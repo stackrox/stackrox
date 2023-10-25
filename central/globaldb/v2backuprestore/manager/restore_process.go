@@ -194,26 +194,22 @@ func (p *restoreProcess) Cancel() {
 }
 
 func (p *restoreProcess) Interrupt(ctx context.Context, attemptID string) (*v1.DBRestoreProcessStatus_ResumeInfo, error) {
-	var resumeInfo *v1.DBRestoreProcessStatus_ResumeInfo
-	var err error
-	var reattachCond concurrency.Waitable
-
-	concurrency.WithLock(&p.mutex, func() {
+	reattachCond, resumeInfo, err := concurrency.WithLock3(&p.mutex, func() (concurrency.Waitable, *v1.DBRestoreProcessStatus_ResumeInfo, error) {
 		if p.reattachC != nil {
 			// Process is already interrupted
-			resumeInfo = &v1.DBRestoreProcessStatus_ResumeInfo{
+			return nil, &v1.DBRestoreProcessStatus_ResumeInfo{
 				Pos: p.reattachPos,
-			}
-			return
+			}, nil
 		}
 
 		if p.attemptID != attemptID {
-			err = errors.Errorf("provided attempt ID %q does not match ID %s of current attempt", attemptID, p.attemptID)
-			return
+			return nil, nil,
+				errors.Errorf("provided attempt ID %q does not match ID %s of current attempt", attemptID, p.attemptID)
 		}
 
-		reattachCond = p.reattachableSig.Snapshot()
+		reattachCond := p.reattachableSig.Snapshot()
 		p.currentAttemptSig.SignalWithError(errors.New("attempt canceled"))
+		return reattachCond, nil, nil
 	})
 
 	if reattachCond == nil {

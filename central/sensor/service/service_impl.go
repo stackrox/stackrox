@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -102,12 +103,18 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if sensorSupportsHello {
 		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
+
+		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
+		if features.SensorReconciliationOnReconnect.Enabled() {
+			capabilities = append(capabilities, centralsensor.SensorReconciliationOnReconnect)
+		}
+
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
 			CentralId:      installInfo.GetId(),
-			Capabilities:   sliceutils.StringSlice(eventPipeline.Capabilities()...),
+			Capabilities:   capabilities,
 		}
 
 		if err := safe.RunE(func() error {

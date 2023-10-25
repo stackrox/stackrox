@@ -67,7 +67,75 @@ func (x ComplianceCheckResult_CheckStatus) String() string {
 }
 
 func (ComplianceCheckResult_CheckStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{0, 0}
+	return fileDescriptor_fb98f7f6563d14bb, []int{1, 0}
+}
+
+type ComplianceScanCluster struct {
+	ClusterId            string   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName          string   `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ComplianceScanCluster) Reset()         { *m = ComplianceScanCluster{} }
+func (m *ComplianceScanCluster) String() string { return proto.CompactTextString(m) }
+func (*ComplianceScanCluster) ProtoMessage()    {}
+func (*ComplianceScanCluster) Descriptor() ([]byte, []int) {
+	return fileDescriptor_fb98f7f6563d14bb, []int{0}
+}
+func (m *ComplianceScanCluster) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceScanCluster) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceScanCluster.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceScanCluster) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceScanCluster.Merge(m, src)
+}
+func (m *ComplianceScanCluster) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceScanCluster) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceScanCluster.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceScanCluster proto.InternalMessageInfo
+
+func (m *ComplianceScanCluster) GetClusterId() string {
+	if m != nil {
+		return m.ClusterId
+	}
+	return ""
+}
+
+func (m *ComplianceScanCluster) GetClusterName() string {
+	if m != nil {
+		return m.ClusterName
+	}
+	return ""
+}
+
+func (m *ComplianceScanCluster) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceScanCluster) Clone() *ComplianceScanCluster {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceScanCluster)
+	*cloned = *m
+
+	return cloned
 }
 
 // ComplianceCheckResult provides the results of a compliance check against a rule
@@ -88,7 +156,7 @@ func (m *ComplianceCheckResult) Reset()         { *m = ComplianceCheckResult{} }
 func (m *ComplianceCheckResult) String() string { return proto.CompactTextString(m) }
 func (*ComplianceCheckResult) ProtoMessage()    {}
 func (*ComplianceCheckResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{0}
+	return fileDescriptor_fb98f7f6563d14bb, []int{1}
 }
 func (m *ComplianceCheckResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -187,7 +255,7 @@ func (m *ComplianceCheckResult) Clone() *ComplianceCheckResult {
 
 // ClusterCheckStatus groups the result of the check by cluster
 type ComplianceCheckResult_ClusterCheckStatus struct {
-	ClusterId            string                            `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Cluster              *ComplianceScanCluster            `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	Status               ComplianceCheckResult_CheckStatus `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckResult_CheckStatus" json:"status,omitempty"`
 	CreatedTime          *types.Timestamp                  `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
@@ -201,7 +269,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Reset() {
 func (m *ComplianceCheckResult_ClusterCheckStatus) String() string { return proto.CompactTextString(m) }
 func (*ComplianceCheckResult_ClusterCheckStatus) ProtoMessage()    {}
 func (*ComplianceCheckResult_ClusterCheckStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{0, 0}
+	return fileDescriptor_fb98f7f6563d14bb, []int{1, 0}
 }
 func (m *ComplianceCheckResult_ClusterCheckStatus) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -230,11 +298,11 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ComplianceCheckResult_ClusterCheckStatus proto.InternalMessageInfo
 
-func (m *ComplianceCheckResult_ClusterCheckStatus) GetClusterId() string {
+func (m *ComplianceCheckResult_ClusterCheckStatus) GetCluster() *ComplianceScanCluster {
 	if m != nil {
-		return m.ClusterId
+		return m.Cluster
 	}
-	return ""
+	return nil
 }
 
 func (m *ComplianceCheckResult_ClusterCheckStatus) GetStatus() ComplianceCheckResult_CheckStatus {
@@ -261,6 +329,7 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Clone() *ComplianceCheckResul
 	cloned := new(ComplianceCheckResult_ClusterCheckStatus)
 	*cloned = *m
 
+	cloned.Cluster = m.Cluster.Clone()
 	cloned.CreatedTime = m.CreatedTime.Clone()
 	return cloned
 }
@@ -279,7 +348,7 @@ func (m *ComplianceScanResult) Reset()         { *m = ComplianceScanResult{} }
 func (m *ComplianceScanResult) String() string { return proto.CompactTextString(m) }
 func (*ComplianceScanResult) ProtoMessage()    {}
 func (*ComplianceScanResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{1}
+	return fileDescriptor_fb98f7f6563d14bb, []int{2}
 }
 func (m *ComplianceScanResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -364,7 +433,7 @@ func (m *ComplianceScanStatsShim) Reset()         { *m = ComplianceScanStatsShim
 func (m *ComplianceScanStatsShim) String() string { return proto.CompactTextString(m) }
 func (*ComplianceScanStatsShim) ProtoMessage()    {}
 func (*ComplianceScanStatsShim) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{2}
+	return fileDescriptor_fb98f7f6563d14bb, []int{3}
 }
 func (m *ComplianceScanStatsShim) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -446,7 +515,7 @@ func (m *ComplianceScanStatsShim) Clone() *ComplianceScanStatsShim {
 type ComplianceScanResultsOverview struct {
 	ScanStats            *ComplianceScanStatsShim `protobuf:"bytes,1,opt,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
 	ProfileName          []string                 `protobuf:"bytes,2,rep,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId            []string                 `protobuf:"bytes,3,rep,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Cluster              []*ComplianceScanCluster `protobuf:"bytes,3,rep,name=cluster,proto3" json:"cluster,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -456,7 +525,7 @@ func (m *ComplianceScanResultsOverview) Reset()         { *m = ComplianceScanRes
 func (m *ComplianceScanResultsOverview) String() string { return proto.CompactTextString(m) }
 func (*ComplianceScanResultsOverview) ProtoMessage()    {}
 func (*ComplianceScanResultsOverview) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{3}
+	return fileDescriptor_fb98f7f6563d14bb, []int{4}
 }
 func (m *ComplianceScanResultsOverview) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -499,9 +568,9 @@ func (m *ComplianceScanResultsOverview) GetProfileName() []string {
 	return nil
 }
 
-func (m *ComplianceScanResultsOverview) GetClusterId() []string {
+func (m *ComplianceScanResultsOverview) GetCluster() []*ComplianceScanCluster {
 	if m != nil {
-		return m.ClusterId
+		return m.Cluster
 	}
 	return nil
 }
@@ -521,9 +590,11 @@ func (m *ComplianceScanResultsOverview) Clone() *ComplianceScanResultsOverview {
 		cloned.ProfileName = make([]string, len(m.ProfileName))
 		copy(cloned.ProfileName, m.ProfileName)
 	}
-	if m.ClusterId != nil {
-		cloned.ClusterId = make([]string, len(m.ClusterId))
-		copy(cloned.ClusterId, m.ClusterId)
+	if m.Cluster != nil {
+		cloned.Cluster = make([]*ComplianceScanCluster, len(m.Cluster))
+		for idx, v := range m.Cluster {
+			cloned.Cluster[idx] = v.Clone()
+		}
 	}
 	return cloned
 }
@@ -541,7 +612,7 @@ func (m *ComplianceProfileScanStats) Reset()         { *m = ComplianceProfileSca
 func (m *ComplianceProfileScanStats) String() string { return proto.CompactTextString(m) }
 func (*ComplianceProfileScanStats) ProtoMessage()    {}
 func (*ComplianceProfileScanStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{4}
+	return fileDescriptor_fb98f7f6563d14bb, []int{5}
 }
 func (m *ComplianceProfileScanStats) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -601,7 +672,7 @@ func (m *ComplianceProfileScanStats) Clone() *ComplianceProfileScanStats {
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 type ComplianceClusterScanStats struct {
 	ScanStats            *ComplianceScanStatsShim `protobuf:"bytes,1,opt,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
-	ClusterId            string                   `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Cluster              *ComplianceScanCluster   `protobuf:"bytes,2,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -611,7 +682,7 @@ func (m *ComplianceClusterScanStats) Reset()         { *m = ComplianceClusterSca
 func (m *ComplianceClusterScanStats) String() string { return proto.CompactTextString(m) }
 func (*ComplianceClusterScanStats) ProtoMessage()    {}
 func (*ComplianceClusterScanStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{5}
+	return fileDescriptor_fb98f7f6563d14bb, []int{6}
 }
 func (m *ComplianceClusterScanStats) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -647,11 +718,11 @@ func (m *ComplianceClusterScanStats) GetScanStats() *ComplianceScanStatsShim {
 	return nil
 }
 
-func (m *ComplianceClusterScanStats) GetClusterId() string {
+func (m *ComplianceClusterScanStats) GetCluster() *ComplianceScanCluster {
 	if m != nil {
-		return m.ClusterId
+		return m.Cluster
 	}
-	return ""
+	return nil
 }
 
 func (m *ComplianceClusterScanStats) MessageClone() proto.Message {
@@ -665,6 +736,7 @@ func (m *ComplianceClusterScanStats) Clone() *ComplianceClusterScanStats {
 	*cloned = *m
 
 	cloned.ScanStats = m.ScanStats.Clone()
+	cloned.Cluster = m.Cluster.Clone()
 	return cloned
 }
 
@@ -684,7 +756,7 @@ func (m *ListComplianceScanResultsOverviewResponse) String() string {
 }
 func (*ListComplianceScanResultsOverviewResponse) ProtoMessage() {}
 func (*ListComplianceScanResultsOverviewResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{6}
+	return fileDescriptor_fb98f7f6563d14bb, []int{7}
 }
 func (m *ListComplianceScanResultsOverviewResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -753,7 +825,7 @@ func (m *ListComplianceProfileScanStatsResponse) Reset() {
 func (m *ListComplianceProfileScanStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceProfileScanStatsResponse) ProtoMessage()    {}
 func (*ListComplianceProfileScanStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{7}
+	return fileDescriptor_fb98f7f6563d14bb, []int{8}
 }
 func (m *ListComplianceProfileScanStatsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -822,7 +894,7 @@ func (m *ListComplianceClusterScanStatsResponse) Reset() {
 func (m *ListComplianceClusterScanStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceClusterScanStatsResponse) ProtoMessage()    {}
 func (*ListComplianceClusterScanStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{8}
+	return fileDescriptor_fb98f7f6563d14bb, []int{9}
 }
 func (m *ListComplianceClusterScanStatsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -889,7 +961,7 @@ func (m *ListComplianceScanResultsResponse) Reset()         { *m = ListComplianc
 func (m *ListComplianceScanResultsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceScanResultsResponse) ProtoMessage()    {}
 func (*ListComplianceScanResultsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fb98f7f6563d14bb, []int{9}
+	return fileDescriptor_fb98f7f6563d14bb, []int{10}
 }
 func (m *ListComplianceScanResultsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -946,6 +1018,7 @@ func (m *ListComplianceScanResultsResponse) Clone() *ListComplianceScanResultsRe
 
 func init() {
 	proto.RegisterEnum("v2.ComplianceCheckResult_CheckStatus", ComplianceCheckResult_CheckStatus_name, ComplianceCheckResult_CheckStatus_value)
+	proto.RegisterType((*ComplianceScanCluster)(nil), "v2.ComplianceScanCluster")
 	proto.RegisterType((*ComplianceCheckResult)(nil), "v2.ComplianceCheckResult")
 	proto.RegisterType((*ComplianceCheckResult_ClusterCheckStatus)(nil), "v2.ComplianceCheckResult.ClusterCheckStatus")
 	proto.RegisterType((*ComplianceScanResult)(nil), "v2.ComplianceScanResult")
@@ -964,68 +1037,69 @@ func init() {
 }
 
 var fileDescriptor_fb98f7f6563d14bb = []byte{
-	// 964 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xcd, 0x6e, 0xe3, 0x54,
-	0x14, 0x1e, 0x27, 0x69, 0x9a, 0x9c, 0x64, 0x2a, 0xeb, 0xc2, 0x08, 0x37, 0x9d, 0x86, 0xd4, 0xc3,
-	0x40, 0x07, 0x81, 0x23, 0x99, 0x05, 0x12, 0xa8, 0x48, 0x99, 0xa8, 0x85, 0x48, 0x21, 0x09, 0x76,
-	0x46, 0x42, 0x6c, 0xcc, 0xad, 0x73, 0xd3, 0x5a, 0x93, 0xd8, 0xc6, 0xd7, 0x49, 0x41, 0xec, 0x10,
-	0xac, 0x58, 0x22, 0x21, 0x36, 0x6c, 0xd9, 0xf3, 0x06, 0x2c, 0x59, 0x22, 0xf1, 0x02, 0xa8, 0xf0,
-	0x20, 0xe8, 0xfe, 0x24, 0x8e, 0xe3, 0x24, 0x0c, 0x52, 0x77, 0x3d, 0x7f, 0xfe, 0xbe, 0x73, 0xce,
-	0x77, 0x6e, 0x0a, 0x6f, 0xe0, 0xd0, 0x6b, 0xce, 0xcd, 0xa6, 0x1b, 0x4c, 0xc3, 0x89, 0x87, 0x7d,
-	0x97, 0x38, 0x11, 0xa1, 0xb3, 0x49, 0x4c, 0x1d, 0x4a, 0xa2, 0xb9, 0xe7, 0x12, 0x23, 0x8c, 0x82,
-	0x38, 0x40, 0xb9, 0xb9, 0x59, 0x7b, 0xf5, 0x2a, 0x08, 0xae, 0x26, 0xa4, 0xc9, 0x3d, 0x97, 0xb3,
-	0x71, 0x33, 0xf6, 0xa6, 0x84, 0xc6, 0x78, 0x1a, 0x8a, 0xa4, 0xda, 0x43, 0x99, 0xc0, 0x3e, 0x8a,
-	0x7d, 0x3f, 0x88, 0x71, 0xec, 0x05, 0x3e, 0x95, 0xd1, 0x97, 0x12, 0xac, 0x69, 0xe0, 0x4b, 0xe7,
-	0xa1, 0x74, 0x52, 0x82, 0x23, 0xf7, 0xda, 0xf9, 0x62, 0x46, 0xa2, 0xaf, 0x44, 0x48, 0xff, 0xad,
-	0x00, 0x0f, 0xda, 0x4b, 0x5e, 0xed, 0x6b, 0xe2, 0x3e, 0xb7, 0x38, 0x37, 0x74, 0x08, 0x25, 0x97,
-	0x99, 0x8e, 0x37, 0xd2, 0x94, 0x86, 0x72, 0x5a, 0xb6, 0xf6, 0xb9, 0xdd, 0x19, 0xa1, 0x63, 0x00,
-	0x11, 0xf2, 0xf1, 0x94, 0x68, 0x39, 0x1e, 0x2c, 0x73, 0x4f, 0x0f, 0x4f, 0x09, 0xfa, 0x08, 0x4a,
-	0xee, 0x64, 0x46, 0x63, 0x12, 0x51, 0x2d, 0xdf, 0xc8, 0x9f, 0x56, 0xcc, 0xb7, 0x8c, 0xb9, 0x69,
-	0x6c, 0x84, 0x31, 0xda, 0x22, 0x93, 0xbb, 0xec, 0x18, 0xc7, 0x33, 0x6a, 0x2d, 0xab, 0x51, 0x03,
-	0x2a, 0x23, 0x42, 0xdd, 0xc8, 0x0b, 0x59, 0x8f, 0x5a, 0x81, 0x23, 0xad, 0xba, 0x90, 0x0e, 0x55,
-	0xcf, 0xa7, 0x71, 0x34, 0x73, 0xf9, 0x14, 0xb4, 0x3d, 0x9e, 0x92, 0xf2, 0xa1, 0x1a, 0x94, 0x68,
-	0x8c, 0xfd, 0x11, 0x8e, 0x46, 0x5a, 0x91, 0xc7, 0x97, 0x36, 0xd2, 0x60, 0xdf, 0x0d, 0xfc, 0x38,
-	0x0a, 0x26, 0xda, 0xbe, 0x6c, 0x52, 0x98, 0xb5, 0x5f, 0x15, 0x40, 0x59, 0x72, 0xbc, 0x77, 0xe1,
-	0x4d, 0x06, 0x53, 0x96, 0x9e, 0xce, 0x08, 0x9d, 0x41, 0x91, 0xf2, 0x44, 0x3e, 0x96, 0x03, 0xf3,
-	0xf1, 0x8e, 0xce, 0x57, 0x5a, 0x96, 0x45, 0xe8, 0x0c, 0xaa, 0x6e, 0x44, 0x70, 0x4c, 0x46, 0x0e,
-	0xdb, 0xbb, 0x96, 0x6f, 0x28, 0xa7, 0x15, 0xb3, 0x66, 0x88, 0x9d, 0x1b, 0x0b, 0x51, 0x18, 0xc3,
-	0x85, 0x28, 0xac, 0x8a, 0xcc, 0x67, 0x1e, 0x9d, 0x42, 0x65, 0x95, 0x6b, 0x19, 0xf6, 0x9e, 0xf5,
-	0xec, 0xf3, 0xa1, 0x7a, 0x0f, 0x95, 0xa0, 0x30, 0x68, 0xd9, 0xb6, 0xaa, 0xb0, 0xbf, 0x2e, 0x5a,
-	0x9d, 0xae, 0x9a, 0x63, 0xe1, 0x73, 0xcb, 0xea, 0x5b, 0x6a, 0x9e, 0x39, 0x3b, 0xbd, 0x8b, 0xbe,
-	0x5a, 0x40, 0x00, 0xc5, 0x8f, 0x5b, 0xbd, 0x67, 0xad, 0xae, 0xba, 0x87, 0x10, 0x1c, 0xf4, 0xfa,
-	0x43, 0xa7, 0x35, 0x18, 0x74, 0x3b, 0xed, 0xd6, 0xd3, 0xee, 0xb9, 0x5a, 0x44, 0x2a, 0x54, 0x3b,
-	0xbd, 0x76, 0xbf, 0x67, 0x77, 0xec, 0xe1, 0x79, 0x6f, 0xa8, 0xee, 0xeb, 0x3f, 0x2a, 0xf0, 0x72,
-	0xd2, 0xa1, 0xed, 0x62, 0x5f, 0x2a, 0xe8, 0x08, 0xca, 0xd4, 0xc5, 0xbe, 0x50, 0x89, 0x22, 0x07,
-	0xef, 0x62, 0x9f, 0x8b, 0xe4, 0x04, 0xaa, 0x61, 0x14, 0x8c, 0xbd, 0x09, 0x59, 0x55, 0x51, 0x45,
-	0xfa, 0x78, 0xca, 0x07, 0x70, 0x5f, 0xc8, 0x4c, 0x5e, 0x8b, 0x14, 0xd3, 0xe1, 0xd6, 0x91, 0x5a,
-	0x55, 0x37, 0x31, 0xa8, 0xfe, 0x7d, 0x0e, 0x5e, 0x49, 0x13, 0x63, 0x73, 0xa1, 0xf6, 0xb5, 0x37,
-	0xdd, 0xcd, 0xed, 0x14, 0x54, 0x7f, 0x36, 0xbd, 0x24, 0x91, 0x13, 0x8c, 0x1d, 0xfe, 0x49, 0xb1,
-	0xce, 0x3d, 0xeb, 0x40, 0xf8, 0xfb, 0x63, 0x8e, 0x4a, 0xd1, 0xbb, 0xa0, 0x25, 0x99, 0x63, 0xec,
-	0x4d, 0x3c, 0xff, 0x6a, 0x51, 0x91, 0xe7, 0x15, 0x0f, 0x16, 0x15, 0x17, 0x22, 0xba, 0xa9, 0x30,
-	0xc4, 0x94, 0xae, 0x14, 0x16, 0xd2, 0x85, 0x03, 0x11, 0x5d, 0x16, 0x96, 0x27, 0x98, 0xc6, 0x0e,
-	0x23, 0xcb, 0xd5, 0xbe, 0x5b, 0x1e, 0x25, 0x96, 0xcc, 0x5a, 0xd7, 0x7f, 0x56, 0xe0, 0x78, 0xd3,
-	0x9a, 0x68, 0x7f, 0xce, 0x1e, 0x21, 0x72, 0x83, 0xde, 0x03, 0xe0, 0x33, 0x61, 0x5a, 0xa4, 0x7c,
-	0x28, 0x15, 0xf3, 0x28, 0x3d, 0xec, 0xd4, 0x10, 0x2d, 0x3e, 0x42, 0x6e, 0x6e, 0x58, 0x67, 0x7e,
-	0x7d, 0x9d, 0xe9, 0xcb, 0xc9, 0xf3, 0x84, 0xe4, 0x72, 0xf4, 0xaf, 0xa1, 0x96, 0xe0, 0x0c, 0x44,
-	0xdd, 0x12, 0xee, 0x8e, 0xb9, 0xad, 0x4b, 0x4d, 0xbf, 0x59, 0x05, 0x97, 0x57, 0x7f, 0x37, 0xe0,
-	0xe9, 0xae, 0x73, 0x6b, 0xef, 0x85, 0x3e, 0x83, 0x27, 0x5d, 0x8f, 0xc6, 0x3b, 0x17, 0x63, 0x11,
-	0x1a, 0x06, 0x3e, 0x65, 0x0f, 0xeb, 0x01, 0xe7, 0x11, 0xc8, 0x00, 0xe3, 0xc2, 0x2e, 0xe2, 0x24,
-	0xcb, 0x65, 0xfd, 0x13, 0xf7, 0x59, 0xe1, 0xc2, 0xa2, 0xfa, 0x15, 0xbc, 0x9e, 0x86, 0x5d, 0x1f,
-	0xf8, 0x12, 0xf3, 0x6c, 0xad, 0x77, 0x86, 0x57, 0x4f, 0xe3, 0x65, 0x6a, 0x93, 0xf6, 0xb3, 0x40,
-	0xeb, 0xc3, 0xfd, 0x3f, 0x40, 0x99, 0xda, 0x15, 0xa0, 0xcf, 0xe1, 0x64, 0xeb, 0x20, 0x97, 0x18,
-	0xef, 0x43, 0x95, 0x63, 0x2c, 0x1e, 0x14, 0x81, 0xa2, 0x6d, 0x1b, 0x9f, 0x55, 0xa1, 0xc9, 0x47,
-	0xcc, 0x5f, 0x0a, 0xa0, 0x25, 0x59, 0xd2, 0x6b, 0x8b, 0x1f, 0x70, 0xf4, 0x9d, 0x02, 0x8d, 0x0f,
-	0xc9, 0xee, 0x3d, 0xa2, 0x2a, 0x03, 0xb2, 0xf0, 0xcd, 0x27, 0xec, 0x07, 0xb8, 0xf6, 0x36, 0xb3,
-	0x5e, 0x78, 0xf9, 0xfa, 0x6b, 0xdf, 0xfc, 0xf9, 0xcf, 0x0f, 0xb9, 0x3a, 0x7a, 0x98, 0xfe, 0x57,
-	0xa2, 0xc9, 0x28, 0x36, 0x17, 0x8a, 0x40, 0x31, 0x68, 0xdb, 0x68, 0xac, 0xc1, 0x3f, 0xde, 0x09,
-	0xbf, 0x84, 0x7d, 0xc4, 0x61, 0x8f, 0xd1, 0xd1, 0x26, 0x58, 0x39, 0x47, 0xf4, 0xad, 0x02, 0xc7,
-	0x29, 0xd8, 0xcc, 0xfd, 0xa6, 0xb1, 0xdf, 0xcc, 0x62, 0x6f, 0x13, 0xa0, 0xfe, 0x84, 0x13, 0x78,
-	0x84, 0x4e, 0x36, 0x11, 0xe0, 0x62, 0x69, 0xca, 0x4b, 0xce, 0xd2, 0xc8, 0x5c, 0xf2, 0x7f, 0xd2,
-	0xd8, 0x26, 0xcf, 0x17, 0xa1, 0x21, 0xaf, 0xfa, 0xa9, 0xf1, 0xfb, 0x6d, 0x5d, 0xf9, 0xe3, 0xb6,
-	0xae, 0xfc, 0x75, 0x5b, 0x57, 0x7e, 0xfa, 0xbb, 0x7e, 0x0f, 0x34, 0x2f, 0x30, 0x68, 0x8c, 0xdd,
-	0xe7, 0x51, 0xf0, 0xa5, 0x78, 0xa5, 0x0d, 0x1c, 0x7a, 0xc6, 0xdc, 0xfc, 0x2c, 0x37, 0x37, 0x3f,
-	0x55, 0x2e, 0x8b, 0xdc, 0xf7, 0xce, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x89, 0xde, 0x30, 0x1b,
-	0x2a, 0x0a, 0x00, 0x00,
+	// 990 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x41, 0x6f, 0xe3, 0x44,
+	0x14, 0x5e, 0x27, 0x69, 0x93, 0xbc, 0x64, 0x2b, 0x6b, 0xc4, 0x0a, 0x37, 0xdd, 0x86, 0xc6, 0xcb,
+	0x42, 0x17, 0x81, 0x23, 0x79, 0x0f, 0x48, 0xa0, 0x22, 0x65, 0xa3, 0x16, 0x22, 0x85, 0x24, 0xd8,
+	0x59, 0x09, 0xb8, 0x98, 0xa9, 0x33, 0x69, 0xad, 0x4d, 0x6c, 0xe3, 0x71, 0xb2, 0x20, 0x6e, 0x08,
+	0x4e, 0x88, 0x13, 0x12, 0xe2, 0x17, 0xf0, 0x07, 0xf8, 0x11, 0x70, 0x44, 0x42, 0xe2, 0x8c, 0x0a,
+	0x3f, 0x04, 0xcd, 0x78, 0xec, 0xd8, 0x71, 0x12, 0x8a, 0xb4, 0x37, 0xcf, 0x9b, 0xf7, 0xde, 0xf7,
+	0xcd, 0xf7, 0xbe, 0x19, 0x19, 0x5e, 0xc7, 0xbe, 0xd3, 0x5e, 0xea, 0x6d, 0xdb, 0x9b, 0xfb, 0x33,
+	0x07, 0xbb, 0x36, 0xb1, 0x02, 0x42, 0x17, 0xb3, 0x90, 0x5a, 0x94, 0x04, 0x4b, 0xc7, 0x26, 0x9a,
+	0x1f, 0x78, 0xa1, 0x87, 0x0a, 0x4b, 0xbd, 0xf1, 0xca, 0x95, 0xe7, 0x5d, 0xcd, 0x48, 0x9b, 0x47,
+	0x2e, 0x17, 0xd3, 0x76, 0xe8, 0xcc, 0x09, 0x0d, 0xf1, 0xdc, 0x8f, 0x92, 0x1a, 0xf7, 0x45, 0x02,
+	0x6b, 0x8a, 0x5d, 0xd7, 0x0b, 0x71, 0xe8, 0x78, 0x2e, 0x15, 0xbb, 0x87, 0x02, 0x8b, 0x12, 0x1c,
+	0xd8, 0xd7, 0xd6, 0xe7, 0x0b, 0x12, 0x7c, 0x19, 0x6d, 0xa9, 0x9f, 0xc0, 0xbd, 0x6e, 0xc2, 0xc0,
+	0xb4, 0xb1, 0xdb, 0x9d, 0x2d, 0x68, 0x48, 0x02, 0x74, 0x0c, 0x60, 0x47, 0x9f, 0x96, 0x33, 0x51,
+	0xa4, 0x13, 0xe9, 0xb4, 0x6a, 0x54, 0x45, 0xa4, 0x37, 0x41, 0x2d, 0xa8, 0xc7, 0xdb, 0x2e, 0x9e,
+	0x13, 0xa5, 0xc0, 0x13, 0x6a, 0x22, 0x36, 0xc0, 0x73, 0xa2, 0xfe, 0x59, 0x4a, 0xf7, 0xee, 0x5e,
+	0x13, 0xfb, 0x99, 0xc1, 0x4f, 0x88, 0x0e, 0xa1, 0x62, 0xb3, 0xe5, 0xaa, 0x73, 0x99, 0xaf, 0x7b,
+	0x13, 0x0e, 0xcb, 0xb7, 0x52, 0x5d, 0xab, 0x3c, 0xc2, 0x7a, 0xa2, 0x0f, 0xa0, 0x22, 0x20, 0xa8,
+	0x52, 0x3c, 0x29, 0x9e, 0xd6, 0xf4, 0x37, 0xb5, 0xa5, 0xae, 0x6d, 0x84, 0xd1, 0xc4, 0x51, 0x78,
+	0xc8, 0x0c, 0x71, 0xb8, 0xa0, 0x46, 0x52, 0x8d, 0x4e, 0xa0, 0x36, 0x21, 0xd4, 0x0e, 0x1c, 0x9f,
+	0x29, 0xa5, 0x94, 0x22, 0xfe, 0xa9, 0x10, 0x52, 0xa1, 0xee, 0xb8, 0x34, 0x0c, 0x16, 0x36, 0xd7,
+	0x52, 0xd9, 0xe3, 0x29, 0x99, 0x18, 0x6a, 0x40, 0x85, 0x86, 0xd8, 0x9d, 0xe0, 0x60, 0xa2, 0xec,
+	0xf3, 0xfd, 0x64, 0x8d, 0x14, 0x28, 0xdb, 0x9e, 0x1b, 0x06, 0xde, 0x4c, 0x29, 0x8b, 0x43, 0x46,
+	0xcb, 0xc6, 0xaf, 0x12, 0xa0, 0x3c, 0x39, 0xf4, 0x18, 0xca, 0x82, 0x1e, 0x57, 0xa5, 0xa6, 0x1f,
+	0x66, 0xcf, 0x96, 0x1a, 0x8f, 0x11, 0x67, 0xa2, 0x33, 0xd8, 0xa7, 0xbc, 0x9c, 0x8b, 0x75, 0xa0,
+	0x3f, 0xdc, 0xa1, 0x47, 0x4a, 0x08, 0x51, 0x84, 0xce, 0xa0, 0x6e, 0x07, 0x04, 0x87, 0x64, 0x62,
+	0x31, 0x4f, 0x29, 0x45, 0x0e, 0xdc, 0xd0, 0x22, 0x3f, 0x69, 0xb1, 0xe1, 0xb4, 0x71, 0x6c, 0x38,
+	0xa3, 0x26, 0xf2, 0x59, 0x44, 0xa5, 0x50, 0x4b, 0x9f, 0xa0, 0x0a, 0x7b, 0x4f, 0x07, 0xe6, 0xf9,
+	0x58, 0xbe, 0x83, 0x2a, 0x50, 0x1a, 0x75, 0x4c, 0x53, 0x96, 0xd8, 0xd7, 0x45, 0xa7, 0xd7, 0x97,
+	0x0b, 0x6c, 0xfb, 0xdc, 0x30, 0x86, 0x86, 0x5c, 0x64, 0xc1, 0xde, 0xe0, 0x62, 0x28, 0x97, 0x10,
+	0xc0, 0xfe, 0x87, 0x9d, 0xc1, 0xd3, 0x4e, 0x5f, 0xde, 0x43, 0x08, 0x0e, 0x06, 0xc3, 0xb1, 0xd5,
+	0x19, 0x8d, 0xfa, 0xbd, 0x6e, 0xe7, 0x49, 0xff, 0x5c, 0xde, 0x47, 0x32, 0xd4, 0x7b, 0x83, 0xee,
+	0x70, 0x60, 0xf6, 0xcc, 0xf1, 0xf9, 0x60, 0x2c, 0x97, 0xd5, 0x1f, 0x25, 0x78, 0x29, 0xab, 0x8a,
+	0xf0, 0xd5, 0x11, 0x54, 0xa9, 0x8d, 0xdd, 0xc8, 0x3b, 0x92, 0x18, 0x87, 0x8d, 0x5d, 0x6e, 0x9d,
+	0x16, 0xd4, 0xfd, 0xc0, 0x9b, 0x3a, 0x33, 0x92, 0x71, 0xac, 0x88, 0xf1, 0x94, 0xf7, 0xe0, 0x6e,
+	0x64, 0x3e, 0x71, 0x13, 0x85, 0xc5, 0x0e, 0xb7, 0x4a, 0x6a, 0xd4, 0xed, 0xd5, 0x82, 0xaa, 0xdf,
+	0x15, 0xe0, 0xe5, 0x2c, 0x31, 0xa6, 0x0b, 0x35, 0xaf, 0x9d, 0xf9, 0x6e, 0x6e, 0xa7, 0x20, 0xbb,
+	0x8b, 0xf9, 0x25, 0x09, 0x2c, 0x6f, 0x6a, 0xf1, 0x96, 0xd1, 0x38, 0xf7, 0x8c, 0x83, 0x28, 0x3e,
+	0x9c, 0x72, 0x54, 0x8a, 0xde, 0x06, 0x65, 0x95, 0x39, 0xc5, 0xce, 0xcc, 0x71, 0xaf, 0xe2, 0x8a,
+	0x22, 0xaf, 0xb8, 0x17, 0x57, 0x5c, 0x44, 0xbb, 0x9b, 0x0a, 0x7d, 0x4c, 0x69, 0xaa, 0xb0, 0x94,
+	0x2d, 0x1c, 0x45, 0xbb, 0x49, 0x61, 0x75, 0x86, 0x69, 0x68, 0x31, 0xb2, 0xfc, 0x0e, 0xec, 0xb6,
+	0x47, 0x85, 0x25, 0xb3, 0xa3, 0xab, 0xbf, 0x48, 0x70, 0xbc, 0x69, 0x4c, 0x74, 0xb8, 0x64, 0x0f,
+	0x1c, 0x79, 0x8e, 0xde, 0x01, 0xe0, 0x9a, 0x30, 0x2f, 0x52, 0xe1, 0xf9, 0xa3, 0xbc, 0xe7, 0x13,
+	0x11, 0x0d, 0x2e, 0x21, 0x5f, 0x6e, 0x18, 0x67, 0x71, 0x7d, 0x9c, 0xa9, 0xfb, 0xb4, 0x71, 0x90,
+	0x9b, 0xee, 0x93, 0xfa, 0x15, 0x34, 0x56, 0x19, 0xa3, 0xa8, 0x5b, 0x42, 0xe2, 0x05, 0x33, 0x5e,
+	0x37, 0xa0, 0xfa, 0xbd, 0x94, 0x46, 0x17, 0xdc, 0x5e, 0x0c, 0x7a, 0x4a, 0x8c, 0xc2, 0x6d, 0x1f,
+	0x17, 0x75, 0x01, 0x8f, 0xfa, 0x0e, 0x0d, 0x77, 0x4e, 0xd1, 0x20, 0xd4, 0xf7, 0x5c, 0xca, 0xde,
+	0xe6, 0x03, 0xce, 0xce, 0x13, 0x1b, 0x8c, 0x21, 0x53, 0xbd, 0x95, 0x07, 0x5a, 0x6f, 0x71, 0x97,
+	0x15, 0xc6, 0x2b, 0xaa, 0x5e, 0xc1, 0x6b, 0x59, 0xd8, 0xf5, 0x39, 0x24, 0x98, 0x67, 0x6b, 0x8a,
+	0x30, 0xbc, 0x66, 0x16, 0x2f, 0x57, 0xbb, 0x12, 0x25, 0x0f, 0xb4, 0x2e, 0xf9, 0xff, 0x01, 0xca,
+	0xd5, 0xa6, 0x80, 0x3e, 0x83, 0xd6, 0x56, 0x21, 0x13, 0x8c, 0x77, 0xa1, 0xce, 0x31, 0xe2, 0xd7,
+	0x27, 0x42, 0x51, 0xb6, 0xc9, 0x67, 0xd4, 0xe8, 0xaa, 0x89, 0xfe, 0x73, 0x09, 0x94, 0x55, 0x96,
+	0x88, 0x9a, 0xd1, 0x9f, 0x04, 0xfa, 0x56, 0x82, 0x93, 0xf7, 0xc9, 0xee, 0x39, 0xa2, 0x3a, 0x03,
+	0x32, 0xf0, 0xf3, 0x8f, 0xd8, 0xef, 0x41, 0xe3, 0x2d, 0xb6, 0xba, 0xf5, 0xf0, 0xd5, 0x57, 0xbf,
+	0xfe, 0xe3, 0x9f, 0x1f, 0x0a, 0x4d, 0x74, 0x3f, 0xfb, 0x4f, 0xd3, 0x66, 0x14, 0xdb, 0xb1, 0x23,
+	0x50, 0x08, 0xca, 0x36, 0x1a, 0x6b, 0xf0, 0x0f, 0x77, 0xc2, 0x27, 0xb0, 0x0f, 0x38, 0xec, 0x31,
+	0x3a, 0xda, 0x04, 0x2b, 0x74, 0x44, 0xdf, 0x48, 0x70, 0x9c, 0x81, 0xcd, 0x5d, 0xeb, 0x2c, 0xf6,
+	0x1b, 0x79, 0xec, 0x6d, 0x06, 0x54, 0x1f, 0x71, 0x02, 0x0f, 0x50, 0x6b, 0x13, 0x01, 0x6e, 0x96,
+	0xb6, 0xb8, 0xe0, 0x79, 0x1a, 0xb9, 0xfb, 0xfd, 0x9f, 0x34, 0xb6, 0xd9, 0xf3, 0x36, 0x34, 0xc4,
+	0x9d, 0x7e, 0xa2, 0xfd, 0x76, 0xd3, 0x94, 0x7e, 0xbf, 0x69, 0x4a, 0x7f, 0xdd, 0x34, 0xa5, 0x9f,
+	0xfe, 0x6e, 0xde, 0x01, 0xc5, 0xf1, 0x34, 0x1a, 0x62, 0xfb, 0x59, 0xe0, 0x7d, 0x11, 0x3d, 0xe9,
+	0x1a, 0xf6, 0x1d, 0x6d, 0xa9, 0x7f, 0x5a, 0x58, 0xea, 0x1f, 0x4b, 0x97, 0xfb, 0x3c, 0xf6, 0xf8,
+	0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x6e, 0xd9, 0x0a, 0x4e, 0xb3, 0x0a, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1041,12 +1115,32 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ComplianceResultsServiceClient interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResults(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats by profile
+	// GetComplianceProfileScanStats lists current scan stats grouped by profile
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats by cluster
+	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
 }
 
@@ -1097,12 +1191,32 @@ func (c *complianceResultsServiceClient) GetComplianceClusterScanStats(ctx conte
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
 type ComplianceResultsServiceServer interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(context.Context, *RawQuery) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResults(context.Context, *RawQuery) (*ListComplianceScanResultsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats by profile
+	// GetComplianceProfileScanStats lists current scan stats grouped by profile
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats by cluster
+	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error)
 }
 
@@ -1222,6 +1336,47 @@ var _ComplianceResultsService_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v2/compliance_results_service.proto",
+}
+
+func (m *ComplianceScanCluster) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceScanCluster) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceScanCluster) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterName) > 0 {
+		i -= len(m.ClusterName)
+		copy(dAtA[i:], m.ClusterName)
+		i = encodeVarintComplianceResultsService(dAtA, i, uint64(len(m.ClusterName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = encodeVarintComplianceResultsService(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *ComplianceCheckResult) Marshal() (dAtA []byte, err error) {
@@ -1348,10 +1503,15 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) MarshalToSizedBuffer(dAtA []b
 		i--
 		dAtA[i] = 0x10
 	}
-	if len(m.ClusterId) > 0 {
-		i -= len(m.ClusterId)
-		copy(dAtA[i:], m.ClusterId)
-		i = encodeVarintComplianceResultsService(dAtA, i, uint64(len(m.ClusterId)))
+	if m.Cluster != nil {
+		{
+			size, err := m.Cluster.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceResultsService(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1498,11 +1658,16 @@ func (m *ComplianceScanResultsOverview) MarshalToSizedBuffer(dAtA []byte) (int, 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.ClusterId) > 0 {
-		for iNdEx := len(m.ClusterId) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.ClusterId[iNdEx])
-			copy(dAtA[i:], m.ClusterId[iNdEx])
-			i = encodeVarintComplianceResultsService(dAtA, i, uint64(len(m.ClusterId[iNdEx])))
+	if len(m.Cluster) > 0 {
+		for iNdEx := len(m.Cluster) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Cluster[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintComplianceResultsService(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x1a
 		}
@@ -1601,10 +1766,15 @@ func (m *ComplianceClusterScanStats) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.ClusterId) > 0 {
-		i -= len(m.ClusterId)
-		copy(dAtA[i:], m.ClusterId)
-		i = encodeVarintComplianceResultsService(dAtA, i, uint64(len(m.ClusterId)))
+	if m.Cluster != nil {
+		{
+			size, err := m.Cluster.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintComplianceResultsService(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1798,6 +1968,26 @@ func encodeVarintComplianceResultsService(dAtA []byte, offset int, v uint64) int
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ComplianceScanCluster) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + sovComplianceResultsService(uint64(l))
+	}
+	l = len(m.ClusterName)
+	if l > 0 {
+		n += 1 + l + sovComplianceResultsService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ComplianceCheckResult) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1846,8 +2036,8 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.ClusterId)
-	if l > 0 {
+	if m.Cluster != nil {
+		l = m.Cluster.Size()
 		n += 1 + l + sovComplianceResultsService(uint64(l))
 	}
 	if m.Status != 0 {
@@ -1934,9 +2124,9 @@ func (m *ComplianceScanResultsOverview) Size() (n int) {
 			n += 1 + l + sovComplianceResultsService(uint64(l))
 		}
 	}
-	if len(m.ClusterId) > 0 {
-		for _, s := range m.ClusterId {
-			l = len(s)
+	if len(m.Cluster) > 0 {
+		for _, e := range m.Cluster {
+			l = e.Size()
 			n += 1 + l + sovComplianceResultsService(uint64(l))
 		}
 	}
@@ -1976,8 +2166,8 @@ func (m *ComplianceClusterScanStats) Size() (n int) {
 		l = m.ScanStats.Size()
 		n += 1 + l + sovComplianceResultsService(uint64(l))
 	}
-	l = len(m.ClusterId)
-	if l > 0 {
+	if m.Cluster != nil {
+		l = m.Cluster.Size()
 		n += 1 + l + sovComplianceResultsService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -2063,6 +2253,121 @@ func sovComplianceResultsService(x uint64) (n int) {
 }
 func sozComplianceResultsService(x uint64) (n int) {
 	return sovComplianceResultsService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *ComplianceScanCluster) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceResultsService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ComplianceScanCluster: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ComplianceScanCluster: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceResultsService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceResultsService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceResultsService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceResultsService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceResultsService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceResultsService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceResultsService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceResultsService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *ComplianceCheckResult) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -2372,9 +2677,9 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error 
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cluster", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowComplianceResultsService
@@ -2384,23 +2689,27 @@ func (m *ComplianceCheckResult_ClusterCheckStatus) Unmarshal(dAtA []byte) error 
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			if m.Cluster == nil {
+				m.Cluster = &ComplianceScanCluster{}
+			}
+			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
@@ -2903,9 +3212,9 @@ func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cluster", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowComplianceResultsService
@@ -2915,23 +3224,25 @@ func (m *ComplianceScanResultsOverview) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterId = append(m.ClusterId, string(dAtA[iNdEx:postIndex]))
+			m.Cluster = append(m.Cluster, &ComplianceScanCluster{})
+			if err := m.Cluster[len(m.Cluster)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3141,9 +3452,9 @@ func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Cluster", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowComplianceResultsService
@@ -3153,23 +3464,27 @@ func (m *ComplianceClusterScanStats) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthComplianceResultsService
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			if m.Cluster == nil {
+				m.Cluster = &ComplianceScanCluster{}
+			}
+			if err := m.Cluster.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

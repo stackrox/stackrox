@@ -4,6 +4,7 @@ import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import {
     VulnerabilitySeverity,
     VulnerabilityState,
+    isVulnerabilityState,
     vulnerabilitySeverities,
 } from 'types/cve.proto';
 import { SearchFilter } from 'types/search';
@@ -11,21 +12,23 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { CveStatusTab, FixableStatus, isValidCveStatusTab, QuerySearchFilter } from './types';
+import { FixableStatus, QuerySearchFilter } from './types';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
 export type WorkloadCvesSearch = {
-    cveStatusTab: CveStatusTab;
+    vulnerabilityState: VulnerabilityState;
     entityTab?: EntityTab;
     s?: SearchFilter;
 };
 
 export function parseWorkloadCvesOverviewSearchString(search: string): WorkloadCvesSearch {
-    const { cveStatusTab } = qs.parse(search, { ignoreQueryPrefix: true });
+    const { vulnerabilityState } = qs.parse(search, { ignoreQueryPrefix: true });
 
     return {
-        cveStatusTab: isValidCveStatusTab(cveStatusTab) ? cveStatusTab : 'Observed',
+        vulnerabilityState: isVulnerabilityState(vulnerabilityState)
+            ? vulnerabilityState
+            : 'OBSERVED',
     };
 }
 
@@ -128,20 +131,13 @@ export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<Fix
     return hiddenStatuses;
 }
 
-// Map from the CVE status tab to the backend equivalent search value
-const vulnerabilitySearchStateForCveStatus: Record<CveStatusTab, VulnerabilityState> = {
-    Observed: 'OBSERVED',
-    Deferred: 'DEFERRED',
-    'False Positive': 'FALSE_POSITIVE',
-} as const;
-
-// Returns a search filter string that scopes results to a CVE Workflow state (e.g. 'OBSERVED')
-export function getCveStatusScopedQueryString(
+// Returns a search filter string that scopes results to a Vulnerability state (e.g. 'OBSERVED')
+export function getVulnStateScopedQueryString(
     searchFilter: QuerySearchFilter,
-    cveStatusTab?: CveStatusTab /* TODO Make this required once Observed/Deferred/FP states are re-implemented */
+    vulnerabilityState?: VulnerabilityState // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 ): string {
-    const vulnerabilityStateFilter = cveStatusTab
-        ? { 'Vulnerability State': vulnerabilitySearchStateForCveStatus[cveStatusTab] }
+    const vulnerabilityStateFilter = vulnerabilityState
+        ? { 'Vulnerability State': vulnerabilityState }
         : {};
     return getRequestQueryStringForSearchFilter({
         ...searchFilter,

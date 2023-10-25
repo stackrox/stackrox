@@ -1,0 +1,30 @@
+{
+	"cluster_name": "jouko-022723",
+	"test_dir": "test/example_2/num_streams_0",
+	"nrepeat": 5,
+	"num_worker_nodes": 3,
+	"sleep_after_start_rox": 60,
+        "query_window": "10m",
+	"load": {
+		"load_duration": "600",
+		"kubenetbench_load": {
+			"num_streams": 0,
+			"load_test_name": "plop-open-close-ports-load-stackrox-versions"
+		}
+	},
+	"versions": [
+		{
+			"nick_name": "3.73",
+			"collector_image_registry": "quay.io/stackrox-io",
+			"collector_image_tag": "3.11.x-100-gc45b3e7c29",
+			"env_var_file": "env_3.73.sh"
+		},
+		{
+			"nick_name": "3.73.x-130",
+			"collector_image_registry": "quay.io/stackrox-io",
+			"collector_image_tag": "3.12.x-32-gd018d81af0",
+			"env_var_file": "env_3.73.x-130-g1ead7d6745.sh"
+		}
+	]
+
+}

@@ -18,6 +18,7 @@ import (
 
 const (
 	telemetryChanGCPeriod = 5 * time.Minute
+	progressTimeout       = 5 * time.Minute
 )
 
 type controller struct {
@@ -99,6 +100,10 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		go c.sendCancellation(requestID)
 	}()
 
+	// In case there's no progress regarding sensor sending telemetry response data,
+	// we should stop waiting.
+	progressTicker := time.NewTicker(progressTimeout)
+	defer progressTicker.Stop()
 	for {
 		var resp *central.TelemetryResponsePayload
 		select {
@@ -106,7 +111,10 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 			return errors.Wrap(ctx.Err(), "context error")
 		case <-c.stopSig.Done():
 			return errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
+		case <-progressTicker.C:
+			return errors.Errorf("sensor didn't sent any data in last %s", progressTimeout)
 		case resp = <-retC:
+			progressTicker.Reset(progressTimeout)
 		}
 
 		if eos := resp.GetEndOfStream(); eos != nil {
@@ -181,20 +189,19 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB, time.Now())
 }
 
-func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {
+func (c *controller) ProcessTelemetryDataResponse(ctx context.Context, resp *central.PullTelemetryDataResponse) error {
 	requestID := resp.GetRequestId()
 	if resp.GetPayload() == nil {
 		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
 	}
 
-	var retC chan *central.TelemetryResponsePayload
-	var found bool
-	concurrency.WithLock(&c.returnChansMutex, func() {
-		retC, found = c.returnChans[requestID]
+	retC, found := concurrency.WithLock2(&c.returnChansMutex, func() (chan *central.TelemetryResponsePayload, bool) {
+		retC, found := c.returnChans[requestID]
 		if !found {
 			// Add the channel to the map to make sure log messages get throttled.
 			c.returnChans[requestID] = nil
 		}
+		return retC, found
 	})
 	if retC == nil {
 		if found {
@@ -205,6 +212,8 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-c.stopSig.Done():
 		return errors.Wrap(c.stopSig.Err(), "sensor connection stopped while waiting for network policies response")
 	case retC <- resp.GetPayload():

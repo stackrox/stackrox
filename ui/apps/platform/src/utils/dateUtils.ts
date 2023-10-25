@@ -32,6 +32,15 @@ export function getTime(timestamp: DateLike) {
     return format(timestamp, timeFormat);
 }
 
+/**
+ * Returns a formatted time with hours and minutes but without seconds.
+ * @param {DateLike} timestamp - The timestamp for the date
+ * @returns {string} - returns a formatted string for the time
+ */
+export function getTimeHoursMinutes(timestamp: DateLike) {
+    return format(timestamp, 'h:mmA');
+}
+
 export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
     if (!key || !list.length || !list[0][key]) {
         return null;
@@ -90,10 +99,15 @@ export const getDistanceStrict: typeof distanceInWordsStrict = (
  * Also the order of the arguments is reversed in date-fns@2
  * formatDistanceStrict(parseISO(dataDatetime), currentDatetime, { roundingMethod: 'floor', addSuffix: true });
  */
-export const getDistanceStrictAsPhrase = (dataDatetime: DateLike, currentDatetime: DateLike) =>
+export const getDistanceStrictAsPhrase = (
+    dataDatetime: DateLike,
+    currentDatetime: DateLike,
+    unit?: 's' | 'm' | 'h' | 'd' | 'M' | 'Y'
+) =>
     distanceInWordsStrict(currentDatetime, dataDatetime, {
         addSuffix: true,
         partialMethod: 'floor',
+        unit,
     });
 
 export const addDaysToDate = (date: DateLike, amount: number) => {

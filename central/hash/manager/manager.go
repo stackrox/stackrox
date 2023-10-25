@@ -46,19 +46,18 @@ type managerImpl struct {
 }
 
 func (m *managerImpl) flushHashes(ctx context.Context) {
-	// Get clusters first to flush hashes one at a time
-	var clusters []string
-	concurrency.WithLock(&m.dedupersLock, func() {
-		clusters = make([]string, 0, len(m.dedupers))
+	// Get clusters first to flush hashes one at a time.
+	clusters := concurrency.WithLock1(&m.dedupersLock, func() []string {
+		clusters := make([]string, 0, len(m.dedupers))
 		for clusterID := range m.dedupers {
 			clusters = append(clusters, clusterID)
 		}
+		return clusters
 	})
 	for _, cluster := range clusters {
-		var deduper Deduper
-		var ok bool
-		concurrency.WithLock(&m.dedupersLock, func() {
-			deduper, ok = m.dedupers[cluster]
+		deduper, ok := concurrency.WithLock2(&m.dedupersLock, func() (Deduper, bool) {
+			deduper, ok := m.dedupers[cluster]
+			return deduper, ok
 		})
 		if !ok {
 			continue

@@ -33,7 +33,7 @@ import ImageDetailBadges, {
 } from '../components/ImageDetailBadges';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
-    cveStatusTab: 'Observed',
+    vulnerabilityState: 'OBSERVED',
     entityTab: 'Image',
 });
 

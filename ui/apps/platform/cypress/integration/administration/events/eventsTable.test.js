@@ -2,10 +2,14 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
-    assertDescriptionListGroup,
     eventAlias,
     eventsAlias,
     eventsCountAlias,
+    getDescriptionListGroupSelector,
+    getDescriptionListTermSelector,
+    getFilterQueryForPage,
+    interactAndWaitForAdministrationEvents,
+    selectFilter,
     visitAdministrationEventFromTableRow,
     visitAdministrationEvents,
 } from './AdministrationEvents.helpers';
@@ -30,9 +34,7 @@ const event = {
 
 const staticResponseMapForEvent = {
     [eventAlias]: {
-        body: {
-            event,
-        },
+        body: { event },
     },
 };
 
@@ -40,14 +42,19 @@ const events = [event];
 
 const staticResponseMapForEvents = {
     [eventsAlias]: {
-        body: {
-            events,
-        },
+        body: { events },
     },
     [eventsCountAlias]: {
-        body: {
-            count: String(events.length),
-        },
+        body: { count: events.length },
+    },
+};
+
+const staticResponseMapForEvents0 = {
+    [eventsAlias]: {
+        body: { events: [] },
+    },
+    [eventsCountAlias]: {
+        body: { count: 0 },
     },
 };
 
@@ -66,7 +73,7 @@ describe('Administration Events table', () => {
         cy.get('th:contains("Domain")');
         cy.get('th:contains("Resource type")');
         cy.get('th:contains("Level")');
-        cy.get('th:contains("Event last occurred at")');
+        cy.get('th:contains("Last occurred")');
         cy.get('th:contains("Count")');
     });
 
@@ -74,14 +81,97 @@ describe('Administration Events table', () => {
         visitAdministrationEvents(staticResponseMapForEvents);
         visitAdministrationEventFromTableRow(0, staticResponseMapForEvent);
 
+        const { createdAt, id, lastOccurredAt, numOccurrences, resource } = event;
+        const { name: resourceName, type: resourceType } = resource;
+
         cy.get('h1:contains("Image Scanning")');
-        assertDescriptionListGroup('Resource type', event.resource.type);
-        assertDescriptionListGroup('Resource name', event.resource.name);
-        // TODO assert absence of 'Resource ID'
-        assertDescriptionListGroup('Event type', 'Log');
-        assertDescriptionListGroup('Event ID', event.id);
-        assertDescriptionListGroup('Created at', event.createdAt);
-        assertDescriptionListGroup('Last occurred at', event.lastOccurredAt);
-        assertDescriptionListGroup('Count', event.numOccurrences);
+        cy.get(getDescriptionListGroupSelector('Resource type', resourceType));
+        cy.get(getDescriptionListGroupSelector('Resource name', resourceName));
+        cy.get(getDescriptionListTermSelector('Resource ID')).should('not.exist');
+        cy.get(getDescriptionListGroupSelector('Event type', 'Log'));
+        cy.get(getDescriptionListGroupSelector('Event ID', id));
+        cy.get(getDescriptionListGroupSelector('Created', createdAt));
+        cy.get(getDescriptionListGroupSelector('Last occurred', lastOccurredAt));
+        cy.get(getDescriptionListGroupSelector('Count', numOccurrences));
+    });
+
+    it('has link from event page to table', () => {
+        visitAdministrationEvents(staticResponseMapForEvents);
+        visitAdministrationEventFromTableRow(0, staticResponseMapForEvent);
+
+        interactAndWaitForAdministrationEvents(() => {
+            cy.get('a.pf-c-breadcrumb__link:contains("Administration events")').click();
+        }, staticResponseMapForEvents);
+    });
+
+    it('selects filter for Domain', () => {
+        visitAdministrationEvents(staticResponseMapForEvents);
+
+        const value = 'Image Scanning';
+
+        interactAndWaitForAdministrationEvents(
+            () => {
+                selectFilter('Domain filter menu toggle', value);
+            },
+            staticResponseMapForEvents // events might not be correct for filter
+        );
+
+        cy.location('search').should('contain', getFilterQueryForPage('Event Domain', value));
+    });
+
+    it('selects filter for Resource type', () => {
+        visitAdministrationEvents(staticResponseMapForEvents);
+
+        const value = 'Image';
+
+        interactAndWaitForAdministrationEvents(
+            () => {
+                selectFilter('Resource type filter menu toggle', value);
+            },
+            staticResponseMapForEvents // events might not be correct for filter
+        );
+
+        cy.location('search').should('contain', getFilterQueryForPage('Resource Type', value));
+    });
+
+    it('selects filter for Level', () => {
+        visitAdministrationEvents(staticResponseMapForEvents);
+
+        interactAndWaitForAdministrationEvents(
+            () => {
+                selectFilter('Level filter menu toggle', 'Error');
+            },
+            staticResponseMapForEvents // events might not be correct for filter
+        );
+
+        cy.location('search').should(
+            'contain',
+            getFilterQueryForPage('Event Level', 'ADMINISTRATION_EVENT_LEVEL_ERROR')
+        );
+    });
+
+    it('renders No administration events found', () => {
+        visitAdministrationEvents(staticResponseMapForEvents0);
+
+        interactAndWaitForAdministrationEvents(() => {
+            selectFilter('Level filter menu toggle', 'Unknown');
+        });
+
+        cy.location('search').should(
+            'contain',
+            getFilterQueryForPage('Event Level', 'ADMINISTRATION_EVENT_LEVEL_UNKNOWN')
+        );
+
+        cy.get('h2:contains("No administration events found")');
+        cy.get('p:contains("Modify filters and try again")');
+    });
+
+    it('renders No administration events', () => {
+        visitAdministrationEvents(staticResponseMapForEvents0);
+
+        cy.get('h2:contains("No administration events")');
+
+        cy.get('h2:contains("No administration events found")').should('not.exist');
+        cy.get('p:contains("Modify filters and try again")').should('not.exist');
     });
 });

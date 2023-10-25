@@ -45,8 +45,7 @@ func (suite *ImageCVEDataStoreSuite) SetupSuite() {
 
 	suite.searcher.EXPECT().SearchRawImageCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.ImageCVE{}, nil)
 
-	ds, err := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
-	suite.Require().NoError(err)
+	ds := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
 	suite.datastore = ds.(*datastoreImpl)
 }
 
@@ -113,7 +112,7 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 			Snoozed: true,
 		},
 	}, nil)
-	suite.NoError(suite.datastore.buildSuppressedCache())
+	suite.datastore.buildSuppressedCache()
 	expectedCache := common.CVESuppressionCache{
 		"CVE-ABC": {},
 		"CVE-DEF": {},

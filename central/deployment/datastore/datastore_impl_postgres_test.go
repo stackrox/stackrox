@@ -47,8 +47,7 @@ func (s *DeploymentPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.testDB = pgtest.ForT(s.T())
 
-	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Require().NoError(err)
+	imageDS := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.imageDatastore = imageDS
 
 	deploymentDS, err := GetTestPostgresDataStore(s.T(), s.testDB.DB)

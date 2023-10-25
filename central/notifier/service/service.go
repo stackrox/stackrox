@@ -29,11 +29,13 @@ type Service interface {
 func New(storage datastore.DataStore,
 	processor notifier.Processor,
 	policyCleaner policycleaner.PolicyCleaner,
-	reporter integrationhealth.Reporter) Service {
+	reporter integrationhealth.Reporter,
+	cryptoKey string) Service {
 	return &serviceImpl{
 		storage:       storage,
 		processor:     processor,
 		policyCleaner: policyCleaner,
 		reporter:      reporter,
+		cryptoKey:     cryptoKey,
 	}
 }

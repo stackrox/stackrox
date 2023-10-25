@@ -16,6 +16,7 @@ import util.Timer
 
 import spock.lang.Tag
 
+@Tag("PZ")
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
 

@@ -9,6 +9,7 @@ import (
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	plopMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -34,6 +35,7 @@ type PodDataStoreTestSuite struct {
 	storage      *storeMocks.MockStore
 	searcher     *searcherMocks.MockSearcher
 	processStore *indicatorMocks.MockDataStore
+	plopStore    *plopMocks.MockDataStore
 	filter       filter.Filter
 
 	mockCtrl *gomock.Controller
@@ -45,9 +47,10 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.processStore = indicatorMocks.NewMockDataStore(mockCtrl)
+	suite.plopStore = plopMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
-	suite.datastore = newDatastoreImpl(suite.storage, suite.searcher, suite.processStore, suite.filter)
+	suite.datastore = newDatastoreImpl(suite.storage, suite.searcher, suite.processStore, suite.plopStore, suite.filter)
 }
 
 func (suite *PodDataStoreTestSuite) TearDownTest() {
@@ -176,6 +179,7 @@ func (suite *PodDataStoreTestSuite) TestRemovePod() {
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().Delete(ctx, expectedPod.GetId()).Return(nil)
 	suite.processStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), expectedPod.GetId())
+	suite.plopStore.EXPECT().RemovePlopsByPod(gomock.Any(), expectedPod.GetId())
 	suite.NoError(suite.datastore.RemovePod(ctx, expectedPod.GetId()))
 
 	suite.storage.EXPECT().Get(ctx, expectedPod.GetId()).Return(expectedPod, false, nil)

@@ -283,7 +283,8 @@ func (c *TestContext) StartFakeGRPC() {
 		message.SensorHello(certID),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
-		message.BaselineSync([]*storage.ProcessBaseline{}))
+		message.BaselineSync([]*storage.ProcessBaseline{}),
+		message.NetworkBaselineSync(nil))
 
 	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 
@@ -727,7 +728,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
 
 	c.sensorStopped = s.Stopped()
 	c.stopFn = func() {
-		go s.Stop()
+		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
 	}
 

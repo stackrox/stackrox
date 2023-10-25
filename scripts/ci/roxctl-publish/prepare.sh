@@ -20,7 +20,6 @@ target_dir="${2:-}"
 
 mkdir "${target_dir}/bin"
 
-# x86_64; directory names without architecture for compatibility
 for platform in Linux Darwin Windows; do
   platform_lower="$(echo "$platform" | tr '[:upper:]' '[:lower:]')"
 
@@ -31,8 +30,21 @@ for platform in Linux Darwin Windows; do
   if [[ "${platform}" == "Windows" ]]; then
     roxctl_bin="roxctl.exe"
   fi
+
+  # x86_64 binaries don't mention architecture for compatibility with existing users (and their scripts).
   cp "${source_dir}/bin/${platform_lower}_amd64/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}"
   cp "${source_dir}/bin/${platform_lower}_amd64/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}"
+
+  # Binaries for other architectures should mention arch. The suggestion is to do it in the filename:
+  #   https://mirror.openshift.com/pub/rhacs/assets/<version>/<platform>/roxctl-<arch>[.filetype]
+  # See https://issues.redhat.com/browse/ROX-14701.
+  # We may later want to add binaries with explicit x86_64 architecture which would be roxctl-amd64[.exe].
+  if [[ "${platform}" == "Linux" ]]; then
+    cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-ppc64le"
+    cp "${source_dir}/bin/${platform_lower}_ppc64le/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-ppc64le"
+    cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}-s390x"
+    cp "${source_dir}/bin/${platform_lower}_s390x/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}-s390x"
+  fi
 done
 
 # Create sha256sum.txt checksum files

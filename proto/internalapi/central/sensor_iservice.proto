@@ -84,6 +84,8 @@ message MsgToSensor {
 
 message DeduperState {
     map<string,uint64> resource_hashes = 1;
+    int32 current = 2;
+    int32 total = 3;
 }
 
 message NodeInventoryACK {

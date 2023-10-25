@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { Modal, ModalVariant, Button } from '@patternfly/react-core';
 
 import { excludeDeployments } from 'services/PoliciesService';
-import { ListAlert } from '../types/violationTypes';
+import { ListAlert } from 'types/alert.proto';
 
 // Filter the excludableAlerts displayed down to the ones checked, and group them into a map from policy ID to a list of
 // deployment names, then exclude every policy ID, deployment name pair in the map.

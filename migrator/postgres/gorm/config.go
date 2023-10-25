@@ -71,17 +71,12 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 		source = fmt.Sprintf("%s database=%s", gc.source, dbName)
 	}
 
-	// Due to the potential of stacking migrations and how Gorm builds queries,
-	// we need to turn off statement caching for Gorm and the underlying PGX config
-	// that it uses.
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  source,
-		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:    pgutils.NamingStrategy,
 		CreateBatchSize:   1000,
 		AllowGlobalUpdate: true,
 		Logger:            logger.Discard,
+		QueryFields:       true,
 	})
 
 	if err != nil {
@@ -119,6 +114,7 @@ func (gc *gormConfig) ConnectDatabase() (*gorm.DB, error) {
 		CreateBatchSize:   1000,
 		AllowGlobalUpdate: true,
 		Logger:            logger.Discard,
+		QueryFields:       true,
 	})
 	if err != nil {
 		log.WriteToStderrf("fail to connect to central db %v", err)

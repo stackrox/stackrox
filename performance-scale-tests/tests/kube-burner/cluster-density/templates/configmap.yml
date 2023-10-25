@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{.resourceName}}-{{.Replica}}
+data:
+  key1: "{{randAlphaNum 2048}}"

@@ -48,13 +48,13 @@ message ComplianceScanConfigurationStatus {
 }
 
 // Next available tag: 2
-message ListComplianceScanConfigurationResponse {
-    repeated ComplianceScanConfigurationStatus configuration = 1;
+message ListComplianceScanConfigurationsResponse {
+    repeated ComplianceScanConfigurationStatus configurations = 1;
 }
 
 service ComplianceScanConfigurationService {
     // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
-    rpc ListComplianceScanConfigurations (RawQuery) returns (ListComplianceScanConfigurationResponse) {
+    rpc ListComplianceScanConfigurations (RawQuery) returns (ListComplianceScanConfigurationsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/configurations"
         };

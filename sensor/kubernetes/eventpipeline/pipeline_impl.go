@@ -110,7 +110,6 @@ func (p *eventPipeline) Start() error {
 
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop(_ error) {
-	defer close(p.eventsC)
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
 	p.listener.Stop(nil)
@@ -145,6 +144,7 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 
 // forwardMessages from listener component to responses channel
 func (p *eventPipeline) forwardMessages() {
+	defer close(p.eventsC)
 	for {
 		select {
 		case <-p.stopSig.Done():

@@ -170,11 +170,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		if !prevExists {
-			if val.CloseTimestamp != nil {
-				// We try to close a not existing Endpoint, something is wrong
-				log.Warnf("Found no matching PLOP to close for %+v", plopToNoSecretsString(val))
-			}
-
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
@@ -506,9 +501,20 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		ProcessIndicatorId: indicatorID,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
+		PodUid:             value.PodUid,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
 
 	return append(plopObjects, newPLOP)
+}
+
+func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {
+	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
+	return ds.storage.DeleteByQuery(ctx, q)
 }

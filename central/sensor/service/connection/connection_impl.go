@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/pkg/errors"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
@@ -23,6 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -67,6 +70,8 @@ type sensorConnection struct {
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
+
+	hashDeduper hashManager.Deduper
 }
 
 func newConnection(ctx context.Context,
@@ -82,6 +87,7 @@ func newConnection(ctx context.Context,
 	imageIntegrationMgr common.ImageIntegrationManager,
 	hashMgr hashManager.Manager,
 	complianceOperatorMgr common.ComplianceOperatorManager,
+	initSyncMgr *initSyncManager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -110,7 +116,8 @@ func newConnection(ctx context.Context,
 	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
 	deduper.StartSync()
 
-	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper)
+	conn.hashDeduper = deduper
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -245,7 +252,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
-		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
+		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
 	case *central.MsgFromSensor_ComplianceResponse:
@@ -593,9 +600,47 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
+	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
+		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
+		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
+
+		// Send hashes to sensor
+		maxEntries := env.GetMaxDeduperEntriesPerMessage()
+		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+		// If there are no hashes we send the empty map
+		if len(successfulHashes) == 0 {
+			if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
+				return err
+			}
+		}
+		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
+		log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
+		var current int32 = 1
+		payload := make(map[string]uint64)
+		for k, v := range successfulHashes {
+			payload[k] = v
+			if len(payload) == int(maxEntries) {
+				if err := c.sendDeduperState(server, payload, current, total); err != nil {
+					return err
+				}
+				payload = make(map[string]uint64)
+				current++
+			}
+		}
+		if len(payload) > 0 {
+			if err := c.sendDeduperState(server, payload, current, total); err != nil {
+				return err
+			}
+		}
+		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
+		c.sensorEventHandler.disableReconciliation()
+	} else {
+		log.Infof("Sensor (%s) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
+	}
+
 	go c.runSend(server)
 
-	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the the feature is enabled.
+	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the feature is enabled.
 	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
 		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
 			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
@@ -641,4 +686,23 @@ func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 
 func (c *sensorConnection) SensorVersion() string {
 	return c.sensorHello.GetSensorVersion()
+}
+
+func (c *sensorConnection) sendDeduperState(server central.SensorService_CommunicateServer, payload map[string]uint64, current, total int32) error {
+	deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
+		DeduperState: &central.DeduperState{
+			ResourceHashes: payload,
+			Current:        current,
+			Total:          total,
+		},
+	}}
+
+	log.Infof("Sending %d hashes (Size=%d), current chunk: %d, total: %d", len(payload), deduperMessage.Size(), current, total)
+
+	err := server.Send(deduperMessage)
+	if err != nil {
+		log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
+		return errors.Wrap(err, "unable to sync deduper state")
+	}
+	return nil
 }

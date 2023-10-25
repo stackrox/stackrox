@@ -59,8 +59,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 	var err error
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
-	s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
-	s.Require().NoError(err)
+	s.datastore = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.Require().NoError(err)

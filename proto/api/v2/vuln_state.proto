@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+package v2;
+
+
+// VulnerabilityState are the possible applicable to CVE. By default all vulnerabilities are in observed state.
+enum VulnerabilityState {
+    // This is the default state and indicates that the CVE is not excluded from policy evaluation and risk evaluation.
+    OBSERVED       = 0; // [Default state]
+    // Indicates that the vulnerability is deferred. A deferred CVE is excluded from policy evaluation and risk evaluation.
+    DEFERRED       = 1;
+    // Indicates that the vulnerability is a false-positive. A false-positive CVE is excluded from policy evaluation and risk evaluation.
+    FALSE_POSITIVE = 2;
+}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	usageMocks "github.com/stackrox/rox/central/administration/usage/datastore/securedunits/mocks"
 	telemetryMocks "github.com/stackrox/rox/central/metrics/telemetry/mocks"
-	usageMocks "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
 	metricsMocks "github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"

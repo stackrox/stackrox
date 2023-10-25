@@ -11,8 +11,10 @@ import sys
 from clusters import GKECluster
 from collections import namedtuple
 from compatibility_test import make_compatibility_test_runner
-from get_latest_helm_chart_versions import get_latest_helm_chart_versions
+from get_latest_helm_chart_versions import get_latest_helm_chart_versions, get_latest_helm_chart_version_for_specific_release
 from pathlib import Path
+
+Release = namedtuple("Release", ["major", "minor"])
 
 # start logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -37,6 +39,11 @@ Chart_versions = namedtuple("Chart_versions", ["central_version", "sensor_versio
 test_tuples = [Chart_versions(central_version=latest_tag, sensor_version=sensor_chart_version) for sensor_chart_version in sensor_chart_versions]
 # Latest sensor vs central versions in central_chart_versions
 test_tuples.extend([Chart_versions(central_version=central_chart_version, sensor_version=latest_tag) for central_chart_version in central_chart_versions])
+
+# Support exception for latest central and sensor 3.74 as per https://issues.redhat.com/browse/ROX-18223
+support_exceptions = [Chart_versions(central_version=latest_tag, sensor_version=get_latest_helm_chart_version_for_specific_release("stackrox-secured-cluster-services", Release(major=3, minor=74)))]
+
+test_tuples.extend(support_exception for support_exception in support_exceptions if support_exception not in test_tuples)
 
 gkecluster = GKECluster("compat-test", machine_type="e2-standard-8", num_nodes=2)
 

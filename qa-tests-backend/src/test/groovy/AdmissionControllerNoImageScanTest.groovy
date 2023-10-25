@@ -13,6 +13,7 @@ import util.Timer
 import spock.lang.Shared
 import spock.lang.Tag
 
+@Tag("PZ")
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> noImageScansEnforcements

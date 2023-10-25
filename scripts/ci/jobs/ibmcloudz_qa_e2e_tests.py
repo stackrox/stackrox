@@ -13,6 +13,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "s390x"
-os.environ["COLLECTION_METHOD"] = "core_bpf"
+os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
+os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()

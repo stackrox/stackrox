@@ -32,6 +32,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+@Tag("PZ")
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
     static final private String DNS = "qaapachedns"
@@ -92,7 +93,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
-                    .setCreateLoadBalancer(true).setExposeAsService(true),
+                    .setCreateLoadBalancer(
+                        !(Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
+                    .setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")

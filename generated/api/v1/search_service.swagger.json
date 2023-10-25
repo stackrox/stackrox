@@ -101,9 +101,9 @@
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE",
                 "ADMINISTRATION_EVENTS",
-                "COMPLIANCE_SCAN_CONFIG_STATUS"
+                "COMPLIANCE_SCAN_CONFIG_STATUS",
+                "ADMINISTRATION_USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -204,9 +204,9 @@
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE",
                 "ADMINISTRATION_EVENTS",
-                "COMPLIANCE_SCAN_CONFIG_STATUS"
+                "COMPLIANCE_SCAN_CONFIG_STATUS",
+                "ADMINISTRATION_USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -301,9 +301,9 @@
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE",
                 "ADMINISTRATION_EVENTS",
-                "COMPLIANCE_SCAN_CONFIG_STATUS"
+                "COMPLIANCE_SCAN_CONFIG_STATUS",
+                "ADMINISTRATION_USAGE"
               ]
             },
             "collectionFormat": "multi"
@@ -447,9 +447,9 @@
         "COMPLIANCE_SCAN",
         "COMPLIANCE_CHECK_RESULTS",
         "BLOB",
-        "PRODUCT_USAGE",
         "ADMINISTRATION_EVENTS",
-        "COMPLIANCE_SCAN_CONFIG_STATUS"
+        "COMPLIANCE_SCAN_CONFIG_STATUS",
+        "ADMINISTRATION_USAGE"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 62"

@@ -1,6 +1,6 @@
 import qs from 'qs';
 
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 
 import axios from './instance';
@@ -139,6 +139,24 @@ export function listAdministrationEvents(
         .then((response) => response.data.events);
 }
 
+type GetAdministrationEventResponseArg = {
+    page: number;
+    perPage: number;
+    searchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+};
+
+export function getListAdministrationEventsArg({
+    page,
+    perPage,
+    searchFilter,
+    sortOption,
+}: GetAdministrationEventResponseArg): ListAdministrationEventsRequest {
+    const filter = getAdministrationEventsFilter(searchFilter);
+    const pagination: Pagination = { limit: perPage, offset: page - 1, sortOption };
+    return { filter, pagination };
+}
+
 // Given searchFilter from useURLSearch hook, return validated filter argument.
 
 export function getAdministrationEventsFilter(
@@ -185,7 +203,7 @@ function getDateTime(arg: SearchFilterValue): string | undefined {
 
 // 20yy-mm-ddThh:mm:ssZ (excludes some but not all invalid month-day combinations).
 const isDateTimeRegExp =
-    /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d:\d\d$/;
+    /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d:\d\dZ$/;
 
 function isDateTime(arg: string) {
     return isDateTimeRegExp.test(arg);

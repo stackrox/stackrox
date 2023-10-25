@@ -81,7 +81,7 @@ get_unique_gs_destination() {
 }
 
 set_gs_path_vars() {
-    GS_URL="gs://roxci-artifacts"
+    GS_URL="gs://stackrox-ci-artifacts"
 
     if is_OPENSHIFT_CI; then
         local repo
@@ -133,7 +133,7 @@ make_artifacts_help() {
     
     local gs_workflow_url="$GS_URL/$WORKFLOW_SUBDIR"
     local gs_job_url="$gs_workflow_url/$JOB_SUBDIR"
-    local browser_url="https://console.cloud.google.com/storage/browser/roxci-artifacts"
+    local browser_url="https://console.cloud.google.com/storage/browser/stackrox-ci-artifacts"
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
     local help_file

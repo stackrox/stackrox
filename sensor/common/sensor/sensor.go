@@ -3,11 +3,13 @@ package sensor
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
 
@@ -61,6 +64,7 @@ type Sensor struct {
 	apiServices   []pkgGRPC.APIService
 
 	server          pkgGRPC.API
+	webhookServer   pkgGRPC.API
 	profilingServer *http.Server
 
 	currentState    common.SensorComponentEvent
@@ -72,20 +76,30 @@ type Sensor struct {
 
 	stoppedSig concurrency.ErrorSignal
 
-	notifyList []common.Notifiable
-	reconnect  atomic.Bool
+	notifyList            []common.Notifiable
+	reconnect             atomic.Bool
+	reconcile             atomic.Bool
+	deduperStateProcessor *reconciliation.DeduperStateProcessor
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralConnectionFactory centralclient.CentralConnectionFactory, components ...common.SensorComponent) *Sensor {
+func NewSensor(
+	configHandler config.Handler,
+	detector detector.Detector,
+	imageService image.Service,
+	centralConnectionFactory centralclient.CentralConnectionFactory,
+	deduperStateProcessor *reconciliation.DeduperStateProcessor,
+	components ...common.SensorComponent,
+) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		configHandler: configHandler,
-		detector:      detector,
-		imageService:  imageService,
-		components:    append(components, detector, configHandler), // Explicitly add the config handler
+		configHandler:         configHandler,
+		detector:              detector,
+		imageService:          imageService,
+		deduperStateProcessor: deduperStateProcessor,
+		components:            append(components, detector, configHandler, deduperStateProcessor), // Explicitly add the config handler
 
 		centralConnectionFactory: centralConnectionFactory,
 		centralConnection:        grpcUtil.NewLazyClientConn(),
@@ -238,8 +252,8 @@ func (s *Sensor) Start() {
 		},
 	}
 
-	webhookServer := pkgGRPC.NewAPI(webhookConfig)
-	webhookServer.Start()
+	s.webhookServer = pkgGRPC.NewAPI(webhookConfig)
+	s.webhookServer.Start()
 
 	for _, component := range s.components {
 		if err := component.Start(); err != nil {
@@ -303,19 +317,29 @@ func (s *Sensor) Stop() {
 		c.Stop(nil)
 	}
 
+	log.Infof("Sensor stop was called. Stopping all listeners")
+
 	if s.profilingServer != nil {
 		if err := s.profilingServer.Close(); err != nil {
 			log.Errorf("Error closing profiling server: %v", err)
 		}
 	}
 
+	if s.server != nil && !s.server.Stop() {
+		log.Warnf("Sensor gRPC server stop was called more than once")
+	}
+
+	if s.webhookServer != nil && !s.webhookServer.Stop() {
+		log.Warnf("Sensor webhook server stop was called more than once")
+	}
+
 	log.Info("Sensor shutdown complete")
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(false, s.components...)
+	s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, false, false, s.components...)
 
-	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
+	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)
@@ -359,8 +383,12 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
+	if features.SensorReconciliationOnReconnect.Enabled() {
+		s.reconcile.Store(true)
+	}
+
 	err := backoff.RetryNotify(func() error {
-		log.Info("Attempting connection setup")
+		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection is up, we can try to create a new central communication
@@ -374,14 +402,23 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
-		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
-		// Reset the exponential back-off if the connection successes
+		s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
+		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
-				log.Infof("Communication with Central stopped with error: %s. Retrying.", s.centralCommunication.Stopped().Err())
+				if errors.Is(err, errCantReconcile) {
+					if errors.Is(err, errLargePayload) {
+						log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+							"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+					} else {
+						log.Warnf("Sensor cannot reconcile due to: %v", err)
+					}
+					s.reconcile.Store(false)
+				}
+				log.Infof("Communication with Central stopped with error: %s. Retrying.", err)
 			} else {
 				log.Info("Communication with Central stopped. Retrying.")
 			}
@@ -397,6 +434,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
+			s.centralCommunication.Stop(nil)
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {

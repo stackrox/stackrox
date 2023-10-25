@@ -126,7 +126,7 @@ describe('Workload CVE watched images flow', () => {
                 watchImageFlowFromModal(fullName, nameAndTag);
 
                 // Open the unwatch modal via the table row action
-                cy.get(selectors.tableRowActionsForImage(nameAndTag)).click();
+                cy.get(selectors.tableRowActionsForImage(nameAndTag)).first().click();
                 cy.get('button:contains("Unwatch image")').click();
 
                 cy.get('*[role="dialog"] button:contains("Unwatch")').click();
@@ -138,7 +138,7 @@ describe('Workload CVE watched images flow', () => {
                 );
 
                 // Close the modal and verify the update in the table
-                cy.get('*[role="dialog"]  button:contains("Close")').click();
+                cy.get('*[role="dialog"] button:contains("Close")').click();
                 cy.get(selectors.watchedImageCellWithName(nameAndTag)).should('not.exist');
             });
         }
