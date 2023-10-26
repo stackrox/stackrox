@@ -33,6 +33,8 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
