@@ -79,7 +79,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 		a.Run(tt.name, func() {
 			cfg := defaultConf()
 			if tt.hasLimiter {
-				cfg.RateLimiter = ratelimit.NewRateLimiter(tt.maxPerSec)
+				cfg.RateLimiter = ratelimit.NewRateLimiter(tt.maxPerSec, 0)
 			}
 
 			httpHandler := &testHTTPHandler{}

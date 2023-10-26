@@ -13,11 +13,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18525, ROX-19158: A new `cluster` flag has been added to the `roxctl` commands and APIs that perform image scans, this enables delegating scans to specific secured clusters on demand.
 - ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
   - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
-- ROX-19561: Few new environment variables have been introduced in Central. They can be used to rate limit API requests and Sensor communications.
+- ROX-19561: Few new environment variables have been introduced in Central. They can be used to rate limit requests and Sensor communications.
   - `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS` functions as a restriction on the quantity of Sensors engaged in their initial synchronization process. It is set to a default value `0` (unlimited).
     This synchronization occurs once Sensor establishes a connection with Central. It is recommended to set this limit when a significant number of secured clusters are connected to a single Central instance to avoid resource exhaustion.
-  - `ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND` setting functions as a global rate limiter for all API requests directed to Central. It is set to a default value `0` (unlimited).
+  - `ROX_CENTRAL_RATE_LIMIT_PER_SECOND` setting functions as a global rate limiter for all requests directed to Central. It is set to a default value `0` (unlimited).
     The primary objective of this configuration is to serve as a protective measure against Distributed Denial of Service (DDoS) attacks on Central.
+  - `ROX_CENTRAL_RATE_LIMIT_THROTTLE_DURATION` setting allows you to specify the maximum throttle duration when the rate limit is reached. If set to less than 1 second (or 0), requests are immediately rejected. The default value is `10s` (10 seconds).
 
 ### Removed Features
 
@@ -28,6 +29,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
 - The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
+- Vulnerability deferral management for host(/node) and platform(/cluster) vulnerabilities has been deprecated and 
+will be removed in the future. Once removed, deferral cannot be created for host and platform vulnerabilities 
+and the existing exceptions enforced on host and platform vulnerabilities will be reverted. The affected APIs are
+`/v1/nodecves/suppress`, `/v1/nodecves/unsuppress`, `/v1/clustercves/suppress`, and `/v1/clustercves/unsuppress`.
 
 ### Technical Changes
 - Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
@@ -39,6 +44,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 - Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
 - ROX-20303: Fixed a bug that may have incorrectly matched an image to an image integration during scanning.
+- ROX:20288: A new environment variable `ROX_AUDIT_LOG_WITHOUT_PERMISSIONS` has been added to Central (defaults to `false`).
+  When set to `true`, audit log messages will not contain the detailed permissions of the user associated with the request.
+  Instead, only the associated role names will be there. Enabling this will lower the verbosity of the audit log messages,
+  but investigating associated permissions for a requester might be harder (i.e. the associated role would have be known at the time of the request).
+  Thus, it is generally not recommended to set this to `true`.
 
 ## [4.2.0]
 

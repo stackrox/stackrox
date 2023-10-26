@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
@@ -31,6 +32,8 @@ type InMemoryStoreProvider struct {
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
+	nsStore                *namespaceStore
+	reconciliationStore    reconciliation.Store
 
 	cleanableStores    []CleanableStore
 	reconcilableStores map[string]reconcile.Reconcilable
@@ -62,6 +65,8 @@ func InitializeStore() *InMemoryStoreProvider {
 		orchestratorNamespaces: orchestratornamespaces.NewOrchestratorNamespaces(),
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
+		nsStore:                newNamespaceStore(),
+		reconciliationStore:    reconciliation.NewStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -76,16 +81,29 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.orchestratorNamespaces,
 		p.registryStore,
 		p.registryMirrorStore,
+		p.nsStore,
+		p.reconciliationStore,
 	}
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorProfile.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorResult.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorRule.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorScan.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorScanSettingBinding.String())
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
-		deduper.TypeDeployment.String():     p.deploymentStore,
-		deduper.TypePod.String():            p.podStore,
-		deduper.TypeServiceAccount.String(): p.serviceAccountStore,
-		deduper.TypeSecret.String():         p.registryStore,
-		deduper.TypeNode.String():           p.nodeStore,
-		deduper.TypeNetworkPolicy.String():  p.networkPolicyStore,
-		deduper.TypeRole.String():           p.rbacStore,
-		deduper.TypeBinding.String():        p.rbacStore,
+		deduper.TypeDeployment.String():                           p.deploymentStore,
+		deduper.TypePod.String():                                  p.podStore,
+		deduper.TypeServiceAccount.String():                       p.serviceAccountStore,
+		deduper.TypeSecret.String():                               p.registryStore,
+		deduper.TypeNode.String():                                 p.nodeStore,
+		deduper.TypeNetworkPolicy.String():                        p.networkPolicyStore,
+		deduper.TypeRole.String():                                 p.rbacStore,
+		deduper.TypeBinding.String():                              p.rbacStore,
+		deduper.TypeNamespace.String():                            p.nsStore,
+		deduper.TypeComplianceOperatorProfile.String():            p.reconciliationStore,
+		deduper.TypeComplianceOperatorResult.String():             p.reconciliationStore,
+		deduper.TypeComplianceOperatorRule.String():               p.reconciliationStore,
+		deduper.TypeComplianceOperatorScan.String():               p.reconciliationStore,
+		deduper.TypeComplianceOperatorScanSettingBinding.String(): p.reconciliationStore,
 	}
 
 	return p

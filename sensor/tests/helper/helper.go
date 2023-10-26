@@ -728,7 +728,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
 
 	c.sensorStopped = s.Stopped()
 	c.stopFn = func() {
-		go s.Stop()
+		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
 	}
 

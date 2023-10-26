@@ -324,7 +324,7 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	// be fewer indicators to delete if we process orphaned pods first.
 	g.removeOrphanedProcesses()
 	g.removeOrphanedProcessBaselines(deploymentSet)
-	g.removeOrphanedPLOP()
+	g.removeOrphanedPLOPs()
 
 	q := clusterIDsToNegationQuery(clusterIDSet)
 	g.removeOrphanedServiceAccounts(q)
@@ -423,12 +423,10 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 	log.Infof("[Process baseline pruning] Removed %d process baselines", prunedProcessBaselines)
 }
 
-// removeOrphanedPLOP: cleans up ProcessListeningOnPort objects that do not
-// have correct process indicator reference. Such objects could not be cleaned
-// on per-deployment basis, since the deployment and cluster info is taken from
-// the process indicator, so clean without such filtering in batches.
-func (g *garbageCollectorImpl) removeOrphanedPLOP() {
-	prunedCount := postgres.PruneOrphanedPLOP(pruningCtx, g.postgres, orphanWindow)
+// removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
+// or have a PodUid and belong to a deployment or pod that does not exist.
+func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
+	prunedCount := postgres.PruneOrphanedPLOPs(pruningCtx, g.postgres, orphanWindow)
 
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
 		prunedCount)

@@ -23,14 +23,19 @@ jobs:
     - name: Download repository mappings
       run: |
         curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs \
-          -o 'redhat-repository-mappings/#1' \
+          -o 'repomapping-tmp/#1' \
           'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
-        for f in redhat-repository-mappings/*; do
+        for f in repomapping-tmp/*; do
           jq empty "$f"
         done
 
     - name: Upload repository mappings to Google Cloud Storage
       run: |
+        # Zip the files into mapping.zip
+        zip mapping.zip repomapping-tmp/*
+
+        mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
+        # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
 
     - name: Send Slack notification on workflow failure
