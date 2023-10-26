@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 )
 
 type handlerImpl struct {
@@ -29,6 +31,14 @@ type handlerImpl struct {
 
 	disabled   concurrency.Signal
 	stopSignal concurrency.Signal
+}
+
+type ScanScheduleConfiguration struct {
+	Suspend        *bool
+	Schedule       *string
+	ScanName       string
+	Request        interface{}
+	ValidationFunc func(interface{}) error
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
@@ -140,6 +150,10 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 			return m.processOneTimeScanRequest(request.GetId(), r.OneTimeScan)
 		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
 			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
+		case *central.ApplyComplianceScanConfigRequest_SuspendScan:
+			return m.processSuspendScheduledScanRequest(request.GetId(), r.SuspendScan)
+		case *central.ApplyComplianceScanConfigRequest_ResumeScan:
+			return m.processResumeScheduledScanRequest(request.GetId(), r.ResumeScan)
 		case *central.ApplyComplianceScanConfigRequest_RerunScan:
 			return m.processRerunScheduledScanRequest(request.GetId(), r.RerunScan)
 		default:
@@ -246,7 +260,91 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
+func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, config ScanScheduleConfiguration) bool {
+	if err := config.ValidationFunc(config.Request); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
+	}
 
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
+	}
+
+	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+	obj, err := resI.Get(m.ctx(), config.ScanName, v1.GetOptions{})
+	if err != nil || obj == nil {
+		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	if config.Suspend != nil {
+		// TODO: Waiting to get a new release of compliance-operator with
+		// the new field added to ScanSetting CRD.
+		// Check if scanSetting has the "Suspend" field
+		if _, ok := reflect.TypeOf(scanSetting).Elem().FieldByName("Suspend"); ok {
+			// scanSetting.Suspend = *config.Suspend // uncomment when ready
+			// Field exists, safe to set
+		} else {
+			// Handle the case where the field doesn't exist (older CRD)
+			return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Cannot suspend/resume scheduled scan. Compliance operator version is too old"))
+		}
+	}
+
+	if config.Schedule != nil {
+		scanSetting.Schedule = *config.Schedule
+	}
+
+	obj, err = runtimeObjToUnstructured(&scanSetting)
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
+	}
+
+	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+}
+
+func validateInterface(i interface{}) error {
+	switch req := i.(type) {
+	case *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan:
+		return validateApplySuspendScheduledScanRequest(req)
+	case *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan:
+		return validateApplyResumeScheduledScanRequest(req)
+	// Add other cases as needed for other request types.
+	// ex. we might need be adding suppport for changing schedule for scheduled scans.
+	default:
+		return errors.Errorf("Cannot validate request of type %T", i)
+	}
+}
+
+func (m *handlerImpl) processSuspendScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) bool {
+	config := ScanScheduleConfiguration{
+		Suspend:        pointer.Bool(true),
+		ScanName:       request.GetScanName(),
+		Request:        request,
+		ValidationFunc: validateInterface,
+	}
+	return m.processScanConfigScheduleChangeRequest(requestID, config)
+}
+
+func (m *handlerImpl) processResumeScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) bool {
+	config := ScanScheduleConfiguration{
+		Suspend:        pointer.Bool(false),
+		ScanName:       request.GetScanName(),
+		Request:        request,
+		ValidationFunc: validateInterface,
+	}
+	return m.processScanConfigScheduleChangeRequest(requestID, config)
+}
 func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest) bool {
 	select {
 	case <-m.disabled.Done():

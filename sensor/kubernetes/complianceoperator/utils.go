@@ -14,6 +14,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type ScanNameGetter interface {
+	GetScanName() string
+}
+
+func validateScanName(req ScanNameGetter) error {
+	if req == nil {
+		return errors.New("apply scan configuration request is empty")
+	}
+	if req.GetScanName() == "" {
+		return errors.New("no name provided for the scan")
+	}
+	return nil
+}
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
@@ -106,13 +119,15 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 }
 
 func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {
-	if req == nil {
-		return errors.New("apply scan configuration request is empty")
-	}
-	if req.GetScanName() == "" {
-		return errors.New("no name provided for the scan")
-	}
-	return nil
+	return validateScanName(req)
+}
+
+func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) error {
+	return validateScanName(req)
+}
+
+func validateApplyResumeScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) error {
+	return validateScanName(req)
 }
 
 func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {

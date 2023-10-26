@@ -54,12 +54,20 @@ message ApplyComplianceScanConfigRequest {
     message RerunScheduledScan {
        string scan_name = 1;
     }
+    message SuspendScheduledScan {
+        string scan_name = 1;
+    }
+    message ResumeScheduledScan {
+        string scan_name = 1;
+    }
 
     string                  id              = 1;
     oneof scan_request {
         OneTimeScan         one_time_scan   = 2;
         ScheduledScan       scheduled_scan  = 3;
         RerunScheduledScan  rerun_scan      = 4;
+        SuspendScheduledScan suspend_scan   = 5;
+        ResumeScheduledScan resume_scan     = 6;
     }
 }
 
