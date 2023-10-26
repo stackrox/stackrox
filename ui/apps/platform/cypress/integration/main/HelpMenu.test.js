@@ -21,7 +21,7 @@ const routeMatcherMapForMetadata = {
 describe('Help menu API Reference', () => {
     withAuth();
 
-    const title = 'API Reference';
+    const title = 'API Reference (v1)';
 
     it('should visit via menu on top nav', () => {
         visitMainDashboard();
