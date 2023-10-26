@@ -24,6 +24,9 @@ spec:
     value: image/roxctl/rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
+  - name: image-expires-after
+    # TODO(ROX-20230): make release images not expire.
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/roxctl:{{revision}}
   - name: path-context
@@ -133,7 +136,7 @@ spec:
       description: Java build
       name: java
       type: string
-    - default: "13w"
+    - default: ""
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after

@@ -26,7 +26,7 @@ spec:
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    value: 13w
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/roxctl:on-pr-{{revision}}
   - name: path-context
