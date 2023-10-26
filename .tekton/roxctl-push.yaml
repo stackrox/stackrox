@@ -1,5 +1,6 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
@@ -15,7 +16,9 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: roxctl-on-push
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
     value: image/roxctl/rhtap.Dockerfile
@@ -32,6 +35,23 @@ spec:
   #   value: "true"
   # - name: prefetch-input
   #   value: '{"type": "gomod", "path": "."}'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: { }
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
     finally:
     - name: show-sbom
@@ -377,19 +397,5 @@ spec:
     - name: workspace
     - name: git-auth
       optional: true
-  workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: { }
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+
 status: { }
