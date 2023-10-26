@@ -15,6 +15,7 @@ type Dependencies struct {
 	LocalImages     set.StringSet
 }
 
+// GetHash generates a hash value for the Dependencies struct.
 func (d *Dependencies) GetHash() (uint64, error) {
 	return hashstructure.Hash(d, hashstructure.FormatV2, &hashstructure.HashOptions{
 		ZeroNil:         true,

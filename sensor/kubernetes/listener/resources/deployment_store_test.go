@@ -115,14 +115,14 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
 				Level:       storage.PortConfig_EXTERNAL,
 				ServiceName: "test.service",
 				ServicePort: 5432,
 			}},
 		},
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
 				Level:       storage.PortConfig_HOST,
 				ServiceName: "test2.service",
 				ServicePort: 2345,
@@ -133,7 +133,7 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 
 	defaultExposureUnordered := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
 				Level:       storage.PortConfig_HOST,
 				ServiceName: "test2.service",
 				ServicePort: 2345,
@@ -141,7 +141,7 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 			}},
 		},
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
 				Level:       storage.PortConfig_EXTERNAL,
 				ServiceName: "test.service",
 				ServicePort: 5432,
