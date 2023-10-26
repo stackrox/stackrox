@@ -13,6 +13,9 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
+
+	// TODO: Remove when the Scanner V4 updater pipeline is available.
+	_ "github.com/quay/claircore/updater/defaults"
 )
 
 // Matcher represents a vulnerability matcher.
