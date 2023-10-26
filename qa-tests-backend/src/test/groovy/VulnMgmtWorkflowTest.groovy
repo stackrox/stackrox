@@ -4,6 +4,7 @@ import io.stackrox.proto.storage.VulnRequests
 import objects.Deployment
 import services.VulnRequestService
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
