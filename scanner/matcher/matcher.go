@@ -11,11 +11,9 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
+	updaterdefaults "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
-
-	// TODO: Remove when the Scanner V4 updater pipeline is available.
-	_ "github.com/quay/claircore/updater/defaults"
 )
 
 // Matcher represents a vulnerability matcher.
@@ -46,7 +44,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
-
+	// TODO: Remove when Scanner V4 updater pipeline is available.
+	if err := updaterdefaults.Error(); err != nil {
+		return nil, fmt.Errorf("vulnerability updater init: %w", err)
+	}
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
