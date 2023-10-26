@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
@@ -64,6 +65,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
+	if features.ComplianceEnhancements.Enabled() {
+		return msg.GetEvent().GetComplianceOperatorProfileV2() != nil || msg.GetEvent().GetComplianceOperatorProfile() != nil
+	}
 	return msg.GetEvent().GetComplianceOperatorProfile() != nil
 }
 
