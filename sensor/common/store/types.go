@@ -21,7 +21,7 @@ type DeploymentStore interface {
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
 	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
 	FindDeploymentIDsByImages([]*storage.Image) []string
-	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, error)
+	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, bool, error)
 	CountDeploymentsForNamespace(namespaceName string) int
 }
 
