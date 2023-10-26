@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package m192tom193
 
 import (
@@ -117,8 +115,12 @@ func (s *migrationTestSuite) TestMigration() {
 
 	configs, err := s.gormDB.Rows()
 	s.Require().NoError(err)
+	s.Require().NoError(configs.Err())
+
 	snapshots, err := s.snapshotgormdB.Rows()
 	s.Require().NoError(err)
+	s.Require().NoError(snapshots.Err())
+
 	actualConfigProto := []*storage.ReportConfiguration{}
 	v1Config := &storage.ReportConfiguration{}
 	v2Config := &storage.ReportConfiguration{}
