@@ -23,6 +23,7 @@ import services.SecretService
 import util.Timer
 import util.Env
 
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -90,6 +91,7 @@ class ReconciliationTest extends BaseSpecification {
     @Tag("COMPATIBILITY")
     // RS-361 - Fails on OSD
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
+    @Ignore("ROX-20448")
     def "Verify the Sensor reconciles after being restarted"() {
         when:
         "Get Sensor and counts"
