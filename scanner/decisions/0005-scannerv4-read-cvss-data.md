@@ -15,7 +15,7 @@ The NVD JSON feed offers bundled data on a yearly basis, spanning from 2002 to t
 
 ## Decision
 
-The updated NVD CVSS GitHub Workflow (CI) has transitioned to sourcing data from the NVD CVE API, rather than the NVD Json feeds, ensuring the timely update of the NVD CVSS data bundle in Google Storage. To fetch data, the workflow downloads based on both the start index and CVSS v3 severity. For instance, a command such as curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0" > critical-1.json would be used. For every severity level, the workflow iteratively exhaust the startIndex to capture all associated data. And there are four severity levels in total. After all json files downloaded, they will be compress to one data bundle as one single zip file.
+The updated NVD CVSS GitHub Workflow (CI) has transitioned to sourcing data from the NVD CVE API, rather than the NVD Json feeds, ensuring the timely update of the NVD CVSS data bundle in Google Storage. To fetch data, the workflow downloads based on both the start index and CVSS v3 severity. For instance, a command such as `curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0" > critical-1.json` would be used. For every severity level, the workflow iteratively exhaust the startIndex to capture all associated data. And there are four severity levels in total. After all json files downloaded, they will be compress to one data bundle as one single zip file.
 
 We've chosen to base our API requests on CVSS V3 severity to ensure all data integrated into Claircore possesses valid CVSS V3 metrics. Consequently, retrieving data without CVSS V3 information becomes irrelevant.
 
