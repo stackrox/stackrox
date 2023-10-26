@@ -92,11 +92,10 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	}
 
 	for _, key := range scanOrder {
-		scanResults, _ := resultsByScan[key]
 		convertedResults = append(convertedResults, &v2.ComplianceScanResult{
 			ScanName:     key.scanName,
 			ProfileName:  key.profileName,
-			CheckResults: scanResults,
+			CheckResults: resultsByScan[key],
 		})
 	}
 
