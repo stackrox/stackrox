@@ -21,6 +21,7 @@ const routeMatcherMapForMetadata = {
 describe('Help menu API Reference', () => {
     withAuth();
 
+    const button = 'API Reference (v1)';
     const title = 'API Reference';
 
     it('should visit via menu on top nav', () => {
@@ -28,7 +29,7 @@ describe('Help menu API Reference', () => {
 
         interactAndWaitForResponses(() => {
             cy.get('button[aria-label="Help menu"]').click();
-            cy.get(`a:contains("${title}")`).click();
+            cy.get(`a:contains("${button}")`).click();
         }, routeMatcherMapForReference);
 
         cy.location('pathname').should('eq', apiReferencePath);
