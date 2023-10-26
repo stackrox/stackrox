@@ -122,7 +122,7 @@ To freeze a schema, you can use the following tool to generate a frozen schema, 
 to generate current schema which can be find in each Postgres store.
 
 ```shell
-pg-schema-migration-helper --type=<prototype> --search-category ...
+./tools/generate-helpers/pg-schema-migration-helper --type=<prototype> --search-category ...
 ```
 
 This tool also generates conversion tools for schema, you may remove them. 
@@ -289,7 +289,7 @@ The following shows an example of the conversion functions.
 The tool is `pg-schema-migration-helper`, it can be used as follows.
 
 ```shell
-pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
+./tools/generate-helpers/pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
 ```
 
 `pg-schema-migration-helper` uses the same elements as `pg-table-bindings-wrapper` (the code generator for the postgres
