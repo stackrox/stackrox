@@ -172,21 +172,27 @@ func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
 	dbgS := ""
 	for k, v := range updates {
 		dbgS += fmt.Sprintf("DeplID: %q, EntityData: ", k)
-		dbgS += "{IPs: ["
-		for k2 := range v.ips {
-			dbgS += fmt.Sprintf("%s, ", k2)
+		if v != nil {
+			dbgS += "IPs: ["
+			for k2 := range v.ips {
+				dbgS += fmt.Sprintf("%s, ", k2)
+			}
+			dbgS += "], "
+
+			dbgS += "Endpoints: ["
+			for k2, v2 := range v.endpoints {
+				dbgS += fmt.Sprintf("%s: %v, ", k2, v2)
+			}
+			dbgS += "], "
+
+			dbgS += "ContainerIDs: ["
+			for k2 := range v.containerIDs {
+				dbgS += fmt.Sprintf("%s, ", k2)
+			}
+			dbgS += "],"
+		} else {
+			dbgS += "nil,"
 		}
-		dbgS += "]},"
-		dbgS += "{Endpoints: ["
-		for k2, v2 := range v.endpoints {
-			dbgS += fmt.Sprintf("%s: %v, ", k2, v2)
-		}
-		dbgS += "]"
-		dbgS += "{ContainerIDs: ["
-		for k2 := range v.containerIDs {
-			dbgS += fmt.Sprintf("%s, ", k2)
-		}
-		dbgS += "]"
 	}
 	log.Debugf("Calling Apply incremental=%t with updates: %s", incremental, dbgS)
 	if !incremental {

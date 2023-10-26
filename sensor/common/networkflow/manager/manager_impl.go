@@ -332,6 +332,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.done.WaitC():
 			return
 		case <-tickerC:
+			log.Debugf("Enricher ticker tick")
 			if !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -377,7 +378,7 @@ func (m *networkFlowManager) enrichAndSend() {
 		}
 	}()
 
-	log.Debugf("Flow update : %v", protoToSend)
+	log.Debugf("Flow update for Central: %v", protoToSend)
 	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
@@ -499,7 +500,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 	}
 
-	log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, phase2-lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
+	if strings.HasPrefix(container.ContainerName, "client-") || container.ContainerName == "nginx" {
+		log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, phase2-lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
+	}
 
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
