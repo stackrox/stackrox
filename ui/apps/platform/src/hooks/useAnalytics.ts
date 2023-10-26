@@ -4,6 +4,11 @@ import { Telemetry } from 'types/config.proto';
 
 import { selectors } from 'reducers';
 
+// events constants
+export const CLUSTER_CREATED = 'Cluster Created';
+export const INVITE_USERS_MODAL_OPENED = 'Invite Users Modal Opened';
+export const INVITE_USERS_SUBMITTED = 'Invite Users Submitted';
+
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
     const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
@@ -30,5 +35,3 @@ const useAnalytics = () => {
 };
 
 export default useAnalytics;
-
-export const CLUSTER_CREATED = 'Cluster Created';
