@@ -167,8 +167,6 @@ spec:
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      - name: skip-checks
-        value: $(params.skip-checks)
       - name: pipelinerun-name
         value: $(context.pipelineRun.name)
       - name: pipelinerun-uid
