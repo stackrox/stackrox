@@ -274,7 +274,9 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // DeleteVulnerabilityException deletes a vulnerability exception.
+    // DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates
+    // to an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained
+    // in the system according to the retention configuration.
     rpc DeleteVulnerabilityException (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v2/vulnerability-exceptions/{id}"
