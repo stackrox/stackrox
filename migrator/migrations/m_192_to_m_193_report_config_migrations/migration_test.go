@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package m192tom193
 
 import (
@@ -115,11 +117,9 @@ func (s *migrationTestSuite) TestMigration() {
 
 	configs, err := s.gormDB.Rows()
 	s.Require().NoError(err)
-	s.Require().NoError(configs.Err())
 
 	snapshots, err := s.snapshotgormdB.Rows()
 	s.Require().NoError(err)
-	s.Require().NoError(snapshots.Err())
 
 	actualConfigProto := []*storage.ReportConfiguration{}
 	v1Config := &storage.ReportConfiguration{}
@@ -137,6 +137,7 @@ func (s *migrationTestSuite) TestMigration() {
 			v2Config = config
 		}
 	}
+	s.Require().NoError(configs.Err())
 	actualSnapahshotProto := []*storage.ReportSnapshot{}
 
 	for snapshots.Next() {
@@ -147,6 +148,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 		actualSnapahshotProto = append(actualSnapahshotProto, repSnapshot)
 	}
+	s.Require().NoError(snapshots.Err())
 	// there should be 2 copies of report config
 	s.Equal(len(actualConfigProto), 2)
 	s.Equal(int32(1), v1Config.GetVersion())
