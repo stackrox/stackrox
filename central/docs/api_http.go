@@ -14,7 +14,7 @@ import (
 // rather than interpreting a JSON string from inside a response.
 func Swagger() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		b, err := swaggerForRequest(req)
+		b, err := swaggerForRequest(req, "/stackrox/static-data/docs/api/v1/swagger.json")
 		if err != nil {
 			w.WriteHeader(500)
 			msg := err.Error()
@@ -27,8 +27,26 @@ func Swagger() http.Handler {
 	})
 }
 
-func swaggerForRequest(req *http.Request) ([]byte, error) {
-	b, err := os.ReadFile("/stackrox/static-data/docs/api/v1/swagger.json")
+// SwaggerV2 returns an HTTP handler that exposes the v2 API's swagger.json doc directly.
+// It's not a gRPC method because some clients will want to consume this URL directly,
+// rather than interpreting a JSON string from inside a response.
+func SwaggerV2() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		b, err := swaggerForRequest(req, "/stackrox/static-data/docs/api/v2/swagger.json")
+		if err != nil {
+			w.WriteHeader(500)
+			msg := err.Error()
+			_, _ = w.Write([]byte(msg))
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(200)
+		_, _ = w.Write(b)
+	})
+}
+
+func swaggerForRequest(req *http.Request, swaggerPath string) ([]byte, error) {
+	b, err := os.ReadFile(swaggerPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load swagger file")
 	}

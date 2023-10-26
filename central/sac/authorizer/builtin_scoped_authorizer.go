@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -10,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/cache/objectarraycache"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -23,6 +25,13 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
+
+	clusterCache   = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
+	namespaceCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchNamespacesFromDB)
+)
+
+const (
+	cacheRefreshPeriod = 5 * time.Second
 )
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
@@ -30,11 +39,11 @@ var (
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	clusters, err := clusterStore.Singleton().GetClusters(adminCtx)
+	clusters, err := fetchClusters(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetAllNamespaces(adminCtx)
+	namespaces, err := fetchNamespaces(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -360,4 +369,20 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 	namespaceNode, ok := clusterNode.Namespaces[namespaceName]
 
 	return ok && namespaceNode.State == effectiveaccessscope.Included
+}
+
+func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	return clusterCache.GetObjects(ctx)
+}
+
+func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
+	return clusterStore.Singleton().GetClusters(ctx)
+}
+
+func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	return namespaceCache.GetObjects(ctx)
+}
+
+func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	return namespaceStore.Singleton().GetAllNamespaces(ctx)
 }

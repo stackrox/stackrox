@@ -28,7 +28,7 @@ require (
 	github.com/dexidp/dex v0.0.0-20230320125501-2bb4896d120e
 	github.com/docker/distribution v2.8.2+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/docker v23.0.6+incompatible
+	github.com/docker/docker v23.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/driftprogramming/pgxpoolmock v1.1.0
@@ -112,7 +112,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.7
 	go.uber.org/atomic v1.11.0
-	go.uber.org/goleak v1.2.1
+	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.3.0
 	go.uber.org/zap v1.25.0
 	golang.org/x/crypto v0.14.0

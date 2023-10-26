@@ -46,7 +46,7 @@ var (
 	ComplianceEnhancements = registerUnchangeableFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
-	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", true)
 
 	// PostgresDatastore defines if PostgresSQL should be used
 	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)
@@ -62,4 +62,7 @@ var (
 
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
 	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", false)
+
+	// AuthMachineToMachine allows to exchange ID tokens for Central tokens without requiring user interaction.
+	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", false)
 )
