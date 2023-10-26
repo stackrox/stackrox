@@ -161,6 +161,7 @@ spec:
       optional: true
 
     tasks:
+
     - name: init
       params:
       - name: image-url
@@ -184,6 +185,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
@@ -215,6 +217,7 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -238,6 +241,7 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -273,6 +277,7 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+
     - name: inspect-image
       params:
       - name: IMAGE_URL
@@ -298,6 +303,7 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
@@ -316,6 +322,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: clair-scan
       params:
       - name: image-digest
@@ -338,6 +345,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: sast-snyk-check
       runAfter:
       - clone-repository
@@ -358,6 +366,7 @@ spec:
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: clamav-scan
       params:
       - name: image-digest
@@ -380,6 +389,7 @@ spec:
         operator: in
         values:
         - "false"
+
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
