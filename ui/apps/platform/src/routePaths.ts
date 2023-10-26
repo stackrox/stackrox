@@ -21,6 +21,7 @@ export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:enti
 export const administrationEventsBasePath = `${mainPath}/administration-events`;
 export const administrationEventsPathWithParam = `${administrationEventsBasePath}/:id?`;
 export const apidocsPath = `${mainPath}/apidocs`;
+export const apidocsPathV2 = `${mainPath}/apidocs-v2`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
@@ -144,6 +145,7 @@ export type RouteKey =
     | 'access-control'
     | 'administration-events'
     | 'apidocs'
+    | 'apidocs-v2'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
@@ -185,6 +187,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Administration']),
     },
     apidocs: {
+        resourceAccessRequirements: everyResource([]),
+    },
+    'apidocs-v2': {
         resourceAccessRequirements: everyResource([]),
     },
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
@@ -431,7 +436,8 @@ export const basePathToLabelMap = {
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',
     [riskBasePath]: 'Risk',
-    [apidocsPath]: 'API Reference',
+    [apidocsPath]: 'API Reference (v1)',
+    [apidocsPathV2]: 'API Reference (v2)',
     [clustersBasePath]: 'Clusters',
     [policyManagementBasePath]: 'Policy Management',
     [policiesBasePath]: 'Policy Management',

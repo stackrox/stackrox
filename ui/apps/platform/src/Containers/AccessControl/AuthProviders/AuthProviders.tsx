@@ -20,6 +20,7 @@ import { CaretDownIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
@@ -72,6 +73,7 @@ function AuthProviders(): ReactElement {
     const { action, type } = queryObject;
     const { entityId } = useParams();
     const dispatch = useDispatch();
+    const { analyticsTrack } = useAnalytics();
 
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const {
@@ -95,6 +97,9 @@ function AuthProviders(): ReactElement {
     }
 
     function onClickInviteUsers() {
+        // track request to invite
+        analyticsTrack(INVITE_USERS_MODAL_OPENED);
+
         dispatch(inviteActions.setInviteModalVisibility(true));
     }
 

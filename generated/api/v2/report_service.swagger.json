@@ -1,0 +1,1070 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/report_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/reports/configuration-count": {
+      "get": {
+        "summary": "CountReportConfigurations returns the number of report configurations.",
+        "operationId": "ReportService_CountReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CountReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations": {
+      "get": {
+        "summary": "ListReportConfigurations returns report configurations matching given query",
+        "operationId": "ReportService_ListReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "post": {
+        "summary": "PostReportConfiguration creates a report configuration",
+        "operationId": "ReportService_PostReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}": {
+      "get": {
+        "summary": "GetReportConfiguration returns the report configuration with given ID",
+        "operationId": "ReportService_GetReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteReportConfiguration removes the report configuration with given ID",
+        "operationId": "ReportService_DeleteReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateReportConfiguration updates a report configuration",
+        "operationId": "ReportService_UpdateReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}/history": {
+      "get": {
+        "summary": "GetReportHistory returns the full report job history for a report configuration with the specified ID.",
+        "operationId": "ReportService_GetReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/configurations/{id}/my-history": {
+      "get": {
+        "summary": "GetMyReportHistory returns the requester's report job history for a report configuration with the specified ID.",
+        "operationId": "ReportService_GetMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/cancel": {
+      "delete": {
+        "summary": "Cancels a queued report job for the given report id. If the job is not active, it is a noop.\nIf a report is already being prepared, it won't be cancelled.",
+        "operationId": "ReportService_CancelReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/delete": {
+      "delete": {
+        "summary": "Deletes a generated report for the given report id",
+        "operationId": "ReportService_DeleteReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/jobs/{id}/status": {
+      "get": {
+        "summary": "GetReportStatus returns report status for the given report id",
+        "operationId": "ReportService_GetReportStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/run": {
+      "post": {
+        "summary": "Submits a new report generation request if the user requesting this report does not have another waiting or preparing\nreport for the same report configuration.",
+        "operationId": "ReportService_RunReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2RunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
+    "ReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
+    },
+    "ReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE"
+      ],
+      "default": "WAITING"
+    },
+    "VulnerabilityReportFiltersFixability": {
+      "type": "string",
+      "enum": [
+        "BOTH",
+        "FIXABLE",
+        "NOT_FIXABLE"
+      ],
+      "default": "BOTH"
+    },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
+    "VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2CollectionReference": {
+      "type": "object",
+      "properties": {
+        "collectionId": {
+          "type": "string"
+        },
+        "collectionName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CollectionSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CountReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2EmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customSubject": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2ListReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ReportConfiguration"
+          }
+        }
+      }
+    },
+    "v2NotificationMethod": {
+      "type": "string",
+      "enum": [
+        "EMAIL",
+        "DOWNLOAD"
+      ],
+      "default": "EMAIL"
+    },
+    "v2NotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/v2EmailNotifierConfiguration"
+        },
+        "notifierName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2ReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "v2ReportHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "reportSnapshots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ReportSchedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/v2ReportScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfMonth"
+        }
+      }
+    },
+    "v2ReportScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "v2ReportScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "v2ReportScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY"
+      ],
+      "default": "UNSET"
+    },
+    "v2ReportSnapshot": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportJobId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "collectionSnapshot": {
+          "$ref": "#/definitions/v2CollectionSnapshot"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "reportStatus": {
+          "$ref": "#/definitions/v2ReportStatus"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "isDownloadAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2ReportStatus": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/ReportStatusRunState"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        },
+        "reportRequestType": {
+          "$ref": "#/definitions/ReportStatusReportMethod"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2ReportStatusResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v2ReportStatus"
+        }
+      }
+    },
+    "v2ResourceScope": {
+      "type": "object",
+      "properties": {
+        "collectionScope": {
+          "$ref": "#/definitions/v2CollectionReference"
+        }
+      }
+    },
+    "v2RunReportRequest": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2RunReportResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportId": {
+          "type": "string"
+        }
+      }
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2VulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "fixability": {
+          "$ref": "#/definitions/VulnerabilityReportFiltersFixability"
+        },
+        "severities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersVulnerabilitySeverity"
+          }
+        },
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+          }
+        },
+        "allVuln": {
+          "type": "boolean"
+        },
+        "sinceLastSentScheduledReport": {
+          "type": "boolean"
+        },
+        "sinceStartDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

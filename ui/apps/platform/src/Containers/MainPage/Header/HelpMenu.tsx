@@ -11,7 +11,7 @@ import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
 import { actions } from 'reducers/feedback';
-import { apidocsPath } from 'routePaths';
+import { apidocsPath, apidocsPathV2 } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';
 
 function HelpMenu(): ReactElement {
@@ -29,7 +29,14 @@ function HelpMenu(): ReactElement {
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
-                        API Reference
+                        API Reference (v1)
+                    </Link>
+                }
+            />
+            <ApplicationLauncherItem
+                component={
+                    <Link className="pf-c-app-launcher__menu-item" to={apidocsPathV2}>
+                        API Reference (v2)
                     </Link>
                 }
             />

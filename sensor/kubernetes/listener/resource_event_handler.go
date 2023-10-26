@@ -319,10 +319,10 @@ func handle(
 		missingInitialIDs:          nil,
 	}
 	_, err := informer.AddEventHandler(handlerImpl)
-	utils.Should(err)
+	should(err, stopSignal)
 	if !informer.HasSynced() {
 		err := informer.SetTransform(managedFieldsTransformer)
-		utils.Should(err)
+		should(err, stopSignal)
 	}
 	wg.Add(1)
 	go func() {
@@ -336,4 +336,17 @@ func handle(
 		case <-doneChannel:
 		}
 	}()
+}
+
+// should function wraps utils.Should to avoid panics if the listeners were already stopped by Sensor.
+func should(err error, stopSignal *concurrency.Signal) {
+	if err == nil {
+		return
+	}
+	// We don't want to panic in development builds if adding a handler fails due to the listener being stopped.
+	if stopSignal.IsDone() {
+		log.Warnf("Error while the informers were stopped: %+v", err)
+		return
+	}
+	utils.Should(err)
 }

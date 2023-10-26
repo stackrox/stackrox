@@ -360,7 +360,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
-		authService.New(),
+		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
@@ -682,6 +682,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/docs/swagger",
 			Authorizer:    user.Authenticated(),
 			ServerHandler: docs.Swagger(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/docs/v2/swagger",
+			Authorizer:    user.Authenticated(),
+			ServerHandler: docs.SwaggerV2(),
 			Compression:   true,
 		},
 		{

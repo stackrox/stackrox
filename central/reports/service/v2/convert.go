@@ -57,6 +57,7 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 		Schedule:      s.convertV2ScheduleToProto(config.GetSchedule()),
 		ResourceScope: s.convertV2ResourceScopeToProto(config.GetResourceScope()),
 		Creator:       creator,
+		Version:       2,
 	}
 
 	if config.GetVulnReportFilters() != nil {

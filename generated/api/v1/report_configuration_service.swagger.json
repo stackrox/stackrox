@@ -522,6 +522,10 @@
         },
         "creator": {
           "$ref": "#/definitions/storageSlimUser"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

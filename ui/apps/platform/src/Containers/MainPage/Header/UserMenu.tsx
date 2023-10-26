@@ -6,6 +6,7 @@ import { createStructuredSelector } from 'reselect';
 import initials from 'initials';
 import { Dropdown, DropdownItem, DropdownSeparator, DropdownToggle } from '@patternfly/react-core';
 
+import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
@@ -20,6 +21,7 @@ const userMenuStyleConstant = {
 
 function UserMenu({ logout, setInviteModalVisibility, userData }) {
     const [isOpen, setIsOpen] = useState(false);
+    const { analyticsTrack } = useAnalytics();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
 
@@ -28,6 +30,9 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     }
 
     function onClickInviteUsers() {
+        // track request to invite
+        analyticsTrack(INVITE_USERS_MODAL_OPENED);
+
         setInviteModalVisibility(true);
     }
 

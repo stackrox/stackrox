@@ -21,6 +21,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useAnalytics, { WATCH_IMAGE_MODAL_OPENED } from 'hooks/useAnalytics';
 import { vulnerabilityStates } from 'types/cve.proto';
 import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
@@ -47,6 +48,8 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+
+    const { analyticsTrack } = useAnalytics();
 
     const [vulnerabilityStateKey, setVulnerabilityStateKey] = useURLStringUnion(
         'vulnerabilityState',
@@ -105,6 +108,7 @@ function WorkloadCvesOverviewPage() {
                             onClick={() => {
                                 setDefaultWatchedImageName('');
                                 watchedImagesModalToggle.openSelect();
+                                analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                             }}
                         >
                             Manage watched images
@@ -153,6 +157,7 @@ function WorkloadCvesOverviewPage() {
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
+                                        analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                                     }}
                                     onUnwatchImage={(imageName) => {
                                         setUnwatchImageName(imageName);
