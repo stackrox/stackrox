@@ -34,10 +34,12 @@ endif
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
-BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
-BUILD_CMD := $(BUILD_FLAGS) go build \
+
+GO_BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
+GO_BUILD_CMD := $(GO_BUILD_FLAGS) go build \
                  -trimpath \
                  -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)"
+GO_TEST_CMD := $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -74,7 +76,7 @@ tag:
 ## Go Builds ##
 ###############
 
-build-cmd := $(BUILD_CMD)
+build-cmd := $(GO_BUILD_CMD)
 build-d   := bin
 build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
 
@@ -284,12 +286,15 @@ $(certs-d)/%/.verified: $(certs-d)/%/cert.pem
 # E2E vars
 # ========
 
-SCANNER_E2E_TAG       ?= $(TAG)
+SCANNER_E2E_IMAGE_TAG ?= $(TAG)
 SCANNER_E2E_NAMESPACE ?= $(SCANNER_NAMESPACE)
 
-e2e-chart     := e2etests/helmchart
+e2e-d         := e2etests
+e2e-chart     := $(e2e-d)/helmchart
 e2e-namespace := $(SCANNER_E2E_NAMESPACE)
-e2e-tag       := $(SCANNER_E2E_TAG)
+e2e-image-tag := $(SCANNER_E2E_IMAGE_TAG)
+e2e-go-tag    := e2etests
+e2e-timeout   := 20m
 
 e2e-conf-files := db-postgresql.conf \
                   db-pg_hba.conf
@@ -314,12 +319,20 @@ ifeq ($(SILENT),@)
 endif
 
 e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
-	@echo "+ $@" $(e2e-tag)
+	@echo "+ $@" $(e2e-image-tag)
 	$(SILENT)-kubectl create namespace $(e2e-namespace)
 	helm upgrade scanner-v4-e2e $(e2e-chart) \
 	    --install \
 	    --namespace $(e2e-namespace) \
-	    --set image.tag="$(e2e-tag)"
+	    --set image.tag="$(e2e-image-tag)"
+
+.PHONY: e2e-run
+e2e-run: deps
+	@echo "+ $@"
+	$(SILENT)$(GO_TEST_CMD) -tags $(e2e-go-tag) -count=1 -timeout=$(e2e-timeout) -v ./$(e2e-d)/...
+
+.PHONY: e2e
+e2e: e2e-deploy e2e-run
 
 clean-e2e:
 	@echo "+ $@"

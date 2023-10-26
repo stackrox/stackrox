@@ -18,7 +18,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')

@@ -37,6 +37,8 @@ qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
 scale/image/fixtures/scrape.json
+scanner/e2etests/testdata/image_tests.json
+scanner/e2etests/testdata/image_tests.orig.json
 scripts/ci/lib.sh
 sensor/tests/replay/data/policies.json
 sensor/tests/replay/data/safety-net-alerts-central-out.bin
