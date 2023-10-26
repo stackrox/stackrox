@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -97,13 +98,22 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
 				r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
 
+				localImages := set.NewStringSet()
+				for _, c := range preBuiltDeployment.GetContainers() {
+					imgName := c.GetImage().GetName()
+					if r.storeProvider.Registries().IsLocal(imgName) {
+						localImages.Add(imgName.GetFullName())
+					}
+				}
+
 				permissionLevel := r.storeProvider.RBAC().GetPermissionLevelForDeployment(preBuiltDeployment)
 				exposureInfo := r.storeProvider.Services().
 					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
 
-				d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
+				d, newObject, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 					PermissionLevel: permissionLevel,
 					Exposures:       exposureInfo,
+					LocalImages:     localImages,
 				})
 
 				if err != nil {
@@ -111,8 +121,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					continue
 				}
 
-				msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
-					AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				// Skip generating an event and sending the deployment to the detector if the object is not
+				// new and detection isn't forced.
+				if deploymentReference.ForceDetection || newObject {
+					msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
+						AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				}
 			}
 		}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -429,10 +430,11 @@ func (s *resolverSuite) givenBuildDependenciesError(deployment string) {
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: storage.PermissionLevel_NONE,
 			Exposures:       nil,
+			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
-			return nil, errors.New("dependency error")
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+			return nil, false, errors.New("dependency error")
 		})
 }
 
@@ -462,10 +464,11 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: permissionLevel,
 			Exposures:       nil,
+			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
-			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, nil
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, true, nil
 		})
 }
 
@@ -496,9 +499,10 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 		gomock.Eq(deployment), gomock.Eq(store.Dependencies{
 			PermissionLevel: storage.PermissionLevel_NONE,
 			Exposures:       exposure,
+			LocalImages:     set.NewStringSet(),
 		})).
 		Times(1).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
 			return &storage.Deployment{
 				Id:                            deployment,
 				ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
@@ -507,7 +511,7 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 						ExposureInfos: flatExposures,
 					},
 				},
-			}, nil
+			}, true, nil
 		})
 }
 
@@ -526,8 +530,8 @@ func (s *resolverSuite) givenAnyDeploymentProcessedNTimes(times int) {
 
 	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).
 		Times(times).
-		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, error) {
-			return &storage.Deployment{}, nil
+		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
+			return &storage.Deployment{}, true, nil
 		})
 }
 
