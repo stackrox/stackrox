@@ -53,7 +53,7 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
                 tag: '.*',
             },
         },
-        deferralReq: {
+        deferralRequest: {
             expiry: {
                 expiryType: 'ALL_CVE_FIXABLE',
             },

@@ -61,7 +61,7 @@ export function getRequestedAction(
         const exceptionExpiry: ExceptionExpiry =
             shouldUseUpdatedExpiry && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
-                : exception.deferralReq.expiry;
+                : exception.deferralRequest.expiry;
         let duration = 'indefinitely';
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
             duration = getDistanceStrictAsPhrase(
@@ -105,7 +105,7 @@ export function getExpiresDate(exception: VulnerabilityException, context: Reque
         const exceptionExpiry: ExceptionExpiry =
             shouldUseUpdatedExpiry && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
-                : exception.deferralReq.expiry;
+                : exception.deferralRequest.expiry;
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
             return getDate(exceptionExpiry.expiresOn);
         }
