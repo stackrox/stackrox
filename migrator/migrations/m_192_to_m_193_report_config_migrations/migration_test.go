@@ -92,23 +92,23 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	//verify getMigratedReportConfigIfExists function
-	found, conf, err := getMigratedReportConfigIfExists(reportID, dbs.GormDB, dbs.DBCtx)
+	found, conf, err := getMigratedReportConfigIfExists(dbs.DBCtx, reportID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
 	s.NotNil(conf)
 
 	notifierID := conf.GetEmailConfig().GetNotifierId()
 
-	found, conf, err = getMigratedReportConfigIfExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	found, conf, err = getMigratedReportConfigIfExists(dbs.DBCtx, "does-not-exist", dbs.GormDB)
 	s.Require().NoError(err)
 	s.False(found)
 	s.Nil(conf)
 	//verify checkifNotifierExists function
-	found, err = checkifNotifierExists(notifierID, dbs.GormDB, dbs.DBCtx)
+	found, err = checkifNotifierExists(dbs.DBCtx, notifierID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
 
-	found, err = checkifNotifierExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	found, err = checkifNotifierExists(dbs.DBCtx, "does-not-exist", dbs.GormDB)
 	s.Require().NoError(err)
 	s.False(found)
 
