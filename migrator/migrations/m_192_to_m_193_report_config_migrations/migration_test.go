@@ -43,7 +43,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
-	//create report config table to insert v1 config for testing
+	// create report config table to insert v1 config for testing
 	s.db = pghelper.ForT(s.T(), false)
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), newSchema.CreateTableReportConfigurationsStmt)
 	s.gormDB = s.db.GetGormDB()
@@ -91,7 +91,7 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	//verify getMigratedReportConfigIfExists function
+	// verify getMigratedReportConfigIfExists function
 	found, conf, err := getMigratedReportConfigIfExists(dbs.DBCtx, reportID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
@@ -103,7 +103,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(err)
 	s.False(found)
 	s.Nil(conf)
-	//verify checkifNotifierExists function
+	// verify checkifNotifierExists function
 	found, err = checkifNotifierExists(dbs.DBCtx, notifierID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
@@ -112,7 +112,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().NoError(err)
 	s.False(found)
 
-	//run and verify migration
+	// run and verify migration
 	s.Require().NoError(migration.Run(dbs))
 
 	configs, err := s.gormDB.Rows()
@@ -145,7 +145,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 		actualSnapahshotProto = append(actualSnapahshotProto, repSnapshot)
 	}
-	//there should be 2 copies of report config
+	// there should be 2 copies of report config
 	s.Equal(len(actualConfigProto), 2)
 	s.Equal(int32(1), v1Config.GetVersion())
 	s.Equal(int32(2), v2Config.GetVersion())
