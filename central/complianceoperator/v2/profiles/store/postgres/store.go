@@ -95,14 +95,14 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetVersion(),
+		obj.GetOperatorVersion(),
 		obj.GetProductType(),
 		obj.GetStandard(),
 		obj.GetProduct(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, Version, ProductType, Standard, Product, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, OperatorVersion, ProductType, Standard, Product, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -143,7 +143,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 	copyCols := []string{
 		"id",
 		"name",
-		"version",
+		"operatorversion",
 		"producttype",
 		"standard",
 		"product",
@@ -164,7 +164,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetName(),
-			obj.GetVersion(),
+			obj.GetOperatorVersion(),
 			obj.GetProductType(),
 			obj.GetStandard(),
 			obj.GetProduct(),

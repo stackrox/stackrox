@@ -76,20 +76,20 @@ func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceO
 	}
 }
 
-func severityToV2Severity(severity v1alpha1.ComplianceCheckResultSeverity) central.ComplianceOperatorCheckResultV2_RuleSeverity {
+func severityToV2Severity(severity v1alpha1.ComplianceCheckResultSeverity) central.ComplianceOperatorRuleSeverity {
 	switch severity {
 	case v1alpha1.CheckResultSeverityHigh:
-		return central.ComplianceOperatorCheckResultV2_HIGH_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY
 	case v1alpha1.CheckResultSeverityMedium:
-		return central.ComplianceOperatorCheckResultV2_MEDIUM_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY
 	case v1alpha1.CheckResultSeverityLow:
-		return central.ComplianceOperatorCheckResultV2_LOW_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY
 	case v1alpha1.CheckResultSeverityInfo:
-		return central.ComplianceOperatorCheckResultV2_INFO_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY
 	case v1alpha1.CheckResultSeverityUnknown:
-		return central.ComplianceOperatorCheckResultV2_UNKNOWN_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY
 	default:
-		return central.ComplianceOperatorCheckResultV2_UNSET_RULE_SEVERITY
+		return central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
 	}
 }
 
