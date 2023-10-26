@@ -31,6 +31,7 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
         when:
         "A user requests a vuln be deferred or marked as FP"
