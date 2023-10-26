@@ -43,7 +43,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
-	//create report config table to insert v1 config for testing
+	// create report config table to insert v1 config for testing
 	s.db = pghelper.ForT(s.T(), false)
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), newSchema.CreateTableReportConfigurationsStmt)
 	s.gormDB = s.db.GetGormDB()
@@ -91,34 +91,36 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	//verify getMigratedReportConfigIfExists function
-	found, conf, err := getMigratedReportConfigIfExists(reportID, dbs.GormDB, dbs.DBCtx)
+	// verify getMigratedReportConfigIfExists function
+	found, conf, err := getMigratedReportConfigIfExists(dbs.DBCtx, reportID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
 	s.NotNil(conf)
 
 	notifierID := conf.GetEmailConfig().GetNotifierId()
 
-	found, conf, err = getMigratedReportConfigIfExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	found, conf, err = getMigratedReportConfigIfExists(dbs.DBCtx, "does-not-exist", dbs.GormDB)
 	s.Require().NoError(err)
 	s.False(found)
 	s.Nil(conf)
-	//verify checkifNotifierExists function
-	found, err = checkifNotifierExists(notifierID, dbs.GormDB, dbs.DBCtx)
+	// verify checkifNotifierExists function
+	found, err = checkifNotifierExists(dbs.DBCtx, notifierID, dbs.GormDB)
 	s.Require().NoError(err)
 	s.True(found)
 
-	found, err = checkifNotifierExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	found, err = checkifNotifierExists(dbs.DBCtx, "does-not-exist", dbs.GormDB)
 	s.Require().NoError(err)
 	s.False(found)
 
-	//run and verify migration
+	// run and verify migration
 	s.Require().NoError(migration.Run(dbs))
 
 	configs, err := s.gormDB.Rows()
 	s.Require().NoError(err)
+
 	snapshots, err := s.snapshotgormdB.Rows()
 	s.Require().NoError(err)
+
 	actualConfigProto := []*storage.ReportConfiguration{}
 	v1Config := &storage.ReportConfiguration{}
 	v2Config := &storage.ReportConfiguration{}
@@ -135,6 +137,7 @@ func (s *migrationTestSuite) TestMigration() {
 			v2Config = config
 		}
 	}
+	s.Require().NoError(configs.Err())
 	actualSnapahshotProto := []*storage.ReportSnapshot{}
 
 	for snapshots.Next() {
@@ -145,7 +148,8 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 		actualSnapahshotProto = append(actualSnapahshotProto, repSnapshot)
 	}
-	//there should be 2 copies of report config
+	s.Require().NoError(snapshots.Err())
+	// there should be 2 copies of report config
 	s.Equal(len(actualConfigProto), 2)
 	s.Equal(int32(1), v1Config.GetVersion())
 	s.Equal(int32(2), v2Config.GetVersion())

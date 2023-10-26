@@ -92,7 +92,7 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 	return nil
 }
 
-func checkifNotifierExists(notifierID string, db *gorm.DB, dbctx context.Context) (bool, error) {
+func checkifNotifierExists(dbctx context.Context, notifierID string, db *gorm.DB) (bool, error) {
 	var id string
 	row := db.WithContext(dbctx).Table(updatedSchema.NotifiersTableName).Select("id").Where(&updatedSchema.Notifiers{ID: notifierID}).Limit(1).Find(&id)
 	if row.Error != nil {
@@ -101,7 +101,7 @@ func checkifNotifierExists(notifierID string, db *gorm.DB, dbctx context.Context
 	return id != "", nil
 }
 
-func getMigratedReportConfigIfExists(reportID string, db *gorm.DB, dbctx context.Context) (bool, *storage.ReportConfiguration, error) {
+func getMigratedReportConfigIfExists(dbctx context.Context, reportID string, db *gorm.DB) (bool, *storage.ReportConfiguration, error) {
 	var reportConfig updatedSchema.ReportConfigurations
 	row := db.WithContext(dbctx).Table(updatedSchema.ReportConfigurationsTableName).Select("serialized").Where(&updatedSchema.ReportConfigurations{ID: reportID}).Limit(1).Find(&reportConfig)
 	if row.Error != nil {
@@ -162,8 +162,8 @@ func migrate(database *types.Databases) error {
 				continue
 			}
 
-			//since checkifNotifierExsists only reads data from older migration, no need to write a new tx
-			notifierFound, err := checkifNotifierExists(reportConfigProto.GetEmailConfig().GetNotifierId(), db, database.DBCtx)
+			// since checkifNotifierExsists only reads data from older migration, no need to write a new tx
+			notifierFound, err := checkifNotifierExists(database.DBCtx, reportConfigProto.GetEmailConfig().GetNotifierId(), db)
 			if err != nil {
 				return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
 			}
@@ -184,9 +184,9 @@ func migrate(database *types.Databases) error {
 			newConfig.Version = 2
 			reportConfigProto.Version = 1
 
-			//if deterministic id exists no need to copy the config
-			//since getMigratedReportConfigIfExsists only reads data from older migration, no need to write a new tx
-			migrated, data, err := getMigratedReportConfigIfExists(newConfig.GetId(), db, database.DBCtx)
+			// if deterministic id exists no need to copy the config
+			// since getMigratedReportConfigIfExsists only reads data from older migration, no need to write a new tx
+			migrated, data, err := getMigratedReportConfigIfExists(database.DBCtx, newConfig.GetId(), db)
 			if err != nil {
 				return errors.Wrapf(err, "failed to query v2 report config with id %s", newConfig.GetId())
 			}
