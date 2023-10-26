@@ -21,7 +21,11 @@ function getDefaultValues(cves: string[], scopeContext: ScopeContext): Exception
     const imageScope =
         scopeContext === 'GLOBAL'
             ? { registry: ALL, remote: ALL, tag: ALL }
-            : { registry: ALL, remote: scopeContext.image.name, tag: ALL };
+            : {
+                  registry: scopeContext.imageName.registry,
+                  remote: scopeContext.imageName.remote,
+                  tag: ALL,
+              };
 
     return { cves, comment: '', scope: { imageScope } };
 }

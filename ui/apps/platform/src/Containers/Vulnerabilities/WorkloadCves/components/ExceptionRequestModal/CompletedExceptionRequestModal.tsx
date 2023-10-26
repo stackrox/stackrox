@@ -21,6 +21,7 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import { getDate } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
+import { exceptionManagementPath } from 'routePaths';
 
 function scopeDisplay(scope: BaseVulnerabilityException['scope']): string {
     if (scope.imageScope.remote === '.*') {
@@ -75,6 +76,8 @@ function CompletedExceptionRequestModal({
         requestedAction = 'False positive';
     }
 
+    const exceptionRequestURL = `${window.location.origin}${exceptionManagementPath}/requests/${exceptionRequest.id}`;
+
     return (
         <Modal
             onClose={onClose}
@@ -89,11 +92,9 @@ function CompletedExceptionRequestModal({
         >
             <Flex direction={{ default: 'column' }}>
                 <Text>Use this link to share and discuss your request with your approver.</Text>
-                <ClipboardCopy
-                    isReadOnly
-                    hoverTip="Copy"
-                    clickTip="Copied"
-                >{`todo.path.to.requests.page/${exceptionRequest.name}`}</ClipboardCopy>
+                <ClipboardCopy isReadOnly hoverTip="Copy" clickTip="Copied">
+                    {exceptionRequestURL}
+                </ClipboardCopy>
                 <DescriptionList columnModifier={{ default: '2Col' }} className="pf-u-pt-md">
                     <DescriptionListGroup>
                         <DescriptionListTerm>Requested action</DescriptionListTerm>
