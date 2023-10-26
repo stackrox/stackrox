@@ -109,7 +109,7 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
-	//s.db.Teardown(s.T())
+	s.db.Teardown(s.T())
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
