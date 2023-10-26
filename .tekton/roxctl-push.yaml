@@ -53,6 +53,7 @@ spec:
       secretName: '{{ git_auth_secret }}'
 
   pipelineSpec:
+
     finally:
     - name: show-sbom
       params:
@@ -86,6 +87,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     params:
     - description: Source Repository URL
       name: git-url
@@ -135,6 +137,7 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
+
     results:
     - description: ""
       name: IMAGE_URL
@@ -151,6 +154,12 @@ spec:
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
+    workspaces:
+    - name: workspace
+    - name: git-auth
+      optional: true
+
     tasks:
     - name: init
       params:
@@ -393,9 +402,5 @@ spec:
         operator: in
         values:
         - "false"
-    workspaces:
-    - name: workspace
-    - name: git-auth
-      optional: true
 
 status: { }
