@@ -4,6 +4,7 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/store/reconciliation"
@@ -43,8 +44,49 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 		return nil
 	}
 
+	id := string(complianceProfile.UID)
+	// We probably could have gotten away with re-using the storage proto here for the time being.
+	// But we have a new field coming on for profiles and using the storage object even in an internal api
+	// is a bad practice, so we will make that split now.  V1 and V2 compliance will both need to work for a period
+	// of time.  However, we should not need to send the same profile twice, the pipeline can convert the V2 sensor message
+	// so V1 and V2 objects can both be stored.
+	if features.ComplianceEnhancements.Enabled() {
+		protoProfile := &central.ComplianceOperatorProfileV2{
+			Id:             id,
+			ProfileId:      complianceProfile.ID,
+			Name:           complianceProfile.Name,
+			Version:        "",
+			ProfileVersion: "",
+			Labels:         complianceProfile.Labels,
+			Annotations:    complianceProfile.Annotations,
+			Description:    complianceProfile.Description,
+		}
+
+		for _, r := range complianceProfile.Rules {
+			protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
+				RuleName: string(r),
+			})
+		}
+
+		events := []*central.SensorEvent{
+			{
+				Id:     id,
+				Action: action,
+				Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+					ComplianceOperatorProfileV2: protoProfile,
+				},
+			}}
+
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			c.reconciliationStore.Remove(deduper.TypeComplianceOperatorProfile.String(), id)
+		} else {
+			c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), id)
+		}
+		return component.NewEvent(events...)
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:          string(complianceProfile.UID),
+		Id:          id,
 		ProfileId:   complianceProfile.ID,
 		Name:        complianceProfile.Name,
 		Labels:      complianceProfile.Labels,

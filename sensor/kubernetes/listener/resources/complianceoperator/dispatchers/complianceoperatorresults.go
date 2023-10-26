@@ -76,23 +76,6 @@ func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceO
 	}
 }
 
-func severityToV2Severity(severity v1alpha1.ComplianceCheckResultSeverity) central.ComplianceOperatorRuleSeverity {
-	switch severity {
-	case v1alpha1.CheckResultSeverityHigh:
-		return central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityMedium:
-		return central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityLow:
-		return central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityInfo:
-		return central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY
-	case v1alpha1.CheckResultSeverityUnknown:
-		return central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY
-	default:
-		return central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY
-	}
-}
-
 func getScanName(labels map[string]string) string {
 	if value, ok := labels[scanNameKey]; ok {
 		return value
