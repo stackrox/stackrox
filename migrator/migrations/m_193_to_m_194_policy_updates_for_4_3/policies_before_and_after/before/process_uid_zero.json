@@ -45,15 +45,6 @@
           "namespace": "istio-system"
         }
       }
-    },
-    {
-      "name": "Don't alert on deployment aide-worker-fileintegrity in namespace openshift-file-integrity",
-      "deployment": {
-        "name": "aide-worker-fileintegrity",
-        "scope": {
-          "namespace": "openshift-file-integrity"
-        }
-      }
     }
   ],
   "severity": "HIGH_SEVERITY",

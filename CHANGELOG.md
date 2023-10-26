@@ -49,6 +49,10 @@ and the existing exceptions enforced on host and platform vulnerabilities will b
   Instead, only the associated role names will be there. Enabling this will lower the verbosity of the audit log messages,
   but investigating associated permissions for a requester might be harder (i.e. the associated role would have be known at the time of the request).
   Thus, it is generally not recommended to set this to `true`.
+- ROX-18978: The default policy "Iptables Executed in Privileged Container" has been renamed to "Iptables or nftables Executed in Privileged Container" and now also detects the `nft` process which is used by `nftables`.
+- ROX-20223: Added a new default policy category called "Zero Trust", and the following default policies have been tagged with the category: "Deployments should have at least one ingress Network Policy" and "Unauthorized Network Flow"
+- ROX-20224: Added a new default policy category called "Supply Chain Security", and the following default policies have been tagged with the category: "Images with no scans", "30-day Scan Age", "90-day Image Age", "Required Annotation: Email",
+  "Required Annotation: Owner/Team", "Required Label: Owner/Team" and "Latest tag"
 
 ## [4.2.0]
 

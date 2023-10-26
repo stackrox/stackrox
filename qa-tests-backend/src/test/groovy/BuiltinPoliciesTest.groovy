@@ -43,7 +43,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     )
                     // For: "Mounting Sensitive Host Directories"
                     .addVolume("sensitive", "/etc/", true)
-                    // For: Iptables Executed in Privileged Container
+                    // For: Iptables or nftables Executed in Privileged Container
                     .setPrivilegedFlag(true),
             // For: "Alpine Linux Package Manager (apk) in Image"
             new Deployment()
@@ -146,7 +146,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
         "Insecure specified in CMD"                                  | TRIGGER_MOST
         "iptables Execution"                                         | TRIGGER_MOST
-        "Iptables Executed in Privileged Container"                  | TRIGGER_MOST
+        "Iptables or nftables Executed in Privileged Container"      | TRIGGER_MOST
         "Linux Group Add Execution"                                  | TRIGGER_MOST
         "Linux User Add Execution"                                   | TRIGGER_MOST
         "Login Binaries"                                             | TRIGGER_MOST
