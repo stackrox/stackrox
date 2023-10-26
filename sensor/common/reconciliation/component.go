@@ -49,6 +49,7 @@ func (c *DeduperStateProcessor) SetDeduperState(state map[deduper.Key]uint64) {
 	if len(c.deduperState) != 0 {
 		log.Warnf("SetDeduperState called but current deduperState is not empty (%d entries being overwritten)", len(state))
 	}
+
 	c.stateLock.Lock()
 	defer c.stateLock.Unlock()
 	c.deduperState = state

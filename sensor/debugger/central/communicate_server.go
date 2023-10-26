@@ -159,6 +159,16 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 		}
 	}
 
+	if err := stream.Send(&central.MsgToSensor{
+		Msg: &central.MsgToSensor_DeduperState{DeduperState: &central.DeduperState{
+			ResourceHashes: map[string]uint64{},
+			Current:        1,
+			Total:          1,
+		}},
+	}); err != nil {
+		s.t.Fatalf("failed to send deduper state message on gRPC stream")
+	}
+
 	s.ConnectionStarted.Signal()
 	go s.startInputIngestion(stream)
 	go s.startCentralStub(stream)
