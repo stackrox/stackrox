@@ -65,4 +65,7 @@ var (
 
 	// AuthMachineToMachine allows to exchange ID tokens for Central tokens without requiring user interaction.
 	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", false)
+
+	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
+	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL", false)
 )
