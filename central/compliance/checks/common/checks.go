@@ -420,7 +420,7 @@ func CheckViolationsForPolicyByDeployment(ctx framework.ComplianceContext, polic
 
 // CISBenchmarksSatisfied checks if either Docker or Kube benchmarks were run.
 func CISBenchmarksSatisfied(ctx framework.ComplianceContext) {
-	if ctx.Data().CISDockerTriggered() || ctx.Data().CISKubernetesTriggered() {
+	if ctx.Data().CISKubernetesTriggered() {
 		framework.Pass(ctx, "CIS Benchmarks have been run.")
 		return
 	}

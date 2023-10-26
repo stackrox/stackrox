@@ -4,7 +4,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"k8s.io/kubelet/config/v1beta1"
 )
 
@@ -21,7 +20,6 @@ type KubeletConfiguration struct {
 type ComplianceData struct {
 	NodeName             string
 	ScrapeID             string
-	DockerData           *internalTypes.Data
 	CommandLines         map[string]*compliance.CommandLine
 	Files                map[string]*compliance.File
 	SystemdFiles         map[string]*compliance.File
