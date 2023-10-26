@@ -8,6 +8,49 @@ import { SearchCategory } from 'services/SearchService';
 
 export type SearchOption = { label: string; value: string; category: SearchCategory };
 
+// @TODO: If list gets too long, consider putting it in it's own file
+export const IMAGE_CVE_SEARCH_OPTION: SearchOption = {
+    label: 'CVE',
+    value: 'CVE',
+    category: 'IMAGE_VULNERABILITIES',
+};
+
+export const IMAGE_SEARCH_OPTION: SearchOption = {
+    label: 'Image',
+    value: 'IMAGE',
+    category: 'IMAGES',
+};
+
+export const DEPLOYMENT_SEARCH_OPTION: SearchOption = {
+    label: 'Deployment',
+    value: 'DEPLOYMENT',
+    category: 'DEPLOYMENTS',
+};
+
+export const NAMESPACE_SEARCH_OPTION: SearchOption = {
+    label: 'Namespace',
+    value: 'NAMESPACE',
+    category: 'NAMESPACES',
+};
+
+export const CLUSTER_SEARCH_OPTION: SearchOption = {
+    label: 'Cluster',
+    value: 'CLUSTER',
+    category: 'CLUSTERS',
+};
+
+export const REQUEST_ID_SEARCH_OPTION: SearchOption = {
+    label: 'Request ID',
+    value: 'REQUEST_ID',
+    category: 'VULN_REQUEST', // This might need to change
+};
+
+export const REQUESTER_SEARCH_OPTION: SearchOption = {
+    label: 'Requester',
+    value: 'REQUESTER',
+    category: 'VULN_REQUEST', // This might need to change
+};
+
 export type SearchOptionsDropdownProps = {
     setSearchOption: (selection) => void;
     searchOption: SearchOption;

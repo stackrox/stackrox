@@ -31,6 +31,13 @@ import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import {
+    CLUSTER_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+import {
     getHiddenSeverities,
     getOverviewCvesPath,
     getVulnStateScopedQueryString,
@@ -57,7 +64,6 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { Resource } from '../components/FilterResourceDropdown';
 import { VulnerabilitySeverityLabel } from '../types';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -146,7 +152,12 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const imageCveResourceFilters = new Set<Resource>(['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER']);
+const searchOptions: SearchOption[] = [
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+];
 
 function ImageCvePage() {
     const currentVulnerabilityState = useVulnerabilityState();
@@ -323,7 +334,7 @@ function ImageCvePage() {
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
                         <WorkloadTableToolbar
-                            supportedResourceFilters={imageCveResourceFilters}
+                            searchOptions={searchOptions}
                             autocompleteSearchContext={{
                                 'CVE ID': cveId,
                             }}
