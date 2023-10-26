@@ -58,6 +58,12 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: ROX_MTLS_CA_FILE
+          value: "/run/secrets/stackrox.io/certs/ca.pem"
+        - name: ROX_MTLS_CERT_FILE
+          value:  "/run/secrets/stackrox.io/certs/cert.pem"
+        - name: ROX_MTLS_KEY_FILE
+          value: "/run/secrets/stackrox.io/certs/key.pem"
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
@@ -67,6 +73,7 @@ spec:
           {{- ._rox.scannerV4.matcher._resources | nindent 10 }}
         command:
         - /entrypoint.sh
+        - --conf=/etc/scanner/config.yaml
         ports:
         - name: grpc
           containerPort: 8443
