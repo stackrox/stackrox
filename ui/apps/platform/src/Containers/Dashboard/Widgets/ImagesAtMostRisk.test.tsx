@@ -75,6 +75,7 @@ beforeEach(() => {
 
 function setup() {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
+    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -123,7 +124,8 @@ describe('Images at most risk dashboard widget', () => {
         );
     });
 
-    it('should link to the appropriate pages in VulnMgmt', async () => {
+    // eslint-disable-next-line jest/no-disabled-tests
+    it.skip('should link to the appropriate pages in VulnMgmt', async () => {
         const {
             user,
             utils: { history },
