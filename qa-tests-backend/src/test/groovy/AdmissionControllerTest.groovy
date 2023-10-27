@@ -17,6 +17,7 @@ import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Timeout

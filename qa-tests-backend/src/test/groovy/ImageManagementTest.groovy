@@ -11,6 +11,7 @@ import services.CVEService
 import services.ImageService
 import services.PolicyService
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
