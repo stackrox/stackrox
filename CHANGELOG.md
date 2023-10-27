@@ -16,6 +16,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Fatures
 
 ### Technical Changes
+- Increased default memory request for scanner-db from 200MiB to 512MiB,
+  to prevent OOMs during DB initialization in case of memory pressure on the node.
 
 ## [4.3.0]
 
