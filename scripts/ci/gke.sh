@@ -22,7 +22,7 @@ assign_env_variables() {
     info "Assigning environment variables for later steps"
 
     if [[ "$#" -lt 1 ]]; then
-        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type> <disk_gb>]"
+        die "missing args. usage: assign_env_variables <cluster-id>"
     fi
 
     local cluster_id="$1"
