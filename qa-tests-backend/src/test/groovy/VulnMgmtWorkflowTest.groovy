@@ -4,6 +4,7 @@ import io.stackrox.proto.storage.VulnRequests
 import objects.Deployment
 import services.VulnRequestService
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -31,6 +32,7 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
         when:
         "A user requests a vuln be deferred or marked as FP"

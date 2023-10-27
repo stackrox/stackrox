@@ -33,6 +33,7 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 		Expired:     vulnRequest.GetExpired(),
 		Requester:   convertUser(vulnRequest.GetRequestor()),
 		Approvers:   convertUsers(vulnRequest.GetApprovers()),
+		CreatedAt:   vulnRequest.GetCreatedAt(),
 		LastUpdated: vulnRequest.GetLastUpdated(),
 		Comments:    comments(vulnRequest.GetComments()),
 		Scope:       exceptionScope(vulnRequest.GetScope()),
