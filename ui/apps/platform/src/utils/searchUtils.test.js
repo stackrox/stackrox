@@ -7,6 +7,7 @@ import {
     searchOptionsToSearchFilter,
     getListQueryParams,
     searchValueAsArray,
+    convertToExactMatch,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -391,6 +392,20 @@ describe('searchUtils', () => {
         it('converts an array value to an array with the same elements', () => {
             expect(searchValueAsArray([])).toEqual([]);
             expect(searchValueAsArray(['cluster', 'namespace'])).toEqual(['cluster', 'namespace']);
+        });
+    });
+
+    describe('convertToExactMatch', () => {
+        it('returns a non-string value unmodified', () => {
+            expect(convertToExactMatch(undefined)).toEqual(undefined);
+            expect(convertToExactMatch(null)).toEqual(null);
+            expect(convertToExactMatch(42)).toEqual(42);
+            expect(convertToExactMatch(['42'])).toEqual(['42']);
+            expect(convertToExactMatch({ key: 'value' })).toEqual({ key: 'value' });
+        });
+
+        it('returns a string value wrapped in bespoke regex for exact match', () => {
+            expect(convertToExactMatch('cluster')).toEqual('r/^cluster$');
         });
     });
 });
