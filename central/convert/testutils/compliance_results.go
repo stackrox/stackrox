@@ -21,13 +21,13 @@ const (
 )
 
 var (
-	checkID1 = uuid.NewV4().String()
-	checkID2 = uuid.NewV4().String()
-	checkID3 = uuid.NewV4().String()
+	complianceCheckID1 = uuid.NewV4().String()
+	complianceCheckID2 = uuid.NewV4().String()
+	complianceCheckID3 = uuid.NewV4().String()
 
-	checkName1 = "check1"
-	checkName2 = "check2"
-	checkName3 = "check3"
+	complianceCheckName1 = "check1"
+	complianceCheckName2 = "check2"
+	complianceCheckName3 = "check3"
 
 	clusterName1 = "cluster1"
 	clusterName2 = "cluster2"
@@ -43,8 +43,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 	return []*storage.ComplianceOperatorCheckResultV2{
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID1,
-			CheckName:      checkName1,
+			CheckId:        complianceCheckID1,
+			CheckName:      complianceCheckName1,
 			ClusterId:      fixtureconsts.Cluster1,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -55,8 +55,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID1,
-			CheckName:      checkName1,
+			CheckId:        complianceCheckID1,
+			CheckName:      complianceCheckName1,
 			ClusterId:      fixtureconsts.Cluster2,
 			ClusterName:    clusterName2,
 			Status:         storage.ComplianceOperatorCheckResultV2_PASS,
@@ -67,8 +67,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID2,
-			CheckName:      checkName2,
+			CheckId:        complianceCheckID2,
+			CheckName:      complianceCheckName2,
 			ClusterId:      fixtureconsts.Cluster2,
 			ClusterName:    clusterName2,
 			Status:         storage.ComplianceOperatorCheckResultV2_PASS,
@@ -79,8 +79,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID2,
-			CheckName:      checkName2,
+			CheckId:        complianceCheckID2,
+			CheckName:      complianceCheckName2,
 			ClusterId:      fixtureconsts.Cluster1,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -91,8 +91,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID3,
-			CheckName:      checkName3,
+			CheckId:        complianceCheckID3,
+			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster1,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -103,8 +103,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID3,
-			CheckName:      checkName3,
+			CheckId:        complianceCheckID3,
+			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster2,
 			ClusterName:    clusterName2,
 			Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
@@ -115,8 +115,8 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID3,
-			CheckName:      checkName3,
+			CheckId:        complianceCheckID3,
+			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster3,
 			ClusterName:    clusterName3,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -133,8 +133,8 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 	return []*storage.ComplianceOperatorCheckResultV2{
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID1,
-			CheckName:      checkName1,
+			CheckId:        complianceCheckID1,
+			CheckName:      complianceCheckName1,
 			ClusterId:      clusterID,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -145,8 +145,8 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID2,
-			CheckName:      checkName2,
+			CheckId:        complianceCheckID2,
+			CheckName:      complianceCheckName2,
 			ClusterId:      clusterID,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -157,8 +157,8 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 		},
 		{
 			Id:             uuid.NewV4().String(),
-			CheckId:        checkID3,
-			CheckName:      checkName3,
+			CheckId:        complianceCheckID3,
+			CheckName:      complianceCheckName3,
 			ClusterId:      clusterID,
 			ClusterName:    clusterName1,
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
@@ -177,8 +177,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 			ScanName: scanConfigName1,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
-					CheckId:   checkID1,
-					CheckName: checkName1,
+					CheckId:   complianceCheckID1,
+					CheckName: complianceCheckName1,
 					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
@@ -199,8 +199,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 					Instructions: "instructions 1",
 				},
 				{
-					CheckId:   checkID2,
-					CheckName: checkName2,
+					CheckId:   complianceCheckID2,
+					CheckName: complianceCheckName2,
 					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
@@ -219,8 +219,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 			ScanName: scanConfigName2,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
-					CheckId:   checkID2,
-					CheckName: checkName2,
+					CheckId:   complianceCheckID2,
+					CheckName: complianceCheckName2,
 					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{
@@ -239,8 +239,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 			ScanName: scanConfigName3,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
-					CheckId:   checkID3,
-					CheckName: checkName3,
+					CheckId:   complianceCheckID3,
+					CheckName: complianceCheckName3,
 					Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
 						{
 							Cluster: &v2.ComplianceScanCluster{

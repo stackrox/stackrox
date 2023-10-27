@@ -174,19 +174,19 @@ func (s *complianceCheckResultDataStoreTestSuite) TestSearchCheckResults() {
 	s.Require().Equal(6, count)
 
 	// Search results of fake cluster, should return 0
-	searchResults, err := s.dataStore.SearchCheckResults(s.hasReadCtx, search.NewQueryBuilder().
+	searchResults, err := s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, fixtureconsts.ClusterFake2).ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(0, len(searchResults))
 
 	// Search results of cluster 2 should return 3 records.
-	searchResults, err = s.dataStore.SearchCheckResults(s.hasReadCtx, search.NewQueryBuilder().
+	searchResults, err = s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, fixtureconsts.Cluster2).ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(3, len(searchResults))
 
 	// Search with no access should return err
-	searchResults, err = s.dataStore.SearchCheckResults(s.noAccessCtx, search.NewQueryBuilder().
+	searchResults, err = s.dataStore.SearchComplianceCheckResults(s.noAccessCtx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, fixtureconsts.ClusterFake2).ProtoQuery())
 	s.Require().Error(err)
 	s.Require().Equal(0, len(searchResults))
@@ -200,12 +200,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCheckResultStats() {
 		AddExactMatches(search.ClusterID, fixtureconsts.Cluster2).
 		AddExactMatches(search.ClusterID, fixtureconsts.Cluster3).ProtoQuery()
 
-	results, err := s.dataStore.CheckResultStats(s.hasReadCtx, query)
+	results, err := s.dataStore.ComplianceCheckResultStats(s.hasReadCtx, query)
 	s.Require().NoError(err)
 	s.Require().Equal(expectedClusterCounts, results)
 
 	// Counts with no access should return error
-	results, err = s.dataStore.CheckResultStats(s.noAccessCtx, query)
+	results, err = s.dataStore.ComplianceCheckResultStats(s.noAccessCtx, query)
 	s.Require().Error(err)
 	s.Require().Equal(0, len(results))
 }

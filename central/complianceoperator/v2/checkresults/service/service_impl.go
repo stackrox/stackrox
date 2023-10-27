@@ -82,7 +82,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	scanResults, err := s.complianceResultsDS.SearchCheckResults(ctx, parsedQuery)
+	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
 	}
@@ -109,7 +109,7 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	scanResults, err := s.complianceResultsDS.CheckResultStats(ctx, parsedQuery)
+	scanResults, err := s.complianceResultsDS.ComplianceCheckResultStats(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
 	}

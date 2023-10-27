@@ -19,11 +19,11 @@ type DataStore interface {
 	// DeleteResult removes a result from the database
 	DeleteResult(ctx context.Context, id string) error
 
-	// SearchCheckResults retrieves the scan results specified by query
-	SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
+	// SearchComplianceCheckResults retrieves the scan results specified by query
+	SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
 
-	// CheckResultStats retrieves the scan results stats specified by query
-	CheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
+	// ComplianceCheckResultStats retrieves the scan results stats specified by query
+	ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

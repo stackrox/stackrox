@@ -63,8 +63,8 @@ func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
 	return d.store.Delete(ctx, id)
 }
 
-// SearchCheckResults retrieves the scan results specified by query
-func (d *datastoreImpl) SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
+// SearchComplianceCheckResults retrieves the scan results specified by query
+func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -74,8 +74,8 @@ func (d *datastoreImpl) SearchCheckResults(ctx context.Context, query *v1.Query)
 	return d.store.GetByQuery(ctx, query)
 }
 
-// CheckResultStats retrieves the scan results stats specified by query
-func (d *datastoreImpl) CheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
+// ComplianceCheckResultStats retrieves the scan results stats specified by query
+func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
