@@ -158,7 +158,7 @@ In migrator, there are a multiple ways to access data.
 
 2. Gorm
 
-    Consideration:  If the migration is dealing with multiple tables tied together it will may be simpler for
+    Consideration:  If the migration is dealing with multiple tables tied together it may be simpler for
     the migration author to use the store method vs gorm.
     
     Use Gorm to read small amount data. Gorm is light-weighted and comprehensive ORM allowing accessing databases
@@ -278,8 +278,9 @@ In migrator, there are a multiple ways to access data.
    with current release eg. search/delete with schema and the prototypes of the objects. 
 
    Now that stores are built upon a generic store you would need to make a copy of the store and remove
-   references to SAC and such.  We should be careful to not relying on the search framework for queries as those
-   could change over time.  .  
+   references to SAC and such.  We should be careful not to rely on the search framework for queries as those
+   could change over time.  Additionally the stores should use the frozen schemas just as any other migration would
+   to ensure isolation.  
 
    This model supports the transaction passed via the databases.DBCtx.
 
