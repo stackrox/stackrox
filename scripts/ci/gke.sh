@@ -22,7 +22,7 @@ assign_env_variables() {
     info "Assigning environment variables for later steps"
 
     if [[ "$#" -lt 1 ]]; then
-        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type>]"
+        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type> <disk_gb>]"
     fi
 
     local cluster_id="$1"
@@ -151,7 +151,7 @@ create_cluster() {
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
     DISK_SIZE_GB=${DISK_SIZE_GB:-40}
 
-    echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
+    echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\" and ${DISK_SIZE_GB}GB disks."
 
     if [[ -n "${GKE_CLUSTER_VERSION:-}" ]]; then
         ensure_supported_cluster_version

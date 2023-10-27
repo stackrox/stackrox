@@ -47,6 +47,7 @@ class GKECluster:
                 self.cluster_id,
                 str(self.num_nodes),
                 self.machine_type,
+                str(self.disk_gb),
             ]
         ) as cmd:
 
