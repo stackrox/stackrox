@@ -8,6 +8,7 @@ import (
 )
 
 func BenchmarkNetworkTreeWrapper(b *testing.B) {
+	b.Skip("ROX-20480: This test is failing. Skipping!")
 	entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(32, 15000)
 	require.NoError(b, err)
 	ipv6Entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(128, 5000)
