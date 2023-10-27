@@ -49,6 +49,7 @@ beforeEach(() => {
 
 const setup = () => {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
+    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -163,7 +164,7 @@ describe('AgingImages dashboard widget', () => {
 
         await act(() => user.click(screen.getByLabelText('Options')));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
-        const inputs = (await screen.findAllByLabelText('Image age in days')) as HTMLInputElement[];
+        const inputs = await screen.findAllByLabelText('Image age in days');
 
         // Defaults
         checkboxes.forEach((cb) => expect(cb).toBeChecked());
