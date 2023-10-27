@@ -3,6 +3,7 @@ package complianceoperatorprofiles
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -72,10 +73,28 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorProfile)
 
 	event := msg.GetEvent()
+	// If a sensor sends in a v1 compliance message we will still process it the v1 way in the event
+	// a sensor is not updated or does not have the flag on.
+	switch event.Resource.(type) {
+	case *central.SensorEvent_ComplianceOperatorProfile:
+		return s.processComplianceProfile(ctx, event, clusterID)
+	case *central.SensorEvent_ComplianceOperatorProfileV2:
+		if !features.ComplianceEnhancements.Enabled() {
+			return errors.New("Next gen compliance is disabled.  Message unexpected.")
+		}
+		return s.processComplianceProfileV2(ctx, event, clusterID)
+	}
+
+	return errors.Errorf("unexpected message %t.", event.Resource)
+}
+
+func (s *pipelineImpl) OnFinish(_ string) {}
+
+func (s *pipelineImpl) processComplianceProfile(_ context.Context, event *central.SensorEvent, clusterID string) error {
 	profile := event.GetComplianceOperatorProfile()
 	profile.ClusterId = clusterID
 
@@ -87,4 +106,8 @@ func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.Msg
 	}
 }
 
-func (s *pipelineImpl) OnFinish(_ string) {}
+func (s *pipelineImpl) processComplianceProfileV2(ctx context.Context, event *central.SensorEvent, clusterID string) error {
+	if !features.ComplianceEnhancements.Enabled() {
+		return errors.New("Next gen compliance is disabled.  Message unexpected.")
+	}
+}
