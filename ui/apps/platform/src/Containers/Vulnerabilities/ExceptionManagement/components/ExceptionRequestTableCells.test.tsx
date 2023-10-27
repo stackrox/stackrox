@@ -47,7 +47,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -70,7 +70,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -91,7 +91,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -119,7 +119,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -149,7 +149,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'FALSE_POSITIVE',
                 exceptionStatus: 'PENDING',
-                fpRequest: {},
+                falsePositiveRequest: {},
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
@@ -163,7 +163,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -181,7 +181,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ANY_CVE_FIXABLE',
                     },
@@ -199,7 +199,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: '2023-10-31T19:16:49.155480945Z',
@@ -218,7 +218,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: null,
@@ -237,7 +237,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: null,
@@ -263,7 +263,7 @@ describe('ExceptionRequestTableCells', () => {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: null,
