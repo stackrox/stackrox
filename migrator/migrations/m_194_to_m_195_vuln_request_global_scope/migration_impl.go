@@ -3,7 +3,6 @@ package m194tom195
 import (
 	"context"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_194_to_m_195_vuln_request_global_scope/schema"
@@ -23,11 +22,10 @@ func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(ctx, database.GormDB, schema.CreateTableVulnerabilityRequestsStmt)
 
-	now := timestamp.TimestampNow()
-	return createVulnRequests(ctx, database, now)
+	return updateGlobalScope(ctx, database)
 }
 
-func createVulnRequests(ctx context.Context, database *types.Databases, now *timestamp.Timestamp) error {
+func updateGlobalScope(ctx context.Context, database *types.Databases) error {
 	db := database.GormDB.WithContext(ctx).Table(schema.VulnerabilityRequestsTableName)
 	query := database.GormDB.WithContext(ctx).Table(schema.VulnerabilityRequestsTableName).Select("serialized")
 	rows, err := query.Rows()
