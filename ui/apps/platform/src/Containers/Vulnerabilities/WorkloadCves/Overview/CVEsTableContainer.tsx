@@ -158,6 +158,7 @@ function CVEsTableContainer({
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                         selectedCves={selectedCves}
                         canSelectRows={canSelectRows}
+                        vulnerabilityState={vulnerabilityState}
                         createTableActions={createTableActions}
                     />
                 </div>
