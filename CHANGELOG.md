@@ -49,6 +49,7 @@ and the existing exceptions enforced on host and platform vulnerabilities will b
   Instead, only the associated role names will be there. Enabling this will lower the verbosity of the audit log messages,
   but investigating associated permissions for a requester might be harder (i.e. the associated role would have be known at the time of the request).
   Thus, it is generally not recommended to set this to `true`.
+- ROX-18978: The default policy "Iptables Executed in Privileged Container" has been renamed to "Iptables or nftables Executed in Privileged Container" and now also detects the `nft` process which is used by `nftables`.
 
 ## [4.2.0]
 
