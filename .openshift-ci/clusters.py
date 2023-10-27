@@ -32,7 +32,7 @@ class GKECluster:
     REFRESH_PATH = "scripts/ci/gke.sh"
     TEARDOWN_PATH = "scripts/ci/gke.sh"
 
-    def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4", disk_gb=40):
+    def __init__(self, cluster_id, num_nodes=None, machine_type=None, disk_gb=None):
         self.cluster_id = cluster_id
         self.num_nodes = num_nodes
         self.machine_type = machine_type
@@ -40,15 +40,18 @@ class GKECluster:
         self.refresh_token_cmd = None
 
     def provision(self):
+        if self.num_nodes is not None:
+            os.environ["NUM_NODES"] = str(self.num_nodes)
+        if self.machine_type is not None:
+            os.environ["MACHINE_TYPE"] = str(self.machine_type)
+        if self.disk_gb is not None:
+            os.environ["DISK_SIZE_GB"] = str(self.disk_gb)
+
         with subprocess.Popen(
             [
                 GKECluster.PROVISION_PATH,
                 "provision_gke_cluster",
-                self.cluster_id,
-                str(self.num_nodes),
-                self.machine_type,
-                str(self.disk_gb),
-            ]
+                self.cluster_id,            ]
         ) as cmd:
 
             try:
