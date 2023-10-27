@@ -2091,7 +2091,9 @@ type VulnerabilityExceptionServiceClient interface {
 	// enforced. Cancelled exceptions are garbage collected as per the retention configuration
 	// `.expiredVulnReqRetentionDurationDays` (GET `/v1/config/`).
 	CancelVulnerabilityException(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*CancelVulnerabilityExceptionResponse, error)
-	// DeleteVulnerabilityException deletes a vulnerability exception.
+	// DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates
+	// to an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained
+	// in the system according to the retention configuration.
 	DeleteVulnerabilityException(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -2214,7 +2216,9 @@ type VulnerabilityExceptionServiceServer interface {
 	// enforced. Cancelled exceptions are garbage collected as per the retention configuration
 	// `.expiredVulnReqRetentionDurationDays` (GET `/v1/config/`).
 	CancelVulnerabilityException(context.Context, *ResourceByID) (*CancelVulnerabilityExceptionResponse, error)
-	// DeleteVulnerabilityException deletes a vulnerability exception.
+	// DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates
+	// to an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained
+	// in the system according to the retention configuration.
 	DeleteVulnerabilityException(context.Context, *ResourceByID) (*Empty, error)
 }
 
