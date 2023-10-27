@@ -38,6 +38,10 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.scannerV4.indexer.affinity | nindent 8 }}
+      initContainers:
+      - name: update-ca-trust
+        image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
+        command: ["update-ca-trust"] # ["/bin/bash", "-c", "sleep 1000"]
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
@@ -71,7 +75,7 @@ spec:
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-indexer" "scanner-v4-indexer") | nindent 8 }}
         resources:
           {{- ._rox.scannerV4.indexer._resources | nindent 10 }}
-        command:
+        command: # ["/bin/bash", "-c", "sleep 1000"]
         - /entrypoint.sh
         - --conf=/etc/scanner/config.yaml
         ports:

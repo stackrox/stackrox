@@ -80,7 +80,7 @@
 
 {{ if $dbEnabled }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
-  {{ $scannerDBCertSpec := dict "CN" "SCANNER_V4_DB_SERVICE: Scanner DB" "dnsBase" "scanner-v4" }}
+  {{ $scannerDBCertSpec := dict "CN" "SCANNER_V4_DB_SERVICE: Scanner DB" "dnsBase" "scanner-v4-db" }}
   {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
   {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
 {{ end }}
