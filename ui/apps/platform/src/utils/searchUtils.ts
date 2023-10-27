@@ -237,3 +237,19 @@ export function searchValueAsArray(searchValue: ValueOf<SearchFilter>): string[]
     }
     return [searchValue];
 }
+
+/**
+ * Adds the StackRox bespoke flag for regex match, plus start-of-line and end-of-line character
+ *
+ * Non-string values will be returned unchanged.
+ * String values will return as "r/^<original>$".
+ *
+ * @param {string} item
+ * @returns {string}
+ */
+export function convertToExactMatch(item): string | unknown {
+    if (typeof item !== 'string') {
+        return item;
+    }
+    return `r/^${item}$`;
+}
