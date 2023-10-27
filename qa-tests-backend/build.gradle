@@ -98,7 +98,7 @@ dependencies {
 
     implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'
 
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.6.0'
 
     implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
 
