@@ -35,6 +35,14 @@ spec:
         limits:
           memory: 2500Mi
           cpu: 2000m
+    db:
+      resources:
+        requests:
+          cpu: 400m
+          memory: 512Mi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
   tls:
     additionalCAs:
     - name: foo.pem
