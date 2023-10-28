@@ -177,6 +177,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/authn/tokenreview"
 	authnUserpki "github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -541,6 +542,7 @@ func startGRPCServer() {
 		userpass.IdentityExtractorOrPanic(roleDataStore.Singleton(), basicAuthMgr, basicAuthProvider),
 		serviceTokenExtractor,
 		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
+		tokenreview.NewExtractor(roleDataStore.Singleton()),
 	}
 
 	endpointCfgs, err := endpoints.InstantiateAll(tlsconfig.ManagerInstance())
