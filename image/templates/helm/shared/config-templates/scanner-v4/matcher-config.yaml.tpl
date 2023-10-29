@@ -8,11 +8,9 @@
 # Configuration file for Scanner v4 Matcher.
 indexer:
   enable: false
-  database:
-    conn_string: "host=scanner-v4-db.{{ .Release.Namespace }}.svc port=5432 user=postgres sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000"
-  get_layer_timeout: 1m
 matcher:
   enable: true
   database:
-    conn_string: "host=scanner-v4-db.{{ .Release.Namespace }}.svc port=5432 user=postgres sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000"
+    conn_string: "host=scanner-v4-db.{{ .Release.Namespace }}.svc port=5432 user=postgres sslrootcert=/run/secrets/stackrox.io/certs/ca.pem sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000"
+    password_file: /run/secrets/stackrox.io/secrets/password
 log_level: debug
