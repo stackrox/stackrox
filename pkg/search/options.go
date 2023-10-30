@@ -211,7 +211,6 @@ var (
 	ComplianceOperatorRuleName             = newFieldLabel("Compliance Rule Name")
 	ComplianceOperatorProfileID            = newFieldLabel("Compliance Profile ID")
 	ComplianceOperatorProfileName          = newFieldLabel("Compliance Profile Name")
-	ComplianceOperatorProfileProductType   = newFieldLabel("Compliance Profile Product Type")
 	ComplianceOperatorProfileVersion       = newFieldLabel("Compliance Profile Version")
 	ComplianceOperatorStandard             = newFieldLabel("Compliance Standard")
 	ComplianceOperatorScanConfig           = newFieldLabel("Compliance Scan Config ID")
