@@ -85,7 +85,7 @@ func main() {
 		client.WithAddress(*address),
 	}
 	if *skipTLSVerify {
-		opts = append(opts, client.WithoutTLSVerify)
+		opts = append(opts, client.SkipTLSVerification)
 	}
 
 	// Create a context that is cancellable on the usual command line signals. Double
