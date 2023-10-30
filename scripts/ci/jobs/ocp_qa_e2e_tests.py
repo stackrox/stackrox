@@ -15,6 +15,6 @@ os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 # Scale up the cluster to support postgres
-cluster = OpenShiftScaleWorkersCluster(increment=1)
+cluster = OpenShiftScaleWorkersCluster(increment=4)
 
 make_qa_e2e_test_runner(cluster=cluster).run()
