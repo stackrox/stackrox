@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -104,8 +105,15 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
 
+		// Check if there is a deduper state available for this cluster. Otherwise, central should
+		// request Sensor to not wait for any state. This is to avoid the case where an old backup
+		// is restored which causes the deduper table to be empty but deployments are still in the
+		// deployments table. This will cause sensor to not send the deletes for deployments that
+		// are not transmitted in the deduper state message.
+		deduperForCluster := hashManager.Singleton().GetDeduper(context.Background(), cluster.GetId())
+
 		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
-		if features.SensorReconciliationOnReconnect.Enabled() {
+		if features.SensorReconciliationOnReconnect.Enabled() && len(deduperForCluster.GetSuccessfulHashes()) > 0 {
 			capabilities = append(capabilities, centralsensor.SensorReconciliationOnReconnect)
 		}
 
