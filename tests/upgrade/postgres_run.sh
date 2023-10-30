@@ -241,6 +241,9 @@ test_upgrade_paths() {
     "$TEST_ROOT/bin/$TEST_HOST_PLATFORM/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
     [[ -d sensor-remote ]]
 
+    echo "Wait for the deployments to be deleted before starting a new sensor"
+    wait_for_central_reconciliation
+
     info "Installing sensor"
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
