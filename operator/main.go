@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"os"
 	"path/filepath"
@@ -38,6 +39,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -81,11 +83,15 @@ func run() error {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var enableHTTP2 bool
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableHTTP2, "enable-http2", enableHTTP2, "If HTTP/2 should be enabled for the metrics and webhook servers.")
+
 	opts := zap.Options{
 		Development: !buildinfo.ReleaseBuild,
 	}
@@ -94,6 +100,13 @@ func run() error {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	var webhookServer *webhook.Server
+	if enableWebhooks.BooleanSetting() {
+		webhookServer = &webhook.Server{
+			TLSOpts: getTLSOptions(enableHTTP2),
+		}
+	}
+
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -101,6 +114,7 @@ func run() error {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
+		WebhookServer:          webhookServer,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
@@ -168,4 +182,26 @@ func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
 	server.CertDir = "/apiserver.local.config/certificates"
 	server.CertName = "apiserver.crt"
 	server.KeyName = "apiserver.key"
+}
+
+func getTLSOptions(enableHTTP2 bool) []func(*tls.Config) {
+	// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
+	// the Go standard library and golang.org/x/net are fully fixed.
+	// Right now, it is possible for authenticated and unauthenticated users to
+	// hold open HTTP2 connections and consume huge amounts of memory.
+	// See:
+	// * https://github.com/kubernetes/kubernetes/pull/121120
+	// * https://github.com/kubernetes/kubernetes/issues/121197
+	// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
+	forceHTTP1 := func(c *tls.Config) {
+		c.NextProtos = []string{"http/1.1"}
+	}
+
+	if !enableHTTP2 {
+		return []func(*tls.Config){
+			forceHTTP1,
+		}
+	}
+
+	return nil
 }
