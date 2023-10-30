@@ -50,7 +50,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	log.Debugf("Received audit log state from sensor: %+v", protoutils.NewWrapper(msg.GetAuditLogStatusInfo()))
+	log.Infof("Received audit log state from sensor: %+v", protoutils.NewWrapper(msg.GetAuditLogStatusInfo()))
 
 	if err := s.clusters.UpdateAuditLogFileStates(ctx, clusterID, msg.GetAuditLogStatusInfo().GetNodeAuditLogFileStates()); err != nil {
 		return err

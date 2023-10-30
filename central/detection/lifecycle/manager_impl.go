@@ -398,6 +398,10 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 			alertmanager.WithNamespace(key.namespace),
 			alertmanager.WithResource(key.resourceName, key.resourceType),
 		}
+		log.Infof("Got resource alerts")
+		for _, a := range alerts {
+			log.Infof("[Res Alert] %+v at %+v", protoutils.NewWrapper(a.GetResource()).String(), protoutils.NewWrapper(a.GetTime()))
+		}
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err
 		}

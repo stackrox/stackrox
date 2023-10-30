@@ -85,6 +85,12 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 	defer s.stopper.Flow().ReportStopped()
 	defer s.cleanupTailOnStop(tailer)
 
+	if s.startState != nil {
+		log.Infof("Starting audit log reader with start time %+v and start id %s", protoutils.NewWrapper(s.startState.CollectLogsSince).String(), s.startState.LastAuditId)
+	} else {
+		log.Infof("Starting audit log reader with no start state")
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -129,6 +135,10 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 				continue
 			}
 
+			if auditLine.Verb == "GET" && auditLine.ObjectRef.Resource == "CONFIGMAPS" {
+				log.Infof("Going to send event with id %s, for res name %s at time %+v", auditLine.AuditID, auditLine.ObjectRef.Name, protoutils.NewWrapper(eventTS).String())
+			}
+
 			if err := s.sender.Send(ctx, &auditLine); err != nil {
 				// It's very likely that this failure is due to Sensor being unavailable
 				// In that case when Sensor next comes available it will ask to restart from the last
@@ -147,12 +157,14 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 			// don't send since time hasn't matched yet
 			// but if the id matches then we're in the same time and everything after can be sent
 			if event.AuditID == s.startState.LastAuditId {
+				log.Infof("Matched up start state in reader with start time %+v and start id %s", protoutils.NewWrapper(s.startState.CollectLogsSince).String(), s.startState.LastAuditId)
 				s.startState = nil
 			}
 			// in either case don't send
 			return false
 		}
 		// otherwise the time is after prev state so clear out state and send (if it matches other conditions)
+		log.Infof("Currently at audit log ts %+v which is after start since time %+v", protoutils.NewWrapper(eventTS), protoutils.NewWrapper(s.startState.CollectLogsSince).String())
 		s.startState = nil
 	}
 
