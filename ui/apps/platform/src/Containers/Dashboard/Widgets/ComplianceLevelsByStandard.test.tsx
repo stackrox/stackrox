@@ -65,6 +65,7 @@ beforeEach(() => {
 
 const setup = () => {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
+    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
