@@ -72,7 +72,7 @@ function PolicyCriteriaModal({ isModalOpen, onClose }: PolicyCriteriaModalProps)
             isOpen={isModalOpen}
             variant="small"
             onClose={onClose}
-            aria-label="Permanently delete category?"
+            aria-label="Add policy criteria field"
             hasNoBodyWrapper
         >
             <ModalBoxBody>
