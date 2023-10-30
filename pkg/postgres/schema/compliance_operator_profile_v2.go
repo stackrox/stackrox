@@ -1,5 +1,4 @@
 package schema
-
 import (
 	"fmt"
 	"reflect"
@@ -71,9 +70,12 @@ type ComplianceOperatorProfileV2 struct {
 	ProductType    *pq.StringArray `gorm:"column:producttype;type:text[]"`
 	Standard       string          `gorm:"column:standard;type:varchar"`
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	Product        string          `gorm:"column:product;type:varchar"`
 >>>>>>> 4d66fe421c (generator and boiler plate stuff)
+=======
+>>>>>>> d37eec3f0f (some search tags)
 	Serialized     []byte          `gorm:"column:serialized;type:bytea"`
 >>>>>>> f7ae74327d (generator and boiler plate stuff)
 }
