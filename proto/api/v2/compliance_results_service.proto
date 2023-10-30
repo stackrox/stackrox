@@ -9,6 +9,17 @@ import "api/v2/search_query.proto";
 
 package v2;
 
+enum ComplianceCheckStatus {
+    UNSET_CHECK_STATUS = 0;
+    PASS               = 1;
+    FAIL               = 2;
+    ERROR              = 3;
+    INFO               = 4;
+    MANUAL             = 5;
+    NOT_APPLICABLE     = 6;
+    INCONSISTENT       = 7;
+}
+
 message ComplianceScanCluster {
     string cluster_id   = 1;
     string cluster_name = 2;
@@ -16,23 +27,13 @@ message ComplianceScanCluster {
 
 // ComplianceCheckResult provides the results of a compliance check against a rule
 message ComplianceCheckResult {
-    enum CheckStatus {
-        UNSET          = 0;
-        PASS           = 1;
-        FAIL           = 2;
-        ERROR          = 3;
-        INFO           = 4;
-        MANUAL         = 5;
-        NOT_APPLICABLE = 6;
-        INCONSISTENT   = 7;
-    }
     string                     check_id     = 1;
     string                     check_name   = 2;
 
     // ClusterCheckStatus groups the result of the check by cluster
     message ClusterCheckStatus {
         ComplianceScanCluster      cluster      = 1;
-        CheckStatus                status       = 2;
+        ComplianceCheckStatus      status       = 2;
         google.protobuf.Timestamp  created_time = 3;
     }
     repeated ClusterCheckStatus clusters     = 3;
@@ -51,11 +52,15 @@ message ComplianceScanResult {
 
 // ComplianceScanStatsShim models statistics of checks for a given scan configuration
 message ComplianceScanStatsShim {
-    string                                  scan_name                = 1;
-    int32                                   number_of_checks         = 2;
-    int32                                   number_of_failing_checks = 3;
-    int32                                   number_of_passing_checks = 4;
-    google.protobuf.Timestamp               last_scan                = 5;
+    string                                  scan_name = 1;
+
+    // Group the number of occurrences by status
+    message ComplianceCheckStatusCount {
+        int32                  count  = 1;
+        ComplianceCheckStatus  status = 2;
+    }
+    repeated ComplianceCheckStatusCount     check_stats = 2;
+    google.protobuf.Timestamp               last_scan   = 3;
 }
 
 // ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration

@@ -175,17 +175,18 @@ func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorDa
 	}
 
 	return &storage.ComplianceOperatorCheckResultV2{
-		Id:           sensorData.GetId(),
-		CheckId:      sensorData.GetCheckId(),
-		CheckName:    sensorData.GetCheckName(),
-		ClusterId:    clusterID,
-		Status:       statusToV2[sensorData.GetStatus()],
-		Severity:     severityToV2[sensorData.GetSeverity()],
-		Description:  sensorData.GetDescription(),
-		Instructions: sensorData.GetInstructions(),
-		Labels:       sensorData.GetLabels(),
-		Annotations:  sensorData.GetAnnotations(),
-		CreatedTime:  sensorData.GetCreatedTime(),
-		ScanConfigId: scanConfigs[0].GetId(),
+		Id:             sensorData.GetId(),
+		CheckId:        sensorData.GetCheckId(),
+		CheckName:      sensorData.GetCheckName(),
+		ClusterId:      clusterID,
+		Status:         statusToV2[sensorData.GetStatus()],
+		Severity:       severityToV2[sensorData.GetSeverity()],
+		Description:    sensorData.GetDescription(),
+		Instructions:   sensorData.GetInstructions(),
+		Labels:         sensorData.GetLabels(),
+		Annotations:    sensorData.GetAnnotations(),
+		CreatedTime:    sensorData.GetCreatedTime(),
+		ScanConfigId:   scanConfigs[0].GetId(),
+		ScanConfigName: scanConfigs[0].GetScanName(),
 	}, nil
 }
