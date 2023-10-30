@@ -9,6 +9,8 @@ import {
     cloneFirstPolicyFromTable,
     goToStep3,
 } from '../../helpers/policies';
+import { closeModalByButton } from '../../helpers/modal';
+import { hasFeatureFlag } from '../../helpers/features';
 
 const dataTransfer = new DndSimulatorDataTransfer();
 
@@ -200,6 +202,16 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                     cy.get(selectors.step3.policyCriteria.value.deleteBtn).should('not.exist');
                     cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.exist');
                 });
+
+                // TODO: (vjw, 2023-10-30) currently, this feature flag is only _adding_ another way to add policy criteria fields
+                //       after adding fields has been thoroughly tested, this flag will indicate _whether_ to test the old way or the new way
+                if (hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL')) {
+                    cy.log('flag on');
+                    cy.get('.policy-section-card button:contains("Add policy field")').click();
+                    cy.get('.pf-c-modal-box__title-text:contains("Add policy criteria field")');
+
+                    closeModalByButton('Cancel');
+                }
             });
 
             it('should not add multiple field values for the same field if not applicable', () => {
