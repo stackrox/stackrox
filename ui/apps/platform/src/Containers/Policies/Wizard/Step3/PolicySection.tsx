@@ -14,6 +14,7 @@ import {
 } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon, CheckIcon } from '@patternfly/react-icons';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useModal from 'hooks/useModal';
 import { Policy } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
@@ -34,6 +35,9 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
     const { isModalOpen, openModal, closeModal } = useModal();
     const { values, setFieldValue, handleChange } = useFormikContext<Policy>();
     const { sectionName, policyGroups } = values.policySections[sectionIndex];
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
 
     function onEditSectionName(_, e) {
         handleChange(e);
@@ -123,7 +127,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             descriptors={descriptors}
                         />
                     )}
-                    {!readOnly && (
+                    {showPolicyCriteriaModal && !readOnly && (
                         <Flex
                             className="pf-u-mt-md"
                             justifyContent={{ default: 'justifyContentCenter' }}
@@ -141,7 +145,9 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                     )}
                 </CardBody>
             </Card>
-            <PolicyCriteriaModal isModalOpen={isModalOpen} onClose={closeModal} />
+            {showPolicyCriteriaModal && (
+                <PolicyCriteriaModal isModalOpen={isModalOpen} onClose={closeModal} />
+            )}
         </>
     );
 }
