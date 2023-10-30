@@ -191,6 +191,7 @@ webhooks:
         resources:
           - pods
           - deployments
+          - deployments/scale
           - replicasets
           - replicationcontrollers
           - statefulsets
