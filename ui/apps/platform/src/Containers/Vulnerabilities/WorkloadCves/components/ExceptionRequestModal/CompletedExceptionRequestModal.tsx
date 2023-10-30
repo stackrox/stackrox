@@ -11,7 +11,7 @@ import {
     Text,
     pluralize,
 } from '@patternfly/react-core';
-import differenceInDays from 'date-fns/difference_in_days';
+import differenceInCalendarDays from 'date-fns/difference_in_calendar_days';
 
 import {
     BaseVulnerabilityException,
@@ -45,7 +45,7 @@ function expiryDisplay(
         case 'TIME': {
             if (expiry.expiresOn) {
                 // Since the expiry here will always be in the future, we don't need to check which date is earlier
-                const daysUntilExpiration = differenceInDays(expiry.expiresOn, new Date());
+                const daysUntilExpiration = differenceInCalendarDays(expiry.expiresOn, new Date());
                 return `${getDate(expiry.expiresOn)} (${pluralize(daysUntilExpiration, 'day')})`;
             }
             return 'Never';
