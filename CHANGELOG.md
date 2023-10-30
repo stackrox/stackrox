@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 ### Removed Features
+- ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
 
 ### Deprecated Fatures
 
