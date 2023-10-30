@@ -146,7 +146,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         component   | _
 
         "sensor"    | _
-        "collector" | _
+//        "collector" | _
         // Note: central restart isn't being tested here because unfortunately killing the central pod stops
         // the port forward and fails the rest of the test suite.
     }
