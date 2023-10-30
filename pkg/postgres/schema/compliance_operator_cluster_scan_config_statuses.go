@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -53,7 +54,8 @@ const (
 
 // ComplianceOperatorClusterScanConfigStatuses holds the Gorm model for Postgres table `compliance_operator_cluster_scan_config_statuses`.
 type ComplianceOperatorClusterScanConfigStatuses struct {
-	ClusterID  string `gorm:"column:clusterid;type:uuid;primaryKey"`
-	ScanID     string `gorm:"column:scanid;type:varchar"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid;primaryKey"`
+	ScanID          string     `gorm:"column:scanid;type:varchar"`
+	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
+	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }
