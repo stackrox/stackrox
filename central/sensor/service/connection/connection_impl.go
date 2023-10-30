@@ -612,28 +612,36 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
 				return err
 			}
-		}
-		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
-		log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
-		var current int32 = 1
-		payload := make(map[string]uint64)
-		for k, v := range successfulHashes {
-			payload[k] = v
-			if len(payload) == int(maxEntries) {
+			// If there is no deduper state, Central should still exepct to reconcile since Sensor
+			// will effectively communicate the entire cluster state. This is to avoid the case where
+			// an old backup is restored which causes the deduper table to be empty but deployments
+			// are still in the deployments table. This will cause sensor to not send the deletes
+			// for deployments that are not transmitted in the deduper state message.
+			log.Infof("Successfully sent empty deduper state to sensor (%s). Central will not disable reconciliation", c.clusterID)
+		} else {
+			total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
+			log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
+			var current int32 = 1
+			payload := make(map[string]uint64)
+			for k, v := range successfulHashes {
+				payload[k] = v
+				if len(payload) == int(maxEntries) {
+					if err := c.sendDeduperState(server, payload, current, total); err != nil {
+						return err
+					}
+					payload = make(map[string]uint64)
+					current++
+				}
+			}
+			if len(payload) > 0 {
 				if err := c.sendDeduperState(server, payload, current, total); err != nil {
 					return err
 				}
-				payload = make(map[string]uint64)
-				current++
 			}
+			log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
+			c.sensorEventHandler.disableReconciliation()
 		}
-		if len(payload) > 0 {
-			if err := c.sendDeduperState(server, payload, current, total); err != nil {
-				return err
-			}
-		}
-		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
-		c.sensorEventHandler.disableReconciliation()
+
 	} else {
 		log.Infof("Sensor (%s) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
 	}
