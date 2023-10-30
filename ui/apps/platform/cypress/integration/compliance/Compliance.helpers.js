@@ -33,7 +33,6 @@ const opnamesWithoutStandards = [
     'getAggregatedResultsByEntity_CLUSTER',
     'getAggregatedResultsAcrossEntity_NAMESPACE',
     'getAggregatedResultsAcrossEntity_NODE',
-    'getComplianceStandards',
 ];
 
 export const routeMatcherMapWithoutStandards =
