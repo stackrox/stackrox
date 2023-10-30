@@ -204,14 +204,15 @@ var (
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
-	ComplianceOperatorVersion     = newFieldLabel("Compliance Operator Version")
-	ComplianceOperatorScanName    = newFieldLabel("Compliance Scan Name")
-	ComplianceOperatorSeverity    = newFieldLabel("Compliance Rule Severity")
-	ComplianceOperatorCheckStatus = newFieldLabel("Compliance Check Status")
-	ComplianceOperatorRuleName    = newFieldLabel("Compliance Rule Name")
-	ComplianceOperatorProfileName = newFieldLabel("Compliance Profile Name")
-	ComplianceOperatorStandard    = newFieldLabel("Compliance Standard")
-	ComplianceOperatorScanConfig  = newFieldLabel("Compliance Scan Config ID")
+	ComplianceOperatorVersion        = newFieldLabel("Compliance Operator Version")
+	ComplianceOperatorScanName       = newFieldLabel("Compliance Scan Name")
+	ComplianceOperatorSeverity       = newFieldLabel("Compliance Rule Severity")
+	ComplianceOperatorCheckStatus    = newFieldLabel("Compliance Check Status")
+	ComplianceOperatorRuleName       = newFieldLabel("Compliance Rule Name")
+	ComplianceOperatorProfileName    = newFieldLabel("Compliance Profile Name")
+	ComplianceOperatorProfileVersion = newFieldLabel("Compliance Profile Version")
+	ComplianceOperatorStandard       = newFieldLabel("Compliance Standard")
+	ComplianceOperatorScanConfig     = newFieldLabel("Compliance Scan Config ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")

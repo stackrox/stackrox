@@ -33,6 +33,7 @@ func init() {
 		&storage.ComplianceOperatorCheckResultV2{}:              resources.ComplianceOperator,
 		&storage.ComplianceOperatorClusterScanConfigStatus{}:    resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
+		&storage.ComplianceOperatorProfileClusterEdge{}:         resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfileV2{}:                  resources.ComplianceOperator,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
 		&storage.ComplianceOperatorRuleV2{}:                     resources.ComplianceOperator,

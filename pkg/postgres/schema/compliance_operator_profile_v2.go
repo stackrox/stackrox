@@ -7,11 +7,14 @@ import (
 	"reflect"
 
 	"github.com/lib/pq"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -40,8 +43,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILES, "complianceoperatorprofilev2", (*storage.ComplianceOperatorProfileV2)(nil)))
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt, features.ComplianceEnhancements.Enabled)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_PROFILES, schema)
 		return schema
 	}()
 )
@@ -55,13 +60,13 @@ const (
 
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
 type ComplianceOperatorProfileV2 struct {
-	ID              string          `gorm:"column:id;type:varchar;primaryKey"`
-	Name            string          `gorm:"column:name;type:varchar;uniqueIndex:rule_unique_indicator"`
-	OperatorVersion string          `gorm:"column:operatorversion;type:varchar;uniqueIndex:rule_unique_indicator"`
-	ProductType     *pq.StringArray `gorm:"column:producttype;type:text[]"`
-	Standard        string          `gorm:"column:standard;type:varchar"`
-	Product         string          `gorm:"column:product;type:varchar"`
-	Serialized      []byte          `gorm:"column:serialized;type:bytea"`
+	ID             string          `gorm:"column:id;type:varchar;primaryKey"`
+	Name           string          `gorm:"column:name;type:varchar;uniqueIndex:profile_unique_indicator"`
+	ProfileVersion string          `gorm:"column:profileversion;type:varchar;uniqueIndex:profile_unique_indicator"`
+	ProductType    *pq.StringArray `gorm:"column:producttype;type:text[]"`
+	Standard       string          `gorm:"column:standard;type:varchar"`
+	Product        string          `gorm:"column:product;type:varchar"`
+	Serialized     []byte          `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.

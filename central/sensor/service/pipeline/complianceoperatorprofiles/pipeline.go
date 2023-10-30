@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
+	v2Datastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	"github.com/stackrox/rox/central/convert/internaltostorage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -25,20 +27,25 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(datastore.Singleton(), manager.Singleton())
+	if features.ComplianceEnhancements.Enabled() {
+		return NewPipeline(datastore.Singleton(), manager.Singleton(), v2Datastore.Singleton())
+	}
+	return NewPipeline(datastore.Singleton(), manager.Singleton(), nil)
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(datastore datastore.DataStore, manager manager.Manager) pipeline.Fragment {
+func NewPipeline(datastore datastore.DataStore, manager manager.Manager, v2ProfileDatastore v2Datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		datastore: datastore,
-		manager:   manager,
+		datastore:          datastore,
+		manager:            manager,
+		v2ProfileDatastore: v2ProfileDatastore,
 	}
 }
 
 type pipelineImpl struct {
-	datastore datastore.DataStore
-	manager   manager.Manager
+	datastore          datastore.DataStore
+	v2ProfileDatastore v2Datastore.DataStore
+	manager            manager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -109,5 +116,18 @@ func (s *pipelineImpl) processComplianceProfile(_ context.Context, event *centra
 func (s *pipelineImpl) processComplianceProfileV2(ctx context.Context, event *central.SensorEvent, clusterID string) error {
 	if !features.ComplianceEnhancements.Enabled() {
 		return errors.New("Next gen compliance is disabled.  Message unexpected.")
+	}
+
+	profile := event.GetComplianceOperatorProfileV2()
+
+	switch event.GetAction() {
+	case central.ResourceAction_REMOVE_RESOURCE:
+		return s.v2ProfileDatastore.DeleteProfile(ctx, profile.Id)
+	default:
+		// For now, we need to process V1 profiles as well to ensure full capability of V1 compliance
+		if err := s.manager.AddProfile(internaltostorage.ComplianceOperatorProfileV1(profile, clusterID)); err != nil {
+			return err
+		}
+		return s.v2ProfileDatastore.UpsertProfile(ctx, internaltostorage.ComplianceOperatorProfileV2(profile))
 	}
 }
