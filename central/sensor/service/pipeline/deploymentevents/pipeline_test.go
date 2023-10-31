@@ -62,6 +62,31 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *PipelineTestSuite) TestDeploymentSyncResources() {
+	deployment := fixtures.GetDeployment()
+
+	suite.clusters.EXPECT().GetClusterName(context.Background(), deployment.GetClusterId())
+	suite.deployments.EXPECT().GetDeployment(context.Background(), deployment.GetId())
+	suite.deployments.EXPECT().UpsertDeployment(context.Background(), gomock.Any())
+	suite.processAggregator.EXPECT().RefreshDeployment(gomock.Any()).AnyTimes()
+	suite.networkBaselines.EXPECT().ProcessDeploymentCreate(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), gomock.Any())
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(deployment.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     deployment.GetId(),
+				Action: central.ResourceAction_SYNC_RESOURCE,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: deployment,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
+
 func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 	deployment := fixtures.GetDeployment()
 
