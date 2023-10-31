@@ -619,7 +619,6 @@ jobs:
       - pre-build-docs
       - build-and-push-main
       - build-and-push-operator
-      - build-and-push-mock-grpc-server
       - scan-images-with-roxctl
     permissions:
       actions: read
