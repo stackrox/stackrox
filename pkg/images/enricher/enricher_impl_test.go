@@ -1248,3 +1248,92 @@ func TestFetchFromDatabase_ForceFetch(t *testing.T) {
 	assert.Nil(t, img.GetSignature())
 	assert.Nil(t, img.GetSignatureVerificationData())
 }
+
+func TestUpdateFromDatabase_ImageNames(t *testing.T) {
+	cimg, err := utils.GenerateImageFromString("docker.io/test")
+	require.NoError(t, err)
+	img := imgTypes.ToImage(cimg)
+	img.Id = "sample-SHA"
+	testImageName, _, err := utils.GenerateImageNameFromString(img.GetName().GetFullName())
+	require.NoError(t, err)
+
+	cimg, err = utils.GenerateImageFromString("docker.io/test2")
+	require.NoError(t, err)
+	existingImg := imgTypes.ToImage(cimg)
+	existingImg.Id = "sample-SHA"
+	existingTestImageName, _, err := utils.GenerateImageNameFromString(existingImg.GetName().GetFullName())
+	require.NoError(t, err)
+
+	e := &enricherImpl{
+		imageGetter: func(_ context.Context, _ string) (*storage.Image, bool, error) {
+			return existingImg, true, nil
+		},
+	}
+
+	cases := map[string]struct {
+		expectedImageNames []*storage.ImageName
+		opt                FetchOption
+	}{
+		"UseCachesIfPossible should retain image names and merge them": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: UseCachesIfPossible,
+		},
+		"NoExternalMetadata should retain image names and merge them": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: NoExternalMetadata,
+		},
+		"IgnoreExistingImages should not retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+			},
+			opt: IgnoreExistingImages,
+		},
+		"ForceRefetch should not retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+			},
+			opt: ForceRefetch,
+		},
+		"ForceRefetchScansOnly should retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: ForceRefetchScansOnly,
+		},
+		"ForceRefetchSignaturesOnly should retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: ForceRefetchSignaturesOnly,
+		},
+		"ForceRefetchCachedValuesOnly should not retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+			},
+			opt: ForceRefetchCachedValuesOnly,
+		},
+		"UseImageNamesRefetchCachedValues should retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: UseImageNamesRefetchCachedValues,
+		},
+	}
+
+	for name, testCase := range cases {
+		t.Run(name, func(t *testing.T) {
+			testImg := img.Clone()
+			_ = e.updateImageFromDatabase(context.Background(), testImg, testCase.opt)
+			assert.ElementsMatch(t, testImg.GetNames(), testCase.expectedImageNames)
+		})
+	}
+}

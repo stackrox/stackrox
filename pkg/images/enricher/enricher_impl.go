@@ -160,11 +160,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	// or forcing re-scan will trigger updates as necessary.
 	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
 	if exists && cachedImageIsValid(existingImg) {
-		image.Metadata = existingImg.GetMetadata()
-		image.Scan = existingImg.GetScan()
-		image.Signature = existingImg.GetSignature()
-		image.SignatureVerificationData = existingImg.GetSignatureVerificationData()
-		image.Notes = existingImg.GetNotes()
+		e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
 
 		e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -202,6 +198,20 @@ func cachedImageIsValid(cachedImage *storage.Image) bool {
 	}
 
 	return true
+}
+
+func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existingImage *storage.Image, option FetchOption) bool {
+	if option == IgnoreExistingImages {
+		return false
+	}
+
+	image.Metadata = existingImage.GetMetadata()
+	image.Notes = existingImage.GetNotes()
+	image.Names = utils.UniqueImageNames(existingImage.GetNames(), image.GetNames())
+
+	e.useExistingSignature(image, existingImage, option)
+	e.useExistingSignatureVerificationData(image, existingImage, option)
+	return e.useExistingScan(image, existingImage, option)
 }
 
 // EnrichImage enriches an image with the integration set present.
@@ -312,15 +322,7 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 		return false
 	}
 
-	// Since the image we use may not include all image names associated with the stored image due to different scanning
-	// workflows, ensure we merge the image names.
-	img.Names = utils.UniqueImageNames(existingImg.GetNames(), img.GetNames())
-
-	usesExistingScan := e.useExistingScan(img, existingImg, option)
-	e.useExistingSignature(img, existingImg, option)
-	e.useExistingSignatureVerificationData(img, existingImg, option)
-
-	return usesExistingScan
+	return e.updateImageWithExistingImage(img, existingImg, option)
 }
 
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
