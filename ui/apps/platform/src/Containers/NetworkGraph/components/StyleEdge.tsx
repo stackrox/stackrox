@@ -7,7 +7,10 @@ type StyleEdgeProps = {
     element: Edge;
 };
 
-const StyleEdge: React.FunctionComponent<React.PropsWithChildren<StyleEdgeProps>> = ({ element, ...rest }) => {
+const StyleEdge: React.FunctionComponent<React.PropsWithChildren<StyleEdgeProps>> = ({
+    element,
+    ...rest
+}) => {
     const data = element.getData();
 
     const passedData = React.useMemo(() => {
