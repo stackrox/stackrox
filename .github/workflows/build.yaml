@@ -566,53 +566,6 @@ jobs:
         run: |
           make -C operator/ docker-push-index | cat
 
-  build-and-push-mock-grpc-server:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
-    - uses: ./.github/actions/handle-tagged-build
-
-    - name: Get tag
-      id: tag
-      run: |
-        echo "TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_OUTPUT"
-
-    - name: Set up Docker Buildx
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to quay.io/rhacs-eng
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/login-action@v3
-      with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-
-    - name: Push to quay.io/rhacs-eng
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        TAG: ${{ steps.tag.outputs.TAG }}
-        PLATFORM: "linux/amd64,linux/s390x,linux/ppc64le"
-      run: make mock-grpc-server-image-push
-
   scan-images-with-roxctl:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest

@@ -25,7 +25,6 @@ var (
 		"central",
 		"compliance",
 		"image",
-		"integration-tests",
 		"migrator",
 		"migrator/migrations",
 		"operator",
