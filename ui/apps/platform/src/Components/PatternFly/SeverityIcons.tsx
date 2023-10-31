@@ -46,7 +46,7 @@ export const UnknownSeverityIcon = (props) => (
     <UnknownIcon {...props} color={props.color ?? UNKNOWN_SEVERITY_COLOR} />
 );
 
-const SeverityIcons: Record<VulnerabilitySeverity, React.FC<SVGIconProps>> = {
+const SeverityIcons: Record<VulnerabilitySeverity, React.FC<React.PropsWithChildren<SVGIconProps>>> = {
     CRITICAL_VULNERABILITY_SEVERITY: CriticalSeverityIcon,
     IMPORTANT_VULNERABILITY_SEVERITY: ImportantSeverityIcon,
     MODERATE_VULNERABILITY_SEVERITY: ModerateSeverityIcon,
@@ -54,7 +54,7 @@ const SeverityIcons: Record<VulnerabilitySeverity, React.FC<SVGIconProps>> = {
     UNKNOWN_VULNERABILITY_SEVERITY: UnknownSeverityIcon,
 };
 
-export const policySeverityIconMap: Record<PolicySeverity, React.FC<SVGIconProps>> = {
+export const policySeverityIconMap: Record<PolicySeverity, React.FC<React.PropsWithChildren<SVGIconProps>>> = {
     CRITICAL_SEVERITY: CriticalSeverityIcon,
     HIGH_SEVERITY: HighSeverityIcon,
     MEDIUM_SEVERITY: MediumSeverityIcon,
