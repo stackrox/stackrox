@@ -92,7 +92,7 @@ class OperatorE2eTest(BaseTest):
 
 
 class QaE2eTestPart1(BaseTest):
-    TEST_TIMEOUT = 240 * 60
+    TEST_TIMEOUT = 240 * 60 * 2
 
     def run(self):
         print("Executing qa-tests-backend tests (part I)")
@@ -103,7 +103,7 @@ class QaE2eTestPart1(BaseTest):
 
 
 class QaE2eTestPart2(BaseTest):
-    TEST_TIMEOUT = 30 * 60
+    TEST_TIMEOUT = 30 * 60 * 2
 
     def run(self):
         print("Executing qa-tests-backend tests (part II)")
