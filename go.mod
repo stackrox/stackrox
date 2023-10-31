@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.11.1
+	cloud.google.com/go/containeranalysis v0.11.2
 	cloud.google.com/go/storage v1.33.0
 	github.com/BurntSushi/toml v1.3.2
 	github.com/ComplianceAsCode/compliance-operator v1.3.1
@@ -127,7 +127,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.2.12
 	google.golang.org/api v0.148.0
 	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97
-	google.golang.org/grpc v1.58.3
+	google.golang.org/grpc v1.59.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
