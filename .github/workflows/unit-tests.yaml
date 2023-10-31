@@ -49,8 +49,8 @@ jobs:
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
-    # Do not create junit report for bench tests: 
-    # https://github.com/jstemmer/go-junit-report/issues/174 
+    # Do not create junit report for bench tests:
+    # https://github.com/jstemmer/go-junit-report/issues/174
 
   go-postgres:
     strategy:
