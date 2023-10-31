@@ -51,7 +51,7 @@ func (suite *PipelineTestSuite) TestRoleSyncResources() {
 	ctx := context.Background()
 	role := fixtures.GetMultipleK8SRoles(1)[0]
 
-	suite.clusters.EXPECT().GetClusterName(ctx, role.GetId())
+	suite.clusters.EXPECT().GetClusterName(ctx, role.GetClusterId())
 	suite.roles.EXPECT().UpsertRole(ctx, gomock.Any())
 
 	err := suite.pipeline.Run(ctx, role.GetClusterId(), &central.MsgFromSensor{
