@@ -227,6 +227,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - go
+      - go-bench
       - go-postgres
       - ui
       - local-roxctl-tests
