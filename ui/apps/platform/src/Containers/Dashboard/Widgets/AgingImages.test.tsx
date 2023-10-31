@@ -164,7 +164,8 @@ describe('AgingImages dashboard widget', () => {
 
         await act(() => user.click(screen.getByLabelText('Options')));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
-        const inputs = await screen.findAllByLabelText('Image age in days');
+        // eslint-disable-next-line prettier/prettier, @typescript-eslint/no-unnecessary-type-assertion
+        const inputs = (await screen.findAllByLabelText('Image age in days')) as HTMLInputElement[];
 
         // Defaults
         checkboxes.forEach((cb) => expect(cb).toBeChecked());
