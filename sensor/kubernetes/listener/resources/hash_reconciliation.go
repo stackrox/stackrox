@@ -11,11 +11,11 @@ import (
 
 // ResourceStoreReconciler handles sensor-side reconciliation using in-memory store
 type ResourceStoreReconciler struct {
-	storeProvider *InMemoryStoreProvider
+	storeProvider *StoreProvider
 }
 
 // NewResourceStoreReconciler builds ResourceStoreReconciler for sensor-side reconciliation
-func NewResourceStoreReconciler(storeProvider *InMemoryStoreProvider) *ResourceStoreReconciler {
+func NewResourceStoreReconciler(storeProvider *StoreProvider) *ResourceStoreReconciler {
 	return &ResourceStoreReconciler{storeProvider: storeProvider}
 }
 
