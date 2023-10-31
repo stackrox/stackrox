@@ -176,7 +176,7 @@ task testParallelBAT(type: Test) {
 
 task testBAT(type: Test) {
     useJUnitPlatform {
-        includeTags "BAT"
+        includeTags "BATA"
         excludeTags "Parallel"
     }
 }

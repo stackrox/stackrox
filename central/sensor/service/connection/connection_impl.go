@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/pkg/errors"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
@@ -646,6 +647,9 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
 		}
 	}
+
+	// Sleep to simulate slowness
+	time.Sleep(120 * time.Second)
 
 	if connectionCapabilities.Contains(centralsensor.AuditLogEventsCap) {
 		msg, err := c.getAuditLogSyncMsg(ctx)

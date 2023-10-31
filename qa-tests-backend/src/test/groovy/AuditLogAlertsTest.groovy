@@ -83,7 +83,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Tag("BAT")
+    @Tag("BATA")
     @Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
         when:

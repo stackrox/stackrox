@@ -135,7 +135,7 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 				continue
 			}
 
-			if auditLine.Verb == "GET" && auditLine.ObjectRef.Resource == "CONFIGMAPS" {
+			if strings.ToLower(auditLine.Verb) == "get" && strings.ToLower(auditLine.ObjectRef.Resource) == "configmaps" {
 				log.Infof("Going to send event with id %s, for res name %s at time %+v", auditLine.AuditID, auditLine.ObjectRef.Name, protoutils.NewWrapper(eventTS).String())
 			}
 
