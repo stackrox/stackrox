@@ -35,6 +35,30 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *PipelineTestSuite) TestSecretsSyncResources() {
+	ctx := context.Background()
+	secret := fixtures.GetSecret()
+
+	suite.clusters.EXPECT().GetClusterName(context.Background(), "clusterid")
+	suite.secrets.EXPECT().UpsertSecret(ctx, secret).Return(nil)
+
+	pipeline := NewPipeline(suite.clusters, suite.secrets)
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     "secretid",
+				Action: central.ResourceAction_SYNC_RESOURCE,
+				Resource: &central.SensorEvent_Secret{
+					Secret: secret,
+				},
+			},
+		},
+	}
+	err := pipeline.Run(ctx, "clusterid", msg, nil)
+	suite.NoError(err)
+
+}
+
 func (suite *PipelineTestSuite) TestRun() {
 	ctx := context.Background()
 	secret := fixtures.GetSecret()
