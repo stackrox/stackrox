@@ -193,13 +193,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	defer centralReachable.Set(false)
 
 	if s.clientReconcile {
-		// Make a copy of the map before passing it to state processor to avoid race conditions
-		mapCopy := make(map[deduper.Key]uint64, len(s.initialDeduperState))
-		for k, v := range s.initialDeduperState {
-			mapCopy[k] = v
-		}
-
-		s.deduperStateProcessor.SetDeduperState(mapCopy)
+		s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
 		s.sender.OnSync(func() {
 			s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
 		})

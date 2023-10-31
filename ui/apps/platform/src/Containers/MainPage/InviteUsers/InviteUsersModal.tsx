@@ -213,7 +213,7 @@ function InviteUsersModal(): ReactElement | null {
             isOpen={showInviteModal}
             variant={ModalVariant.small}
             onClose={onClose}
-            aria-label="Permanently delete category?"
+            aria-label="Invite users"
             hasNoBodyWrapper
         >
             <ModalBoxBody>

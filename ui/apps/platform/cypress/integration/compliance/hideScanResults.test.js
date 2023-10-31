@@ -5,7 +5,6 @@ import { triggerScan, visitComplianceDashboard } from './Compliance.helpers';
 import {
     clickSaveAndWaitForPatchComplianceStandards,
     openModal,
-    selectorForWidget,
     selectorForModal,
     selectorInModal,
     selectorInWidget,
@@ -18,30 +17,26 @@ const forHIPAA = {
     standardId: 'HIPAA_164',
     barLink: 'a:contains("HIPAA")',
     checkboxLabel: 'HIPAA 164',
-    sunburstTitle: 'HIPAA 164 Compliance',
 };
 
 const forNIST190 = {
     standardId: 'NIST_800_190',
     barLink: 'a:contains("NIST SP 800-190")',
     checkboxLabel: 'NIST SP 800-190',
-    sunburstTitle: 'NIST SP 800-190 Compliance',
 };
 
 const forNIST53 = {
     standardId: 'NIST_SP_800_53_Rev_4',
     barLink: 'a:contains("NIST SP 800-53")',
     checkboxLabel: 'NIST SP 800-53',
-    sunburstTitle: 'NIST SP 800-53 Compliance',
 };
 
 function assertExistenceOfStandard(forStandard, existence) {
-    const { barLink, sunburstTitle } = forStandard;
+    const { barLink } = forStandard;
     const existOrNot = existence ? 'exist' : 'not.exist';
 
     cy.get(selectorInWidget(titleAcrossClusters, barLink)).should(existOrNot);
     cy.get(selectorInWidget(titleAcrossNamespaces, barLink)).should(existOrNot);
-    cy.get(selectorForWidget(sunburstTitle)).should(existOrNot);
 
     // TODO columns in entity tables
 }

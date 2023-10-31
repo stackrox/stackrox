@@ -9,7 +9,7 @@ import (
 
 type providerSuite struct {
 	suite.Suite
-	provider *InMemoryStoreProvider
+	provider *StoreProvider
 }
 
 var _ suite.SetupTestSuite = (*providerSuite)(nil)

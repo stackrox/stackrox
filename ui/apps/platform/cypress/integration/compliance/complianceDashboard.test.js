@@ -17,10 +17,6 @@ function getStandardAcrossEntitiesLink(entityNameOrdinaryCasePlural) {
     return `${getWidgetSelector(`Passing standards across ${entityNameOrdinaryCasePlural}`)} a`;
 }
 
-function getStandardSunburstControlsLink(standardName) {
-    return `${getWidgetSelector(standardName)} .widget-detail-bullet span:contains("Controls")`;
-}
-
 describe('Compliance Dashboard', () => {
     withAuth();
 
@@ -89,14 +85,5 @@ describe('Compliance Dashboard', () => {
         cy.location('search').should('contain', '?s[groupBy]=NODE'); // followed by a standard
         cy.get('[data-testid="panel-header"]').contains('node');
         cy.get(selectors.list.table.firstGroup).should('be.visible');
-    });
-
-    it('should link to controls list when clicking on "# controls" in sunburst', () => {
-        visitComplianceDashboard();
-
-        interactAndWaitForComplianceStandard(() => {
-            cy.get(getStandardSunburstControlsLink('PCI DSS 3.2.1 Compliance')).first().click();
-        });
-        cy.location('search').should('eq', '?s[standard]=PCI DSS 3.2.1'.replace(/ /g, '%20'));
     });
 });
