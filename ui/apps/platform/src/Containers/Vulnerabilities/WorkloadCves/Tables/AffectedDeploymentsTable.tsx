@@ -1,5 +1,6 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant, pluralize, Truncate } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Flex, pluralize, Truncate } from '@patternfly/react-core';
 import {
     TableComposable,
     Thead,
@@ -11,7 +12,6 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../searchUtils';
@@ -133,14 +133,9 @@ function AffectedDeploymentsTable({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id)}
-                                    >
+                                    <Link to={getEntityPagePath('Deployment', id)}>
                                         <Truncate position="middle" content={name} />
-                                    </Button>{' '}
+                                    </Link>
                                 </Flex>
                             </Td>
                             <Td modifier="nowrap" dataLabel="Images by severity">

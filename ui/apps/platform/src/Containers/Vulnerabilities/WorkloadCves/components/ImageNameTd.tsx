@@ -1,7 +1,7 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant, Truncate } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Flex, Truncate } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { getEntityPagePath } from '../searchUtils';
 
 export type ImageNameTdProps = {
@@ -17,14 +17,9 @@ export type ImageNameTdProps = {
 function ImageNameTd({ name, id, children }: ImageNameTdProps) {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-            <Button
-                variant={ButtonVariant.link}
-                isInline
-                component={LinkShim}
-                href={getEntityPagePath('Image', id)}
-            >
+            <Link to={getEntityPagePath('Image', id)}>
                 <Truncate position="middle" content={`${name.remote}:${name.tag}`} />
-            </Button>{' '}
+            </Link>{' '}
             <span className="pf-u-color-200 pf-u-font-size-sm">in {name.registry}</span>
             <div>{children}</div>
         </Flex>
