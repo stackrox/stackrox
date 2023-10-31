@@ -49,7 +49,6 @@ import services.ComplianceService
 import services.ImageIntegrationService
 import services.ImageService
 import services.NetworkPolicyService
-import services.NodeService
 import services.PolicyService
 import services.ProcessService
 import services.RoleService
@@ -71,8 +70,6 @@ class ComplianceTest extends BaseSpecification {
     private static final NIST_800_53_ID = "NIST_SP_800_53_Rev_4"
     @Shared
     private static final HIPAA_ID = "HIPAA_164"
-    @Shared
-    private static final DOCKER_1_2_0_ID = "CIS_Docker_v1_2_0"
     @Shared
     private static final Map<String, ComplianceRunResults> BASE_RESULTS = [:]
     @Shared
@@ -169,18 +166,11 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
         if (!ClusterService.isAKS()) { // ROX-6993
-            List<Node> nodes = NodeService.getNodes()
-            if (nodes.size() > 0 && nodes.get(0).containerRuntimeVersion.contains("docker")) {
-                staticControls.add(new Control(
-                        "CIS_Docker_v1_2_0:2_6",
-                        ["Docker daemon is not exposed over TCP"],
-                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
-            } else {
-                staticControls.add(new Control(
-                        "CIS_Docker_v1_2_0:2_6",
-                        ["Node does not use Docker container runtime"],
-                        ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
-            }
+            staticControls.add(new Control(
+               "CIS_Kubernetes_v1_5:1_1_13",
+               ["File \"/etc/kubernetes/manifests/admin.conf\" does not exist on host, " +
+               "therefore check is not applicable"],
+               ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
         }
 
         expect:
@@ -515,16 +505,6 @@ class ComplianceTest extends BaseSpecification {
     def "Verify a subset of the checks in nodes were run in each node"() {
         expect:
         "check a subset of the checks run in the compliance pods are present in the results"
-        def dockerResults = BASE_RESULTS.get("CIS_Docker_v1_2_0")
-        for (ComplianceRunResults.EntityResults nodeResults : dockerResults.getNodeResultsMap().values()) {
-            def controlResults = nodeResults.getControlResultsMap()
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:1_1_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:2_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:3_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:4_2")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:5_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:6_1")
-        }
 
         def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
         for (ComplianceRunResults.EntityResults nodeResults : kubernetesResults.getNodeResultsMap().values()) {
@@ -1219,63 +1199,6 @@ class ComplianceTest extends BaseSpecification {
         def start = System.currentTimeMillis()
         orchestrator.waitForSensor()
         log.info "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
-    }
-
-    @Tag("BAT")
-    def "Verify Docker 5_6, no SSH processes"() {
-        def deployment = new Deployment()
-                .setName("triggerssh")
-                .setImage("quay.io/rhacs-eng/qa-multi-arch:fail-compliance-ssh")
-
-        given:
-        "create a deployment which forces the ssh check to fail"
-        orchestrator.createDeployment(deployment)
-        assert Services.waitForDeployment(deployment)
-
-        and:
-        "create an expected control result"
-        def control = new Control(
-                "CIS_Docker_v1_2_0:5_6",
-                [],
-                ComplianceState.COMPLIANCE_STATE_FAILURE)
-
-        and:
-        "verify deployment fully detected"
-        Set<String> receivedProcessPaths = []
-        def foundSSHProcess = false
-        Timer t = new Timer(30, 2)
-        while (t.IsValid()) {
-            receivedProcessPaths = ProcessService.getUniqueProcessPaths(deployment.deploymentUid)
-            for (String path : receivedProcessPaths) {
-                if (path.contains("ssh")) {
-                    foundSSHProcess = true
-                    break
-                }
-            }
-            log.info "Didn't find an SSH processes, retrying..."
-        }
-        assert foundSSHProcess
-
-        and:
-        "trigger compliance runs"
-        def dockerResults = ComplianceService.triggerComplianceRunAndWaitForResult(DOCKER_1_2_0_ID, clusterId)
-
-        expect:
-        "check the SSH control for a failed for state"
-
-        def results = dockerResults.getDeploymentResultsMap()
-        assert results
-        assert results.containsKey(deployment.getDeploymentUid())
-        def controlResultsMap = results[deployment.getDeploymentUid()].getControlResultsMap()
-        assert controlResultsMap
-        assert controlResultsMap.containsKey(control.id)
-        ComplianceResultValue value = controlResultsMap.get(control.id)
-        assert value.overallState == control.state
-        assert value.evidenceList*.message.any { msg -> msg =~ /has ssh process running/ }
-
-        cleanup:
-        "remove the deployment we created"
-        orchestrator.deleteDeployment(deployment)
     }
 
     @Tag("BAT")

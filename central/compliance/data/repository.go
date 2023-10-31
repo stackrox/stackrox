@@ -128,10 +128,6 @@ func (r *repository) NodeResults() map[string]map[string]*compliance.ComplianceS
 	return r.nodeResults
 }
 
-func (r *repository) CISDockerTriggered() bool {
-	return r.cisDockerRunCheck
-}
-
 func (r *repository) CISKubernetesTriggered() bool {
 	return r.cisKubernetesRunCheck
 }
@@ -343,21 +339,9 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	r.nodeResults = getNodeResults(scrapeResults)
 
-	// check for latest compliance results to determine
-	// if CIS benchmarks were ever run
-	cisDockerStandardID, err := f.standardsRepo.GetCISDockerStandardID()
-	if err != nil {
-		return err
-	}
-
 	cisKubernetesStandardID, err := f.standardsRepo.GetCISKubernetesStandardID()
 	if err != nil {
 		return err
-	}
-
-	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(ctx, clusterID, cisDockerStandardID, 0)
-	if err == nil && dockerCISRunResults.LastSuccessfulResults != nil {
-		r.cisDockerRunCheck = true
 	}
 
 	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(ctx, clusterID, cisKubernetesStandardID, 0)

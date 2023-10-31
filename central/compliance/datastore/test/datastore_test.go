@@ -63,7 +63,7 @@ func (s *complianceDataStoreTestSuite) TearDownTest() {
 
 func (s *complianceDataStoreTestSuite) TestGetLatestRunResults() {
 	clusterID := "cid"
-	standardID := "CIS_Docker_v1_2_0"
+	standardID := "CIS_Kubernetes_v1_5"
 	expectedReturn := types.ResultsWithStatus{
 		LastSuccessfulResults: &storage.ComplianceRunResults{},
 	}
@@ -84,10 +84,10 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResults() {
 
 func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 	clusterIDs := []string{"cid"}
-	standardIDs := []string{"CIS_Docker_v1_2_0"}
+	standardIDs := []string{"CIS_Kubernetes_v1_5"}
 	csPair := compliance.ClusterStandardPair{
 		ClusterID:  "cid",
-		StandardID: "CIS_Docker_v1_2_0",
+		StandardID: "CIS_Kubernetes_v1_5",
 	}
 	expectedReturn := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair: {
@@ -177,7 +177,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 
 	// Call tested.
 	clusterID := "cid"
-	standardID := "CIS_Docker_v1_2_0"
+	standardID := "CIS_Kubernetes_v1_5"
 	_, err := s.dataStore.GetLatestRunResults(s.hasNoneCtx, clusterID, standardID, types.WithMessageStrings)
 
 	// Check results match.

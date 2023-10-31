@@ -51,7 +51,6 @@ func TestNIST443_Success(t *testing.T) {
 
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-	data.EXPECT().CISDockerTriggered().AnyTimes().Return(false)
 	data.EXPECT().CISKubernetesTriggered().AnyTimes().Return(true)
 
 	run, err := framework.NewComplianceRun(check)
@@ -79,7 +78,6 @@ func TestNIST443_Fail(t *testing.T) {
 
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-	data.EXPECT().CISDockerTriggered().AnyTimes().Return(false)
 	data.EXPECT().CISKubernetesTriggered().AnyTimes().Return(false)
 
 	run, err := framework.NewComplianceRun(check)
