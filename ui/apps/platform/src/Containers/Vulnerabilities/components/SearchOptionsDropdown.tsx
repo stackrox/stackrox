@@ -71,8 +71,8 @@ function SearchOptionsDropdown({
     return (
         <Select
             variant="single"
-            toggleAriaLabel="exception request filter menu toggle"
-            aria-label="exception request filter menu items"
+            toggleAriaLabel="search options filter menu toggle"
+            aria-label="search options filter menu items"
             onToggle={onToggle}
             onSelect={onSearchOptionSelect}
             selections={searchOption.value}

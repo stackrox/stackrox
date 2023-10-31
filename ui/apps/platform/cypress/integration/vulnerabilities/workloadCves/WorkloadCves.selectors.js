@@ -3,12 +3,12 @@ const filterChipSection = '.pf-c-toolbar .pf-c-toolbar__group[aria-label="applie
 
 export const selectors = {
     // Toolbar selectors
-    resourceDropdown: '.pf-c-toolbar button[aria-label="resource filter menu toggle"]',
-    resourceMenuItem: (resource) =>
-        `.pf-c-toolbar ul[aria-label="resource filter menu items"] button:contains("${resource}")`,
-    resourceValueTypeahead: (resource) =>
+    searchOptionsDropdown: '.pf-c-toolbar button[aria-label="search options filter menu toggle"]',
+    searchOptionsMenuItem: (resource) =>
+        `.pf-c-toolbar ul[aria-label="search options filter menu items"] button:contains("${resource}")`,
+    searchOptionsValueTypeahead: (resource) =>
         `.pf-c-toolbar input[aria-label="Filter by ${resource.toUpperCase()}"]`,
-    resourceValueMenuItem: (resource) =>
+    searchOptionsValueMenuItem: (resource) =>
         `.pf-c-toolbar ul[aria-label="Filter by ${resource.toUpperCase()}"] button`,
     severityDropdown: '.pf-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
     severityMenuItems: '.pf-c-toolbar ul[aria-label="CVE severity filter menu items"]',

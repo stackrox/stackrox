@@ -17,17 +17,17 @@ describe('Workload table toolbar', () => {
         visitWorkloadCveOverview();
 
         // Set the entity type to 'Namespace'
-        cy.get(selectors.resourceDropdown).click();
-        cy.get(selectors.resourceMenuItem('Namespace')).click();
-        cy.get(selectors.resourceDropdown).click();
-        cy.get(selectors.resourceDropdown).should('have.text', 'Namespace');
+        cy.get(selectors.searchOptionsDropdown).click();
+        cy.get(selectors.searchOptionsMenuItem('Namespace')).click();
+        cy.get(selectors.searchOptionsDropdown).click();
+        cy.get(selectors.searchOptionsDropdown).should('have.text', 'Namespace');
 
         // Apply a namespace filter
-        cy.get(selectors.resourceValueTypeahead('Namespace')).click();
-        cy.get(selectors.resourceValueTypeahead('Namespace')).type('stackrox');
-        cy.get(selectors.resourceValueMenuItem('Namespace')).contains('stackrox').click();
+        cy.get(selectors.searchOptionsValueTypeahead('Namespace')).click();
+        cy.get(selectors.searchOptionsValueTypeahead('Namespace')).type('stackrox');
+        cy.get(selectors.searchOptionsValueMenuItem('Namespace')).contains('stackrox').click();
 
-        cy.get(selectors.resourceValueTypeahead('Namespace')).click();
+        cy.get(selectors.searchOptionsValueTypeahead('Namespace')).click();
 
         // Apply a severity filter
         cy.get(selectors.severityDropdown).click();
