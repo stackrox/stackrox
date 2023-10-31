@@ -47,7 +47,7 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
     static final private int CREATED_RESOURCES = 8
-    static final int MOUNTED_RESOURCES = 2
+    static final private int MOUNTED_RESOURCES = 2
 
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
