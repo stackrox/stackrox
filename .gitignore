@@ -74,5 +74,3 @@ shellcheck-reports
 
 # Direnv
 .direnv/
-
-.central-chart

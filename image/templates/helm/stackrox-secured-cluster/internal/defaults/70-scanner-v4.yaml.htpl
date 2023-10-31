@@ -29,6 +29,8 @@ scannerV4:
       tag: [< required "" .ScannerV4ImageTag >]
     postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
     hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+    source:
+      statementTimeoutMs: 60000
     resources:
       limits:
         cpu: "2000m"
