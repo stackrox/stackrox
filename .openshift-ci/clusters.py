@@ -51,7 +51,8 @@ class GKECluster:
             [
                 GKECluster.PROVISION_PATH,
                 "provision_gke_cluster",
-                self.cluster_id,            ]
+                self.cluster_id,
+            ]
         ) as cmd:
 
             try:
@@ -125,6 +126,7 @@ class AutomationFlavorsCluster:
 
     def teardown(self):
         pass
+
 
 class OpenShiftScaleWorkersCluster:
     SCALE_CHANGE_TIMEOUT = 15 * 60
