@@ -21,7 +21,7 @@ provision_gke_cluster() {
 assign_env_variables() {
     info "Assigning environment variables for later steps"
 
-    if [[ "$#" -lt 1 ]]; then
+    if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: assign_env_variables <cluster-id>"
     fi
 
