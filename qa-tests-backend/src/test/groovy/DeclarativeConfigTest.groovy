@@ -46,7 +46,8 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private String AUTH_PROVIDER_KEY = "declarative-config-test--auth-provider"
     static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
-    static final private int CREATED_RESOURCES = 7
+    static final private int CREATED_RESOURCES = 8
+    static final int MOUNTED_RESOURCES = 2
 
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
@@ -262,7 +263,7 @@ splunk:
         // Ensure we do not have stale integration health info and only the Config Map one exists.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
@@ -414,7 +415,7 @@ splunk:
         then:
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
@@ -526,7 +527,7 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getName().contains("Config Map")
@@ -717,7 +718,7 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
