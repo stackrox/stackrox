@@ -34,11 +34,6 @@ func newFileEntry(path string, contents, recurse bool) fileEntry {
 }
 
 var files = []fileEntry{
-	// With contents
-	newFileEntry("/etc/audit", true, true),
-	newFileEntry("/etc/docker", true, true),
-	newFileEntry("/proc/mounts", true, true),
-
 	// Directories without contents
 	newFileEntry("/var/lib/kubelet/kubeconfig", false, false),
 	newFileEntry("/srv/kubernetes/ca.crt", false, false),
@@ -46,23 +41,11 @@ var files = []fileEntry{
 	newFileEntry("/etc/cni", false, true),
 	newFileEntry("/opt/cni", false, true),
 
-	// individual files without contents
-	newFileEntry("/var/run/docker.sock", false, true),
-	newFileEntry("/run/docker.sock", false, true),
-	newFileEntry("/etc/default/docker", false, true),
-	newFileEntry("/etc/sysconfig/docker", false, true),
-
-	newFileEntry("/usr/bin/dockerd", false, true),
-	newFileEntry("/usr/bin/docker-containerd", false, true),
 	newFileEntry("/usr/sbin/runc", false, true),
 	newFileEntry("/usr/bin/runc", false, true),
-
-	// No recursion
-	newFileEntry("/var/lib/docker", false, false),
 }
 
 var systemdUnits = []string{
-	"docker",
 	"kube",
 }
 
