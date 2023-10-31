@@ -30,3 +30,7 @@ templates/*
 templates/*
 [< end >]
 templates/keep.yaml
+[< if not .FeatureFlags.ROX_SCANNER_V4 >]
+templates/02-scanner-v4-*.yaml
+internal/scanner-v4-config-shape.yaml
+[< end >]

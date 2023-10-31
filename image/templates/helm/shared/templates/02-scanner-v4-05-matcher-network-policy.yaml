@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.matcher.disable) -}}
+{{- if ._rox.scannerV4._matcherEnabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -24,7 +24,7 @@ spec:
   policyTypes:
   - Ingress
 
-{{- if ._rox.scannerV4.exposeMonitoring -}}
+{{- if ._rox.scannerV4.exposeMonitoring }}
 ---
 
 apiVersion: networking.k8s.io/v1
@@ -46,5 +46,5 @@ spec:
       app: scanner-v4-matcher
   policyTypes:
   - Ingress
-{{ end -}}
-{{ end -}}
+{{- end }}
+{{- end }}

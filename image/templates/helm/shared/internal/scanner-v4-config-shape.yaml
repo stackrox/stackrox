@@ -49,7 +49,6 @@ scannerV4:
       tag: null # string
       fullRef: null # string
     source:
-      connectionString: null # string
       minConns: null # int
       maxConns: null # int
       statementTimeoutMs: null #int
@@ -64,6 +63,8 @@ scannerV4:
       cert: null # string
       key: null # string
       generate: null # bool
+    postgresConfig: null # string
+    hbaConfig: null # string
     persistence:
       hostPath: null # string
       persistentVolumeClaim:

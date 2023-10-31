@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.indexer.disable) -}}
+{{- if ._rox.scannerV4._indexerEnabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,7 +17,7 @@ spec:
   - name: grpcs-scanner-v4-indexer
     port: 8443
     targetPort: 8443
-  {{ if ._rox.scannerV4.exposeMonitoring -}}
+  {{- if ._rox.scannerV4.exposeMonitoring }}
   - name: monitoring
     port: 9090
     targetPort: 9090

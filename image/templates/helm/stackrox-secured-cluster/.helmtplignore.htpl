@@ -27,15 +27,5 @@ config-templates/scanner/
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
 [< end >]
-[< if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4) >]
-config-templates/scanner-v4/
-config-templates/scanner-v4-db/
-internal/scanner-v4-config-shape.yaml
-internal/70-scanner-v4.yaml
-templates/00-storage-class.yaml
-templates/*scanner-v4*
-values-scanner-v4-indexer.yaml.example
-[< end >]
-[</* Ignore tls secrets unconditionally in secured cluster */>]
+[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
 templates/02-scanner-03-tls-secret.yaml
-templates/02-scanner-v4-03-tls-secret.yaml

@@ -30,7 +30,7 @@
 
 {{/* Configure PVC if any of the settings in `scannerV4.db.persistence.persistentVolumeClaim` is provided
      or no other persistence backend has been configured yet. */}}
-{{ if or (not (deepEqual $._rox._configShapeScannerV4.scannerV4.db.persistence.persistentVolumeClaim $scannerV4DBCfg.persistence.persistentVolumeClaim)) (not $scannerV4DBVolumeCfg) }}
+{{ if or (not (deepEqual $._rox._configShape.scannerV4.db.persistence.persistentVolumeClaim $scannerV4DBCfg.persistence.persistentVolumeClaim)) (not $scannerV4DBVolumeCfg) }}
   {{ $scannerV4DBPVCCfg := $scannerV4DBCfg.persistence.persistentVolumeClaim }}
   {{ if and ($._rox._defaults) ($._rox._defaults.scannerV4DBPVCDefaults) }}
     {{/* Central Services defaults are added to `_defaults` object */}}

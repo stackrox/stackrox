@@ -21,4 +21,5 @@ matcher:
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.minConns) -}} pool_min_conns={{._rox.scannerV4.db.source.minConns}} {{- end }}
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
     password_file: /run/secrets/stackrox.io/secrets/password
+  get_layer_timeout: 1m
 log_level: debug

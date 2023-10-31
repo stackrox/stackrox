@@ -163,11 +163,11 @@ defaults:
       name: [< required "" .ScannerDBImageRemote >]
       tag: [< required "" .ScannerImageTag >]
 
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
   scannerV4:
     disable: true
     matcher:
       autoscaling:
-        disable: false
         minReplicas: 2
         maxReplicas: 5
       resources:
@@ -182,7 +182,6 @@ defaults:
         tag: [< required "" .ScannerV4ImageTag >]
     indexer:
       autoscaling:
-        disable: false
         minReplicas: 2
         maxReplicas: 5
       resources:
@@ -208,6 +207,7 @@ defaults:
       image:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
+[<- end >]
 
   system:
     createSCCs: [< not .Operator >]
@@ -224,6 +224,8 @@ dbPVCDefaults:
   claimName: "central-db"
   size: "100Gi"
 
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4DBPVCDefaults:
   claimName: "scanner-v4-db"
   size: "10Gi"
+[<- end >]

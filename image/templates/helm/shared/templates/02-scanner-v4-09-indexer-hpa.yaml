@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.indexer.disable) -}}
-{{- if not ._rox.scannerV4.indexer.autoscaling.disable -}}
+{{- if and ._rox.scannerV4._indexerEnabled (not ._rox.scannerV4.indexer.autoscaling.disable) }}
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
@@ -18,5 +17,4 @@ spec:
     kind: Deployment
     name: scanner-v4-indexer
   targetCPUUtilizationPercentage: 150
-{{ end -}}
-{{ end -}}
+{{- end }}

@@ -34,23 +34,19 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
-{{ $_ := set $ "_rox" $rox }}
+
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{/* Only merge scanner config shapes if kubectl output is disabled */}}
-[< if not .KubectlOutput ->]
+
+{{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
+[< if (not .KubectlOutput) ->]
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
-  {{/* Only merge scanner-v4 config shapes if kubectl output is disabled and feature flag is enabled */}}
-[< if .FeatureFlags.ROX_SCANNER_V4 ->]
-    {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
-    {{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner $configShapeScannerV4) }}
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
 [< else >]
-  {{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape) }}
 [< end >]
-[< else >]
-  {{ $_ = include "srox.mergeInto" (list $rox $configShape) }}
-[< end >]
-{{ $_ = set $._rox "_configShapeScannerV4" $configShapeScannerV4 }}
+
+{{ $_ = set $ "_rox" $rox }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
@@ -217,9 +213,6 @@
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
 [< if (not .KubectlOutput) ->]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
-[< if .FeatureFlags.ROX_SCANNER_V4 ->]
-{{ include "srox.configureImage" (list $ ._rox.image.scannerV4) }}
-[<- end >]
 [<- end >]
 
 {{ include "srox.initGlobalPrefix" (list $) }}
@@ -261,39 +254,6 @@
   {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
   {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
-{{ end }}
-[<- end >]
-
-[< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 ->]
-{{/*
-   Local scanner-v4-indexer setup.
-  */}}
-
-{{ if not ._rox.scannerV4.disable }}
-  {{ include "srox.scannerV4Volume" $ }}
-
-  {{ if not ._rox.scannerV4.indexer.disable }}
-    {{ $centralDeployment := dict }}
-    {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
-    {{ if $centralDeployment.result }}
-      {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
-      {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-      {{ $_ := set $._rox.scanner "disable" true }}
-      {{ $_ := set $._rox.scannerV4.indexer "disable" true }}
-    {{ end }}
-  {{ end }}
-
-  {{ if not ._rox.scannerV4.matcher.disable }}
-    {{ include "srox.fail" (print "Only scanner-v4-indexer is allowed in Secured Cluster. To solve this, disable the matcher: scannerV4.matcher.disable=true.") }}
-  {{ end }}
-
-  {{ if not ._rox.scannerV4.indexer.disable }}
-    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-    {{ $_ := set $._rox.scannerV4.indexer "image" ._rox.image.scannerV4 }}
-    {{ $_ := set $._rox.scannerV4.db "image" ._rox.image.scannerV4DB }}
-    {{ include "srox.scannerV4Init" (list $ $._rox.scannerV4) }}
-    {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner-v4") $.Release.Namespace) }}
-  {{ end }}
 {{ end }}
 [<- end >]
 

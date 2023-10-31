@@ -25,6 +25,7 @@
 {{ $_ := false }}
 
 {{/* Handle high-level defaulting logic. */}}
+{{/* Treat a scannerV4.disable=false setting as a hint to enable indexer and/or matcher depending on the chart being used. */}}
 {{- if and (not $scannerV4Cfg.disable) (kindIs "invalid" $scannerV4Cfg.indexer.disable) (kindIs "invalid" $scannerV4Cfg.matcher.disable) -}}
 {{- /* The top-level setting scannerV4.disable=false activates a default setting based on the chart. */ -}}
 {{- if eq $.Chart.Name "stackrox-central-services" -}}
@@ -63,17 +64,22 @@
 {{- $scannerV4Mode = "matcher-only" -}}
 {{- end -}}
 
+{{- $indexerEnabled := false -}}
+{{- $matcherEnabled := false -}}
 {{- $dbEnabled := false -}}
-{{ if not $scannerV4Cfg.indexer.disable }}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
-    {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
-    {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $scannerCertSpec) }}
-    {{ $dbEnabled = true }}
+
+{{ if and (not (kindIs "invalid" $scannerV4Cfg.indexer.disable)) (not $scannerV4Cfg.indexer.disable) }}
+  {{ $indexerEnabled = true }}
+  {{ $dbEnabled = true }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
+  {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
+  {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $scannerCertSpec) }}
 {{ end }}
 
-{{ if not $scannerV4Cfg.matcher.disable }}
-  {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
+{{ if and (not (kindIs "invalid" $scannerV4Cfg.matcher.disable)) (not $scannerV4Cfg.matcher.disable) }}
+  {{ $matcherEnabled = true }}
   {{ $dbEnabled = true }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
   {{- if eq $.Chart.Name "stackrox-central-services" -}}
     {{/* For central-services we configure certificates directly. */}}
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner v4 Matcher" "dnsBase" "scanner-v4" }}
@@ -94,7 +100,9 @@
 {{ end }}
 
 {{/* Propagate information about Scanner V4 setup. */}}
-{{ $_ = set $._rox.scannerV4 "_dbEnabled" $dbEnabled }}
-{{- $_ := set $._rox "_scannerV4Mode" $scannerV4Mode -}}
+{{- $_ := set $._rox.scannerV4 "_indexerEnabled" $indexerEnabled -}}
+{{- $_ := set $._rox.scannerV4 "_matcherEnabled" $matcherEnabled -}}
+{{- $_ := set $._rox.scannerV4 "_dbEnabled"      $dbEnabled      -}}
+{{- $_ := set $._rox.scannerV4 "_installMode"    $scannerV4Mode  -}}
 
 {{ end }}

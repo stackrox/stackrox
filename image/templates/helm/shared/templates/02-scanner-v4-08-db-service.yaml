@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if not ._rox.scannerV4.disable -}}
+{{- if ._rox.scannerV4._dbEnabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -18,7 +18,7 @@ spec:
   selector:
     app: scanner-v4-db
 
-{{- if ._rox.env.istio -}}
+{{- if ._rox.env.istio }}
 ---
 
 apiVersion: networking.istio.io/v1alpha3
@@ -39,5 +39,5 @@ spec:
         number: 5432
       tls:
         mode: DISABLE
-{{- end -}}
-{{ end -}}
+{{- end }}
+{{- end }}

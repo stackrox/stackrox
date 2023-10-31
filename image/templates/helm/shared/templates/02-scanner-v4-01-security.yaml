@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if not ._rox.scannerV4.disable }}
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+{{- if and (or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled) ._rox.env.openshift ._rox.system.createSCCs }}
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
@@ -74,5 +73,4 @@ subjects:
 - kind: ServiceAccount
   name: scanner-v4
   namespace: {{ .Release.Namespace }}
-{{- end }}
 {{- end }}

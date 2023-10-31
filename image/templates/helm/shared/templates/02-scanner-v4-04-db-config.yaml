@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if not ._rox.scannerV4.disable -}}
+{{- if ._rox.scannerV4._dbEnabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,4 +14,4 @@ data:
     {{- ._rox.scannerV4.db._postgresConfig | nindent 4 }}
   pg_hba.conf: |
     {{- ._rox.scannerV4.db._hbaConfig | nindent 4 }}
-{{ end -}}
+{{- end }}

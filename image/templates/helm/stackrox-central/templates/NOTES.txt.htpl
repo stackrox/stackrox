@@ -15,15 +15,6 @@ Central Services Configuration Summary:
   Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}
 {{- end }}
 
-{{ if ._rox._state.notes -}}
-Please take note of the following:
-{{ range ._rox._state.notes }}
-- {{ . | wrapWith 98 "\n  " -}}
-{{ end }}
-
-{{ end -}}
-
-
 {{ if include "srox.checkGenerated" (list . "central.adminPassword.value") -}}
 An administrator password has been generated automatically. Use username 'admin' and the following
 password to log in for initial setup:

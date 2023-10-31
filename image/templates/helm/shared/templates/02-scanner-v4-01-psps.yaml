@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if and (not ._rox.scannerV4.disable) ._rox.system.enablePodSecurityPolicies -}}
+{{- if and (or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled) ._rox.system.enablePodSecurityPolicies }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

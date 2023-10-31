@@ -94,8 +94,6 @@
       {{ $ca := $._rox._ca }}
       {{ if kindIs "map" $ca }}
         {{ $out := dict }}
-        {{ include "srox.fail" (printf "\n%s\n" (toYaml $ca)) }}
-
         {{ $_ := tpl "{{ $_ := set .out \"ca\" (buildCustomCert (b64enc .ca.Cert) (b64enc .ca.Key)) }}" (dict "Template" $.Template "ca" $ca "out" $out) }}
         {{ $ca = $out.ca }}
       {{ end }}

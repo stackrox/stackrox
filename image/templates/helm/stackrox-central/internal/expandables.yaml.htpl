@@ -46,14 +46,25 @@ scanner:
   dbServiceTLS:
     cert: true
     key: true
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4:
   indexer:
     resources: true
+    serviceTLS:
+      cert: true
+      key: true
   matcher:
     resources: true
+    serviceTLS:
+      cert: true
+      key: true
   db:
     resources: true
     postgresConfig: true
     hbaConfig: true
     password:
       value: true
+    serviceTLS:
+      cert: true
+      key: true
+[<- end >]

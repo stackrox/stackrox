@@ -109,12 +109,6 @@ spec:
         - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
           value: "true"
         {{- end }}
-        {{- if and (not ._rox.scannerV4.disable) (not ._rox.scannerV4.indexer.disable) }}
-        - name: ROX_SCANNER_V4_GRPC_ENDPOINT
-          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
-        - name: ROX_SCANNER_V4_ENABLED
-          value: "true"
-        {{- end }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         [<- end >]

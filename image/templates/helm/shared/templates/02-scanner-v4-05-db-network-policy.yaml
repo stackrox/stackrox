@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if not ._rox.scannerV4.disable -}}
+{{- if ._rox.scannerV4._dbEnabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -30,4 +30,4 @@ spec:
       protocol: TCP
   policyTypes:
   - Ingress
-{{ end -}}
+{{- end }}
