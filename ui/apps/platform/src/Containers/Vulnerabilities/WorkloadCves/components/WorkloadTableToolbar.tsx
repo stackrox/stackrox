@@ -13,8 +13,6 @@ import FilterAutocomplete, {
 } from '../../components/FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
 
-import './WorkloadTableToolbar.css';
-
 type FilterChipProps = {
     isGlobal?: boolean;
     name: string;
@@ -79,7 +77,7 @@ function WorkloadTableToolbar({
     }
 
     return (
-        <Toolbar id="workload-cves-table-toolbar">
+        <Toolbar>
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}

@@ -7,6 +7,8 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import SearchOptionsDropdown, { SearchOption } from './SearchOptionsDropdown';
 
+import './FilterAutocomplete.css';
+
 function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
     return data?.map((value) => <SelectOption key={value} value={value} />);
 }
@@ -88,7 +90,11 @@ function FilterAutocompleteSelect({
     );
 
     return (
-        <ToolbarGroup variant="filter-group" className="pf-u-display-flex pf-u-flex-grow-1">
+        <ToolbarGroup
+            variant="filter-group"
+            className="pf-u-display-flex pf-u-flex-grow-1"
+            id="filter-autocomplete-toolbar-group"
+        >
             <SearchOptionsDropdown
                 setSearchOption={(selection) => {
                     const newSearchOption = searchOptions.find(
@@ -117,7 +123,7 @@ function FilterAutocompleteSelect({
                 isCreatable
                 createText="Add"
                 // We set this as empty because we want to use SearchFilterChips to display the search values
-                selections={[]}
+                selections={searchFilter[searchOption.value]}
                 onTypeaheadInputChanged={(val: string) => {
                     updateTypeahead(val);
                 }}
