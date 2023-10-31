@@ -3,7 +3,7 @@ import {
     VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import {
-    getShouldUseUpdatedExpiry,
+    getShouldUseUpdatedRequest,
     getRequestedAction,
     RequestContext,
 } from './ExceptionRequestTableCells';
@@ -55,12 +55,12 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
 
         // When an approved deferral that is pending an update is finally approved, it overwrites
@@ -78,12 +78,12 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
 
         it('should use the updated expiry for an approved request pending an update', () => {
@@ -106,12 +106,12 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(true);
+            expect(shouldUseUpdatedRequest).toBe(true);
         });
 
         it('should use the original expiry for an approved request pending an update', () => {
@@ -134,12 +134,12 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'APPROVED_DEFERRALS';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
     });
 
