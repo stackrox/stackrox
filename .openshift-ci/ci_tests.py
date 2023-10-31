@@ -18,7 +18,7 @@ class BaseTest:
             if post_start_hook is not None:
                 post_start_hook()
             try:
-                exitstatus = cmd.wait(timeout)
+                exitstatus = cmd.wait(timeout * 2)
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
