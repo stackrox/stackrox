@@ -25,14 +25,14 @@ var (
 
 	csPair = compliance.ClusterStandardPair{
 		ClusterID:  clusterID,
-		StandardID: "CIS_Docker_v1_2_0",
+		StandardID: "CIS_Kubernetes_v1_5",
 	}
 	latestRunResultBatch = map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair: {
 			LastSuccessfulResults: &storage.ComplianceRunResults{
 				RunMetadata: &storage.ComplianceRunMetadata{
 					RunId:      "compliance-run-metadata-id",
-					StandardId: "CIS_Docker_v1_2_0",
+					StandardId: "CIS_Kubernetes_v1_5",
 					ClusterId:  clusterID,
 				},
 				Domain: &storage.ComplianceDomain{
@@ -68,7 +68,7 @@ var (
 				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 					"deployment1": {
 						ControlResults: map[string]*storage.ComplianceResultValue{
-							"CIS_Docker_v1_2_0:5_6": {
+							"CIS_Kubernetes_v1_5:5_6": {
 								Evidence: []*storage.ComplianceResultValue_Evidence{{
 									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 									Message: "Container has no ssh process running",
@@ -81,7 +81,7 @@ var (
 				NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
 					"node1": {
 						ControlResults: map[string]*storage.ComplianceResultValue{
-							"CIS_Docker_v1_2_0:1_1_2": {
+							"CIS_Kubernetes_v1_5:1_1_2": {
 								Evidence: []*storage.ComplianceResultValue_Evidence{{
 									State:   storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 									Message: "Node does not use Docker container runtime",
@@ -164,19 +164,19 @@ func (s *splunkComplianceAPITestSuite) TestComplianceAPIResults() {
 	}{
 		{
 			name:           "Cluster Results",
-			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Cluster\",\"objectName\":\"compliance-test-id\",\"control\":\"HIPAA_164:310_a_1\",\"state\":\"Pass\",\"evidence\":\"(Pass) Cluster has an image scanner in use\"}",
+			expectedResult: "{\"standard\":\"CIS Kubernetes v1.5\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Cluster\",\"objectName\":\"compliance-test-id\",\"control\":\"HIPAA_164:310_a_1\",\"state\":\"Pass\",\"evidence\":\"(Pass) Cluster has an image scanner in use\"}",
 		},
 		{
 			name:           "Deployment Results",
-			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"dep-ns1\",\"objectType\":\"Deployment\",\"objectName\":\"deployment1\",\"control\":\"5.6\",\"state\":\"Pass\",\"evidence\":\"(Pass) Container has no ssh process running\"}",
+			expectedResult: "{\"standard\":\"CIS Kubernetes v1.5\",\"cluster\":\"compliance-test-id\",\"namespace\":\"dep-ns1\",\"objectType\":\"Deployment\",\"objectName\":\"deployment1\",\"control\":\"CIS_Kubernetes_v1_5:5_6\",\"state\":\"Pass\",\"evidence\":\"(Pass) Container has no ssh process running\"}",
 		},
 		{
 			name:           "Node Results",
-			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Node\",\"objectName\":\"node1\",\"control\":\"1.1.2\",\"state\":\"N/A\",\"evidence\":\"(N/A) Node does not use Docker container runtime\"}",
+			expectedResult: "{\"standard\":\"CIS Kubernetes v1.5\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Node\",\"objectName\":\"node1\",\"control\":\"1.1.2\",\"state\":\"N/A\",\"evidence\":\"(N/A) Node does not use Docker container runtime\"}",
 		},
 		{
 			name:           "Machine Config Results",
-			expectedResult: "{\"standard\":\"CIS Docker v1.2.0\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Machine Config\",\"objectName\":\"ocp4-cis-node-master\",\"control\":\"ocp4-cis-node:file-owner-worker-kubeconfig\",\"state\":\"Pass\",\"evidence\":\"(Pass) Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.\"}",
+			expectedResult: "{\"standard\":\"CIS Kubernetes v1.5\",\"cluster\":\"compliance-test-id\",\"namespace\":\"\",\"objectType\":\"Machine Config\",\"objectName\":\"ocp4-cis-node-master\",\"control\":\"ocp4-cis-node:file-owner-worker-kubeconfig\",\"state\":\"Pass\",\"evidence\":\"(Pass) Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.\"}",
 		},
 	}
 

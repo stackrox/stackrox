@@ -223,18 +223,6 @@ func (r *Registry) Group(groupID string) *v1.ComplianceControlGroup {
 	return r.categoriesByID[groupID].ToProto()
 }
 
-// GetCISDockerStandardID returns the Docker CIS standard ID.
-func (r *Registry) GetCISDockerStandardID() (string, error) {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	for _, standard := range r.standardsByID {
-		if strings.Contains(standard.Name, "CIS Docker") {
-			return standard.ID, nil
-		}
-	}
-	return "", errors.New("Unable to find CIS Docker standard")
-}
-
 // GetCISKubernetesStandardID returns the kubernetes CIS standard ID.
 func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 	r.lock.RLock()

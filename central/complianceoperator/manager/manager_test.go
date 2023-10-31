@@ -270,7 +270,7 @@ func TestIsStandardActiveFunctions(t *testing.T) {
 	assert.False(t, mgr.IsStandardActive("random"))
 	assert.False(t, mgr.IsStandardActiveForCluster("random", "thisdoesntmatter"))
 
-	dockerID, err := mgr.registry.GetCISDockerStandardID()
+	dockerID, err := mgr.registry.GetCISKubernetesStandardID()
 	assert.NoError(t, err)
 	assert.True(t, mgr.IsStandardActive(dockerID))
 	assert.True(t, mgr.IsStandardActiveForCluster(dockerID, "thisdoesntmatter"))

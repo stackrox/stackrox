@@ -280,9 +280,6 @@ include make/protogen.mk
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@# Files are ordered such that repeated runs of `make go-easyjson-srcs` don't create diffs.
-	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/image.go
-	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/container.go
-	$(SILENT)$(EASYJSON_BIN) pkg/docker/types/types.go
 	$(SILENT)$(EASYJSON_BIN) pkg/compliance/compress/compress.go
 
 .PHONY: clean-easyjson-srcs
