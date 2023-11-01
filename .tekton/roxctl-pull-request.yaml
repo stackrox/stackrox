@@ -160,7 +160,6 @@ spec:
     workspaces:
     - name: workspace
     - name: git-auth
-      optional: true
 
     tasks:
 
