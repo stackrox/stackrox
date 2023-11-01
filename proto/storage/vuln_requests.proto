@@ -68,7 +68,17 @@ message FalsePositiveUpdate {
     repeated string CVEs = 1;
 }
 
-// Next available tag: 27
+message Requester {
+    string id    = 1 [(gogoproto.moretags) = 'search:"Requester User ID"'];
+    string name  = 2 [(gogoproto.moretags) = 'search:"Requester User Name"'];
+}
+
+message Approver {
+    string id    = 1 [(gogoproto.moretags) = 'search:"Approver User ID"'];
+    string name  = 2 [(gogoproto.moretags) = 'search:"Approver User Name"'];
+}
+
+// Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
@@ -107,6 +117,9 @@ message VulnerabilityRequest {
     google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
     repeated RequestComment          comments           = 9;
     Scope                            scope              = 10;
+    Requester                        requester_v2       = 28;
+    repeated Approver                approvers_v2       = 29;
+
 
     // 11 to 15 reserved for the request type oneof.
     oneof req {
