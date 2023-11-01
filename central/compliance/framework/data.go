@@ -40,7 +40,6 @@ type ComplianceDataRepository interface {
 	Notifiers() []*storage.Notifier
 	K8sRoles() []*storage.K8SRole
 	K8sRoleBindings() []*storage.K8SRoleBinding
-	CISDockerTriggered() bool
 	CISKubernetesTriggered() bool
 
 	ComplianceOperatorResults() map[string][]*storage.ComplianceOperatorCheckResult

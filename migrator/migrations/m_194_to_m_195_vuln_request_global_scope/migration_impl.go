@@ -39,11 +39,11 @@ func updateGlobalScope(ctx context.Context, database *types.Databases) error {
 	for rows.Next() {
 		var obj schema.VulnerabilityRequests
 		if err = query.ScanRows(rows, &obj); err != nil {
-			return errors.Wrap(err, "failed to scan image_cves table rows")
+			return errors.Wrap(err, "failed to scan vulnerability_requests table rows")
 		}
 		proto, err := schema.ConvertVulnerabilityRequestToProto(&obj)
 		if err != nil {
-			return errors.Wrapf(err, "failed to convert %+v to proto", proto)
+			return errors.Wrapf(err, "failed to convert %+v to proto", obj)
 		}
 
 		// Update the representation of global scope per the new way.

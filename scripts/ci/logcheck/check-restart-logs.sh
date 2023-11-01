@@ -48,7 +48,7 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             echo "This restart does not match any ignore patterns"
             if [[ -n "${ARTIFACT_DIR:-}" ]]; then
                 cp "${logfile}" "${ARTIFACT_DIR}" || true
-                echo "$(basename "${logfile}") copied to Artifacts"
+                echo "$(basename "${logfile}") copied to Artifacts" # do not change - required by pod restart check
             fi
             all_ok=false
         fi

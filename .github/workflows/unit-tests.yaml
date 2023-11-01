@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -49,22 +49,8 @@ jobs:
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
-      uses: ./.github/actions/junit2jira
-      with:
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        directory: 'junit-reports'
+    # Do not create junit report for bench tests:
+    # https://github.com/jstemmer/go-junit-report/issues/174
 
   go-postgres:
     strategy:
@@ -72,7 +58,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -115,7 +101,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -158,7 +144,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -190,7 +176,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -227,6 +213,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - go
+      - go-bench
       - go-postgres
       - ui
       - local-roxctl-tests

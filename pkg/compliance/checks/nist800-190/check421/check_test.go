@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -69,9 +68,6 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			require.NotNil(t, check)
 
 			mockNodeData := &standards.ComplianceData{
-				DockerData: &internalTypes.Data{
-					Info: c.info,
-				},
 				ContainerRuntimeInfo: c.cri,
 			}
 

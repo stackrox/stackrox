@@ -552,7 +552,8 @@ check_for_stackrox_restarts() {
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
-            save_junit_failure "Pod Restarts" "Check for unexplained pod restart" "${check_out}"
+            pods=$(echo $check_out | grep "copied to Artifacts" | cut -d- -f1,3 | sort -u | tr '\n' ' ')
+            save_junit_failure "Pod Restarts" "${pods}" "${check_out}"
             die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
         info "Restarts were considered benign"

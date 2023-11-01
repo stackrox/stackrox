@@ -79,20 +79,6 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
-// CISDockerTriggered mocks base method.
-func (m *MockComplianceDataRepository) CISDockerTriggered() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CISDockerTriggered")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// CISDockerTriggered indicates an expected call of CISDockerTriggered.
-func (mr *MockComplianceDataRepositoryMockRecorder) CISDockerTriggered() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CISDockerTriggered", reflect.TypeOf((*MockComplianceDataRepository)(nil).CISDockerTriggered))
-}
-
 // CISKubernetesTriggered mocks base method.
 func (m *MockComplianceDataRepository) CISKubernetesTriggered() bool {
 	m.ctrl.T.Helper()

@@ -76,7 +76,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -197,7 +197,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -247,7 +247,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -409,7 +409,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -494,7 +494,7 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -569,7 +569,7 @@ jobs:
   build-and-push-mock-grpc-server:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -619,7 +619,7 @@ jobs:
     needs:
       - build-and-push-main
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
       env:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}

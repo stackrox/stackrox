@@ -21,14 +21,11 @@ provision_gke_cluster() {
 assign_env_variables() {
     info "Assigning environment variables for later steps"
 
-    if [[ "$#" -lt 1 ]]; then
-        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type> <disk_gb>]"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: assign_env_variables <cluster-id>"
     fi
 
     local cluster_id="$1"
-    local num_nodes="${2:-3}"
-    local machine_type="${3:-e2-standard-4}"
-    local disk_gb="${4:-40}"
 
     ensure_CI
 
@@ -47,15 +44,6 @@ assign_env_variables() {
     cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
-
-    ci_export NUM_NODES "$num_nodes"
-    echo "Number of nodes for cluster is $num_nodes"
-
-    ci_export MACHINE_TYPE "$machine_type"
-    echo "Machine type is set as to $machine_type"
-
-    ci_export DISK_SIZE_GB "$disk_gb"
-    echo "Disk size is set to $disk_gb"
 
     choose_release_channel
     choose_cluster_version
