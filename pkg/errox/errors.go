@@ -48,5 +48,8 @@ var (
 
 	// NotImplemented indicates the functionality is not implemented.
 	NotImplemented = makeSentinel("not implemented")
+
+	// ReferencedObjectNotFound indicates that a referenced object could not be found.
+	ReferencedObjectNotFound = makeSentinel("referenced object not found")
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )

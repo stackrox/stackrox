@@ -215,7 +215,7 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 
 }
 
-func initStore() *InMemoryStoreProvider {
+func initStore() *StoreProvider {
 	s := InitializeStore()
 	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("1"))
 	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("2"))

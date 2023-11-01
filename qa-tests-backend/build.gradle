@@ -89,7 +89,7 @@ dependencies {
 
     implementation 'io.kubernetes:client-java:19.0.0'
 
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.3'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.4'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
@@ -98,7 +98,7 @@ dependencies {
 
     implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'
 
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.6.0'
 
     implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
 

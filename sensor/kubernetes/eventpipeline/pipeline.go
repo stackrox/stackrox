@@ -21,7 +21,7 @@ import (
 )
 
 // New instantiates the eventPipeline component
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.InMemoryStoreProvider, queueSize int) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	var depResolver component.Resolver
 	var resourceListener component.ContextListener

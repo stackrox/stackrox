@@ -7,14 +7,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	resourceTypeA = "resource_type_A"
-	resourceTypeB = "resource_type_B"
-)
-
 type providerSuite struct {
 	suite.Suite
-	provider *InMemoryStoreProvider
+	provider *StoreProvider
 }
 
 var _ suite.SetupTestSuite = (*providerSuite)(nil)

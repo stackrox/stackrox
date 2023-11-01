@@ -24,7 +24,8 @@ type ClusterStatusProps = {
 function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): ReactElement {
     const { version } = useMetadata();
 
-    const { overallHealthStatus } = healthStatus;
+    const { overallHealthStatus = 'UNAVAILABLE' } = healthStatus ?? {};
+
     const { Icon, fgColor } = healthStatusStyles[overallHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
 

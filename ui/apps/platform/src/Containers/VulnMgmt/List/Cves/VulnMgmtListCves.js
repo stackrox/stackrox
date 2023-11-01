@@ -23,6 +23,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -295,12 +296,17 @@ const VulnMgmtCves = ({
         hasReadWriteAccess('VulnerabilityManagementApprovals') &&
         hasReadWriteAccess('VulnerabilityManagementRequests');
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isUnifiedDeferralEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
 
     const workflowState = useContext(workflowStateContext);
 
     const cveType = workflowState.getCurrentEntityType();
+
+    const shouldRenderGlobalSnooze = !isUnifiedDeferralEnabled || cveType !== entityTypes.IMAGE_CVE;
 
     let cveQuery = '';
 
@@ -467,23 +473,27 @@ const VulnMgmtCves = ({
                               icon={<Icon.Plus className="my-1 h-4 w-4" />}
                           />
                       )}
-                      {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
-                          <RowActionMenu
-                              className="h-full min-w-30"
-                              border="border-l-2 border-base-400"
-                              icon={<Icon.BellOff className="h-4 w-4" />}
-                              options={snoozeOptions(cve)}
-                              text="Defer and approve CVE"
-                          />
-                      )}
-                      {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
-                          <RowActionButton
-                              text="Reobserve CVE"
-                              border="border-l-2 border-base-400"
-                              onClick={unsuppressCves(cve)}
-                              icon={<Icon.Bell className="my-1 h-4 w-4" />}
-                          />
-                      )}
+                      {hasWriteAccessForRiskAcceptance &&
+                          !viewingSuppressed &&
+                          shouldRenderGlobalSnooze && (
+                              <RowActionMenu
+                                  className="h-full min-w-30"
+                                  border="border-l-2 border-base-400"
+                                  icon={<Icon.BellOff className="h-4 w-4" />}
+                                  options={snoozeOptions(cve)}
+                                  text="Defer and approve CVE"
+                              />
+                          )}
+                      {hasWriteAccessForRiskAcceptance &&
+                          viewingSuppressed &&
+                          shouldRenderGlobalSnooze && (
+                              <RowActionButton
+                                  text="Reobserve CVE"
+                                  border="border-l-2 border-base-400"
+                                  onClick={unsuppressCves(cve)}
+                                  icon={<Icon.Bell className="my-1 h-4 w-4" />}
+                              />
+                          )}
                   </div>
               )
             : null;
@@ -503,7 +513,7 @@ const VulnMgmtCves = ({
                     Add to policy
                 </PanelButton>
             )}
-            {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
+            {hasWriteAccessForRiskAcceptance && !viewingSuppressed && shouldRenderGlobalSnooze && (
                 <Menu
                     className="h-full min-w-30 ml-2"
                     menuClassName="bg-base-100 min-w-28"
@@ -516,7 +526,7 @@ const VulnMgmtCves = ({
                 />
             )}
 
-            {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
+            {hasWriteAccessForRiskAcceptance && viewingSuppressed && shouldRenderGlobalSnooze && (
                 <PanelButton
                     icon={<Icon.Bell className="h-4 w-4" />}
                     className="btn-icon btn-tertiary ml-2"
@@ -529,20 +539,22 @@ const VulnMgmtCves = ({
             )}
 
             <span className="w-px bg-base-400 ml-2" />
-            <PanelButton
-                icon={
-                    viewingSuppressed ? (
-                        <Icon.Zap className="h-4 w-4" />
-                    ) : (
-                        <Icon.Archive className="h-4 w-4" />
-                    )
-                }
-                className="btn-icon btn-tertiary ml-2"
-                onClick={toggleSuppressedView}
-                tooltip={`${viewButtonText} CVEs`}
-            >
-                {viewButtonText}
-            </PanelButton>
+            {shouldRenderGlobalSnooze && (
+                <PanelButton
+                    icon={
+                        viewingSuppressed ? (
+                            <Icon.Zap className="h-4 w-4" />
+                        ) : (
+                            <Icon.Archive className="h-4 w-4" />
+                        )
+                    }
+                    className="btn-icon btn-tertiary ml-2"
+                    onClick={toggleSuppressedView}
+                    tooltip={`${viewButtonText} CVEs`}
+                >
+                    {viewButtonText}
+                </PanelButton>
+            )}
         </>
     );
 

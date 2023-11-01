@@ -8,9 +8,6 @@ import {
     Card,
     CardBody,
     Button,
-    Tab,
-    TabTitleText,
-    Tabs,
 } from '@patternfly/react-core';
 import { useApolloClient, useQuery } from '@apollo/client';
 
@@ -21,7 +18,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { vulnerabilityStates } from 'types/cve.proto';
+import useAnalytics, { WATCH_IMAGE_MODAL_OPENED } from 'hooks/useAnalytics';
 import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
@@ -30,6 +27,8 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -48,11 +47,9 @@ function WorkloadCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
 
-    const [vulnerabilityStateKey, setVulnerabilityStateKey] = useURLStringUnion(
-        'vulnerabilityState',
-        vulnerabilityStates
-    );
-    const currentVulnerabilityState = isUnifiedDeferralsEnabled ? vulnerabilityStateKey : undefined;
+    const { analyticsTrack } = useAnalytics();
+
+    const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -79,10 +76,6 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    function handleTabClick(e, tab) {
-        setVulnerabilityStateKey(tab);
-    }
-
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
@@ -105,6 +98,7 @@ function WorkloadCvesOverviewPage() {
                             onClick={() => {
                                 setDefaultWatchedImageName('');
                                 watchedImagesModalToggle.openSelect();
+                                analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                             }}
                         >
                             Manage watched images
@@ -113,24 +107,13 @@ function WorkloadCvesOverviewPage() {
                 )}
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
-                {isUnifiedDeferralsEnabled && (
-                    <Tabs
-                        activeKey={vulnerabilityStateKey}
-                        onSelect={handleTabClick}
-                        component="nav"
-                        className="pf-u-pl-lg pf-u-background-color-100"
-                    >
-                        <Tab
-                            eventKey="OBSERVED"
-                            title={<TabTitleText>Observed CVEs</TabTitleText>}
-                        />
-                        <Tab eventKey="DEFERRED" title={<TabTitleText>Deferrals</TabTitleText>} />
-                        <Tab
-                            eventKey="FALSE_POSITIVE"
-                            title={<TabTitleText>False positives</TabTitleText>}
-                        />
-                    </Tabs>
-                )}
+                <PageSection
+                    padding={{ default: 'noPadding' }}
+                    component="div"
+                    className="pf-u-pl-lg pf-u-background-color-100"
+                >
+                    <VulnerabilityStateTabs />
+                </PageSection>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
@@ -153,6 +136,7 @@ function WorkloadCvesOverviewPage() {
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
+                                        analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
                                     }}
                                     onUnwatchImage={(imageName) => {
                                         setUnwatchImageName(imageName);

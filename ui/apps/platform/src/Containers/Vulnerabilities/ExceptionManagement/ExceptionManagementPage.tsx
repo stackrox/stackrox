@@ -12,7 +12,7 @@ function ExceptionManagementPage() {
     return (
         <Switch>
             {/* TODO: Add a route for the request details page */}
-            <Route exact path={exceptionManagementPath} component={ExceptionRequestsPage} />
+            <Route path={exceptionManagementPath} component={ExceptionRequestsPage} />
             <Route>
                 <PageSection variant="light">
                     <PageTitle title="Exception requests - Not Found" />

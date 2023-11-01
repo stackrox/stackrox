@@ -96,16 +96,19 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetCheckId(),
+		obj.GetCheckName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetStatus(),
 		obj.GetSeverity(),
+		pgutils.NilOrTime(obj.GetCreatedTime()),
 		obj.GetStandard(),
 		obj.GetScanId(),
 		pgutils.NilOrUUID(obj.GetScanConfigId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, ClusterId, Status, Severity, Standard, ScanId, ScanConfigId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, ScanConfigId = EXCLUDED.ScanConfigId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, Standard, ScanId, ScanConfigId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, ScanConfigId = EXCLUDED.ScanConfigId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,9 +123,12 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 
 	copyCols := []string{
 		"id",
+		"checkid",
+		"checkname",
 		"clusterid",
 		"status",
 		"severity",
+		"createdtime",
 		"standard",
 		"scanid",
 		"scanconfigid",
@@ -142,9 +148,12 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			obj.GetCheckId(),
+			obj.GetCheckName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetStatus(),
 			obj.GetSeverity(),
+			pgutils.NilOrTime(obj.GetCreatedTime()),
 			obj.GetStandard(),
 			obj.GetScanId(),
 			pgutils.NilOrUUID(obj.GetScanConfigId()),

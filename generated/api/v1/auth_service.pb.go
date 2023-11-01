@@ -28,6 +28,34 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// The type of the auth machine to machine config.
+// Currently supports GitHub actions or any other generic OIDC provider to use for verifying and
+// exchanging the token.
+type AuthMachineToMachineConfig_Type int32
+
+const (
+	AuthMachineToMachineConfig_GENERIC        AuthMachineToMachineConfig_Type = 0
+	AuthMachineToMachineConfig_GITHUB_ACTIONS AuthMachineToMachineConfig_Type = 1
+)
+
+var AuthMachineToMachineConfig_Type_name = map[int32]string{
+	0: "GENERIC",
+	1: "GITHUB_ACTIONS",
+}
+
+var AuthMachineToMachineConfig_Type_value = map[string]int32{
+	"GENERIC":        0,
+	"GITHUB_ACTIONS": 1,
+}
+
+func (x AuthMachineToMachineConfig_Type) String() string {
+	return proto.EnumName(AuthMachineToMachineConfig_Type_name, int32(x))
+}
+
+func (AuthMachineToMachineConfig_Type) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{2, 0}
+}
+
 type UserAttribute struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Values               []string `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
@@ -273,45 +301,729 @@ func (m *AuthStatus) Clone() *AuthStatus {
 	return cloned
 }
 
+// AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with
+// a Central access token. The M2M stands for machine to machine, as this is the intended use-case
+// for the config.
+type AuthMachineToMachineConfig struct {
+	// UUID of the config.
+	// Note that when adding a machine to machine config, this field should not be set.
+	Id   string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Type AuthMachineToMachineConfig_Type `protobuf:"varint,2,opt,name=type,proto3,enum=v1.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
+	// Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.
+	// Possible valid time units are: s, m, h.
+	// The maximum allowed expiration duration is 24h.
+	// As an example: 2h45m.
+	// For additional information on the validation of the duration, see:
+	// https://pkg.go.dev/time#ParseDuration.
+	TokenExpirationDuration string `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration,proto3" json:"token_expiration_duration,omitempty"`
+	// At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
+	Mappings []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
+	// The issuer of the related OIDC provider issuing the ID tokens to exchange.
+	//
+	// Must be non-empty string containing URL when type is GENERIC.
+	// In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
+	//
+	// Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
+	// GENERIC config must have a distinct issuer.
+	Issuer               string   `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AuthMachineToMachineConfig) Reset()         { *m = AuthMachineToMachineConfig{} }
+func (m *AuthMachineToMachineConfig) String() string { return proto.CompactTextString(m) }
+func (*AuthMachineToMachineConfig) ProtoMessage()    {}
+func (*AuthMachineToMachineConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{2}
+}
+func (m *AuthMachineToMachineConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthMachineToMachineConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthMachineToMachineConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthMachineToMachineConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthMachineToMachineConfig.Merge(m, src)
+}
+func (m *AuthMachineToMachineConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthMachineToMachineConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthMachineToMachineConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthMachineToMachineConfig proto.InternalMessageInfo
+
+func (m *AuthMachineToMachineConfig) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig) GetType() AuthMachineToMachineConfig_Type {
+	if m != nil {
+		return m.Type
+	}
+	return AuthMachineToMachineConfig_GENERIC
+}
+
+func (m *AuthMachineToMachineConfig) GetTokenExpirationDuration() string {
+	if m != nil {
+		return m.TokenExpirationDuration
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig) GetMappings() []*AuthMachineToMachineConfig_Mapping {
+	if m != nil {
+		return m.Mappings
+	}
+	return nil
+}
+
+func (m *AuthMachineToMachineConfig) GetIssuer() string {
+	if m != nil {
+		return m.Issuer
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthMachineToMachineConfig) Clone() *AuthMachineToMachineConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthMachineToMachineConfig)
+	*cloned = *m
+
+	if m.Mappings != nil {
+		cloned.Mappings = make([]*AuthMachineToMachineConfig_Mapping, len(m.Mappings))
+		for idx, v := range m.Mappings {
+			cloned.Mappings[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+// Mappings map an identity token's claim values to a specific role within Central.
+type AuthMachineToMachineConfig_Mapping struct {
+	// A key within the identity token's claim value to use.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// A regular expression that will be evaluated against values of the identity token claim
+	// identified by the specified key.
+	// This regular expressions is in RE2 format, see more here:
+	// https://github.com/google/re2/wiki/Syntax.
+	ValueExpression string `protobuf:"bytes,2,opt,name=value_expression,json=valueExpression,proto3" json:"value_expression,omitempty"`
+	// The role which should be issued when the key and value match for a particular identity token.
+	Role                 string   `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) Reset()         { *m = AuthMachineToMachineConfig_Mapping{} }
+func (m *AuthMachineToMachineConfig_Mapping) String() string { return proto.CompactTextString(m) }
+func (*AuthMachineToMachineConfig_Mapping) ProtoMessage()    {}
+func (*AuthMachineToMachineConfig_Mapping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{2, 0}
+}
+func (m *AuthMachineToMachineConfig_Mapping) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AuthMachineToMachineConfig_Mapping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AuthMachineToMachineConfig_Mapping.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AuthMachineToMachineConfig_Mapping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AuthMachineToMachineConfig_Mapping.Merge(m, src)
+}
+func (m *AuthMachineToMachineConfig_Mapping) XXX_Size() int {
+	return m.Size()
+}
+func (m *AuthMachineToMachineConfig_Mapping) XXX_DiscardUnknown() {
+	xxx_messageInfo_AuthMachineToMachineConfig_Mapping.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AuthMachineToMachineConfig_Mapping proto.InternalMessageInfo
+
+func (m *AuthMachineToMachineConfig_Mapping) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) GetValueExpression() string {
+	if m != nil {
+		return m.ValueExpression
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) GetRole() string {
+	if m != nil {
+		return m.Role
+	}
+	return ""
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AuthMachineToMachineConfig_Mapping) Clone() *AuthMachineToMachineConfig_Mapping {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AuthMachineToMachineConfig_Mapping)
+	*cloned = *m
+
+	return cloned
+}
+
+type ListAuthMachineToMachineConfigResponse struct {
+	Configs              []*AuthMachineToMachineConfig `protobuf:"bytes,1,rep,name=configs,proto3" json:"configs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) Reset() {
+	*m = ListAuthMachineToMachineConfigResponse{}
+}
+func (m *ListAuthMachineToMachineConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*ListAuthMachineToMachineConfigResponse) ProtoMessage()    {}
+func (*ListAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{3}
+}
+func (m *ListAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListAuthMachineToMachineConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListAuthMachineToMachineConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListAuthMachineToMachineConfigResponse.Merge(m, src)
+}
+func (m *ListAuthMachineToMachineConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListAuthMachineToMachineConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListAuthMachineToMachineConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListAuthMachineToMachineConfigResponse proto.InternalMessageInfo
+
+func (m *ListAuthMachineToMachineConfigResponse) GetConfigs() []*AuthMachineToMachineConfig {
+	if m != nil {
+		return m.Configs
+	}
+	return nil
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListAuthMachineToMachineConfigResponse) Clone() *ListAuthMachineToMachineConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListAuthMachineToMachineConfigResponse)
+	*cloned = *m
+
+	if m.Configs != nil {
+		cloned.Configs = make([]*AuthMachineToMachineConfig, len(m.Configs))
+		for idx, v := range m.Configs {
+			cloned.Configs[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type GetAuthMachineToMachineConfigResponse struct {
+	Config               *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) Reset()         { *m = GetAuthMachineToMachineConfigResponse{} }
+func (m *GetAuthMachineToMachineConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*GetAuthMachineToMachineConfigResponse) ProtoMessage()    {}
+func (*GetAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{4}
+}
+func (m *GetAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetAuthMachineToMachineConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetAuthMachineToMachineConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetAuthMachineToMachineConfigResponse.Merge(m, src)
+}
+func (m *GetAuthMachineToMachineConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetAuthMachineToMachineConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetAuthMachineToMachineConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetAuthMachineToMachineConfigResponse proto.InternalMessageInfo
+
+func (m *GetAuthMachineToMachineConfigResponse) GetConfig() *AuthMachineToMachineConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetAuthMachineToMachineConfigResponse) Clone() *GetAuthMachineToMachineConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetAuthMachineToMachineConfigResponse)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type AddAuthMachineToMachineConfigRequest struct {
+	Config               *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) Reset()         { *m = AddAuthMachineToMachineConfigRequest{} }
+func (m *AddAuthMachineToMachineConfigRequest) String() string { return proto.CompactTextString(m) }
+func (*AddAuthMachineToMachineConfigRequest) ProtoMessage()    {}
+func (*AddAuthMachineToMachineConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{5}
+}
+func (m *AddAuthMachineToMachineConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddAuthMachineToMachineConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddAuthMachineToMachineConfigRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddAuthMachineToMachineConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddAuthMachineToMachineConfigRequest.Merge(m, src)
+}
+func (m *AddAuthMachineToMachineConfigRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddAuthMachineToMachineConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddAuthMachineToMachineConfigRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddAuthMachineToMachineConfigRequest proto.InternalMessageInfo
+
+func (m *AddAuthMachineToMachineConfigRequest) GetConfig() *AuthMachineToMachineConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AddAuthMachineToMachineConfigRequest) Clone() *AddAuthMachineToMachineConfigRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AddAuthMachineToMachineConfigRequest)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type AddAuthMachineToMachineConfigResponse struct {
+	Config               *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) Reset()         { *m = AddAuthMachineToMachineConfigResponse{} }
+func (m *AddAuthMachineToMachineConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*AddAuthMachineToMachineConfigResponse) ProtoMessage()    {}
+func (*AddAuthMachineToMachineConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{6}
+}
+func (m *AddAuthMachineToMachineConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AddAuthMachineToMachineConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AddAuthMachineToMachineConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AddAuthMachineToMachineConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AddAuthMachineToMachineConfigResponse.Merge(m, src)
+}
+func (m *AddAuthMachineToMachineConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *AddAuthMachineToMachineConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_AddAuthMachineToMachineConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AddAuthMachineToMachineConfigResponse proto.InternalMessageInfo
+
+func (m *AddAuthMachineToMachineConfigResponse) GetConfig() *AuthMachineToMachineConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AddAuthMachineToMachineConfigResponse) Clone() *AddAuthMachineToMachineConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AddAuthMachineToMachineConfigResponse)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type UpdateAuthMachineToMachineConfigRequest struct {
+	Config               *AuthMachineToMachineConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) Reset() {
+	*m = UpdateAuthMachineToMachineConfigRequest{}
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateAuthMachineToMachineConfigRequest) ProtoMessage()    {}
+func (*UpdateAuthMachineToMachineConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{7}
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateAuthMachineToMachineConfigRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateAuthMachineToMachineConfigRequest.Merge(m, src)
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateAuthMachineToMachineConfigRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateAuthMachineToMachineConfigRequest proto.InternalMessageInfo
+
+func (m *UpdateAuthMachineToMachineConfigRequest) GetConfig() *AuthMachineToMachineConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) Clone() *UpdateAuthMachineToMachineConfigRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateAuthMachineToMachineConfigRequest)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type ExchangeAuthMachineToMachineTokenRequest struct {
+	// Identity token that is supposed to be exchanged.
+	IdToken              string   `protobuf:"bytes,1,opt,name=id_token,json=idToken,proto3" json:"id_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) Reset() {
+	*m = ExchangeAuthMachineToMachineTokenRequest{}
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) String() string { return proto.CompactTextString(m) }
+func (*ExchangeAuthMachineToMachineTokenRequest) ProtoMessage()    {}
+func (*ExchangeAuthMachineToMachineTokenRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{8}
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ExchangeAuthMachineToMachineTokenRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExchangeAuthMachineToMachineTokenRequest.Merge(m, src)
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExchangeAuthMachineToMachineTokenRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ExchangeAuthMachineToMachineTokenRequest proto.InternalMessageInfo
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) GetIdToken() string {
+	if m != nil {
+		return m.IdToken
+	}
+	return ""
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) Clone() *ExchangeAuthMachineToMachineTokenRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ExchangeAuthMachineToMachineTokenRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type ExchangeAuthMachineToMachineTokenResponse struct {
+	// The exchanged access token.
+	AccessToken          string   `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) Reset() {
+	*m = ExchangeAuthMachineToMachineTokenResponse{}
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*ExchangeAuthMachineToMachineTokenResponse) ProtoMessage() {}
+func (*ExchangeAuthMachineToMachineTokenResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_70ce5d1cdb6bc92a, []int{9}
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ExchangeAuthMachineToMachineTokenResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExchangeAuthMachineToMachineTokenResponse.Merge(m, src)
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExchangeAuthMachineToMachineTokenResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ExchangeAuthMachineToMachineTokenResponse proto.InternalMessageInfo
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) GetAccessToken() string {
+	if m != nil {
+		return m.AccessToken
+	}
+	return ""
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) Clone() *ExchangeAuthMachineToMachineTokenResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ExchangeAuthMachineToMachineTokenResponse)
+	*cloned = *m
+
+	return cloned
+}
+
 func init() {
+	proto.RegisterEnum("v1.AuthMachineToMachineConfig_Type", AuthMachineToMachineConfig_Type_name, AuthMachineToMachineConfig_Type_value)
 	proto.RegisterType((*UserAttribute)(nil), "v1.UserAttribute")
 	proto.RegisterType((*AuthStatus)(nil), "v1.AuthStatus")
+	proto.RegisterType((*AuthMachineToMachineConfig)(nil), "v1.AuthMachineToMachineConfig")
+	proto.RegisterType((*AuthMachineToMachineConfig_Mapping)(nil), "v1.AuthMachineToMachineConfig.Mapping")
+	proto.RegisterType((*ListAuthMachineToMachineConfigResponse)(nil), "v1.ListAuthMachineToMachineConfigResponse")
+	proto.RegisterType((*GetAuthMachineToMachineConfigResponse)(nil), "v1.GetAuthMachineToMachineConfigResponse")
+	proto.RegisterType((*AddAuthMachineToMachineConfigRequest)(nil), "v1.AddAuthMachineToMachineConfigRequest")
+	proto.RegisterType((*AddAuthMachineToMachineConfigResponse)(nil), "v1.AddAuthMachineToMachineConfigResponse")
+	proto.RegisterType((*UpdateAuthMachineToMachineConfigRequest)(nil), "v1.UpdateAuthMachineToMachineConfigRequest")
+	proto.RegisterType((*ExchangeAuthMachineToMachineTokenRequest)(nil), "v1.ExchangeAuthMachineToMachineTokenRequest")
+	proto.RegisterType((*ExchangeAuthMachineToMachineTokenResponse)(nil), "v1.ExchangeAuthMachineToMachineTokenResponse")
 }
 
 func init() { proto.RegisterFile("api/v1/auth_service.proto", fileDescriptor_70ce5d1cdb6bc92a) }
 
 var fileDescriptor_70ce5d1cdb6bc92a = []byte{
-	// 474 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x92, 0xcf, 0x6e, 0xd3, 0x4e,
-	0x10, 0xc7, 0x63, 0xa7, 0xbf, 0xe4, 0xe7, 0x09, 0x69, 0xe9, 0x4a, 0xc0, 0x36, 0x20, 0x37, 0xca,
-	0x29, 0xa7, 0xb5, 0x5c, 0xb8, 0xb4, 0xb7, 0x16, 0x21, 0x9a, 0x1b, 0x72, 0xa9, 0x84, 0xb8, 0x44,
-	0x9b, 0x7a, 0x93, 0xac, 0x9a, 0x78, 0xad, 0xfd, 0x63, 0xb5, 0x57, 0x5e, 0x81, 0x0b, 0x8f, 0xc4,
-	0x11, 0x89, 0x17, 0x40, 0x01, 0x89, 0xd7, 0x40, 0x5e, 0xef, 0xa6, 0xe9, 0x6d, 0x66, 0xbe, 0xf3,
-	0x9d, 0x9d, 0xf9, 0x68, 0xe1, 0x88, 0x96, 0x3c, 0xa9, 0xd2, 0x84, 0x1a, 0xbd, 0x9c, 0x2a, 0x26,
-	0x2b, 0x7e, 0xc3, 0x48, 0x29, 0x85, 0x16, 0x28, 0xac, 0xd2, 0xc1, 0xab, 0x85, 0x10, 0x8b, 0x15,
-	0x4b, 0xea, 0x2e, 0x5a, 0x14, 0x42, 0x53, 0xcd, 0x45, 0xa1, 0x9a, 0x8e, 0xc1, 0xb1, 0x53, 0x6d,
-	0x36, 0x33, 0xf3, 0x44, 0xf3, 0x35, 0x53, 0x9a, 0xae, 0x4b, 0xd7, 0x80, 0xdc, 0x74, 0xb6, 0x2e,
-	0xf5, 0xbd, 0xab, 0xbd, 0x54, 0x5a, 0x48, 0xba, 0x60, 0xcd, 0x93, 0xa5, 0x14, 0x15, 0xcf, 0x99,
-	0x74, 0x62, 0xec, 0x45, 0xb7, 0xca, 0x94, 0xe7, 0xac, 0xd0, 0x7c, 0x6b, 0x46, 0x5e, 0x37, 0xca,
-	0x7b, 0x46, 0xa7, 0xd0, 0xbf, 0x56, 0x4c, 0x9e, 0x6b, 0x2d, 0xf9, 0xcc, 0x68, 0x86, 0x9e, 0x42,
-	0xfb, 0x96, 0xdd, 0xe3, 0x60, 0x18, 0x8c, 0xa3, 0xac, 0x0e, 0xd1, 0x73, 0xe8, 0x54, 0x74, 0x65,
-	0x98, 0xc2, 0xe1, 0xb0, 0x3d, 0x8e, 0x32, 0x97, 0x8d, 0xfe, 0x86, 0x00, 0xe7, 0x46, 0x2f, 0xaf,
-	0x34, 0xd5, 0x46, 0xa1, 0x23, 0xe8, 0xd6, 0x73, 0xa7, 0x3c, 0x6f, 0xcc, 0x97, 0xad, 0xac, 0x53,
-	0x17, 0x26, 0x39, 0x3a, 0x05, 0x78, 0x58, 0x09, 0x87, 0xc3, 0x60, 0xdc, 0x3b, 0xc1, 0xc4, 0x6d,
-	0x43, 0xae, 0x1a, 0x69, 0xe2, 0x96, 0xbd, 0x6c, 0x65, 0x91, 0xf2, 0x25, 0xf4, 0x06, 0xba, 0xec,
-	0xae, 0xe4, 0x92, 0x29, 0xdc, 0xb6, 0xbe, 0x01, 0x69, 0xb8, 0x11, 0xcf, 0x8d, 0x7c, 0xf4, 0xdc,
-	0x32, 0xdf, 0x8a, 0x8e, 0xa1, 0x27, 0xd9, 0x5c, 0x32, 0xb5, 0x9c, 0x1a, 0xb9, 0xc2, 0x7b, 0xf6,
-	0x18, 0x70, 0xa5, 0x6b, 0xb9, 0x42, 0x67, 0xd0, 0x7f, 0x44, 0x10, 0xff, 0x67, 0x87, 0x3f, 0xdb,
-	0x2e, 0x55, 0x1f, 0xf6, 0xc1, 0x89, 0xd9, 0x13, 0xba, 0x93, 0x21, 0x02, 0x51, 0x73, 0x68, 0x31,
-	0x17, 0xb8, 0x63, 0x7d, 0x87, 0x5b, 0x5f, 0x0d, 0x73, 0x52, 0xcc, 0x45, 0xf6, 0xbf, 0x71, 0x11,
-	0x3a, 0x83, 0x03, 0xdb, 0x4f, 0x3d, 0x63, 0x85, 0xbb, 0xc3, 0xb6, 0x75, 0x55, 0x29, 0x79, 0x44,
-	0x3f, 0xdb, 0x37, 0xbb, 0xa9, 0xba, 0xd8, 0x83, 0x90, 0xe7, 0x27, 0x19, 0xf4, 0x2c, 0xe8, 0x86,
-	0x0a, 0x7a, 0x0b, 0xfd, 0xf7, 0x4c, 0xef, 0xa0, 0x8f, 0xea, 0x41, 0xef, 0xea, 0x6f, 0x32, 0xd8,
-	0xaf, 0xc3, 0x07, 0x69, 0xf4, 0xe2, 0xcb, 0xcf, 0x3f, 0x5f, 0xc3, 0x43, 0x74, 0xe0, 0xff, 0x69,
-	0xa2, 0xac, 0x70, 0x41, 0xbe, 0x6f, 0xe2, 0xe0, 0xc7, 0x26, 0x0e, 0x7e, 0x6d, 0xe2, 0xe0, 0xdb,
-	0xef, 0xb8, 0x05, 0x98, 0x0b, 0xa2, 0x34, 0xbd, 0xb9, 0x95, 0xe2, 0xae, 0xa1, 0x4b, 0x68, 0xc9,
-	0x49, 0x95, 0x7e, 0x0e, 0xab, 0xf4, 0x53, 0x6b, 0xd6, 0xb1, 0xb5, 0xd7, 0xff, 0x02, 0x00, 0x00,
-	0xff, 0xff, 0x76, 0xa5, 0x08, 0xcf, 0xf6, 0x02, 0x00, 0x00,
+	// 984 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4d, 0x6f, 0xe3, 0x44,
+	0x18, 0xae, 0xd3, 0x90, 0x34, 0x6f, 0xda, 0x34, 0x9d, 0x65, 0x59, 0xc7, 0xd0, 0x34, 0xeb, 0x65,
+	0x77, 0xd3, 0x02, 0x8e, 0x52, 0x10, 0xb0, 0xb9, 0x35, 0x6d, 0xd4, 0x46, 0x62, 0x0b, 0x72, 0x53,
+	0x09, 0xf5, 0x80, 0xe5, 0xc6, 0x93, 0x64, 0xd4, 0xc4, 0x63, 0x3c, 0xe3, 0xd0, 0x08, 0xad, 0x90,
+	0xf6, 0xce, 0x89, 0x0b, 0x67, 0x7e, 0x0d, 0x17, 0x24, 0x24, 0xfe, 0x00, 0x2a, 0x48, 0xfc, 0x0d,
+	0x34, 0xe3, 0x71, 0xb6, 0x11, 0xdd, 0x24, 0x02, 0x71, 0x9b, 0x79, 0x3f, 0x9f, 0xf7, 0x99, 0x67,
+	0x3c, 0x86, 0x92, 0x1b, 0x90, 0xda, 0xb8, 0x5e, 0x73, 0x23, 0x3e, 0x70, 0x18, 0x0e, 0xc7, 0xa4,
+	0x8b, 0xad, 0x20, 0xa4, 0x9c, 0xa2, 0xd4, 0xb8, 0x6e, 0xbc, 0xd3, 0xa7, 0xb4, 0x3f, 0xc4, 0x35,
+	0x11, 0xe5, 0xfa, 0x3e, 0xe5, 0x2e, 0x27, 0xd4, 0x67, 0x71, 0x84, 0xb1, 0xa3, 0xbc, 0x72, 0x77,
+	0x19, 0xf5, 0x6a, 0x9c, 0x8c, 0x30, 0xe3, 0xee, 0x28, 0x50, 0x01, 0x48, 0x55, 0xc7, 0xa3, 0x80,
+	0x4f, 0x94, 0xed, 0x9e, 0xb2, 0x75, 0xe9, 0x68, 0x44, 0x7d, 0x65, 0x7c, 0x9b, 0x71, 0x1a, 0xba,
+	0x7d, 0x1c, 0xe3, 0x08, 0x42, 0x3a, 0x26, 0x1e, 0x0e, 0x95, 0xb3, 0x9c, 0x38, 0x15, 0x3e, 0x87,
+	0x78, 0xd8, 0xe7, 0x64, 0x5a, 0x11, 0x25, 0xfe, 0x88, 0x25, 0x39, 0xe6, 0x33, 0xd8, 0x38, 0x67,
+	0x38, 0x3c, 0xe0, 0x3c, 0x24, 0x97, 0x11, 0xc7, 0xa8, 0x08, 0xab, 0x57, 0x78, 0xa2, 0x6b, 0x15,
+	0xad, 0x9a, 0xb3, 0xc5, 0x12, 0xbd, 0x05, 0x99, 0xb1, 0x3b, 0x8c, 0x30, 0xd3, 0x53, 0x95, 0xd5,
+	0x6a, 0xce, 0x56, 0x3b, 0xf3, 0xaf, 0x14, 0xc0, 0x41, 0xc4, 0x07, 0x67, 0xdc, 0xe5, 0x11, 0x43,
+	0x25, 0xc8, 0x8a, 0xba, 0x0e, 0xf1, 0xe2, 0xe4, 0x93, 0x15, 0x3b, 0x23, 0x0c, 0x6d, 0x0f, 0x3d,
+	0x03, 0x78, 0x05, 0x49, 0x4f, 0x55, 0xb4, 0x6a, 0x7e, 0x5f, 0xb7, 0x14, 0x1a, 0xeb, 0x2c, 0x76,
+	0xb5, 0x15, 0xd8, 0x93, 0x15, 0x3b, 0xc7, 0x12, 0x13, 0xfa, 0x08, 0xb2, 0xf8, 0x3a, 0x20, 0x21,
+	0x66, 0xfa, 0xaa, 0xcc, 0x33, 0xac, 0x98, 0x4c, 0x2b, 0x21, 0xd3, 0xea, 0x24, 0x64, 0xda, 0x49,
+	0x28, 0xda, 0x81, 0x7c, 0x88, 0x7b, 0x21, 0x66, 0x03, 0x27, 0x0a, 0x87, 0x7a, 0x5a, 0x0e, 0x03,
+	0xca, 0x74, 0x1e, 0x0e, 0x51, 0x03, 0x36, 0x66, 0x18, 0xd4, 0xdf, 0x90, 0xc5, 0xef, 0x4f, 0x41,
+	0x89, 0xc1, 0xbe, 0x50, 0x4e, 0x7b, 0xdd, 0xbd, 0xb5, 0x43, 0x16, 0xe4, 0xe2, 0x41, 0xfd, 0x1e,
+	0xd5, 0x33, 0x32, 0x6f, 0x6b, 0x9a, 0x27, 0xc8, 0x6c, 0xfb, 0x3d, 0x6a, 0xaf, 0x45, 0x6a, 0x85,
+	0x1a, 0xb0, 0x29, 0xe3, 0xdd, 0x84, 0x63, 0xa6, 0x67, 0x2b, 0xab, 0x32, 0x6b, 0x5c, 0xb7, 0x66,
+	0xd8, 0xb7, 0x0b, 0xd1, 0xed, 0x2d, 0x6b, 0xa6, 0x21, 0x45, 0x3c, 0xf3, 0xe5, 0x2a, 0x18, 0x02,
+	0xd0, 0x73, 0xb7, 0x3b, 0x20, 0x3e, 0xee, 0x50, 0xb5, 0x38, 0xa4, 0x7e, 0x8f, 0xf4, 0x51, 0x41,
+	0x04, 0xa9, 0x13, 0x4b, 0x11, 0x0f, 0x7d, 0x02, 0x69, 0x3e, 0x09, 0xb0, 0x24, 0xba, 0xb0, 0xff,
+	0x48, 0x74, 0x79, 0x7d, 0xb6, 0xd5, 0x99, 0x04, 0xd8, 0x96, 0x09, 0xa8, 0x01, 0x25, 0x4e, 0xaf,
+	0xb0, 0xef, 0x48, 0x1e, 0xa5, 0x84, 0x1d, 0x2f, 0x8a, 0x17, 0x92, 0xfe, 0x9c, 0xfd, 0x40, 0x06,
+	0xb4, 0xa6, 0xfe, 0x23, 0xe5, 0x46, 0x4d, 0x58, 0x1b, 0xb9, 0x41, 0x40, 0xfc, 0x3e, 0xd3, 0xd3,
+	0x72, 0xbc, 0x27, 0x0b, 0x1a, 0x3f, 0x8f, 0xc3, 0xed, 0x69, 0x9e, 0x50, 0x1a, 0x61, 0x2c, 0x52,
+	0xc7, 0x91, 0xb3, 0xd5, 0xce, 0xb8, 0x80, 0xac, 0x0a, 0xbe, 0x43, 0x9e, 0xbb, 0x50, 0x94, 0x82,
+	0x14, 0xa0, 0x43, 0xcc, 0x98, 0xc0, 0x9a, 0x92, 0xee, 0x4d, 0x69, 0x6f, 0x4d, 0xcd, 0x08, 0x41,
+	0x3a, 0xa4, 0x43, 0xac, 0x46, 0x91, 0x6b, 0xf3, 0x29, 0xa4, 0x05, 0x03, 0x28, 0x0f, 0xd9, 0xe3,
+	0xd6, 0x69, 0xcb, 0x6e, 0x1f, 0x16, 0x57, 0x10, 0x82, 0xc2, 0x71, 0xbb, 0x73, 0x72, 0xde, 0x74,
+	0x0e, 0x0e, 0x3b, 0xed, 0xcf, 0x4f, 0xcf, 0x8a, 0x9a, 0x79, 0x09, 0x4f, 0x3e, 0x23, 0x8c, 0xbf,
+	0x7e, 0x20, 0x1b, 0xb3, 0x80, 0xfa, 0x0c, 0xa3, 0x4f, 0x21, 0xdb, 0x95, 0x16, 0xa6, 0x6b, 0x92,
+	0x89, 0xf2, 0x7c, 0x26, 0xec, 0x24, 0xdc, 0x74, 0xe0, 0xf1, 0x31, 0x5e, 0xa6, 0xc5, 0xc7, 0x90,
+	0x89, 0x73, 0x24, 0x13, 0x8b, 0x3b, 0xa8, 0x68, 0xf3, 0x2b, 0x78, 0xf7, 0xc0, 0xf3, 0xe6, 0x35,
+	0xf8, 0x3a, 0xc2, 0x8c, 0xff, 0xeb, 0xfa, 0x0e, 0x3c, 0x5e, 0x50, 0xff, 0x3f, 0x0e, 0xe0, 0xc2,
+	0xd3, 0xf3, 0xc0, 0x73, 0x39, 0xfe, 0xff, 0x66, 0x68, 0x41, 0xb5, 0x75, 0xdd, 0x1d, 0xb8, 0x7e,
+	0xff, 0xce, 0x26, 0x1d, 0x71, 0x01, 0x92, 0x1e, 0x25, 0x58, 0x23, 0x9e, 0x23, 0xef, 0x84, 0xd2,
+	0x64, 0x96, 0x78, 0x32, 0xc2, 0x3c, 0x85, 0xdd, 0x25, 0xca, 0x28, 0x3a, 0x1e, 0xc2, 0xba, 0xdb,
+	0xed, 0x62, 0xc6, 0x66, 0x6a, 0xe5, 0x63, 0x9b, 0x0c, 0xdd, 0xff, 0x25, 0x03, 0x79, 0xf9, 0xb9,
+	0x8d, 0xbf, 0x8d, 0xe8, 0x10, 0x36, 0x94, 0x56, 0xd4, 0x07, 0x38, 0x27, 0xe6, 0x6b, 0x89, 0x17,
+	0xc4, 0x28, 0x24, 0xa3, 0xc6, 0x2e, 0xf3, 0xc1, 0xcb, 0xdf, 0xfe, 0xfc, 0x21, 0xb5, 0x85, 0x36,
+	0x93, 0x27, 0xac, 0xc6, 0xe2, 0x1c, 0x1f, 0x76, 0xe6, 0x8b, 0x7a, 0xa6, 0xec, 0x9e, 0x58, 0x2e,
+	0x77, 0x09, 0xcc, 0x37, 0x65, 0xcb, 0x02, 0x5a, 0x9f, 0xb6, 0x1c, 0xed, 0x8f, 0xd0, 0x37, 0xb0,
+	0x3d, 0x57, 0xe0, 0xa8, 0x28, 0x5a, 0xd8, 0x98, 0xd1, 0x28, 0xec, 0xe2, 0xe6, 0xa4, 0x7d, 0x64,
+	0xec, 0x0a, 0xcb, 0x52, 0xb7, 0xc2, 0x2c, 0xc9, 0x9e, 0xf7, 0xd0, 0xd6, 0xed, 0x9e, 0xb5, 0x6f,
+	0x89, 0xf7, 0x02, 0x7d, 0xaf, 0xc1, 0xf6, 0x5c, 0x65, 0xa2, 0xaa, 0xe4, 0x6c, 0x89, 0xcb, 0x11,
+	0x23, 0x5a, 0x4a, 0xe6, 0x09, 0xf1, 0xe6, 0x0c, 0x0b, 0x0d, 0x6d, 0x0f, 0x7d, 0x07, 0x95, 0x45,
+	0x3a, 0x46, 0xef, 0xc9, 0xf7, 0x61, 0x39, 0xb5, 0x1b, 0xaf, 0x8e, 0xc9, 0x7c, 0x24, 0x9b, 0x6e,
+	0x1b, 0xfa, 0x2c, 0x0d, 0xb1, 0xbc, 0x2d, 0xe2, 0xbd, 0x10, 0x00, 0x2e, 0xa0, 0x72, 0x84, 0x87,
+	0x78, 0x2e, 0x80, 0x7f, 0x1e, 0xc6, 0xad, 0x2e, 0x8a, 0xec, 0xbd, 0x3b, 0xc8, 0xfe, 0x49, 0x83,
+	0x87, 0x0b, 0xb5, 0x8f, 0xde, 0x97, 0xb5, 0x96, 0xbc, 0x69, 0xc6, 0x07, 0x4b, 0x46, 0x2b, 0xe2,
+	0x2b, 0x12, 0x9d, 0x61, 0xde, 0x9f, 0x41, 0x87, 0x55, 0x7e, 0x43, 0xdb, 0x6b, 0x5a, 0x3f, 0xdf,
+	0x94, 0xb5, 0x5f, 0x6f, 0xca, 0xda, 0xef, 0x37, 0x65, 0xed, 0xc7, 0x3f, 0xca, 0x2b, 0xa0, 0x13,
+	0x6a, 0x31, 0xee, 0x76, 0xaf, 0x42, 0x7a, 0x1d, 0xff, 0x5e, 0x58, 0x6e, 0x40, 0xac, 0x71, 0xfd,
+	0x22, 0x35, 0xae, 0x7f, 0xb9, 0x72, 0x99, 0x91, 0xb6, 0x0f, 0xff, 0x0e, 0x00, 0x00, 0xff, 0xff,
+	0x2a, 0xbf, 0xf4, 0x2d, 0x0c, 0x0a, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -326,7 +1038,23 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type AuthServiceClient interface {
+	// GetAuthStatus returns the status for the current client.
 	GetAuthStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuthStatus, error)
+	// ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+	ListAuthMachineToMachineConfigs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListAuthMachineToMachineConfigResponse, error)
+	// GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+	GetAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetAuthMachineToMachineConfigResponse, error)
+	// AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+	AddAuthMachineToMachineConfig(ctx context.Context, in *AddAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*AddAuthMachineToMachineConfigResponse, error)
+	// UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+	// In case the auth machine to machine config does not exist, a new one will be created.
+	UpdateAuthMachineToMachineConfig(ctx context.Context, in *UpdateAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+	// In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
+	DeleteAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
+	// configured auth machine to machine configs.
+	ExchangeAuthMachineToMachineToken(ctx context.Context, in *ExchangeAuthMachineToMachineTokenRequest, opts ...grpc.CallOption) (*ExchangeAuthMachineToMachineTokenResponse, error)
 }
 
 type authServiceClient struct {
@@ -346,9 +1074,79 @@ func (c *authServiceClient) GetAuthStatus(ctx context.Context, in *Empty, opts .
 	return out, nil
 }
 
+func (c *authServiceClient) ListAuthMachineToMachineConfigs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListAuthMachineToMachineConfigResponse, error) {
+	out := new(ListAuthMachineToMachineConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/ListAuthMachineToMachineConfigs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) GetAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetAuthMachineToMachineConfigResponse, error) {
+	out := new(GetAuthMachineToMachineConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/GetAuthMachineToMachineConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) AddAuthMachineToMachineConfig(ctx context.Context, in *AddAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*AddAuthMachineToMachineConfigResponse, error) {
+	out := new(AddAuthMachineToMachineConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/AddAuthMachineToMachineConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) UpdateAuthMachineToMachineConfig(ctx context.Context, in *UpdateAuthMachineToMachineConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/UpdateAuthMachineToMachineConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) DeleteAuthMachineToMachineConfig(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/DeleteAuthMachineToMachineConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ExchangeAuthMachineToMachineToken(ctx context.Context, in *ExchangeAuthMachineToMachineTokenRequest, opts ...grpc.CallOption) (*ExchangeAuthMachineToMachineTokenResponse, error) {
+	out := new(ExchangeAuthMachineToMachineTokenResponse)
+	err := c.cc.Invoke(ctx, "/v1.AuthService/ExchangeAuthMachineToMachineToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 type AuthServiceServer interface {
+	// GetAuthStatus returns the status for the current client.
 	GetAuthStatus(context.Context, *Empty) (*AuthStatus, error)
+	// ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+	ListAuthMachineToMachineConfigs(context.Context, *Empty) (*ListAuthMachineToMachineConfigResponse, error)
+	// GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+	GetAuthMachineToMachineConfig(context.Context, *ResourceByID) (*GetAuthMachineToMachineConfigResponse, error)
+	// AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+	AddAuthMachineToMachineConfig(context.Context, *AddAuthMachineToMachineConfigRequest) (*AddAuthMachineToMachineConfigResponse, error)
+	// UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+	// In case the auth machine to machine config does not exist, a new one will be created.
+	UpdateAuthMachineToMachineConfig(context.Context, *UpdateAuthMachineToMachineConfigRequest) (*Empty, error)
+	// DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+	// In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
+	DeleteAuthMachineToMachineConfig(context.Context, *ResourceByID) (*Empty, error)
+	// ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
+	// configured auth machine to machine configs.
+	ExchangeAuthMachineToMachineToken(context.Context, *ExchangeAuthMachineToMachineTokenRequest) (*ExchangeAuthMachineToMachineTokenResponse, error)
 }
 
 // UnimplementedAuthServiceServer can be embedded to have forward compatible implementations.
@@ -357,6 +1155,24 @@ type UnimplementedAuthServiceServer struct {
 
 func (*UnimplementedAuthServiceServer) GetAuthStatus(ctx context.Context, req *Empty) (*AuthStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuthStatus not implemented")
+}
+func (*UnimplementedAuthServiceServer) ListAuthMachineToMachineConfigs(ctx context.Context, req *Empty) (*ListAuthMachineToMachineConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAuthMachineToMachineConfigs not implemented")
+}
+func (*UnimplementedAuthServiceServer) GetAuthMachineToMachineConfig(ctx context.Context, req *ResourceByID) (*GetAuthMachineToMachineConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAuthMachineToMachineConfig not implemented")
+}
+func (*UnimplementedAuthServiceServer) AddAuthMachineToMachineConfig(ctx context.Context, req *AddAuthMachineToMachineConfigRequest) (*AddAuthMachineToMachineConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAuthMachineToMachineConfig not implemented")
+}
+func (*UnimplementedAuthServiceServer) UpdateAuthMachineToMachineConfig(ctx context.Context, req *UpdateAuthMachineToMachineConfigRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAuthMachineToMachineConfig not implemented")
+}
+func (*UnimplementedAuthServiceServer) DeleteAuthMachineToMachineConfig(ctx context.Context, req *ResourceByID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAuthMachineToMachineConfig not implemented")
+}
+func (*UnimplementedAuthServiceServer) ExchangeAuthMachineToMachineToken(ctx context.Context, req *ExchangeAuthMachineToMachineTokenRequest) (*ExchangeAuthMachineToMachineTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExchangeAuthMachineToMachineToken not implemented")
 }
 
 func RegisterAuthServiceServer(s *grpc.Server, srv AuthServiceServer) {
@@ -381,6 +1197,114 @@ func _AuthService_GetAuthStatus_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_ListAuthMachineToMachineConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ListAuthMachineToMachineConfigs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/ListAuthMachineToMachineConfigs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ListAuthMachineToMachineConfigs(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_GetAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetAuthMachineToMachineConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/GetAuthMachineToMachineConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetAuthMachineToMachineConfig(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_AddAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAuthMachineToMachineConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).AddAuthMachineToMachineConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/AddAuthMachineToMachineConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).AddAuthMachineToMachineConfig(ctx, req.(*AddAuthMachineToMachineConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_UpdateAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAuthMachineToMachineConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdateAuthMachineToMachineConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/UpdateAuthMachineToMachineConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdateAuthMachineToMachineConfig(ctx, req.(*UpdateAuthMachineToMachineConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_DeleteAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).DeleteAuthMachineToMachineConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/DeleteAuthMachineToMachineConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).DeleteAuthMachineToMachineConfig(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ExchangeAuthMachineToMachineToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExchangeAuthMachineToMachineTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ExchangeAuthMachineToMachineToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.AuthService/ExchangeAuthMachineToMachineToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ExchangeAuthMachineToMachineToken(ctx, req.(*ExchangeAuthMachineToMachineTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _AuthService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
@@ -388,6 +1312,30 @@ var _AuthService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAuthStatus",
 			Handler:    _AuthService_GetAuthStatus_Handler,
+		},
+		{
+			MethodName: "ListAuthMachineToMachineConfigs",
+			Handler:    _AuthService_ListAuthMachineToMachineConfigs_Handler,
+		},
+		{
+			MethodName: "GetAuthMachineToMachineConfig",
+			Handler:    _AuthService_GetAuthMachineToMachineConfig_Handler,
+		},
+		{
+			MethodName: "AddAuthMachineToMachineConfig",
+			Handler:    _AuthService_AddAuthMachineToMachineConfig_Handler,
+		},
+		{
+			MethodName: "UpdateAuthMachineToMachineConfig",
+			Handler:    _AuthService_UpdateAuthMachineToMachineConfig_Handler,
+		},
+		{
+			MethodName: "DeleteAuthMachineToMachineConfig",
+			Handler:    _AuthService_DeleteAuthMachineToMachineConfig_Handler,
+		},
+		{
+			MethodName: "ExchangeAuthMachineToMachineToken",
+			Handler:    _AuthService_ExchangeAuthMachineToMachineToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -565,6 +1513,386 @@ func (m *AuthStatus_ServiceId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
+func (m *AuthMachineToMachineConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthMachineToMachineConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthMachineToMachineConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Issuer) > 0 {
+		i -= len(m.Issuer)
+		copy(dAtA[i:], m.Issuer)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.Issuer)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Mappings) > 0 {
+		for iNdEx := len(m.Mappings) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Mappings[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAuthService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.TokenExpirationDuration) > 0 {
+		i -= len(m.TokenExpirationDuration)
+		copy(dAtA[i:], m.TokenExpirationDuration)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.TokenExpirationDuration)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Type != 0 {
+		i = encodeVarintAuthService(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Role) > 0 {
+		i -= len(m.Role)
+		copy(dAtA[i:], m.Role)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.Role)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.ValueExpression) > 0 {
+		i -= len(m.ValueExpression)
+		copy(dAtA[i:], m.ValueExpression)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.ValueExpression)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Configs) > 0 {
+		for iNdEx := len(m.Configs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Configs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintAuthService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAuthService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAuthService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAuthService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAuthService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.IdToken) > 0 {
+		i -= len(m.IdToken)
+		copy(dAtA[i:], m.IdToken)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.IdToken)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.AccessToken) > 0 {
+		i -= len(m.AccessToken)
+		copy(dAtA[i:], m.AccessToken)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.AccessToken)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintAuthService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovAuthService(v)
 	base := offset
@@ -654,6 +1982,176 @@ func (m *AuthStatus_ServiceId) Size() (n int) {
 	if m.ServiceId != nil {
 		l = m.ServiceId.Size()
 		n += 1 + l + sovAuthService(uint64(l))
+	}
+	return n
+}
+func (m *AuthMachineToMachineConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + sovAuthService(uint64(m.Type))
+	}
+	l = len(m.TokenExpirationDuration)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if len(m.Mappings) > 0 {
+		for _, e := range m.Mappings {
+			l = e.Size()
+			n += 1 + l + sovAuthService(uint64(l))
+		}
+	}
+	l = len(m.Issuer)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AuthMachineToMachineConfig_Mapping) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	l = len(m.ValueExpression)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	l = len(m.Role)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListAuthMachineToMachineConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Configs) > 0 {
+		for _, e := range m.Configs {
+			l = e.Size()
+			n += 1 + l + sovAuthService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetAuthMachineToMachineConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddAuthMachineToMachineConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AddAuthMachineToMachineConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateAuthMachineToMachineConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ExchangeAuthMachineToMachineTokenRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.IdToken)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ExchangeAuthMachineToMachineTokenResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AccessToken)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
@@ -1048,6 +2546,952 @@ func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 			if err := m.UserAttributes[len(m.UserAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AuthMachineToMachineConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AuthMachineToMachineConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= AuthMachineToMachineConfig_Type(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TokenExpirationDuration", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TokenExpirationDuration = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mappings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mappings = append(m.Mappings, &AuthMachineToMachineConfig_Mapping{})
+			if err := m.Mappings[len(m.Mappings)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Issuer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Issuer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AuthMachineToMachineConfig_Mapping) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Mapping: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Mapping: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValueExpression", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValueExpression = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Role", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Role = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListAuthMachineToMachineConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListAuthMachineToMachineConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Configs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Configs = append(m.Configs, &AuthMachineToMachineConfig{})
+			if err := m.Configs[len(m.Configs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetAuthMachineToMachineConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetAuthMachineToMachineConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthMachineToMachineConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddAuthMachineToMachineConfigRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddAuthMachineToMachineConfigRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddAuthMachineToMachineConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthMachineToMachineConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AddAuthMachineToMachineConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AddAuthMachineToMachineConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AddAuthMachineToMachineConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthMachineToMachineConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateAuthMachineToMachineConfigRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateAuthMachineToMachineConfigRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateAuthMachineToMachineConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &AuthMachineToMachineConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExchangeAuthMachineToMachineTokenRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExchangeAuthMachineToMachineTokenRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExchangeAuthMachineToMachineTokenRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IdToken", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IdToken = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAuthService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ExchangeAuthMachineToMachineTokenResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAuthService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExchangeAuthMachineToMachineTokenResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExchangeAuthMachineToMachineTokenResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessToken", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessToken = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

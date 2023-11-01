@@ -4,6 +4,8 @@ PLATFORM ?= linux/amd64
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
+BENCHTIME ?= 1x
+BENCHTIMEOUT ?= 20m
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,
@@ -18,7 +20,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -293,7 +295,7 @@ go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(ST
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
 
-proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS)
+proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2)
 	@echo "+ $@"
 	$(SILENT)touch proto-generated-srcs
 	$(SILENT)$(MAKE) clean-obsolete-protos
@@ -463,9 +465,10 @@ mock-grpc-server-build: build-prep
 gendocs: $(GENERATED_API_DOCS)
 	@echo "+ $@"
 
-# We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) target already performs validation.
+# We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) and $(MERGED_API_SWAGGER_SPEC_V2) targets
+# already perform validation.
 .PHONY: swagger-docs
-swagger-docs: $(MERGED_API_SWAGGER_SPEC)
+swagger-docs: $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 	@echo "+ $@"
 
 UNIT_TEST_PACKAGES ?= ./...
@@ -506,6 +509,14 @@ go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		| tee $(GO_TEST_OUTPUT_PATH)
+
+.PHONY: go-postgres-bench-tests
+go-postgres-bench-tests: build-prep test-prep
+	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
+	set -o pipefail ; \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -v \
+  $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: shell-unit-tests
@@ -559,7 +570,7 @@ junit-reports/report.xml: $(GO_TEST_OUTPUT_PATH) $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
+all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) ui-build
 
 .PHONY: main-image
 main-image: all-builds

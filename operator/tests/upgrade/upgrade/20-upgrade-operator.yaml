@@ -3,5 +3,5 @@ kind: TestStep
 commands:
 # We invoke the upgrade script via make such that we do not need to redefine here or plumb through
 # from the parent make: the namespace and operator version string (which are arguments to upgrade script).
-- script: make -C ../../.. upgrade-via-olm
+- command: make -C ../../.. upgrade-via-olm
   timeout: 900

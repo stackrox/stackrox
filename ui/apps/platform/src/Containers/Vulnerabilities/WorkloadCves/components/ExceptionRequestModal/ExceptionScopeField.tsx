@@ -44,7 +44,7 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                             values.scope.imageScope.tag === ALL
                         }
                         onChange={() => {}}
-                        label={`All tags within ${scopeContext.image.name}}`}
+                        label={`All tags within ${scopeContext.image.name}`}
                     />
                     <Radio
                         id="scope-single-image-single-tag"

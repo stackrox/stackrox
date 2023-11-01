@@ -32,7 +32,9 @@ function scopeDisplay(scope: BaseVulnerabilityException['scope']): string {
     return `${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`;
 }
 
-function expiryDisplay(expiry: VulnerabilityDeferralException['deferralReq']['expiry']): string {
+function expiryDisplay(
+    expiry: VulnerabilityDeferralException['deferralRequest']['expiry']
+): string {
     const { expiryType } = expiry;
     switch (expiryType) {
         case 'ALL_CVE_FIXABLE':
@@ -119,7 +121,7 @@ function CompletedExceptionRequestModal({
                         <DescriptionListGroup>
                             <DescriptionListTerm>Expires</DescriptionListTerm>
                             <DescriptionListDescription>
-                                {expiryDisplay(exceptionRequest.deferralReq.expiry)}
+                                {expiryDisplay(exceptionRequest.deferralRequest.expiry)}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                     )}

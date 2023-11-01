@@ -21,12 +21,14 @@ migrator/**/*                       @stackrox/core-workflows
 pkg/postgres/**/*                   @stackrox/core-workflows
 tests/upgrade/*                     @stackrox/core-workflows
 
-# Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC).
-roxctl/**/*     @stackrox/merlin
-pkg/auth/**/*   @stackrox/merlin
-pkg/sac/**/*    @stackrox/merlin
-*/declarativeconfig/**/* @stackrox/merlin
-tests/performance @stackrox/merlin
+# Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC), declarative config,
+# performance testing, and administration events.
+roxctl/**/*                 @stackrox/merlin
+pkg/auth/**/*               @stackrox/merlin
+pkg/sac/**/*                @stackrox/merlin
+*/administration/**/*       @stackrox/merlin
+*/declarativeconfig/**/*    @stackrox/merlin
+tests/performance           @stackrox/merlin
 
 /ui/**/* @stackrox/ui
 

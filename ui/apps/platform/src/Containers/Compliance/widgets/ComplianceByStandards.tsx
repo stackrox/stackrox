@@ -17,9 +17,9 @@ type StandardsQueryDataType = {
 };
 
 type ComplianceByStandardsProps = {
-    entityId?: string;
-    entityName?: string;
-    entityType?: ComplianceStandardScope;
+    entityId: string;
+    entityName: string;
+    entityType: ComplianceStandardScope;
 };
 
 function ComplianceByStandards({
