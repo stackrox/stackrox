@@ -21,13 +21,11 @@ provision_gke_cluster() {
 assign_env_variables() {
     info "Assigning environment variables for later steps"
 
-    if [[ "$#" -lt 1 ]]; then
-        die "missing args. usage: assign_env_variables <cluster-id> [<num-nodes> <machine-type>]"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: assign_env_variables <cluster-id>"
     fi
 
     local cluster_id="$1"
-    local num_nodes="${2:-3}"
-    local machine_type="${3:-e2-standard-4}"
 
     ensure_CI
 
@@ -46,12 +44,6 @@ assign_env_variables() {
     cluster_name="${cluster_name:0:40}" # (for GKE name limit)
     ci_export CLUSTER_NAME "$cluster_name"
     echo "Assigned cluster name is $cluster_name"
-
-    ci_export NUM_NODES "$num_nodes"
-    echo "Number of nodes for cluster is $num_nodes"
-
-    ci_export MACHINE_TYPE "$machine_type"
-    echo "Machine type is set as to $machine_type"
 
     choose_release_channel
     choose_cluster_version
@@ -145,6 +137,7 @@ create_cluster() {
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
+    DISK_SIZE_GB="${DISK_SIZE_GB:-40GB}"
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
@@ -173,7 +166,7 @@ create_cluster() {
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
             --disk-type=pd-standard \
-            --disk-size=40GB \
+            --disk-size="${DISK_SIZE_GB}" \
             --create-subnetwork range=/28 \
             --cluster-ipv4-cidr=/20 \
             --services-ipv4-cidr=/24 \
