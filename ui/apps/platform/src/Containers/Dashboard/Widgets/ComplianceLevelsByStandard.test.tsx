@@ -18,7 +18,6 @@ tests compared to a direct hard coding in the mocked response below.
 id: [name, numFailing, numPassing]
 */
 const standards = {
-    CIS_Docker_v1_2_0: ['CIS Docker v1.2.0', 9, 1],
     CIS_Kubernetes_v1_5: ['CIS Kubernetes v1.5', 8, 2],
     HIPAA_164: ['HIPAA 164', 7, 3],
     NIST_800_190: ['NIST SP 800-190', 6, 4],

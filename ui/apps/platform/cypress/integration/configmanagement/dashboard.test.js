@@ -328,18 +328,4 @@ describe('Configuration Management Dashboard', () => {
         }, entitiesKey);
     });
 
-    it('switching clusters in the "CIS Standard Across Clusters" widget\'s should change the data', () => {
-        visitConfigurationManagementDashboard();
-
-        cy.get(selectors.cisStandardsAcrossClusters.select.value).should('contain', 'CIS Docker');
-        cy.get(selectors.cisStandardsAcrossClusters.select.input).click();
-        cy.get(`${selectors.cisStandardsAcrossClusters.select.options}:last`)
-            .last()
-            .click({ force: true });
-        cy.wait('@complianceByControls'); // assume alias from visit function
-        cy.get(selectors.cisStandardsAcrossClusters.select.value).should(
-            'contain',
-            'CIS Kubernetes'
-        );
-    });
 });
