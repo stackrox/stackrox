@@ -2,7 +2,6 @@ package booleanpolicy
 
 import (
 	"errors"
-	"sort"
 	"time"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/celcompile"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/regocompile"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/maputil"
 )
 
 type factoryWrapper struct {
@@ -35,7 +33,6 @@ const (
 
 var (
 	legacyCounter = NewDurationCounter(time.Minute, "legacy 1 minute")
-	evalCounter   = NewDurationCounter(time.Minute, "all evals 1 minute")
 	otherCounter  = NewDurationCounter(time.Minute, "other evals 1 minute")
 )
 
@@ -47,14 +44,7 @@ type evaluatorWrapper struct {
 }
 
 func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
-	evalCounter.Add()
-	if len(e.otherEvaluators) == 0 {
-		legacyCounter.Add()
-		return e.legacyEvaluator.Evaluate(obj)
-	}
-	keys := maputil.Keys(e.otherEvaluators)
-	sort.Strings(keys)
-	for _, name := range keys {
+	for name := range e.otherEvaluators {
 		evaluator := e.otherEvaluators[name]
 		result, matched := evaluator.Evaluate(obj)
 		otherCounter.Add()
