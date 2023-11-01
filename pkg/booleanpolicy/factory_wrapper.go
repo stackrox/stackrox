@@ -36,6 +36,7 @@ const (
 var (
 	legacyCounter = NewDurationCounter(time.Minute, "legacy 1 minute")
 	evalCounter   = NewDurationCounter(time.Minute, "all evals 1 minute")
+	otherCounter  = NewDurationCounter(time.Minute, "other evals 1 minute")
 )
 
 type evaluatorWrapper struct {
@@ -56,6 +57,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	for _, name := range keys {
 		evaluator := e.otherEvaluators[name]
 		result, matched := evaluator.Evaluate(obj)
+		otherCounter.Add()
 		return result, matched
 	}
 

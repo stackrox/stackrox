@@ -1,8 +1,12 @@
 package booleanpolicy
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
 type durationCounter struct {
+	lock          sync.Mutex
 	message       string
 	duration      time.Duration
 	lastStartTime time.Time
@@ -20,6 +24,8 @@ func NewDurationCounter(d time.Duration, message string) *durationCounter {
 }
 
 func (d *durationCounter) Add() {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	if time.Since(d.lastStartTime) > d.duration {
 		log.Infof("Count of %s since %v is %d", d.message, d.lastStartTime, d.count)
 		d.count = 0

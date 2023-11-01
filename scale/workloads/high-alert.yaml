@@ -1,7 +1,7 @@
 deploymentWorkload:
 - deploymentType: Deployment
   lifecycleDuration: 10m0s
-  numDeployments: 11000
+  numDeployments: 10000
   numLifecycles: 0
   podWorkload:
     containerWorkload:
@@ -14,12 +14,12 @@ deploymentWorkload:
       processInterval: 30s
   updateInterval: 3m
 networkWorkload:
-  batchSize: 1100
+  batchSize: 1000
   flowInterval: 1s
 nodeWorkload:
-  numNodes: 11000
+  numNodes: 10000
 rbacWorkload:
-  numBindings: 11000
-  numRoles: 11000
-  numServiceAccounts: 11000
-numNamespaces: 11000
+  numBindings: 10000
+  numRoles: 10000
+  numServiceAccounts: 10000
+numNamespaces: 10000
