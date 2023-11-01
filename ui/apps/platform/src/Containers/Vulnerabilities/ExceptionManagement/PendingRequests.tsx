@@ -13,7 +13,13 @@ import useURLPagination from 'hooks/useURLPagination';
 import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 import useURLSearch from 'hooks/useURLSearch';
-import { SearchOption } from 'Containers/Vulnerabilities/ExceptionManagement/components/SearchOptionsDropdown';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    REQUEST_ID_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import {
@@ -25,7 +31,7 @@ import {
     RequesterTableCell,
     ScopeTableCell,
 } from './components/ExceptionRequestTableCells';
-import FilterAutocompleteSelect from './components/FilterAutocomplete';
+import FilterAutocompleteSelect from '../components/FilterAutocomplete';
 
 // @TODO: Use API data instead of hardcoded data
 const vulnerabilityExceptions: VulnerabilityException[] = [
@@ -76,26 +82,10 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
 ];
 
 const searchOptions: SearchOption[] = [
-    {
-        label: 'Request ID',
-        value: 'REQUEST_ID',
-        category: 'VULN_REQUEST', // This might need to change
-    },
-    {
-        label: 'CVE',
-        value: 'CVE',
-        category: 'IMAGE_VULNERABILITIES',
-    },
-    {
-        label: 'Requester',
-        value: 'REQUESTER',
-        category: 'VULN_REQUEST', // This might need to change
-    },
-    {
-        label: 'Image',
-        value: 'IMAGE',
-        category: 'IMAGES',
-    },
+    REQUEST_ID_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
 ];
 
 function PendingApprovals() {

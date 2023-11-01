@@ -43,9 +43,9 @@ export function applyLocalSeverityFilters(...severities) {
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
  */
 export function selectResourceFilterType(entityType) {
-    cy.get(selectors.resourceDropdown).click();
-    cy.get(selectors.resourceMenuItem(entityType)).click();
-    cy.get(selectors.resourceDropdown).click();
+    cy.get(selectors.searchOptionsDropdown).click();
+    cy.get(selectors.searchOptionsMenuItem(entityType)).click();
+    cy.get(selectors.searchOptionsDropdown).click();
 }
 
 /**
@@ -54,12 +54,12 @@ export function selectResourceFilterType(entityType) {
  * @param {string} value
  */
 export function typeAndSelectResourceFilterValue(entityType, value) {
-    cy.get(selectors.resourceValueTypeahead(entityType)).click();
-    cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
-    cy.get(selectors.resourceValueMenuItem(entityType))
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(entityType))
         .contains(new RegExp(`^${value}$`))
         .click();
-    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
 }
 
 /**
@@ -68,10 +68,10 @@ export function typeAndSelectResourceFilterValue(entityType, value) {
  * @param {string} value
  */
 export function typeAndSelectCustomResourceFilterValue(entityType, value) {
-    cy.get(selectors.resourceValueTypeahead(entityType)).click();
-    cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
-    cy.get(selectors.resourceValueMenuItem(entityType)).contains(`Add "${value}"`).click();
-    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(entityType)).contains(`Add "${value}"`).click();
+    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
 }
 /**
  * View a specific entity tab for a Workload CVE table
