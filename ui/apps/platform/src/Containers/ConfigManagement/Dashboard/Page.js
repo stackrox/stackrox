@@ -26,7 +26,7 @@ const ConfigManagementDashboardPage = () => {
                 <ComplianceByControls
                     className="pdf-page"
                     standardOptions={[
-                        standardTypes.CIS_Kubernetes_v1_5,
+                        standardTypes.CIS_Kubernetes_v1_5
                     ]}
                 />
                 <UsersWithMostClusterAdminRoles />
