@@ -6,8 +6,6 @@ export const standardLabels = {
     [standardTypes.NIST_SP_800_53_Rev_4]: 'NIST SP 800-53',
     [standardTypes.HIPAA_164]: 'HIPAA 164',
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS Kubernetes v1.5',
-    [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker v1.1.0',
-    [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker v1.2.0',
 };
 
 export const standardShortLabels = {

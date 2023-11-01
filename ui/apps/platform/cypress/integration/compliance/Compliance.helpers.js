@@ -41,7 +41,6 @@ export const routeMatcherMapWithoutStandards =
 // TODO are these reliable after hideScanResults feature?
 /*
 const opnamesOfStandards = [
-    'complianceStandards_CIS_Docker_v1_2_0',
     'complianceStandards_CIS_Kubernetes_v1_5',
     'complianceStandards_HIPAA_164',
     'complianceStandards_NIST_800_190',
