@@ -15,7 +15,7 @@ export type ExceptionScopeFieldProps = {
 };
 
 function ExceptionScopeField({ fieldId, label, scopeContext, formik }: ExceptionScopeFieldProps) {
-    const { values } = formik;
+    const { values, setFieldValue } = formik;
 
     return (
         <FormGroup fieldId={fieldId} label={label} isRequired>
@@ -29,7 +29,6 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                         values.scope.imageScope.remote === ALL &&
                         values.scope.imageScope.tag === ALL
                     }
-                    onChange={() => {}}
                     label="Selected CVEs across all images and deployments"
                 />
             )}
@@ -39,22 +38,32 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                         id="scope-single-image"
                         name="scope-single-image"
                         isChecked={
-                            values.scope.imageScope.registry === ALL &&
-                            values.scope.imageScope.remote === scopeContext.image.name &&
+                            values.scope.imageScope.registry === scopeContext.imageName.registry &&
+                            values.scope.imageScope.remote === scopeContext.imageName.remote &&
                             values.scope.imageScope.tag === ALL
                         }
-                        onChange={() => {}}
-                        label={`All tags within ${scopeContext.image.name}`}
+                        onChange={() =>
+                            setFieldValue('scope.imageScope', {
+                                ...scopeContext.imageName,
+                                tag: ALL,
+                            })
+                        }
+                        label={`All tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`}
                     />
                     <Radio
                         id="scope-single-image-single-tag"
                         name="scope-single-image-single-tag"
                         isChecked={
-                            values.scope.imageScope.registry === ALL &&
-                            values.scope.imageScope.remote === scopeContext.image.name &&
-                            values.scope.imageScope.tag === scopeContext.image.tag
+                            values.scope.imageScope.registry === scopeContext.imageName.registry &&
+                            values.scope.imageScope.remote === scopeContext.imageName.remote &&
+                            values.scope.imageScope.tag === scopeContext.imageName.tag
                         }
-                        label={`Only ${scopeContext.image.name}:${scopeContext.image.tag}`}
+                        onChange={() =>
+                            setFieldValue('scope.imageScope', {
+                                ...scopeContext.imageName,
+                            })
+                        }
+                        label={`Only ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}:${scopeContext.imageName.tag}`}
                     />
                 </>
             )}

@@ -7,7 +7,9 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import { ensureExhaustive } from 'utils/type.utils';
 
-export type ScopeContext = 'GLOBAL' | { image: { name: string; tag: string } };
+export type ScopeContext =
+    | 'GLOBAL'
+    | { imageName: { registry: string; remote: string; tag: string } };
 
 export const exceptionValidationSchema = yup.object({
     cves: yup.array().of(yup.string()).min(1, 'At least one CVE must be selected'),
