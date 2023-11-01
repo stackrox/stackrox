@@ -67,7 +67,7 @@ describe('Compliance entities list', () => {
     });
 
     it('should be sorted by version in standards list', () => {
-        visitComplianceStandard('CIS Docker v1.2.0');
+        visitComplianceStandard('CIS Kubernetes v1.5');
 
         cy.get(selectors.list.table.firstRowName)
             .invoke('text')

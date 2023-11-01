@@ -25,10 +25,7 @@ const ConfigManagementDashboardPage = () => {
                 <PolicyViolationsBySeverity />
                 <ComplianceByControls
                     className="pdf-page"
-                    standardOptions={[
-                        standardTypes.CIS_Docker_v1_2_0,
-                        standardTypes.CIS_Kubernetes_v1_5,
-                    ]}
+                    standardOptions={[standardTypes.CIS_Kubernetes_v1_5]}
                 />
                 <UsersWithMostClusterAdminRoles />
                 <SecretsMostUsedAcrossDeployments />
