@@ -10,6 +10,21 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
+
+### Removed Features
+- ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
+
+### Deprecated Fatures
+
+### Technical Changes
+- Increased default memory request for scanner-db from 200MiB to 512MiB,
+  to prevent OOMs during DB initialization in case of memory pressure on the node.
+
+## [4.3.0]
+
+
+
+### Added Features
 - ROX-18525, ROX-19158: A new `cluster` flag has been added to the `roxctl` commands and APIs that perform image scans, this enables delegating scans to specific secured clusters on demand.
 - ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
   - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
@@ -49,6 +64,7 @@ and the existing exceptions enforced on host and platform vulnerabilities will b
   Instead, only the associated role names will be there. Enabling this will lower the verbosity of the audit log messages,
   but investigating associated permissions for a requester might be harder (i.e. the associated role would have be known at the time of the request).
   Thus, it is generally not recommended to set this to `true`.
+- ROX-18978: The default policy "Iptables Executed in Privileged Container" has been renamed to "Iptables or nftables Executed in Privileged Container" and now also detects the `nft` process which is used by `nftables`.
 
 ## [4.2.0]
 

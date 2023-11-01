@@ -97,10 +97,10 @@ jobs:
     name: Check Jira tickets for release
     needs: [variables, properties]
     runs-on: ubuntu-latest
-    # Checking unequal with "false" because closed milestones have unset input values.
-    if: github.event.inputs.check-jira-issues != 'false'
     steps:
       - name: Query JIRA
+        # Checking unequal with "false" because closed milestones have unset input values.
+        if: github.event.inputs.check-jira-issues != 'false'
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |

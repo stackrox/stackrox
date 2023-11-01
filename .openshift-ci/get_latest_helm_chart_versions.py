@@ -38,7 +38,7 @@ num_releases_default = 3
 # For support exceptions we may need to get the latest patch for a specific release that is not within the
 # last N versions. In that case get_latest_helm_chart_version_for_specific_release will provide the latest
 # patch of the input release.
-sample_support_exception Release = (major=3, minor=74)
+sample_support_exception = Release(major=3, minor=74)
 
 def main(argv):
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)

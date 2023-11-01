@@ -63,7 +63,7 @@ func NewDispatcherRegistry(
 	configHandler config.Handler,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
-	storeProvider *InMemoryStoreProvider,
+	storeProvider *StoreProvider,
 	k8sAPI kubernetes.Interface,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore

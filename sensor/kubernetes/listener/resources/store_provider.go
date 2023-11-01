@@ -15,11 +15,11 @@ import (
 
 var (
 	errUnableToReconcile                        = errors.New("unable to reconcile resource")
-	_                    reconcile.Reconcilable = (*InMemoryStoreProvider)(nil)
+	_                    reconcile.Reconcilable = (*StoreProvider)(nil)
 )
 
-// InMemoryStoreProvider holds all stores used in sensor and exposes a public interface for each that can be used outside of the listeners.
-type InMemoryStoreProvider struct {
+// StoreProvider holds all stores used in sensor and exposes a public interface for each that can be used outside of the listeners.
+type StoreProvider struct {
 	deploymentStore        *DeploymentStore
 	podStore               *PodStore
 	serviceStore           *serviceStore
@@ -45,14 +45,14 @@ type CleanableStore interface {
 }
 
 // InitializeStore creates the store instances
-func InitializeStore() *InMemoryStoreProvider {
+func InitializeStore() *StoreProvider {
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStore()
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
-	p := &InMemoryStoreProvider{
+	p := &StoreProvider{
 		deploymentStore:        deployStore,
 		podStore:               podStore,
 		serviceStore:           svcStore,
@@ -110,71 +110,71 @@ func InitializeStore() *InMemoryStoreProvider {
 }
 
 // CleanupStores deletes all entries from all stores
-func (p *InMemoryStoreProvider) CleanupStores() {
+func (p *StoreProvider) CleanupStores() {
 	for _, cleanable := range p.cleanableStores {
 		cleanable.Cleanup()
 	}
 }
 
 // Deployments returns the deployment store public interface
-func (p *InMemoryStoreProvider) Deployments() store.DeploymentStore {
+func (p *StoreProvider) Deployments() store.DeploymentStore {
 	return p.deploymentStore
 }
 
 // Pods returns the pod store public interface
-func (p *InMemoryStoreProvider) Pods() store.PodStore {
+func (p *StoreProvider) Pods() store.PodStore {
 	return p.podStore
 }
 
 // Services returns the service store public interface
-func (p *InMemoryStoreProvider) Services() store.ServiceStore {
+func (p *StoreProvider) Services() store.ServiceStore {
 	return p.serviceStore
 }
 
 // NetworkPolicies returns the network policy store public interface
-func (p *InMemoryStoreProvider) NetworkPolicies() store.NetworkPolicyStore {
+func (p *StoreProvider) NetworkPolicies() store.NetworkPolicyStore {
 	return p.networkPolicyStore
 }
 
 // RBAC returns the RBAC store public interface
-func (p *InMemoryStoreProvider) RBAC() store.RBACStore {
+func (p *StoreProvider) RBAC() store.RBACStore {
 	return p.rbacStore
 }
 
 // ServiceAccounts returns the ServiceAccount store public interface
-func (p *InMemoryStoreProvider) ServiceAccounts() store.ServiceAccountStore {
+func (p *StoreProvider) ServiceAccounts() store.ServiceAccountStore {
 	return p.serviceAccountStore
 }
 
 // EndpointManager returns the EndpointManager public interface
-func (p *InMemoryStoreProvider) EndpointManager() store.EndpointManager {
+func (p *StoreProvider) EndpointManager() store.EndpointManager {
 	return p.endpointManager
 }
 
 // Registries returns the Registry store public interface
-func (p *InMemoryStoreProvider) Registries() *registry.Store {
+func (p *StoreProvider) Registries() *registry.Store {
 	return p.registryStore
 }
 
 // Entities returns the cluster entities store public interface
-func (p *InMemoryStoreProvider) Entities() *clusterentities.Store {
+func (p *StoreProvider) Entities() *clusterentities.Store {
 	return p.entityStore
 }
 
 // Nodes returns the Nodes public interface
-func (p *InMemoryStoreProvider) Nodes() store.NodeStore {
+func (p *StoreProvider) Nodes() store.NodeStore {
 	return p.nodeStore
 }
 
 // RegistryMirrors returns the RegistryMirror store public interface.
-func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
+func (p *StoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
 }
 
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (p *InMemoryStoreProvider) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
+func (p *StoreProvider) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	if resStore, found := p.reconcilableStores[resType]; found {
 		return resStore.ReconcileDelete(resType, resID, resHash)
 	}

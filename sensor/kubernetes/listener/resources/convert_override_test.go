@@ -173,7 +173,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), c.registryOverride,
-				storeProvider.orchestratorNamespaces, storeProvider.Registries()).GetDeployment()
+				storeProvider.orchestratorNamespaces).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

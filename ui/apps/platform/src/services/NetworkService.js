@@ -1,6 +1,7 @@
 import queryString from 'qs';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
+import { convertToExactMatch } from 'utils/searchUtils';
 
 import axios from './instance';
 
@@ -232,8 +233,12 @@ export function fetchNetworkFlowGraph(
     includePolicies = false
 ) {
     const urlParams = query ? { query } : {};
-    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
-    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
+    const namespaceQuery =
+        namespaces.length > 0 ? `Namespace:${namespaces.map(convertToExactMatch).join(',')}` : '';
+    const deploymentQuery =
+        deployments.length > 0
+            ? `Deployment:${deployments.map(convertToExactMatch).join(',')}`
+            : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
     if (date) {
