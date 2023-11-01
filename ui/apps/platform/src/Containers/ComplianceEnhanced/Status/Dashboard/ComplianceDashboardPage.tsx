@@ -1,6 +1,7 @@
 import React from 'react';
 import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
 
+import PageTitle from 'Components/PageTitle';
 import ComplianceByCluster from './Widgets/ComplianceByCluster';
 import ComplianceByProfile from './Widgets/ComplianceByProfile';
 import ScanResultsOverviewTable from './ScanResultsOverviewTable';
@@ -8,6 +9,7 @@ import ScanResultsOverviewTable from './ScanResultsOverviewTable';
 function ComplianceDashboardPage() {
     return (
         <>
+            <PageTitle title="Compliance Status Dashboard" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-pl-lg">
                     <FlexItem>
