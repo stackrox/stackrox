@@ -327,5 +327,4 @@ describe('Configuration Management Dashboard', () => {
                 .click();
         }, entitiesKey);
     });
-
 });
