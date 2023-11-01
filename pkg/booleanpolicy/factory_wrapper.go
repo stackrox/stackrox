@@ -33,6 +33,11 @@ const (
 	jmespathBased     = "jmespath"
 )
 
+var (
+	legacyCounter = NewDurationCounter(time.Minute, "legacy 1 minute")
+	evalCounter   = NewDurationCounter(time.Minute, "all evals 1 minute")
+)
+
 type evaluatorWrapper struct {
 	otherEvaluators map[string]evaluator.Evaluator
 	legacyEvaluator evaluator.Evaluator
@@ -41,23 +46,21 @@ type evaluatorWrapper struct {
 }
 
 func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
+	evalCounter.Add()
 	if len(e.otherEvaluators) == 0 {
-		log.Info("Evaluating with legacy")
+		legacyCounter.Add()
 		return e.legacyEvaluator.Evaluate(obj)
 	}
 	keys := maputil.Keys(e.otherEvaluators)
 	sort.Strings(keys)
 	for _, name := range keys {
 		evaluator := e.otherEvaluators[name]
-		start := time.Now()
 		result, matched := evaluator.Evaluate(obj)
-		log.Infof("Evaluating with %s: %d", name, time.Since(start).Nanoseconds())
 		return result, matched
 	}
 
-	start := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
-	log.Infof("Evaluating legacy %d", time.Since(start).Nanoseconds())
+	legacyCounter.Add()
 
 	return legacyResult, legacyMatched
 }
@@ -84,7 +87,7 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 			} else {
 				e.otherEvaluators[regoBased] = regoEvaluator
 				duration := time.Since(start).Nanoseconds()
-				log.Debugf("Rego base compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
+				log.Infof("Rego base compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
 			}
 		}
 		if f.opaOrBasedFactory != nil {
@@ -97,7 +100,7 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 			} else {
 				e.otherEvaluators[regoOrBased] = regoOrEvaluator
 				duration := time.Since(start).Nanoseconds()
-				log.Debugf("Rego or compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
+				log.Infof("Rego or compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
 			}
 		}
 
@@ -111,7 +114,7 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 			} else {
 				e.otherEvaluators[regoNegateOrBased] = regoNegateEvaluator
 				duration := time.Since(start).Nanoseconds()
-				log.Debugf("Rego negate compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
+				log.Infof("Rego negate compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
 			}
 		}
 
@@ -125,7 +128,7 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 			} else {
 				e.otherEvaluators[celBased] = celEvaluator
 				duration := time.Since(start).Nanoseconds()
-				log.Debugf("CEL compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
+				log.Infof("CEL compile %d, which is %.2f times of legacy", duration, float64(duration)/float64(legacyDuration))
 			}
 		}
 	}
