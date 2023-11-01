@@ -1,8 +1,0 @@
-#workload-cves-table-toolbar .pf-m-typeahead .pf-c-chip-group,
-#workload-cves-table-toolbar .pf-m-typeahead button.pf-c-select__toggle-clear {
-    display: none;
-}
-
-#workload-cves-table-toolbar .pf-c-select__toggle-wrapper {
-    flex-wrap: nowrap
-}

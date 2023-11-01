@@ -28,13 +28,13 @@ describe('Workload CVE Image Single page', () => {
         cy.get('tbody tr td[data-label="Image"] a').first().click();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.resourceDropdown).click();
-        cy.get(selectors.resourceMenuItem('CVE'));
-        cy.get(selectors.resourceMenuItem('Image')).should('not.exist');
-        cy.get(selectors.resourceMenuItem('Deployment')).should('not.exist');
-        cy.get(selectors.resourceMenuItem('Cluster')).should('not.exist');
-        cy.get(selectors.resourceMenuItem('Namespace')).should('not.exist');
-        cy.get(selectors.resourceDropdown).click();
+        cy.get(selectors.searchOptionsDropdown).click();
+        cy.get(selectors.searchOptionsMenuItem('CVE'));
+        cy.get(selectors.searchOptionsMenuItem('Image')).should('not.exist');
+        cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
+        cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
+        cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
+        cy.get(selectors.searchOptionsDropdown).click();
     });
 
     it('should display consistent data between the cards and the table test', () => {

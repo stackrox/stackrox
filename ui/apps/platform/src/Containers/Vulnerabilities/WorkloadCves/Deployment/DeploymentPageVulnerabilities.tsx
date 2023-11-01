@@ -26,6 +26,11 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import TableErrorComponent from '../components/TableErrorComponent';
@@ -45,7 +50,6 @@ import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
     DeploymentWithVulnerabilities,
 } from '../Tables/DeploymentVulnerabilitiesTable';
-import { Resource } from '../components/FilterResourceDropdown';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
@@ -74,7 +78,7 @@ const vulnerabilityQuery = gql`
 
 const defaultSortFields = ['CVE'];
 
-const deploymentResourceFilters = new Set<Resource>(['CVE', 'IMAGE']);
+const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
@@ -173,7 +177,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                         autocompleteSearchContext={{
                             'Deployment ID': deploymentId,
                         }}
-                        supportedResourceFilters={deploymentResourceFilters}
+                        searchOptions={searchOptions}
                         onFilterChange={() => setPage(1)}
                     />
                 </div>

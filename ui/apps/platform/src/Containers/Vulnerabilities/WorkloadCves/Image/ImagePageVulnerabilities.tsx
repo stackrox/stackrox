@@ -28,6 +28,10 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -46,7 +50,6 @@ import {
 } from '../searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
-import { Resource } from '../components/FilterResourceDropdown';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
@@ -74,7 +77,7 @@ const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const imageResourceFilters = new Set<Resource>(['CVE']);
+const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -303,7 +306,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                 <VulnerabilityStateTabs isBox />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
-                        supportedResourceFilters={imageResourceFilters}
+                        searchOptions={searchOptions}
                         autocompleteSearchContext={{
                             'Image SHA': imageId,
                         }}
