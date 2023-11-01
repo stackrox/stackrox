@@ -118,6 +118,8 @@ spec:
         {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
+        - mountPath: /etc/stackrox
+          name: central-config-volume
         - name: varlog
           mountPath: /var/log/stackrox/
         - name: sensor-etc-ssl-volume
@@ -147,6 +149,11 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      - configMap:
+          defaultMode: 420
+          name: central-config
+          optional: true
+        name: central-config-volume
       - name: certs
         secret:
           secretName: sensor-tls
