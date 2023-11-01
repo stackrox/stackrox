@@ -98,7 +98,6 @@ describe('Compliance levels by standard dashboard widget', () => {
         expect(ascendingData).toHaveLength(6);
         expect(ascendingData).toStrictEqual(
             expect.arrayContaining([
-                'CIS Docker v1.2.0',
                 'CIS Kubernetes v1.5',
                 'HIPAA 164',
                 'NIST SP 800-190',
@@ -137,7 +136,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         await user.click(await screen.findByText('View all'));
         expect(history.location.pathname).toBe(complianceBasePath);
 
-        const standard = 'CIS Docker v1.2.0';
+        const standard = 'CIS Kubernetes v1.5';
         await user.click(await screen.findByText(standard));
         expect(history.location.pathname).toBe(
             `${complianceBasePath}/${urlEntityListTypes[standardEntityTypes.CONTROL]}`
