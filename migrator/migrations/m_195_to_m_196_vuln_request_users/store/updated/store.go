@@ -274,7 +274,7 @@ func copyFromVulnerabilityRequests(ctx context.Context, s pgSearch.Deleter, tx *
 	return nil
 }
 
-func copyFromVulnerabilityRequestsApprovers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.SlimUser) error {
+func copyFromVulnerabilityRequestsApprovers(ctx context.Context, _ pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.SlimUser) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -311,7 +311,7 @@ func copyFromVulnerabilityRequestsApprovers(ctx context.Context, s pgSearch.Dele
 	return nil
 }
 
-func copyFromVulnerabilityRequestsComments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.RequestComment) error {
+func copyFromVulnerabilityRequestsComments(ctx context.Context, _ pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.RequestComment) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -348,7 +348,7 @@ func copyFromVulnerabilityRequestsComments(ctx context.Context, s pgSearch.Delet
 	return nil
 }
 
-func copyFromVulnerabilityRequestsApproversV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.Approver) error {
+func copyFromVulnerabilityRequestsApproversV2(ctx context.Context, _ pgSearch.Deleter, tx *postgres.Tx, vulnerabilityRequestID string, objs ...*storage.Approver) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
