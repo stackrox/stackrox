@@ -38,6 +38,7 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
+  # TODO(ROX-20482): Enable dependencies prefetch
   # - name: prefetch-input
   #   value: '{"type": "gomod", "path": "."}'
 
