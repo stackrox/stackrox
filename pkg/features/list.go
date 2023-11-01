@@ -61,6 +61,9 @@ var (
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", false)
 
+	// WorkloadCVEsFixabilityFilters enables Workload CVE UI controls for fixability filters and default filters
+	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", false)
+
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
 	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", false)
 
