@@ -21,13 +21,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type RootCommand struct {
+type rootCommand struct {
 	cobra.Command
 	ScannerClient client.Scanner
 }
 
-func rootCommand(ctx context.Context) *cobra.Command {
-	cmd := RootCommand{
+func rootCmd(ctx context.Context) *cobra.Command {
+	cmd := rootCommand{
 		Command: cobra.Command{
 			Use:          "scannerctl",
 			Version:      version.Version,
@@ -77,11 +77,11 @@ func rootCommand(ctx context.Context) *cobra.Command {
 		}
 		return nil
 	}
-	cmd.AddCommand(scanCommand(ctx, &cmd))
+	cmd.AddCommand(scanCmd(ctx, &cmd))
 	return &cmd.Command
 }
 
-func scanCommand(ctx context.Context, parent *RootCommand) *cobra.Command {
+func scanCmd(ctx context.Context, parent *rootCommand) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "scan http(s)://<image-reference>",
 		Short: "Perform vulnerability scans.",
@@ -164,7 +164,7 @@ func main() {
 		}()
 	}()
 
-	if err := rootCommand(ctx).Execute(); err != nil {
+	if err := rootCmd(ctx).Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
