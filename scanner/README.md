@@ -1,44 +1,102 @@
 # StackRox Scanner
 
-Static Image, Node, and Orchestrator Scanner.
+The container image scanner, built with ClairCore technology.
 
-# Dev
+## Development
 
-## scanner
+Scanner requires the Go version be aligned with the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION). This is verified when using scanner's `make` targets that depends on go tooling.
 
-Scanner requires the Go version be aligned with the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION).
-This is verified when using any of Scanner's `make` targets.
+For local development, you can overwrite this restriction by specifying `EXPECTED_GO_VERSION` in the make targets that will depends on go tools, example:
 
-### Local
+```
+make build EXPECTED_GO_VERSION=$(go version | {read _ _ v _; echo $v})
+```
+
+### Running Scanner locally
 
 Copy the sample config and edit it to your liking:
+
 ```sh
-$ cp config.sample.yaml config.yaml
+cp config.sample.yaml config.yaml
 ```
 
-Generate the development TLS certificates:
+Build Scanner and generate the development TLS certificates:
+
 ```sh
-$ make certs
+make build certs
 ```
 
-Now you can build the dependencies and run scanner:
+Run:
+
 ```sh
-$ make deps
-$ go run cmd/scanner -conf config.yaml
+./bin/scanner -conf config.yaml
+```
+
+The build system by default builds for `GOOS=linux`.  If you are running a non-Linux OS specify the `GOOS` yourself, or use `HOST_OS`.
+
+```sh
+make GOOS='$(HOST_OS)' build
+```
+
+## Running Scanner with Kubernetes for testing 
+
+Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.
+
+```
+make e2e-deploy
 ```
 
 ## scannerctl
 
-### Local
+There is a CLI that allows you to interact with Scanner, called [`scannerctl`](cmd/scannerctl/main.go).
 
-If you're connecting to your local scanner, you should already have the TLS certificates generated. If not, refer to
-running scanner in the above section.
+### Local build
 
-Once you have the certificates and scanner running with those certificates, you can run scannerctl:
 ```sh
-$ go run cmd/scannerctl/main.go \
-    -certs certs/client \
-    -server-name localhost \
-    -port 8443 \
+make build
+```
+
+Or:
+
+```
+make bin/scannerctl
+```
+
+### Running
+
+There are many options to control how `scannerctl`.  See `scannerctl help`.
+
+### Example 1: Connecting to local Scanner 
+
+Common use-case is testing Scanner locally.  Once you have the local scanner build, certificates and scanner running with those certificates, you can run `scannerctl`:
+
+```sh
+./bin/scannerctl scan \
+    --certs certs/scannerctl \
     https://registry.hub.docker.com/library/hello-world:latest
+```
+
+
+
+#### Example 2: Connect to local Scanner in different modes
+
+Setup Scanner to run locally in different modes: 
+
+```sh
+sed 's@certs_dir: ""@certs_dir: certs/scanner-v4@' config.yaml.sample > matcher-config.yaml
+sed 's@certs_dir: ""@certs_dir: certs/scanner-v4@' config.yaml.sample > indexer-config.yaml
+sed -i '/matcher:/!b;n; s/enable: .*/enable: false/' indexer-config.yaml
+sed -i '/indexer:/!b;n; s/enable: .*/enable: false/' matcher-config.yaml
+./bin/scanner -conf indexer-config.yaml &
+ROX_METRICS_PORT=:9091 ./bin/scanner -conf matcher-config.yaml &
+```
+
+Call `scannerctl`:
+
+```sh
+./bin/scannerctl scan \
+    --certs certs/scannerctl \
+    --indexer-address=:8443 \
+    --matcher-address=:8444 \
+    'https://docker.io/library/ubuntu:16.04'
 ```
