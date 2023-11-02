@@ -58,6 +58,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 			req.Id = ""
 			req.Name = ""
 			req.Approvers = nil
+			req.ApproversV2 = nil
 			req.Comments[0].Id = ""
 			req.Comments[0].CreatedAt = nil
 			return req
@@ -84,6 +85,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 			req.Id = ""
 			req.Name = ""
 			req.Approvers = nil
+			req.ApproversV2 = nil
 			req.Comments[0].Id = ""
 			req.Comments[0].CreatedAt = nil
 			return req
