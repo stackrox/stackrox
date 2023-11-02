@@ -47,6 +47,10 @@ func (limiter *rateLimiter) Limit() bool {
 	return limiter.tokenBucketLimiter.Wait(ctx) != nil
 }
 
+func (limiter *rateLimiter) LimitNoThrottle() bool {
+	return !limiter.tokenBucketLimiter.Allow()
+}
+
 func (limiter *rateLimiter) modifyRateLimit(limitDelta int) {
 	if limiter.tokenBucketLimiter.Limit() == rate.Inf {
 		return

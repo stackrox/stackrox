@@ -12,6 +12,10 @@ type RateLimiter interface {
 	// Limit returns true when the event should be rejected.
 	Limit() bool
 
+	// LimitNoThrottle returns true when the event should be rejected.
+	// It returns without throttling the function call.
+	LimitNoThrottle() bool
+
 	// IncreaseLimit increases the allowed rate of events. If rate limiter
 	// is unlimited, no change is made. The argument 'limitDelta' has to be
 	// bigger than 0, otherwise no change is made.
