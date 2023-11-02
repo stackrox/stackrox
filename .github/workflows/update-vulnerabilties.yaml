@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false #if one of the versions fails to get updated vulns, we still want to update for the other versions
-      max-parallel: 2 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
+      max-parallel: 1 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
       matrix:
         version: ${{ fromJson(needs.read-versions.outputs.matrix).versions }}
     env:

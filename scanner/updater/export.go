@@ -32,9 +32,8 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 	defer func() {
-		closeErr := outputFile.Close()
-		if closeErr != nil {
-			zlog.Error(ctx).Err(closeErr).Msg("Failed to close output file")
+		if err := outputFile.Close(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("Failed to close output file")
 		}
 	}()
 
@@ -57,14 +56,13 @@ func Export(ctx context.Context, outputDir string) error {
 		}
 	}()
 
-	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	manualSet, err := manual.UpdaterSet(ctx, nil)
 	if err != nil {
 		return err
 	}
-	outOfTree := [][]driver.Updater{
-		make([]driver.Updater, 0),
-	}
-	outOfTree = append(outOfTree, updaterSet.Updaters())
+
+	outOfTree := make([]driver.Updater, 0)
+	outOfTree = append(outOfTree, manualSet.Updaters()...)
 
 	for i, uSet := range [][]string{
 		{"oracle"}, {"photon"},
@@ -78,31 +76,27 @@ func Export(ctx context.Context, outputDir string) error {
 			return err
 		}
 		var mgr *updates.Manager
-		if i >= len(outOfTree) {
+		if i == 0 {
 			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
 				updates.WithEnabled(uSet),
+				updates.WithOutOfTree(outOfTree),
 			)
 		} else {
 			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
 				updates.WithEnabled(uSet),
-				updates.WithOutOfTree(outOfTree[i]),
 			)
 		}
-
 		if err != nil {
 			return err
 		}
-
-		if err := mgr.Run(ctx); err != nil {
+		if err = mgr.Run(ctx); err != nil {
 			return err
 		}
 
-		err = jsonStore.Store(zstdWriter)
-		if err != nil {
+		if err = jsonStore.Store(zstdWriter); err != nil {
 			return err
 		}
-		err = zstdWriter.Flush()
-		if err != nil {
+		if err = zstdWriter.Flush(); err != nil {
 			zlog.Error(ctx).Err(err).Msg("Failed to flush zstd writer")
 		}
 	}
