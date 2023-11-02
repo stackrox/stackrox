@@ -511,6 +511,9 @@
         "customDate": {
           "type": "boolean",
           "description": "This option, if true, allows UI to show a custom date picker for setting expiry date."
+        },
+        "indefinite": {
+          "type": "boolean"
         }
       }
     },
