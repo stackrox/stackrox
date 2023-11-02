@@ -29,13 +29,13 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get('.pf-c-skeleton:contains("Loading image cve summary data")').should('not.exist');
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.resourceDropdown).click();
-        cy.get(selectors.resourceMenuItem('CVE')).should('not.exist');
-        cy.get(selectors.resourceMenuItem('Image'));
-        cy.get(selectors.resourceMenuItem('Deployment'));
-        cy.get(selectors.resourceMenuItem('Cluster'));
-        cy.get(selectors.resourceMenuItem('Namespace'));
-        cy.get(selectors.resourceDropdown).click();
+        cy.get(selectors.searchOptionsDropdown).click();
+        cy.get(selectors.searchOptionsMenuItem('CVE')).should('not.exist');
+        cy.get(selectors.searchOptionsMenuItem('Image'));
+        cy.get(selectors.searchOptionsMenuItem('Deployment'));
+        cy.get(selectors.searchOptionsMenuItem('Cluster'));
+        cy.get(selectors.searchOptionsMenuItem('Namespace'));
+        cy.get(selectors.searchOptionsDropdown).click();
     });
 
     it('should correctly handle local filters on the images tab', () => {

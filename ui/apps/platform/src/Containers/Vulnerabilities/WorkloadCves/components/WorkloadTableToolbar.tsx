@@ -6,11 +6,12 @@ import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { Globe } from 'react-feather';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import { SearchOption } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
-import FilterAutocomplete, { FilterAutocompleteSelectProps } from './FilterAutocomplete';
+import FilterAutocomplete, {
+    FilterAutocompleteSelectProps,
+} from '../../components/FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
-
-import './WorkloadTableToolbar.css';
 
 type FilterChipProps = {
     isGlobal?: boolean;
@@ -37,14 +38,14 @@ const emptyDefaultFilters = {
 type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
-    supportedResourceFilters?: FilterAutocompleteSelectProps['supportedResourceFilters'];
+    searchOptions: SearchOption[];
     autocompleteSearchContext?: FilterAutocompleteSelectProps['autocompleteSearchContext'];
     onFilterChange?: (searchFilter: SearchFilter) => void;
 };
 
 function WorkloadTableToolbar({
     defaultFilters = emptyDefaultFilters,
-    supportedResourceFilters,
+    searchOptions,
     autocompleteSearchContext,
     onFilterChange = noop,
 }: WorkloadTableToolbarProps) {
@@ -76,12 +77,12 @@ function WorkloadTableToolbar({
     }
 
     return (
-        <Toolbar id="workload-cves-table-toolbar">
+        <Toolbar>
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
                     setSearchFilter={setSearchFilter}
-                    supportedResourceFilters={supportedResourceFilters}
+                    searchOptions={searchOptions}
                     autocompleteSearchContext={autocompleteSearchContext}
                 />
                 <ToolbarGroup>

@@ -68,7 +68,17 @@ message FalsePositiveUpdate {
     repeated string CVEs = 1;
 }
 
-// Next available tag: 27
+message Requester {
+    string id    = 1 [(gogoproto.moretags) = 'search:"Requester User ID"'];
+    string name  = 2 [(gogoproto.moretags) = 'search:"Requester User Name"'];
+}
+
+message Approver {
+    string id    = 1 [(gogoproto.moretags) = 'search:"Approver User ID"'];
+    string name  = 2 [(gogoproto.moretags) = 'search:"Approver User Name"'];
+}
+
+// Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
@@ -89,7 +99,7 @@ message VulnerabilityRequest {
             // This field can be used to apply the request to selected images.
             Image  image_scope  = 1;
             // If set, the scope of this request is system-wide.
-            Global global_scope = 2;
+            Global global_scope = 2 [deprecated = true];
         }
     }
     string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
@@ -101,12 +111,15 @@ message VulnerabilityRequest {
     // Indicates if this request is a historical request that is no longer in effect
     // due to deferral expiry, cancellation, or restarting cve observation.
     bool                             expired            = 4 [(gogoproto.moretags) = 'search:"Expired Request"'];
-    SlimUser                         requestor          = 5 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
-    repeated SlimUser                approvers          = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    SlimUser                         requestor          = 5 [deprecated = true, (gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    repeated SlimUser                approvers          = 6 [deprecated = true, (gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
     google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = 'search:"Created Time"'];
     google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
     repeated RequestComment          comments           = 9;
     Scope                            scope              = 10;
+    Requester                        requester_v2       = 28;
+    repeated Approver                approvers_v2       = 29;
+
 
     // 11 to 15 reserved for the request type oneof.
     oneof req {

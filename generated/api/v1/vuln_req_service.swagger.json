@@ -437,6 +437,17 @@
         }
       }
     },
+    "storageApprover": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "storageDeferralRequest": {
       "type": "object",
       "properties": {
@@ -520,6 +531,17 @@
       "default": "PENDING",
       "description": "Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver\nare not tracked/persisted (with the exception of audit logs if it is turned on).\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
     },
+    "storageRequester": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "storageSlimUser": {
       "type": "object",
       "properties": {
@@ -578,6 +600,15 @@
         "scope": {
           "$ref": "#/definitions/storageVulnerabilityRequestScope"
         },
+        "requesterV2": {
+          "$ref": "#/definitions/storageRequester"
+        },
+        "approversV2": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageApprover"
+          }
+        },
         "deferralReq": {
           "$ref": "#/definitions/storageDeferralRequest"
         },
@@ -597,7 +628,7 @@
           "$ref": "#/definitions/storageFalsePositiveUpdate"
         }
       },
-      "description": "Next available tag: 27\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
+      "description": "Next available tag: 30\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
     },
     "storageVulnerabilityRequestScope": {
       "type": "object",

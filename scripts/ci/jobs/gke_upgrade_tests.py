@@ -15,7 +15,7 @@ from post_tests import PostClusterTest, FinalPost
 # out of support those bits can be removed.
 
 ClusterTestRunner(
-    cluster=GKECluster("upgrade-test", machine_type="e2-standard-8", disk_gb=1600),
+    cluster=GKECluster("upgrade-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=UpgradeTest(),
     post_test=PostClusterTest(),

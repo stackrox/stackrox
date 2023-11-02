@@ -47,6 +47,7 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
     static final private int CREATED_RESOURCES = 7
+    static final private int MOUNTED_RESOURCES = 2
 
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
@@ -262,7 +263,7 @@ splunk:
         // Ensure we do not have stale integration health info and only the Config Map one exists.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
@@ -286,8 +287,8 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.healthsCount == CREATED_RESOURCES + 1
+            // Expect 7 integration health status for the created resources and 2 for declarative config mounts.
+            assert response.healthsCount == CREATED_RESOURCES + MOUNTED_RESOURCES
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
@@ -414,7 +415,7 @@ splunk:
         then:
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
@@ -475,8 +476,8 @@ splunk:
         then:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and one for the config map.
-            assert response.healthsCount == CREATED_RESOURCES
+            // Expect 6 integration health status for the created resources and 2 for declarative config mounts.
+            assert response.healthsCount == CREATED_RESOURCES - 1 + MOUNTED_RESOURCES
 
             for (integrationHealth in response.getHealthsList()) {
                 // Config map health will be healthy and do not indicate an error.
@@ -526,7 +527,7 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getName().contains("Config Map")
@@ -548,8 +549,8 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 7 integration health status for the created resources and one for the config map.
-            assert response.healthsCount == CREATED_RESOURCES + 1
+            // Expect 7 integration health status for the created resources and 2 for declarative config mounts.
+            assert response.healthsCount == CREATED_RESOURCES + MOUNTED_RESOURCES
             for (integrationHealth in response.healthsList) {
                 assert integrationHealth.hasLastTimestamp()
                 assert integrationHealth.getErrorMessage() == ""
@@ -698,8 +699,9 @@ splunk:
             // - access scope
             // - role
             // - permission set
-            // - config map
-            assert response.getHealthsCount() == 5
+            // - notifier
+            // - 2 config maps
+            assert response.getHealthsCount() == 6
         }
 
         when:
@@ -717,7 +719,7 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == 1
+            assert response.getHealthsCount() == MOUNTED_RESOURCES
             def configMapHealth = response.getHealths(0)
             assert configMapHealth
             assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
@@ -733,6 +735,7 @@ splunk:
     //  - access scope with valid configuration.
     //  - role with valid configuration, referencing the previously created permission set / access scope.
     //  - auth provider with valid configuration, and two groups (one default, one separate)
+    //  - notifier with valid configuration.
     private createDefaultSetOfResources(String configMapName, String namespace) {
         orchestrator.createConfigMap(configMapName,
                 [

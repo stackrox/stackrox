@@ -146,7 +146,16 @@ function ImagePage() {
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
-                            <ImagePageVulnerabilities imageId={imageId} />
+                            <ImagePageVulnerabilities
+                                imageId={imageId}
+                                imageName={
+                                    imageData?.name ?? {
+                                        registry: '',
+                                        remote: '',
+                                        tag: '',
+                                    }
+                                }
+                            />
                         </Tab>
                         <Tab
                             className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"

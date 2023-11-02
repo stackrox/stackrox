@@ -4,14 +4,12 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
-	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/compliance/collection/kubernetes/collection/kubelet"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
-	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/compliance/framework"
@@ -32,7 +30,7 @@ func runChecks(client sensor.ComplianceService_CommunicateClient,
 	return sendResults(results, client, run.GetScrapeId(), nodeNameProvider)
 }
 
-func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
+func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, _ *sensor.MsgToCompliance_ScrapeConfig, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
 	results := make(map[string]*compliance.ComplianceStandardResult)
 	for _, standardID := range run.GetStandardIds() {
 		standard, ok := standards.NodeChecks[standardID]
@@ -40,19 +38,6 @@ func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, scrapeConfig *senso
 			log.Infof("no checks found for standard %s during compliance run %s", standardID, run.GetScrapeId())
 			continue
 		}
-		requiresDockerRuntime := standards.StandardDependencies[standardID].Contains(standards.DockerDependency)
-		if requiresDockerRuntime && scrapeConfig.GetContainerRuntime() != storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
-			for checkName, checkAndMetadata := range standard {
-				if checkAndMetadata.CheckFunc == nil {
-					log.Infof("no check function found for check %s in standard %s during compliance run %s", checkName, standardID, run.GetScrapeId())
-					continue
-				}
-				evidence := common.NonDockerRuntimeSkipList()
-				addCheckResultsToResponse(results, standardID, checkName, checkAndMetadata.Metadata.TargetKind, evidence)
-			}
-			continue
-		}
-
 		for checkName, checkAndMetadata := range standard {
 			if checkAndMetadata.CheckFunc == nil {
 				log.Infof("no check function found for check %s in standard %s during compliance run %s", checkName, standardID, run.GetScrapeId())
@@ -125,15 +110,7 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 
 	var err error
 	log.Infof("Container runtime is %v", scrapeConfig.GetContainerRuntime())
-	if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
-		log.Info("Starting to collect Docker data")
-		complianceData.DockerData, complianceData.ContainerRuntimeInfo, err = docker.GetDockerData()
-		if err != nil {
-			log.Errorf("Collecting Docker data failed: %v", err)
-		} else {
-			log.Info("Successfully collected relevant Docker data")
-		}
-	} else if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME {
+	if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME {
 		log.Info("Collecting relevant CRI-O data")
 		complianceData.ContainerRuntimeInfo, err = crio.GetContainerRuntimeData()
 		if err != nil {

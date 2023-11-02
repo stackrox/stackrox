@@ -24,7 +24,9 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		TargetState: convertVulnerabilityState(vulnException.GetTargetState()),
 		Status:      requestStatus(vulnException.GetStatus()),
 		Expired:     vulnException.GetExpired(),
-		Requestor:   convertUser(vulnException.GetRequester()),
+		// Fill the legacy field for backward compatibility.
+		Requestor: convertUser(vulnException.GetRequester()),
+		// Fill the legacy field for backward compatibility.
 		Approvers:   convertUsers(vulnException.GetApprovers()),
 		LastUpdated: vulnException.GetLastUpdated(),
 		Comments:    requestComments(vulnException.GetComments()),
@@ -36,6 +38,8 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		},
 		UpdatedReq: nil,
 	}
+	out.RequesterV2 = requester(out.GetRequestor())
+	out.ApproversV2 = approvers(out.GetApprovers())
 
 	if vulnException.GetDeferralRequest() != nil {
 		out.Req = &storage.VulnerabilityRequest_DeferralReq{
@@ -70,6 +74,7 @@ func DeferVulnerabilityRequest(ctx context.Context, req *v2.CreateDeferVulnerabi
 		Requestor:   authn.UserFromContext(ctx),
 		Scope:       requestScope(req.GetScope()),
 	}
+	ret.RequesterV2 = requester(ret.GetRequestor())
 	if req.GetExceptionExpiry() != nil {
 		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
 			DeferralReq: &storage.DeferralRequest{
@@ -111,6 +116,7 @@ func FalsePositiveVulnerabilityRequest(ctx context.Context, req *v2.CreateFalseP
 		},
 		Scope: requestScope(req.GetScope()),
 	}
+	ret.RequesterV2 = requester(ret.GetRequestor())
 	if len(req.GetCves()) > 0 {
 		ret.Entities = &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
@@ -211,11 +217,15 @@ func requestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
 	ret := &storage.RequestExpiry{
 		ExpiryType: requestExpiryType(expiry.GetExpiryType()),
 	}
-	if expiry.GetExpiryType() == v2.ExceptionExpiry_TIME {
+	switch expiry.GetExpiryType() {
+	case v2.ExceptionExpiry_TIME:
 		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
 			ExpiresOn: expiry.GetExpiresOn(),
 		}
-	} else {
+	case v2.ExceptionExpiry_ANY_CVE_FIXABLE:
+		// Set the legacy field for backward compatibility.
+		// In v1, a vulnerability request could have only one CVE at a time. For expiry based on CVE fixability,
+		// the request expired if at least one CVE in the request was fixable which maps to ANY_CVE_FIXABLE behaviour in the v2.
 		ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
 			ExpiresWhenFixed: true,
 		}
@@ -235,4 +245,31 @@ func requestExpiryType(t v2.ExceptionExpiry_ExpiryType) storage.RequestExpiry_Ex
 		utils.Should(errors.Errorf("unhandled requestExpiry type encountered %s", t))
 		return storage.RequestExpiry_TIME
 	}
+}
+
+func requester(user *storage.SlimUser) *storage.Requester {
+	if user == nil {
+		return nil
+	}
+	return &storage.Requester{
+		Id:   user.GetId(),
+		Name: user.GetName(),
+	}
+}
+
+func approvers(users []*storage.SlimUser) []*storage.Approver {
+	ret := make([]*storage.Approver, 0, len(users))
+	for _, user := range users {
+		if user == nil {
+			continue
+		}
+		ret = append(ret, &storage.Approver{
+			Id:   user.GetId(),
+			Name: user.GetName(),
+		})
+	}
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
 }

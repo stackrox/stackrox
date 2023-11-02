@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 import {
     ActionsColumn,
     ExpandableRowContent,
+    IAction,
     TableComposable,
     Tbody,
     Td,
@@ -10,7 +11,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant, Text, pluralize } from '@patternfly/react-core';
+import { Button, ButtonVariant, Text } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -31,9 +32,10 @@ import {
     aggregateByImageSha,
 } from '../sortUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
-import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal/ExceptionRequestModal';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
+import CVESelectionTh from '../components/CVESelectionTh';
+import CVESelectionTd from '../components/CVESelectionTd';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -97,9 +99,9 @@ export type CVEsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
-    showExceptionMenuItems: boolean;
+    canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    cveTableActionHandler: (opts: ExceptionRequestModalOptions) => void;
+    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
 };
 
 function CVEsTable({
@@ -108,33 +110,20 @@ function CVEsTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
-    showExceptionMenuItems,
+    canSelectRows,
     selectedCves,
-    cveTableActionHandler,
+    createTableActions,
 }: CVEsTableProps) {
     const expandedRowSet = useSet<string>();
 
-    const colSpan = 6 + (showExceptionMenuItems ? 2 : 0);
+    const colSpan = 6 + (canSelectRows ? 1 : 0) + (createTableActions ? 1 : 0);
 
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
-                    {showExceptionMenuItems && (
-                        <Th
-                            title={
-                                selectedCves.size > 0
-                                    ? `Clear ${pluralize(selectedCves.size, 'selected CVE')}`
-                                    : undefined
-                            }
-                            select={{
-                                isSelected: selectedCves.size !== 0,
-                                isDisabled: selectedCves.size === 0,
-                                onSelect: selectedCves.clear,
-                            }}
-                        />
-                    )}
+                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh tooltip="Severity of this CVE across images">
                         Images by severity
@@ -160,7 +149,7 @@ function CVEsTable({
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    {showExceptionMenuItems && <Th aria-label="CVE actions" />}
+                    {createTableActions && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
             {cves.length === 0 && <EmptyTableResults colSpan={colSpan} />}
@@ -203,20 +192,12 @@ function CVEsTable({
                                         onToggle: () => expandedRowSet.toggle(cve),
                                     }}
                                 />
-                                {showExceptionMenuItems && (
-                                    <Td
-                                        key={cve}
-                                        select={{
-                                            rowIndex,
-                                            onSelect: () => {
-                                                if (selectedCves.has(cve)) {
-                                                    selectedCves.remove(cve);
-                                                } else {
-                                                    selectedCves.set(cve, { cve, summary });
-                                                }
-                                            },
-                                            isSelected: selectedCves.has(cve),
-                                        }}
+                                {canSelectRows && (
+                                    <CVESelectionTd
+                                        selectedCves={selectedCves}
+                                        rowIndex={rowIndex}
+                                        cve={cve}
+                                        summary={summary}
                                     />
                                 )}
                                 <Td dataLabel="CVE">
@@ -254,27 +235,10 @@ function CVEsTable({
                                 <Td dataLabel="First discovered">
                                     <DateDistanceTd date={firstDiscoveredInSystem} />
                                 </Td>
-                                {showExceptionMenuItems && (
+                                {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn
-                                            items={[
-                                                {
-                                                    title: 'Defer CVE',
-                                                    onClick: () =>
-                                                        cveTableActionHandler({
-                                                            type: 'DEFERRAL',
-                                                            cves: [{ cve, summary }],
-                                                        }),
-                                                },
-                                                {
-                                                    title: 'Mark as false positive',
-                                                    onClick: () =>
-                                                        cveTableActionHandler({
-                                                            type: 'FALSE_POSITIVE',
-                                                            cves: [{ cve, summary }],
-                                                        }),
-                                                },
-                                            ]}
+                                            items={createTableActions({ cve, summary })}
                                         />
                                     </Td>
                                 )}

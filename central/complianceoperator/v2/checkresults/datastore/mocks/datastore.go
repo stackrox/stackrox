@@ -12,6 +12,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
@@ -40,6 +41,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ComplianceCheckResultStats mocks base method.
+func (m *MockDataStore) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*datastore.ResourceCountByResultByCluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComplianceCheckResultStats", ctx, query)
+	ret0, _ := ret[0].([]*datastore.ResourceCountByResultByCluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ComplianceCheckResultStats indicates an expected call of ComplianceCheckResultStats.
+func (mr *MockDataStoreMockRecorder) ComplianceCheckResultStats(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceCheckResultStats", reflect.TypeOf((*MockDataStore)(nil).ComplianceCheckResultStats), ctx, query)
+}
+
 // DeleteResult mocks base method.
 func (m *MockDataStore) DeleteResult(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -54,19 +70,19 @@ func (mr *MockDataStoreMockRecorder) DeleteResult(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResult", reflect.TypeOf((*MockDataStore)(nil).DeleteResult), ctx, id)
 }
 
-// SearchCheckResults mocks base method.
-func (m *MockDataStore) SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
+// SearchComplianceCheckResults mocks base method.
+func (m *MockDataStore) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCheckResults", ctx, query)
+	ret := m.ctrl.Call(m, "SearchComplianceCheckResults", ctx, query)
 	ret0, _ := ret[0].([]*storage.ComplianceOperatorCheckResultV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchCheckResults indicates an expected call of SearchCheckResults.
-func (mr *MockDataStoreMockRecorder) SearchCheckResults(ctx, query any) *gomock.Call {
+// SearchComplianceCheckResults indicates an expected call of SearchComplianceCheckResults.
+func (mr *MockDataStoreMockRecorder) SearchComplianceCheckResults(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCheckResults", reflect.TypeOf((*MockDataStore)(nil).SearchCheckResults), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchComplianceCheckResults", reflect.TypeOf((*MockDataStore)(nil).SearchComplianceCheckResults), ctx, query)
 }
 
 // UpsertResult mocks base method.

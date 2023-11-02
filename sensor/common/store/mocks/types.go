@@ -47,12 +47,13 @@ func (m *MockDeploymentStore) EXPECT() *MockDeploymentStoreMockRecorder {
 }
 
 // BuildDeploymentWithDependencies mocks base method.
-func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
+func (m *MockDeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDeploymentWithDependencies", id, dependencies)
 	ret0, _ := ret[0].(*storage.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // BuildDeploymentWithDependencies indicates an expected call of BuildDeploymentWithDependencies.

@@ -48,6 +48,18 @@ func (s *postgresPolicyMigratorTestSuite) comparePolicyWithDB(policyID string, p
 	s.EqualValues(policy, newPolicy)
 }
 
+// TODO: Remove once the deprecated functions are removed
+func (s *postgresPolicyMigratorTestSuite) getTestCaseFunctions() map[string]func(map[string]PolicyChanges, map[string]*storage.Policy) error {
+	return map[string]func(map[string]PolicyChanges, map[string]*storage.Policy) error{
+		"MigratePoliciesWithStore": func(policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
+			return MigratePoliciesWithStore(policiesToMigrate, comparisonPolicies, s.store.Exists, s.store.Get, s.store.Upsert)
+		},
+		"MigratePoliciesWithStoreV2": func(policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
+			return MigratePoliciesWithStoreV2(policiesToMigrate, comparisonPolicies, s.store.Get, s.store.Upsert)
+		},
+	}
+}
+
 // Test that unrelated policies aren't updated
 func (s *postgresPolicyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 	policyID := "this-is-a-random-id-that-should-not-exist"
@@ -64,22 +76,19 @@ func (s *postgresPolicyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 		policyID: policy,
 	}
 
-	s.NoError(s.store.Upsert(s.ctx, policy))
-	s.NoError(MigratePoliciesWithStore(
-		policiesToMigrate,
-		comparisonPolicies,
-		s.store.Exists,
-		s.store.Get,
-		s.store.Upsert,
-	))
+	tests := s.getTestCaseFunctions()
+	for tc, fn := range tests {
+		s.T().Run(tc, func(t *testing.T) {
+			s.NoError(s.store.Upsert(s.ctx, policy))
+			s.NoError(fn(policiesToMigrate, comparisonPolicies))
+			s.comparePolicyWithDB(policyID, policy)
+		})
+	}
 
-	s.comparePolicyWithDB(policyID, policy)
 }
 
 // Test that an unmodified policy that matches comparison policy is updated
 func (s *postgresPolicyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdated() {
-	policy := testPolicy(policyID)
-
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
 			FieldsToCompare: []FieldComparator{DescriptionComparator},
@@ -87,22 +96,23 @@ func (s *postgresPolicyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdat
 		},
 	}
 
-	comparisonPolicies := map[string]*storage.Policy{
-		policyID: policy,
+	tests := s.getTestCaseFunctions()
+	for tc, fn := range tests {
+		s.T().Run(tc, func(t *testing.T) {
+			policy := testPolicy(policyID)
+
+			comparisonPolicies := map[string]*storage.Policy{
+				policyID: policy,
+			}
+
+			s.NoError(s.store.Upsert(s.ctx, policy))
+			s.NoError(fn(policiesToMigrate, comparisonPolicies))
+
+			// Policy should've had description changed, but nothing else
+			policy.Description = *policiesToMigrate[policyID].ToChange.Description
+			s.comparePolicyWithDB(policyID, policy)
+		})
 	}
-
-	s.NoError(s.store.Upsert(s.ctx, policy))
-	s.NoError(MigratePoliciesWithStore(
-		policiesToMigrate,
-		comparisonPolicies,
-		s.store.Exists,
-		s.store.Get,
-		s.store.Upsert,
-	))
-
-	// Policy should've had description changed, but nothing else
-	policy.Description = *policiesToMigrate[policyID].ToChange.Description
-	s.comparePolicyWithDB(policyID, policy)
 }
 
 // Test that all unmodified policies are updated
@@ -111,35 +121,33 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 	comparisonPolicies := make(map[string]*storage.Policy)
 	policiesToMigrate := make(map[string]PolicyChanges)
 
-	// Create and insert a set of unmodified fake policies
-	for i := 0; i < 10; i++ {
-		policy := testPolicy(fmt.Sprintf("policy%d", i))
-		policiesToTest[i] = policy
-		policy.Name = fmt.Sprintf("policy-name%d", i) // name is a unique key
-		policy.Description = "sfasdf"
+	tests := s.getTestCaseFunctions()
+	for tc, fn := range tests {
+		s.T().Run(tc, func(t *testing.T) {
+			// Create and insert a set of unmodified fake policies
+			for i := 0; i < 10; i++ {
+				policy := testPolicy(fmt.Sprintf("policy%d", i))
+				policiesToTest[i] = policy
+				policy.Name = fmt.Sprintf("policy-name%d", i) // name is a unique key
+				policy.Description = "sfasdf"
 
-		comparisonPolicy := policy.Clone()
-		comparisonPolicies[policy.Id] = comparisonPolicy
-		policiesToMigrate[policy.Id] = PolicyChanges{
-			FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
-			ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.Id))}, // give them all a new description
-		}
-	}
+				comparisonPolicy := policy.Clone()
+				comparisonPolicies[policy.Id] = comparisonPolicy
+				policiesToMigrate[policy.Id] = PolicyChanges{
+					FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
+					ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.Id))}, // give them all a new description
+				}
+			}
 
-	s.NoError(s.store.UpsertMany(s.ctx, policiesToTest))
+			s.NoError(s.store.UpsertMany(s.ctx, policiesToTest))
+			s.NoError(fn(policiesToMigrate, comparisonPolicies))
 
-	s.NoError(MigratePoliciesWithStore(
-		policiesToMigrate,
-		comparisonPolicies,
-		s.store.Exists,
-		s.store.Get,
-		s.store.Upsert,
-	))
-
-	for _, policy := range policiesToTest {
-		// All the policies should've changed
-		policy.Description = fmt.Sprintf("%s new description", policy.Id)
-		s.comparePolicyWithDB(policy.Id, policy)
+			for _, policy := range policiesToTest {
+				// All the policies should've changed
+				policy.Description = fmt.Sprintf("%s new description", policy.Id)
+				s.comparePolicyWithDB(policy.Id, policy)
+			}
+		})
 	}
 }
 
@@ -151,6 +159,7 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 	policy.Exclusions = []*storage.Exclusion{
 		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
 		{Name: "exclusion1", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace 1"}}},
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
 		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-2"}}},
 		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-3"}}},
 		{Name: "exclusion4", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-4"}}},
@@ -180,16 +189,16 @@ func (s *postgresPolicyMigratorTestSuite) TestExclusionAreAddedAndRemovedAsNeces
 		},
 	}
 
-	s.NoError(MigratePoliciesWithStore(
+	s.NoError(MigratePoliciesWithStoreV2(
 		policiesToMigrate,
 		comparisonPolicies,
-		s.store.Exists,
 		s.store.Get,
 		s.store.Upsert,
 	))
 
 	// Policy exclusions should be updated
 	policy.Exclusions = []*storage.Exclusion{
+		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
 		{Name: "exclusion0", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-0"}}},
 		{Name: "exclusion2", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-2"}}},
 		{Name: "exclusion3", Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: "namespace-3"}}},

@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import {
     Bullseye,
     Divider,
+    DropdownItem,
     Flex,
     Grid,
     GridItem,
@@ -24,6 +25,13 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useMap from 'hooks/useMap';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -42,7 +50,13 @@ import {
 } from '../searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
-import { Resource } from '../components/FilterResourceDropdown';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import ExceptionRequestModal, {
+    ExceptionRequestModalProps,
+} from '../components/ExceptionRequestModal/ExceptionRequestModal';
+import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -63,13 +77,23 @@ const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const imageResourceFilters = new Set<Resource>(['CVE']);
+const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
+    imageName: {
+        registry: string;
+        remote: string;
+        tag: string;
+    };
 };
 
-function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
+function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabilitiesProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+
+    const currentVulnerabilityState = useVulnerabilityState();
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
@@ -103,16 +127,30 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getVulnStateScopedQueryString(querySearchFilter),
+            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             pagination,
         },
     });
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
+    const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
+    const {
+        exceptionRequestModalOptions,
+        completedException,
+        showModal,
+        closeModals,
+        createExceptionModalActions,
+    } = useExceptionRequestModal();
+
     let mainContent: ReactNode | null = null;
 
     const vulnerabilityData = data ?? previousData;
+
+    const showDeferralUI = isUnifiedDeferralsEnabled && currentVulnerabilityState === 'OBSERVED';
+    const canSelectRows = showDeferralUI;
+
+    const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
     if (error) {
         mainContent = (
@@ -171,6 +209,42 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
+                        {canSelectRows && (
+                            <>
+                                <SplitItem>
+                                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <DropdownItem
+                                            key="bulk-defer-cve"
+                                            component="button"
+                                            onClick={() =>
+                                                showModal({
+                                                    type: 'DEFERRAL',
+                                                    cves: Array.from(selectedCves.values()),
+                                                })
+                                            }
+                                        >
+                                            Defer CVEs
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="bulk-mark-false-positive"
+                                            component="button"
+                                            onClick={() =>
+                                                showModal({
+                                                    type: 'FALSE_POSITIVE',
+                                                    cves: Array.from(selectedCves.values()),
+                                                })
+                                            }
+                                        >
+                                            Mark as false positives
+                                        </DropdownItem>
+                                    </BulkActionsDropdown>
+                                </SplitItem>
+                                <Divider
+                                    className="pf-u-px-lg"
+                                    orientation={{ default: 'vertical' }}
+                                />
+                            </>
+                        )}
                         <SplitItem>
                             <Pagination
                                 itemCount={totalVulnerabilityCount}
@@ -191,6 +265,9 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                             image={vulnerabilityData.image}
                             getSortParams={getSortParams}
                             isFiltered={isFiltered}
+                            selectedCves={selectedCves}
+                            canSelectRows={canSelectRows}
+                            createTableActions={createTableActions}
                         />
                     </div>
                 </div>
@@ -200,6 +277,24 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
 
     return (
         <>
+            {exceptionRequestModalOptions && (
+                <ExceptionRequestModal
+                    cves={exceptionRequestModalOptions.cves}
+                    type={exceptionRequestModalOptions.type}
+                    scopeContext={{ imageName }}
+                    onExceptionRequestSuccess={(exception) => {
+                        selectedCves.clear();
+                        showModal({ type: 'COMPLETION', exception });
+                    }}
+                    onClose={closeModals}
+                />
+            )}
+            {completedException && (
+                <CompletedExceptionRequestModal
+                    exceptionRequest={completedException}
+                    onClose={closeModals}
+                />
+            )}
             <PageSection component="div" variant="light" className="pf-u-py-md pf-u-px-xl">
                 <Text>Review and triage vulnerability data scanned on this image</Text>
             </PageSection>
@@ -208,9 +303,10 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
+                <VulnerabilityStateTabs isBox />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
-                        supportedResourceFilters={imageResourceFilters}
+                        searchOptions={searchOptions}
                         autocompleteSearchContext={{
                             'Image SHA': imageId,
                         }}
