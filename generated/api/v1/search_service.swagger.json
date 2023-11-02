@@ -103,7 +103,9 @@
                 "BLOB",
                 "ADMINISTRATION_EVENTS",
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
-                "ADMINISTRATION_USAGE"
+                "ADMINISTRATION_USAGE",
+                "COMPLIANCE_PROFILES",
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -206,7 +208,9 @@
                 "BLOB",
                 "ADMINISTRATION_EVENTS",
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
-                "ADMINISTRATION_USAGE"
+                "ADMINISTRATION_USAGE",
+                "COMPLIANCE_PROFILES",
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -303,7 +307,9 @@
                 "BLOB",
                 "ADMINISTRATION_EVENTS",
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
-                "ADMINISTRATION_USAGE"
+                "ADMINISTRATION_USAGE",
+                "COMPLIANCE_PROFILES",
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -449,10 +455,12 @@
         "BLOB",
         "ADMINISTRATION_EVENTS",
         "COMPLIANCE_SCAN_CONFIG_STATUS",
-        "ADMINISTRATION_USAGE"
+        "ADMINISTRATION_USAGE",
+        "COMPLIANCE_PROFILES",
+        "COMPLIANCE_PROFILE_CLUSTER_EDGE"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 62"
+      "title": "Next available tag: 65"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
