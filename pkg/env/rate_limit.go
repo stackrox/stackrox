@@ -24,6 +24,6 @@ var (
 	// CentralSensorMaxEventsThrottleDuration sets the maximum allowed throttle
 	// duration when the global rate limit for sensor message is reached. If
 	// set under 1s (or 0), connection is immediately terminate after limit is
-	// reached.The default value is 2s.
+	// reached. The default value is 2s.
 	CentralSensorMaxEventsThrottleDuration = registerDurationSetting("ROX_CENTRAL_SENSOR_MAX_EVENTS_THROTTLE_DURATION", 2*time.Second, WithDurationZeroAllowed())
 )

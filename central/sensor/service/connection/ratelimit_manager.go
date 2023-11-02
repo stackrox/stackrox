@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	boostInitSyncRateLimit  = 50
-	maxTopCandidateClusters = 3
-	rateOverPeriod          = 10 * time.Minute
-	minimumRatePeriod       = 10 * time.Second
+	boostInitSyncRateLimit      = 50
+	defaultTopCandidateClusters = 3
+	defaultRatePeriod           = 10 * time.Minute
+	minimumRatePeriod           = 10 * time.Second
 )
 
 // Inspiration is taken from EARRRL:
@@ -27,13 +27,14 @@ const (
 type clusterMsgRate struct {
 	mutex sync.Mutex
 
+	// index is required for Heap.
 	index     int
 	clusterID string
 
-	halfPeriod float64
-	lastTime   int64
-	rate       float64
-	acc        float64
+	lastUpdate  int64
+	halfPeriod  float64
+	ratePerSec  float64
+	accumulator float64
 }
 
 func (cmr *clusterMsgRate) recvMsg() {
@@ -42,28 +43,27 @@ func (cmr *clusterMsgRate) recvMsg() {
 
 	now := time.Now().Unix()
 
-	deltaT := cmr.lastTime - now
+	deltaT := cmr.lastUpdate - now
 	if deltaT < 0 {
-		cmr.acc *= math.Exp(float64(deltaT) / cmr.halfPeriod)
+		cmr.accumulator *= math.Exp(float64(deltaT) / cmr.halfPeriod)
 	}
-	cmr.acc++
-	cmr.lastTime = now
+	cmr.accumulator++
+	cmr.lastUpdate = now
 
-	cmr.rate = cmr.acc / cmr.halfPeriod
+	cmr.ratePerSec = cmr.accumulator / cmr.halfPeriod
 }
 
 func newClusterMsgRate(clusterID string, period time.Duration) *clusterMsgRate {
 	if period < minimumRatePeriod {
 		period = minimumRatePeriod
 	}
-	halfPeriod := period.Seconds() / 2.0
 
 	return &clusterMsgRate{
 		index:      -1,
 		clusterID:  clusterID,
-		halfPeriod: halfPeriod,
-		lastTime:   time.Now().Unix(),
-		rate:       0.0,
+		halfPeriod: period.Seconds() / 2.0,
+		lastUpdate: time.Now().Unix(),
+		ratePerSec: 0.0,
 	}
 }
 
@@ -80,7 +80,7 @@ func (h *clusterMsgRateHeap) Len() int {
 }
 
 func (h *clusterMsgRateHeap) Less(i, j int) bool {
-	return (*h)[i].rate < (*h)[j].rate
+	return (*h)[i].ratePerSec < (*h)[j].ratePerSec
 }
 
 func (h *clusterMsgRateHeap) Swap(i, j int) {
@@ -110,8 +110,8 @@ func (h *clusterMsgRateHeap) Pop() interface{} {
 type rateLimitManager struct {
 	mutex sync.Mutex
 
-	maxSensors      int
-	initSyncSensors set.StringSet
+	initSyncMaxSensors int
+	initSyncSensors    set.StringSet
 
 	msgRateLimiter         ratelimit.RateLimiter
 	clusterMsgRates        map[string]*clusterMsgRate
@@ -138,8 +138,8 @@ func newRateLimitManager() *rateLimitManager {
 	}
 
 	return &rateLimitManager{
-		maxSensors:      maxSensors,
-		initSyncSensors: set.NewStringSet(),
+		initSyncMaxSensors: maxSensors,
+		initSyncSensors:    set.NewStringSet(),
 
 		msgRateLimiter:         ratelimit.NewRateLimiter(eventRateLimit, env.CentralSensorMaxEventsThrottleDuration.DurationSetting()),
 		clusterMsgRates:        make(map[string]*clusterMsgRate),
@@ -156,7 +156,7 @@ func (m *rateLimitManager) AddInitSync(clusterID string) bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if len(m.initSyncSensors) >= m.maxSensors {
+	if len(m.initSyncSensors) >= m.initSyncMaxSensors {
 		return false
 	}
 
@@ -186,7 +186,7 @@ func (m *rateLimitManager) getClusterRate(clusterID string) *clusterMsgRate {
 
 	clusterRate, found := m.clusterMsgRates[clusterID]
 	if !found {
-		clusterRate = newClusterMsgRate(clusterID, rateOverPeriod)
+		clusterRate = newClusterMsgRate(clusterID, defaultRatePeriod)
 		m.clusterMsgRates[clusterID] = clusterRate
 	}
 
@@ -199,14 +199,16 @@ func (m *rateLimitManager) updateClusterRateHeap(clusterRate *clusterMsgRate) {
 
 	if m.clusterLimitCandidates.Contains(clusterRate.clusterID) {
 		heap.Fix(m.clusterMsgRatesHeap, clusterRate.index)
-	} else {
-		heap.Push(m.clusterMsgRatesHeap, clusterRate)
-		m.clusterLimitCandidates.Add(clusterRate.clusterID)
 
-		if m.clusterMsgRatesHeap.Len() > maxTopCandidateClusters {
-			droppedCandidate := heap.Pop(m.clusterMsgRatesHeap).(*clusterMsgRate)
-			m.clusterLimitCandidates.Remove(droppedCandidate.clusterID)
-		}
+		return
+	}
+
+	heap.Push(m.clusterMsgRatesHeap, clusterRate)
+	m.clusterLimitCandidates.Add(clusterRate.clusterID)
+
+	if m.clusterMsgRatesHeap.Len() > defaultTopCandidateClusters {
+		droppedCandidate := heap.Pop(m.clusterMsgRatesHeap).(*clusterMsgRate)
+		m.clusterLimitCandidates.Remove(droppedCandidate.clusterID)
 	}
 }
 
@@ -229,7 +231,7 @@ func (m *rateLimitManager) LimitClusterMsg(clusterID string) bool {
 	// a cluster that is a candidate for limiting, we initially apply message
 	// throttling. If this throttling doesn't help the situation, we will
 	// return false, which should terminate the connection to the cluster.
-	return m.msgRateLimiter.LimitNoThrottle() && m.clusterLimitCandidates.Contains(clusterID) && m.throttleMsg(clusterID)
+	return m.msgRateLimiter.LimitWithoutThrottle() && m.clusterLimitCandidates.Contains(clusterID) && m.throttleMsg(clusterID)
 }
 
 func (m *rateLimitManager) RemoveMsgRateCluster(clusterID string) {
@@ -238,6 +240,7 @@ func (m *rateLimitManager) RemoveMsgRateCluster(clusterID string) {
 
 	clusterRate := m.getClusterRate(clusterID)
 	delete(m.clusterMsgRates, clusterID)
+
 	m.clusterLimitCandidates.Remove(clusterID)
 
 	if clusterRate.index != -1 {

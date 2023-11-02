@@ -14,7 +14,7 @@ import (
 
 func TestNewRateLimitManagerDefaultMaxInitSync(t *testing.T) {
 	m := newRateLimitManager()
-	assert.Equal(t, math.MaxInt, m.maxSensors)
+	assert.Equal(t, math.MaxInt, m.initSyncMaxSensors)
 
 	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
@@ -31,7 +31,7 @@ func TestNewRateLimitManagerNegativeMaxInitSync(t *testing.T) {
 func TestNewRateLimitManagerZeroMaxInitSync(t *testing.T) {
 	t.Setenv(env.CentralMaxInitSyncSensors.EnvVar(), "0")
 	m := newRateLimitManager()
-	assert.Equal(t, math.MaxInt, m.maxSensors)
+	assert.Equal(t, math.MaxInt, m.initSyncMaxSensors)
 
 	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
@@ -69,7 +69,7 @@ func TestInitSyncNilGuards(t *testing.T) {
 	assert.NotPanics(t, func() { m.RemoveInitSync("test-1") })
 
 	m = &rateLimitManager{
-		maxSensors: 1,
+		initSyncMaxSensors: 1,
 	}
 	assert.Nil(t, m.msgRateLimiter)
 	assert.True(t, m.AddInitSync("test-1"))
@@ -159,13 +159,13 @@ func TestClusterMsgEwmaRateNoTick(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			msgRate := newClusterMsgRate("c1", tt.period)
-			assert.Equal(t, 0.0, msgRate.rate)
+			assert.Equal(t, 0.0, msgRate.ratePerSec)
 
 			for i := 0; i < 10; i++ {
-				msgRate.lastTime = time.Now().Add(tt.timeDiff).Unix()
+				msgRate.lastUpdate = time.Now().Add(tt.timeDiff).Unix()
 				msgRate.recvMsg()
 			}
-			assert.InDelta(t, tt.rate, msgRate.rate, tt.rateDelta)
+			assert.InDelta(t, tt.rate, msgRate.ratePerSec, tt.rateDelta)
 		})
 	}
 }
@@ -215,7 +215,7 @@ func BenchmarkClusterMsgRateRecvMsg(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			n := newClusterMsgRate("c1", 10*time.Hour)
 			for i := 0; i < b.N; i++ {
-				n.lastTime = tt.lastTime
+				n.lastUpdate = tt.lastTime
 				n.recvMsg()
 			}
 		})
