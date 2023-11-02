@@ -213,6 +213,70 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 	}
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurations() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+	createdTime := timestamp.Now().GogoProtobuf()
+	lastUpdatedTime := timestamp.Now().GogoProtobuf()
+
+	testCases := []struct {
+		desc      string
+		query     *apiV2.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+		},
+		{
+			desc:  "Query with search field",
+			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
+				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+		},
+		{
+			desc: "Query with custom pagination",
+			query: &apiV2.RawQuery{
+				Query:      "",
+				Pagination: &apiV2.Pagination{Limit: 1},
+			},
+			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+
+			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
+				Return([]*storage.ComplianceOperatorScanConfigurationV2{
+					{
+						Id:                     uuid.NewDummy().String(),
+						ScanName:               "test-scan",
+						AutoApplyRemediations:  false,
+						AutoUpdateRemediations: false,
+						OneTimeScan:            false,
+						Profiles: []*storage.ProfileShim{
+							{
+								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
+								ProfileName: "ocp4-cis",
+							},
+						},
+						StrictNodeScan:  false,
+						Schedule:        defaultStorageSchedule,
+						CreatedTime:     createdTime,
+						LastUpdatedTime: lastUpdatedTime,
+						ModifiedBy:      storageRequester,
+					},
+				}, nil).Times(1)
+
+			configs, err := s.service.GetComplianceScanConfigurationCount(allAccessContext, tc.query)
+			s.Require().NoError(err)
+			s.Require().Equal(1, configs)
+		})
+	}
+
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	createdTime := timestamp.Now().GogoProtobuf()

@@ -131,3 +131,18 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 
 	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.complianceScanSettingsDS)
 }
+
+func (s *serviceImpl) GetComplianceScanConfigurationCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationCount, error) {
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	scanConfigs, err := s.complianceScanSettingsDS.GetScanConfigurations(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.NotFound, err.Error())
+	}
+	res := &v2.ComplianceScanConfigurationCount{
+		Count: int32(len(scanConfigs)),
+	}
+	return res, nil
+}
