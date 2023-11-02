@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -36,6 +37,7 @@ var (
 					Enabled: true,
 				},
 			},
+			Indefinite: true,
 			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: true,
 				AnyFixable: true,
@@ -70,20 +72,18 @@ func (s *configServiceTestSuite) SetupSuite() {
 	s.db = pgtest.ForT(s.T())
 	s.dataStore = datastore.NewForTest(s.T(), s.db.DB)
 	s.srv = New(s.dataStore)
-}
 
-func (s *configServiceTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
-func (s *configServiceTestSuite) TestNotFound() {
 	// Not found because Singleton() was not called and default configuration was not initialize.
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
 	s.EqualValues(&v1.GetVulnerabilityExceptionConfigResponse{}, cfg)
 }
 
-func (s *configServiceTestSuite) TestexceptionConfigOps() {
+func (s *configServiceTestSuite) TearDownSuite() {
+	s.db.Teardown(s.T())
+}
+
+func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	initialCfg := &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
 			ImageRetentionDurationDays:   90,
@@ -95,7 +95,7 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 	s.NoError(err)
 
 	// Verify the initial record exists.
-	expected := VulnerabilityExceptionConfigStorageToV1(defaultExceptionCfg)
+	expected := storagetov1.VulnerabilityExceptionConfig(defaultExceptionCfg)
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
 	s.EqualValues(expected, cfg.GetConfig())
@@ -104,7 +104,7 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 	updatedExceptionCfg := initialCfg.Clone().GetPrivateConfig().GetVulnerabilityExceptionConfig()
 	updatedExceptionCfg.ExpiryOptions.DayOptions = nil
 	req := &v1.UpdateVulnerabilityExceptionConfigRequest{
-		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
+		Config: storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg),
 	}
 	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
 	s.Error(err)
@@ -130,7 +130,7 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 		},
 	}
 	req = &v1.UpdateVulnerabilityExceptionConfigRequest{
-		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
+		Config: storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg),
 	}
 	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
 	s.Error(err)
@@ -184,7 +184,7 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 		},
 	}
 	req = &v1.UpdateVulnerabilityExceptionConfigRequest{
-		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
+		Config: storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg),
 	}
 	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
 	s.NoError(err)
@@ -192,7 +192,7 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 	// Verify vulnerability exception configuration was updated.
 	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg), cfg.GetConfig())
+	s.EqualValues(storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg), cfg.GetConfig())
 	// Verify other config was undisturbed.
 	pCfg, err = s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)

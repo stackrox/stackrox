@@ -36,6 +36,7 @@ message VulnerabilityExceptionConfig {
         FixableCVEOptions   fixable_cve_options  = 2;
         // This option, if true, allows UI to show a custom date picker for setting expiry date.
         bool                custom_date          = 3;
+        bool                indefinite           = 4;
     }
 
     ExpiryOptions expiry_options = 1;
