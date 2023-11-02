@@ -17,7 +17,7 @@ The NVD JSON feed offers bundled data on a yearly basis, spanning from 2002 to t
 
 The updated NVD CVSS GitHub Workflow (CI) has transitioned to sourcing data from the NVD CVE API, rather than the NVD JSON feeds, ensuring the timely update of the NVD CVSS data bundle in Google Storage. To fetch data, the workflow downloads based on both the start index and CVSS v3 severity. For instance, a command listed below could be used: 
 ```
-bash curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0" > critical-1.json
+curl "https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0" > critical-1.json
 ``` 
 For every severity level, the workflow iteratively exhaust the startIndex to capture all associated data. And there are four severity levels: LOW, MEDIUM, HIGH, CRITICAL. After all json files downloaded, they will be compress to one data bundle as one single compressed file.
 
@@ -27,9 +27,9 @@ The CVSS Updater in Central will be modified to download compressed file (genera
 
 A custom enricher is essential for Scanner V4, as it will provide a mechanism to retrieve JSON data from Central, parse the enrichment details, and store them in the Scanner V4 database.  Additionally, our data will be sourced from the NVD CVE API rather than JSON feeds, so the custom enricher can accommodate the distinct data formats. This also offers greater flexibility, allowing us to extract more information from the fetched JSONs than what Claircore offers.
 
-The CVSS Updater in Central will attempt to download the data bundle from the Google bucket a maximum of five times. Should all five attempts be unsuccessful, the updater will pause its efforts and initiate a fresh download attempt after a 4-hour interval. 
+The CVSS Updater in Central will attempt to download the data bundle from the Google bucket using exponential retries in case of partial failures, up to a maximum interval within the next loop, which happens every 4 hours by default.
 
-If the GH workflow (CI) encounters issues accessing or downloading portions of the CVSS data—likely due to NVD API unavailability or rate limiting—it should retry the request after a 6-second delay, capping at three total attempts. If the same HTTP request fails three times consecutively, that specific data section will be skipped. Central retains the data bundle from the prior update. In cases where the current update has data missing but the previous one doesn't (as determined by comparing the sizes of the two data bundles), the earlier data bundle will be employed to support Scanner v4.
+Should the GitHub Actions workflow (CI) experience difficulties in accessing or downloading segments of the CVSS data due to an HTTP request failure—potentially caused by the NVD API being unavailable or due to rate limiting—the affected HTTP request should be automatically retried following an exponential backoff strategy. In the event that all retry attempts fail, the workflow will be terminated, and the system will await the next scheduled update in 4 hours. The team will be promptly notified of any aborted or failed workflows via Slack.
 
 ## Consequences
 
@@ -38,5 +38,7 @@ One drawback of the NVD CVE API is its rate limit: only 5 requests are allowed p
 Changing from the NVD JSON feed to the NVD CVE API also give us the conveniences of no need to filter out data without valid CVSS V3 metrics, as mentioned above. 
 
 Following this modification, Central will no longer have a dependency on Claircore. The Claircore enricher will be used in Scanner V4, which adopts Claircore as its primary scanning engine by design.
+
+Given that we will terminate the workflow in the event of incomplete data, there may be a delay of several hours before we can acquire the most updated data bundle. However, should such a workflow termination occur, the team will be promptly notified.
 
 Per the NVD's documentation (https://nvd.nist.gov/developers/vulnerabilities), the NVD CVE API omits CVSS v3 vector strings with a 'NONE' severity. This ensures we only obtain data bearing valid CVSS V3 metrics.
