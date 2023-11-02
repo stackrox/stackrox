@@ -1,12 +1,12 @@
 # StackRox Scanner
 
-The container image scanner, built with ClairCore technology.
+The container image scanner.  Built with ClairCore technology.
 
 ## Development
 
-Scanner requires the Go version be aligned with the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION). This is verified when using scanner's `make` targets that depends on go tooling.
+Scanner requires the Go version to be aligned with the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION).  This is verified using Scanner's `make` targets that depend on go tooling.
 
-For local development, you can overwrite this restriction by specifying `EXPECTED_GO_VERSION` in the make targets that will depends on go tools, example:
+For local development, you can overwrite this restriction by specifying `EXPECTED_GO_VERSION` in the make targets that will depend on go tools, for example:
 
 ```
 make build EXPECTED_GO_VERSION=$(go version | {read _ _ v _; echo $v})
@@ -68,7 +68,7 @@ There are many options to control how `scannerctl`.  See `scannerctl help`.
 
 ### Example 1: Connecting to local Scanner 
 
-Common use-case is testing Scanner locally.  Once you have the local scanner build, certificates and scanner running with those certificates, you can run `scannerctl`:
+A common use case is testing Scanner locally.  Once you have the local scanner build, certificates, and Scanner running with those certificates, you can run `scannerctl`:
 
 ```sh
 ./bin/scannerctl scan \
