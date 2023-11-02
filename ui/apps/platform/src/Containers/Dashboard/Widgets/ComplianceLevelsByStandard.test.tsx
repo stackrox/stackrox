@@ -137,7 +137,7 @@ describe('Compliance levels by standard dashboard widget', () => {
         expect(history.location.pathname).toBe(complianceBasePath);
 
         const standard = 'CIS Kubernetes v1.5';
-        await user.click(await screen.findByText(standard));
+        await act(() => user.click(screen.getByText(standard)));
         expect(history.location.pathname).toBe(
             `${complianceBasePath}/${urlEntityListTypes[standardEntityTypes.CONTROL]}`
         );
