@@ -267,6 +267,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                             isFiltered={isFiltered}
                             selectedCves={selectedCves}
                             canSelectRows={canSelectRows}
+                            vulnerabilityState={currentVulnerabilityState}
                             createTableActions={createTableActions}
                         />
                     </div>
