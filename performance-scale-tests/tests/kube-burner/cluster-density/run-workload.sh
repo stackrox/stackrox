@@ -102,6 +102,16 @@ function run_workload() {
 
     local run_uuid="node-${num_nodes}--${node_type}--dep-${num_deployments}--pod-${num_pods}--workload-${num_namespaces}--run-0"
 
+    local metadata_path="user-metadata-${run_uuid}.yml"
+
+    go run ../../metadata-collector/main.go \
+        --namespaces-count "${num_namespaces}" \
+        --deployments-per-namespace-count "${num_deployments}" \
+        --pods-per-deployment-count "${num_pods}" \
+        --configs-per-deployment-count "${num_configs}" \
+        --test-workload-type "${template}" \
+        --output-file "${metadata_path}"
+
     echo "--- Starting kube-burner"
     "${kube_burner_path}" init \
         --uuid="${run_uuid}" \
@@ -111,7 +121,8 @@ function run_workload() {
         --skip-tls-verify \
         --timeout=2h \
         --prometheus-url="${prometheus_url}" \
-        --token="${prometheus_token}"
+        --token="${prometheus_token}" \
+        --user-metadata="${metadata_path}"
     echo "--- Done!"
 
     echo "Move results to: ${run_uuid}.tar.gz"
