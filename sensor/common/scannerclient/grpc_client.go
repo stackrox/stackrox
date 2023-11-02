@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,11 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/scanner/pkg/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -51,9 +52,8 @@ type v2Client struct {
 // v4Client is the client for StackRox Scanner Indexer, also
 // known as Scanner V4 Indexer.
 type v4Client struct {
-	// Sensor uses Scanner V4's indexer.
-	v4.IndexerClient
-	conn *grpc.ClientConn
+	// Sensor uses Scanner V4's client.
+	client client.Scanner
 }
 
 // GetStatus returns the image analysis status
@@ -143,25 +143,20 @@ func dialV2() (ScannerClient, error) {
 
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
-	endpoint, err := getScannerEndpoint(env.ScannerV4GRPCEndpoint)
+	ctx := context.Background()
+	c, err := client.NewGRPCScanner(ctx,
+		client.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
+		// TODO: [ROX-19050] Set the Scanner V4 TLS validation when certificates are ready.
+		client.WithoutTLSVerify)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: [ROX-19050] Set the Scanner V4 certificate here.
-	log.Infof("dialing scanner-v4 client: %s", endpoint)
-	conn, err := dial(endpoint, mtls.ScannerSubject)
-	if err != nil {
-		return nil, err
-	}
-	return &v4Client{
-		IndexerClient: v4.NewIndexerClient(conn),
-		conn:          conn,
-	}, nil
+	return &v4Client{client: c}, nil
 }
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
 func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	name := image.GetName().GetFullName()
+	imgName := image.GetName().GetFullName()
 
 	// The WaitForReady option will cause invocations to block (until server ready or
 	// ctx done/expires) This was added so that on fresh installation of sensor when
@@ -177,11 +172,11 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		},
 	}, grpc.WaitForReady(true))
 	if err != nil {
-		log.Debugf("Unable to get image components from local Scanner for image %s: %v", name, err)
+		log.Debugf("Unable to get image components from local Scanner for image %s: %v", imgName, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Scanner for image %s", name)
+	log.Debugf("Received image components from local Scanner for image %s", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),
@@ -212,45 +207,28 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 }
 
 func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	imgSHA := utils.GetSHA(image)
-	if imgSHA == "" {
-		// TODO: ROX-19576: Is the assumption that image always have SHA correct?
-		return nil, fmt.Errorf("internal: V4 scanning of an image without SHA: %s",
-			image.GetName().GetFullName())
-	}
-	hashID := fmt.Sprintf("/v4/containerimage/%s", imgSHA)
-	opts := []grpc.CallOption{grpc.WaitForReady(true)}
-	ir, err := c.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID}, opts...)
-	if err == nil {
-		return convertIndexReportToAnalysis(ir), nil
-	}
-	// Check if index was "not found", so we create.
-	if s, _ := status.FromError(err); s.Code() != codes.NotFound {
-		return nil, fmt.Errorf("get index report (hashid: %s): %w", hashID, err)
-	}
-	log.Infof("creating index report: %s", hashID)
-	scheme := "https"
+	var opts []name.Option
 	if cfg.Insecure {
-		scheme = "http"
+		opts = append(opts, name.Insecure)
 	}
-	req := &v4.CreateIndexReportRequest{
-		HashId: hashID,
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-			ContainerImage: &v4.ContainerImageLocator{
-				Url:      fmt.Sprintf("%s://%s", scheme, image.GetName().GetFullName()),
-				Username: cfg.Username,
-				Password: cfg.Password,
-			},
-		},
-	}
-	ir, err = c.CreateIndexReport(ctx, req, opts...)
+	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
+	ref, err := name.NewDigest(n, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("create index report (hashid: %s): %w", hashID, err)
+		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
+		return nil, fmt.Errorf("creating digest reference: %w", err)
+	}
+	auth := authn.Basic{
+		Username: cfg.Username,
+		Password: cfg.Password,
+	}
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth)
+	if err != nil {
+		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
 	return convertIndexReportToAnalysis(ir), nil
 }
 
 // Close closes and cleanup the client connection.
 func (c *v4Client) Close() error {
-	return c.conn.Close()
+	return c.client.Close()
 }
