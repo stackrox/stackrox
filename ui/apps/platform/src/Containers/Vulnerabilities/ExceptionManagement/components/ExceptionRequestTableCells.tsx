@@ -11,31 +11,29 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
-// @TODO: Add tests for these
-
 export type RequestContext =
     | 'PENDING_REQUESTS'
     | 'APPROVED_DEFERRALS'
     | 'APPROVED_FALSE_POSITIVES'
     | 'DENIED_REQUESTS';
 
-export type RequestIDTableCellProps = {
+export type RequestIDLinkProps = {
     id: VulnerabilityException['id'];
     name: VulnerabilityException['name'];
 };
 
-export function RequestIDTableCell({ id, name }: RequestIDTableCellProps) {
+export function RequestIDLink({ id, name }: RequestIDLinkProps) {
     return <Link to={`${exceptionManagementPath}/requests/${id}`}>{name}</Link>;
 }
 
-export type RequesterTableCellProps = {
+export type RequesterProps = {
     requester: VulnerabilityException['requester'];
 };
-export function RequesterTableCell({ requester }: RequesterTableCellProps) {
+export function Requester({ requester }: RequesterProps) {
     return <div>{requester.name}</div>;
 }
 
-export type RequestedActionTableCellProps = {
+export type RequestedActionProps = {
     exception: VulnerabilityException;
     context: RequestContext;
 };
@@ -94,18 +92,18 @@ export function getRequestedAction(
     return '-';
 }
 
-export function RequestedActionTableCell({ exception, context }: RequestedActionTableCellProps) {
+export function RequestedAction({ exception, context }: RequestedActionProps) {
     return <div>{getRequestedAction(exception, context)}</div>;
 }
 
-export type RequestedTableCellProps = {
+export type RequestCreatedAtProps = {
     createdAt: VulnerabilityException['createdAt'];
 };
-export function RequestedTableCell({ createdAt }: RequestedTableCellProps) {
+export function RequestCreatedAt({ createdAt }: RequestCreatedAtProps) {
     return <div>{getDate(createdAt)}</div>;
 }
 
-export type ExpiresTableCellProps = {
+export type RequestExpiresProps = {
     exception: VulnerabilityException;
     context: RequestContext;
 };
@@ -124,26 +122,26 @@ export function getExpiresDate(exception: VulnerabilityException, context: Reque
     return '-';
 }
 
-export function ExpiresTableCell({ exception, context }: ExpiresTableCellProps) {
+export function RequestExpires({ exception, context }: RequestExpiresProps) {
     return <div>{getExpiresDate(exception, context)}</div>;
 }
 
-export type ScopeTableCellProps = {
+export type RequestScopeProps = {
     scope: VulnerabilityException['scope'];
 };
 
-export function ScopeTableCell({ scope }: ScopeTableCellProps) {
+export function RequestScope({ scope }: RequestScopeProps) {
     return (
         <div>{`${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`}</div>
     );
 }
 
-export type RequestedItemsTableCellProps = {
+export type RequestedItemsProps = {
     exception: VulnerabilityException;
     context: RequestContext;
 };
 
-export function RequestedItemsTableCell({ exception, context }: RequestedItemsTableCellProps) {
+export function RequestedItems({ exception, context }: RequestedItemsProps) {
     const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
     let cvesCount = exception.cves.length;
     if (isDeferralException(exception) && shouldUseUpdatedRequest && exception.deferralUpdate) {
