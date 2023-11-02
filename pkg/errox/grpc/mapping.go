@@ -17,7 +17,7 @@ func RoxErrorToGRPCCode(err error) codes.Code {
 		return codes.AlreadyExists
 	case errors.Is(err, errox.InvalidArgs):
 		return codes.InvalidArgument
-	case errors.Is(err, errox.NotFound):
+	case errors.Is(err, errox.NotFound), errors.Is(err, errox.ReferencedObjectNotFound):
 		return codes.NotFound
 	case errors.Is(err, errox.ReferencedByAnotherObject):
 		return codes.FailedPrecondition

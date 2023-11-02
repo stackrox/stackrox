@@ -35,7 +35,7 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Fetch, Validate, and Store NVD Data
       run: ./.github/workflows/scripts/scanner-fetch-update-nvd.sh ${{ matrix.year }}

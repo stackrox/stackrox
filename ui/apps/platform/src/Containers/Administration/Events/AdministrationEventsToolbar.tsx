@@ -73,6 +73,8 @@ function AdministrationEventsToolbar({
                             setDomain={setDomain}
                         />
                     </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
                         <SearchFilterResourceType
                             isDisabled={isDisabled}
@@ -80,6 +82,8 @@ function AdministrationEventsToolbar({
                             setResourceType={setResourceType}
                         />
                     </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
                         <SearchFilterLevel
                             isDisabled={isDisabled}

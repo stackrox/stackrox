@@ -122,7 +122,7 @@ To freeze a schema, you can use the following tool to generate a frozen schema, 
 to generate current schema which can be find in each Postgres store.
 
 ```shell
-pg-schema-migration-helper --type=<prototype> --search-category ...
+./tools/generate-helpers/pg-schema-migration-helper --type=<prototype> --search-category ...
 ```
 
 This tool also generates conversion tools for schema, you may remove them. 
@@ -158,6 +158,9 @@ In migrator, there are a multiple ways to access data.
 
 2. Gorm
 
+    Consideration:  If the migration is dealing with multiple tables tied together it may be simpler for
+    the migration author to use the store method vs gorm.
+    
     Use Gorm to read small amount data. Gorm is light-weighted and comprehensive ORM allowing accessing databases
     in an object oriented way. You may have partial data access by trimming the gorm model.
     Check the [details](https://gorm.io/docs/) how to use Gorm.
@@ -272,8 +275,13 @@ In migrator, there are a multiple ways to access data.
 3. Duplicate the Postgres Store
    This method is used in version 73 and 74 to migrate all tables from RocksDB to Postgres. In addition to frozen schema,
    the store to access the data are also frozen for migration. The migrations with this method are closely associated
-   with current release eg. search/delete with schema and the prototypes of the objects. This method is NOT recommended for
-   4.0 and beyond.
+   with current release eg. search/delete with schema and the prototypes of the objects. 
+
+   Now that stores are built upon a generic store you would need to make a copy of the store and remove
+   references to SAC and such.  We should be careful not to rely on the search framework for queries as those
+   could change over time.  Additionally the stores should use the frozen schemas just as any other migration would
+   to ensure isolation.  
+
    This model supports the transaction passed via the databases.DBCtx.
 
 #### Conversion tool
@@ -289,7 +297,7 @@ The following shows an example of the conversion functions.
 The tool is `pg-schema-migration-helper`, it can be used as follows.
 
 ```shell
-pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
+./tools/generate-helpers/pg-schema-migration-helper --type=storage.VulnerabilityRequest --search-category VULN_REQUEST
 ```
 
 `pg-schema-migration-helper` uses the same elements as `pg-table-bindings-wrapper` (the code generator for the postgres

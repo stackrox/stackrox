@@ -24,11 +24,6 @@ const mockComplianceData: ComplianceByProfileData = [
         link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
     },
     {
-        name: 'CIS Docker',
-        passing: 73,
-        link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
-    },
-    {
         name: 'CIS K8s',
         passing: 69,
         link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),

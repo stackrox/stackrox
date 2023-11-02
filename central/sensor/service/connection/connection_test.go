@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/set"
@@ -73,6 +74,7 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 
 func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 	s.T().Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
+	s.T().Setenv(env.MaxDeduperEntriesPerMessage.EnvVar(), "2")
 	if !features.SensorReconciliationOnReconnect.Enabled() {
 		s.T().Skip("Test skipped if ROX_SENSOR_RECONCILIATION feature flag isn't set")
 	}
@@ -83,6 +85,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 		expectError                   bool
 		expectReconciliationMapClosed bool
 		expectDeduperStateSent        bool
+		expectNumberOfDeduperStates   int
 		expectDeduperStateContents    map[string]uint64
 	}{
 		"Sensor reconciles: sensor has capability and status is reconnect": {
@@ -90,6 +93,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			givenSensorState:              central.SensorHello_RECONNECT,
 			expectReconciliationMapClosed: true,
 			expectDeduperStateSent:        true,
+			expectNumberOfDeduperStates:   1,
 			expectDeduperStateContents:    map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: sensor has capability and status is startup": {
@@ -97,6 +101,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			givenSensorState:              central.SensorHello_STARTUP,
 			expectReconciliationMapClosed: true,
 			expectDeduperStateSent:        true,
+			expectNumberOfDeduperStates:   1,
 			expectDeduperStateContents:    map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: sensor has capability and status is unknown": {
@@ -104,6 +109,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			givenSensorState:              central.SensorHello_UNKNOWN,
 			expectReconciliationMapClosed: true,
 			expectDeduperStateSent:        true,
+			expectNumberOfDeduperStates:   1,
 			expectDeduperStateContents:    map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: state is sent even if there is no deduper state": {
@@ -111,6 +117,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			givenSensorState:              central.SensorHello_RECONNECT,
 			expectReconciliationMapClosed: true,
 			expectDeduperStateSent:        true,
+			expectNumberOfDeduperStates:   1,
 			expectDeduperStateContents:    nil,
 		},
 		"Central reconciles: sensor doesn't have capability status is reconnect": {
@@ -132,11 +139,20 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: failed to send message": {
-			givenSensorCapabilities: []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
-			givenSensorState:        central.SensorHello_RECONNECT,
-			givenSendError:          errors.New("gRPC error"),
-			expectError:             true,
-			expectDeduperStateSent:  true,
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:            central.SensorHello_RECONNECT,
+			givenSendError:              errors.New("gRPC error"),
+			expectError:                 true,
+			expectDeduperStateSent:      true,
+			expectNumberOfDeduperStates: 1,
+		},
+		"Sensor reconciles: multiple chunks are sent": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:              central.SensorHello_RECONNECT,
+			expectReconciliationMapClosed: true,
+			expectDeduperStateSent:        true,
+			expectNumberOfDeduperStates:   2,
+			expectDeduperStateContents:    map[string]uint64{"deployment:1": 0, "deployment:2": 1, "deployment:3": 2},
 		},
 	}
 
@@ -185,18 +201,36 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				s.NoError(err)
 			}
 
-			var deduperState *central.DeduperState
+			var deduperStates []*central.DeduperState
 			for _, msg := range server.sentList {
 				if m := msg.GetDeduperState(); m != nil {
-					deduperState = m
+					deduperStates = append(deduperStates, m)
 				}
 			}
 
 			if tc.expectDeduperStateSent {
-				s.NotNil(deduperState)
-				s.Equal(tc.expectDeduperStateContents, deduperState.ResourceHashes)
+				s.NotNil(deduperStates)
+				s.Assert().Len(deduperStates, tc.expectNumberOfDeduperStates)
+				currentSet := set.NewIntSet()
+				for i := 1; i <= tc.expectNumberOfDeduperStates; i++ {
+					currentSet.Add(i)
+				}
+				deduperStateSent := make(map[string]uint64)
+				for _, state := range deduperStates {
+					for k, v := range state.GetResourceHashes() {
+						deduperStateSent[k] = v
+					}
+					s.Equal(tc.expectNumberOfDeduperStates, int(state.GetTotal()))
+					s.True(currentSet.Contains(int(state.GetCurrent())))
+					currentSet.Remove(int(state.GetCurrent()))
+				}
+				if tc.expectDeduperStateContents != nil {
+					s.Equal(tc.expectDeduperStateContents, deduperStateSent)
+				} else {
+					s.Assert().Len(deduperStateSent, 0)
+				}
 			} else {
-				s.Nil(deduperState)
+				s.Nil(deduperStates)
 			}
 
 			s.Equal(tc.expectReconciliationMapClosed, eventHandler.reconciliationMap.IsClosed())

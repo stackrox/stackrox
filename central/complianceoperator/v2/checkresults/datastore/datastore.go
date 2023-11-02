@@ -6,6 +6,7 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore defines the possible interactions with compliance operator check results
@@ -18,11 +19,14 @@ type DataStore interface {
 	// DeleteResult removes a result from the database
 	DeleteResult(ctx context.Context, id string) error
 
-	// SearchCheckResults retrieves the scan results specified by query
-	SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
+	// SearchComplianceCheckResults retrieves the scan results specified by query
+	SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
+
+	// ComplianceCheckResultStats retrieves the scan results stats specified by query
+	ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store) DataStore {
-	return &datastoreImpl{store: store}
+func New(store store.Store, db postgres.DB) DataStore {
+	return &datastoreImpl{store: store, db: db}
 }

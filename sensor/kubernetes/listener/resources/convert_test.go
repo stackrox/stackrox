@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,7 +89,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 		c := c
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
-			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces, storeProvider.Registries())
+			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces)
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -333,14 +333,17 @@ func TestPopulateImageMetadata(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			registryStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+			var localImages set.StringSet
 			if c.isClusterLocal {
-				registryStore.AddClusterLocalRegistryHost("image-registry.openshift-image-registry.svc:5000")
+				for _, p := range c.pods {
+					for _, img := range p.images {
+						localImages.Add(img)
+					}
+				}
 			}
 
 			wrap := deploymentWrap{
-				Deployment:    &storage.Deployment{},
-				registryStore: registryStore,
+				Deployment: &storage.Deployment{},
 			}
 			for _, container := range c.wrap {
 				img, err := imageUtils.GenerateImageFromString(container.image)
@@ -365,7 +368,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 				pods = append(pods, k8sPod)
 			}
 
-			wrap.populateImageMetadata(pods...)
+			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
 				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
 				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
@@ -1137,7 +1140,7 @@ func TestConvert(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
-				storeProvider.orchestratorNamespaces, storeProvider.Registries()).GetDeployment()
+				storeProvider.orchestratorNamespaces).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

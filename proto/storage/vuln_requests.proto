@@ -89,7 +89,7 @@ message VulnerabilityRequest {
             // This field can be used to apply the request to selected images.
             Image  image_scope  = 1;
             // If set, the scope of this request is system-wide.
-            Global global_scope = 2;
+            Global global_scope = 2 [deprecated = true];
         }
     }
     string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];

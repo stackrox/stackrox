@@ -8,6 +8,7 @@ import {
     accessControlPath,
     administrationEventsPathWithParam,
     apidocsPath,
+    apidocsPathV2,
     clustersDelegatedScanningPath,
     clustersInitBundlesPathWithParam,
     clustersPathWithParam,
@@ -36,6 +37,7 @@ import {
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    exceptionManagementPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -80,6 +82,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),
         path: apidocsPath,
     },
+    'apidocs-v2': {
+        component: asyncComponent(() => import('Containers/Docs/ApiPageV2')),
+        path: apidocsPathV2,
+    },
     // Delegated image scanning must precede generic Clusters.
     'clusters/delegated-image-scanning': {
         component: asyncComponent(
@@ -123,6 +129,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
         path: exceptionConfigurationPath,
+    },
+    'exception-management': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
+        ),
+        path: exceptionManagementPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),

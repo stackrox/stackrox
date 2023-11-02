@@ -14,9 +14,6 @@ import (
 )
 
 var commandsToRetrieve = []string{
-	"dockerd",
-	"dockerd-current",
-
 	"federation-apiserver",
 	"federation-controller-manager",
 	"kube-controller-manager",

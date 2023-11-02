@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -49,22 +49,8 @@ jobs:
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
-    - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
-      uses: ./.github/actions/junit2jira
-      with:
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        directory: 'junit-reports'
+    # Do not create junit report for bench tests:
+    # https://github.com/jstemmer/go-junit-report/issues/174
 
   go-postgres:
     strategy:
@@ -72,7 +58,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -112,10 +98,53 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'junit-reports'
 
+  go-bench:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+
+    - name: Run Postgres
+      run: |
+        su postgres -c 'initdb -D /tmp/data'
+        su postgres -c 'pg_ctl -D /tmp/data start'
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Is Postgres ready
+      run: pg_isready -h 127.0.0.1
+
+    - name: Go Bench Tests
+      run: make go-postgres-bench-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled()) && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
+
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -147,7 +176,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -184,6 +213,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - go
+      - go-bench
       - go-postgres
       - ui
       - local-roxctl-tests

@@ -39,8 +39,8 @@ func GetTestVulnDeferralExceptionFull(_ *testing.T) *v2.VulnerabilityException {
 				},
 			},
 		},
-		Req: &v2.VulnerabilityException_DeferralReq{
-			DeferralReq: &v2.DeferralRequest{
+		Req: &v2.VulnerabilityException_DeferralRequest{
+			DeferralRequest: &v2.DeferralRequest{
 				Expiry: &v2.ExceptionExpiry{
 					ExpiryType: v2.ExceptionExpiry_TIME,
 					ExpiresOn:  ts1,
@@ -62,8 +62,8 @@ func GetTestVulnDeferralExceptionFull(_ *testing.T) *v2.VulnerabilityException {
 func GetTestVulnFPExceptionFull(t *testing.T) *v2.VulnerabilityException {
 	ret := GetTestVulnDeferralExceptionFull(t)
 	ret.TargetState = v2.VulnerabilityState_FALSE_POSITIVE
-	ret.Req = &v2.VulnerabilityException_FpRequest{
-		FpRequest: &v2.FalsePositiveRequest{},
+	ret.Req = &v2.VulnerabilityException_FalsePositiveRequest{
+		FalsePositiveRequest: &v2.FalsePositiveRequest{},
 	}
 	return ret
 }
@@ -104,7 +104,7 @@ func GetTestCreateDeferVulnExceptionRequest(t *testing.T) *v2.CreateDeferVulnera
 		Cves:            []string{"cve1"},
 		Comment:         "message",
 		Scope:           req.GetScope(),
-		ExceptionExpiry: req.GetDeferralReq().GetExpiry(),
+		ExceptionExpiry: req.GetDeferralRequest().GetExpiry(),
 	}
 }
 

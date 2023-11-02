@@ -5,6 +5,7 @@ import * as yup from 'yup';
 
 import { UseRestQueryReturn } from 'hooks/useRestQuery';
 import { UseRestMutationReturn } from 'hooks/useRestMutation';
+import useAnalytics, { WATCH_IMAGE_SUBMITTED } from 'hooks/useAnalytics';
 import { WatchedImage } from 'types/image.proto';
 
 const validationSchema = yup.object({
@@ -41,7 +42,10 @@ function WatchedImagesForm({
     const isNameFieldInvalid = !!(errors.imageName && touched.imageName);
     const nameFieldValidated = isNameFieldInvalid ? 'error' : 'default';
 
+    const { analyticsTrack } = useAnalytics();
+
     function addToWatchedImages(formValues: FormData, { setSubmitting }: FormikHelpers<FormData>) {
+        analyticsTrack(WATCH_IMAGE_SUBMITTED);
         watchImage(formValues.imageName, {
             onSuccess: () => watchedImagesRequest.refetch(),
             onSettled: () => setSubmitting(false),

@@ -87,8 +87,8 @@ message VulnerabilityException {
     Scope                            scope              = 11;
 
     oneof req {
-        DeferralRequest              deferral_req       = 12;
-        FalsePositiveRequest         fp_request         = 13;
+        DeferralRequest              deferral_request       = 12;
+        FalsePositiveRequest         false_positive_request = 13;
     }
 
     // Indicates the CVEs to which the exception applies.
@@ -274,7 +274,9 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // DeleteVulnerabilityException deletes a vulnerability exception.
+    // DeleteVulnerabilityException deletes a vulnerability exception. Only pending exceptions and pending updates
+    // to an enforced exception can be deleted. To revert an exception use cancel API. All exceptions are retained
+    // in the system according to the retention configuration.
     rpc DeleteVulnerabilityException (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v2/vulnerability-exceptions/{id}"

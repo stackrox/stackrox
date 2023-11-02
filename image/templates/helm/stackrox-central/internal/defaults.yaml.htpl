@@ -157,7 +157,7 @@ defaults:
         memory: "4Gi"
       requests:
         cpu: "200m"
-        memory: "200Mi"
+        memory: "512Mi"
 
     dbImage:
       name: [< required "" .ScannerDBImageRemote >]

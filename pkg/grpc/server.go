@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	"github.com/stackrox/rox/pkg/sync"
 	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -121,6 +122,7 @@ type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+	listenersLock      sync.Mutex
 	listeners          []serverAndListener
 
 	grpcServer         *grpc.Server
@@ -157,6 +159,7 @@ func NewAPI(config Config) API {
 		config:             config,
 		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
 		shutdownInProgress: &shutdownRequested,
+		listenersLock:      sync.Mutex{},
 	}
 }
 
@@ -182,6 +185,10 @@ func (a *apiImpl) Stop() bool {
 	log.Info("Starting stop procedure")
 	a.grpcServer.GracefulStop()
 	log.Info("gRPC server fully stopped")
+
+	a.listenersLock.Lock()
+	defer a.listenersLock.Unlock()
+
 	for _, listener := range a.listeners {
 		if listener.stopper != nil {
 			listener.stopper()
@@ -458,7 +465,9 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		go a.serveBlocking(srvAndLis, errC)
 	}
 
+	a.listenersLock.Lock()
 	a.listeners = allSrvAndLiss
+	a.listenersLock.Unlock()
 
 	if startedSig != nil {
 		startedSig.Signal()

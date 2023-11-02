@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -19,6 +20,14 @@ type DeploymentStore struct {
 	deploymentIDs map[string]map[string]struct{}
 	// Stores deployments by IDs.
 	deployments map[string]*deploymentWrap
+
+	// deploymentSnapshots
+	deploymentSnapshots map[string]snapshotEntry
+}
+
+type snapshotEntry struct {
+	dependenciesHash uint64
+	builtDeployment  *storage.Deployment
 }
 
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
@@ -41,8 +50,9 @@ func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (str
 // newDeploymentStore creates and returns a new deployment store.
 func newDeploymentStore() *DeploymentStore {
 	return &DeploymentStore{
-		deploymentIDs: make(map[string]map[string]struct{}),
-		deployments:   make(map[string]*deploymentWrap),
+		deploymentIDs:       make(map[string]map[string]struct{}),
+		deployments:         make(map[string]*deploymentWrap),
+		deploymentSnapshots: make(map[string]snapshotEntry),
 	}
 }
 
@@ -260,29 +270,60 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
-func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, error) {
+func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, bool, error) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
 	// Get wrap with no lock since ds.lock.Lock() was already requested above
 	wrap, found := ds.deployments[id]
 	if !found || wrap == nil {
-		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
+		return nil, false, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
+	}
+
+	var dependencyHash uint64
+	if features.SensorDeploymentBuildOptimization.Enabled() {
+		var err error
+		snapshot, exists := ds.deploymentSnapshots[wrap.GetId()]
+
+		dependencyHash, err = dependencies.GetHash()
+		if err != nil {
+			return nil, false, errors.Wrap(err, "hashing deployment dependencies")
+		}
+
+		if wrap.isBuilt {
+			// check if dependencies changed, otherwise return an existing deployment object without needing to clone
+			// or check for hashes.
+			if exists && dependencyHash == snapshot.dependenciesHash {
+				return snapshot.builtDeployment, false, nil
+			}
+		}
 	}
 
 	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
 	wrap.updatePortExposureSlice(dependencies.Exposures)
-	if err := wrap.updateHash(); err != nil {
-		return nil, err
-	}
 
 	// These properties are set when initially parsing a deployment/pod event as a deploymentWrap. Since secrets could
 	// influence its values, we need to call this again with the same pods from the wrap. Inside this function we call
 	// the registry store and update `IsClusterLocal` and `NotPullable` based on it. Meaning that if a pull secret was
 	// updated, the value from this properties might need to be updated.
-	wrap.populateDataFromPods(wrap.pods...)
+	wrap.populateDataFromPods(dependencies.LocalImages, wrap.pods...)
+
+	if err := wrap.updateHash(); err != nil {
+		return nil, false, err
+	}
 
 	wrap.isBuilt = true
+
+	// If it's the first time we are building, or the snapshot is different, then update and clone the deployment
 	ds.addOrUpdateDeploymentNoLock(wrap)
-	return wrap.GetDeployment().Clone(), nil
+	clone := wrap.GetDeployment().Clone()
+
+	if features.SensorDeploymentBuildOptimization.Enabled() {
+		ds.deploymentSnapshots[clone.GetId()] = snapshotEntry{
+			dependenciesHash: dependencyHash,
+			builtDeployment:  clone,
+		}
+	}
+
+	return clone, true, nil
 }
