@@ -9,7 +9,7 @@ Scanner requires the Go version to be aligned with the [EXPECTED_GO_VERSION](../
 For local development, you can overwrite this restriction by specifying `EXPECTED_GO_VERSION` in the make targets that will depend on go tools, for example:
 
 ```
-make build EXPECTED_GO_VERSION=$(go version | {read _ _ v _; echo $v})
+make build EXPECTED_GO_VERSION=$(go version | { read _ _ v _; echo $v; })
 ```
 
 ### Running Scanner locally
