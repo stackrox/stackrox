@@ -31,8 +31,8 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 		TargetState: convertVulnerabilityState(vulnRequest.GetTargetState()),
 		Status:      exceptionStatus(vulnRequest.GetStatus()),
 		Expired:     vulnRequest.GetExpired(),
-		Requester:   convertUser(vulnRequest.GetRequestor()),
-		Approvers:   convertUsers(vulnRequest.GetApprovers()),
+		Requester:   requester(vulnRequest.GetRequesterV2()),
+		Approvers:   approvers(vulnRequest.GetApproversV2()),
 		CreatedAt:   vulnRequest.GetCreatedAt(),
 		LastUpdated: vulnRequest.GetLastUpdated(),
 		Comments:    comments(vulnRequest.GetComments()),
@@ -154,4 +154,31 @@ func falsePositiveUpdate(update *storage.FalsePositiveUpdate) *v2.FalsePositiveU
 	return &v2.FalsePositiveUpdate{
 		CVEs: update.GetCVEs(),
 	}
+}
+
+func requester(user *storage.Requester) *v2.SlimUser {
+	if user == nil {
+		return nil
+	}
+	return &v2.SlimUser{
+		Id:   user.GetId(),
+		Name: user.GetName(),
+	}
+}
+
+func approvers(users []*storage.Approver) []*v2.SlimUser {
+	ret := make([]*v2.SlimUser, 0, len(users))
+	for _, user := range users {
+		if user == nil {
+			continue
+		}
+		ret = append(ret, &v2.SlimUser{
+			Id:   user.GetId(),
+			Name: user.GetName(),
+		})
+	}
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
 }
