@@ -72,7 +72,7 @@ jobs:
     - name: Run Postgres
       run: |
         initdb -D /tmp/data
-        pg_ctl -D /tmp/data start -k /tmp
+        pg_ctl -D /tmp/data start -o "-k /tmp"
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
