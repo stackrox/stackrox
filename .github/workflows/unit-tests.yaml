@@ -59,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    env:
+      PGHOST: /tmp
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -69,8 +71,8 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        initdb -D /tmp/data
+        pg_ctl -D /tmp/data start -k /tmp
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
