@@ -12,9 +12,9 @@ For local development, you can overwrite this restriction by specifying `EXPECTE
 make build EXPECTED_GO_VERSION=$(go version | { read _ _ v _; echo $v; })
 ```
 
-### Running Scanner locally
+### Running locally
 
-Copy the sample config and edit it to your liking:
+To run Scanner locally for development, copy the sample config and edit it to your liking:
 
 ```sh
 cp config.sample.yaml config.yaml
@@ -38,7 +38,7 @@ The build system by default builds for `GOOS=linux`.  If you are running a non-L
 make GOOS='$(HOST_OS)' build
 ```
 
-## Running Scanner with Kubernetes for testing 
+### Running standalone in Kubernetes
 
 Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.
 
@@ -50,23 +50,23 @@ make e2e-deploy
 
 There is a CLI that allows you to interact with Scanner, called [`scannerctl`](cmd/scannerctl/main.go).
 
-### Local build
+To build it, use:
 
 ```sh
 make build
 ```
 
-Or:
+Or, specifically:
 
 ```
 make bin/scannerctl
 ```
 
-### Running
+### Examples
 
-There are many options to control how `scannerctl`.  See `scannerctl help`.
+There are options to control how to run `scannerctl`.  See `scannerctl help`.
 
-### Example 1: Connecting to local Scanner 
+#### Example 1: Connecting to local Scanner 
 
 A common use case is testing Scanner locally.  Once you have the local scanner build, certificates, and Scanner running with those certificates, you can run `scannerctl`:
 
