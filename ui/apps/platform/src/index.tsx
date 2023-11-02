@@ -86,6 +86,5 @@ root.render(
                 </ThemeProvider>
             </ConnectedRouter>
         </ApolloProvider>
-    </Provider>,
-    rootNode
+    </Provider>
 );

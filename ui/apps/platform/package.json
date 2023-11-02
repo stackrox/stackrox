@@ -10,7 +10,7 @@
     },
     "license": "UNLICENSED",
     "dependencies": {
-        "@apollo/client": "^3.5.5",
+        "@apollo/client": "^3.6.2",
         "@lifeomic/axios-fetch": "^3.0.0",
         "@patternfly/react-charts": "6.94.18",
         "@patternfly/react-code-editor": "^4.82.113",
@@ -37,7 +37,7 @@
         "file-saver": "^2.0.5",
         "formik": "^2.2.9",
         "framer-motion": "^10.0.0",
-        "graphql": "^15.5.0",
+        "graphql": "^16.0.0",
         "history": "^4.9.0",
         "html2canvas": "1.0.0-rc.7",
         "initials": "^3.1.2",

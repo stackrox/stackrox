@@ -63,19 +63,22 @@ export type SummaryCountsProps = {
 };
 
 function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
+    const tileResourcesQuery = tileResources
+        .filter((tileResource) => hasReadAccessForResource[tileResource])
+        .map((tileResource) => dataKey[tileResource])
+        .join('\n');
     const query = gql`
         query summary_counts {
-            ${tileResources
-                .filter((tileResource) => hasReadAccessForResource[tileResource])
-                .map((tileResource) => dataKey[tileResource])
-                .join('\n')}
+            ${tileResourcesQuery}
         }
     `;
 
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+    console.log('SummaryCoutns', query);
     const { loading, error, data } = useQuery<SummaryCountsResponse>(query, {
-        fetchPolicy: 'network-only',
-        onCompleted: () => setLastUpdate(new Date()),
+        errorPolicy: 'all',
+        // fetchPolicy: 'network-only',
+        // onCompleted: () => setLastUpdate(new Date()),
     });
 
     if (loading) {
@@ -87,6 +90,8 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
             />
         );
     }
+
+    console.log(error, query);
 
     if (error || !data) {
         Raven.captureException(error);
