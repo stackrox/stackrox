@@ -217,11 +217,15 @@ func requestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
 	ret := &storage.RequestExpiry{
 		ExpiryType: requestExpiryType(expiry.GetExpiryType()),
 	}
-	if expiry.GetExpiryType() == v2.ExceptionExpiry_TIME {
+	switch expiry.GetExpiryType() {
+	case v2.ExceptionExpiry_TIME:
 		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
 			ExpiresOn: expiry.GetExpiresOn(),
 		}
-	} else {
+	case v2.ExceptionExpiry_ANY_CVE_FIXABLE:
+		// Set the legacy field for backward compatibility.
+		// In v1, a vulnerability request could have only one CVE at a time. For expiry based on CVE fixability,
+		// the request expired if at least one CVE in the request was fixable which maps to ANY_CVE_FIXABLE behaviour in the v2.
 		ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
 			ExpiresWhenFixed: true,
 		}
