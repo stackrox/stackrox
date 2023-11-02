@@ -63,8 +63,8 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 		}
 		connList = append(connList, mConn)
 	}
-	indexerClient := v4.NewIndexerClient(mConn)
-	matcherClient := v4.NewMatcherClient(iConn)
+	indexerClient := v4.NewIndexerClient(iConn)
+	matcherClient := v4.NewMatcherClient(mConn)
 	return &gRPCScanner{
 		gRPCConnections: connList,
 		indexer:         indexerClient,
