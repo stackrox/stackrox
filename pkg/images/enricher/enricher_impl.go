@@ -160,13 +160,14 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 	// or forcing re-scan will trigger updates as necessary.
 	existingImg, exists := e.fetchFromDatabase(ctx, image, enrichCtx.FetchOpt)
 	if exists && cachedImageIsValid(existingImg) {
-		e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
+		updated := e.updateImageWithExistingImage(image, existingImg, enrichCtx.FetchOpt)
+		if updated {
+			e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
+			e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
-		e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
-		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
-
-		log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
-		return true, nil
+			log.Debugf("Delegated enrichment returning cached image for %q", image.GetName().GetFullName())
+			return true, nil
+		}
 	}
 
 	// Send image to secured cluster for enrichment.
