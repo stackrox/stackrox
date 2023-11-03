@@ -7,15 +7,17 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkCreateNetworkTree(b *testing.B) {
 	ip := net.ParseIP("1.1.1.1")
 	entities := make([]*storage.NetworkEntityInfo, 10000)
-	for i := 0; i < 10000; i++ {
+	const c1 = "c1"
+	for i := range entities {
 		cidr := ip.String() + "/32"
-		id, _ := externalsrcs.NewClusterScopedID("c1", cidr)
+		id, _ := externalsrcs.NewClusterScopedID(c1, cidr)
 		e := &storage.NetworkEntityInfo{
 			Id:   id.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -31,23 +33,38 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 		entities[i] = e
 		ip = nextIP(ip)
 	}
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{c1: entities}
 
 	// Above data will create one of the worst possible tree since each CIDR is disjoint aka all nodes are leaves,
 	// hence resulting in comparison with every node for each new entry.
 
-	mgr := newManager()
 	b.Run("createNetworkTree", func(b *testing.B) {
-		err := mgr.Initialize(map[string][]*storage.NetworkEntityInfo{"c1": entities})
-		require.NoError(b, err)
+		for i := 0; i < b.N; i++ {
+			t := createNetworkTree(b, entitiesByCluster)
+			require.NotNil(b, t)
+		}
 	})
 
 	b.Run("insertIntoNetworkTree", func(b *testing.B) {
-		t := mgr.CreateNetworkTree(context.Background(), "c2")
-		require.NotNil(b, t)
-		for _, entity := range entities {
-			require.NoError(b, t.Insert(entity))
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			t := createNetworkTree(b, entitiesByCluster)
+			b.StartTimer()
+
+			for _, entity := range entities {
+				require.NoError(b, t.Insert(entity))
+			}
 		}
 	})
+}
+
+func createNetworkTree(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) tree.NetworkTree {
+	mgr := newManager()
+	err := mgr.Initialize(entitiesByCluster)
+	require.NoError(b, err)
+	t := mgr.CreateNetworkTree(context.Background(), "c2")
+	require.NotNil(b, t)
+	return t
 }
 
 func nextIP(ip net.IP) net.IP {
