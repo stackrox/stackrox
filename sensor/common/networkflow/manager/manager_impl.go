@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -426,27 +425,19 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
 		}
-		log.Debugf("Container with ID %q for connection %v not found", conn.containerID, conn)
+		log.Warnf("Source container (ID %q) for connection to %q not found", conn.containerID, conn.remote.IPAndPort.String())
 		return
 	}
 
 	var lookupResults []clusterentities.LookupResult
 
-	dbgS := ""
 	// Check if the remote address represents the de-facto INTERNET entity.
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
-		dbgS = fmt.Sprintf("Connection %s (INTERNET)", conn.remote.IPAndPort.String())
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
-		dbgS = fmt.Sprintf("Connection %s (NOT INTERNET)", conn.remote.IPAndPort.String())
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
-	}
-	// Focused debugging
-	if strings.HasPrefix(container.ContainerName, "client-") || container.ContainerName == "nginx" {
-		log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
 	}
 
 	if len(lookupResults) == 0 {
@@ -483,6 +474,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					ContainerPorts: []uint16{port},
 				},
 			}
+			log.Warnf("Container ID/Name=(%s/%s) is communicating with unknown destination (External Entities): %q", container.ContainerID, container.ContainerName, conn.remote.IPAndPort.String())
 		} else {
 			lookupResults = []clusterentities.LookupResult{
 				{
@@ -498,10 +490,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// corresponding outgoing connection from the other end.
 			return
 		}
-	}
-
-	if strings.HasPrefix(container.ContainerName, "client-") || container.ContainerName == "nginx" {
-		log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, phase2-lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
 	}
 
 	for _, lookupResult := range lookupResults {

@@ -208,7 +208,6 @@ func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel sele
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
-	log.Debugf("OnServiceUpdateOrRemove: updating non-incremental: %v", updates)
 	m.entityStore.Apply(updates, false)
 }
 

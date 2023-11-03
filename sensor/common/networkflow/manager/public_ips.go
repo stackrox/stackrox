@@ -61,8 +61,6 @@ func (m *publicIPsManager) OnAdded(ip net.IPAddress) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	log.Debugf("OnAdded: IP %s", ip.String())
-
 	m.publicIPs[ip] = struct{}{}
 	delete(m.publicIPDeletions, ip) // undo a pending deletion, if any
 	m.publicIPsUpdateSig.Signal()
@@ -73,7 +71,6 @@ func (m *publicIPsManager) OnRemoved(ip net.IPAddress) {
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	log.Debugf("OnRemoved: IP %s", ip.String())
 
 	m.publicIPDeletions[ip] = now
 }
