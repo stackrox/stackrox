@@ -71,8 +71,6 @@ export const standardBaseTypes = {
     [standardTypes.NIST_800_190]: 'NIST SP 800-190',
     [standardTypes.NIST_SP_800_53_Rev_4]: 'NIST SP 800-53',
     [standardTypes.HIPAA_164]: 'HIPAA',
-    [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker',
-    [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker',
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
 };
 

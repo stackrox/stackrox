@@ -84,6 +84,7 @@ func GetValidReportConfigWithMultipleNotifiersV2() *storage.ReportConfiguration 
 		Name:        "App Team 1 Report",
 		Description: "Report for CVEs in app team 1's infrastructure",
 		Type:        storage.ReportConfiguration_VULNERABILITY,
+		Version:     2,
 		Filter: &storage.ReportConfiguration_VulnReportFilters{
 			VulnReportFilters: &storage.VulnerabilityReportFilters{
 				Fixability: storage.VulnerabilityReportFilters_FIXABLE,

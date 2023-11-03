@@ -3,7 +3,7 @@ import {
     VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import {
-    getDeferralExpiryToUse,
+    getShouldUseUpdatedExpiry,
     getRequestedAction,
     RequestContext,
 } from './ExceptionRequestTableCells';
@@ -42,39 +42,35 @@ const baseException: BaseVulnerabilityException = {
 
 describe('ExceptionRequestTableCells', () => {
     describe('getDeferralExpiryToUse', () => {
-        it('should show the original deferral request expiry for a pending request', () => {
+        it('should use the original expiry for a pending request', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
-                    },
-                },
-                deferralUpdate: {
-                    cves: ['CVE-2018-20839'],
-                    expiry: {
-                        expiryType: 'TIME',
-                        expiresOn: '2023-10-31T19:16:49.155480945Z',
                     },
                 },
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const exceptionExpiry = getDeferralExpiryToUse(vulnerabilityException, context);
+            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+                vulnerabilityException,
+                context
+            );
 
-            expect(exceptionExpiry).toStrictEqual({
-                expiryType: 'ALL_CVE_FIXABLE',
-            });
+            expect(shouldUseUpdatedExpiry).toBe(false);
         });
 
-        it('should show the original deferral request expiry for an approved request', () => {
+        // When an approved deferral that is pending an update is finally approved, it overwrites
+        // the deferralReq with the deferralUpdate
+        it('should show the original expiry for an approved request', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -82,19 +78,20 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const exceptionExpiry = getDeferralExpiryToUse(vulnerabilityException, context);
+            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+                vulnerabilityException,
+                context
+            );
 
-            expect(exceptionExpiry).toStrictEqual({
-                expiryType: 'ALL_CVE_FIXABLE',
-            });
+            expect(shouldUseUpdatedExpiry).toBe(false);
         });
 
-        it('should show the updated deferral request expiry for an approved request', () => {
+        it('should use the updated expiry for an approved request pending an update', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED',
-                deferralReq: {
+                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -109,48 +106,20 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
-            const exceptionExpiry = getDeferralExpiryToUse(vulnerabilityException, context);
+            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+                vulnerabilityException,
+                context
+            );
 
-            expect(exceptionExpiry).toStrictEqual({
-                expiryType: 'TIME',
-                expiresOn: '2023-10-31T19:16:49.155480945Z',
-            });
+            expect(shouldUseUpdatedExpiry).toBe(true);
         });
 
-        it('should show the updated deferral request expiry for an approved request pending an update', () => {
+        it('should use the original expiry for an approved request pending an update', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
-                    expiry: {
-                        expiryType: 'ALL_CVE_FIXABLE',
-                    },
-                },
-                deferralUpdate: {
-                    cves: ['CVE-2018-20839'],
-                    expiry: {
-                        expiryType: 'TIME',
-                        expiresOn: '2023-10-31T19:16:49.155480945Z',
-                    },
-                },
-            };
-            const context: RequestContext = 'PENDING_REQUESTS';
-
-            const exceptionExpiry = getDeferralExpiryToUse(vulnerabilityException, context);
-
-            expect(exceptionExpiry).toStrictEqual({
-                expiryType: 'TIME',
-                expiresOn: '2023-10-31T19:16:49.155480945Z',
-            });
-        });
-
-        it('should show the original deferral request expiry for an approved request pending an update', () => {
-            const vulnerabilityException: VulnerabilityException = {
-                ...baseException,
-                targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -165,35 +134,36 @@ describe('ExceptionRequestTableCells', () => {
             };
             const context: RequestContext = 'APPROVED_DEFERRALS';
 
-            const exceptionExpiry = getDeferralExpiryToUse(vulnerabilityException, context);
+            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+                vulnerabilityException,
+                context
+            );
 
-            expect(exceptionExpiry).toStrictEqual({
-                expiryType: 'ALL_CVE_FIXABLE',
-            });
+            expect(shouldUseUpdatedExpiry).toBe(false);
         });
     });
 
     describe('getRequestedAction', () => {
-        it('should show the requested action for a false positive request', () => {
+        it('should show the requested action for a pending false positive request', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'FALSE_POSITIVE',
                 exceptionStatus: 'PENDING',
-                fpRequest: {},
+                falsePositiveRequest: {},
             };
             const context: RequestContext = 'PENDING_REQUESTS';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
-            expect(requestedAction).toStrictEqual('False positive');
+            expect(requestedAction).toBe('False positive');
         });
 
-        it('should show the requested action for a deferral with CVEs deferred until all fixed', () => {
+        it('should show the requested action for a pending deferral with CVEs deferred until all fixed', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
@@ -203,15 +173,15 @@ describe('ExceptionRequestTableCells', () => {
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
-            expect(requestedAction).toStrictEqual('Deferral (when all fixed)');
+            expect(requestedAction).toBe('Deferred (when all fixed)');
         });
 
-        it('should show the requested action for a deferral with CVEs deferred until one fixed', () => {
+        it('should show the requested action for a pending deferral with CVEs deferred until one fixed', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'ANY_CVE_FIXABLE',
                     },
@@ -221,15 +191,15 @@ describe('ExceptionRequestTableCells', () => {
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
-            expect(requestedAction).toStrictEqual('Deferral (when any fixed)');
+            expect(requestedAction).toBe('Deferred (when any fixed)');
         });
 
-        it('should show the requested action for a deferral with CVEs deferred for 30 days', () => {
+        it('should show the requested action for a pending deferral with CVEs deferred for 30 days', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: '2023-10-31T19:16:49.155480945Z',
@@ -240,15 +210,15 @@ describe('ExceptionRequestTableCells', () => {
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
-            expect(requestedAction).toStrictEqual('Deferral (in 30 days)');
+            expect(requestedAction).toBe('Deferred (in 30 days)');
         });
 
-        it('should show the requested action for a deferral with CVEs deferred indefinitely', () => {
+        it('should show the requested action for a pending deferral with CVEs deferred indefinitely', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
                 exceptionStatus: 'PENDING',
-                deferralReq: {
+                deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
                         expiresOn: null,
@@ -259,7 +229,59 @@ describe('ExceptionRequestTableCells', () => {
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
-            expect(requestedAction).toStrictEqual('Deferral (indefinitely)');
+            expect(requestedAction).toBe('Deferred (indefinitely)');
+        });
+
+        it('should show the requested action for an approved deferral (pending update) with CVEs deferred for 30 days', () => {
+            const vulnerabilityException: VulnerabilityException = {
+                ...baseException,
+                targetState: 'DEFERRED',
+                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                deferralRequest: {
+                    expiry: {
+                        expiryType: 'TIME',
+                        expiresOn: null,
+                    },
+                },
+                deferralUpdate: {
+                    cves: ['CVE-2018-20839'],
+                    expiry: {
+                        expiryType: 'TIME',
+                        expiresOn: '2023-10-31T19:16:49.155480945Z',
+                    },
+                },
+            };
+            const context: RequestContext = 'PENDING_REQUESTS';
+
+            const requestedAction = getRequestedAction(vulnerabilityException, context);
+
+            expect(requestedAction).toBe('Deferral pending update (in 30 days)');
+        });
+
+        it('should show the requested action for an approved deferral (pending update) with CVEs deferred indefinitely', () => {
+            const vulnerabilityException: VulnerabilityException = {
+                ...baseException,
+                targetState: 'DEFERRED',
+                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                deferralRequest: {
+                    expiry: {
+                        expiryType: 'TIME',
+                        expiresOn: null,
+                    },
+                },
+                deferralUpdate: {
+                    cves: ['CVE-2018-20839'],
+                    expiry: {
+                        expiryType: 'TIME',
+                        expiresOn: '2023-10-31T19:16:49.155480945Z',
+                    },
+                },
+            };
+            const context: RequestContext = 'APPROVED_DEFERRALS';
+
+            const requestedAction = getRequestedAction(vulnerabilityException, context);
+
+            expect(requestedAction).toBe('Deferred (indefinitely)');
         });
     });
 });

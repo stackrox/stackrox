@@ -10,6 +10,8 @@ import (
 )
 
 // IssuerFactory allows creating issuers from token sources. The signing key is typically tied to the factory.
+//
+//go:generate mockgen-wrapper
 type IssuerFactory interface {
 	// CreateIssuer creates an issuer for the given source. This must only be invoked once per source (ID).
 	CreateIssuer(source Source, options ...Option) (Issuer, error)

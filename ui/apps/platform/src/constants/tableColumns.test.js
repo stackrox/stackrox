@@ -15,11 +15,6 @@ function expectColumnsNotToContain(columns, shouldNotContain) {
 
 const standards = [
     {
-        id: 'CIS_Docker_v1_2_0',
-        name: 'CIS Docker v1.2.0',
-        scopes: ['CLUSTER', 'NAMESPACE', 'DEPLOYMENT', 'NODE'],
-    },
-    {
         id: 'CIS_Kubernetes_v1_5',
         name: 'CIS Kubernetes v1.5',
         scopes: ['CLUSTER', 'NODE'],

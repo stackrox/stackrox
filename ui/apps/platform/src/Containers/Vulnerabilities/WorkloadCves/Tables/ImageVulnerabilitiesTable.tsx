@@ -1,7 +1,9 @@
 import React from 'react';
 import { Button, ButtonVariant } from '@patternfly/react-core';
 import {
+    ActionsColumn,
     ExpandableRowContent,
+    IAction,
     TableComposable,
     Tbody,
     Td,
@@ -15,8 +17,9 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import useMap from 'hooks/useMap';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import ImageComponentVulnerabilitiesTable, {
@@ -29,6 +32,12 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 import { getAnyVulnerabilityIsFixable } from './table.utils';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
+import CVESelectionTh from '../components/CVESelectionTh';
+import CVESelectionTd from '../components/CVESelectionTd';
+import TooltipTh from '../components/TooltipTh';
+import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -61,20 +70,36 @@ export type ImageVulnerabilitiesTableProps = {
     };
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    canSelectRows: boolean;
+    selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
 };
 
 function ImageVulnerabilitiesTable({
     image,
     getSortParams,
     isFiltered,
+    canSelectRows,
+    selectedCves,
+    vulnerabilityState,
+    createTableActions,
 }: ImageVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
+    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+
+    const colSpan =
+        6 +
+        (canSelectRows ? 1 : 0) +
+        (createTableActions ? 1 : 0) +
+        (showExceptionDetailsLink ? 1 : 0);
 
     return (
         <TableComposable variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th>{/* Header for expanded column */}</Th>
+                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th sort={getSortParams('Severity')}>CVE Severity</Th>
                     <Th>
@@ -87,6 +112,12 @@ function ImageVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th>First discovered</Th>
+                    {showExceptionDetailsLink && (
+                        <TooltipTh tooltip="View information about this exception request">
+                            Request details
+                        </TooltipTh>
+                    )}
+                    {createTableActions && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
             {image.imageVulnerabilities.length === 0 && <EmptyTableResults colSpan={7} />}
@@ -116,6 +147,14 @@ function ImageVulnerabilitiesTable({
                                         onToggle: () => expandedRowSet.toggle(cve),
                                     }}
                                 />
+                                {canSelectRows && (
+                                    <CVESelectionTd
+                                        selectedCves={selectedCves}
+                                        rowIndex={rowIndex}
+                                        cve={cve}
+                                        summary={summary}
+                                    />
+                                )}
                                 <Td dataLabel="CVE">
                                     <Button
                                         variant={ButtonVariant.link}
@@ -145,10 +184,23 @@ function ImageVulnerabilitiesTable({
                                 <Td dataLabel="First discovered">
                                     <DateDistanceTd date={discoveredAtImage} />
                                 </Td>
+                                {showExceptionDetailsLink && (
+                                    <ExceptionDetailsCell
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    />
+                                )}
+                                {createTableActions && (
+                                    <Td className="pf-u-px-0">
+                                        <ActionsColumn
+                                            items={createTableActions({ cve, summary })}
+                                        />
+                                    </Td>
+                                )}
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={6}>
+                                <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
                                         <p className="pf-u-mb-md">{summary}</p>
                                         <ImageComponentVulnerabilitiesTable

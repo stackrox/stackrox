@@ -11,6 +11,7 @@ import services.CVEService
 import services.ImageService
 import services.PolicyService
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
@@ -181,6 +182,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
@@ -279,6 +281,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"

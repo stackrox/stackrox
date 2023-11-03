@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/datastore"
+	"github.com/stackrox/rox/central/auth/m2m"
+	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
@@ -15,8 +17,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -58,10 +64,15 @@ type authServiceAccessControlTestSuite struct {
 	withNoRoleCtx    context.Context
 	anonymousCtx     context.Context
 
+	mockIssuerFactory  *tokensMocks.MockIssuerFactory
+	mockTokenExchanger *mocks.MockTokenExchanger
+
 	accessCtx context.Context
 }
 
 func (s *authServiceAccessControlTestSuite) SetupSuite() {
+	s.T().Setenv(features.AuthMachineToMachine.EnvVar(), "true")
+
 	authProvider, err := authproviders.NewProvider(
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
@@ -87,9 +98,6 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 
-	store := pgStore.New(s.pool.DB)
-	authDataStore := datastore.New(store)
-
 	permSetStore := permissionSetPostgresStore.New(s.pool.DB)
 	accessScopeStore := accessScopePostgresStore.New(s.pool.DB)
 	roleStore := rolePostgresStore.New(s.pool.DB)
@@ -99,6 +107,13 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.addRoles()
 
+	store := pgStore.New(s.pool.DB)
+
+	s.mockIssuerFactory = tokensMocks.NewMockIssuerFactory(gomock.NewController(s.T()))
+	s.mockTokenExchanger = mocks.NewMockTokenExchanger(gomock.NewController(s.T()))
+
+	tokenExchangerSet := m2m.TokenExchangerSetForTesting(s.T(), s.roleDS, s.mockIssuerFactory, mockTokenExchangerFactory(s.mockTokenExchanger))
+	authDataStore := datastore.New(store, tokenExchangerSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
@@ -580,7 +595,8 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 	config, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
-			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+			Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+			Issuer:                  "https://stackrox.io",
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
 					Key:             "sub",
@@ -604,6 +620,11 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 			Role:            testRole2,
 		},
 	}
+
+	gomock.InOrder(
+		s.mockTokenExchanger.EXPECT().Provider().Return(nil).Times(1),
+		s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil).Times(1),
+	)
 
 	_, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx,
 		&v1.UpdateAuthMachineToMachineConfigRequest{Config: config.GetConfig()})
@@ -659,6 +680,9 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 	})
 	s.Require().NoError(err)
 
+	s.mockTokenExchanger.EXPECT().Provider().Return(nil).Times(1)
+	s.mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Return(nil).Times(1)
+
 	_, err = s.svc.DeleteAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: config.GetConfig().GetId()})
 	s.NoError(err)
 
@@ -666,11 +690,51 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 		&v1.ResourceByID{Id: config.GetConfig().GetId()})
 	s.ErrorIs(err, errox.NotFound)
 	s.Nil(configResponse)
+
+	exchanger, exists := s.svc.authDataStore.GetTokenExchanger(s.accessCtx, config.GetConfig().GetIssuer())
+	s.Nil(exchanger)
+	s.False(exists)
 }
 
 func (s *authServiceAccessControlTestSuite) TestRemoveNonExistingConfig() {
 	_, err := s.svc.DeleteAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: "80c053c2-24a7-4b97-bd69-85b3a511241e"})
 	s.NoError(err)
+}
+
+func (s *authServiceAccessControlTestSuite) TestExchangeToken() {
+	// Sample ID token generated from JWT.io with issuer https://stackrox.io.
+	//#nosec G101 -- This is a static example JWT token for testing purposes.
+	idToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovL3N0YWNrcm94LmlvIn0.-Ii0_J7GeJ9lp7Ja5SFdmk-ub7f7MtEF24Juf0WD5-k"
+	_, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
+		Config: &v1.AuthMachineToMachineConfig{
+			TokenExpirationDuration: "1h",
+			Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+			Issuer:                  "https://stackrox.io",
+			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+				{
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
+				},
+				{
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
+				},
+			},
+		},
+	})
+	s.Require().NoError(err)
+
+	s.mockTokenExchanger.EXPECT().ExchangeToken(gomock.Any(), idToken).
+		Return("sample-token", nil).Times(1)
+
+	resp, err := s.svc.ExchangeAuthMachineToMachineToken(s.accessCtx, &v1.ExchangeAuthMachineToMachineTokenRequest{
+		IdToken: idToken,
+	})
+
+	s.NoError(err)
+	s.Equal("sample-token", resp.GetAccessToken())
 }
 
 func (s *authServiceAccessControlTestSuite) addRoles() {
@@ -700,5 +764,13 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 			PermissionSetId: permSetID,
 			AccessScopeId:   accessScopeID,
 		}))
+	}
+}
+
+// Mocks used within tests.
+
+func mockTokenExchangerFactory(mockExchanger *mocks.MockTokenExchanger) m2m.TokenExchangerFactory {
+	return func(_ context.Context, config *storage.AuthMachineToMachineConfig, _ roleDataStore.DataStore, _ tokens.IssuerFactory) (m2m.TokenExchanger, error) {
+		return mockExchanger, nil
 	}
 }

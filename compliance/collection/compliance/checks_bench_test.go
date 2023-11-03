@@ -19,7 +19,6 @@ func BenchmarkRunChecks(b *testing.B) {
 	run := &sensor.MsgToCompliance_TriggerRun{
 		ScrapeId: "test",
 		StandardIds: []string{
-			standards.CISDocker,
 			standards.CISKubernetes,
 			standards.NIST800190,
 		},
@@ -38,7 +37,6 @@ func BenchmarkCompressResults(b *testing.B) {
 	run := &sensor.MsgToCompliance_TriggerRun{
 		ScrapeId: "test",
 		StandardIds: []string{
-			standards.CISDocker,
 			standards.CISKubernetes,
 			standards.NIST800190,
 		},
@@ -62,7 +60,6 @@ func BenchmarkChecksAndCompression(b *testing.B) {
 	run := &sensor.MsgToCompliance_TriggerRun{
 		ScrapeId: "test",
 		StandardIds: []string{
-			standards.CISDocker,
 			standards.CISKubernetes,
 			standards.NIST800190,
 		},

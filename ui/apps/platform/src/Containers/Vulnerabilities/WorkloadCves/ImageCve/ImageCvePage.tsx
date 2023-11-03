@@ -26,11 +26,23 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { getHasSearchApplied, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getHasSearchApplied } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
-import { getHiddenSeverities, getOverviewCvesPath, parseQuerySearchFilter } from '../searchUtils';
+import {
+    CLUSTER_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+import {
+    getHiddenSeverities,
+    getOverviewCvesPath,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import ImageCvePageHeader, {
     ImageCveMetadata,
@@ -52,8 +64,9 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { Resource } from '../components/FilterResourceDropdown';
 import { VulnerabilitySeverityLabel } from '../types';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const workloadCveOverviewCvePath = getOverviewCvesPath({
     vulnerabilityState: 'OBSERVED',
@@ -139,17 +152,27 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const imageCveResourceFilters = new Set<Resource>(['IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER']);
+const searchOptions: SearchOption[] = [
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+];
 
 function ImageCvePage() {
+    const currentVulnerabilityState = useVulnerabilityState();
+
     const urlParams = useParams();
     const cveId: string = urlParams.cveId ?? '';
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const query = getRequestQueryStringForSearchFilter({
-        ...querySearchFilter,
-        CVE: cveId,
-    });
+    const query = getVulnStateScopedQueryString(
+        {
+            ...querySearchFilter,
+            CVE: [cveId],
+        },
+        currentVulnerabilityState
+    );
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
 
     const [entityTab] = useURLStringUnion('entityTab', imageCveEntities);
@@ -202,11 +225,11 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, CVE: cveId };
+        const filters = { ...querySearchFilter, CVE: [cveId] };
         if (severity) {
             filters.Severity = [severity];
         }
-        return getRequestQueryStringForSearchFilter(filters);
+        return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
     }
 
     const deploymentDataRequest = useQuery<
@@ -307,10 +330,11 @@ function ImageCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
+                <VulnerabilityStateTabs titleOverrides={{ observed: 'Workloads' }} isBox />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
                         <WorkloadTableToolbar
-                            supportedResourceFilters={imageCveResourceFilters}
+                            searchOptions={searchOptions}
                             autocompleteSearchContext={{
                                 'CVE ID': cveId,
                             }}

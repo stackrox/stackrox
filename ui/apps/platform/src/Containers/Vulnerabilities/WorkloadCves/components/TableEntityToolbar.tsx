@@ -3,6 +3,14 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { SortOption } from 'types/table';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import {
+    CLUSTER_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
 import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';
@@ -17,6 +25,14 @@ type TableEntityToolbarProps = {
     isFiltered: boolean;
     children?: React.ReactNode;
 };
+
+const searchOptions: SearchOption[] = [
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+];
 
 function TableEntityToolbar({
     defaultFilters,
@@ -33,6 +49,7 @@ function TableEntityToolbar({
             <WorkloadTableToolbar
                 defaultFilters={defaultFilters}
                 onFilterChange={() => setPage(1)}
+                searchOptions={searchOptions}
             />
             <Divider component="div" />
             <Toolbar>

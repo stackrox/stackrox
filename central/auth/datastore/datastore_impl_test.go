@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -42,6 +44,7 @@ type datastorePostgresTestSuite struct {
 	pool          *pgtest.TestPostgres
 	authDataStore DataStore
 	roleDataStore roleDataStore.DataStore
+	mockSet       *mocks.MockTokenExchangerSet
 }
 
 func (s *datastorePostgresTestSuite) SetupTest() {
@@ -56,7 +59,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.Require().NotNil(s.pool)
 
 	store := pgStore.New(s.pool.DB)
-	s.authDataStore = New(store)
 
 	permSetStore := permissionSetPostgresStore.New(s.pool.DB)
 	accessScopeStore := accessScopePostgresStore.New(s.pool.DB)
@@ -67,6 +69,12 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 
 	s.addRoles()
 
+	s.mockSet = mocks.NewMockTokenExchangerSet(gomock.NewController(s.T()))
+	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
+	s.mockSet.EXPECT().NewTokenExchangerFromConfig(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	s.authDataStore = New(store, s.mockSet)
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {

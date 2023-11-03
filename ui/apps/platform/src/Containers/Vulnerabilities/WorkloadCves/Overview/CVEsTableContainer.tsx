@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@apollo/client';
 import { Bullseye, Divider, DropdownItem, Spinner, ToolbarItem } from '@patternfly/react-core';
 
@@ -9,7 +9,6 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
-import { BaseVulnerabilityException } from 'services/VulnerabilityExceptionService';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
@@ -18,10 +17,10 @@ import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../search
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
-    ExceptionRequestModalOptions,
     ExceptionRequestModalProps,
 } from '../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
+import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
@@ -62,26 +61,17 @@ function CVEsTableContainer({
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
 
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
-    const [exceptionRequestModalOptions, setExceptionRequestModalOptions] =
-        useState<ExceptionRequestModalOptions>(null);
+    const {
+        exceptionRequestModalOptions,
+        completedException,
+        showModal,
+        closeModals,
+        createExceptionModalActions,
+    } = useExceptionRequestModal();
+    const showDeferralUI = isUnifiedDeferralsEnabled && vulnerabilityState === 'OBSERVED';
+    const canSelectRows = showDeferralUI;
 
-    const [completedException, setCompletedException] = useState<BaseVulnerabilityException | null>(
-        null
-    );
-
-    function openDeferralModal() {
-        setExceptionRequestModalOptions({
-            type: 'DEFERRAL',
-            cves: Array.from(selectedCves.values()),
-        });
-    }
-
-    function openFalsePositiveModal() {
-        setExceptionRequestModalOptions({
-            type: 'FALSE_POSITIVE',
-            cves: Array.from(selectedCves.values()),
-        });
-    }
+    const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
     const tableData = data ?? previousData;
     return (
@@ -91,18 +81,17 @@ function CVEsTableContainer({
                     cves={exceptionRequestModalOptions.cves}
                     type={exceptionRequestModalOptions.type}
                     scopeContext="GLOBAL"
-                    onExceptionRequestSuccess={(vulnerabilityException) => {
-                        setExceptionRequestModalOptions(null);
+                    onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
-                        setCompletedException(vulnerabilityException);
+                        showModal({ type: 'COMPLETION', exception });
                     }}
-                    onClose={() => setExceptionRequestModalOptions(null)}
+                    onClose={closeModals}
                 />
             )}
             {completedException && (
                 <CompletedExceptionRequestModal
                     exceptionRequest={completedException}
-                    onClose={() => setCompletedException(null)}
+                    onClose={closeModals}
                 />
             )}
             <TableEntityToolbar
@@ -113,24 +102,36 @@ function CVEsTableContainer({
                 tableRowCount={countsData.imageCVECount}
                 isFiltered={isFiltered}
             >
-                <ToolbarItem alignment={{ default: 'alignRight' }}>
-                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
-                        <DropdownItem
-                            key="bulk-defer-cve"
-                            component="button"
-                            onClick={openDeferralModal}
-                        >
-                            Defer CVEs
-                        </DropdownItem>
-                        <DropdownItem
-                            key="bulk-mark-false-positive"
-                            component="button"
-                            onClick={openFalsePositiveModal}
-                        >
-                            Mark as false positives
-                        </DropdownItem>
-                    </BulkActionsDropdown>
-                </ToolbarItem>
+                {canSelectRows && (
+                    <ToolbarItem alignment={{ default: 'alignRight' }}>
+                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                            <DropdownItem
+                                key="bulk-defer-cve"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'DEFERRAL',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Defer CVEs
+                            </DropdownItem>
+                            <DropdownItem
+                                key="bulk-mark-false-positive"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'FALSE_POSITIVE',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Mark as false positives
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
+                )}
                 <ToolbarItem alignment={{ default: 'alignRight' }} variant="separator" />
             </TableEntityToolbar>
             <Divider component="div" />
@@ -156,10 +157,9 @@ function CVEsTableContainer({
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                         selectedCves={selectedCves}
-                        cveTableActionHandler={setExceptionRequestModalOptions}
-                        showExceptionMenuItems={
-                            isUnifiedDeferralsEnabled && vulnerabilityState === 'OBSERVED'
-                        }
+                        canSelectRows={canSelectRows}
+                        vulnerabilityState={vulnerabilityState}
+                        createTableActions={createTableActions}
                     />
                 </div>
             )}

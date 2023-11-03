@@ -10,45 +10,12 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
-// SystemdOwnershipCheck checks the users and groups of the file
-func SystemdOwnershipCheck(file, user, group string) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: systemdOwnershipCheckFunc(file, user, group, false),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-// OwnershipCheck checks the users and groups of the file
-func OwnershipCheck(file, user, group string) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: ownershipCheckFunc(file, user, group, false),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node is owned by user %q and group %q", file, user, group),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
 // OptionalOwnershipCheck checks the users and groups of the file if it exists. If it does not exist, then the check passes
 func OptionalOwnershipCheck(file, user, group string) *standards.CheckAndMetadata {
 	return &standards.CheckAndMetadata{
 		CheckFunc: ownershipCheckFunc(file, user, group, true),
 		Metadata: &standards.Metadata{
 			InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node (if existing) is owned by user %q and group %q", file, user, group),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-// RecursiveOwnershipCheck is a framework Check for recursively checking the ownership
-func RecursiveOwnershipCheck(dir, user, group string) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: recursiveOwnershipCheckFunc(dir, user, group, false),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
 			TargetKind:         framework.NodeKind,
 		},
 	}
@@ -102,39 +69,6 @@ func ownershipCheck(f *compliance.File, user, group string) []*storage.Complianc
 		results = append(results, Passf("Found group %q and user %q on file %q", group, user, f.GetPath()))
 	}
 	return results
-}
-
-// PermissionCheck checks the permissions of the file
-func PermissionCheck(file string, permissions uint32) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: permissionCheckFunc(file, permissions, false),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node are set to '%#o'", file, permissions),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-// OptionalSystemdOwnershipCheck checks the users and groups of the file if it exists. If it does not exist, then the check passes
-func OptionalSystemdOwnershipCheck(file, user, group string) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: systemdOwnershipCheckFunc(file, user, group, true),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-// SystemdPermissionCheck checks the permissions of the file
-func SystemdPermissionCheck(file string, permissions uint32) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: systemdPermissionCheckFunc(file, permissions, false),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
-			TargetKind:         framework.NodeKind,
-		},
-	}
 }
 
 // HasOwnershipUser checks the user owner on a file
@@ -201,28 +135,6 @@ func OptionalPermissionCheck(file string, permissions uint32) *standards.CheckAn
 	}
 }
 
-// OptionalSystemdPermissionCheck checks the permissions of the file
-func OptionalSystemdPermissionCheck(file string, permissions uint32) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: systemdPermissionCheckFunc(file, permissions, true),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-func recursivePermissionCheckFunc(path string, permissions uint32) standards.Check {
-	return func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-		f, ok := complianceData.Files[path]
-		if !ok {
-			return FailListf("File %q could not be found in scraped data", path)
-		}
-		results, _ := CheckRecursivePermissions(f, permissions)
-		return results
-	}
-}
-
 // RecursivePermissionCheckWithFileExtIfDirExists recursively checks the permissions of the file with given extension
 func RecursivePermissionCheckWithFileExtIfDirExists(dir, ext string, permissions uint32) *standards.CheckAndMetadata {
 	return &standards.CheckAndMetadata{
@@ -279,43 +191,5 @@ func recursiveOwnershipCheckFunc(path, user, group string, optional bool) standa
 			return FailListf("File %q could not be found in scraped data", path)
 		}
 		return CheckRecursiveOwnership(f, user, group)
-	}
-}
-
-func systemdOwnershipCheckFunc(path, user, group string, optional bool) standards.Check {
-	return func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-		f, ok := complianceData.SystemdFiles[path]
-		if !ok {
-			if optional {
-				return PassListf("Service %q does not exist on host, therefore check is not applicable", path)
-			}
-			return FailListf("Service %q could not be found in scraped data", path)
-		}
-		return ownershipCheck(f, user, group)
-	}
-}
-
-// RecursivePermissionCheck recursively checks the permissions of the file
-func RecursivePermissionCheck(file string, permissions uint32) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: recursivePermissionCheckFunc(file, permissions),
-		Metadata: &standards.Metadata{
-			InterpretationText: fmt.Sprintf("StackRox checks that the permissions of all files under the path %s on each node are set to '%#o'", file, permissions),
-			TargetKind:         framework.NodeKind,
-		},
-	}
-}
-
-func systemdPermissionCheckFunc(path string, permissions uint32, optional bool) standards.Check {
-	return func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-		f, ok := complianceData.SystemdFiles[path]
-		if !ok {
-			if optional {
-				return PassListf("Service %q does not exist on host, therefore check is not applicable", path)
-			}
-			return FailListf("Service %q could not be found in scraped data", path)
-		}
-		result, _ := permissionCheck(f, permissions)
-		return []*storage.ComplianceResultValue_Evidence{result}
 	}
 }

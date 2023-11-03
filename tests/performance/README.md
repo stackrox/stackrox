@@ -1,5 +1,24 @@
 # Performance Testing for StackRox - Quick Start
 
+## Go bench tests
+
+In order to run all Go bench tests (including postgres related) use `go-postgres-bench-tests` target.
+It could be configured with
+- `BENCHTIME` – approximate run time for each benchmark
+- `BENCHTIMEOUT` – if positive, sets an aggregate time limit for all tests
+
+```bash
+# on base branch
+BENCHTIME=1s BENCHTIMEOUT=30m make go-postgres-bench-tests | tee old.txt
+# on new branch
+BENCHTIME=1s BENCHTIMEOUT=30m make go-postgres-bench-tests | tee new.txt
+# compare the results
+go install golang.org/x/perf/cmd/benchstat@latest
+benchstat -csv old.txt new.txt
+```
+
+## API (aka k6)
+
 Please use `README.ipynb` for local developnment of performance tests. That README is designed to be easy executable.
 
 ### Pre-requirements to use `README.ipynb`

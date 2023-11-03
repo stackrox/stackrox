@@ -4,6 +4,7 @@ import {
     Pagination,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -11,6 +12,16 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import useURLPagination from 'hooks/useURLPagination';
 import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
+import useURLSearch from 'hooks/useURLSearch';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    REQUEST_ID_SEARCH_OPTION,
+    SearchOption,
+} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import {
     ExpiresTableCell,
     RequestIDTableCell,
@@ -20,6 +31,7 @@ import {
     RequesterTableCell,
     ScopeTableCell,
 } from './components/ExceptionRequestTableCells';
+import FilterAutocompleteSelect from '../components/FilterAutocomplete';
 
 // @TODO: Use API data instead of hardcoded data
 const vulnerabilityExceptions: VulnerabilityException[] = [
@@ -53,7 +65,7 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
                 tag: '.*',
             },
         },
-        deferralReq: {
+        deferralRequest: {
             expiry: {
                 expiryType: 'ALL_CVE_FIXABLE',
             },
@@ -69,13 +81,30 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
     },
 ];
 
+const searchOptions: SearchOption[] = [
+    REQUEST_ID_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+];
+
 function PendingApprovals() {
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+
+    function onFilterChange() {
+        setPage(1);
+    }
 
     return (
         <PageSection>
             <Toolbar>
                 <ToolbarContent>
+                    <FilterAutocompleteSelect
+                        searchFilter={searchFilter}
+                        setSearchFilter={setSearchFilter}
+                        searchOptions={searchOptions}
+                    />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination
                             itemCount={1}
@@ -86,6 +115,17 @@ function PendingApprovals() {
                             isCompact
                         />
                     </ToolbarItem>
+                    <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
+                        <SearchFilterChips
+                            onFilterChange={onFilterChange}
+                            filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
+                                return {
+                                    displayName: label,
+                                    searchFilterName: value,
+                                };
+                            })}
+                        />
+                    </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
             <TableComposable borders={false}>

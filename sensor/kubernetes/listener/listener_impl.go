@@ -38,7 +38,7 @@ type listenerImpl struct {
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
-	storeProvider      *resources.InMemoryStoreProvider
+	storeProvider      *resources.StoreProvider
 	mayCreateHandlers  concurrency.Signal
 	context            context.Context
 }

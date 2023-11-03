@@ -1,0 +1,8 @@
+#filter-autocomplete-toolbar-group .pf-m-typeahead .pf-c-chip-group,
+#filter-autocomplete-toolbar-group .pf-m-typeahead button.pf-c-select__toggle-clear {
+    display: none;
+}
+
+#filter-autocomplete-toolbar-group .pf-c-select__toggle-wrapper {
+    flex-wrap: nowrap
+}
