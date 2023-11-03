@@ -17,7 +17,7 @@ make build EXPECTED_GO_VERSION=$(go version | { read _ _ v _; echo $v; })
 To run Scanner locally for development, copy the sample config and edit it to your liking:
 
 ```sh
-cp config.sample.yaml config.yaml
+cp config.yaml.sample config.yaml
 ```
 
 Build Scanner and generate the development TLS certificates:
