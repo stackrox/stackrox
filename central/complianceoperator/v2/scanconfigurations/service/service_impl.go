@@ -137,12 +137,12 @@ func (s *serviceImpl) GetComplianceScanConfigurationCount(ctx context.Context, r
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	scanConfigs, err := s.complianceScanSettingsDS.GetScanConfigurations(ctx, parsedQuery)
+	scanConfigs, err := s.complianceScanSettingsDS.CountScanConfigurations(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(errox.NotFound, err.Error())
 	}
 	res := &v2.ComplianceScanConfigurationCount{
-		Count: int32(len(scanConfigs)),
+		Count: int32(scanConfigs),
 	}
 	return res, nil
 }
