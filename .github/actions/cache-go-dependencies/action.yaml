@@ -11,13 +11,31 @@ runs:
       shell: bash
 
     - name: Restore Go Dependencies
-      if: ${{ github.event_name == 'pull_request' }}
+      # If we are in PR but not to master then only look for exact match for cache key
+      # to prevent issues on release branches where downloading newer cache and then old
+      # dependencies might cause out of space errors.
+      if: ${{ github.event_name == 'pull_request' && github.base_ref != 'master' }}
       uses: actions/cache/restore@v3
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
           ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Restore Go Dependencies
+      # If we are in PR targeting master we can make use of all sub-keys to speedup build
+      # even if we change go.sum. This is to speedup dependabot builds or PRs for which there is
+      # no cache entry yet.
+      if: ${{ github.base_ref == 'master' }}
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+        key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-v3-${{ github.job }}-
+          go-v3-
 
     - name: Cache Go Dependencies
       if: ${{ github.ref_name == 'master' }}
