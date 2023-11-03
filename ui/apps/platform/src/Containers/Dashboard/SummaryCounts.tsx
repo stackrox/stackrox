@@ -74,11 +74,9 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
     `;
 
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-    console.log('SummaryCoutns', query);
     const { loading, error, data } = useQuery<SummaryCountsResponse>(query, {
-        errorPolicy: 'all',
-        // fetchPolicy: 'network-only',
-        // onCompleted: () => setLastUpdate(new Date()),
+        fetchPolicy: 'network-only',
+        onCompleted: () => setLastUpdate(new Date()),
     });
 
     if (loading) {
@@ -90,8 +88,6 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
             />
         );
     }
-
-    console.log(error, query);
 
     if (error || !data) {
         Raven.captureException(error);

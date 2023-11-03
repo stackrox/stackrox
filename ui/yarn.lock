@@ -19,7 +19,7 @@
     jsonpointer "^5.0.0"
     leven "^3.1.0"
 
-"@apollo/client@^3.6.2":
+"@apollo/client@^3.6.3":
   version "3.8.7"
   resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.8.7.tgz#090b1518f513503b9a6a690ee3eaec49529822e1"
   integrity sha512-DnQtFkQrCyxHTSa9gR84YRLmU/al6HeXcLZazVe+VxKBmx/Hj4rV8xWtzfWYX5ijartsqDR7SJgV037MATEecA==
@@ -3282,10 +3282,10 @@
     npmlog "^4.1.2"
     write-file-atomic "^2.3.0"
 
-"@lifeomic/axios-fetch@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@lifeomic/axios-fetch/-/axios-fetch-3.0.0.tgz#87ac5f121a027b92a12248ce031199f836810022"
-  integrity sha512-XQH4iCCock19PzYveC/bu6O6zJ1mGdyQOdpu27I76lnb04+fKuFAw9J2HRAi/iN5fEsJevbUuGs3Pch3oxHxww==
+"@lifeomic/axios-fetch@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@lifeomic/axios-fetch/-/axios-fetch-3.0.1.tgz#a0f135470d7bb54d0ce82b0a2f3b19daa7bf77e2"
+  integrity sha512-bwEgYXtGrn/F+yYqoUIAWBRzyqQ7yB1VL84gCq0uAk36GRoyoWyOzbE35VWeXlmkkoby91FnAwh4UhgayMM/og==
   dependencies:
     "@types/node-fetch" "^2.5.10"
 
