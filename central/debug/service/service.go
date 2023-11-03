@@ -306,7 +306,7 @@ func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 }
 
 func getMemory(zipWriter *zip.Writer) error {
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "heap.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "heap.pb.gz")
 	if err != nil {
 		return err
 	}
@@ -314,7 +314,7 @@ func getMemory(zipWriter *zip.Writer) error {
 }
 
 func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) error {
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "cpu.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "cpu.pb.gz")
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) 
 }
 
 func getBlock(zipWriter *zip.Writer) error {
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "block.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "block.pb.gz")
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func getBlock(zipWriter *zip.Writer) error {
 }
 
 func getMutex(zipWriter *zip.Writer) error {
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "mutex.tar.gz")
+	w, err := zipWriterWithCurrentTimestamp(zipWriter, "mutex.pb.gz")
 	if err != nil {
 		return err
 	}

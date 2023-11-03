@@ -24,6 +24,16 @@ func GetTestVulnDeferralRequestFull(_ *testing.T) *storage.VulnerabilityRequest 
 				Name: "userName",
 			},
 		},
+		RequesterV2: &storage.Requester{
+			Id:   "userID",
+			Name: "userName",
+		},
+		ApproversV2: []*storage.Approver{
+			{
+				Id:   "userID",
+				Name: "userName",
+			},
+		},
 		Comments: []*storage.RequestComment{
 			{
 				Id:      "commentID",
@@ -76,6 +86,8 @@ func GetTestVulnRequestNoUsers(t *testing.T) *storage.VulnerabilityRequest {
 	ret := GetTestVulnDeferralRequestFull(t)
 	ret.Requestor = nil
 	ret.Approvers = nil
+	ret.RequesterV2 = nil
+	ret.ApproversV2 = nil
 	return ret
 }
 

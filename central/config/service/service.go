@@ -6,6 +6,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
+	"github.com/stackrox/rox/central/convert/storagetov1"
+	"github.com/stackrox/rox/central/convert/v1tostorage"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -153,7 +155,7 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 		return nil, err
 	}
 	return &v1.GetVulnerabilityExceptionConfigResponse{
-		Config: VulnerabilityExceptionConfigStorageToV1(privateConfig.GetVulnerabilityExceptionConfig()),
+		Config: storagetov1.VulnerabilityExceptionConfig(privateConfig.GetVulnerabilityExceptionConfig()),
 	}, nil
 }
 
@@ -165,7 +167,7 @@ func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, re
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "request cannot be nil")
 	}
-	exceptionCfg := VulnerabilityExceptionConfigV1ToStorage(req.GetConfig())
+	exceptionCfg := v1tostorage.VulnerabilityExceptionConfig(req.GetConfig())
 	if err := validateExceptionConfigReq(exceptionCfg); err != nil {
 		return nil, err
 	}

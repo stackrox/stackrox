@@ -163,6 +163,52 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	return nil
 }
 
+func (ds *datastoreImpl) ApplyException(ctx context.Context, start, expiry *types.Timestamp, cves ...string) error {
+	if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	vulns, err := ds.searcher.SearchRawImageCVEs(ctx,
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	if err != nil {
+		return err
+	}
+
+	return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
+		for _, vuln := range vulns {
+			vuln.Snoozed = true
+			vuln.SnoozeStart = start
+			vuln.SnoozeExpiry = expiry
+		}
+		return ds.storage.UpsertMany(ctx, vulns)
+	})
+}
+
+func (ds *datastoreImpl) RevertException(ctx context.Context, cves ...string) error {
+	if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	vulns, err := ds.searcher.SearchRawImageCVEs(ctx,
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	if err != nil {
+		return err
+	}
+
+	return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
+		for _, vuln := range vulns {
+			vuln.Snoozed = false
+			vuln.SnoozeStart = nil
+			vuln.SnoozeExpiry = nil
+		}
+		return ds.storage.UpsertMany(ctx, vulns)
+	})
+}
+
 func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	ds.cveSuppressionLock.RLock()
 	defer ds.cveSuppressionLock.RUnlock()

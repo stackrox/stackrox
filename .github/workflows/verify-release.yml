@@ -1,4 +1,4 @@
-name: Verify release
+name: "RELEASE: Verify release"
 on:
   workflow_dispatch:
     inputs:

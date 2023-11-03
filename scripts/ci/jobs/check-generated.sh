@@ -60,6 +60,23 @@ check-operator-generated-files-up-to-date || {
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
 
+info 'Check .containerignore file is in sync with .dockerignore (If this fails, follow instructions in .containerignore to update it.)'
+function check-containerignore-is-in-sync() {
+    diff \
+        --unified \
+        --ignore-blank-lines \
+        <(grep -v -e '^#' .containerignore) \
+        <(grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore) \
+    > diff.txt
+}
+check-containerignore-is-in-sync || {
+    save_junit_failure "Check_Containerignore_File" \
+        ".containerignore file is not in sync with .dockerignore" \
+        "$(cat diff.txt)"
+    git reset --hard HEAD
+    echo check-containerignore-is-in-sync >> "$FAIL_FLAG"
+}
+
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
 function check-shellcheck-failing-list() {

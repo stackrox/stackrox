@@ -17,6 +17,8 @@ spec:
     declarativeConfiguration:
       configMaps:
       - name: "declarative-configurations"
+      secrets:
+      - name: "sensitive-declarative-configurations"
     db:
       isEnabled: Enabled
       persistence:

@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -60,14 +59,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                     >
                         <Tr>
                             <Td>
-                                <Button
-                                    variant={ButtonVariant.link}
-                                    isInline
-                                    component={LinkShim}
-                                    href={getEntityPagePath('Deployment', id)}
-                                >
-                                    {name}
-                                </Button>
+                                <Link to={getEntityPagePath('Deployment', id)}>{name}</Link>
                             </Td>
                             <Td>{clusterName}</Td>
                             <Td>{namespace}</Td>

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/convert/testutils"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -44,6 +45,45 @@ func TestVulnerabilityRequest(t *testing.T) {
 		VulnerabilityRequest(testutils.GetTestVulnExceptionWithUpdate(t)),
 	)
 
+	assert.EqualValues(
+		t,
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnRequestWithUpdate(t)
+			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
+				ExpiryType: storage.RequestExpiry_ALL_CVE_FIXABLE,
+			}
+			return req
+		}(),
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnExceptionWithUpdate(t)
+			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
+				ExpiryType: v2.ExceptionExpiry_ALL_CVE_FIXABLE,
+			}
+			return VulnerabilityRequest(req)
+		}(),
+	)
+
+	assert.EqualValues(
+		t,
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnRequestWithUpdate(t)
+			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
+				ExpiryType: storage.RequestExpiry_ANY_CVE_FIXABLE,
+				Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
+					ExpiresWhenFixed: true,
+				},
+			}
+			return req
+		}(),
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnExceptionWithUpdate(t)
+			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
+				ExpiryType: v2.ExceptionExpiry_ANY_CVE_FIXABLE,
+			}
+			return VulnerabilityRequest(req)
+		}(),
+	)
+
 	id := mockIdentity.NewMockIdentity(gomock.NewController(t))
 	id.EXPECT().UID().Return("userID").AnyTimes()
 	id.EXPECT().FullName().Return("userName").AnyTimes()
@@ -58,6 +98,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 			req.Id = ""
 			req.Name = ""
 			req.Approvers = nil
+			req.ApproversV2 = nil
 			req.Comments[0].Id = ""
 			req.Comments[0].CreatedAt = nil
 			return req
@@ -84,6 +125,7 @@ func TestVulnerabilityRequest(t *testing.T) {
 			req.Id = ""
 			req.Name = ""
 			req.Approvers = nil
+			req.ApproversV2 = nil
 			req.Comments[0].Id = ""
 			req.Comments[0].CreatedAt = nil
 			return req
