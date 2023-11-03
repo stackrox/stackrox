@@ -439,6 +439,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
+	for _, v := range lookupResults {
+		if !v.IsActive {
+			log.Warnf("Adding communication to inactive Container ID/Name=(%s/%s): %q", container.ContainerID, container.ContainerName, conn.remote.IPAndPort.String())
+		}
+	}
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time

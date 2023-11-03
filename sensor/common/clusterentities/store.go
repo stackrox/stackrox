@@ -41,18 +41,23 @@ type PublicIPsListener interface {
 // endpoint.
 type Store struct {
 	// ipMap maps ip addresses to sets of deployment ids this IP is associated with.
-	ipMap map[net.IPAddress]map[string]struct{}
+	// boolean value false means that the endpoint was deleted recently
+	ipMap map[net.IPAddress]map[string]bool
 	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
-	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}
+	// boolean value false means that the endpoint was deleted recently
+	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]bool
 	// containerIDMap maps container IDs to container metadata
 	containerIDMap map[string]ContainerMetadata
 
 	// reverseIpMap maps deployment ids to sets of IP addresses associated with this deployment.
-	reverseIPMap map[string]map[net.IPAddress]struct{}
+	// boolean value false means that the endpoint was deleted recently
+	reverseIPMap map[string]map[net.IPAddress]bool
 	// reverseEndpointMap maps deployment ids to sets of endpoints associated with this deployment.
-	reverseEndpointMap map[string]map[net.NumericEndpoint]struct{}
+	// boolean value false means that the endpoint was deleted recently
+	reverseEndpointMap map[string]map[net.NumericEndpoint]bool
 	// reverseContainerIDMap maps deployment ids to sets of container IDs associated with this deployment.
-	reverseContainerIDMap map[string]map[string]struct{}
+	// boolean value false means that the endpoint was deleted recently
+	reverseContainerIDMap map[string]map[string]bool
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
@@ -73,12 +78,12 @@ func NewStore() *Store {
 
 func (e *Store) initMaps() {
 	log.Debugf("EndpointMap is about to be reset. State: %v", e.endpointMap)
-	e.ipMap = make(map[net.IPAddress]map[string]struct{})
-	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
+	e.ipMap = make(map[net.IPAddress]map[string]bool)
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]bool)
 	e.containerIDMap = make(map[string]ContainerMetadata)
-	e.reverseIPMap = make(map[string]map[net.IPAddress]struct{})
-	e.reverseEndpointMap = make(map[string]map[net.NumericEndpoint]struct{})
-	e.reverseContainerIDMap = make(map[string]map[string]struct{})
+	e.reverseIPMap = make(map[string]map[net.IPAddress]bool)
+	e.reverseEndpointMap = make(map[string]map[net.NumericEndpoint]bool)
+	e.reverseContainerIDMap = make(map[string]map[string]bool)
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 }
@@ -139,9 +144,11 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 func (e *Store) purgeNoLock(deploymentID string) {
 	for ip := range e.reverseIPMap[deploymentID] {
 		set := e.ipMap[ip]
-		delete(set, deploymentID)
+		set[deploymentID] = false // mark deletion
+		// delete(set, deploymentID)
 		if len(set) == 0 {
-			delete(e.ipMap, ip)
+			e.ipMap[ip][deploymentID] = false
+			//delete(e.ipMap, ip)
 			if ip.IsPublic() {
 				e.decPublicIPRefNoLock(ip)
 			}
@@ -149,10 +156,16 @@ func (e *Store) purgeNoLock(deploymentID string) {
 	}
 	for ep := range e.reverseEndpointMap[deploymentID] {
 		set := e.endpointMap[ep]
-		delete(set, deploymentID)
+		for eti := range set[deploymentID] {
+			set[deploymentID][eti] = false // mark deletion
+		}
+		//delete(set, deploymentID)
 		if len(set) == 0 {
 			log.Debugf("EndpointMap: Removing endpoint %s for deploymentID %s", ep.String(), deploymentID)
-			delete(e.endpointMap, ep)
+			for eti := range set[deploymentID] {
+				e.endpointMap[ep][deploymentID][eti] = false // mark deletion
+			}
+			//delete(e.endpointMap, ep)
 			log.Debugf("EndpointMap: State after removal: %v", e.endpointMap)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.decPublicIPRefNoLock(ipAddr)
@@ -163,9 +176,19 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		delete(e.containerIDMap, containerID)
 	}
 
-	delete(e.reverseIPMap, deploymentID)
-	delete(e.reverseEndpointMap, deploymentID)
-	delete(e.reverseContainerIDMap, deploymentID)
+	for ipAddr := range e.reverseIPMap[deploymentID] {
+		e.reverseIPMap[deploymentID][ipAddr] = false // set to inactive (mark deleted)
+	}
+	//delete(e.reverseIPMap, deploymentID)
+
+	for ep := range e.reverseEndpointMap[deploymentID] {
+		e.reverseEndpointMap[deploymentID][ep] = false // set to inactive (mark deleted)
+	}
+	//delete(e.reverseEndpointMap, deploymentID)
+	for ids := range e.reverseContainerIDMap[deploymentID] {
+		e.reverseContainerIDMap[deploymentID][ids] = false // set to inactive (mark deleted)
+	}
+	//delete(e.reverseContainerIDMap, deploymentID)
 }
 
 func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
@@ -216,14 +239,14 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 
 	for ep, targetInfos := range data.endpoints {
 		if reverseEPs == nil {
-			reverseEPs = make(map[net.NumericEndpoint]struct{})
+			reverseEPs = make(map[net.NumericEndpoint]bool)
 			e.reverseEndpointMap[deploymentID] = reverseEPs
 		}
-		reverseEPs[ep] = struct{}{}
+		reverseEPs[ep] = true
 
 		epMap := e.endpointMap[ep]
 		if epMap == nil {
-			epMap = make(map[string]map[EndpointTargetInfo]struct{})
+			epMap = make(map[string]map[EndpointTargetInfo]bool)
 			e.endpointMap[ep] = epMap
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.incPublicIPRefNoLock(ipAddr)
@@ -231,39 +254,39 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		targetSet := epMap[deploymentID]
 		if targetSet == nil {
-			targetSet = make(map[EndpointTargetInfo]struct{})
+			targetSet = make(map[EndpointTargetInfo]bool)
 			epMap[deploymentID] = targetSet
 		}
 		for _, tgtInfo := range targetInfos {
-			targetSet[tgtInfo] = struct{}{}
+			targetSet[tgtInfo] = true
 		}
 	}
 
 	for ip := range data.ips {
 		if reverseIPs == nil {
-			reverseIPs = make(map[net.IPAddress]struct{})
+			reverseIPs = make(map[net.IPAddress]bool)
 			e.reverseIPMap[deploymentID] = reverseIPs
 		}
-		reverseIPs[ip] = struct{}{}
+		reverseIPs[ip] = true
 
 		ipMap := e.ipMap[ip]
 		if ipMap == nil {
-			ipMap = make(map[string]struct{})
+			ipMap = make(map[string]bool)
 			e.ipMap[ip] = ipMap
 			if ip.IsPublic() {
 				e.incPublicIPRefNoLock(ip)
 			}
 		}
-		ipMap[deploymentID] = struct{}{}
+		ipMap[deploymentID] = true
 	}
 
 	mdsForCallback := make([]ContainerMetadata, 0, len(data.containerIDs))
 	for containerID, metadata := range data.containerIDs {
 		if reverseContainerIDs == nil {
-			reverseContainerIDs = make(map[string]struct{})
+			reverseContainerIDs = make(map[string]bool)
 			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
 		}
-		reverseContainerIDs[containerID] = struct{}{}
+		reverseContainerIDs[containerID] = true
 		e.containerIDMap[containerID] = metadata
 		mdsForCallback = append(mdsForCallback, metadata)
 	}
@@ -296,6 +319,7 @@ type LookupResult struct {
 	Entity         networkgraph.Entity
 	ContainerPorts []uint16
 	PortNames      []string
+	IsActive       bool
 }
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).
@@ -319,7 +343,8 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
 			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
 		}
-		for tgtInfo := range targetInfoSet {
+		for tgtInfo, active := range targetInfoSet {
+			result.IsActive = active
 			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)
 			if tgtInfo.PortName != "" {
 				result.PortNames = append(result.PortNames, tgtInfo.PortName)
