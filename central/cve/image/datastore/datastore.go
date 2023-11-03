@@ -32,7 +32,8 @@ type DataStore interface {
 	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
 	Unsuppress(ctx context.Context, cves ...string) error
 
-	// ApplyException and RevertException are used for database backward compatibility purpose only. They can be removed after a few releases.
+	// Deprecated: ApplyException and RevertException are used for database backward compatibility purpose only.
+	// Those functions can be removed after a few releases.
 	ApplyException(ctx context.Context, start *types.Timestamp, expiry *types.Timestamp, cves ...string) error
 	RevertException(ctx context.Context, cves ...string) error
 
