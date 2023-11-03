@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -12,7 +12,6 @@ import {
 import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -186,14 +185,7 @@ function DeploymentVulnerabilitiesTable({
                                 }}
                             />
                             <Td dataLabel="CVE">
-                                <Button
-                                    variant={ButtonVariant.link}
-                                    isInline
-                                    component={LinkShim}
-                                    href={getEntityPagePath('CVE', cve)}
-                                >
-                                    {cve}
-                                </Button>
+                                <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
                             </Td>
                             <Td modifier="nowrap" dataLabel="Severity">
                                 <VulnerabilitySeverityIconText severity={severity} />

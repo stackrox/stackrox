@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import {
     ActionsColumn,
@@ -11,9 +12,8 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant, Text } from '@patternfly/react-core';
+import { Text } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -215,14 +215,7 @@ function CVEsTable({
                                     />
                                 )}
                                 <Td dataLabel="CVE">
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('CVE', cve)}
-                                    >
-                                        {cve}
-                                    </Button>
+                                    <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
                                 </Td>
                                 <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
