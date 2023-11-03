@@ -1,12 +1,14 @@
 package deduper
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/logging"
+	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/messagestream"
@@ -79,6 +81,15 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 	}
 }
 
+func buildKey(typ, id string) string {
+	return fmt.Sprintf("%s:%s", typ, id)
+}
+
+func getKey(msg *central.MsgFromSensor) string {
+	event := msg.GetEvent()
+	return buildKey(eventPkg.GetEventTypeWithoutPrefix(event.GetResource()), event.GetId())
+}
+
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
 	if !ok || eventMsg.Event.GetProcessIndicator() != nil || alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
@@ -112,7 +123,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if d.lastSent[key] == hashValue {
 			// If this is a SYNC event, we have to keep track of this event
 			if msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
-				d.observationSet.LogObserved(key)
+				d.observationSet.LogObserved(getKey(msg))
 			}
 			return nil
 		}

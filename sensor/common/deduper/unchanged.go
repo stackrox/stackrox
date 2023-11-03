@@ -3,7 +3,6 @@ package deduper
 import (
 	"sync/atomic"
 
-	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -27,9 +26,8 @@ func NewObservationSet() *ObservationSet {
 }
 
 // LogObserved parses a key `k` and adds to the observation set.
-func (s *ObservationSet) LogObserved(k deduperkey.Key) {
+func (s *ObservationSet) LogObserved(stringKey string) {
 	if s.open.Load() {
-		stringKey := k.String()
 		s.innerLock.Lock()
 		defer s.innerLock.Unlock()
 		s.innerSet.Add(stringKey)

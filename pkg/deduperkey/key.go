@@ -43,10 +43,6 @@ type Key struct {
 	ResourceType reflect.Type
 }
 
-func (k Key) String() string {
-	return fmt.Sprintf("%s:%s", eventPkg.GetEventTypeWithoutPrefix(k.ResourceType), k.ID)
-}
-
 // ParseKeySlice returns a list of Key objects from a list a string formatted keys.
 func ParseKeySlice(keys []string) []Key {
 	if keys == nil {
