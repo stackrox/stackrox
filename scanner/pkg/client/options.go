@@ -4,18 +4,20 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
-var defaultConnOptions = connOptions{
-	mTLSSubject: mtls.ScannerSubject,
-	address:     ":8443",
-	serverName:  "scanner-v4.stackrox",
-	skipTLS:     false,
-}
+var (
+	defaultConnOptions = connOptions{
+		mTLSSubject: mtls.ScannerSubject,
+		address:     ":8443",
+		serverName:  "scanner-v4.stackrox",
+		skipTLS:     false,
+	}
 
-var defaultOptions = options{
-	indexerOpts: defaultConnOptions,
-	matcherOpts: defaultConnOptions,
-	comboMode:   true,
-}
+	defaultOptions = options{
+		indexerOpts: defaultConnOptions,
+		matcherOpts: defaultConnOptions,
+		comboMode:   true,
+	}
+)
 
 // Option configures the options to create a scanner client.
 type Option func(*options)
