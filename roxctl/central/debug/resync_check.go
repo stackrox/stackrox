@@ -156,7 +156,7 @@ func (c *resyncCheckCmd) storeFile(fileName string, alerts []*storage.ListAlert)
 		return errors.Wrap(err, "failed to marshal ListAlerts as JSON")
 	}
 
-	return os.WriteFile(fullPath, data, 0o644)
+	return os.WriteFile(fullPath, data, 0644)
 }
 
 func (c *resyncCheckCmd) assessDelta(before, after []*storage.ListAlert) {

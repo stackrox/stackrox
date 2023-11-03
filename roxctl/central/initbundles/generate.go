@@ -50,7 +50,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string,
 	for _, out := range outputs {
 		outFile := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
 		if out.filename != "" {
-			outFile, err = os.OpenFile(out.filename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+			outFile, err = os.OpenFile(out.filename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 			if err != nil {
 				return errors.Wrap(err, "opening output file for writing init bundle")
 			}

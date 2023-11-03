@@ -33,7 +33,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
 		return writeCA(ctx, svc, cliEnvironment.InputOutput().Out())
 	}
 
-	bundleOutput, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	bundleOutput, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		return errors.Wrap(err, "opening output file for writing CA config")
 	}
