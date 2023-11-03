@@ -1,4 +1,4 @@
-name: Prepare manual upgrade test
+name: "RELEASE: Prepare manual upgrade test"
 on:
   workflow_dispatch:
     inputs:

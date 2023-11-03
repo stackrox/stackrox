@@ -1,4 +1,4 @@
-name: Parse Version
+name: "RELEASE: Parse Version"
 on:
   workflow_call:
     inputs:

@@ -1,4 +1,4 @@
-name: Start Release
+name: "RELEASE: Start Release"
 on:
   workflow_dispatch:
     inputs:

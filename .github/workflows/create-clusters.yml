@@ -1,4 +1,4 @@
-name: Create Clusters
+name: "RELEASE: Create Clusters"
 on:
   workflow_dispatch:
     inputs:
