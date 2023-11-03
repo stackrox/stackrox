@@ -35,7 +35,7 @@ func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Check alerts before and after reassessing policies",
 		Long:  "Check alerts before and after reassessing policies. This should only be used for testing when Secured Clusters have ROX_RESYNC_DISABLED=true",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			cmd, err := commandWithConnection(cliEnvironment, waitFor, flags.Timeout(c), flags.RetryTimeout(c), outputDir)
+			cmd, err := commandWithConnection(cliEnvironment, waitFor, flags.Timeout(c), outputDir)
 			if err != nil {
 				return err
 			}
@@ -48,7 +48,6 @@ func resyncCheckCommand(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, defaultResyncCheckTimeout)
-	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "resync-check-output", "output directory in which to store bundle")
 	c.PersistentFlags().DurationVar(&waitFor, "wait-for", time.Minute, "how long to wait between before and after alert check")
 
@@ -63,10 +62,8 @@ type resyncCheckCmd struct {
 	outputDir string
 }
 
-func commandWithConnection(env environment.Environment, waitFor, timeout time.Duration,
-	retryTimeout time.Duration, outputDir string,
-) (*resyncCheckCmd, error) {
-	conn, err := env.GRPCConnection(retryTimeout)
+func commandWithConnection(env environment.Environment, waitFor, timeout time.Duration, outputDir string) (*resyncCheckCmd, error) {
+	conn, err := env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}

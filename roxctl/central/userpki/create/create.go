@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -105,7 +106,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 		utils.Must(pems.WriteByte('\n'))
 	}
 
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return err
 	}

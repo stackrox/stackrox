@@ -274,7 +274,6 @@ func (d *deployCheckTestSuite) SetupTest() {
 		retryDelay:         3,
 		retryCount:         3,
 		timeout:            1 * time.Minute,
-		retryTimeout:       1 * time.Minute,
 		printAllViolations: true,
 	}
 }

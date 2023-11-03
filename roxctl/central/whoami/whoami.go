@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -45,7 +46,7 @@ func makeCentralWhoAmICommand(cliEnvironment environment.Environment, cbr *cobra
 }
 
 func (cmd *centralWhoAmICommand) whoami() error {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return err
 	}

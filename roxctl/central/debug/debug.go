@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -75,7 +76,7 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 }
 
 func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return err
 	}
@@ -116,7 +117,7 @@ func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelR
 }
 
 func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return err
 	}

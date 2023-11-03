@@ -25,10 +25,10 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, retryTimeout time.Duration,
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
 	createUpgraderSA bool, slimCollectorP *bool, istioVersion string, env environment.Environment,
 ) error {
-	conn, err := env.GRPCConnection(retryTimeout)
+	conn, err := env.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, re
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, retryTimeout, env)
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, 20 * time.Second, env)
 	if err != nil {
 		return errors.Wrapf(err, "error resolving cluster ID for %q", clusterIDOrName)
 	}
@@ -97,7 +97,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download a bundle with the files to deploy StackRox services into a cluster.",
 		Long:  "Download a bundle with the required YAML configuration files to deploy StackRox Sensor, Collector, and Admission controller (optional).",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), flags.RetryTimeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment); err != nil {
+			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion, cliEnvironment); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
 			return nil
@@ -112,7 +112,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
-	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 
 	autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")
 

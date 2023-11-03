@@ -56,7 +56,6 @@ The login token itself will be stored under $HOME/.roxctl/login and used to re-a
 	}
 
 	flags.AddTimeoutWithDefault(cmd, 5*time.Minute)
-	flags.AddRetryTimeoutWithDefault(cmd, time.Duration(0))
 
 	return cmd
 }

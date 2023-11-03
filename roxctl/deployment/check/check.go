@@ -135,7 +135,6 @@ type deploymentCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
-	retryTimeout       time.Duration
 	force              bool
 	cluster            string
 
@@ -147,7 +146,6 @@ type deploymentCheckCommand struct {
 
 func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
-	d.retryTimeout = flags.RetryTimeout(cmd)
 
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
@@ -203,7 +201,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 }
 
 func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
-	conn, err := d.env.GRPCConnection(d.retryTimeout)
+	conn, err := d.env.GRPCConnection()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}

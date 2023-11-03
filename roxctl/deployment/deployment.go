@@ -22,6 +22,5 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// In reality, if the image is already scanned and no force flag is given, this shouldn't take longer than the
 	// default timeout.
 	flags.AddTimeoutWithDefault(c, 10*time.Minute)
-	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	return c
 }

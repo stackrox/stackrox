@@ -20,7 +20,6 @@ type centralRestoreCancelCommand struct {
 	env          environment.Environment
 	confirm      func() error
 	timeout      time.Duration
-	retryTimeout time.Duration
 }
 
 func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -39,7 +38,6 @@ func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr
 	return &centralRestoreCancelCommand{
 		env:          cliEnvironment,
 		timeout:      flags.Timeout(cbr),
-		retryTimeout: flags.RetryTimeout(cbr),
 		confirm: func() error {
 			return flags.CheckConfirmation(cbr, cliEnvironment.Logger(), cliEnvironment.InputOutput())
 		},
@@ -47,7 +45,7 @@ func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr
 }
 
 func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}

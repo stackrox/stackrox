@@ -79,12 +79,12 @@ func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authMethod ...aut
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
-func (c *cliEnvironmentImpl) GRPCConnection(retryTimeout time.Duration) (*grpc.ClientConn, error) {
+func (c *cliEnvironmentImpl) GRPCConnection(connectionOpts ...common.GRPCOption) (*grpc.ClientConn, error) {
 	am, err := determineAuthMethod(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
-	connection, err := common.GetGRPCConnection(am, c.Logger(), retryTimeout)
+	connection, err := common.GetGRPCConnection(am, c.Logger(), connectionOpts...)
 	return connection, errors.WithStack(err)
 }
 

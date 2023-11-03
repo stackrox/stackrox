@@ -155,7 +155,6 @@ type imageScanCommand struct {
 	retryDelay     int
 	retryCount     int
 	timeout        time.Duration
-	retryTimeout   time.Duration
 	cluster        string
 
 	// injected or constructed values
@@ -167,7 +166,6 @@ type imageScanCommand struct {
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
 func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
-	i.retryTimeout = flags.RetryTimeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
 		return common.ErrInvalidCommandOption.CausedBy(err)
@@ -243,7 +241,7 @@ func (i *imageScanCommand) scanImage() error {
 // getImageResultFromService will retrieve the scan results for the specified image from
 // central's ImageService
 func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
-	conn, err := i.env.GRPCConnection(i.retryTimeout)
+	conn, err := i.env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}

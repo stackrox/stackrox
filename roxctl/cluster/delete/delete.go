@@ -63,7 +63,7 @@ func (cmd *clusterDeleteCommand) Validate() error {
 }
 
 func (cmd *clusterDeleteCommand) Delete() error {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}

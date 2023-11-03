@@ -147,7 +147,6 @@ type imageCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
-	retryTimeout       time.Duration
 	cluster            string
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
@@ -164,7 +163,6 @@ type imageCheckCommand struct {
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
 func (i *imageCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
-	i.retryTimeout = flags.RetryTimeout(cmd)
 
 	// TODO: remove this once we have fully deprecated the old output format
 	// Only create a printer when --json is not given
@@ -260,7 +258,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 }
 
 func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage.Alert, error) {
-	conn, err := i.env.GRPCConnection(i.retryTimeout)
+	conn, err := i.env.GRPCConnection()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}

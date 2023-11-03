@@ -232,7 +232,6 @@ func (suite *imageCheckTestSuite) SetupTest() {
 		retryDelay:   3,
 		retryCount:   3,
 		timeout:      1 * time.Minute,
-		retryTimeout: 1 * time.Minute,
 	}
 }
 
@@ -381,7 +380,6 @@ func (suite *imageCheckTestSuite) TestConstruct() {
 			suite.Assert().Equal(c.printer, imgCheckCmd.objectPrinter)
 			suite.Assert().Equal(c.standardizedFormat, imgCheckCmd.standardizedOutputFormat)
 			suite.Assert().Equal(1*time.Minute, imgCheckCmd.timeout)
-			suite.Assert().Equal(1*time.Minute, imgCheckCmd.retryTimeout)
 		})
 	}
 }

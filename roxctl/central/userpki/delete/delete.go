@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -89,7 +90,7 @@ func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient
 }
 
 func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, error) {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, err
 	}

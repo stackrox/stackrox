@@ -19,9 +19,10 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/roxctl/common"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 const (
@@ -51,7 +52,7 @@ func analyzePackageFile(pkg *zip.Reader) (map[string]*zip.File, bool) {
 }
 
 func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPackage map[string]*zip.File) ([]*v1.ProbeUploadManifest_File, error) {
-	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to establish a gRPC connection to Central")
 	}
@@ -63,7 +64,7 @@ func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPack
 		req.FilesToCheck = append(req.FilesToCheck, probeFileName)
 	}
 
-	ctx, cancel := context.WithTimeout(common.Context(), cmd.timeout)
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
 
 	resp, err := probeUploadClient.GetExistingProbes(ctx, req)

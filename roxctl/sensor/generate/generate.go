@@ -49,7 +49,6 @@ type sensorGenerateCommand struct {
 	outputDir        string
 	slimCollectorP   *bool
 	timeout          time.Duration
-	retryTimeout     time.Duration
 
 	enablePodSecurityPolicies bool
 
@@ -72,7 +71,6 @@ func defaultCluster() *storage.Cluster {
 
 func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	s.timeout = flags.Timeout(cmd)
-	s.retryTimeout = flags.RetryTimeout(cmd)
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
@@ -114,7 +112,7 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 }
 
 func (s *sensorGenerateCommand) fullClusterCreation() error {
-	conn, err := s.env.GRPCConnection(s.retryTimeout)
+	conn, err := s.env.GRPCConnection()
 	if err != nil {
 		return err
 	}
@@ -246,7 +244,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "dynamic enable for enforcing on object updates in the admission controller")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
-	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 
 	c.AddCommand(k8s(generateCmd))
 	c.AddCommand(openshift(generateCmd))

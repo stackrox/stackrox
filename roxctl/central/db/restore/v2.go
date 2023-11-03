@@ -37,7 +37,6 @@ type centralDbRestoreCommand struct {
 	// Properties that are injected or constructed.
 	env          environment.Environment
 	timeout      time.Duration
-	retryTimeout time.Duration
 	confirm      func() error
 }
 
@@ -88,7 +87,6 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 		return flags.CheckConfirmation(cbr, cmd.env.Logger(), cmd.env.InputOutput())
 	}
 	cmd.timeout = flags.Timeout(cbr)
-	cmd.retryTimeout = flags.RetryTimeout(cbr)
 	if cmd.file == "" {
 		cmd.file = args[0]
 	}

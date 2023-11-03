@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -21,7 +22,7 @@ func listInitBundles(cliEnvironment environment.Environment, timeout time.Durati
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
+	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
 		return err
 	}

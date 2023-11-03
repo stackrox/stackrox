@@ -10,6 +10,7 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
@@ -20,7 +21,7 @@ func ResolveClusterID(idOrName string, timeout time.Duration, retryTimeout time.
 		return idOrName, nil
 	}
 
-	conn, err := env.GRPCConnection(retryTimeout)
+	conn, err := env.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
 		return "", err
 	}

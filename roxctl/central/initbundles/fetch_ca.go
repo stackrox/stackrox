@@ -22,7 +22,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
+	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
 		return err
 	}
