@@ -24,7 +24,7 @@ type mappingUpdater struct {
 }
 
 const (
-	// TODO(ROX-20481): Replace this URL 
+	// TODO(ROX-20481): Replace this URL with prod GCS bucket
 	baseURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
 
 	mappingZip = "mapping.zip"

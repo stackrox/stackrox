@@ -129,6 +129,8 @@ func (h *httpHandler) fetchMappingData(ctx context.Context) {
 	}
 }
 
+// TODO(ROX-20520): create post() method to allow customer to upload vuln bundle in offline mode.
+
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	// Get all URL query parameters
 	fileType := r.URL.Query().Get("file")
@@ -138,7 +140,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	offlineFile, modTime, err := h.openOfflineFile(context.Background(), mappingfileBlobName)
+	offlineFile, modTime, err := h.openOfflineFile(r.Context(), mappingfileBlobName)
 	if err != nil || offlineFile == nil {
 		http.Error(w, "offline file not found", http.StatusNotFound)
 		return

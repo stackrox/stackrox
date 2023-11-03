@@ -830,7 +830,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	)
 
 	scannerV4DefinitionsRoute := "/api/extensions/scanner-v4/definitions"
-	utils.CrashOnError(err)
 	customRoutes = append(customRoutes,
 		routes.CustomRoute{
 			Route: scannerV4DefinitionsRoute,
