@@ -24,7 +24,7 @@ type mappingUpdater struct {
 }
 
 const (
-	// TODO: Replace this URL in ROX-20481
+	// TODO(ROX-20481): Replace this URL 
 	baseURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
 
 	mappingZip = "mapping.zip"
