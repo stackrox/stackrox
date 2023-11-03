@@ -76,8 +76,6 @@ A common use case is testing Scanner locally.  Once you have the local scanner b
     https://registry.hub.docker.com/library/hello-world:latest
 ```
 
-
-
 #### Example 2: Connect to local Scanner in different modes
 
 Setup Scanner to run locally in different modes: 
