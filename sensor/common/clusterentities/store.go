@@ -148,7 +148,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		// delete(set, deploymentID)
 		if len(set) == 0 {
 			e.ipMap[ip][deploymentID] = false
-			//delete(e.ipMap, ip)
+			// delete(e.ipMap, ip)
 			if ip.IsPublic() {
 				e.decPublicIPRefNoLock(ip)
 			}
@@ -159,13 +159,13 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		for eti := range set[deploymentID] {
 			set[deploymentID][eti] = false // mark deletion
 		}
-		//delete(set, deploymentID)
+		// delete(set, deploymentID)
 		if len(set) == 0 {
 			log.Debugf("EndpointMap: Removing endpoint %s for deploymentID %s", ep.String(), deploymentID)
 			for eti := range set[deploymentID] {
 				e.endpointMap[ep][deploymentID][eti] = false // mark deletion
 			}
-			//delete(e.endpointMap, ep)
+			// delete(e.endpointMap, ep)
 			log.Debugf("EndpointMap: State after removal: %v", e.endpointMap)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.decPublicIPRefNoLock(ipAddr)
