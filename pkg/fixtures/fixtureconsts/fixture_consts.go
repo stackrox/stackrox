@@ -61,4 +61,5 @@ const (
 
 	PodName1 = "nginx-7db9fccd9b-92hfs"
 	PodName2 = "visa-processor"
+	PodName3 = "collector"
 )
