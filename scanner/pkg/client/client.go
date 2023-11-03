@@ -88,7 +88,7 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 			InsecureSkipVerify: true,
 		},
 	}
-	if o.skipTLS {
+	if !o.skipTLS {
 		ca, err := mtls.LoadDefaultCA()
 		if err != nil {
 			return nil, fmt.Errorf("creating CA: %w", err)
