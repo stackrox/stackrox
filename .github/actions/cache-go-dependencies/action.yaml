@@ -10,7 +10,17 @@ runs:
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    - name: Restore Go Dependencies
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+        key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+
     - name: Cache Go Dependencies
+      if: ${{ github.ref_name == 'master' }}
       uses: actions/cache@v3
       with:
         path: |
@@ -18,4 +28,5 @@ runs:
           ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          go-v3-${{ github.job }}-
+          go-v3-
