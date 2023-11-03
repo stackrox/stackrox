@@ -1,4 +1,4 @@
-name: Check image vulnerabilities
+name: "RELEASE: Check image vulnerabilities"
 on:
   workflow_dispatch:
     inputs:

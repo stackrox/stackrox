@@ -1,4 +1,4 @@
-name: Finish Release
+name: "RELEASE: Finish Release"
 on:
   workflow_dispatch:
     inputs:
