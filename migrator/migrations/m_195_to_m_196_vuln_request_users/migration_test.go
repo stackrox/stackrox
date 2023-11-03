@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_195_to_m_196_vuln_request_users/schema/old"
 	"github.com/stackrox/rox/migrator/migrations/m_195_to_m_196_vuln_request_users/store/previous"
@@ -18,6 +19,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	ts = timestamp.TimestampNow()
 )
 
 type migrationTestSuite struct {
@@ -44,31 +49,51 @@ func (s *migrationTestSuite) TearDownSuite() {
 
 func (s *migrationTestSuite) TestMigration() {
 	oldRequests := map[string]*storage.VulnerabilityRequest{
-		"1": fakeOldVulnReq("1", "requester-1"),
-		"2": fakeOldVulnReq("2", "requester-2", "approver-1"),
-		"3": fakeOldVulnReq("3", "requester-2", "approver-2"),
-		"4": fakeOldVulnReq("4", "requester-3", "approver-1", "approver-2"),
-		"5": fakeOldVulnReq("5", "", ""),
+		"1": fakeOldVulnReq("1", false, "requester-1"),
+		"2": fakeOldVulnReq("2", true, "requester-2", "approver-1"),
+		"3": fakeOldVulnReq("3", false, "requester-2", "approver-2"),
+		"4": fakeOldVulnReq("4", true, "requester-3", "approver-1", "approver-2"),
+		"5": fakeOldVulnReq("5", false, "", ""),
 		"6": func() *storage.VulnerabilityRequest {
-			r := fakeOldVulnReq("6", "", "")
+			r := fakeOldVulnReq("6", false, "", "")
 			r.Requestor = nil
 			r.Approvers = nil
+			return r
+		}(),
+		"7": func() *storage.VulnerabilityRequest {
+			r := fakeOldVulnReq("7", false, "requester-4")
+			r.Req = nil
+			return r
+		}(),
+		"8": func() *storage.VulnerabilityRequest {
+			r := fakeOldVulnReq("8", false, "requester-4")
+			r.GetDeferralReq().Expiry = nil
 			return r
 		}(),
 	}
 
 	newRequests := map[string]*storage.VulnerabilityRequest{
-		"1": fakeNewVulnReq("1", "requester-1"),
-		"2": fakeNewVulnReq("2", "requester-2", "approver-1"),
-		"3": fakeNewVulnReq("3", "requester-2", "approver-2"),
-		"4": fakeNewVulnReq("4", "requester-3", "approver-1", "approver-2"),
-		"5": fakeNewVulnReq("5", "", ""),
+		"1": fakeNewVulnReq("1", false, "requester-1"),
+		"2": fakeNewVulnReq("2", true, "requester-2", "approver-1"),
+		"3": fakeNewVulnReq("3", false, "requester-2", "approver-2"),
+		"4": fakeNewVulnReq("4", true, "requester-3", "approver-1", "approver-2"),
+		"5": fakeNewVulnReq("5", false, "", ""),
 		"6": func() *storage.VulnerabilityRequest {
-			r := fakeNewVulnReq("6", "", "")
+			r := fakeNewVulnReq("6", false, "", "")
 			r.Requestor = nil
 			r.RequesterV2 = nil
 			r.Approvers = nil
 			r.ApproversV2 = nil
+			return r
+		}(),
+		"7": func() *storage.VulnerabilityRequest {
+			r := fakeNewVulnReq("7", false, "requester-4")
+			r.Req = nil
+			return r
+		}(),
+		"8": func() *storage.VulnerabilityRequest {
+			r := fakeNewVulnReq("8", false, "requester-4")
+			r.GetDeferralReq().Expiry = nil
 			return r
 		}(),
 	}
@@ -124,11 +149,12 @@ func (s *migrationTestSuite) verify(expected map[string]*storage.VulnerabilityRe
 		s.ElementsMatch(expectedReq.GetApproversV2(), actualReq.GetApproversV2())
 		s.EqualValues(expectedReq.GetRequestor(), actualReq.GetRequestor())
 		s.ElementsMatch(expectedReq.GetApprovers(), actualReq.GetApprovers())
+		s.EqualValues(expectedReq.GetDeferralReq(), actualReq.GetDeferralReq())
 	}
 }
 
-func fakeOldVulnReq(id string, requester string, approvers ...string) *storage.VulnerabilityRequest {
-	return &storage.VulnerabilityRequest{
+func fakeOldVulnReq(id string, expiresWhenCVEFixable bool, requester string, approvers ...string) *storage.VulnerabilityRequest {
+	ret := &storage.VulnerabilityRequest{
 		Id:   id,
 		Name: id,
 		Requestor: &storage.SlimUser{
@@ -146,10 +172,33 @@ func fakeOldVulnReq(id string, requester string, approvers ...string) *storage.V
 			return users
 		}(),
 	}
+
+	if expiresWhenCVEFixable {
+		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: &storage.RequestExpiry{
+					Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
+						ExpiresWhenFixed: true,
+					},
+				},
+			},
+		}
+	} else {
+		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: &storage.RequestExpiry{
+					Expiry: &storage.RequestExpiry_ExpiresOn{
+						ExpiresOn: ts,
+					},
+				},
+			},
+		}
+	}
+	return ret
 }
 
-func fakeNewVulnReq(id string, requester string, approvers ...string) *storage.VulnerabilityRequest {
-	return &storage.VulnerabilityRequest{
+func fakeNewVulnReq(id string, expiresWhenCVEFixable bool, requester string, approvers ...string) *storage.VulnerabilityRequest {
+	ret := &storage.VulnerabilityRequest{
 		Id:   id,
 		Name: id,
 		Requestor: &storage.SlimUser{
@@ -181,4 +230,28 @@ func fakeNewVulnReq(id string, requester string, approvers ...string) *storage.V
 			return users
 		}(),
 	}
+	if expiresWhenCVEFixable {
+		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: &storage.RequestExpiry{
+					Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
+						ExpiresWhenFixed: true,
+					},
+					ExpiryType: storage.RequestExpiry_ANY_CVE_FIXABLE,
+				},
+			},
+		}
+	} else {
+		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: &storage.RequestExpiry{
+					Expiry: &storage.RequestExpiry_ExpiresOn{
+						ExpiresOn: ts,
+					},
+					ExpiryType: storage.RequestExpiry_TIME,
+				},
+			},
+		}
+	}
+	return ret
 }
