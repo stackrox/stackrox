@@ -17,9 +17,9 @@ import (
 )
 
 type centralRestoreCancelCommand struct {
-	env          environment.Environment
-	confirm      func() error
-	timeout      time.Duration
+	env     environment.Environment
+	confirm func() error
+	timeout time.Duration
 }
 
 func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -36,8 +36,8 @@ func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Comma
 
 func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralRestoreCancelCommand {
 	return &centralRestoreCancelCommand{
-		env:          cliEnvironment,
-		timeout:      flags.Timeout(cbr),
+		env:     cliEnvironment,
+		timeout: flags.Timeout(cbr),
 		confirm: func() error {
 			return flags.CheckConfirmation(cbr, cliEnvironment.Logger(), cliEnvironment.InputOutput())
 		},

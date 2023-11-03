@@ -35,9 +35,9 @@ type centralDbRestoreCommand struct {
 	interrupt bool
 
 	// Properties that are injected or constructed.
-	env          environment.Environment
-	timeout      time.Duration
-	confirm      func() error
+	env     environment.Environment
+	timeout time.Duration
+	confirm func() error
 }
 
 // V2Command defines the new db restore command
