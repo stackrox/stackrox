@@ -85,6 +85,9 @@ sed 's@certs_dir: ""@certs_dir: certs/scanner-v4@' config.yaml.sample > matcher-
 sed 's@certs_dir: ""@certs_dir: certs/scanner-v4@' config.yaml.sample > indexer-config.yaml
 sed -i '/matcher:/!b;n; s/enable: .*/enable: false/' indexer-config.yaml
 sed -i '/indexer:/!b;n; s/enable: .*/enable: false/' matcher-config.yaml
+sed -e 's/http_listen_addr: .*/http_listen_addr: ":9444"/' \
+    -e 's/grpc_listen_addr: .*/grpc_listen_addr: ":8444"/' \
+    config.yaml
 ./bin/scanner -conf indexer-config.yaml &
 ROX_METRICS_PORT=:9091 ./bin/scanner -conf matcher-config.yaml &
 ```
