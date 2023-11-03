@@ -28,11 +28,11 @@ pull_profiles() {
   echo "Pulling profiles (iteration $1)"
   formatted_date="$(date +%Y-%m-%d-%H-%M-%S)"
   echo -n "Pulling heap profile ... "
-  curl_central "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  curl_central "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.pb.gz" && echo "done" || echo "failed"
   echo -n "Pulling goroutine profile ... "
-  curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.pb.gz" && echo "done" || echo "failed"
   echo -n "Pulling CPU profile ... "
-  curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz" && echo "done" || echo "failed"
+  curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.pb.gz" && echo "done" || echo "failed"
   echo "Done pulling profile (iteration $1)"
 }
 
