@@ -92,6 +92,48 @@ sed -e 's/http_listen_addr: .*/http_listen_addr: ":9444"/' \
 ROX_METRICS_PORT=:9091 ./bin/scanner -conf matcher-config.yaml &
 ```
 
+Check updates:
+
+```
+% diff -du config.yaml.sample indexer-config.yaml
+--- config.yaml.sample	2023-10-28 10:24:35.123934825 -0700
++++ indexer-config.yaml	2023-11-02 13:53:06.051843337 -0700
+@@ -7,10 +7,10 @@
+     password_file: ""
+   get_layer_timeout: 1m
+ matcher:
+-  enable: true
++  enable: false
+   database:
+     conn_string: "host=/var/run/postgresql"
+     password_file: ""
+ mtls:
+-  certs_dir: ""
++  certs_dir: certs/scanner-v4
+ log_level: info
+% diff -du config.yaml.sample matcher-config.yaml
+--- config.yaml.sample	2023-10-28 10:24:35.123934825 -0700
++++ matcher-config.yaml	2023-11-02 13:58:45.276489478 -0700
+@@ -1,7 +1,7 @@
+-http_listen_addr: 127.0.0.1:9443
+-grpc_listen_addr: 127.0.0.1:8443
++http_listen_addr: 127.0.0.1:9444
++grpc_listen_addr: 127.0.0.1:8444
+ indexer:
+-  enable: true
++  enable: false
+   database:
+     conn_string: "host=/var/run/postgresql"
+     password_file: ""
+@@ -12,5 +12,5 @@
+     conn_string: "host=/var/run/postgresql"
+     password_file: ""
+ mtls:
+-  certs_dir: ""
++  certs_dir: certs/scanner-v4
+ log_level: info
+```
+
 Call `scannerctl`:
 
 ```sh
