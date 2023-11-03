@@ -72,15 +72,25 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	targetResource permissions.ResourceMetadata,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
-		db:                               db,
-		schema:                           schema,
-		pkGetter:                         pkGetter,
-		insertInto:                       insertInto,
-		copyFromObj:                      copyFromObj,
-		setAcquireDBConnDuration:         setAcquireDBConnDuration,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		upsertAllowed:                    upsertAllowed,
-		targetResource:                   targetResource,
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		upsertAllowed:  upsertAllowed,
+		targetResource: targetResource,
 	}
 }
 
