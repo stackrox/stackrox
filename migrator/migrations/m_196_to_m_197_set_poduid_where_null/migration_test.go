@@ -89,6 +89,10 @@ func (s *migrationTestSuite) TestSetUIDsUsingPods() {
 
 	expectedPlops := plops
 	expectedPlops[1].PodUid = pods[1].Id
+	// plops[0] will not have its PodUid set since its deploymentid does not match either of the pods
+	// plops[1] will have its PodUid set to that of pods[1] since the pod id and deployment id match
+	// plops[2] will not have its PodUid set since it has not process information
+	// plops[3] through plops[5] will not have their PodUids set, since they are already set.
 
 	for _, expectedPlop := range expectedPlops {
 		actualPlop, exists, err := plopStore.Get(s.ctx, expectedPlop.Id)
@@ -132,6 +136,10 @@ func (s *migrationTestSuite) TestSetUIDsUsingProcessIndicators() {
 
 	expectedPlops := plops
 	expectedPlops[2].PodUid = processIndicators[2].PodUid
+	// plops[0] and plops[1] will not be set because they have process information and therefore
+	// there should not be a matching process indicators
+	// plops[2] will have its PodUid set since it has no process information, but has a matching process indicator
+	// plops[3] through plops[5] will not have their PodUids set, since they are already set.
 
 	for _, expectedPlop := range expectedPlops {
 		actualPlop, exists, err := plopStore.Get(s.ctx, expectedPlop.Id)
@@ -189,6 +197,8 @@ func (s *migrationTestSuite) TestMigration() {
 	expectedPlops := plops
 	expectedPlops[1].PodUid = pods[1].Id
 	expectedPlops[2].PodUid = processIndicators[2].PodUid
+	// This test is a combination of the above two tests so the PodUids changed in this test
+	// is the changes of the individual tests above put together
 
 	for _, expectedPlop := range expectedPlops {
 		actualPlop, exists, err := plopStore.Get(s.ctx, expectedPlop.Id)
