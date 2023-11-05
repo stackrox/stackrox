@@ -3,7 +3,6 @@
 package schema
 
 import (
-	//"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	//"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -30,28 +28,13 @@ var (
 	// PodsSchema is the go schema for table `pods`.
 	PodsSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.VulnerabilityRequest)(nil)), "vulnerability_requests")
-		//schema := GetSchemaForTable("pods")
-		//if schema != nil {
-		//	return schema
-		//}
-		//schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
-		//referencedSchemas := map[string]*walker.Schema{
-		//	"storage.Deployment": DeploymentsSchema,
-		//}
-
-		//schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-		//	return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		//})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pod", (*storage.Pod)(nil)))
 		schema.ScopingResource = resources.Deployment
-		//RegisterTable(schema, CreateTablePodsStmt)
-		//mapping.RegisterCategoryToTable(v1.SearchCategory_PODS, schema)
 		return schema
 	}()
 )
 
 const (
-	// PodsTableName specifies the name of the table in postgres.
 	PodsTableName = "pods"
 	// PodsLiveInstancesTableName specifies the name of the table in postgres.
 	PodsLiveInstancesTableName = "pods_live_instances"
