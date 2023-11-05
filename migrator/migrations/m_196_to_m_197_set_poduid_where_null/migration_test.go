@@ -7,17 +7,17 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	podSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/pods"
 	listeningEndpointsSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/listening_endpoints"
+	podSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/pods"
 	processIndicatorSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/process_indicators"
-	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	podDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/pod"
-	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processlisteningonport"
 	processIndicatorDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processindicator"
+	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processlisteningonport"
+	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,7 +48,8 @@ func (s *migrationTestSuite) TearDownSuite() {
 func (s *migrationTestSuite) TestMap() {
 	podStore := podDatastore.New(s.db)
 	pod := fixtures.GetPod1()
-	podStore.Upsert(s.ctx, pod)
+	err := podStore.Upsert(s.ctx, pod)
+	s.NoError(err)
 	podUIDMap, err := getPodUIDMap(s.ctx, podStore)
 	s.NoError(err)
 
@@ -66,7 +67,8 @@ func (s *migrationTestSuite) TestSetUIDsUsingPods() {
 		fixtures.GetPod2(),
 	}
 
-	podStore.UpsertMany(s.ctx, pods)
+	err := podStore.UpsertMany(s.ctx, pods)
+	s.Require().NoError(err)
 
 	plops := []*storage.ProcessListeningOnPortStorage{
 		fixtures.GetPlopStorage1(),
@@ -77,7 +79,7 @@ func (s *migrationTestSuite) TestSetUIDsUsingPods() {
 		fixtures.GetPlopStorage6(),
 	}
 
-	err := plopStore.UpsertMany(s.ctx, plops)
+	err = plopStore.UpsertMany(s.ctx, plops)
 	s.Require().NoError(err)
 
 	count, err := plopStore.Count(s.ctx)
@@ -113,7 +115,8 @@ func (s *migrationTestSuite) TestSetUIDsUsingProcessIndicators() {
 		fixtures.GetProcessIndicator6(),
 	}
 
-	processIndicatorStore.UpsertMany(s.ctx, processIndicators)
+	err := processIndicatorStore.UpsertMany(s.ctx, processIndicators)
+	s.Require().NoError(err)
 
 	plops := []*storage.ProcessListeningOnPortStorage{
 		fixtures.GetPlopStorage1(),
@@ -124,7 +127,7 @@ func (s *migrationTestSuite) TestSetUIDsUsingProcessIndicators() {
 		fixtures.GetPlopStorage6(),
 	}
 
-	err := plopStore.UpsertMany(s.ctx, plops)
+	err = plopStore.UpsertMany(s.ctx, plops)
 	s.Require().NoError(err)
 
 	count, err := plopStore.Count(s.ctx)
@@ -160,7 +163,8 @@ func (s *migrationTestSuite) TestMigration() {
 		fixtures.GetPod2(),
 	}
 
-	podStore.UpsertMany(s.ctx, pods)
+	err := podStore.UpsertMany(s.ctx, pods)
+	s.Require().NoError(err)
 
 	processIndicators := []*storage.ProcessIndicator{
 		fixtures.GetProcessIndicator4(),
@@ -168,7 +172,8 @@ func (s *migrationTestSuite) TestMigration() {
 		fixtures.GetProcessIndicator6(),
 	}
 
-	processIndicatorStore.UpsertMany(s.ctx, processIndicators)
+	err = processIndicatorStore.UpsertMany(s.ctx, processIndicators)
+	s.Require().NoError(err)
 
 	plops := []*storage.ProcessListeningOnPortStorage{
 		fixtures.GetPlopStorage1(),
@@ -179,7 +184,7 @@ func (s *migrationTestSuite) TestMigration() {
 		fixtures.GetPlopStorage6(),
 	}
 
-	err := plopStore.UpsertMany(s.ctx, plops)
+	err = plopStore.UpsertMany(s.ctx, plops)
 	s.Require().NoError(err)
 
 	count, err := plopStore.Count(s.ctx)

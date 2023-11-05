@@ -18,7 +18,7 @@ var (
 	CreateTablePodsStmt = &postgres.CreateStmts{
 		GormModel: (*Pods)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*PodsLiveInstances)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
@@ -35,6 +35,7 @@ var (
 )
 
 const (
+	// PodsTableName is the name of the pods table
 	PodsTableName = "pods"
 	// PodsLiveInstancesTableName specifies the name of the table in postgres.
 	PodsLiveInstancesTableName = "pods_live_instances"

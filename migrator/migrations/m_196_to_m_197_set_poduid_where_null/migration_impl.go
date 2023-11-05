@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	podSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/pods"
 	listeningEndpointsSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/listening_endpoints"
+	podSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/pods"
 	processIndicatorSchema "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/schema/process_indicators"
 	podDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/pod"
-	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processlisteningonport"
 	processIndicatorDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processindicator"
+	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_set_poduid_where_null/store/processlisteningonport"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	log       = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // The purpose of this migration is to set the value of PodUid in the listening_endpoints table where
@@ -83,7 +83,7 @@ func setPodUidsUsingProcessIndicators(ctx context.Context, plopStore plopDatasto
 				if exists {
 					plop.PodUid = podUID
 					plops[count] = plop
-					count += 1
+					count++
 				}
 
 				if count == batchSize {
@@ -132,9 +132,9 @@ func setPodUIDsUsingProcessIndicators(ctx context.Context, processIndicatorStore
 
 // Returns a string which is a combination of the pod name and deploymentid so that listening_endpoints
 // can be matched to pods.
-func getPodKey(podName, deploymentId string) string {
+func getPodKey(podName, deploymentID string) string {
 	// The _ character cannot appear in a podName, so it is a good separator
-	return fmt.Sprintf("%s_%s", podName, deploymentId)
+	return fmt.Sprintf("%s_%s", podName, deploymentID)
 }
 
 // Get a map where the key is a combination of the pod name and deploymenid and the value is the
@@ -167,7 +167,7 @@ func setPodUidsUsingPods(ctx context.Context, plopStore plopDatastore.Store, pod
 				if exists {
 					plop.PodUid = podUID
 					plops[count] = plop
-					count += 1
+					count++
 				}
 
 				if count == batchSize {

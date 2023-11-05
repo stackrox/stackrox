@@ -1,4 +1,3 @@
-
 package fixtures
 
 import (
@@ -6,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 )
 
+// GetProcessIndicatorUniqueKey1 returns a mock ProcessIndicatorUniqueKey
 func GetProcessIndicatorUniqueKey1() *storage.ProcessIndicatorUniqueKey {
 	return &storage.ProcessIndicatorUniqueKey{
 		PodId:               fixtureconsts.PodName1,
@@ -16,6 +16,7 @@ func GetProcessIndicatorUniqueKey1() *storage.ProcessIndicatorUniqueKey {
 	}
 }
 
+// GetProcessIndicatorUniqueKey2 returns a mock ProcessIndicatorUniqueKey
 func GetProcessIndicatorUniqueKey2() *storage.ProcessIndicatorUniqueKey {
 	return &storage.ProcessIndicatorUniqueKey{
 		PodId:               fixtureconsts.PodName2,
@@ -26,6 +27,7 @@ func GetProcessIndicatorUniqueKey2() *storage.ProcessIndicatorUniqueKey {
 	}
 }
 
+// GetProcessIndicatorUniqueKey3 returns a mock ProcessIndicatorUniqueKey
 func GetProcessIndicatorUniqueKey3() *storage.ProcessIndicatorUniqueKey {
 	return &storage.ProcessIndicatorUniqueKey{
 		PodId:               fixtureconsts.PodName2,

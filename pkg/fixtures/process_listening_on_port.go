@@ -113,7 +113,7 @@ func GetPlopStorage1() *storage.ProcessListeningOnPortStorage {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
-		Process:	    GetProcessIndicatorUniqueKey1(),
+		Process:            GetProcessIndicatorUniqueKey1(),
 		DeploymentId:       fixtureconsts.Deployment6,
 	}
 }
@@ -127,7 +127,7 @@ func GetPlopStorage2() *storage.ProcessListeningOnPortStorage {
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
 		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
-		Process:	    GetProcessIndicatorUniqueKey2(),
+		Process:            GetProcessIndicatorUniqueKey2(),
 		DeploymentId:       fixtureconsts.Deployment5,
 	}
 }
@@ -156,7 +156,7 @@ func GetPlopStorage4() *storage.ProcessListeningOnPortStorage {
 		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
-		Process:	    GetProcessIndicatorUniqueKey1(),
+		Process:            GetProcessIndicatorUniqueKey1(),
 		PodUid:             fixtureconsts.PodUID1,
 	}
 }
@@ -172,7 +172,7 @@ func GetPlopStorage5() *storage.ProcessListeningOnPortStorage {
 		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment5,
-		Process:	    GetProcessIndicatorUniqueKey2(),
+		Process:            GetProcessIndicatorUniqueKey2(),
 		PodUid:             fixtureconsts.PodUID2,
 	}
 }
@@ -202,7 +202,7 @@ func GetPlopStorageExpired1() *storage.ProcessListeningOnPortStorage {
 		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
-		Process:	    GetProcessIndicatorUniqueKey1(),
+		Process:            GetProcessIndicatorUniqueKey1(),
 		PodUid:             fixtureconsts.PodUID1,
 	}
 }
@@ -217,7 +217,7 @@ func GetPlopStorageExpired2() *storage.ProcessListeningOnPortStorage {
 		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment5,
-		Process:	    GetProcessIndicatorUniqueKey2(),
+		Process:            GetProcessIndicatorUniqueKey2(),
 		PodUid:             fixtureconsts.PodUID2,
 	}
 }
