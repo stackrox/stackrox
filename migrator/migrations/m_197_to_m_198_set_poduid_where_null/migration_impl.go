@@ -29,7 +29,7 @@ func migrate(database *types.Databases) error {
 	pgutils.CreateTableFromModel(ctx, database.GormDB, listeningEndpointsSchema.CreateTableListeningEndpointsStmt)
 	pgutils.CreateTableFromModel(ctx, database.GormDB, processIndicatorSchema.CreateTableProcessIndicatorsStmt)
 
-	return updateGlobalScope(ctx, database)
+	return updatePodUids(ctx, database)
 }
 
 // Walk through the process_indicators table and get a map where the key is the id and the value is the
@@ -221,7 +221,7 @@ func setPodUIDsUsingPods(ctx context.Context, podStore podDatastore.Store, plopS
 // The podid is not the PodUid. It is the name of the pod. The podid along with the deploymentid
 // can be used to do a join on the pods table and obtain the PodUid. Where one strategy doesn't work
 // the other should work, unless the pod for the listening endpoint has been deleted.
-func updateGlobalScope(ctx context.Context, database *types.Databases) error {
+func updatePodUids(ctx context.Context, database *types.Databases) error {
 	batchSize := 2000
 	podStore := podDatastore.New(database.PostgresDB)
 	plopStore := plopDatastore.New(database.PostgresDB)
