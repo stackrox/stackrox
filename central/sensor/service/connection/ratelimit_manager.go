@@ -167,14 +167,7 @@ func (m *rateLimitManager) AddInitSync(clusterID string) bool {
 	return true
 }
 
-func (m *rateLimitManager) RemoveInitSync(clusterID string) {
-	if m == nil {
-		return
-	}
-
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
+func (m *rateLimitManager) removeInitSync(clusterID string) {
 	if m.initSyncSensors.Remove(clusterID) && m.msgRateLimiter != nil {
 		m.msgRateLimiter.DecreaseLimit(boostInitSyncRateLimit)
 	}
@@ -235,8 +228,14 @@ func (m *rateLimitManager) LimitClusterMsg(clusterID string) bool {
 }
 
 func (m *rateLimitManager) RemoveMsgRateCluster(clusterID string) {
+	if m == nil {
+		return
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	m.removeInitSync(clusterID)
 
 	clusterRate := m.getClusterRate(clusterID)
 	delete(m.clusterMsgRates, clusterID)

@@ -19,7 +19,7 @@ func TestNewRateLimitManagerDefaultMaxInitSync(t *testing.T) {
 	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
 
-	m.RemoveInitSync("test-1")
+	m.removeInitSync("test-1")
 	assert.Len(t, m.initSyncSensors, 0)
 }
 
@@ -36,7 +36,7 @@ func TestNewRateLimitManagerZeroMaxInitSync(t *testing.T) {
 	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
 
-	m.RemoveInitSync("test-1")
+	m.removeInitSync("test-1")
 	assert.Len(t, m.initSyncSensors, 0)
 }
 
@@ -50,10 +50,10 @@ func TestNewRateLimitManagerMaxInitSync(t *testing.T) {
 	assert.False(t, m.AddInitSync("test-a"), "Unable to add after limit is reached")
 	assert.Len(t, m.initSyncSensors, 3)
 
-	m.RemoveInitSync("test-a")
+	m.removeInitSync("test-a")
 	assert.False(t, m.AddInitSync("test-a"), "Unable to add after removing non-existing")
 
-	m.RemoveInitSync("test-1")
+	m.removeInitSync("test-1")
 	assert.Len(t, m.initSyncSensors, 2)
 	assert.True(t, m.AddInitSync("test-a"), "Can add after one is removed")
 	assert.Len(t, m.initSyncSensors, 3)
@@ -66,7 +66,7 @@ func TestInitSyncNilGuards(t *testing.T) {
 
 	assert.Nil(t, m)
 	assert.True(t, m.AddInitSync("test-1"))
-	assert.NotPanics(t, func() { m.RemoveInitSync("test-1") })
+	assert.NotPanics(t, func() { m.removeInitSync("test-1") })
 
 	m = &rateLimitManager{
 		initSyncMaxSensors: 1,
@@ -75,7 +75,7 @@ func TestInitSyncNilGuards(t *testing.T) {
 	assert.True(t, m.AddInitSync("test-1"))
 	assert.False(t, m.AddInitSync("test-2"))
 
-	assert.NotPanics(t, func() { m.RemoveInitSync("test-1") })
+	assert.NotPanics(t, func() { m.removeInitSync("test-1") })
 	assert.True(t, m.AddInitSync("test-2"))
 }
 

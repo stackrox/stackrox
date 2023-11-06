@@ -101,7 +101,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
-		s.rateLimitMgr.RemoveInitSync(s.cluster.GetId())
+		s.rateLimitMgr.RemoveMsgRateCluster(s.cluster.GetId())
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return
