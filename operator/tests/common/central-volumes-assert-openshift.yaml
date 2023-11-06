@@ -1,0 +1,135 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+# Assert only things specific to this step.
+# General sanity should be asserted by another common assert file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        volumeMounts:
+        - mountPath: /var/log/stackrox/
+          name: varlog
+        - mountPath: /tmp
+          name: central-tmp-volume
+        - mountPath: /etc/ssl
+          name: central-etc-ssl-volume
+        - mountPath: /etc/pki/ca-trust
+          name: central-etc-pki-volume
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: central-certs-volume
+          readOnly: true
+        - mountPath: /run/secrets/stackrox.io/default-tls-cert/
+          name: central-default-tls-cert-volume
+          readOnly: true
+        - mountPath: /run/secrets/stackrox.io/htpasswd/
+          name: central-htpasswd-volume
+          readOnly: true
+        - mountPath: /run/secrets/stackrox.io/jwt/
+          name: central-jwt-volume
+          readOnly: true
+        - mountPath: /usr/local/share/ca-certificates/
+          name: additional-ca-volume
+          readOnly: true
+        - mountPath: /run/secrets/stackrox.io/central-license/
+          name: central-license-volume
+          readOnly: true
+        - mountPath: /var/lib/stackrox
+          name: stackrox-db
+        - mountPath: /etc/stackrox
+          name: central-config-volume
+        - mountPath: /run/secrets/stackrox.io/proxy-config/
+          name: proxy-config-volume
+          readOnly: true
+        - mountPath: /etc/stackrox.d/endpoints/
+          name: endpoints-config-volume
+          readOnly: true
+        - mountPath: /run/secrets/stackrox.io/db-password
+          name: central-db-password
+        - mountPath: /etc/ext-db
+          name: central-external-db-volume
+        - mountPath: /etc/pki/injected-ca-trust/
+          name: trusted-ca-volume
+          readOnly: true
+      volumes:
+      - emptyDir: {}
+        name: varlog
+      - emptyDir: {}
+        name: central-tmp-volume
+      - emptyDir: {}
+        name: central-etc-ssl-volume
+      - emptyDir: {}
+        name: central-etc-pki-volume
+      - name: central-certs-volume
+        secret:
+          defaultMode: 420
+          secretName: central-tls
+      - name: central-default-tls-cert-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: central-default-tls-cert
+      - name: central-htpasswd-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: central-htpasswd
+      - name: central-jwt-volume
+        secret:
+          defaultMode: 420
+          items:
+          - key: jwt-key.pem
+            path: jwt-key.pem
+          secretName: central-tls
+      - name: additional-ca-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: additional-ca
+      - name: central-license-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: central-license
+      - configMap:
+          defaultMode: 420
+          name: central-config
+          optional: true
+        name: central-config-volume
+      - name: proxy-config-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: proxy-config
+      - configMap:
+          defaultMode: 420
+          name: central-endpoints
+        name: endpoints-config-volume
+      - name: central-db-password
+        secret:
+          defaultMode: 420
+          secretName: central-db-password
+      - configMap:
+          defaultMode: 420
+          name: central-external-db
+          optional: true
+        name: central-external-db-volume
+      - name: stackrox-db
+        emptyDir: {}
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: ca-bundle.crt
+            path: tls-ca-bundle.pem
+          name: injected-cabundle-stackrox-central-services
+          optional: true
+        name: trusted-ca-volume
