@@ -4,24 +4,3 @@ metadata:
   name: stackrox-secured-cluster-services
 spec:
   clusterName: testing-cluster-newname
-  admissionControl:
-    resources:
-      requests:
-        memory: 100Mi
-        cpu: 100m
-  sensor:
-    resources:
-      requests:
-        memory: 100Mi
-        cpu: 100m
-  perNode:
-    collector:
-      resources:
-        requests:
-          memory: 100Mi
-          cpu: 100m
-    compliance:
-      resources:
-        requests:
-          memory: 100Mi
-          cpu: 100m
