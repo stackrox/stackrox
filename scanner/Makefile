@@ -22,20 +22,21 @@ ifeq ($(TAG),)
 	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
 
-GOOS := $(DEFAULT_GOOS)
 HOST_OS := linux
 ifeq ($(shell uname -s),Darwin)
 	HOST_OS := darwin
 endif
 
+GOOS := $(HOST_OS)
+
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
-GO_BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
-GO_BUILD_CMD := $(GO_BUILD_FLAGS) go build \
-                 -trimpath \
-                 -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
-GO_TEST_CMD := $(GO_BUILD_FLAGS) go test
+GO_BUILD_FLAGS = CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
+GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
+                   -trimpath \
+                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
+GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -66,9 +67,11 @@ tag:
 ## Go Builds ##
 ###############
 
-build-cmd := $(GO_BUILD_CMD)
+build-cmd  = $(GO_BUILD_CMD)
 build-d   := bin
 build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
+
+build-deps-t := deps
 
 .PHONY: build
 build: $(build-t)
@@ -78,30 +81,31 @@ $(build-t): deps
 	@echo "+ $@"
 	$(build-cmd) -o $@ ./cmd/$(@F)
 
-.PHONY: build-local
-build-local:
-	@echo "+ $@"
-	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} build
-
-.PHONY: build-local-scanner
-build-local-scanner:
-	@echo "+ $@"
-	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} bin/scanner
-
-.PHONY: build-local-scannerctl
-build-local-scannerctl:
-	@echo "+ $@"
-	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} bin/scannerctl
-
-.PHONY: build-local-updater
-build-local-updater:
-	@echo "+ $@"
-	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} bin/updater
-
 .PHONY: clean-build
 clean-build:
 	@echo "+ $@"
 	$(SILENT)rm -rf bin/
+
+$(build-deps-t): ../go.mod | scanner-go-check-ver
+	@echo "+ $@"
+	$(SILENT)go mod tidy
+ifdef CI
+	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
+		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
+		exit 1 ; \
+	}
+endif
+	$(SILENT)go mod verify
+	$(SILENT)touch $@
+
+.PHONY: scanner-go-check-ver
+scanner-go-check-ver:
+ifdef CI
+	@echo "+ $@"
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
+endif
+endif
 
 ############
 ## Images ##
@@ -112,6 +116,7 @@ image-prefix := scanner-v4
 .PHONY: images
 images: scanner-image db-image
 
+image/scanner/bin/scanner: GOOS=$(DEFAULT_GOOS)
 image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
 	cp $< $@
@@ -130,11 +135,6 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
 
-.PHONY: clean-image
-clean-image:
-	@echo "+ $@"
-	$(SILENT)git clean -xdf image/scanner/bin
-
 ###########
 ## Tests ##
 ###########
@@ -142,26 +142,6 @@ clean-image:
 ###########
 ## Tools ##
 ###########
-
-.PHONY: scanner-go-check-ver
-scanner-go-check-ver:
-ifdef CI
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
-endif
-
-deps: ../go.mod | scanner-go-check-ver
-	@echo "+ $@"
-	$(SILENT)go mod tidy
-ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
-		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
-		exit 1 ; \
-	}
-endif
-	$(SILENT)go mod verify
-	$(SILENT)touch $@
 
 .PHONY: ossls-notice-no-download
 ossls-notice-no-download: deps
@@ -380,6 +360,11 @@ $(e2e-files-d)/ca.pem: $(certs-d)/ca/root.pem
 .PHONY: clean
 clean: clean-image clean-gobin clean-deps clean-e2e clean-certs clean-build
 	@echo "+ $@"
+
+.PHONY: clean-image
+clean-image:
+	@echo "+ $@"
+	$(SILENT)git clean -xdf image/scanner/bin
 
 .PHONY: clean-gobin
 clean-gobin:
