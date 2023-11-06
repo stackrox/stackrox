@@ -77,7 +77,43 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
                 expiresOn: '2023-10-31T19:16:49.155480945Z',
             },
         },
-        cves: ['CVE-2018-20839'],
+        cves: ['CVE-2018-20839', 'CVE-2018-20840'],
+    },
+    {
+        id: '5837bb34-5357-4b78-ad2b-188fc0b33e78',
+        name: '5837bb34-5357-4b78-ad2b-188fc0b33e78',
+        targetState: 'FALSE_POSITIVE',
+        exceptionStatus: 'APPROVED_PENDING_UPDATE',
+        expired: false,
+        requester: {
+            id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
+            name: 'admin',
+        },
+        createdAt: '2023-10-01T19:16:49.155480945Z',
+        lastUpdated: '2023-10-01T19:16:49.155480945Z',
+        comments: [
+            {
+                createdAt: '2023-10-23T19:16:49.155480945Z',
+                id: 'c84b3f5f-4cad-4c4e-8a4a-97b821c2c373',
+                message: 'asdf',
+                user: {
+                    id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
+                    name: 'admin',
+                },
+            },
+        ],
+        scope: {
+            imageScope: {
+                registry: 'quay.io',
+                remote: 'stackrox-io/scanner',
+                tag: '.*',
+            },
+        },
+        falsePositiveRequest: {},
+        falsePositiveUpdate: {
+            cves: ['CVE-2020-20839'],
+        },
+        cves: ['CVE-2020-20839', 'CVE-2020-20840'],
     },
 ];
 
@@ -142,7 +178,7 @@ function PendingApprovals() {
                 </Thead>
                 <Tbody>
                     {vulnerabilityExceptions.map((exception) => {
-                        const { id, name, requester, createdAt, scope, cves } = exception;
+                        const { id, name, requester, createdAt, scope } = exception;
                         return (
                             <Tr key={id}>
                                 <Td>
@@ -170,7 +206,10 @@ function PendingApprovals() {
                                     <ScopeTableCell scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItemsTableCell cves={cves} />
+                                    <RequestedItemsTableCell
+                                        exception={exception}
+                                        context="PENDING_REQUESTS"
+                                    />
                                 </Td>
                             </Tr>
                         );

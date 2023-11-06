@@ -77,7 +77,7 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
                 expiresOn: '2023-10-31T19:16:49.155480945Z',
             },
         },
-        cves: ['CVE-2018-20839'],
+        cves: ['CVE-2018-20839', 'CVE-2018-20840'],
     },
 ];
 
@@ -142,7 +142,7 @@ function ApprovedDeferrals() {
                 </Thead>
                 <Tbody>
                     {vulnerabilityExceptions.map((exception) => {
-                        const { id, name, requester, createdAt, scope, cves } = exception;
+                        const { id, name, requester, createdAt, scope } = exception;
                         return (
                             <Tr key={id}>
                                 <Td>
@@ -170,7 +170,10 @@ function ApprovedDeferrals() {
                                     <ScopeTableCell scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItemsTableCell cves={cves} />
+                                    <RequestedItemsTableCell
+                                        exception={exception}
+                                        context="APPROVED_DEFERRALS"
+                                    />
                                 </Td>
                             </Tr>
                         );
