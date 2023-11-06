@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -69,6 +70,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 		return nil
 	})
+
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
@@ -78,6 +80,23 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
 
+	// In config yaml file:
+	//repo:
+	//	rhel-repository-scanner:
+	//repo2cpe_mapping_url: needs to be sensor definitions endpoint
+	//	package:
+	//rhel_containerscanner:
+	//name2repos_mapping_file: /config/container-name-repos-map.json
+	for name, node := range cfg.Repo {
+		node := node
+		opts.ScannerConfig.Repo[name] = func(v interface{}) error {
+			b, err := json.Marshal(node)
+			if err != nil {
+				return err
+			}
+			return json.Unmarshal(b, v)
+		}
+	}
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
@@ -121,10 +140,10 @@ func (i *localIndexer) IndexContainerImage(
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
-	zlog.Info(ctx).
-		Str("image_reference", imgRef.String()).
-		Int("layers_count", len(imgLayers)).
-		Msg("retrieving layers to populate container image manifest")
+	zlog.Info(ctx). /**/
+			Str("image_reference", imgRef.String()).
+			Int("layers_count", len(imgLayers)).
+			Msg("retrieving layers to populate container image manifest")
 	for _, layer := range imgLayers {
 		ccDigest, layerDigest, err := getLayerDigests(layer)
 		if err != nil {

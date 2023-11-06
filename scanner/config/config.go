@@ -81,6 +81,8 @@ type IndexerConfig struct {
 	Enable bool `yaml:"enable"`
 	// GetLayerTimeout timeout duration of GET requests for layers
 	GetLayerTimeout Duration `yaml:"get_layer_timeout"`
+
+	Repo map[string]interface{} `yaml:"repo,omitempty" json:"repo,omitempty"`
 }
 
 func (c *IndexerConfig) validate() error {
