@@ -12,7 +12,7 @@ import (
 
 const (
 	// CompositeFieldCharSep is the separating character used when we create a composite field.
-	CompositeFieldCharSep = "\t"
+	CompositeFieldCharSep = "###"
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -93,6 +94,8 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	} {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
+
+	suite.T().Setenv(features.PolicyEngineEvaluatorTest.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}
@@ -1478,7 +1481,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
 						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-							return processMatcher.MatchDeploymentWithProcess(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), process, false)
+							return processMatcher.MatchDeploymentWithProcess(cache, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)), process, false)
 						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
@@ -2624,7 +2627,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 		suite.T().Run(c.CaseName, func(t *testing.T) {
 			dep := deployments[c.DeploymentName]
 			matcher, err := BuildDeploymentMatcher(c.Policy)
-			suite.NoError(err, "deployment matcher creation must succeed")
+			suite.Require().NoError(err, "deployment matcher creation must succeed")
 			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)

@@ -119,7 +119,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 			t.Run("on fully hydrated object", func(t *testing.T) {
 				evaluator, err := factoryInstance.GenerateEvaluator(c.q)
 				require.NoError(t, err)
-				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj).Value())
+				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
@@ -141,7 +141,7 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
 				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
 				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
-				res, matched := evaluator.Evaluate(topLevelAugmentedObj.Value())
+				res, matched := evaluator.Evaluate(topLevelAugmentedObj)
 				assertResultsAsExpected(t, c, res, matched)
 			})
 		})
@@ -729,6 +729,30 @@ func TestLinked(t *testing.T) {
 					{Field: "TopLevelA", Values: []string{"NONEXISTENT"}},
 					{Field: "A", Values: []string{"A1"}},
 					{Field: "B", Values: []string{"B1"}},
+				},
+			},
+		},
+		{
+			desc: "linked, multilevel, complex, should match",
+			obj: &TopLevel{
+				ValA: "TopLevelValA",
+				NestedSlice: []Nested{
+					{NestedValA: "A0", NestedValB: "B0"},
+					{NestedValA: "A1", NestedValB: "B1"},
+					{NestedValA: "A2", NestedValB: "B2"},
+				},
+			},
+			q: &query.Query{
+				FieldQueries: []*query.FieldQuery{
+					{Field: "TopLevelA", Values: []string{"TopLevelValA"}},
+					{Field: "A", Values: []string{"A1", "A2"}, Operator: query.Or},
+					{Field: "B", Values: []string{"B1", "B2"}, Operator: query.Or},
+				},
+			},
+			expectedResult: &Result{
+				Matches: []map[string][]string{
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B1"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A2"}, "B": {"B2"}},
 				},
 			},
 		},

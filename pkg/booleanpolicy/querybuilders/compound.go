@@ -25,8 +25,8 @@ func ForCompound(field string, count int) QueryBuilder {
 				fields[idx] = fmt.Sprintf("(%s)", stringutils.OrDefault(fields[idx], ".*"))
 			}
 
-			// Eg: Compound fields are augmented and stored as "firstValue\tsecondValue"
-			// To match this, we create the regex "(firstRegex)\t(secondRegex)",
+			// Eg: Compound fields are augmented and stored as "firstValue<CharSep>secondValue"
+			// To match this, we create the regex "(firstRegex)<CharSep>(secondRegex)",
 			// replacing empty component by a ".*"
 			vals = append(vals, fmt.Sprintf("%s%s",
 				search.RegexPrefix,

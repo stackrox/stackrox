@@ -46,6 +46,9 @@ var (
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerUnchangeableFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
+	// PolicyEngineEvaluatorTest enables the policy evaluator test.
+	PolicyEngineEvaluatorTest = registerFeature("Use OPA-based evaluator", "ROX_OPA_BASED_EVALUATOR", true)
+
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", true)
 
