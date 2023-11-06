@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -25,10 +24,9 @@ const (
 )
 
 var (
-	createdTime  = types.TimestampNow()
-	id           = uuid.NewV4().String()
-	scanConfigID = uuid.NewV4().String()
-	checkID      = uuid.NewV4().String()
+	createdTime = types.TimestampNow()
+	id          = uuid.NewV4().String()
+	checkID     = uuid.NewV4().String()
 )
 
 func TestPipeline(t *testing.T) {
@@ -67,13 +65,6 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
 	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	suite.v2ConfigDS.EXPECT().GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, mockSuiteName).ProtoQuery()).Return([]*storage.ComplianceOperatorScanConfigurationV2{
-		{
-			Id:       scanConfigID,
-			ScanName: mockSuiteName,
-		},
-	}, nil)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
 
@@ -221,7 +212,6 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Labels:         nil,
 		Annotations:    nil,
 		CreatedTime:    createdTime,
-		ScanConfigId:   scanConfigID,
 		ScanConfigName: mockSuiteName,
 	}
 }
