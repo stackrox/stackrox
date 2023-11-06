@@ -31,4 +31,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_194_to_m_195_vuln_request_global_scope"
 	_ "github.com/stackrox/rox/migrator/migrations/m_195_to_m_196_vuln_request_users"
 	_ "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_vulnerability_requests_for_legacy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_set_poduid_where_null"
 )
