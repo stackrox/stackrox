@@ -37,7 +37,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, 20 * time.Second, env)
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, 20*time.Second, env)
 	if err != nil {
 		return errors.Wrapf(err, "error resolving cluster ID for %q", clusterIDOrName)
 	}
