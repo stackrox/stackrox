@@ -5,7 +5,6 @@ import pluralize from 'pluralize';
 import { exceptionManagementPath } from 'routePaths';
 import {
     ExceptionExpiry,
-    VulnerabilityDeferralException,
     VulnerabilityException,
     isDeferralException,
     isFalsePositiveException,
@@ -14,7 +13,7 @@ import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 // @TODO: Add tests for these
 
-export type RequestContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS';
+export type RequestContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS' | 'APPROVED_FALSE_POSITIVES';
 
 export type RequestIDTableCellProps = {
     id: VulnerabilityException['id'];
@@ -37,14 +36,19 @@ export type RequestedActionTableCellProps = {
     context: RequestContext;
 };
 
-export function getShouldUseUpdatedExpiry(
-    exception: VulnerabilityDeferralException,
+export function getShouldUseUpdatedRequest(
+    exception: VulnerabilityException,
     context: RequestContext
 ): boolean {
     switch (exception.exceptionStatus) {
         case 'APPROVED_PENDING_UPDATE':
-            if (context === 'PENDING_REQUESTS' && exception.deferralUpdate) {
-                return true;
+            if (context === 'PENDING_REQUESTS') {
+                if (isDeferralException(exception) && exception.deferralUpdate) {
+                    return true;
+                }
+                if (isFalsePositiveException(exception) && exception.falsePositiveUpdate) {
+                    return true;
+                }
             }
             return false;
         default:
@@ -56,10 +60,10 @@ export function getRequestedAction(
     exception: VulnerabilityException,
     context: RequestContext
 ): string {
+    const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
     if (isDeferralException(exception)) {
-        const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(exception, context);
         const exceptionExpiry: ExceptionExpiry =
-            shouldUseUpdatedExpiry && exception.deferralUpdate
+            shouldUseUpdatedRequest && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
                 : exception.deferralRequest.expiry;
         let duration = 'indefinitely';
@@ -74,11 +78,14 @@ export function getRequestedAction(
         } else if (exceptionExpiry.expiryType === 'ANY_CVE_FIXABLE') {
             duration = 'when any fixed';
         }
-        const deferralText = shouldUseUpdatedExpiry ? 'Deferral pending update' : 'Deferred';
+        const deferralText = shouldUseUpdatedRequest ? 'Deferral pending update' : 'Deferred';
         return `${deferralText} (${duration})`;
     }
     if (isFalsePositiveException(exception)) {
-        return 'False positive';
+        const falsePositiveText = shouldUseUpdatedRequest
+            ? 'False positive pending update'
+            : 'False positive';
+        return falsePositiveText;
     }
     return '-';
 }
@@ -101,9 +108,9 @@ export type ExpiresTableCellProps = {
 
 export function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
     if (isDeferralException(exception)) {
-        const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(exception, context);
+        const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
         const exceptionExpiry: ExceptionExpiry =
-            shouldUseUpdatedExpiry && exception.deferralUpdate
+            shouldUseUpdatedRequest && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
                 : exception.deferralRequest.expiry;
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
@@ -128,9 +135,21 @@ export function ScopeTableCell({ scope }: ScopeTableCellProps) {
 }
 
 export type RequestedItemsTableCellProps = {
-    cves: VulnerabilityException['cves'];
+    exception: VulnerabilityException;
+    context: RequestContext;
 };
 
-export function RequestedItemsTableCell({ cves }: RequestedItemsTableCellProps) {
-    return <div>{`${cves.length} ${pluralize('CVE', cves.length)}`}</div>;
+export function RequestedItemsTableCell({ exception, context }: RequestedItemsTableCellProps) {
+    const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
+    let cvesCount = exception.cves.length;
+    if (isDeferralException(exception) && shouldUseUpdatedRequest && exception.deferralUpdate) {
+        cvesCount = exception.deferralUpdate.cves.length;
+    } else if (
+        isFalsePositiveException(exception) &&
+        shouldUseUpdatedRequest &&
+        exception.falsePositiveUpdate
+    ) {
+        cvesCount = exception.falsePositiveUpdate.cves.length;
+    }
+    return <div>{`${cvesCount} ${pluralize('CVE', cvesCount)}`}</div>;
 }
