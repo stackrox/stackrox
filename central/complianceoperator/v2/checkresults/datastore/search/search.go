@@ -3,13 +3,13 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/index"
-	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/index"
+	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Searcher is scan configuration searcher
+// Searcher is searcher for check results
 type Searcher interface {
 	Count(ctx context.Context, query *v1.Query) (int, error)
 }

@@ -44,7 +44,7 @@ type DataStore interface {
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
 	GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
 
-	//Count scan config based on a query
+	// Count scan config based on a query
 	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 }
 

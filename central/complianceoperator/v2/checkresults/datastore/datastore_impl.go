@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,8 +21,9 @@ var (
 )
 
 type datastoreImpl struct {
-	store store.Store
-	db    postgres.DB
+	store    store.Store
+	db       postgres.DB
+	searcher checkResultSearch.Searcher
 }
 
 // ResourceCountByResultByCluster represents shape of the stats query for compliance operator results
@@ -123,6 +125,10 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	}
 
 	return countResults, nil
+}
+
+func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
+	return d.searcher.Count(ctx, q)
 }
 
 func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {

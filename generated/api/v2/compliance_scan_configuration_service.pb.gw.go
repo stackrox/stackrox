@@ -735,7 +735,7 @@ var (
 
 	pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "configurations", "execute", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_GetComplianceScanConfigurationCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "configurations", "count"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_GetComplianceScanConfigurationCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "count", "configurations"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

@@ -93,7 +93,6 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
-
 	s.service = New(s.scanConfigDatastore, s.manager)
 }
 
@@ -215,8 +214,6 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
-	createdTime := timestamp.Now().GogoProtobuf()
-	lastUpdatedTime := timestamp.Now().GogoProtobuf()
 
 	testCases := []struct {
 		desc      string
@@ -226,52 +223,24 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurat
 		{
 			desc:      "Empty query",
 			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
 		},
 		{
-			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
-		},
-		{
-			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
-				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
-			},
-			expectedQ: search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
 		},
 	}
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
 
-			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
-				Return([]*storage.ComplianceOperatorScanConfigurationV2{
-					{
-						Id:                     uuid.NewDummy().String(),
-						ScanName:               "test-scan",
-						AutoApplyRemediations:  false,
-						AutoUpdateRemediations: false,
-						OneTimeScan:            false,
-						Profiles: []*storage.ProfileShim{
-							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
-							},
-						},
-						StrictNodeScan:  false,
-						Schedule:        defaultStorageSchedule,
-						CreatedTime:     createdTime,
-						LastUpdatedTime: lastUpdatedTime,
-						ModifiedBy:      storageRequester,
-					},
-				}, nil).Times(1)
+			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
+				Return(1, nil).Times(1)
 
 			configs, err := s.service.GetComplianceScanConfigurationCount(allAccessContext, tc.query)
 			s.Require().NoError(err)
-			s.Require().Equal(1, configs)
+			s.Require().Equal(int32(1), configs.Count)
 		})
 	}
 

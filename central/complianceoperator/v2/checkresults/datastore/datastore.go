@@ -24,6 +24,8 @@ type DataStore interface {
 
 	// ComplianceCheckResultStats retrieves the scan results stats specified by query
 	ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
+
+	CountCheckResults(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

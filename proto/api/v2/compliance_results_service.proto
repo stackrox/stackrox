@@ -102,6 +102,11 @@ message ListComplianceScanResultsResponse {
     repeated ComplianceScanResult scan_results = 1;
 }
 
+// ComplianceScanResultsCount gives count of scan results
+message CountComplianceScanResults{
+    int32     count=1;
+}
+
 service ComplianceResultsService {
     // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
     // Optional RawQuery query fields can be combined.
@@ -148,6 +153,12 @@ service ComplianceResultsService {
     rpc GetComplianceClusterScanStats (RawQuery) returns (ListComplianceClusterScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/cluster"
+        };
+    }
+
+    rpc GetComplianceScanResultsCount(RawQuery) returns (CountComplianceScanResults){
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/count/results"
         };
     }
 }

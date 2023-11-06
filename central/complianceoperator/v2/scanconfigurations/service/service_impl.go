@@ -29,6 +29,7 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
 			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
+			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfigurationCount",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
