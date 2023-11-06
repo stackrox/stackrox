@@ -1,4 +1,4 @@
-package m196tom197
+package m197tom198
 
 import (
 	"github.com/stackrox/rox/generated/storage"
@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	startSeqNum = 196
+	startSeqNum = 197
 )
 
 var (
