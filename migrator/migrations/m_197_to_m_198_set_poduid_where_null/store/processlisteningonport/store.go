@@ -7,17 +7,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_set_poduid_where_null/schema/listening_endpoints"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"gorm.io/gorm"
 )
 
 const (
@@ -32,7 +30,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ListeningEndpointsSchema
+	schema         = migrationSchema.ListeningEndpointsSchema
 	targetResource = resources.DeploymentExtension
 )
 
@@ -78,12 +76,10 @@ func pkGetter(obj *storeType) string {
 	return obj.GetId()
 }
 
-func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, storeName)
+func metricsSetPostgresOperationDurationTime(_ time.Time, _ ops.Op) {
 }
 
-func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, storeName)
+func metricsSetAcquireDBConnDuration(_ time.Time, _ ops.Op) {
 }
 
 func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
@@ -182,12 +178,6 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 // endregion Helper functions
 
 // region Used for testing
-
-// CreateTableAndNewStore returns a new Store instance for testing.
-func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
-	return New(db)
-}
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {

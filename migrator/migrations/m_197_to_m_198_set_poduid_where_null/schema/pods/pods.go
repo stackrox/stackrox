@@ -27,7 +27,7 @@ var (
 
 	// PodsSchema is the go schema for table `pods`.
 	PodsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.VulnerabilityRequest)(nil)), "vulnerability_requests")
+		schema := walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pod", (*storage.Pod)(nil)))
 		schema.ScopingResource = resources.Deployment
 		return schema
