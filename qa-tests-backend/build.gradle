@@ -17,7 +17,7 @@ repositories {
 
 def grpcVersion = '1.57.2'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '3.24.4'
+def protocVersion = '3.25.0'
 def protobufVersion = '3.25.0'
 def nettyTcNativeVersion = '2.0.61.Final'
 def fabric8Version = '6.8.1'
