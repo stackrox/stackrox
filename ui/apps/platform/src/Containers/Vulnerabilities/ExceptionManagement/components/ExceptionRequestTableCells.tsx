@@ -13,7 +13,11 @@ import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 // @TODO: Add tests for these
 
-export type RequestContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS' | 'APPROVED_FALSE_POSITIVES';
+export type RequestContext =
+    | 'PENDING_REQUESTS'
+    | 'APPROVED_DEFERRALS'
+    | 'APPROVED_FALSE_POSITIVES'
+    | 'DENIED_REQUESTS';
 
 export type RequestIDTableCellProps = {
     id: VulnerabilityException['id'];
