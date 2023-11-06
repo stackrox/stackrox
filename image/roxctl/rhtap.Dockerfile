@@ -12,6 +12,11 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
+RUN echo "Checking that files in git are not modified." && \
+    echo "If the following command fails, it will also print modified files." && \
+    echo "You need to figure the reason and prevent that because otherwise the build results will be inconsistent." && \
+    git status --porcelain | { ! grep '.' >&2 ; }
+
 RUN mkdir -p image/bin
 
 # TODO(ROX-20240): enable non-release development builds.
