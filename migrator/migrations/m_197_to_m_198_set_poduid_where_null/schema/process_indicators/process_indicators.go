@@ -3,7 +3,6 @@
 package schema
 
 import (
-	//"fmt"
 	"reflect"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	//"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -26,22 +24,8 @@ var (
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
 	ProcessIndicatorsSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
-		//schema := GetSchemaForTable("process_indicators")
-		//if schema != nil {
-		//	return schema
-		//}
-		//schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
-		//referencedSchemas := map[string]*walker.Schema{
-		//	"storage.Deployment": DeploymentsSchema,
-		//}
-
-		//schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-		//	return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		//})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
 		schema.ScopingResource = resources.DeploymentExtension
-		//RegisterTable(schema, CreateTableProcessIndicatorsStmt)
-		//mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)
 		return schema
 	}()
 )
