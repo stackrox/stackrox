@@ -66,10 +66,12 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
+	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	suite.v2ConfigDS.EXPECT().GetScanConfigurations(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanName, mockSuiteName).ProtoQuery()).Return([]*storage.ComplianceOperatorScanConfigurationV2{
 		{
-			Id: scanConfigID,
+			Id:       scanConfigID,
+			ScanName: mockSuiteName,
 		},
 	}, nil)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
@@ -86,7 +88,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 						CheckId:      checkID,
 						CheckName:    mockCheckRuleName,
 						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_INCONSISTENT,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
 						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
 						Description:  "this is a test",
 						Instructions: "this is a test",
@@ -108,6 +110,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
+	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
 
@@ -122,7 +125,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 						CheckId:      checkID,
 						CheckName:    mockCheckRuleName,
 						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_INCONSISTENT,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
 						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
 						Description:  "this is a test",
 						Instructions: "this is a test",
@@ -207,18 +210,19 @@ func (suite *PipelineTestSuite) TestRunV1Delete() {
 
 func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
-		Id:           id,
-		CheckId:      checkID,
-		CheckName:    mockCheckRuleName,
-		ClusterId:    clusterID,
-		Status:       storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-		Severity:     storage.RuleSeverity_HIGH_RULE_SEVERITY,
-		Description:  "this is a test",
-		Instructions: "this is a test",
-		Labels:       nil,
-		Annotations:  nil,
-		CreatedTime:  createdTime,
-		ScanConfigId: scanConfigID,
+		Id:             id,
+		CheckId:        checkID,
+		CheckName:      mockCheckRuleName,
+		ClusterId:      clusterID,
+		Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
+		Severity:       storage.RuleSeverity_HIGH_RULE_SEVERITY,
+		Description:    "this is a test",
+		Instructions:   "this is a test",
+		Labels:         nil,
+		Annotations:    nil,
+		CreatedTime:    createdTime,
+		ScanConfigId:   scanConfigID,
+		ScanConfigName: mockSuiteName,
 	}
 }
 

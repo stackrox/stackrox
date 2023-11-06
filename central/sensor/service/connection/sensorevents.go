@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -106,11 +107,28 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 		// NodeInventory because the two should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
+	case *central.SensorEvent_ComplianceOperatorResultV2:
+		if !features.ComplianceEnhancements.Enabled() {
+			log.Errorf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			return
+		}
+		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
+		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
+		// have been avoided by sending both messages from sensor during the transition, but
+		// that seemed like a lot of extra traffic.  Could have also been simpler of the reconciliationMap
+		// simply used a key instead of taking in a type and using reflection to get the string to use as the key.
+		// Leaving the key defintion to the caller may have simplified this as well as we could have simply used
+		// workerType when adding to the map.  This essentially matches how the sensor side is implemented.
+		workerType = reflectutils.Type(event.Resource)
+		if !s.reconciliationMap.IsClosed() {
+			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorResult{}, event.Id)
+		}
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
 			return
 		}
+
 		// Default worker type is the event type.
 		workerType = reflectutils.Type(event.Resource)
 		if !s.reconciliationMap.IsClosed() {

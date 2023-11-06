@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	"github.com/stackrox/rox/central/convert/internaltov1storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -18,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -79,11 +79,9 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	if features.ComplianceEnhancements.Enabled() {
-		// Due to forthcoming historical result requirements, the removal of V2 results will occur through
-		// pruning and retention policies as opposed to reconciliation.
-		return nil
-	}
+	// Due to forthcoming historical result requirements, the removal of V2 results will occur through
+	// pruning and retention policies as opposed to reconciliation.  However, during the transition V1 compliance
+	// must remain feature complete so reconciliation will always reconcile V1
 
 	existingIDs := set.NewStringSet()
 	walkFn := func() error {
@@ -153,27 +151,24 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
+		// V1 still needs to function so remove it too
+		if err := s.datastore.Delete(ctx, event.GetId()); err != nil {
+			return err
+		}
+
 		// use V2 datastore
 		return s.v2Datastore.DeleteResult(ctx, event.GetId())
 	default:
-		convertedResult, err := s.convertSensorMsgToV2Storage(ctx, checkResult, clusterID)
-		if err != nil {
+		// Still need to store the V1 version to maintain both
+		if err := s.datastore.Upsert(ctx, internaltov1storage.ConvertInternalToV1Storage(checkResult)); err != nil {
 			return err
 		}
-		return s.v2Datastore.UpsertResult(ctx, convertedResult)
+
+		return s.v2Datastore.UpsertResult(ctx, s.convertSensorMsgToV2Storage(ctx, checkResult, clusterID))
 	}
 }
 
-func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) (*storage.ComplianceOperatorCheckResultV2, error) {
-	scanConfigs, err := s.scanConfigDatastore.GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, sensorData.GetSuiteName()).ProtoQuery())
-	if err != nil {
-		return nil, err
-	}
-	if len(scanConfigs) != 1 {
-		return nil, errors.Errorf("Unable to find matching scan configuration for scan %q", sensorData.GetSuiteName())
-	}
-
+func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             sensorData.GetId(),
 		CheckId:        sensorData.GetCheckId(),
@@ -186,7 +181,6 @@ func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorDa
 		Labels:         sensorData.GetLabels(),
 		Annotations:    sensorData.GetAnnotations(),
 		CreatedTime:    sensorData.GetCreatedTime(),
-		ScanConfigId:   scanConfigs[0].GetId(),
-		ScanConfigName: scanConfigs[0].GetScanName(),
-	}, nil
+		ScanConfigName: sensorData.GetSuiteName(),
+	}
 }
