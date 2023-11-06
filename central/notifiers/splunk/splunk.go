@@ -231,10 +231,7 @@ func init() {
 
 func newSplunk(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*splunk, error) {
 	conf := notifier.GetSplunk()
-	if conf == nil {
-		return nil, errors.New("Splunk configuration required")
-	}
-	if err := validate(conf); err != nil {
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 	url := urlfmt.FormatURL(conf.GetHttpEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
@@ -261,9 +258,13 @@ func newSplunk(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, 
 	}, nil
 }
 
-func validate(conf *storage.Splunk) error {
+// Validate Splunk notifier
+func Validate(conf *storage.Splunk, validateSecret bool) error {
+	if conf == nil {
+		return errors.New("Splunk configuration required")
+	}
 	errorList := errorhelpers.NewErrorList("Splunk config validation")
-	if len(conf.HttpToken) == 0 {
+	if validateSecret && len(conf.HttpToken) == 0 {
 		errorList.AddString("Splunk HTTP Event Collector(HEC) token must be specified")
 	}
 	if len(conf.HttpEndpoint) == 0 {
