@@ -12,8 +12,8 @@ GET_GITHUB_RELEASE_FN = get_github_release() { \
 		for i in $$(seq $$attempts); do \
 			curl --silent --show-error --fail --location --output $${1} $${2} && break ;\
 			[ $$i -eq $$attempts ] && exit 1; \
-			echo "Retrying after $$(i*i) seconds..."; \
-			sleep $$(i*i); \
+			echo "Retrying after $$((i*i)) seconds..."; \
+			sleep $$((i*i)); \
 		done ;\
 		[[ "$$(uname -s)" != "Darwin" ]] || xattr -c $${1} ;\
 		chmod +x $${1} ;\
