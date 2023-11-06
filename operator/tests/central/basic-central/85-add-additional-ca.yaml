@@ -1,0 +1,9 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  tls:
+    additionalCAs:
+    - name: foo.pem
+      content: some cert content
