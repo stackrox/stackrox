@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	v1ResultMocks "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
-	v2ConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -38,7 +37,6 @@ type PipelineTestSuite struct {
 
 	v1ResultDS *v1ResultMocks.MockDataStore
 	v2ResultDS *v2ResultMocks.MockDataStore
-	v2ConfigDS *v2ConfigMocks.MockDataStore
 	mockCtrl   *gomock.Controller
 }
 
@@ -54,7 +52,6 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.v1ResultDS = v1ResultMocks.NewMockDataStore(suite.mockCtrl)
 	suite.v2ResultDS = v2ResultMocks.NewMockDataStore(suite.mockCtrl)
-	suite.v2ConfigDS = v2ConfigMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -66,7 +63,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 
 	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -103,7 +100,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 
 	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -139,7 +136,7 @@ func (suite *PipelineTestSuite) TestRunV1Create() {
 	ctx := context.Background()
 
 	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -171,7 +168,7 @@ func (suite *PipelineTestSuite) TestRunV1Delete() {
 	ctx := context.Background()
 
 	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{

@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov1storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -53,25 +52,23 @@ func GetPipeline() pipeline.Fragment {
 	// Central may have the flag on, but sensor may not.  So the pipeline
 	// needs to handle both old and new results in that case.
 	if features.ComplianceEnhancements.Enabled() {
-		return NewPipeline(datastore.Singleton(), v2.Singleton(), scanConfigDS.Singleton())
+		return NewPipeline(datastore.Singleton(), v2.Singleton())
 	}
 
-	return NewPipeline(datastore.Singleton(), nil, nil)
+	return NewPipeline(datastore.Singleton(), nil)
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(datastore datastore.DataStore, v2Datastore v2.DataStore, scanConfigDatastore scanConfigDS.DataStore) pipeline.Fragment {
+func NewPipeline(datastore datastore.DataStore, v2Datastore v2.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		datastore:           datastore,
-		v2Datastore:         v2Datastore,
-		scanConfigDatastore: scanConfigDatastore,
+		datastore:   datastore,
+		v2Datastore: v2Datastore,
 	}
 }
 
 type pipelineImpl struct {
-	datastore           datastore.DataStore
-	v2Datastore         v2.DataStore
-	scanConfigDatastore scanConfigDS.DataStore
+	datastore   datastore.DataStore
+	v2Datastore v2.DataStore
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -164,11 +161,11 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 			return err
 		}
 
-		return s.v2Datastore.UpsertResult(ctx, s.convertSensorMsgToV2Storage(ctx, checkResult, clusterID))
+		return s.v2Datastore.UpsertResult(ctx, s.convertSensorMsgToV2Storage(checkResult, clusterID))
 	}
 }
 
-func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) *storage.ComplianceOperatorCheckResultV2 {
+func (s *pipelineImpl) convertSensorMsgToV2Storage(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
 		Id:             sensorData.GetId(),
 		CheckId:        sensorData.GetCheckId(),
