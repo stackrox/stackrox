@@ -321,7 +321,7 @@ func convertVulnerabilityRequestFromProto(obj *storage.VulnerabilityRequest) (*s
                 LastUpdated:                       pgutils.NilOrTime(obj.GetLastUpdated()),
                 DeferralReqExpiryExpiresWhenFixed: obj.GetDeferralReq().GetExpiry().GetExpiresWhenFixed(),
                 DeferralReqExpiryExpiresOn:        pgutils.NilOrTime(obj.GetDeferralReq().GetExpiry().GetExpiresOn()),
-                CvesIds:                           pq.Array(obj.GetCves().GetIds()).(*pq.StringArray),
+                CvesIds:                           obj.GetCves().GetIds(),
                 Serialized:                        serialized,
         }
         return model, nil

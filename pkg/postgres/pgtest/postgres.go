@@ -13,9 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"k8s.io/utils/env"
-
-	// Ignore blank import warning as this is for test only
-	_ "github.com/lib/pq"
 )
 
 // TestPostgres is a Postgres instance used in tests

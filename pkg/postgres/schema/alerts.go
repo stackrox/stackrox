@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -50,9 +49,9 @@ type Alerts struct {
 	PolicyName               string                              `gorm:"column:policy_name;type:varchar"`
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`
-	PolicyCategories         *pq.StringArray                     `gorm:"column:policy_categories;type:text[]"`
+	PolicyCategories         []string                            `gorm:"column:policy_categories;type:text[]"`
 	PolicySeverity           storage.Severity                    `gorm:"column:policy_severity;type:integer"`
-	PolicyEnforcementActions *pq.Int32Array                      `gorm:"column:policy_enforcementactions;type:int[]"`
+	PolicyEnforcementActions []int32                             `gorm:"column:policy_enforcementactions;type:int[]"`
 	PolicyLastUpdated        *time.Time                          `gorm:"column:policy_lastupdated;type:timestamp"`
 	PolicySORTName           string                              `gorm:"column:policy_sortname;type:varchar"`
 	PolicySORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`

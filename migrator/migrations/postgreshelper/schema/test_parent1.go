@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -56,7 +55,7 @@ type TestParent1 struct {
 	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
 	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
-	StringSlice         *pq.StringArray  `gorm:"column:stringslice;type:text[]"`
+	StringSlice         []string         `gorm:"column:stringslice;type:text[]"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

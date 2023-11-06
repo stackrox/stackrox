@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -55,13 +54,13 @@ const (
 
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
 type ComplianceOperatorProfileV2 struct {
-	ID          string          `gorm:"column:id;type:varchar;primaryKey"`
-	Name        string          `gorm:"column:name;type:varchar;uniqueIndex:rule_unique_indicator"`
-	Version     string          `gorm:"column:version;type:varchar;uniqueIndex:rule_unique_indicator"`
-	ProductType *pq.StringArray `gorm:"column:producttype;type:text[]"`
-	Standard    string          `gorm:"column:standard;type:varchar"`
-	Product     string          `gorm:"column:product;type:varchar"`
-	Serialized  []byte          `gorm:"column:serialized;type:bytea"`
+	ID          string   `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string   `gorm:"column:name;type:varchar;uniqueIndex:rule_unique_indicator"`
+	Version     string   `gorm:"column:version;type:varchar;uniqueIndex:rule_unique_indicator"`
+	ProductType []string `gorm:"column:producttype;type:text[]"`
+	Standard    string   `gorm:"column:standard;type:varchar"`
+	Product     string   `gorm:"column:product;type:varchar"`
+	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.

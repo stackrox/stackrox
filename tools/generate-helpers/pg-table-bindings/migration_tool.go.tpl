@@ -2,15 +2,11 @@
     {{- $field := . }}
     {{- if eq $field.DataType "datetime" -}}
     pgutils.NilOrTime({{$field.Getter "obj"}}),
-    {{- else -}}{{if eq $field.DataType "stringarray" -}}
-    pq.Array({{$field.Getter "obj"}}).(*pq.StringArray),
     {{- else -}}{{if eq $field.DataType "enumarray" -}}
-    pq.Array(pgutils.ConvertEnumSliceToIntArray({{$field.Getter "obj"}})).(*pq.Int32Array),
-    {{- else -}}{{if eq $field.DataType "intarray" -}}
-    pq.Array({{$field.Getter "obj"}}).(*pq.Int32Array),
+    pgutils.ConvertEnumSliceToIntArray({{$field.Getter "obj"}}),
     {{- else -}}
     {{$field.Getter "obj"}},
-    {{- end }}{{end}}{{end}}{{end -}}
+    {{- end}}{{end -}}
 {{- end}}
 
 {{- define "convertProtoToModel" }}
@@ -49,7 +45,6 @@
 package schema
 
 import (
-	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )

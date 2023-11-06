@@ -65,9 +65,9 @@ func GetToGormModelType(typ string, dataType DataType) string {
 	case DateTime:
 		modelType = "*time.Time"
 	case StringArray:
-		modelType = "*pq.StringArray"
+		modelType = "[]string"
 	case EnumArray, IntArray:
-		modelType = "*pq.Int32Array"
+		modelType = "[]int32"
 	default:
 		modelType = typ
 	}

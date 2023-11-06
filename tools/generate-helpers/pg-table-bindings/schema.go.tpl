@@ -9,7 +9,6 @@ import (
     "reflect"
     "time"
 
-    "github.com/lib/pq"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     {{- if .FeatureFlag }}

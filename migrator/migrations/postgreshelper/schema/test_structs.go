@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -47,7 +46,7 @@ const (
 type TestStructs struct {
 	Key1              string                  `gorm:"column:key1;type:varchar;primaryKey"`
 	Key2              string                  `gorm:"column:key2;type:varchar"`
-	StringSlice       *pq.StringArray         `gorm:"column:stringslice;type:text[]"`
+	StringSlice       []string                `gorm:"column:stringslice;type:text[]"`
 	Bool              bool                    `gorm:"column:bool;type:bool"`
 	Uint64            uint64                  `gorm:"column:uint64;type:bigint"`
 	Int64             int64                   `gorm:"column:int64;type:bigint"`
@@ -55,9 +54,9 @@ type TestStructs struct {
 	Labels            map[string]string       `gorm:"column:labels;type:jsonb"`
 	Timestamp         *time.Time              `gorm:"column:timestamp;type:timestamp"`
 	Enum              storage.TestStruct_Enum `gorm:"column:enum;type:integer"`
-	Enums             *pq.Int32Array          `gorm:"column:enums;type:int[]"`
+	Enums             []int32                 `gorm:"column:enums;type:int[]"`
 	String            string                  `gorm:"column:string_;type:varchar"`
-	Int32Slice        *pq.Int32Array          `gorm:"column:int32slice;type:int[]"`
+	Int32Slice        []int32                 `gorm:"column:int32slice;type:int[]"`
 	OneofnestedNested string                  `gorm:"column:oneofnested_nested;type:varchar"`
 	Serialized        []byte                  `gorm:"column:serialized;type:bytea"`
 }

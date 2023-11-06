@@ -2,7 +2,7 @@
 package schema
 
 import (
-	"github.com/lib/pq"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -18,10 +18,10 @@ func ConvertPolicyFromProto(obj *storage.Policy) (*Policies, error) {
 		Name:               obj.GetName(),
 		Description:        obj.GetDescription(),
 		Disabled:           obj.GetDisabled(),
-		Categories:         pq.Array(obj.GetCategories()).(*pq.StringArray),
-		LifecycleStages:    pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetLifecycleStages())).(*pq.Int32Array),
+		Categories:         obj.GetCategories(),
+		LifecycleStages:    pgutils.ConvertEnumSliceToIntArray(obj.GetLifecycleStages()),
 		Severity:           obj.GetSeverity(),
-		EnforcementActions: pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnforcementActions())).(*pq.Int32Array),
+		EnforcementActions: pgutils.ConvertEnumSliceToIntArray(obj.GetEnforcementActions()),
 		LastUpdated:        pgutils.NilOrTime(obj.GetLastUpdated()),
 		SORTName:           obj.GetSORTName(),
 		SORTLifecycleStage: obj.GetSORTLifecycleStage(),

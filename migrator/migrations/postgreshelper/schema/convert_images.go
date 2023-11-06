@@ -2,7 +2,7 @@
 package schema
 
 import (
-	"github.com/lib/pq"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -21,9 +21,9 @@ func ConvertImageFromProto(obj *storage.Image) (*Images, error) {
 		NameFullName:         obj.GetName().GetFullName(),
 		MetadataV1Created:    pgutils.NilOrTime(obj.GetMetadata().GetV1().GetCreated()),
 		MetadataV1User:       obj.GetMetadata().GetV1().GetUser(),
-		MetadataV1Command:    pq.Array(obj.GetMetadata().GetV1().GetCommand()).(*pq.StringArray),
-		MetadataV1Entrypoint: pq.Array(obj.GetMetadata().GetV1().GetEntrypoint()).(*pq.StringArray),
-		MetadataV1Volumes:    pq.Array(obj.GetMetadata().GetV1().GetVolumes()).(*pq.StringArray),
+		MetadataV1Command:    obj.GetMetadata().GetV1().GetCommand(),
+		MetadataV1Entrypoint: obj.GetMetadata().GetV1().GetEntrypoint(),
+		MetadataV1Volumes:    obj.GetMetadata().GetV1().GetVolumes(),
 		MetadataV1Labels:     obj.GetMetadata().GetV1().GetLabels(),
 		ScanScanTime:         pgutils.NilOrTime(obj.GetScan().GetScanTime()),
 		ScanOperatingSystem:  obj.GetScan().GetOperatingSystem(),

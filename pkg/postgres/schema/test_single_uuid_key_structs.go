@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -47,7 +46,7 @@ const (
 type TestSingleUUIDKeyStructs struct {
 	Key         string                               `gorm:"column:key;type:uuid;primaryKey;index:testsingleuuidkeystructs_key,type:hash"`
 	Name        string                               `gorm:"column:name;type:varchar;unique"`
-	StringSlice *pq.StringArray                      `gorm:"column:stringslice;type:text[]"`
+	StringSlice []string                             `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                                 `gorm:"column:bool;type:bool"`
 	Uint64      uint64                               `gorm:"column:uint64;type:bigint"`
 	Int64       int64                                `gorm:"column:int64;type:bigint"`
@@ -55,6 +54,6 @@ type TestSingleUUIDKeyStructs struct {
 	Labels      map[string]string                    `gorm:"column:labels;type:jsonb"`
 	Timestamp   *time.Time                           `gorm:"column:timestamp;type:timestamp"`
 	Enum        storage.TestSingleUUIDKeyStruct_Enum `gorm:"column:enum;type:integer"`
-	Enums       *pq.Int32Array                       `gorm:"column:enums;type:int[]"`
+	Enums       []int32                              `gorm:"column:enums;type:int[]"`
 	Serialized  []byte                               `gorm:"column:serialized;type:bytea"`
 }

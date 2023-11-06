@@ -2,7 +2,6 @@
 package schema
 
 import (
-	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -16,7 +15,7 @@ func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*Tes
 	model := &TestSingleKeyStructs{
 		Key:         obj.GetKey(),
 		Name:        obj.GetName(),
-		StringSlice: pq.Array(obj.GetStringSlice()).(*pq.StringArray),
+		StringSlice: obj.GetStringSlice(),
 		Bool:        obj.GetBool(),
 		Uint64:      obj.GetUint64(),
 		Int64:       obj.GetInt64(),
@@ -24,7 +23,7 @@ func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*Tes
 		Labels:      obj.GetLabels(),
 		Timestamp:   pgutils.NilOrTime(obj.GetTimestamp()),
 		Enum:        obj.GetEnum(),
-		Enums:       pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
+		Enums:       pgutils.ConvertEnumSliceToIntArray(obj.GetEnums()),
 		Serialized:  serialized,
 	}
 	return model, nil
