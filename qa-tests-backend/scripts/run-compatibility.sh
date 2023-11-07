@@ -22,7 +22,7 @@ set -euo pipefail
 
 shorten_tag() {
     if [[ "$#" -ne 1 ]]; then
-        echo "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
+        die "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
     fi
 
     long_tag=$1
@@ -32,7 +32,7 @@ shorten_tag() {
     if [[ $long_tag =~ $short_tag_regex ]]; then
         echo "${BASH_REMATCH[1]}"
     else
-        echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        die "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
     fi
 }
 
