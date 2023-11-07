@@ -12,16 +12,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# When dependencies prefetch is on, RHTAP modifies this Dockerfile which would fail the following check.
-# This should stop happening after https://issues.redhat.com/browse/STONEBLD-1847
-# Since changes to the Dockerfile aren't needed (in its copy inside the build context), we revert changes.
-# This is only done when in RHTAP which is checked by the presence of cachi2.env file in absence of anything better.
-RUN if [[ -f /cachi2/cachi2.env ]]; then git restore image/roxctl/rhtap.Dockerfile; fi
-
-RUN echo "Checking that files in git are not modified." && \
-    echo "If the following command fails, it will also print modified files." && \
-    echo "You need to figure the reason and prevent that because otherwise the build results will be inconsistent." && \
-    git status --porcelain | { ! grep '.' >&2 ; }
+RUN scripts/rhtap/fail-build-if-git-is-dirty.sh
 
 RUN mkdir -p image/bin
 
