@@ -29,8 +29,8 @@ endif
 
 GOOS := $(HOST_OS)
 
-GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
-EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
+GO_VERSION          = $(firstword $(subst go version ,,$(shell go version)))
+EXPECTED_GO_VERSION = $(shell cat ../EXPECTED_GO_VERSION)
 
 GO_BUILD_FLAGS = CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
@@ -51,7 +51,7 @@ all: images
 ###############################################################
 
 OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN): | scanner-go-check-ver
+$(OSSLS_BIN): | build-go-check-ver
 	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
 
@@ -69,24 +69,25 @@ tag:
 
 build-cmd  = $(GO_BUILD_CMD)
 build-d   := bin
-build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
 
+build-t      := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
 build-deps-t := deps
 
 .PHONY: build
 build: $(build-t)
 
-.PHONY: $(build-t)
-$(build-t): deps
-	@echo "+ $@"
-	$(build-cmd) -o $@ ./cmd/$(@F)
-
 .PHONY: clean-build
 clean-build:
 	@echo "+ $@"
 	$(SILENT)rm -rf bin/
+	$(SILENT)rm -f $(build-deps-t)
 
-$(build-deps-t): ../go.mod | scanner-go-check-ver
+.PHONY: $(build-t)
+$(build-t): $(build-deps-t)
+	@echo "+ $@"
+	$(build-cmd) -o $@ ./cmd/$(@F)
+
+$(build-deps-t): ../go.mod | build-go-check-ver
 	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
@@ -98,8 +99,8 @@ endif
 	$(SILENT)go mod verify
 	$(SILENT)touch $@
 
-.PHONY: scanner-go-check-ver
-scanner-go-check-ver:
+.PHONY: build-go-check-ver
+build-go-check-ver:
 ifdef CI
 	@echo "+ $@"
 ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
@@ -144,13 +145,13 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 ###########
 
 .PHONY: ossls-notice-no-download
-ossls-notice-no-download: deps
+ossls-notice-no-download: $(build-deps-t)
 	@echo "+ $@"
 	$(SILENT)ossls version
 	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
 
 .PHONY: ossls-notice
-ossls-notice: deps $(OSSLS_BIN)
+ossls-notice: $(build-deps-t) $(OSSLS_BIN)
 	@echo "+ $@"
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
@@ -325,7 +326,7 @@ e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
 	    --set image.tag="$(e2e-image-tag)"
 
 .PHONY: e2e-run
-e2e-run: deps
+e2e-run: $(build-deps-t)
 	@echo "+ $@"
 	$(SILENT)$(GO_TEST_CMD) -tags $(e2e-go-tag) -count=1 -timeout=$(e2e-timeout) -v ./$(e2e-d)/...
 
@@ -358,7 +359,7 @@ $(e2e-files-d)/ca.pem: $(certs-d)/ca/root.pem
 ###########
 
 .PHONY: clean
-clean: clean-image clean-gobin clean-deps clean-e2e clean-certs clean-build
+clean: clean-image clean-gobin clean-e2e clean-certs clean-build
 	@echo "+ $@"
 
 .PHONY: clean-image
@@ -370,8 +371,3 @@ clean-image:
 clean-gobin:
 	@echo "+ $@"
 	$(SILENT)rm -rf $(GOBIN)
-
-.PHONY: clean-deps
-clean-deps:
-	@echo "+ $@"
-	$(SILENT)rm -f deps
