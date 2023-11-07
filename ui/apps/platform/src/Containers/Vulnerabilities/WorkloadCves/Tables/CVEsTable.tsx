@@ -38,9 +38,14 @@ import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelec
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const cveListQuery = gql`
-    query getImageCVEList($query: String, $pagination: Pagination) {
+    query getImageCVEList(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -66,6 +71,7 @@ export const cveListQuery = gql`
                 cvss
                 scoreVersion
             }
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;
@@ -93,6 +99,7 @@ type ImageCVE = {
         cvss: number;
         scoreVersion: string;
     }[];
+    pendingExceptionCount: number;
 };
 
 export type CVEsTableProps = {
@@ -176,6 +183,7 @@ function CVEsTable({
                         affectedImageCount,
                         firstDiscoveredInSystem,
                         distroTuples,
+                        pendingExceptionCount,
                     },
                     rowIndex
                 ) => {
@@ -215,7 +223,13 @@ function CVEsTable({
                                     />
                                 )}
                                 <Td dataLabel="CVE">
-                                    <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={pendingExceptionCount > 0}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    >
+                                        <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                    </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
