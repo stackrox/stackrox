@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/vulnerabilityrequest/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -30,6 +31,7 @@ func init() {
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"discoveredAtImage(query: String): Time",
 				"effectiveVulnerabilityRequest: VulnerabilityRequest",
+				"exceptionCount(requestStatus: [String]): Int!",
 				"imageComponentCount(query: String): Int!",
 				"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 				"imageCount(query: String): Int!",
@@ -54,6 +56,7 @@ type ImageVulnerabilityResolver interface {
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
+	ExceptionCount(ctx context.Context, args struct{ RequestStatus *[]*string }) (int32, error)
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
@@ -630,7 +633,41 @@ func (resolver *imageCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *
 	return nil
 }
 
-// Follows are functions that return information that is nested in the CVEInfo object
+func (resolver *imageCVEResolver) ExceptionCount(ctx context.Context, args struct{ RequestStatus *[]*string }) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ExceptionCount")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	var requestStatusArr []string
+	if args.RequestStatus != nil {
+		for _, status := range *args.RequestStatus {
+			if status != nil {
+				requestStatusArr = append(requestStatusArr, *status)
+			}
+		}
+	}
+	filters := exceptionQueryFilters{
+		cves:          []string{resolver.data.GetCveBaseInfo().GetCve()},
+		requestStates: requestStatusArr,
+	}
+	q, err := unExpiredExceptionQuery(resolver.ctx, filters)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := resolver.root.vulnReqStore.Count(ctx, q)
+	if err != nil {
+		if errors.Is(err, errox.NotAuthorized) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return int32(count), nil
+}
+
+// Following are the functions that return information that is nested in the CVEInfo object
 // or are convenience functions to allow time for UI to migrate to new naming schemes
 
 func (resolver *imageCVEResolver) ID(_ context.Context) graphql.ID {

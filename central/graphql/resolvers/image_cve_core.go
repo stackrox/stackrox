@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -36,6 +37,7 @@ func init() {
 				"deployments(pagination: Pagination): [Deployment!]!",
 				"distroTuples: [ImageVulnerability!]!",
 				"firstDiscoveredInSystem: Time",
+				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
 			}),
@@ -185,6 +187,40 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 	return &graphql.Time{
 		Time: *ts,
 	}
+}
+
+func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args struct{ RequestStatus *[]*string }) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ExceptionCount")
+
+	if resolver.ctx == nil {
+		resolver.ctx = ctx
+	}
+
+	var requestStatusArr []string
+	if args.RequestStatus != nil {
+		for _, status := range *args.RequestStatus {
+			if status != nil {
+				requestStatusArr = append(requestStatusArr, *status)
+			}
+		}
+	}
+	filters := exceptionQueryFilters{
+		cves:          []string{resolver.data.GetCVE()},
+		requestStates: requestStatusArr,
+	}
+	q, err := unExpiredExceptionQuery(resolver.ctx, filters)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := resolver.root.vulnReqStore.Count(ctx, q)
+	if err != nil {
+		if errors.Is(err, errox.NotAuthorized) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return int32(count), nil
 }
 
 func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
