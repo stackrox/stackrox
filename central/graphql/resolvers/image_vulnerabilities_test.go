@@ -9,7 +9,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -54,6 +57,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 		CreateTestImageCVEDatastore(s.T(), s.testDB),
 		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
+		TestVulnReqDatastore(s.T(), s.testDB),
 	)
 	s.resolver = resolver
 
@@ -62,6 +66,32 @@ func (s *GraphQLImageVulnerabilityTestSuite) SetupSuite() {
 	for _, image := range testImages {
 		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, image)
 		s.NoError(err)
+	}
+
+	// Add test vulnerability exceptions
+	for _, vulnReq := range []*storage.VulnerabilityRequest{
+		fixtures.GetImageScopeDeferralRequest("reg1", "img1", "tag1", "cve-2018-1"),
+		func() *storage.VulnerabilityRequest {
+			req := fixtures.GetImageScopeDeferralRequest("reg1", "img1", ".*", "cve-2018-1")
+			req.Status = storage.RequestStatus_APPROVED
+			return req
+		}(),
+		fixtures.GetImageScopeDeferralRequest("reg2", "img2", ".*", "cve-2018-1"),
+		func() *storage.VulnerabilityRequest {
+			req := fixtures.GetImageScopeDeferralRequest("reg2", "img2", ".*", "cve-2017-2")
+			req.Status = storage.RequestStatus_APPROVED_PENDING_UPDATE
+			return req
+		}(),
+		fixtures.GetImageScopeDeferralRequest("reg2", "img2", "", "cve-2017-1"),
+		fixtures.GetGlobalDeferralRequestV2("cve-2017-2"),
+		fixtures.GetGlobalFPRequestV2("cve-2019-1"),
+		func() *storage.VulnerabilityRequest {
+			req := fixtures.GetGlobalFPRequestV2("cve-2019-2")
+			req.Status = storage.RequestStatus_APPROVED
+			return req
+		}(),
+	} {
+		s.NoError(s.resolver.vulnReqStore.AddRequest(s.ctx, vulnReq))
 	}
 }
 
@@ -329,6 +359,294 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityImageComponen
 	count, err = vuln.ImageComponentCount(ctx, RawQuery{})
 	s.NoError(err)
 	s.Equal(int32(len(comps)), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountAll() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	args := struct {
+		RequestStatus *[]*string
+	}{}
+
+	// Deferral:
+	// - sha1 all tags; sha1 one tag
+	// - sha2 one tag
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(3), count)
+
+	// Deferral:
+	// - global
+	// - sha2 all tags
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(2), count)
+
+	// False-positive:
+	// - global
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountPending() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	// Deferral:
+	// - sha1 one tag
+	// - sha2 one tag
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(2), count)
+
+	// Deferral:
+	// - global
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	// False-positive:
+	// - global
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountApproved() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	// Deferral:
+	// - sha1 all tags
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountPendingUpdate() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+
+	// Deferral:
+	// - sha2 all tags
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountAllWithImageScope() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha1",
+		Level: v1.SearchCategory_IMAGES,
+	})
+	args := struct {
+		RequestStatus *[]*string
+	}{}
+
+	// Deferral:
+	// - sha1 all tags; sha1 one tag
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(2), count)
+
+	// Deferral:
+	// - global (covers the sha1 image)
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	// False-positive:
+	// - global (covers the sha1 image)
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountPendingWithImageScope() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_PENDING.String())}
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha1",
+		Level: v1.SearchCategory_IMAGES,
+	})
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	// Deferral:
+	// - sha1 one tag
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	// Deferral:
+	// - global (covers the sha1 image)
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	// False-positive:
+	// - global (covers the sha1 image)
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountApprovedWithImageScope() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_APPROVED.String())}
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha1",
+		Level: v1.SearchCategory_IMAGES,
+	})
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	// Deferral:
+	// - sha1 all tags (covers this specific tag)
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2018-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+
+	// False-positive:
+	// global (covers this specific image)
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-2#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountPendingUpdateWithImageScope() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	status := []*string{pointers.String(storage.RequestStatus_APPROVED_PENDING_UPDATE.String())}
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha2",
+		Level: v1.SearchCategory_IMAGES,
+	})
+	args := struct {
+		RequestStatus *[]*string
+	}{
+		RequestStatus: &status,
+	}
+
+	// sha2 all tags
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2017-2#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2019-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+}
+
+func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCountTagless() {
+	taglessImage := testImages()[1]
+	taglessImage.Id = "sha3"
+	taglessImage.Name.Tag = ""
+	err := s.resolver.ImageDataStore.UpsertImage(s.ctx, taglessImage)
+	s.NoError(err)
+	// Revert the upsert so that other tests are not affected.
+	defer func() {
+		s.NoError(s.resolver.ImageDataStore.DeleteImages(s.ctx, "sha3"))
+	}()
+
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	args := struct {
+		RequestStatus *[]*string
+	}{}
+
+	// Deferral:
+	// - sha3 tagless
+	vuln := s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
+	count, err := vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
+
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha1",
+		Level: v1.SearchCategory_IMAGES,
+	})
+
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(0), count)
+
+	ctx = SetAuthorizerOverride(s.ctx, allow.Anonymous())
+	ctx = scoped.Context(ctx, scoped.Scope{
+		ID:    "sha3",
+		Level: v1.SearchCategory_IMAGES,
+	})
+
+	// Deferral:
+	// - sha3 tagless
+	vuln = s.getImageVulnerabilityResolver(ctx, "cve-2017-1#")
+	count, err = vuln.ExceptionCount(ctx, args)
+	s.NoError(err)
+	s.Equal(int32(1), count)
 }
 
 func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
