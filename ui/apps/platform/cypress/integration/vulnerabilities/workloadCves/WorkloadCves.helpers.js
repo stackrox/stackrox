@@ -54,6 +54,7 @@ export function selectResourceFilterType(entityType) {
  * @param {string} value
  */
 export function typeAndSelectResourceFilterValue(entityType, value) {
+    selectResourceFilterType(entityType);
     cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
     cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
     cy.get(selectors.searchOptionsValueMenuItem(entityType))
@@ -68,6 +69,7 @@ export function typeAndSelectResourceFilterValue(entityType, value) {
  * @param {string} value
  */
 export function typeAndSelectCustomResourceFilterValue(entityType, value) {
+    selectResourceFilterType(entityType);
     cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
     cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
     cy.get(selectors.searchOptionsValueMenuItem(entityType)).contains(`Add "${value}"`).click();

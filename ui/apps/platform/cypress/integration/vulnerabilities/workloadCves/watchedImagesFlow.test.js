@@ -7,6 +7,7 @@ import {
     selectUnwatchedImageTextFromTable,
     watchImageFlowFromModal,
     unwatchImageFromModal,
+    typeAndSelectCustomResourceFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
@@ -35,6 +36,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
@@ -54,6 +56,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 // Open the modal and watch the image
@@ -82,6 +85,7 @@ describe('Workload CVE watched images flow', () => {
     it('should not allow adding a blank or invalid image name to the watch list', () => {
         visitWorkloadCveOverview();
         selectEntityTab('Image');
+        typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
         cy.get(selectors.manageWatchedImagesButton).click();
 
@@ -114,6 +118,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
