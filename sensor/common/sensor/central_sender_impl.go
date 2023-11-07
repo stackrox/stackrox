@@ -18,8 +18,7 @@ type centralSenderImpl struct {
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
 	initialDeduperState map[deduperkey.Key]uint64
-	observationSet      *deduper.ObservationSet
-	onSync              func()
+	observationSet      *deduper.ClosableSet
 }
 
 func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
@@ -33,10 +32,6 @@ func (s *centralSenderImpl) Stop(_ error) {
 
 func (s *centralSenderImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return s.stopper.Client().Stopped()
-}
-
-func (s *centralSenderImpl) OnSync(fn func()) {
-	s.onSync = fn
 }
 
 func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessage, to chan<- *message.ExpiringMessage) {

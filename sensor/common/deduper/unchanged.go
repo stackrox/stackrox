@@ -7,26 +7,26 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// ObservationSet holds IDs that were seen during the initial sensor sync.
-type ObservationSet struct {
+// ClosableSet holds IDs that were seen during the initial sensor sync.
+type ClosableSet struct {
 	innerSet  set.Set[string]
 	innerLock sync.Mutex
 	open      *atomic.Bool
 }
 
-// NewObservationSet creates an empty sync observation set.
-func NewObservationSet() *ObservationSet {
+// NewClosableSet creates an empty sync observation set.
+func NewClosableSet() *ClosableSet {
 	open := atomic.Bool{}
 	open.Store(true)
-	return &ObservationSet{
+	return &ClosableSet{
 		innerSet:  set.NewSet[string](),
 		innerLock: sync.Mutex{},
 		open:      &open,
 	}
 }
 
-// LogObserved parses a key `k` and adds to the observation set.
-func (s *ObservationSet) LogObserved(stringKey string) {
+// AddIfOpen parses a key `k` and adds to the observation set.
+func (s *ClosableSet) AddIfOpen(stringKey string) {
 	if s.open.Load() {
 		s.innerLock.Lock()
 		defer s.innerLock.Unlock()
@@ -35,7 +35,7 @@ func (s *ObservationSet) LogObserved(stringKey string) {
 }
 
 // Close will stop processing of any further keys and return a list of parsed keys.
-func (s *ObservationSet) Close() []string {
+func (s *ClosableSet) Close() []string {
 	s.open.Store(false)
 	s.innerLock.Lock()
 	defer s.innerLock.Unlock()

@@ -192,13 +192,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
 
-	// if s.clientReconcile {
-	//	s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
-	//	s.sender.OnSync(func() {
-	//		s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
-	//	})
-	//}
-
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
 	s.allFinished.Add(2)

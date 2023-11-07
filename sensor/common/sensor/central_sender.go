@@ -14,7 +14,6 @@ type CentralSender interface {
 	Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error))
 	Stop(err error)
 	Stopped() concurrency.ReadOnlyErrorSignal
-	OnSync(func())
 }
 
 // NewCentralSender returns a new instance of a CentralSender.
@@ -23,6 +22,6 @@ func NewCentralSender(finished *sync.WaitGroup, senders ...common.SensorComponen
 		stopper:        concurrency.NewStopper(),
 		senders:        senders,
 		finished:       finished,
-		observationSet: deduper.NewObservationSet(),
+		observationSet: deduper.NewClosableSet(),
 	}
 }

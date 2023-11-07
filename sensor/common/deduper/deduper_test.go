@@ -25,7 +25,7 @@ var (
 
 func Test_DeduperParseKeyFromEvent(t *testing.T) {
 	fake := new(fakeStream)
-	observationSet := NewObservationSet()
+	observationSet := NewClosableSet()
 
 	deduperStream := NewDedupingMessageStream(fake, map[deduperkey.Key]uint64{}, observationSet)
 

@@ -99,7 +99,11 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 
 		unchangedIDs := event.GetSynced().GetUnchangedIds()
 		if unchangedIDs != nil {
-			parsedKeys := deduperkey.ParseKeySlice(unchangedIDs)
+			parsedKeys, err := deduperkey.ParseKeySlice(unchangedIDs)
+			if err != nil {
+				// Show warning for failed keys
+				log.Warnf("Error parsing %d unchanged IDs: %s", len(unchangedIDs), err)
+			}
 			for _, k := range parsedKeys {
 				s.reconciliationMap.AddWithTypeString(k.ResourceType.String(), k.ID)
 			}

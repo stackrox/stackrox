@@ -63,13 +63,13 @@ var (
 type deduper struct {
 	stream         messagestream.SensorMessageStream
 	lastSent       map[deduperkey.Key]uint64
-	observationSet *ObservationSet
+	observationSet *ClosableSet
 
 	hasher *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *ObservationSet) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *ClosableSet) messagestream.SensorMessageStream {
 	if deduperState == nil {
 		deduperState = make(map[deduperkey.Key]uint64)
 	}
@@ -123,7 +123,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if d.lastSent[key] == hashValue {
 			// If this is a SYNC event, we have to keep track of this event
 			if msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
-				d.observationSet.LogObserved(getKey(msg))
+				d.observationSet.AddIfOpen(getKey(msg))
 			}
 			return nil
 		}

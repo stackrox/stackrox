@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 )
@@ -43,21 +44,23 @@ type Key struct {
 	ResourceType reflect.Type
 }
 
-// ParseKeySlice returns a list of Key objects from a list a string formatted keys.
-func ParseKeySlice(keys []string) []Key {
+// ParseKeySlice returns a list of Key objects from a list a string formatted keys. An error returned means that some
+// of the keys might have failed when being parsed.
+func ParseKeySlice(keys []string) ([]Key, error) {
 	if keys == nil {
-		return make([]Key, 0)
+		return make([]Key, 0), nil
 	}
+	errList := errorhelpers.NewErrorList("malformed key entries")
 	result := make([]Key, len(keys))
 	for i, v := range keys {
 		parsedKey, err := keyFrom(v)
 		if err != nil {
-			log.Warnf("Key list has malformed entry %s: %s", v, err)
+			errList.AddError(errors.Wrapf(err, "key: %s", v))
 			continue
 		}
 		result[i] = parsedKey
 	}
-	return result
+	return result, errList.ToError()
 }
 
 // ParseDeduperState makes a copy of the deduper state.
