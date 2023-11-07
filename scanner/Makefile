@@ -38,7 +38,7 @@ EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 GO_BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 GO_BUILD_CMD := $(GO_BUILD_FLAGS) go build \
                  -trimpath \
-                 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)"
+                 -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
 GO_TEST_CMD := $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh

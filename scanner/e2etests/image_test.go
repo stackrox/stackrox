@@ -70,7 +70,7 @@ func TestImage(t *testing.T) {
 	ctx := context.Background()
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithAddress(":8443"),
-		client.WithoutTLSVerify)
+		client.SkipTLSVerification)
 	require.NoError(t, err)
 
 	testCases, err := loadTestCases("testdata/image_tests.json")
