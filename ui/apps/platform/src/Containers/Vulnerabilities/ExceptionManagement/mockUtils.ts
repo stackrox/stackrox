@@ -162,13 +162,15 @@ export const pendingRequests = vulnerabilityExceptions.filter(
 export const approvedDeferrals = vulnerabilityExceptions.filter(
     (exception) =>
         exception.targetState === 'DEFERRED' &&
-        ('APPROVED' || exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
+        (exception.exceptionStatus === 'APPROVED' ||
+            exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
 );
 
 export const approvedFalsePositives = vulnerabilityExceptions.filter(
     (exception) =>
         exception.targetState === 'FALSE_POSITIVE' &&
-        ('APPROVED' || exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
+        (exception.exceptionStatus === 'APPROVED' ||
+            exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
 );
 
 export const deniedRequests = vulnerabilityExceptions.filter(

@@ -21,6 +21,7 @@ import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import { getDateTime } from 'utils/dateUtils';
 import { exceptionManagementPath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import { ensureExhaustive } from 'utils/type.utils';
 import { vulnerabilityExceptions } from './mockUtils';
 import {
     RequestExpires,
@@ -42,7 +43,7 @@ function getSubtitleText(exception: VulnerabilityException) {
         case 'APPROVED_PENDING_UPDATE':
             return `Approved pending update (${exception.cves.length} CVEs)`;
         default:
-            return '';
+            return ensureExhaustive(exception.exceptionStatus);
     }
 }
 
@@ -76,10 +77,7 @@ function ExceptionRequestDetailsPage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
-                variant="light"
-            >
+            <PageSection variant="light">
                 <Flex direction={{ default: 'column' }}>
                     <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
                     <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
@@ -88,83 +86,75 @@ function ExceptionRequestDetailsPage() {
             <PageSection>
                 <PageSection variant="light">
                     <Flex direction={{ default: 'column' }}>
-                        <FlexItem>
-                            <Title headingLevel="h2">Overview</Title>
-                        </FlexItem>
-                        <FlexItem flex={{ default: 'flexNone' }}>
-                            <DescriptionList className="vulnerability-exception-request-overview">
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Requestor</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        {vulnerabilityException.requester.name}
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Requested action</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <RequestedAction
-                                            exception={vulnerabilityException}
-                                            context="PENDING_REQUESTS"
-                                        />
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Requested</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <RequestCreatedAt
-                                            createdAt={vulnerabilityException.createdAt}
-                                        />
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Expires</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <RequestExpires
-                                            exception={vulnerabilityException}
-                                            context="PENDING_REQUESTS"
-                                        />
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Scope</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <RequestScope scope={vulnerabilityException.scope} />
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Comments</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        {vulnerabilityException.comments.length}
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                                <DescriptionListGroup>
-                                    <DescriptionListTerm>Latest comment</DescriptionListTerm>
-                                    <DescriptionListDescription>
-                                        <Flex direction={{ default: 'column' }}>
-                                            <Flex
-                                                direction={{ default: 'row' }}
-                                                spaceItems={{ default: 'spaceItemsSm' }}
+                        <Title headingLevel="h2">Overview</Title>
+                        <DescriptionList className="vulnerability-exception-request-overview">
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Requestor</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {vulnerabilityException.requester.name}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Requested action</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <RequestedAction
+                                        exception={vulnerabilityException}
+                                        context="PENDING_REQUESTS" // @TODO: We need a smarter way to distinguish original vs. updated values here
+                                    />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Requested</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <RequestCreatedAt
+                                        createdAt={vulnerabilityException.createdAt}
+                                    />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Expires</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <RequestExpires
+                                        exception={vulnerabilityException}
+                                        context="PENDING_REQUESTS" // @TODO: We need a smarter way to distinguish original vs. updated values here
+                                    />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Scope</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <RequestScope scope={vulnerabilityException.scope} />
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Comments</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {vulnerabilityException.comments.length}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Latest comment</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    <Flex direction={{ default: 'column' }}>
+                                        <Flex
+                                            direction={{ default: 'row' }}
+                                            spaceItems={{ default: 'spaceItemsSm' }}
+                                        >
+                                            <Text
+                                                className="pf-u-font-weight-bold"
+                                                component={TextVariants.p}
                                             >
-                                                <FlexItem>
-                                                    <Text
-                                                        className="pf-u-font-weight-bold"
-                                                        component={TextVariants.p}
-                                                    >
-                                                        {latestComment.user.name}
-                                                    </Text>
-                                                </FlexItem>
-                                                <FlexItem>
-                                                    <Text component={TextVariants.small}>
-                                                        ({getDateTime(latestComment.createdAt)})
-                                                    </Text>
-                                                </FlexItem>
-                                            </Flex>
-                                            <FlexItem>{latestComment.message}</FlexItem>
+                                                {latestComment.user.name}
+                                            </Text>
+                                            <Text component={TextVariants.small}>
+                                                ({getDateTime(latestComment.createdAt)})
+                                            </Text>
                                         </Flex>
-                                    </DescriptionListDescription>
-                                </DescriptionListGroup>
-                            </DescriptionList>
-                        </FlexItem>
+                                        <FlexItem>{latestComment.message}</FlexItem>
+                                    </Flex>
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        </DescriptionList>
                     </Flex>
                 </PageSection>
             </PageSection>

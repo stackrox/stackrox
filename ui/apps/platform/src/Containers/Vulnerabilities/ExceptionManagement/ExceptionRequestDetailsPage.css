@@ -1,15 +1,11 @@
 .vulnerability-exception-request-overview {
   display: grid !important;
   grid-template-columns: 1fr 2fr 1fr 1fr 2fr 1fr; /* Creates 6 columns */
-  gap: 16px;
+  gap: var(--pf-global--spacer--md);
 }
 
 .vulnerability-exception-request-overview .pf-c-description-list__group:nth-child(7) {
   grid-column: 1 / -1; /* Span all columns */
-}
-
-.vulnerability-exception-request-overview .pf-c-description-list__group {
-  display: block; /* Override default flex layout */
 }
 
 /* Adjustments for smaller screens */
