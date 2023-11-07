@@ -5,7 +5,6 @@ import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     applyLocalSeverityFilters,
-    selectResourceFilterType,
     typeAndSelectResourceFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
@@ -178,8 +177,6 @@ describe('Workload CVE Image Single page', () => {
             .first()
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
-                // Select CVE from the entity dropdown
-                selectResourceFilterType('CVE');
                 // Enter the CVE name into the CVE filter
                 typeAndSelectResourceFilterValue('CVE', cveName);
                 // Check that the header above the table shows only one result
