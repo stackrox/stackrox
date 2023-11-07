@@ -115,7 +115,7 @@ func scanCmd(ctx context.Context) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 	}
 	flags := cmd.PersistentFlags()
-	authEnvName := "ROX_SCANNERCTL_BASIC_AUTH"
+	const authEnvName := "ROX_SCANNERCTL_BASIC_AUTH"
 	basicAuth := flags.String(
 		"auth",
 		"",
