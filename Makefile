@@ -452,12 +452,6 @@ syslog-build:build-prep
 	@echo "+ $@"
 	CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
 
-.PHONY: mock-grpc-server-build
-mock-grpc-server-build: build-prep
-	for GOARCH in $$(echo $(PLATFORM) | sed -e 's/,/ /g') ; do \
-		GOARCH="$${GOARCH##*/}" CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server; \
-	done
-
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
 	@echo "+ $@"
@@ -664,21 +658,6 @@ syslog-image: syslog-build
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
 
-.PHONY: mock-grpc-server-image
-mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --load \
-		-t stackrox/grpc-server:$(TAG) \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
-.PHONY: mock-grpc-server-image-push
-mock-grpc-server-image-push: mock-grpc-server-build
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --push \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
 .PHONY: central-db-image
 central-db-image:
 	$(DOCKERBUILD) \
@@ -701,7 +680,6 @@ clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin image/rhel/bin
 	git clean -xdf image/ui image/rhel/ui image/rhel/docs
-	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
 
