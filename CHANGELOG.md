@@ -13,9 +13,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
+- The Docker CIS benchmark has been deprecated as announced in the 4.2 release notes.
 
 ### Deprecated Features
-- The Docker CIS benchmark has been deprecated as announced in the 4.2 release notes.
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
