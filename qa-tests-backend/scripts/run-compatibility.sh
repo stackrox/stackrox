@@ -20,6 +20,22 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
 set -euo pipefail
 
+shorten_tag() {
+    if [[ "$#" -ne 1 ]]; then
+        echo "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
+    fi
+
+    long_tag=$1
+
+    short_tag_regex='[1-9]+\.[1-9]+\.[1-9xX]+'
+
+    if [[ $long_tag =~ $short_tag_regex ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+    fi
+}
+
 compatibility_test() {
     require_environment "CENTRAL_CHART_VERSION_OVERRIDE"
     require_environment "SENSOR_CHART_VERSION_OVERRIDE"
@@ -63,15 +79,19 @@ compatibility_test() {
 
     update_junit_prefix_with_central_and_sensor_version
 
-    store_qa_test_results "compatibility-test-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
-    [[ ! -f FAIL ]] || die "compatibility-test-central-v${CENTRAL_CHART_VERSION_OVERRIDE}-sensor-v${SENSOR_CHART_VERSION_OVERRIDE}"
+    short_central_tag=$(shorten_tag ${CENTRAL_CHART_VERSION_OVERRIDE})
+    short_sensor_tag=$(shorten_tag ${SENSOR_CHART_VERSION_OVERRIDE})
+    store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
+    [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
 }
 
 update_junit_prefix_with_central_and_sensor_version() {
+    short_central_tag=$(shorten_tag ${CENTRAL_CHART_VERSION_OVERRIDE})
+    short_sensor_tag=$(shorten_tag ${SENSOR_CHART_VERSION_OVERRIDE})
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
-    info "Updating all test in $result_folder to have \"Central-v${CENTRAL_CHART_VERSION_OVERRIDE}_Sensor-v${SENSOR_CHART_VERSION_OVERRIDE}_\" prefix"
+    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
     for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Central-v${CENTRAL_CHART_VERSION_OVERRIDE}_Sensor-v${SENSOR_CHART_VERSION_OVERRIDE}] /g" "$f"
+        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
     done
 }
 
