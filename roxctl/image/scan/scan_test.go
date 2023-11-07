@@ -260,10 +260,10 @@ func (s *imageScanTestSuite) newTestMockEnvironmentWithConn(conn *grpc.ClientCon
 
 func (s *imageScanTestSuite) SetupTest() {
 	s.defaultImageScanCommand = imageScanCommand{
-		image:        "nginx:test",
-		retryDelay:   3,
-		retryCount:   3,
-		timeout:      1 * time.Minute,
+		image:      "nginx:test",
+		retryDelay: 3,
+		retryCount: 3,
+		timeout:    1 * time.Minute,
 	}
 }
 
