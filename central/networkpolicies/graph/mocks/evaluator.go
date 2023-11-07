@@ -70,6 +70,20 @@ func (mr *MockEvaluatorMockRecorder) GetAppliedPolicies(deployments, networkTree
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppliedPolicies", reflect.TypeOf((*MockEvaluator)(nil).GetAppliedPolicies), deployments, networkTree, networkPolicies)
 }
 
+// GetApplyingPoliciesPerDeployment mocks base method.
+func (m *MockEvaluator) GetApplyingPoliciesPerDeployment(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetApplyingPoliciesPerDeployment", deployments, networkTree, networkPolicies)
+	ret0, _ := ret[0].(map[string][]*storage.NetworkPolicy)
+	return ret0
+}
+
+// GetApplyingPoliciesPerDeployment indicates an expected call of GetApplyingPoliciesPerDeployment.
+func (mr *MockEvaluatorMockRecorder) GetApplyingPoliciesPerDeployment(deployments, networkTree, networkPolicies any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApplyingPoliciesPerDeployment", reflect.TypeOf((*MockEvaluator)(nil).GetApplyingPoliciesPerDeployment), deployments, networkTree, networkPolicies)
+}
+
 // GetGraph mocks base method.
 func (m *MockEvaluator) GetGraph(clusterID string, queryDeploymentIDs set.StringSet, clusterDeployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	m.ctrl.T.Helper()
