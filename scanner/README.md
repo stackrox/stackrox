@@ -1,16 +1,11 @@
 # StackRox Scanner
 
-The container image scanner.  Built with ClairCore technology.
+The container image scanner.  Built with [ClairCore](https://github.com/quay/claircore) technology.
 
 ## Development
 
-Scanner requires the Go version to be aligned with the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION).  This is verified using Scanner's `make` targets that depend on go tooling.
-
-For local development, you can overwrite this restriction by specifying `EXPECTED_GO_VERSION` in the make targets that will depend on go tools, for example:
-
-```
-make build EXPECTED_GO_VERSION=$(go version | { read _ _ v _; echo $v; })
-```
+It is recommended to use the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION), but this is not enforced for development.
+It is, however, enforced in CI.
 
 ### Running locally
 
@@ -20,7 +15,7 @@ To run Scanner locally for development, copy the sample config and edit it to yo
 cp config.yaml.sample config.yaml
 ```
 
-Build Scanner and generate the development TLS certificates:
+Build Scanner binaries and generate the development TLS certificates:
 
 ```sh
 make build certs
@@ -32,17 +27,15 @@ Run:
 ./bin/scanner -conf config.yaml
 ```
 
-The build system by default builds for `GOOS=linux`.  If you are running a non-Linux OS specify the `GOOS` yourself, or use `HOST_OS`.
-
-```sh
-make GOOS='$(HOST_OS)' build
-```
+**Note**: Scanner requires a PostgreSQL database, so be sure one is running and `config.yaml` points to it.
 
 ### Running standalone in Kubernetes
 
 Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.
 
-```
+Run Scanner and Scanner DB:
+
+```sh
 make e2e-deploy
 ```
 
@@ -58,7 +51,7 @@ make build
 
 Or, specifically:
 
-```
+```sh
 make bin/scannerctl
 ```
 
@@ -68,7 +61,7 @@ There are options to control how to run `scannerctl`.  See `scannerctl help`.
 
 #### Example 1: Connecting to local Scanner 
 
-A common use case is testing Scanner locally.  Once you have the local scanner build, certificates, and Scanner running with those certificates, you can run `scannerctl`:
+A common use case is testing Scanner locally.  Once you have built local Scanner, certificates, and Scanner running with those certificates, you can run `scannerctl`:
 
 ```sh
 ./bin/scannerctl scan \

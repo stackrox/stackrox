@@ -22,24 +22,21 @@ ifeq ($(TAG),)
 	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
 
-UNAME_S := $(shell uname -s)
-UNAME_M := $(shell uname -m)
-
-GOOS := $(DEFAULT_GOOS)
 HOST_OS := linux
-ifeq ($(UNAME_S),Darwin)
+ifeq ($(shell uname -s),Darwin)
 	HOST_OS := darwin
 endif
+
+GOOS := $(HOST_OS)
 
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
-
-GO_BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
-GO_BUILD_CMD := $(GO_BUILD_FLAGS) go build \
-                 -trimpath \
-                 -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
-GO_TEST_CMD := $(GO_BUILD_FLAGS) go test
+GO_BUILD_FLAGS = CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
+GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
+                   -trimpath \
+                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
+GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -47,7 +44,7 @@ DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 SCANNER_NAMESPACE ?= stackrox
 
 .PHONY: all
-all: deps scanner-go-build images
+all: images
 
 ###############################################################
 ###### Binaries we depend on (need to be defined on top) ######
@@ -57,12 +54,6 @@ OSSLS_BIN := $(GOBIN)/ossls
 $(OSSLS_BIN): | scanner-go-check-ver
 	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
-
-.PHONY: scanner-go-check-ver
-scanner-go-check-ver:
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
 
 #########
 ## Tag ##
@@ -76,9 +67,11 @@ tag:
 ## Go Builds ##
 ###############
 
-build-cmd := $(GO_BUILD_CMD)
+build-cmd  = $(GO_BUILD_CMD)
 build-d   := bin
 build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
+
+build-deps-t := deps
 
 .PHONY: build
 build: $(build-t)
@@ -93,6 +86,27 @@ clean-build:
 	@echo "+ $@"
 	$(SILENT)rm -rf bin/
 
+$(build-deps-t): ../go.mod | scanner-go-check-ver
+	@echo "+ $@"
+	$(SILENT)go mod tidy
+ifdef CI
+	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
+		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
+		exit 1 ; \
+	}
+endif
+	$(SILENT)go mod verify
+	$(SILENT)touch $@
+
+.PHONY: scanner-go-check-ver
+scanner-go-check-ver:
+ifdef CI
+	@echo "+ $@"
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
+endif
+endif
+
 ############
 ## Images ##
 ############
@@ -102,14 +116,10 @@ image-prefix := scanner-v4
 .PHONY: images
 images: scanner-image db-image
 
+image/scanner/bin/scanner: GOOS=$(DEFAULT_GOOS)
 image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
 	cp $< $@
-
-.PHONY: scanner-go-build-local
-scanner-go-build-local:
-	@echo "+ $@"
-	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} image/scanner/bin/scanner
 
 OSSLS_NOTICE_DEP := ossls-notice
 ifdef CI
@@ -132,18 +142,6 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 ###########
 ## Tools ##
 ###########
-
-deps: ../go.mod | scanner-go-check-ver
-	@echo "+ $@"
-	$(SILENT)go mod tidy
-ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
-		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
-		exit 1 ; \
-	}
-endif
-	$(SILENT)go mod verify
-	$(SILENT)touch $@
 
 .PHONY: ossls-notice-no-download
 ossls-notice-no-download: deps
