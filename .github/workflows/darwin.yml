@@ -1,0 +1,45 @@
+name: Darwin compatibility check
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  build-go-binaries:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - uses: cachix/install-nix-action@v22
+      with:
+        extra_nix_config: |
+          accept-flake-config = true
+          trusted-substituters = https://stackrox.cachix.org https://cache.nixos.org/
+          trusted-public-keys = stackrox.cachix.org-1:Wnn8TKAitOTWKfTvvHiHzJjXy0YfiwoK6rrVzXt/trA= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+
+    - name: Checkout stackrox-env flake
+      uses: actions/checkout@v4
+      with:
+        repository: stackrox/stackrox-env
+        path: dev/nix
+        ref: e04df0d3dfe31c3bf53105a3a3818b7b5c45594d
+
+    - name: Build Go Binaries
+      env:
+        CGO_ENABLED: "0"
+        GOOS: "darwin"
+        GOARCH: "amd64"
+      shell: nix develop ./dev/nix --quiet --command bash -e {0}
+      run: make main-build-nodeps cli-darwin
