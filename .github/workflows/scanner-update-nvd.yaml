@@ -1,0 +1,22 @@
+name: Fetch NVD CVEs
+
+on:
+  push:
+    branches:
+      - yli3/**
+  schedule:
+    - cron: '0 0 * * *'  # this runs every day at midnight
+
+
+jobs:
+  fetch-cves:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JQ
+      run: sudo apt-get install jq
+
+    - name: Fetch Critical CVEs
+      run: ./.github/workflows/scripts/scanner-fetch-nvd.sh
