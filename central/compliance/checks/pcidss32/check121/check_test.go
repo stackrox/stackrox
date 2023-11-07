@@ -6,9 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -49,18 +47,13 @@ func (s *suiteImpl) TestHostNetwork() {
 
 	testPolicies := s.networkPolicies()
 
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
-			},
-		},
+	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{
+		testDeployments[0].GetId(): {testPolicies[0], testPolicies[1]},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -97,18 +90,13 @@ func (s *suiteImpl) TestMissingIngress() {
 
 	testPolicies := s.networkPolicies()
 
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testPolicies[1].GetId()}, // Only egress
-			},
-		},
+	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{
+		testDeployments[0].GetId(): {testPolicies[1]},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -145,18 +133,13 @@ func (s *suiteImpl) TestMissingEgress() {
 
 	testPolicies := s.networkPolicies()
 
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testPolicies[0].GetId()}, // Only ingress
-			},
-		},
+	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{
+		testDeployments[0].GetId(): {testPolicies[0]},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -192,11 +175,11 @@ func (s *suiteImpl) TestSkipKubeSystem() {
 
 	testNodes := s.nodes()
 	testPolicies := s.networkPolicies()
-	testNetworkGraph := &v1.NetworkGraph{}
 
+	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{}
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -238,22 +221,14 @@ func (s *suiteImpl) TestPass() {
 
 	testPolicies := s.networkPolicies()
 
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
-			},
-			{
-				Entity:    networkgraph.EntityForDeployment(testDeployments[1].GetId()).ToProto(),
-				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
-			},
-		},
+	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{
+		testDeployments[0].GetId(): {testPolicies[0], testPolicies[1]},
+		testDeployments[1].GetId(): {testPolicies[0], testPolicies[1]},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
