@@ -54,6 +54,8 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
+	vulnReqDatastore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -98,7 +100,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			resolver.NodeDataStore = ds
 		case clusterDataStore.DataStore:
 			resolver.ClusterDataStore = ds
-
+		case vulnReqDatastore.DataStore:
+			resolver.vulnReqStore = ds
 		case imageCVEEdgeDS.DataStore:
 			resolver.ImageCVEEdgeDataStore = ds
 		case clusterCVEEdgeDataStore.DataStore:
@@ -128,10 +131,12 @@ func CreateTestImageDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *g
 	ctx := context.Background()
 	imagePostgres.Destroy(ctx, testDB.DB)
 
+	risks := mockRisks.NewMockDataStore(ctrl)
+	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageDS.NewWithPostgres(
 		imagePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t), false),
 		imagePostgres.NewIndexer(testDB.DB),
-		mockRisks.NewMockDataStore(ctrl),
+		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
 	)
@@ -310,6 +315,11 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 	indexer := nodeComponentCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := nodeComponentCVEEdgeSearch.New(storage, indexer)
 	return nodeComponentCVEEdgeDataStore.New(storage, searcher)
+}
+
+// TestVulnReqDatastore return test vulnerability request datastore.
+func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) vulnReqDatastore.DataStore {
+	return vulnReqDatastore.GetTestPostgresDataStore(t, testDB, cache.New(), cache.New())
 }
 
 func registerImageLoader(_ testing.TB, ds imageDS.DataStore) {
