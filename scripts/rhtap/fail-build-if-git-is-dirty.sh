@@ -23,8 +23,8 @@ fi
 
 echo "Checking that files in git repo are not modified."
 echo "If this command fails, you should see the list of modified files below."
-echo "You need to find the reason and prevent that because otherwise the build results will be inconsistent."
+echo "You need to find the reason and prevent it because otherwise the build results will be inconsistent."
 echo ""
 git status --porcelain | { ! { grep '.' >&2 && echo "ERROR: Modifies files found." >&2; } ; }
 
-echo "No modifications git repo detected."
+echo "No modifications to git repo detected."
