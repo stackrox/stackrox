@@ -285,7 +285,8 @@ func (c *TestContext) StartFakeGRPC() {
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
-		message.NetworkBaselineSync(nil))
+		message.NetworkBaselineSync(nil),
+		message.DeduperState(map[string]uint64{}, 1, 1))
 
 	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 
