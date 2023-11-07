@@ -2,9 +2,12 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgx/v4"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
@@ -723,7 +726,22 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 			scanUpdated = false
 		}
 	}
-
+	if scanUpdated {
+		if err := os.MkdirAll(fmt.Sprintf("/tmp/%s", obj.GetId()), 0777); err != nil {
+			log.Errorf("error creating directory: %v", err)
+		}
+		file, err := os.Create(fmt.Sprintf("/tmp/%s/%d", obj.GetId(), time.Now().UnixMilli()))
+		if err != nil {
+			log.Errorf("could not create: %v", err)
+		}
+		if file != nil {
+			defer file.Close()
+		}
+		marshaler := jsonpb.Marshaler{}
+		if err := marshaler.Marshal(file, obj); err != nil {
+			log.Errorf("marshaling: %v", err)
+		}
+	}
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(imageParts)
 
