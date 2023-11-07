@@ -293,10 +293,9 @@ func (i *Image) addScripts(values *charts.MetaValues) ([]*loader.BufferedFile, e
 		return i.scripts(values, k8sScriptsFileMap)
 	} else if values.ClusterType == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
 		return i.scripts(values, osScriptsFileMap)
-	} else {
-		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
-			values.ClusterName)
 	}
+	return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
+		values.ClusterName)
 }
 
 func (i *Image) scripts(values *charts.MetaValues, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
