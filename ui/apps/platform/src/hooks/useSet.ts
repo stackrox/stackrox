@@ -1,12 +1,21 @@
 import { useState } from 'react';
 
+export type SetResult<T> = {
+    has: (key: T) => boolean;
+    toggle: (key: T, isOn?: boolean) => void;
+    clear: () => void;
+    size: number;
+    asArray: () => void;
+};
+
 /**
  * Hook that wraps a native `Set` for easier immutable usage as React component state
  *
  * Note that the API is intentionally limited - we should add more `Set` methods as use
  * cases require them.
  */
-export default function useSet<T>(initialSet: Set<T> = new Set()) {
+
+export default function useSet<T>(initialSet: Set<T> = new Set()): SetResult<T> {
     const [itemSet, setItemSet] = useState(initialSet);
 
     function has(key: T): boolean {

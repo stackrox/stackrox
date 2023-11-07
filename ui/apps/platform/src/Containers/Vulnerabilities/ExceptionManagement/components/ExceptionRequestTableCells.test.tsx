@@ -11,12 +11,13 @@ import {
 const baseException: BaseVulnerabilityException = {
     id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
     name: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
-    exceptionStatus: 'APPROVED_PENDING_UPDATE',
+    status: 'APPROVED_PENDING_UPDATE',
     expired: false,
     requester: {
         id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
         name: 'admin',
     },
+    approvers: [],
     createdAt: '2023-10-01T19:16:49.155480945Z',
     lastUpdated: '2023-10-01T19:16:49.155480945Z',
     comments: [
@@ -46,7 +47,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -69,7 +70,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED',
+                status: 'APPROVED',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -90,7 +91,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -118,7 +119,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -148,7 +149,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'FALSE_POSITIVE',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 falsePositiveRequest: {},
             };
             const context: RequestContext = 'PENDING_REQUESTS';
@@ -162,7 +163,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -180,7 +181,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ANY_CVE_FIXABLE',
@@ -198,7 +199,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -217,7 +218,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -236,7 +237,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -262,7 +263,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
