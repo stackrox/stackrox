@@ -9,14 +9,13 @@ total_results=1  # Initial dummy value to enter the loop
 
 # Function to fetch data and return the next startIndex
 fetch_data () {
-  # Fetch data with curl and check the exit status
-  response=$(curl -s "$base_url?cvssV3Severity=$severity&resultsPerPage=$results_per_page&startIndex=$start_index")
-  status=$?
-
-  if [ $status -ne 0 ]; then
+  # Fetch data with curl and check the exit status directly
+  if ! response=$(curl -s "$base_url?cvssV3Severity=$severity&resultsPerPage=$results_per_page&startIndex=$start_index"); then
+    status=$?
     echo "Curl failed with status $status"
     exit $status
   fi
+
 
   # Extract the total number of results from the response
   if [ $start_index -eq 0 ]; then  # Only do this the first time.
@@ -25,13 +24,13 @@ fetch_data () {
 
   next_index=$(echo "$response" | jq '.startIndex + .resultsPerPage')
 
-  echo $response > "critical-$((start_index/results_per_page + 1)).json"
+  echo "$response" > "critical-$((start_index/results_per_page + 1)).json"
 
   # Output the next start index
-  echo $next_index
+  echo "$next_index"
 }
 
-while [ $start_index -lt "$total_results" ]; do
+while [ "$start_index" -lt "$total_results" ]; do
   echo "Fetching records starting from index $start_index..."
   start_index=$(fetch_data)  # Fetch the data and get the next start index
 
