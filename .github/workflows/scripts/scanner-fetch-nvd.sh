@@ -32,15 +32,17 @@ fetch_data () {
 
 while [ "$start_index" -lt "$total_results" ]; do
   echo "Fetching records starting from index $start_index..."
-  start_index=$(fetch_data)  # Fetch the data and get the next start index
 
-  if [ $? -ne 0 ]; then
-    exit $?
+  if ! start_index=$(fetch_data); then
+    status=$?
+    echo "Fetch data failed with status $status"
+    exit $status
   fi
 
   # Sleep for 6 seconds before the next request
   echo "Waiting for 6 seconds..."
   sleep 6
 done
+
 
 echo "Done. All critical CVEs are stored in separate files."
