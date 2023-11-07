@@ -245,8 +245,8 @@ func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *s
 		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
-	hasEgress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
+	hasEgress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if hasIngress && hasEgress && !usesHostNamespace {
@@ -272,7 +272,7 @@ func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deploy
 		return
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if usesHostNamespace {
@@ -298,7 +298,7 @@ func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deploym
 		return
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if usesHostNamespace {
@@ -316,7 +316,7 @@ func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deploym
 	}
 }
 
-func deploymentHasSpecifiedNetworkPolicy(ctx framework.ComplianceContext, policyType storage.NetworkPolicyType, deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy, deployment *storage.Deployment) bool {
+func deploymentHasSpecifiedNetworkPolicy(policyType storage.NetworkPolicyType, deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy, deployment *storage.Deployment) bool {
 	netPols, ok := deploymentsToNetworkPolicies[deployment.GetId()]
 	if !ok {
 		return false
