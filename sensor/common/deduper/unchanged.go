@@ -7,14 +7,15 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// ClosableSet holds IDs that were seen during the initial sensor sync.
+// ClosableSet is a concurrency-safe set of strings. Items can be added to the set as long as the set is open.
+// Closing the set ignores all future `Add` operations but allows to fetch already stored items.
 type ClosableSet struct {
 	innerSet  set.Set[string]
 	innerLock sync.Mutex
 	open      *atomic.Bool
 }
 
-// NewClosableSet creates an empty sync observation set.
+// NewClosableSet creates an empty ClosableSet.
 func NewClosableSet() *ClosableSet {
 	open := atomic.Bool{}
 	open.Store(true)
@@ -25,7 +26,7 @@ func NewClosableSet() *ClosableSet {
 	}
 }
 
-// AddIfOpen parses a key `k` and adds to the observation set.
+// AddIfOpen adds item to an unclosed set. If set is closed, this operation does nothing.
 func (s *ClosableSet) AddIfOpen(stringKey string) {
 	if s.open.Load() {
 		s.innerLock.Lock()
@@ -34,7 +35,7 @@ func (s *ClosableSet) AddIfOpen(stringKey string) {
 	}
 }
 
-// Close will stop processing of any further keys and return a list of parsed keys.
+// Close marks set as closed preventing any new items to be added. It returns the currently stored items.
 func (s *ClosableSet) Close() []string {
 	s.open.Store(false)
 	s.innerLock.Lock()
