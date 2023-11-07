@@ -1,0 +1,41 @@
+name: Fetch and Update NVD CVEs
+
+on:
+  push:
+    branches:
+      - yli3/**
+  schedule:
+    - cron: '0 0 * * *'  # this runs every day at midnight
+
+jobs:
+  fetch-cves:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JQ
+      run: sudo apt-get install jq
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Fetch Critical CVEs
+      env:
+        API_KEY: ${{ secrets.NVD_API_KEY }}
+      run: ./.github/workflows/scripts/scanner-fetch-nvd.sh
+
+  send-notification:
+    needs:
+    - fetch-cves
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
