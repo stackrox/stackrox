@@ -71,7 +71,6 @@ function ScanConfigPage({
     // TODO: delete
     const createFakeSchedule = async () => {
         const mockScanConfig: ComplianceScanConfiguration = {
-            id: '1234',
             scanName: 'random180',
             scanConfig: {
                 oneTimeScan: false,

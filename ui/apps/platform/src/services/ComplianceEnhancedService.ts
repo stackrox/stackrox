@@ -49,7 +49,7 @@ type ClusterScanStatus = {
 };
 
 export type ComplianceScanConfiguration = {
-    id: string;
+    id?: string;
     scanName: string;
     scanConfig: BaseComplianceScanConfigurationSettings;
     clusters: string[];

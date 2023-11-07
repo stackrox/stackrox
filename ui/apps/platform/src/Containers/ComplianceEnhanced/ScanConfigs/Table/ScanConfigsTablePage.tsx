@@ -91,24 +91,18 @@ function ScanConfigsTablePage({
         switch (schedule.intervalType) {
             case 'DAILY':
                 return `Daily at ${timeString}`;
-            case 'WEEKLY':
-                if (schedule.daysOfWeek) {
-                    const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekMap[day]);
-                    return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
-                }
-                break;
-            case 'MONTHLY':
-                if (schedule.daysOfMonth) {
-                    const formattedDaysOfMonth =
-                        schedule.daysOfMonth.days.map(getDayOfMonthWithOrdinal);
-                    return `Monthly on the ${formatDays(formattedDaysOfMonth)} at ${timeString}`;
-                }
-                break;
+            case 'WEEKLY': {
+                const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekMap[day]);
+                return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
+            }
+            case 'MONTHLY': {
+                const formattedDaysOfMonth =
+                    schedule.daysOfMonth.days.map(getDayOfMonthWithOrdinal);
+                return `Monthly on the ${formatDays(formattedDaysOfMonth)} at ${timeString}`;
+            }
             default:
                 return 'Invalid Schedule';
         }
-
-        return 'Invalid Schedule';
     };
 
     const scanConfigActions = (): IAction[] => [
