@@ -7,14 +7,12 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-
 	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_set_poduid_where_null/schema/pods"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
