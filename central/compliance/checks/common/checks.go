@@ -210,33 +210,34 @@ This control checks that all deployments have ingress and egress network policie
 // has ingress and egress network policies and does not use host network namespace.
 // Use this with DeploymentKind control checks.
 func CheckNetworkPoliciesByDeployment(ctx framework.ComplianceContext) {
-	// Map deployments to nodes.
-	networkGraph := ctx.Data().DeploymentsToNetworkPolicies()
+	// Map deployments to NetworkPolicies
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasNetworkPolicies(ctx, deployment, networkGraph)
+		deploymentHasNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
 // ClusterHasIngressNetworkPolicies ensures the cluster has ingress network policies and does
 // not use host network namespace.
 func ClusterHasIngressNetworkPolicies(ctx framework.ComplianceContext) {
-	networkGraph := ctx.Data().DeploymentsToNetworkPolicies()
+	// Map deployments to nodes.
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasIngressNetworkPolicies(ctx, deployment, networkGraph)
+		deploymentHasIngressNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
 // ClusterHasEgressNetworkPolicies ensures the cluster has egress network policies and does
 // not use host network namespace.
 func ClusterHasEgressNetworkPolicies(ctx framework.ComplianceContext) {
-	networkGraph := ctx.Data().DeploymentsToNetworkPolicies()
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasEgressNetworkPolicies(ctx, deployment, networkGraph)
+		deploymentHasEgressNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
