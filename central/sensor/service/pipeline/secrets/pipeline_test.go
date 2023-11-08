@@ -56,7 +56,28 @@ func (suite *PipelineTestSuite) TestSecretsSyncResources() {
 	}
 	err := pipeline.Run(ctx, "clusterid", msg, nil)
 	suite.NoError(err)
+}
 
+func (suite *PipelineTestSuite) TestSecretsDeleteResources() {
+	ctx := context.Background()
+	secret := fixtures.GetSecret()
+
+	suite.secrets.EXPECT().RemoveSecret(ctx, secret.GetId())
+
+	pipeline := NewPipeline(suite.clusters, suite.secrets)
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     "secretid",
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Secret{
+					Secret: secret,
+				},
+			},
+		},
+	}
+	err := pipeline.Run(ctx, "clusterid", msg, nil)
+	suite.NoError(err)
 }
 
 func (suite *PipelineTestSuite) TestRun() {
