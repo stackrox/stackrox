@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
-	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v4/mocks"
+	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
 	"github.com/stretchr/testify/suite"
@@ -77,9 +77,9 @@ func (s *postgresConnTestSuite) TestConnBegin() {
 }
 
 func (s *postgresConnTestSuite) TestConnExec() {
-	expectedCt := pgconn.CommandTag("signature")
+	expectedCt := pgconn.NewCommandTag("signature")
 	errFunc := func(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
-		return nil, errFake
+		return pgconn.CommandTag{}, errFake
 	}
 	successFunc := func(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
 		return expectedCt, nil
@@ -103,17 +103,17 @@ func (s *postgresConnTestSuite) TestConnExec() {
 	s.mockTx.EXPECT().Exec(gomock.Any(), "command3").Times(1).DoAndReturn(errFunc)
 	ct, err = s.conn.Exec(ctxWithTx, "command3")
 	s.Equal(errFake, err)
-	s.Nil(ct)
+	s.Empty(ct)
 
 	// Error Handling without Tx
 	s.mockPgxPoolConn.EXPECT().Exec(gomock.Any(), "command4").Times(1).DoAndReturn(errFunc)
 	ct, err = s.conn.Exec(context.Background(), "command4")
 	s.Equal(errFake, err)
-	s.Nil(ct)
+	s.Empty(ct)
 }
 
 func (s *postgresConnTestSuite) TestConnQuery() {
-	expectedRows := pkgmocks.NewMockRows(s.mockCtrl)
+	expectedRows := pkgmocks.NewRows(nil).ToPgxRows()
 	errFunc := func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
 		return nil, errFake
 	}
@@ -149,7 +149,7 @@ func (s *postgresConnTestSuite) TestConnQuery() {
 }
 
 func (s *postgresConnTestSuite) TestConnQueryRow() {
-	expectedRow := pkgmocks.NewMockRow(s.mockCtrl)
+	expectedRow := pkgmocks.NewRows(nil).ToPgxRows()
 	successFunc := func(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 		return expectedRow
 	}
