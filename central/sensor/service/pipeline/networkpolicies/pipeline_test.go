@@ -67,5 +67,25 @@ func (suite *PipelineTestSuite) TestRoleBindingSyncResources() {
 		},
 	}, nil)
 	suite.NoError(err)
+}
 
+func (suite *PipelineTestSuite) TestRoleBindingDeleteResources() {
+	ctx := context.Background()
+	networkPolicy := fixtures.GetNetworkPolicy()
+
+	suite.networkPolicies.EXPECT().RemoveNetworkPolicy(ctx, networkPolicy.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(networkPolicy.GetClusterId())
+
+	err := suite.pipeline.Run(ctx, networkPolicy.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     networkPolicy.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_NetworkPolicy{
+					NetworkPolicy: networkPolicy,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
 }
