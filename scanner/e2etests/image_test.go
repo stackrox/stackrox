@@ -50,7 +50,6 @@ type TestWant struct {
 // TestArgs describes the arguments (i.e. test input) necessary to exercise the test case.
 type TestArgs struct {
 	Image    string `json:"image"`
-	Registry string `json:"registry"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -60,9 +59,10 @@ type TestCase struct {
 	TestArgs
 	TestWant
 	// Test flags.
-	OnlyCheckSpecifiedVulns  bool `json:"only_check_specified_vulns"`
-	UncertifiedRhel          bool `json:"uncertified_rhel"`
-	CheckProvidedExecutables bool `json:"check_provided_executables"`
+	DisabledReason           string `json:"disabled_reason"`
+	OnlyCheckSpecifiedVulns  bool   `json:"only_check_specified_vulns"`
+	UncertifiedRhel          bool   `json:"uncertified_rhel"`
+	CheckProvidedExecutables bool   `json:"check_provided_executables"`
 }
 
 // TestImage is the E2E test for container image scans.
@@ -78,6 +78,10 @@ func TestImage(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s/%s", tc.Namespace, tc.Image), func(t *testing.T) {
+			t.Name()
+			if tc.DisabledReason != "" {
+				t.Skipf("%s disabled: reason: %q", t.Name(), tc.DisabledReason)
+			}
 			ref, err := name.ParseReference(tc.Image)
 			require.NoError(t, err)
 
@@ -89,14 +93,14 @@ func TestImage(t *testing.T) {
 			require.NoError(t, err)
 
 			expected := tc.TestWant
-			converted := tc.convertReport(vr)
+			actual := tc.mapFillReport(vr)
 			defer func() {
 				if t.Failed() && vr != nil {
 					tc.logReport(t, vr)
 				}
 			}()
-			assert.Equal(t, &expected, converted,
-				"The converted vulnerability report did not contain the expected values.")
+			assert.Equal(t, &expected, actual,
+				"The vulnerability report did not contain the expected values.")
 		})
 	}
 }
@@ -116,8 +120,8 @@ func loadTestCases(s string) ([]*TestCase, error) {
 	return cases, nil
 }
 
-// namespace creates a test case namespace from a vulnerability report.
-func namespace(vr *v4.VulnerabilityReport) string {
+// mapNamespace creates a test case namespace from a vulnerability report.
+func mapNamespace(vr *v4.VulnerabilityReport) string {
 	if len(vr.GetContents().GetDistributions()) == 1 {
 		d := vr.GetContents().GetDistributions()[0]
 		return fmt.Sprintf("%s:%s", d.GetDid(), d.GetVersionId())
@@ -126,42 +130,54 @@ func namespace(vr *v4.VulnerabilityReport) string {
 }
 
 func (tc *TestCase) authConfig() authn.Authenticator {
-	return authn.FromConfig(authn.AuthConfig{
+	return &authn.Basic{
 		Username: os.Getenv(tc.Username),
 		Password: os.Getenv(tc.Password),
-	})
+	}
 }
 
-func (tc *TestCase) convertReport(vr *v4.VulnerabilityReport) *TestWant {
+func (tc *TestCase) mapFillReport(vr *v4.VulnerabilityReport) *TestWant {
 	return &TestWant{
-		Namespace: namespace(vr),
+		Namespace: mapNamespace(vr),
 		Source:    tc.Source,
-		Features:  tc.convertFeatures(vr),
+		Features:  tc.mapFillFeatures(vr),
 	}
 }
 
-func (tc *TestCase) convertFeatures(vr *v4.VulnerabilityReport) []Feature {
-	nv := func(n, v string) string {
-		return fmt.Sprintf("%s-%s", n, v)
-	}
-	// Populate map with all features in the test case.
-	feats := make(map[string]*Feature, len(tc.Features))
-	for idx, f := range tc.Features {
-		feats[nv(f.Name, f.Version)] = &tc.Features[idx]
-	}
-	// Convert every expected package in the report.
-	ret := make([]Feature, 0, len(tc.Features))
+// mapFillFeatures creates a features slice by converting values found in the
+// vulnerability report or using empty entries when not found.
+func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
+	// Populate map with all packages in the report.
+	pkgs := make(map[string]map[string]*v4.Package)
 	for _, p := range vr.GetContents().GetPackages() {
-		f, ok := feats[nv(p.Name, p.Version)]
+		versions, ok := pkgs[p.Name]
 		if !ok {
-			// We only care for features in the test case.
-			continue
+			versions = make(map[string]*v4.Package)
+			pkgs[p.Name] = versions
+		}
+		versions[p.Version] = p
+	}
+	// Convert every expected package found in the report, or convert an empty
+	// package if not found.
+	var ret []Feature
+	for _, f := range tc.Features {
+		versions, nameFound := pkgs[f.Name]
+		var p *v4.Package
+		if nameFound {
+			version, versionFound := versions[f.Version]
+			if versionFound {
+				p = version
+			} else {
+				p = &v4.Package{Name: f.Name}
+			}
+		} else {
+			p = &v4.Package{}
 		}
 		ret = append(ret, Feature{
 			Name:            p.GetName(),
-			NamespaceName:   namespace(vr),
+			NamespaceName:   mapNamespace(vr),
 			Version:         p.GetVersion(),
-			Vulnerabilities: tc.convertVulns(vr, p, f),
+			Vulnerabilities: tc.mapFillVulns(vr, p, &f),
 			// TODO Pending fields not currently available in the vulnerability report.
 			VersionFormat: f.VersionFormat,
 			AddedBy:       f.AddedBy,
@@ -172,52 +188,64 @@ func (tc *TestCase) convertFeatures(vr *v4.VulnerabilityReport) []Feature {
 	return ret
 }
 
-func (tc *TestCase) convertVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, feat *Feature) []Vulnerability {
-	// Populate map with all vulnerabilities in the test case feature.
-	featVulns := make(map[string]*Vulnerability)
-	for idx, featVuln := range feat.Vulnerabilities {
-		featVulns[featVuln.Name] = &feat.Vulnerabilities[idx]
+func (tc *TestCase) mapFillVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, feat *Feature) []Vulnerability {
+	// Create map with all vulnerabilities found for the package found in the report.
+	vrVulns := make(map[string]*v4.VulnerabilityReport_Vulnerability)
+	for _, id := range vr.GetPackageVulnerabilities()[pkg.GetId()].GetValues() {
+		v := vr.GetVulnerabilities()[id]
+		vrVulns[v.GetName()] = v
 	}
 	// Convert all package vulnerabilities.
 	var vulns []Vulnerability
-	for _, id := range vr.GetPackageVulnerabilities()[pkg.GetId()].GetValues() {
-		v := vr.GetVulnerabilities()[id]
-		n, _, _ := strings.Cut(v.GetName(), " ")
-		featVuln, ok := featVulns[n]
-		if !ok && tc.OnlyCheckSpecifiedVulns {
-			// Skip since we only check what is in the test features.
-			continue
-		}
-		// Link is by default the first on the list, but we check if the expected link is
-		// somewhere else.
-		link, _, _ := strings.Cut(v.GetLink(), " ")
-		for _, l := range strings.Split(v.GetLink(), " ") {
-			if l == featVuln.Link {
-				link = l
-			}
-		}
-		// Convert severity.
-		severity, ok := map[v4.VulnerabilityReport_Vulnerability_Severity]string{
-			v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL:    "Critical",
-			v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT:   "Important",
-			v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE:    "Moderate",
-			v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW:         "Low",
-			v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED: "Unspecified",
-		}[v.GetNormalizedSeverity()]
+	for _, featVuln := range feat.Vulnerabilities {
+		// If not found, convert an empty vulnerability case.
+		v, ok := vrVulns[featVuln.Name]
 		if !ok {
-			severity = "Unknown"
+			v = &v4.VulnerabilityReport_Vulnerability{}
+		} else if !tc.OnlyCheckSpecifiedVulns {
+			// Delete from map, so we can check the remaining items.
+			delete(vrVulns, featVuln.Name)
 		}
-		vulns = append(vulns, Vulnerability{
-			Name:        n,
-			Description: v.GetDescription(),
-			Link:        link,
-			Severity:    severity,
-			FixedBy:     v.GetFixedInVersion(),
-			// TODO Pending fields not currently available in the vulnerability report.
-			Metadata: featVuln.Metadata,
-		})
+		vulns = append(vulns, tc.mapFillVuln(v, &featVuln))
+	}
+	if !tc.OnlyCheckSpecifiedVulns {
+		// Add the remaining vulnerabilities.
+		for _, v := range vrVulns {
+			vulns = append(vulns, tc.mapFillVuln(v, &Vulnerability{}))
+		}
 	}
 	return vulns
+}
+
+func (tc *TestCase) mapFillVuln(v *v4.VulnerabilityReport_Vulnerability, featVuln *Vulnerability) Vulnerability {
+	// Link is by default the first on the list, but we check if the expected link is
+	// somewhere else.
+	link, _, _ := strings.Cut(v.GetLink(), " ")
+	for _, l := range strings.Split(v.GetLink(), " ") {
+		if l == featVuln.Link {
+			link = l
+		}
+	}
+	// Convert severity.
+	severity, ok := map[v4.VulnerabilityReport_Vulnerability_Severity]string{
+		v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL:    "Critical",
+		v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT:   "Important",
+		v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE:    "Moderate",
+		v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW:         "Low",
+		v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED: "Unspecified",
+	}[v.GetNormalizedSeverity()]
+	if !ok {
+		severity = "Unknown"
+	}
+	return Vulnerability{
+		Name:        v.GetName(),
+		Description: v.GetDescription(),
+		Link:        link,
+		Severity:    severity,
+		FixedBy:     v.GetFixedInVersion(),
+		// TODO Pending fields not currently available in the vulnerability report.
+		Metadata: featVuln.Metadata,
+	}
 }
 
 func (tc *TestCase) logReport(t *testing.T, vr *v4.VulnerabilityReport) {

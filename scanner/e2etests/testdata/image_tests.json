@@ -3559,7 +3559,7 @@
                 "Name": "nodejs-full-i18n",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "1:10.21.0-3.module+el8.2.0+7071+d2377ea3.x86_64",
+                "Version": "1:10.21.0-3.module+el8.2.0+7071+d2377ea3",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2021:0548",
@@ -3617,7 +3617,7 @@
                 "Name": "freetype",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "2.9.1-4.el8.x86_64",
+                "Version": "2.9.1-4.el8",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4952",
@@ -3651,7 +3651,7 @@
                 "Name": "libsolv",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "0.7.7-1.el8.x86_64",
+                "Version": "0.7.7-1.el8",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4508",
@@ -3765,6 +3765,7 @@
         "required_feature_flag": null
     },
     {
+        "disabled_reason": "unauthorized when pulling layers",
         "image": "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.74.1@sha256:8e455c6f7ee571cc8c565b2f2b1ff712f05ade5cef0c34d528d2955253469992",
         "registry": "https://registry.redhat.io",
         "username": "REDHAT_USERNAME",
@@ -5129,7 +5130,7 @@
                 "Name": "aspnetcore-runtime-6.0",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "6.0.6-1.el8_6.x86_64",
+                "Version": "6.0.6-1.el8_6",
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
@@ -5163,7 +5164,7 @@
                 "Name": "dotnet-runtime-6.0",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "6.0.6-1.el8_6.x86_64",
+                "Version": "6.0.6-1.el8_6",
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
@@ -5201,6 +5202,7 @@
         "required_feature_flag": null
     },
     {
+        "disabled_reason": "ROX-20730: CVE-2022-22978 not found",
         "image": "quay.io/rhacs-eng/qa:spring-CVE-2022-22978",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -5209,7 +5211,7 @@
         "namespace": "rhel:8",
         "expected_features": [
             {
-                "Name": "spring-security-web",
+                "Name": "org.springframework.security:spring-security-web",
                 "VersionFormat": "JavaSourceType",
                 "Version": "5.5.5",
                 "Vulnerabilities": [
@@ -5345,6 +5347,7 @@
         "required_feature_flag": null
     },
     {
+        "disabled_reason": "ROX-20730: CVE-2021-26291 not found",
         "image": "quay.io/rhacs-eng/qa:ose-jenkins",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -5356,7 +5359,7 @@
                 "Name": "jenkins-2-plugins",
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
-                "Version": "4.10.1650890594-1.el8.noarch",
+                "Version": "4.10.1650890594-1.el8",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2021-26291",
@@ -5439,6 +5442,7 @@
         "required_feature_flag": null
     },
     {
+        "disabled_reason": "ROX-20729: unexpected fixedby and description in CVE-2021-41411",
         "image": "quay.io/rhacs-eng/qa:drools-CVE-2021-41411",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -5447,9 +5451,9 @@
         "namespace": "rhel:8",
         "expected_features": [
             {
-                "Name": "drools",
+                "Name": "org.drools:drools-core",
                 "VersionFormat": "JavaSourceType",
-                "Version": "6.4.0.final",
+                "Version": "6.4.0.Final",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2021-41411",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
@@ -22,6 +23,7 @@ var (
 		claircore.High:       v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
+	vulnNamePattern = regexp.MustCompile(`((CVE|ALAS|DSA)-\d{4}-\d+)|((RHSA|RHBA|RHEA)-\d{4}:\d+)`)
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -261,7 +263,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
-			Name:               v.Name,
+			Name:               getVulnName(v),
 			Description:        v.Description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -274,6 +276,30 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// getVulnName returns the first vulnerability name that matches a known
+// vulnerability name pattern from the report, or the original name if none
+// found.
+func getVulnName(vuln *claircore.Vulnerability) string {
+	vulnID := vulnNamePattern.FindString(vuln.Name)
+	if vulnID != "" {
+		return vulnID
+	}
+	found := vulnNamePattern.FindAllString(vuln.Links, -1)
+	// Prioritize RHSA > CVE > anything else.
+	for _, p := range []string{"RHSA", "CVE"} {
+		for _, s := range found {
+			if strings.HasPrefix(s, p) {
+				return s
+			}
+		}
+	}
+	// Otherwise return the first one found.
+	if len(found) > 0 {
+		return found[0]
+	}
+	return vuln.Name
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {

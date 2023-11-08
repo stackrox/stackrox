@@ -670,3 +670,51 @@ func Test_convertToNormalizedSeverity(t *testing.T) {
 	// Test nothing was added without us knowing.
 	assert.Equal(t, int(claircore.Critical), 5)
 }
+
+func Test_getVulnName(t *testing.T) {
+	testcases := map[string]struct {
+		name     string
+		links    string
+		expected string
+	}{
+		"Alpine": {
+			name:     "CVE-2018-16840",
+			expected: "CVE-2018-16840",
+		},
+		"Amazon Linux": {
+			name:     "ALAS-2022-1654",
+			expected: "ALAS-2022-1654",
+		},
+		"Debian": {
+			name:     "DSA-4591-1 cyrus-sasl2",
+			expected: "DSA-4591-1",
+		},
+		"pyup.io": {
+			name:     "pyup.io-38834 (CVE-2020-26137)",
+			expected: "CVE-2020-26137",
+		},
+		"RHEL": {
+			name:     "RHSA-2023:0173: libxml2 security update (Moderate)",
+			expected: "RHSA-2023:0173",
+		},
+		"Ubuntu": {
+			name:     "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",
+			expected: "CVE-2022-45061",
+		},
+		"Unknown": {
+			name:     "cool CVE right here",
+			expected: "cool CVE right here",
+		},
+		"Links with CVE and RHSA": {
+			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+			expected: "RHSA-2023:1866",
+		},
+	}
+	for name, testcase := range testcases {
+		t.Run(name, func(t *testing.T) {
+			v := &claircore.Vulnerability{Name: testcase.name, Links: testcase.links}
+			assert.Equal(t, testcase.expected, getVulnName(v))
+		})
+	}
+
+}
