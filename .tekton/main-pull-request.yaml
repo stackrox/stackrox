@@ -200,11 +200,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values:
-        - "true"
       workspaces:
       - name: source
         workspace: workspace
