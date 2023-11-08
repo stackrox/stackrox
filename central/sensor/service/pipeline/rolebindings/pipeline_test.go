@@ -66,3 +66,23 @@ func (suite *PipelineTestSuite) TestRoleBindingSyncResources() {
 	}, nil)
 	suite.NoError(err)
 }
+
+func (suite *PipelineTestSuite) TestRoleBindingDeleteResources() {
+	ctx := context.Background()
+	rolebinding := fixtures.GetMultipleK8sRoleBindings(1, 1)[0]
+
+	suite.rolebindings.EXPECT().RemoveRoleBinding(ctx, rolebinding.GetId())
+
+	err := suite.pipeline.Run(ctx, rolebinding.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     rolebinding.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Binding{
+					Binding: rolebinding,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
