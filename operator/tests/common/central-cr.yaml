@@ -5,20 +5,20 @@ metadata:
 spec:
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:
+    adminPasswordSecret:
+      name: admin-pass
     resources:
       requests:
         memory: 1Gi
-        cpu: 1
+        cpu: 500m
       limits:
         memory: 4Gi
         cpu: 1
-    adminPasswordSecret:
-      name: admin-pass
     db:
       resources:
         requests:
           memory: 1Gi
-          cpu: 1
+          cpu: 500m
         limits:
           memory: 4Gi
           cpu: 1

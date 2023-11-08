@@ -1,3 +1,21 @@
+# Note: When running a TestStep, `kuttl` processes delete directives first,
+# before applying changes to central listed below.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+# The previous step (75-switch-to-external-central-db) has caused the initially generated
+# central-db-password secret to be overwritten with a manually specified "external" password.
+# The DB PVC was left behind, but it's difficult to extract the password from there.
+# Instead, we now remove the central DB PVC, to cause the operator create a new one such that
+# it can be populated with a freshly generated DB password.
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  name: central-db
+# Clean up the external DB password secret, we no longer refer to it in this step.
+- apiVersion: v1
+  kind: Secret
+  name: my-central-db-password
+---
 # Default specs.central.db behaviour is to use an internal central-db instance
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central

@@ -1,8 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-delete:
-# bounce the central pod
-- apiVersion: v1
-  kind: Pod
-  labels:
-    app: central

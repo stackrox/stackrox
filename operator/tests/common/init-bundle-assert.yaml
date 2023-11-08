@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sensor-tls
+  annotations:
+    init-bundle.stackrox.io/name: testing-cluster
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: collector-tls
+  annotations:
+    init-bundle.stackrox.io/name: testing-cluster
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: admission-control-tls
+  annotations:
+    init-bundle.stackrox.io/name: testing-cluster
