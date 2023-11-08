@@ -41,11 +41,6 @@ deploy_stackrox() {
                 "op": "replace",
                 "path": "/spec/template/spec/containers/0/image",
                 "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:807015c95809a726ee8948355deed63b91d69d59"
-            },
-            {
-                "op": "replace",
-                "path": "/spec/template/spec/containers/2/image",
-                "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:807015c95809a726ee8948355deed63b91d69d59"
             }
         ]'
 
