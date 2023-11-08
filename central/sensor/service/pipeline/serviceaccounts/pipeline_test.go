@@ -72,5 +72,24 @@ func (suite *PipelineTestSuite) TestServiceAccountSyncResources() {
 		},
 	}, nil)
 	suite.NoError(err)
+}
 
+func (suite *PipelineTestSuite) TestServiceAccountDeleteResources() {
+	ctx := context.Background()
+	serviceAccount := fixtures.GetServiceAccount()
+
+	suite.serviceaccounts.EXPECT().RemoveServiceAccount(ctx, serviceAccount.GetId())
+
+	err := suite.pipeline.Run(ctx, serviceAccount.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     serviceAccount.GetClusterId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ServiceAccount{
+					ServiceAccount: serviceAccount,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
 }
