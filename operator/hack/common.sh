@@ -152,7 +152,7 @@ function nurse_deployment_until_available() {
   # the _old_ .spec until the deployment controller runs the first reconciliation.
   # We use kuttl because CSV has a Condition type incompatible with `kubectl wait`.
   log "Waiting for the ${version_tag} CSV to finish installing."
-  "${KUTTL}" assert --timeout 300 --namespace "${operator_ns}" /dev/stdin <<-END
+  "${KUTTL}" assert --timeout 600 --namespace "${operator_ns}" /dev/stdin <<-END
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
