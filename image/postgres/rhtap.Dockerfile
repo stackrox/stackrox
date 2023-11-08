@@ -2,7 +2,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as builder
 
 COPY . /stackrox
 
-FROM registry.redhat.io/rhel8/postgresql-13:latest as final
+FROM registry.access.redhat.com/rhel8/postgresql-13:latest as final
 
 USER root
 
@@ -27,7 +27,6 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-ARG REMOTE_SOURCES_DIR
 COPY --from=builder --chown=postgres:postgres \
     /stackrox/image/postgres/scripts/docker-entrypoint.sh \
     /usr/local/bin/
