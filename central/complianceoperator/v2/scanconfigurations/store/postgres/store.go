@@ -23,11 +23,6 @@ import (
 const (
 	baseTable = "compliance_operator_scan_configuration_v2"
 	storeName = "ComplianceOperatorScanConfigurationV2"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -133,6 +128,10 @@ func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, o
 }
 
 func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanConfigurationV2) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -198,6 +197,10 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 }
 
 func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ProfileShim) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
