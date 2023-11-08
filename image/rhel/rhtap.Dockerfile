@@ -11,8 +11,11 @@ COPY . .
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
 ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
-# This installs yarn from Cachi2.
-RUN cd image/rhel/rhtap-bootstrap-yarn && npm install --global
+# This installs yarn from Cachi2 and makes `yarn` executable available.
+# Not using `npm install --global` because it won't get us `yarn` globally.
+RUN cd image/rhel/rhtap-bootstrap-yarn && \
+    npm ci --no-audit --no-fund
+ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/image/rhel/rhtap-bootstrap-yarn/node_modules/.bin/"
 
 # UI build is not hermetic because Cachi2 does not support pulling packages according to yarn.lock yet.
 # TODO(ROX-20723): make UI builds hermetic when Cachi2 supports that.
