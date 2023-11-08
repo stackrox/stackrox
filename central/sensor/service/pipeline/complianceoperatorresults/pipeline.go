@@ -36,13 +36,13 @@ var (
 		central.ComplianceOperatorCheckResultV2_INCONSISTENT:   storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
 	}
 
-	severityToV2 = map[central.ComplianceOperatorCheckResultV2_RuleSeverity]storage.RuleSeverity{
-		central.ComplianceOperatorCheckResultV2_UNSET_RULE_SEVERITY:   storage.RuleSeverity_UNSET_RULE_SEVERITY,
-		central.ComplianceOperatorCheckResultV2_UNKNOWN_RULE_SEVERITY: storage.RuleSeverity_UNKNOWN_RULE_SEVERITY,
-		central.ComplianceOperatorCheckResultV2_INFO_RULE_SEVERITY:    storage.RuleSeverity_INFO_RULE_SEVERITY,
-		central.ComplianceOperatorCheckResultV2_LOW_RULE_SEVERITY:     storage.RuleSeverity_LOW_RULE_SEVERITY,
-		central.ComplianceOperatorCheckResultV2_MEDIUM_RULE_SEVERITY:  storage.RuleSeverity_MEDIUM_RULE_SEVERITY,
-		central.ComplianceOperatorCheckResultV2_HIGH_RULE_SEVERITY:    storage.RuleSeverity_HIGH_RULE_SEVERITY,
+	severityToV2 = map[central.ComplianceOperatorRuleSeverity]storage.RuleSeverity{
+		central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY:   storage.RuleSeverity_UNSET_RULE_SEVERITY,
+		central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY: storage.RuleSeverity_UNKNOWN_RULE_SEVERITY,
+		central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY:    storage.RuleSeverity_INFO_RULE_SEVERITY,
+		central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY:     storage.RuleSeverity_LOW_RULE_SEVERITY,
+		central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY:  storage.RuleSeverity_MEDIUM_RULE_SEVERITY,
+		central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY:    storage.RuleSeverity_HIGH_RULE_SEVERITY,
 	}
 
 	log = logging.LoggerForModule()
