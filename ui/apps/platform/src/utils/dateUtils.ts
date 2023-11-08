@@ -38,7 +38,7 @@ export function getTime(timestamp: DateLike) {
  * @returns {string} - returns a formatted string for the time
  */
 export function getTimeHoursMinutes(timestamp: DateLike) {
-    return format(timestamp, 'h:mmA');
+    return format(timestamp, 'h:mm A');
 }
 
 export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {

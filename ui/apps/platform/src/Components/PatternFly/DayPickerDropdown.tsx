@@ -10,6 +10,7 @@ export type DayPickerDropdownProps = {
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
     intervalType: IntervalType | null;
+    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
 };
 
 export const daysOfWeek = ['0', '1', '2', '3', '4', '5', '6'] as const;
@@ -39,6 +40,7 @@ function DayPickerDropdown({
     handleSelect,
     isEditable = true,
     intervalType,
+    onBlur,
 }: DayPickerDropdownProps): ReactElement {
     const selectSafeValue = value.map((item) => item.toString());
     const {
@@ -100,6 +102,7 @@ function DayPickerDropdown({
             isDisabled={!isEditable}
             placeholderText={value.length ? 'Selected days' : 'Select days'}
             menuAppendTo={() => document.body}
+            onBlur={onBlur}
         >
             {selectOptions}
         </Select>

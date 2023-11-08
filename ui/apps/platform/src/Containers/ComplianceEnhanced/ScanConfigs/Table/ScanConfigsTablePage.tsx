@@ -47,7 +47,7 @@ type ScanConfigsTablePageProps = {
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${complianceEnhancedScanConfigsBasePath}/?action=create`}>
+        <Link to={`${complianceEnhancedScanConfigsBasePath}?action=create`}>
             <Button variant="primary">Create scan schedule</Button>
         </Link>
     );
