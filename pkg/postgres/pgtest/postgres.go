@@ -13,10 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"k8s.io/utils/env"
-
-	// Ignore blank import warning as this is for test only
-	_ "github.com/lib/pq"
 )
+
+const driverName = "pgx"
 
 // TestPostgres is a Postgres instance used in tests
 type TestPostgres struct {
@@ -42,7 +41,7 @@ func CreateDatabase(t testing.TB, database string) {
 	// Bootstrap the test database by connecting to the default postgres database and running create
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
 
-	db, err := sql.Open("postgres", sourceWithPostgresDatabase)
+	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
 
 	// Checks to see if DB already exists
@@ -67,7 +66,7 @@ func DropDatabase(t testing.TB, database string) {
 	// Connect to the admin postgres database to drop the test database.
 	if database != "postgres" {
 		sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, "postgres")
-		db, err := sql.Open("postgres", sourceWithPostgresDatabase)
+		db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 		require.NoError(t, err)
 
 		_, _ = db.Exec("DROP DATABASE " + database)
