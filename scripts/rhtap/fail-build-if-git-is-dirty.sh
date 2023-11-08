@@ -25,6 +25,10 @@ echo "Checking that files in git repo are not modified."
 echo "If this command fails, you should see the list of modified files below."
 echo "You need to find the reason and prevent it because otherwise the build results will be inconsistent."
 echo ""
-git status --porcelain | { ! { grep '.' >&2 && echo "ERROR: Modifies files found." >&2; } ; }
 
-echo "No modifications to git repo detected."
+if git status --porcelain | grep '.' >&2 ; then
+    >&2 echo "ERROR: Modified files found."
+    exit 2
+else
+    echo "No modifications to git repo detected."
+fi
