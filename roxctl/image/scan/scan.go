@@ -231,7 +231,6 @@ func (i *imageScanCommand) Scan() error {
 // scanImage will retrieve scan results from central and print them afterwards
 func (i *imageScanCommand) scanImage() error {
 	imageResult, err := i.getImageResultFromService()
-
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}
