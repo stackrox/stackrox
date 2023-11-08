@@ -66,7 +66,7 @@ const summaryQuery = gql`
     }
 `;
 
-const vulnerabilityQuery = gql`
+export const deploymentVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${deploymentWithVulnerabilitiesFragment}
     query getCvesForDeployment(
@@ -150,7 +150,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             pagination: PaginationParam;
             statusesForExceptionCount: string[];
         }
-    >(vulnerabilityQuery, {
+    >(deploymentVulnerabilitiesQuery, {
         variables: {
             id: deploymentId,
             query,

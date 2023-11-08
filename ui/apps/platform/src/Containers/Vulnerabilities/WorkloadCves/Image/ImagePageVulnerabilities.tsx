@@ -59,7 +59,7 @@ import ExceptionRequestModal, {
 import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
 
-const imageVulnerabilitiesQuery = gql`
+export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
@@ -92,9 +92,14 @@ export type ImagePageVulnerabilitiesProps = {
         remote: string;
         tag: string;
     };
+    refetchAll: () => void;
 };
 
-function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabilitiesProps) {
+function ImagePageVulnerabilities({
+    imageId,
+    imageName,
+    refetchAll,
+}: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
 
@@ -299,6 +304,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
+                        return refetchAll();
                     }}
                     onClose={closeModals}
                 />
