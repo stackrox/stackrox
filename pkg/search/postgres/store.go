@@ -24,6 +24,12 @@ const (
 	batchAfter      = 100
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
+
+	// MaxBatchSize sets the maximum number of elements in a batch.
+	// Using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	MaxBatchSize = 10000
 )
 
 var (

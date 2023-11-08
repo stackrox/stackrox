@@ -21,11 +21,6 @@ import (
 const (
 	baseTable = "node_component_edges"
 	storeName = "NodeComponentEdge"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
