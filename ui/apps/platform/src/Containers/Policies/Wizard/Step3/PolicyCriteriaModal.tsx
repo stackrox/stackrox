@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Button,
     Flex,
@@ -7,65 +7,84 @@ import {
     ModalBoxBody,
     ModalBoxFooter,
     TreeView,
+    TreeViewDataItem,
 } from '@patternfly/react-core';
+import { kebabCase } from 'lodash';
+
+import { Descriptor } from './policyCriteriaDescriptors';
+
+function getEmptyPolicyFieldCard(field) {
+    const defaultValue = field.defaultValue !== undefined ? field.defaultValue : '';
+    return {
+        fieldName: field.name,
+        booleanOperator: 'OR',
+        values: [
+            {
+                value: defaultValue,
+            },
+        ],
+        negate: false,
+        field,
+    };
+}
 
 type PolicyCriteriaModalProps = {
+    descriptors: Descriptor[];
     isModalOpen: boolean;
     onClose: () => void;
+    addPolicyFieldCardHandler: (Descriptor) => void;
 };
 
-// TODO: remove this placeholder data
-const options = [
-    {
-        title: 'Image registry',
-        id: 'category-image-registry',
-        children: [
-            {
-                name: 'Container registry name is',
-                title: 'Image registry',
-                id: 'field-image-registry',
-            },
-            {
-                name: 'Image name is',
-                title: 'Image name',
-                id: 'field-image-name',
-            },
-            {
-                name: 'Image tag is',
-                title: 'Image tag',
-                id: 'field-image-tag',
-            },
-            {
-                name: 'Image signature is missing or wrong',
-                title: 'Image signature',
-                id: 'field-image-signature',
-            },
-        ],
-    },
-    {
-        title: 'Deployment metadata',
-        id: 'category-deployment metadata',
-        children: [
-            {
-                title: 'Disallowed annotation',
-                id: 'field-disallowed annotation',
-            },
-            {
-                name: 'Required deployment label',
-                title: 'Required label',
-                id: 'field-required-label',
-            },
-            {
-                name: 'Required deployment annotation',
-                title: 'Required annotation',
-                id: 'field-required-annotation',
-            },
-        ],
-    },
-];
-// TODO end: remove this placeholder data
+function getKeysByCategory(keys) {
+    const categories = {};
+    keys.forEach((key) => {
+        const { category } = key;
+        if (categories[category]) {
+            categories[category].push(key);
+        } else {
+            categories[category] = [key];
+        }
+    });
+    return categories;
+}
 
-function PolicyCriteriaModal({ isModalOpen, onClose }: PolicyCriteriaModalProps) {
+function PolicyCriteriaModal({
+    addPolicyFieldCardHandler,
+    descriptors,
+    isModalOpen,
+    onClose,
+}: PolicyCriteriaModalProps) {
+    const [activeItems, setActiveItems] = useState<TreeViewDataItem[]>([]);
+    const [allExpanded, setAllExpanded] = useState(false);
+
+    const categories = getKeysByCategory(descriptors);
+    const treeList = Object.keys(categories).map((category) => ({
+        name: '',
+        title: category,
+        id: kebabCase(category),
+        children: categories[category].map((child) => ({
+            name: child.longName,
+            title: child.shortName,
+            id: kebabCase(child.shortName),
+        })),
+    }));
+
+    function onSelect(evt, treeViewItem) {
+        // Ignore folders for selection
+        if (treeViewItem && !treeViewItem.children) {
+            setActiveItems([treeViewItem]);
+        }
+    }
+
+    function addField() {
+        const itemKey = activeItems[0].title;
+        const itemToAdd = descriptors.find((descriptor) => descriptor.shortName === itemKey);
+        const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
+
+        addPolicyFieldCardHandler(newPolicyFieldCard);
+        onClose();
+    }
+
     return (
         <Modal
             title="Add policy criteria field"
@@ -79,13 +98,24 @@ function PolicyCriteriaModal({ isModalOpen, onClose }: PolicyCriteriaModalProps)
                 <Flex direction={{ default: 'column' }}>
                     <FlexItem>Filter by criteria name</FlexItem>
                     <FlexItem>
-                        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-                        {/* @ts-ignore */}
-                        <TreeView data={options} variant="compact" />
+                        <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
+                            {allExpanded && 'Collapse all'}
+                            {!allExpanded && 'Expand all'}
+                        </Button>
+                        <TreeView
+                            activeItems={activeItems}
+                            data={treeList}
+                            onSelect={onSelect}
+                            variant="compact"
+                            allExpanded={allExpanded}
+                        />
                     </FlexItem>
                 </Flex>
             </ModalBoxBody>
             <ModalBoxFooter>
+                <Button variant="primary" onClick={addField}>
+                    Add policy field
+                </Button>
                 <Button variant="link" onClick={onClose}>
                     Cancel
                 </Button>

@@ -6,22 +6,9 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
-import './PolicySectionDropTarget.css';
+import { getEmptyPolicyFieldCard } from '../../policies.utils';
 
-function getEmptyPolicyFieldCard(fieldKey) {
-    const defaultValue = fieldKey.defaultValue !== undefined ? fieldKey.defaultValue : '';
-    return {
-        fieldName: fieldKey.name,
-        booleanOperator: 'OR',
-        values: [
-            {
-                value: defaultValue,
-            },
-        ],
-        negate: false,
-        fieldKey,
-    };
-}
+import './PolicySectionDropTarget.css';
 
 function getPolicyCriteriaFieldKeys(policyGroups, descriptors) {
     const fieldNameMap = keyBy(policyGroups, (field) => field.fieldName as string);
