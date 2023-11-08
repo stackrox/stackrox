@@ -1,14 +1,15 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-event: '[pull_request]'
-    pipelinesascode.tekton.dev/on-target-branch: '[*]'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && (source_branch.contains("konflux") || source_branch.contains("rhtap"))
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
@@ -16,21 +17,51 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: main-on-pull-request
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
-    value: image/postgres/rhtap.Dockerfile
+    value: image/rhel/konflux.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    value: 5d
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/main:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  # TODO: Enable prefetching - will be done as part of ROX-20160.
+  - name: prefetch-input
+    value: ''
+  - name: build-source-image
+    value: 'true'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: { }
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
+
     finally:
     - name: show-sbom
       params:
@@ -41,7 +72,7 @@ spec:
         - name: name
           value: show-sbom
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:7db0af43dcebaeb33e34413148370e17078c30fd2fc78fb84c8941b444199f36
+          value: quay.io/redhat-appstudio-tekton-catalog/task-show-sbom:0.1@sha256:82737c8d365c620295fa526d21a481d4614f657800175ddc0ccd7846c54207f8
         - name: kind
           value: task
         resolver: bundles
@@ -60,10 +91,11 @@ spec:
         - name: name
           value: summary
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.1@sha256:243b13105967b251c1facd55159165809a9fa797215af613997ac6a16798db73
+          value: quay.io/redhat-appstudio-tekton-catalog/task-summary:0.1@sha256:29a64be421fdc203cb26c61b746c650e239ae924a73a825ad93bffb9e7ae7214
         - name: kind
           value: task
         resolver: bundles
+
     params:
     - description: Source Repository URL
       name: git-url
@@ -93,10 +125,6 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "true"
-      description: Skip optional checks, set false if you want to run optional checks
-      name: skip-optional
-      type: string
     - default: "false"
       description: Execute the build with network isolation
       name: hermetic
@@ -118,6 +146,7 @@ spec:
       description: Build a source image.
       name: build-source-image
       type: string
+
     results:
     - description: ""
       name: IMAGE_URL
@@ -134,36 +163,39 @@ spec:
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
+    workspaces:
+    - name: workspace
+    - name: git-auth
+
     tasks:
+
     - name: init
       params:
       - name: image-url
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      - name: skip-checks
-        value: $(params.skip-checks)
-      - name: skip-optional
-        value: $(params.skip-optional)
-      - name: pipelinerun-name
-        value: $(context.pipelineRun.name)
-      - name: pipelinerun-uid
-        value: $(context.pipelineRun.uid)
       taskRef:
         params:
         - name: name
           value: init
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.1@sha256:26586a7ef08c3e86dfdaf0a5cc38dd3d70c4c02db1331b469caaed0a0f5b3d86
+          value: quay.io/redhat-appstudio-tekton-catalog/task-init:0.2@sha256:3d8f01fa59596a998d30dc700fcf7377f09d60008337290eebaeaf604512ce2b
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: depth
+        value: "0"
+      - name: fetchTags
+        value: "true"
       runAfter:
       - init
       taskRef:
@@ -171,20 +203,20 @@ spec:
         - name: name
           value: git-clone
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:d9e1ab10d72953e7a85dab69b8b96f5b41580a6d4026f77b6a5ba6f3ed227cc3
+          value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:e13f6e9145b876e858d115abac1dc47fb3df891fcf10e8894672958372bd37dd
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: output
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -196,18 +228,14 @@ spec:
         - name: name
           value: prefetch-dependencies
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:ca366af4f096e94dad40a327a09328a5e4bed4d0292a213165861e9e19bf380e
+          value: quay.io/redhat-appstudio-tekton-catalog/task-prefetch-dependencies:0.1@sha256:0b7bec23b6c08f37138a86e569835842763b3aa42f4455fd70ba3986350e07c7
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values:
-        - "true"
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -231,18 +259,18 @@ spec:
         - name: name
           value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:e38365a7acbe4a6135fa72096513e24795dc7a8ed8f6be5fa0c7bf0f30484ac6
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:1ee1d570b3cf7feaf85a22c828076e798a57266ffcfea41c1aa0e9f85b0a885a
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -256,22 +284,21 @@ spec:
         - name: name
           value: source-build
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:e751a76622743cf51b35ba230768be9886535b7cf51491c2b8513979e7a577d8
+          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:3ad20adff4aa5cd153695b115133cb7c71c87f095af02fae5932396b1c72eb00
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       - input: $(params.build-source-image)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: inspect-image
       params:
       - name: IMAGE_URL
@@ -285,18 +312,18 @@ spec:
         - name: name
           value: inspect-image
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:3a5d3f611240eb5b7b12799c2be22a71803df80dbc12cce2e1e2a252ab543423
+          value: quay.io/redhat-appstudio-tekton-catalog/task-inspect-image:0.1@sha256:6a9fff4f7485728ebb0dd3f0572a7aedc1e330f588463102ee6bb3182cd24aab
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
       workspaces:
       - name: source
         workspace: workspace
+
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
@@ -308,15 +335,15 @@ spec:
         - name: name
           value: deprecated-image-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.3@sha256:43e226dba9b1230cd271219f33d29dece3e9b2fd6f824aa33beeb5e285f15324
+          value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.3@sha256:d862972471dca80900bbe3a0fbd579cc84e8414bafbd5021bc684b207067c423
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: clair-scan
       params:
       - name: image-digest
@@ -330,15 +357,15 @@ spec:
         - name: name
           value: clair-scan
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.1@sha256:f6a5a24cb8faa590d4f3adc204a197fd89da1bcea365963af9ac66838c030816
+          value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.1@sha256:cfd4a8350b12900345f341171b3fafe9b1f5eb5eeb6aa773bfb1e88ab99cff4a
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sast-snyk-check
       runAfter:
       - clone-repository
@@ -347,18 +374,18 @@ spec:
         - name: name
           value: sast-snyk-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:edd4ba638b71de52c2662abd3e93fd876e6e75cd07b162d13fae014d3a1a1fac
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.1@sha256:b3ff528f60b1d1239dc3dd5de89e553364899823220de3db7fdaf696c3288977
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: clamav-scan
       params:
       - name: image-digest
@@ -372,15 +399,15 @@ spec:
         - name: name
           value: clamav-scan
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-clamav-scan:0.1@sha256:b7d194547892219c663c4414d3bbb18e0c1798353e3922e4dc2b63ef9169adb9
+          value: quay.io/redhat-appstudio-tekton-catalog/task-clamav-scan:0.1@sha256:429e630d8a9a4f268db52daf4971b08783ebefd20fd2770d27cf75218b6500ba
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
@@ -394,33 +421,14 @@ spec:
         - name: name
           value: sbom-json-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:0ca48e1dffde39efe97b3252386f529241d6b276fe812a88774a9f37fc45f742
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:9f803c95f59faa75a87b6548506d5aa0df8368e937d40d696e863a0d46be0937
         - name: kind
           value: task
         resolver: bundles
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
-    workspaces:
-    - name: workspace
-    - name: git-auth
-      optional: true
-  taskRunTemplate: {}
-  workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: {}
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-status: {}
+        values: [ "false" ]
+
+  taskRunTemplate: { }
+status: { }
