@@ -217,7 +217,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 	return nil
 }
 
-func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
+func copyFromPodsLiveInstances(ctx context.Context, _ pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
