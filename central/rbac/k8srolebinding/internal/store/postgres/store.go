@@ -26,11 +26,6 @@ import (
 const (
 	baseTable = "role_bindings"
 	storeName = "K8SRoleBinding"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -160,6 +155,10 @@ func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, role
 }
 
 func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -237,6 +236,10 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 }
 
 func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

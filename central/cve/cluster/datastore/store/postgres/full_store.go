@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -110,12 +111,16 @@ func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType st
 }
 
 func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timestamp, objs ...*storage.ClusterCVE) error {
-	inputRows := [][]interface{}{}
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 
 	// This is a copy, so first we must delete the rows, and re-add them.
-	var deletes []string
+	deletes := make([]string, 0, batchSize)
 	copyCols := []string{
 		"id",
 		"type",
@@ -195,7 +200,11 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime *protoTypes.Timest
 }
 
 func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType storage.CVE_CVEType, clusters []string, objs ...*storage.ClusterCVEEdge) error {
-	inputRows := [][]interface{}{}
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
 
 	var err error
 	copyCols := []string{
