@@ -203,7 +203,6 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 }
 
 func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
-	log.Infof("Init'ing repo")
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 
