@@ -1,10 +1,9 @@
 package ratetracker
 
 import (
+	"container/heap"
 	"testing"
 	"time"
-
-	"container/heap"
 
 	"github.com/stretchr/testify/assert"
 )
