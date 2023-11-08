@@ -76,6 +76,26 @@ func (suite *PipelineTestSuite) TestNodeSyncResources() {
 	suite.NoError(err)
 }
 
+func (suite *PipelineTestSuite) TestNodeDeleteResources() {
+	ctx := context.Background()
+	node := fixtures.GetNode()
+
+	suite.nodeDatastore.EXPECT().DeleteNodes(ctx, node.GetId())
+
+	err := suite.pipeline.Run(ctx, node.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     node.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Node{
+					Node: node,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
+
 func Test_pipelineImpl_Run(t *testing.T) {
 	createMsg := func(osImage string) *central.MsgFromSensor {
 		return &central.MsgFromSensor{
