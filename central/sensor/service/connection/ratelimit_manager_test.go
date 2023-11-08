@@ -1,13 +1,15 @@
 package connection
 
 import (
-	"container/heap"
 	"fmt"
 	"math"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/sensor/service/connection/ratetracker"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,10 +18,10 @@ func TestNewRateLimitManagerDefaultMaxInitSync(t *testing.T) {
 	m := newRateLimitManager()
 	assert.Equal(t, math.MaxInt, m.initSyncMaxSensors)
 
-	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
+	assert.True(t, m.addInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
 
-	m.removeInitSync("test-1")
+	m.removeCluster("test-1")
 	assert.Len(t, m.initSyncSensors, 0)
 }
 
@@ -33,71 +35,54 @@ func TestNewRateLimitManagerZeroMaxInitSync(t *testing.T) {
 	m := newRateLimitManager()
 	assert.Equal(t, math.MaxInt, m.initSyncMaxSensors)
 
-	assert.True(t, m.AddInitSync("test-1"), "Can add if limit is set to 0")
+	assert.True(t, m.addInitSync("test-1"), "Can add if limit is set to 0")
 	assert.Len(t, m.initSyncSensors, 1)
 
-	m.removeInitSync("test-1")
+	m.removeCluster("test-1")
 	assert.Len(t, m.initSyncSensors, 0)
 }
 
 func TestNewRateLimitManagerMaxInitSync(t *testing.T) {
-	t.Setenv(env.CentralMaxInitSyncSensors.EnvVar(), "3")
+	centralMaxInitSyncSensors := 5
+
+	t.Setenv(env.CentralMaxInitSyncSensors.EnvVar(), fmt.Sprintf("%d", centralMaxInitSyncSensors))
 	m := newRateLimitManager()
 
-	for i := 0; i < 3; i++ {
-		assert.True(t, m.AddInitSync(fmt.Sprintf("test-%d", i)))
+	for i := 0; i < centralMaxInitSyncSensors; i++ {
+		assert.True(t, m.addInitSync(fmt.Sprintf("test-%d", i)))
 	}
-	assert.False(t, m.AddInitSync("test-a"), "Unable to add after limit is reached")
-	assert.Len(t, m.initSyncSensors, 3)
+	assert.False(t, m.addInitSync("test-a"), "Unable to add after limit is reached")
+	assert.Len(t, m.initSyncSensors, centralMaxInitSyncSensors)
 
-	m.removeInitSync("test-a")
-	assert.False(t, m.AddInitSync("test-a"), "Unable to add after removing non-existing")
+	m.removeCluster("test-a")
+	assert.False(t, m.addInitSync("test-a"), "Unable to add after removing non-existing")
 
-	m.removeInitSync("test-1")
-	assert.Len(t, m.initSyncSensors, 2)
-	assert.True(t, m.AddInitSync("test-a"), "Can add after one is removed")
-	assert.Len(t, m.initSyncSensors, 3)
+	m.removeCluster("test-1")
+	assert.Len(t, m.initSyncSensors, centralMaxInitSyncSensors-1)
+	assert.True(t, m.addInitSync("test-a"), "Can add after one is removed")
+	assert.Len(t, m.initSyncSensors, centralMaxInitSyncSensors)
 
-	assert.False(t, m.AddInitSync("test-b"), "Unable to add after limit is reached")
+	assert.False(t, m.addInitSync("test-b"), "Unable to add after limit is reached")
 }
 
-func TestInitSyncNilGuards(t *testing.T) {
-	var m *rateLimitManager
-
-	assert.Nil(t, m)
-	assert.True(t, m.AddInitSync("test-1"))
-	assert.NotPanics(t, func() { m.removeInitSync("test-1") })
-
-	m = &rateLimitManager{
-		initSyncMaxSensors: 1,
+func TestRateLimitManagerNilGuards(t *testing.T) {
+	tests := []struct {
+		name    string
+		manager *rateLimitManager
+	}{
+		{"nil manager", nil},
+		{"empty manager", &rateLimitManager{initSyncMaxSensors: 1}},
+		{"no tracker", &rateLimitManager{initSyncMaxSensors: 1, msgRateLimiter: ratelimit.NewRateLimiter(10, time.Minute)}},
+		{"no rate limiter", &rateLimitManager{initSyncMaxSensors: 1, msgRateTracker: ratetracker.NewClusterRateTracker(time.Minute, 1)}},
 	}
-	assert.Nil(t, m.msgRateLimiter)
-	assert.True(t, m.AddInitSync("test-1"))
-	assert.False(t, m.AddInitSync("test-2"))
 
-	assert.NotPanics(t, func() { m.removeInitSync("test-1") })
-	assert.True(t, m.AddInitSync("test-2"))
-}
-
-func TestNewRateLimitManagerDefaultEventsPerSecond(t *testing.T) {
-	m := newRateLimitManager()
-
-	for i := 0; i < 100; i++ {
-		require.False(t, m.LimitClusterMsg("c1"), "No limit")
-	}
-}
-
-func TestNewRateLimitManagerNegativeEventsPerSecond(t *testing.T) {
-	t.Setenv(env.CentralSensorMaxEventsPerSecond.EnvVar(), "-1")
-	assert.Panics(t, func() { newRateLimitManager() })
-}
-
-func TestNewRateLimitManagerZeroEventsPerSecond(t *testing.T) {
-	t.Setenv(env.CentralSensorMaxEventsPerSecond.EnvVar(), "0")
-	m := newRateLimitManager()
-
-	for i := 0; i < 100; i++ {
-		require.False(t, m.LimitClusterMsg("c1"), "No limit")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.True(t, tt.manager.addInitSync("test-1"))
+			assert.False(t, tt.manager.limitClusterMsg("test-1"))
+			assert.False(t, tt.manager.throttleMsg("test-1"))
+			assert.NotPanics(t, func() { tt.manager.removeCluster("test-1") })
+		})
 	}
 }
 
@@ -108,7 +93,7 @@ func TestNewRateLimitManagerEventsPerSecond(t *testing.T) {
 
 	hitLimit := false
 	for i := 0; i < 30; i++ {
-		limitMsg := m.LimitClusterMsg("c1")
+		limitMsg := m.limitClusterMsg("c1")
 		if i < 3 {
 			require.False(t, limitMsg, "Limit is not reached")
 			continue
@@ -124,106 +109,52 @@ func TestNewRateLimitManagerEventsPerSecond(t *testing.T) {
 	// Wait for rate limit to refill.
 	time.Sleep(time.Second)
 
-	assert.False(t, m.LimitClusterMsg("c1"), "Rate is below threshold")
+	assert.False(t, m.limitClusterMsg("c1"), "Rate is below threshold")
 }
 
-func TestLimitMsgNilGuards(t *testing.T) {
-	var m *rateLimitManager
+func TestNewRateLimitManagerEventsPerSecondWithThrottle(t *testing.T) {
+	t.Setenv(env.CentralSensorMaxEventsPerSecond.EnvVar(), "3")
+	t.Setenv(env.CentralSensorMaxEventsThrottleDuration.EnvVar(), "1s")
+	m := newRateLimitManager()
 
-	assert.Nil(t, m)
-	assert.False(t, m.LimitClusterMsg("c1"))
+	var wg sync.WaitGroup
 
-	m = &rateLimitManager{}
-	assert.Nil(t, m.msgRateLimiter)
-	assert.False(t, m.LimitClusterMsg("c1"))
-}
+	numCalls := 15
+	resultChan := make(chan bool, numCalls)
 
-// Test clusterMsgRate
-func TestClusterMsgEwmaRateNoTick(t *testing.T) {
-	tests := []struct {
-		name       string
-		period     time.Duration
-		timeDiff   time.Duration
-		iterations int
-		rate       float64
-		rateDelta  float64
-	}{
-		{"10 messages in burst", time.Minute, time.Hour, 10, 0.3333, 0.0001},
-		{"10 messages in burst", time.Second, time.Hour, 10, 2, 0.0001},
-		{"1 message per min", time.Minute, -time.Minute, 10, 0.0385, 0.0001},
-		{"1 message per 2 mins", time.Minute, -2 * time.Minute, 10, 0.0339, 0.0001},
-		{"1 message per min for period of 10 mins", 10 * time.Minute, -time.Minute, 10, 0.0159, 0.0001},
-		{"1 message per 2 mins for period of 10 mins", 10 * time.Minute, -2 * time.Minute, 10, 0.0099, 0.0001},
+	for i := 0; i < numCalls; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resultChan <- m.limitClusterMsg("c1")
+		}()
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			msgRate := newClusterMsgRate("c1", tt.period)
-			assert.Equal(t, 0.0, msgRate.ratePerSec)
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
 
-			for i := 0; i < 10; i++ {
-				msgRate.lastUpdate = time.Now().Add(tt.timeDiff).Unix()
-				msgRate.recvMsg()
-			}
-			assert.InDelta(t, tt.rate, msgRate.ratePerSec, tt.rateDelta)
-		})
-	}
-}
-
-func TestHeapWorks(t *testing.T) {
-	clusters := []struct {
-		name    string
-		numMsgs int
-	}{
-		{"c1", 1},
-		{"c2", 8},
-		{"c3", 9},
-		{"c4", 5},
-		{"c5", 3},
-	}
-
-	rl := newRateLimitManager()
-	for i := 0; i < 10; i++ {
-		for c := 0; c < len(clusters); c++ {
-			if clusters[c].numMsgs > 0 {
-				rl.LimitClusterMsg(clusters[c].name)
-				clusters[c].numMsgs--
-			}
+	countLimitHit := 0
+	for result := range resultChan {
+		if result {
+			countLimitHit++
 		}
 	}
 
-	var throttleCandidates []string
-	for len(*rl.clusterMsgRatesHeap) > 0 {
-		throttleCandidates = append(throttleCandidates, heap.Pop(rl.clusterMsgRatesHeap).(*clusterMsgRate).clusterID)
-	}
+	assert.LessOrEqual(t, countLimitHit, numCalls-3, "Burst messages are not limited")
+	assert.GreaterOrEqual(t, numCalls-countLimitHit, 2*3, "Burst and throttled messages are successfully handled")
 
-	assert.ElementsMatch(t, []string{"c4", "c3", "c2"}, throttleCandidates)
+	// Wait for rate limit to refill.
+	time.Sleep(time.Second)
+
+	assert.False(t, m.limitClusterMsg("c1"), "Rate is below threshold")
 }
 
 /*** Benchmark tests ***/
 
-func BenchmarkClusterMsgRateRecvMsg(b *testing.B) {
-	tests := []struct {
-		name     string
-		lastTime int64
-	}{
-		{"time ticks", time.Now().Add(-10 * time.Hour).Unix()},
-		{"no time ticks", time.Now().Add(10 * time.Hour).Unix()},
-	}
-
-	for _, tt := range tests {
-		b.Run(tt.name, func(b *testing.B) {
-			n := newClusterMsgRate("c1", 10*time.Hour)
-			for i := 0; i < b.N; i++ {
-				n.lastUpdate = tt.lastTime
-				n.recvMsg()
-			}
-		})
-	}
-}
-
 func getListOfClusters(n int) []string {
-	var clusters []string
+	clusters := make([]string, 0, n)
 	for i := 0; i < n; i++ {
 		clusters = append(clusters, fmt.Sprintf("cluster-%d", i))
 	}
@@ -234,22 +165,21 @@ func getListOfClusters(n int) []string {
 func BenchmarkLimitClusterMsg(b *testing.B) {
 	tests := []struct {
 		name         string
-		lastRecv     time.Time
 		clusters     int
 		rl           *rateLimitManager
 		clustersList []string
 	}{
-		{"00001 clusters", time.Now().Add(-time.Hour), 1, newRateLimitManager(), getListOfClusters(1)},
-		{"00010 clusters", time.Now().Add(-time.Hour), 10, newRateLimitManager(), getListOfClusters(10)},
-		{"00100 clusters", time.Now().Add(-time.Hour), 100, newRateLimitManager(), getListOfClusters(100)},
-		{"01000 clusters", time.Now().Add(-time.Hour), 1000, newRateLimitManager(), getListOfClusters(1000)},
-		{"10000 clusters", time.Now().Add(-time.Hour), 10000, newRateLimitManager(), getListOfClusters(10000)},
+		{"00001 clusters", 1, newRateLimitManager(), getListOfClusters(1)},
+		{"00010 clusters", 10, newRateLimitManager(), getListOfClusters(10)},
+		{"00100 clusters", 100, newRateLimitManager(), getListOfClusters(100)},
+		{"01000 clusters", 1000, newRateLimitManager(), getListOfClusters(1000)},
+		{"10000 clusters", 10000, newRateLimitManager(), getListOfClusters(10000)},
 	}
 
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				tt.rl.LimitClusterMsg(tt.clustersList[i%tt.clusters])
+				tt.rl.limitClusterMsg(tt.clustersList[i%tt.clusters])
 			}
 		})
 	}
