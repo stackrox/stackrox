@@ -44,6 +44,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "path to output directory")
 	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "path to file or directory containing YAML input")
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 
 	return c
 }
