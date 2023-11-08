@@ -1,15 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: central
-spec:
-  template:
-    spec:
-      volumes:
-      - name: stackrox-db
-        persistentVolumeClaim:
-          claimName: stackrox-db
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

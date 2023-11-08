@@ -5,20 +5,8 @@ testRunSelector:
   matchLabels:
     openshift: "true"
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-collectors:
-- type: pod
-  selector: app=central
-  tail: -1
-- type: pod
-  selector: app=scanner
-  tail: -1
-- type: pod
-  selector: app=scanner-db
-  tail: -1
-timeout: 1500
----
+# Assert only things specific to this step.
+# General sanity is asserted by the other assert file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,8 +26,6 @@ spec:
         - containerPort: 9091
           name: monitoring-tls
           protocol: TCP
-status:
-  availableReplicas: 1
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -75,8 +61,6 @@ spec:
         - containerPort: 9090
           name: monitoring
           protocol: TCP
-status:
-  availableReplicas: 1
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

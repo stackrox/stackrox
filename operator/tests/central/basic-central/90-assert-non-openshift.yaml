@@ -5,6 +5,8 @@ testRunSelector:
   matchLabels:
     openshift: "false"
 ---
+# Assert only things specific to this step.
+# General sanity is asserted by the assert-common file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -152,5 +154,3 @@ spec:
           secretName: secret-2
           optional: true
           defaultMode: 420
-status:
-  availableReplicas: 1
