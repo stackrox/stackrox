@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: image/postgres/rhtap.Dockerfile
+    value: image/rhel/rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
