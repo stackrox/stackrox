@@ -20,6 +20,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { complianceEnhancedStatusScansPath } from 'routePaths';
 import { complianceResultsOverview } from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
+import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
 import ScanResultsToolbar from './ScanResultsToolbar';
 
@@ -46,13 +47,6 @@ function ScanResultsOverviewTable() {
             // TODO: link to edit schedule page
         },
     ];
-
-    const displayOnlyItemOrItemCount = (items: string[], multipleItemLabel: string): string => {
-        if (items.length > 1) {
-            return `${items.length} ${multipleItemLabel}`;
-        }
-        return items[0];
-    };
 
     const renderTableContent = () => {
         if (isLoading) {
