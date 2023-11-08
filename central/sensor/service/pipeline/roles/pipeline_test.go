@@ -67,3 +67,23 @@ func (suite *PipelineTestSuite) TestRoleSyncResources() {
 	}, nil)
 	suite.NoError(err)
 }
+
+func (suite *PipelineTestSuite) TestRoleDeleteResources() {
+	ctx := context.Background()
+	role := fixtures.GetMultipleK8SRoles(1)[0]
+
+	suite.roles.EXPECT().RemoveRole(ctx, role.GetId())
+
+	err := suite.pipeline.Run(ctx, role.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     role.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Role{
+					Role: role,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
