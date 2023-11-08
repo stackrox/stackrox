@@ -53,7 +53,7 @@ message Timing {
     int64  nanos      = 3;
 }
 
-// Next tag: 28.
+// Next tag: 30.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string          id                           = 1;
@@ -92,7 +92,9 @@ message SensorEvent {
         storage.ComplianceOperatorScan               compliance_operator_scan                 = 24;
 
         // V2 Compliance
-        ComplianceOperatorCheckResultV2              compliance_operator_result_v2            = 27;
+        ComplianceOperatorCheckResultV2   compliance_operator_result_v2  = 27;
+        ComplianceOperatorProfileV2       compliance_operator_profile_v2 = 28;
+        ComplianceOperatorRuleV2          compliance_operator_rule_v2    = 29;
     }
 }
 

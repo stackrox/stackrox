@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -20,30 +21,31 @@ import (
 )
 
 const (
-	baseTable = "compliance_operator_rule_v2"
-	storeName = "ComplianceOperatorRuleV2"
+	baseTable = "compliance_operator_profile_cluster_edges"
+	storeName = "ComplianceOperatorProfileClusterEdge"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorRuleV2Schema
+	schema         = pkgSchema.ComplianceOperatorProfileClusterEdgesSchema
 	targetResource = resources.ComplianceOperator
 )
 
-type storeType = storage.ComplianceOperatorRuleV2
+type storeType = storage.ComplianceOperatorProfileClusterEdge
 
-// Store is the interface to interact with the storage for storage.ComplianceOperatorRuleV2
+// Store is the interface to interact with the storage for storage.ComplianceOperatorProfileClusterEdge
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, name string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, name string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, name string) (*storeType, bool, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -56,8 +58,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoComplianceOperatorRuleV2,
-		copyFromComplianceOperatorRuleV2,
+		insertIntoComplianceOperatorProfileClusterEdges,
+		copyFromComplianceOperatorProfileClusterEdges,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -68,7 +70,7 @@ func New(db postgres.DB) Store {
 // region Helper functions
 
 func pkGetter(obj *storeType) string {
-	return obj.GetName()
+	return obj.GetId()
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
@@ -79,7 +81,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.ComplianceOperatorRuleV2) error {
+func insertIntoComplianceOperatorProfileClusterEdges(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileClusterEdge) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -88,21 +90,19 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.Complianc
 
 	values := []interface{}{
 		// parent primary keys start
-		obj.GetName(),
-		obj.GetOperatorVersion(),
-		obj.GetRuleVersion(),
-		obj.GetRuleType(),
-		obj.GetSeverity(),
+		obj.GetId(),
+		obj.GetProfileId(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, OperatorVersion, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_cluster_edges (Id, ProfileId, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRuleV2) error {
+func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfileClusterEdge) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -114,11 +114,9 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
-		"name",
-		"operatorversion",
-		"ruleversion",
-		"ruletype",
-		"severity",
+		"id",
+		"profileid",
+		"clusterid",
 		"serialized",
 	}
 
@@ -134,16 +132,14 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		}
 
 		inputRows = append(inputRows, []interface{}{
-			obj.GetName(),
-			obj.GetOperatorVersion(),
-			obj.GetRuleVersion(),
-			obj.GetRuleType(),
-			obj.GetSeverity(),
+			obj.GetId(),
+			obj.GetProfileId(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
 
 		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetName())
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -156,7 +152,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_cluster_edges"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -179,11 +175,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorRuleV2(ctx, db)
+	dropTableComplianceOperatorProfileClusterEdges(ctx, db)
 }
 
-func dropTableComplianceOperatorRuleV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_rule_v2 CASCADE")
+func dropTableComplianceOperatorProfileClusterEdges(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_profile_cluster_edges CASCADE")
 
 }
 

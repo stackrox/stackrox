@@ -44,6 +44,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -90,14 +91,13 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetVersion(),
+		obj.GetProfileVersion(),
 		obj.GetProductType(),
 		obj.GetStandard(),
-		obj.GetProduct(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, Version, ProductType, Standard, Product, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, ProfileVersion, ProductType, Standard, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -142,10 +142,9 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 	copyCols := []string{
 		"id",
 		"name",
-		"version",
+		"profileversion",
 		"producttype",
 		"standard",
-		"product",
 		"serialized",
 	}
 
@@ -163,10 +162,9 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetName(),
-			obj.GetVersion(),
+			obj.GetProfileVersion(),
 			obj.GetProductType(),
 			obj.GetStandard(),
-			obj.GetProduct(),
 			serialized,
 		})
 
