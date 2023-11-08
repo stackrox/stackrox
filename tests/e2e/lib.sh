@@ -32,6 +32,7 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait
 
+    echo "Start collector patching ..."
     # RHTAP testing
     kubectl patch daemonset collector -n stackrox \
     --type=json \
