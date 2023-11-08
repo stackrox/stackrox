@@ -82,6 +82,9 @@ spec:
         - name: ROX_TELEMETRY_STORAGE_KEY_V1
           value: {{ ._rox.central.telemetry.storage.key | quote }}
         {{- end }}
+        {{- else }}
+        - name: ROX_TELEMETRY_STORAGE_KEY_V1
+          value: "DISABLED"
         {{- end }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}

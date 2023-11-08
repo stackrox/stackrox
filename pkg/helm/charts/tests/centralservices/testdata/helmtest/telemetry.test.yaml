@@ -10,20 +10,20 @@ values:
       none: true
 
 tests:
-  - name: Central telemetry should not be enabled by default
+  - name: Central telemetry should not have a configured key by default
     expect: |
       envVars(.deployments.central; "central") | assertThat(has("ROX_TELEMETRY_STORAGE_KEY_V1") == false)
 
-  - name: Central telemetry should be enabled when enabled
+  - name: Central telemetry should be configured when enabled
     set:
       central.telemetry.enabled: true
       central.telemetry.storage.key: "key"
     expect: |
       envVars(.deployments.central; "central")["ROX_TELEMETRY_STORAGE_KEY_V1"] | assertThat(. == "key")
 
-  - name: Central monitoring should be disabled when not enabled
+  - name: Central telemetry should not have a key when not enabled
     set:
       central.telemetry.enabled: false
       central.telemetry.storage.key: "key"
     expect: |
-      envVars(.deployments.central; "central") | assertThat(has("ROX_TELEMETRY_STORAGE_KEY_V1") == false)
+      envVars(.deployments.central; "central")["ROX_TELEMETRY_STORAGE_KEY_V1"] | assertThat(. == "DISABLED")
