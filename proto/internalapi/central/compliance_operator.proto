@@ -160,15 +160,15 @@ message ComplianceOperatorProfileV2 {
     string              id              = 1;
     string              profile_id      = 2;
     string              name            = 3;
-    string              version         = 4;
-    string              profile_version = 5;
-    map<string, string> labels          = 6;
-    map<string, string> annotations     = 7;
-    string              description     = 8;
+    string              profile_version = 4;
+    map<string, string> labels          = 5;
+    map<string, string> annotations     = 6;
+    string              description     = 7;
     message Rule {
         string rule_name       = 1;
     }
-    repeated Rule       rules       = 9;
+    repeated Rule       rules       = 8;
+    string              title       = 9;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.

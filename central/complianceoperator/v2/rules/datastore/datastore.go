@@ -14,7 +14,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// DataStore is the entry point for storing/retrieving compliance operator profiles.
+// DataStore is the entry point for storing/retrieving compliance operator rules.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {

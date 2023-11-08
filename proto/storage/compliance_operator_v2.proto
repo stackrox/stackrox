@@ -44,18 +44,18 @@ message ComplianceOperatorProfileV2 {
     string              id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id       = 2;
     string              name             = 3 [(gogoproto.moretags) = 'search:"Compliance Profile Name,hidden,store" sql:"index=category:unique;name:profile_unique_indicator"'];
-    string              operator_version = 4;
-    string              profile_version  = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden,store" sql:"index=category:unique;name:profile_unique_indicator"'];
-    repeated string     product_type     = 6 [(gogoproto.moretags) = 'search:"Compliance Profile Product Type,hidden,store"'];
-    string              standard         = 7 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
-    map<string, string> labels           = 8;
-    map<string, string> annotations      = 9;
-    string              description      = 10;
+    string              profile_version  = 4 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden,store" sql:"index=category:unique;name:profile_unique_indicator"'];
+    repeated string     product_type     = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Product Type,hidden,store"'];
+    string              standard         = 6 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
+    map<string, string> labels           = 7;
+    map<string, string> annotations      = 8;
+    string              description      = 9;
     message Rule {
         string rule_name       = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorRuleV2:name),no-fk-constraint"'];
     }
-    repeated Rule       rules       = 11;
-    string              product     = 12;
+    repeated Rule       rules       = 10;
+    string              product     = 11;
+    string              title       = 12;
 }
 
 // Next Tag: 12
