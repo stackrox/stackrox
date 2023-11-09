@@ -11,7 +11,11 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
-describe('Workload CVE watched images flow', () => {
+// TODO - dv 2023-11-8
+//  These tests are disabled due to usable images with CVEs not being available in the test environment
+//  at the time the tests are executed. This issue is being tracked in ROX-20728 and these tests
+// should be re-enabled or reworked once that issue is resolved.
+describe.skip('Workload CVE watched images flow', () => {
     withAuth();
 
     before(function () {
