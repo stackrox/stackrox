@@ -37,6 +37,9 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
+  # TODO(): Enable source image builds
+  - name: build-source-image
+    value: 'false'
 
   workspaces:
   - name: workspace
