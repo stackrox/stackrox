@@ -215,13 +215,24 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
+export function visitAnyImageSinglePage() {
+    visitWorkloadCveOverview();
+    selectEntityTab('Image');
+    cy.get('tbody tr td[data-label="Image"] a').first().click();
+
+    return cy.get('h1').then(($h1) => {
+        return $h1.text().split(':');
+    });
+}
+
 /**
  * Fill out the exception form and submit it
- * @param {string} comment
- * @param {string=} scopeLabel
- * @param {string=} expiryLabel
+ * @param {Object} param
+ * @param {string} param.comment
+ * @param {string=} param.scopeLabel
+ * @param {string=} param.expiryLabel
  */
-export function fillAndSubmitExceptionForm(comment, scopeLabel, expiryLabel) {
+export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }) {
     cy.get(selectors.exceptionOptionsTab).click();
     if (expiryLabel) {
         cy.get(`label:contains('${expiryLabel}')`).click();
@@ -236,12 +247,14 @@ export function fillAndSubmitExceptionForm(comment, scopeLabel, expiryLabel) {
 
 /**
  * Verify that the confirmation details for an exception are correct
- * @param {('Deferral' | 'False positive')} expectedAction
- * @param {string[]} cves
- * @param {string} scope
- * @param {string=} expiry
+ * @param {Object} params
+ * @param {('Deferral' | 'False positive')} params.expectedAction
+ * @param {string[]} params.cves
+ * @param {string} params.scope
+ * @param {string=} params.expiry
  */
-export function verifyExceptionConfirmationDetails(expectedAction, cves, scope, expiry) {
+export function verifyExceptionConfirmationDetails(params) {
+    const { expectedAction, cves, scope, expiry } = params;
     getDescriptionListGroup('Requested action', expectedAction);
     getDescriptionListGroup('Requested', getDateString(new Date()));
     getDescriptionListGroup('CVEs', String(cves.length));
