@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
-
 	"go.uber.org/mock/gomock"
 )
 
