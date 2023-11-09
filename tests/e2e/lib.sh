@@ -40,7 +40,7 @@ deploy_stackrox() {
             {
                 "op": "replace",
                 "path": "/spec/template/spec/containers/0/image",
-                "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector:807015c95809a726ee8948355deed63b91d69d59"
+                "value": "quay.io/redhat-user-workloads/rh-acs-tenant/acs/collector-slim:1ea2eb209d65db9398bc9c052acd4de2f23130a9"
             }
         ]'
 
