@@ -69,6 +69,9 @@ spec:
               matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
+      {{- if .rox.central.db.priorityClassName }}
+      priorityClassName: {{ .rox.central.db.priorityClassName }}
+      {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
       initContainers:
