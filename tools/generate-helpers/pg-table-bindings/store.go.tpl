@@ -20,13 +20,7 @@
 {{- $ := . }}
 {{- $pks := .Schema.PrimaryKeys }}
 
-{{- $singlePK := false }}
-{{- if eq (len $pks) 1 }}
-{{ $singlePK = index $pks 0 }}
-{{/*If there are multiple pks, then use the explicitly specified ID column.*/}}
-{{- else if .Schema.ID.ColumnName}}
-{{ $singlePK = .Schema.ID }}
-{{- end }}
+{{ $singlePK := index $pks 0 }}
 
 package postgres
 
@@ -78,9 +72,7 @@ type Store interface {
     UpsertMany(ctx context.Context, objs []*storeType) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
     DeleteByQuery(ctx context.Context, q *v1.Query) error
-{{- if $singlePK }}
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
-{{- end }}
 {{- end }}
 
     Count(ctx context.Context) (int, error)
@@ -90,10 +82,8 @@ type Store interface {
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 {{- end }}
-{{- if $singlePK }}
     GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-{{- end }}
 {{- if .GetAll }}
     GetAll(ctx context.Context) ([]*storeType, error)
 {{- end }}
@@ -241,7 +231,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         batchSize = len(objs)
     }
     inputRows := make([][]interface{}, 0, batchSize)
-    {{if and (eq (len $schema.PrimaryKeys) 1) (not $schema.Parent) }}
+    {{if not $schema.Parent }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     deletes := make([]string, 0, batchSize)
@@ -271,21 +261,15 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         })
 
         {{ if not $schema.Parent }}
-        {{if eq (len $schema.PrimaryKeys) 1}}
         // Add the ID to be deleted.
         deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{else}}
-        if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
-            return err
-        }
-        {{end}}
         {{end}}
 
         // if we hit our batch size we need to push the data
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and ((eq (len $schema.PrimaryKeys) 1)) (not $schema.Parent) }}
+            {{if not $schema.Parent }}
             if err := s.DeleteMany(ctx, deletes); err != nil {
                 return err
             }
