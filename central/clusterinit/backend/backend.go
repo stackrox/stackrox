@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cache/storebased"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
@@ -44,5 +45,6 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 	return &backendImpl{
 		store:        store,
 		certProvider: certProvider,
+		cache:        storebased.NewCache[*storage.InitBundleMeta](store.Get),
 	}
 }

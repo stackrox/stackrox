@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cache/storebased"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -21,6 +22,7 @@ var _ authn.ValidateCertChain = (*backendImpl)(nil)
 type backendImpl struct {
 	store        store.Store
 	certProvider certificate.Provider
+	cache        *storebased.Cache[*storage.InitBundleMeta]
 }
 
 func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
@@ -143,6 +145,8 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "revoking init bundle %q", id)
 	}
 
+	b.cache.InvalidateCache(id)
+
 	return nil
 }
 
@@ -151,7 +155,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 		return err
 	}
 
-	bundleMeta, err := b.store.Get(ctx, id)
+	bundleMeta, err := b.cache.GetObject(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving init bundle %q", id)
 	}
