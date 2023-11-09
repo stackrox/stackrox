@@ -38,8 +38,8 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.central.affinity | nindent 8 }}
-      {{- if .rox.central.priorityClassName }}
-      priorityClassName: {{ .rox.central.priorityClassName }}
+      {{- if ._rox.central.priorityClassName }}
+      priorityClassName: {{ ._rox.central.priorityClassName }}
       {{- end }}
       serviceAccountName: central
       securityContext:

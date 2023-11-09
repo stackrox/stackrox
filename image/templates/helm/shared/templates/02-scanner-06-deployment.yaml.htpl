@@ -40,8 +40,8 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.scanner.affinity | nindent 8 }}
-      {{- if .rox.scanner.priorityClassName }}
-      priorityClassName: {{ .rox.scanner.priorityClassName }}
+      {{- if ._rox.scanner.priorityClassName }}
+      priorityClassName: {{ ._rox.scanner.priorityClassName }}
       {{- end }}
       containers:
       - name: scanner
@@ -226,8 +226,8 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
-      {{- if .rox.scanner.dbPriorityClassName }}
-      priorityClassName: {{ .rox.scanner.dbPriorityClassName }}
+      {{- if ._rox.scanner.dbPriorityClassName }}
+      priorityClassName: {{ ._rox.scanner.dbPriorityClassName }}
       {{- end }}
       initContainers:
         - name: init-db

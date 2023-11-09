@@ -34,8 +34,8 @@ spec:
       nodeSelector:
         {{- ._rox.collector._nodeSelector | nindent 8 }}
       {{- end}}
-      {{- if .rox.collector.priorityClassName }}
-      priorityClassName: {{ .rox.collector.priorityClassName }}
+      {{- if ._rox.collector.priorityClassName }}
+      priorityClassName: {{ ._rox.collector.priorityClassName }}
       {{- end }}
       serviceAccountName: collector
       containers:
