@@ -110,6 +110,7 @@ export const defaultValues: S3IntegrationFormValues = {
             useIam: false,
             accessKeyId: '',
             secretAccessKey: '',
+            usePathstyle: false,
         },
         type: 's3',
     },
