@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pointers"
 )
 
 const (
@@ -81,6 +82,11 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	if !conf.GetUseIam() {
 		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
 	}
+
+	if conf.UsePathstyle {
+		awsConfig.S3ForcePathStyle = pointers.Bool(true)
+	}
+
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, err

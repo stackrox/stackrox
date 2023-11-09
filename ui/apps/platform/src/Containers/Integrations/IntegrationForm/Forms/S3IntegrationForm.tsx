@@ -28,6 +28,7 @@ export type S3Integration = {
         useIam: boolean;
         accessKeyId: string;
         secretAccessKey: string;
+        usePathstyle: boolean;
     };
     type: 's3';
 } & BackupIntegrationBase;
@@ -339,6 +340,21 @@ function S3IntegrationForm({
                             label="Use container IAM role"
                             id="externalBackup.s3.useIam"
                             isChecked={values.externalBackup.s3.useIam}
+                            onChange={updateKeysOnChange}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label=""
+                        fieldId="externalBackup.s3.usePathstyle"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Force path style URLs for S3 objects"
+                            id="externalBackup.s3.usePathstyle"
+                            isChecked={values.externalBackup.s3.usePathstyle}
                             onChange={updateKeysOnChange}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}

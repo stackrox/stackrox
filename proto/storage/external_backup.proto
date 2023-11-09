@@ -35,6 +35,7 @@ message S3Config {
     string region            = 5;
     string object_prefix     = 6;
     string endpoint          = 7 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    bool   use_pathstyle     = 8;
 }
 
 message GCSConfig {
