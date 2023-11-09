@@ -131,7 +131,7 @@ function ExceptionRequestDetailsPage() {
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Requestor</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    {vulnerabilityException.requester.name}
+                                    {vulnerabilityException.requester?.name || '-'}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
