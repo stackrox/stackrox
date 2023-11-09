@@ -37,9 +37,6 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
-  # TODO(): Enable source image builds
-  - name: build-source-image
-    value: 'true'
 
   workspaces:
   - name: workspace
@@ -138,6 +135,11 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
+      type: string
+    - default: "false"
+      description: Build a source image.
+      name: build-source-image
+      type: string
 
     results:
     - description: ""
@@ -188,10 +190,6 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      - name: depth
-        value: "0"
-      - name: fetchTags
-        value: "true"
       runAfter:
       - init
       taskRef:
