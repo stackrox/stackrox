@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
-	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -64,8 +63,6 @@ type requestedUpdater struct {
 
 // httpHandler handles HTTP GET and POST requests for vulnerability data.
 type httpHandler struct {
-	cveManager fetcher.OrchestratorIstioCVEManager
-
 	online        bool
 	interval      time.Duration
 	lock          sync.Mutex
@@ -75,10 +72,8 @@ type httpHandler struct {
 }
 
 // New creates a new http.Handler to handle vulnerability data.
-func New(cveManager fetcher.OrchestratorIstioCVEManager, blobStore blob.Datastore, opts handlerOpts) http.Handler {
+func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	h := &httpHandler{
-		cveManager: cveManager,
-
 		online:    !env.OfflineModeEnv.BooleanSetting(),
 		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
 		blobStore: blobStore,
