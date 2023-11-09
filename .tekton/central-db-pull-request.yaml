@@ -39,7 +39,7 @@ spec:
   #   value: "true"
   # TODO(): Enable source image builds
   - name: build-source-image
-    value: 'false'
+    value: 'true'
 
   workspaces:
   - name: workspace
