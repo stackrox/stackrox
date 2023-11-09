@@ -3,6 +3,7 @@ package central
 import (
 	"io"
 	"log"
+	"sync/atomic"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -40,6 +41,10 @@ type FakeService struct {
 
 	onShutdown func()
 
+	deduperStateLock    sync.RWMutex
+	deduperStateEnabled atomic.Bool
+	deduperState        *central.DeduperState
+
 	t *testing.T
 }
 
@@ -73,6 +78,8 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		messageCallback:      func(_ *central.MsgFromSensor) { /* noop */ },
 		messageCallbackLock:  sync.RWMutex{},
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
+		deduperState:         &central.DeduperState{ResourceHashes: make(map[string]uint64)},
+		deduperStateLock:     sync.RWMutex{},
 	}
 }
 
@@ -159,6 +166,15 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 		}
 	}
 
+	if s.deduperStateEnabled.Load() {
+		if err := stream.Send(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_DeduperState{DeduperState: s.deduperState},
+		}); err != nil {
+			s.t.Errorf("sending deduper state to sensor")
+			return err
+		}
+	}
+
 	s.ConnectionStarted.Signal()
 	go s.startInputIngestion(stream)
 	go s.startCentralStub(stream)
@@ -179,4 +195,17 @@ func (s *FakeService) Stop() {
 	if s.onShutdown != nil {
 		s.onShutdown()
 	}
+}
+
+// EnableDeduperState will make fake central send a deduper state message to sensor.
+func (s *FakeService) EnableDeduperState(v bool) {
+	s.deduperStateEnabled.Store(v)
+}
+
+// SetDeduperState overwrites the deduper state that is going to be sent to Sensor.
+func (s *FakeService) SetDeduperState(state *central.DeduperState) {
+	s.deduperStateLock.Lock()
+	defer s.deduperStateLock.Unlock()
+
+	s.deduperState = state
 }
