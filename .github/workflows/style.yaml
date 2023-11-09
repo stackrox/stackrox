@@ -115,6 +115,9 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
