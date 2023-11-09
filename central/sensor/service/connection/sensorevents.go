@@ -115,11 +115,8 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
 		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
 		// have been avoided by sending both messages from sensor during the transition, but
-		// that seemed like a lot of extra traffic.  Could have also been simpler of the reconciliationMap
-		// simply used a key instead of taking in a type and using reflection to get the string to use as the key.
-		// Leaving the key defintion to the caller may have simplified this as well as we could have simply used
-		// workerType when adding to the map.  This essentially matches how the sensor side is implemented.
-		workerType = reflectutils.Type(event.Resource)
+		// that seemed like a lot of extra traffic.
+		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorResult{})
 		if !s.reconciliationMap.IsClosed() {
 			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorResult{}, event.Id)
 		}
