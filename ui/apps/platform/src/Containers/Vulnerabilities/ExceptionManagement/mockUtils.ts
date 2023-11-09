@@ -2,15 +2,16 @@ import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 export const vulnerabilityExceptions: VulnerabilityException[] = [
     {
-        id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
-        name: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
+        id: 'ecf6b94a-d857-4e69-b50f-cda1cdf002ef',
+        name: 'ecf6b94a-d857-4e69-b50f-cda1cdf002ef',
         targetState: 'DEFERRED',
-        exceptionStatus: 'APPROVED_PENDING_UPDATE',
+        status: 'APPROVED_PENDING_UPDATE',
         expired: false,
         requester: {
             id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
             name: 'admin',
         },
+        approvers: [],
         createdAt: '2023-10-01T19:16:49.155480945Z',
         lastUpdated: '2023-10-01T19:16:49.155480945Z',
         comments: [
@@ -43,18 +44,19 @@ export const vulnerabilityExceptions: VulnerabilityException[] = [
                 expiresOn: '2023-10-31T19:16:49.155480945Z',
             },
         },
-        cves: ['CVE-2018-20839', 'CVE-2018-20840'],
+        cves: ['CVE-2018-20839', 'RHSA-2023:5997'],
     },
     {
         id: '5837bb34-5357-4b78-ad2b-188fc0b33e78',
         name: '5837bb34-5357-4b78-ad2b-188fc0b33e78',
         targetState: 'FALSE_POSITIVE',
-        exceptionStatus: 'APPROVED_PENDING_UPDATE',
+        status: 'APPROVED_PENDING_UPDATE',
         expired: false,
         requester: {
             id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
             name: 'admin',
         },
+        approvers: [],
         createdAt: '2023-10-01T19:16:49.155480945Z',
         lastUpdated: '2023-10-01T19:16:49.155480945Z',
         comments: [
@@ -85,12 +87,13 @@ export const vulnerabilityExceptions: VulnerabilityException[] = [
         id: '6837bb34-5357-4b78-ad2b-188fc0b33e78',
         name: '6837bb34-5357-4b78-ad2b-188fc0b33e78',
         targetState: 'DEFERRED',
-        exceptionStatus: 'DENIED',
+        status: 'DENIED',
         expired: false,
         requester: {
             id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
             name: 'admin',
         },
+        approvers: [],
         createdAt: '2023-10-01T19:16:49.155480945Z',
         lastUpdated: '2023-10-01T19:16:49.155480945Z',
         comments: [
@@ -122,12 +125,13 @@ export const vulnerabilityExceptions: VulnerabilityException[] = [
         id: '7837bb34-5357-4b78-ad2b-188fc0b33e78',
         name: '7837bb34-5357-4b78-ad2b-188fc0b33e78',
         targetState: 'FALSE_POSITIVE',
-        exceptionStatus: 'DENIED',
+        status: 'DENIED',
         expired: false,
         requester: {
             id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
             name: 'admin',
         },
+        approvers: [],
         createdAt: '2023-10-01T19:16:49.155480945Z',
         lastUpdated: '2023-10-01T19:16:49.155480945Z',
         comments: [
@@ -154,25 +158,21 @@ export const vulnerabilityExceptions: VulnerabilityException[] = [
 ];
 
 export const pendingRequests = vulnerabilityExceptions.filter(
-    (exception) =>
-        exception.exceptionStatus === 'PENDING' ||
-        exception.exceptionStatus === 'APPROVED_PENDING_UPDATE'
+    (exception) => exception.status === 'PENDING' || exception.status === 'APPROVED_PENDING_UPDATE'
 );
 
 export const approvedDeferrals = vulnerabilityExceptions.filter(
     (exception) =>
         exception.targetState === 'DEFERRED' &&
-        (exception.exceptionStatus === 'APPROVED' ||
-            exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
+        (exception.status === 'APPROVED' || exception.status === 'APPROVED_PENDING_UPDATE')
 );
 
 export const approvedFalsePositives = vulnerabilityExceptions.filter(
     (exception) =>
         exception.targetState === 'FALSE_POSITIVE' &&
-        (exception.exceptionStatus === 'APPROVED' ||
-            exception.exceptionStatus === 'APPROVED_PENDING_UPDATE')
+        (exception.status === 'APPROVED' || exception.status === 'APPROVED_PENDING_UPDATE')
 );
 
 export const deniedRequests = vulnerabilityExceptions.filter(
-    (exception) => exception.exceptionStatus === 'DENIED'
+    (exception) => exception.status === 'DENIED'
 );
