@@ -236,7 +236,8 @@ func (j *jira) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluster
 	return err
 }
 
-func validate(jira *storage.Jira) error {
+// Validate Jira notifier
+func Validate(jira *storage.Jira, validateSecret bool) error {
 	errorList := errorhelpers.NewErrorList("Jira validation")
 	if jira.GetIssueType() == "" {
 		errorList.AddString("Issue Type must be specified")
@@ -247,7 +248,7 @@ func validate(jira *storage.Jira) error {
 	if jira.GetUsername() == "" {
 		errorList.AddString("Username must be specified")
 	}
-	if jira.GetPassword() == "" {
+	if validateSecret && jira.GetPassword() == "" {
 		errorList.AddString("Password or API Token must be specified")
 	}
 
@@ -272,7 +273,7 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")
 	}
-	if err := validate(conf); err != nil {
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 

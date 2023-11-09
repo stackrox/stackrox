@@ -32,58 +32,75 @@ func SecureNotifier(notifier *storage.Notifier, key string) (bool, error) {
 	if notifier.GetConfig() == nil {
 		return false, nil
 	}
-	encCreds := notifier.GetNotifierSecret()
 
 	cryptoCodec := cryptocodec.Singleton()
 	var err error
 	switch notifier.GetType() {
 	case pkgNotifiers.JiraType:
 		jira := notifier.GetJira()
-		if jira == nil {
-			return false, nil
+		if jira != nil && jira.GetPassword() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, jira.GetPassword())
+			if err != nil {
+				return false, err
+			}
+			jira.Password = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, jira.GetPassword())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.EmailType:
 		email := notifier.GetEmail()
-		if email == nil {
-			return false, nil
+		if email != nil && email.GetPassword() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, email.GetPassword())
+			if err != nil {
+				return false, err
+			}
+			email.Password = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, email.GetPassword())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.CSCCType:
 		cscc := notifier.GetCscc()
-		if cscc == nil {
-			return false, nil
+		if cscc != nil && cscc.GetServiceAccount() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, cscc.GetServiceAccount())
+			if err != nil {
+				return false, err
+			}
+			cscc.ServiceAccount = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, cscc.GetServiceAccount())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.SplunkType:
 		splunk := notifier.GetSplunk()
-		if splunk == nil {
-			return false, nil
+		if splunk != nil && splunk.GetHttpToken() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, splunk.GetHttpToken())
+			if err != nil {
+				return false, err
+			}
+			splunk.HttpToken = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, splunk.GetHttpToken())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.PagerDutyType:
 		pagerDuty := notifier.GetPagerduty()
-		if pagerDuty == nil {
-			return false, nil
+		if pagerDuty != nil && pagerDuty.GetApiKey() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, pagerDuty.GetApiKey())
+			if err != nil {
+				return false, err
+			}
+			pagerDuty.ApiKey = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, pagerDuty.GetApiKey())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.GenericType:
 		generic := notifier.GetGeneric()
-		if generic == nil {
-			return false, nil
+		if generic != nil && generic.GetPassword() != "" {
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, generic.GetPassword())
+			if err != nil {
+				return false, err
+			}
+			generic.Password = ""
+			return true, nil
 		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, generic.GetPassword())
-		return notifier.NotifierSecret != encCreds, err
 
 	case pkgNotifiers.AWSSecurityHubType:
 		awsSecurityHub := notifier.GetAwsSecurityHub()
@@ -91,16 +108,19 @@ func SecureNotifier(notifier *storage.Notifier, key string) (bool, error) {
 			return false, nil
 		}
 		creds := awsSecurityHub.GetCredentials()
-		if creds == nil {
-			return false, nil
+		if creds != nil && creds.GetAccessKeyId() != "" && creds.GetSecretAccessKey() != "" {
+			marshalled, err := creds.Marshal()
+			if err != nil {
+				return false, err
+			}
+			notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, string(marshalled))
+			if err != nil {
+				return false, err
+			}
+			creds.AccessKeyId = ""
+			creds.SecretAccessKey = ""
+			return true, nil
 		}
-		marshalled, err := creds.Marshal()
-		if err != nil {
-			return false, err
-		}
-		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, string(marshalled))
-		return notifier.NotifierSecret != encCreds, err
 	}
-	// TODO (ROX-19879): Cleanup creds if ROX_CLEANUP_NOTIFIER_CREDS is enabled
 	return false, nil
 }
