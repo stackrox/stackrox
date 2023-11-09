@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/central/notifiers/splunk"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
+	"github.com/stackrox/rox/central/notifiers/validation"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -100,7 +101,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersReques
 	return &v1.GetNotifiersResponse{Notifiers: scrubbedNotifiers}, nil
 }
 
-func validateNotifier(notifier *storage.Notifier) error {
+func validateNotifier(notifier *storage.Notifier, validateSecret bool) error {
 	if notifier == nil {
 		return errors.New("empty notifier")
 	}
@@ -117,6 +118,9 @@ func validateNotifier(notifier *storage.Notifier) error {
 	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
+	if err := validation.ValidateNotifierConfig(notifier, validateSecret); err != nil {
+		errorList.AddError(err)
+	}
 	return errorList.ToError()
 }
 
@@ -127,7 +131,7 @@ func (s *serviceImpl) PutNotifier(ctx context.Context, notifier *storage.Notifie
 
 // UpdateNotifier updates a notifier configuration
 func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNotifierRequest) (*v1.Empty, error) {
-	if err := validateNotifier(request.GetNotifier()); err != nil {
+	if err := validateNotifier(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
@@ -158,7 +162,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
 func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifier) (*storage.Notifier, error) {
-	if err := validateNotifier(request); err != nil {
+	if err := validateNotifier(request, true); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if request.GetId() != "" {
@@ -194,7 +198,7 @@ func (s *serviceImpl) TestNotifier(ctx context.Context, notifier *storage.Notifi
 
 // TestUpdatedNotifier tests to see if the config is setup properly
 func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.UpdateNotifierRequest) (*v1.Empty, error) {
-	if err := validateNotifier(request.GetNotifier()); err != nil {
+	if err := validateNotifier(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
