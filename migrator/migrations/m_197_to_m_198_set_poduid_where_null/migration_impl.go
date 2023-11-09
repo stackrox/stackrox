@@ -3,6 +3,7 @@ package m197tom198
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	listeningEndpointsSchema "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_set_poduid_where_null/schema/listening_endpoints"
@@ -38,6 +39,7 @@ func migrate(database *types.Databases) error {
 func getProcessIndicatorPodUIDMap(ctx context.Context, processIndicatorStore processIndicatorDatastore.Store, processIndicatorIds map[string]bool) (map[string]string, error) {
 	podUIDMap := make(map[string]string)
 
+	startTime := time.Now()
 	err := processIndicatorStore.Walk(ctx,
 		func(processIndicator *storage.ProcessIndicator) error {
 			_, exists := processIndicatorIds[processIndicator.Id]
@@ -50,6 +52,11 @@ func getProcessIndicatorPodUIDMap(ctx context.Context, processIndicatorStore pro
 
 	processIndicatorIds = make(map[string]bool)
 
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("getProcessIndicatorPodUIDMap took %s", duration)
+	log.Infof("len(podUIDMap)= %d", len(podUIDMap))
+
 	return podUIDMap, err
 }
 
@@ -59,6 +66,7 @@ func getProcessIndicatorPodUIDMap(ctx context.Context, processIndicatorStore pro
 func getProcessIndicatorIdsOfInterest(ctx context.Context, plopStore plopDatastore.Store) (map[string]bool, error) {
 	processIndicatorIds := make(map[string]bool)
 
+	startTime := time.Now()
 	err := plopStore.Walk(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if plop.GetPodUid() == "" && plop.GetProcess() == nil {
@@ -66,6 +74,10 @@ func getProcessIndicatorIdsOfInterest(ctx context.Context, plopStore plopDatasto
 			}
 			return nil
 		})
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("getProcessIndicatorIdsOfInterest took %s", duration)
+	log.Infof("len(processIndicatorIds)= %d", len(processIndicatorIds))
 
 	return processIndicatorIds, err
 }
@@ -74,8 +86,10 @@ func getProcessIndicatorIdsOfInterest(ctx context.Context, plopStore plopDatasto
 // map obtained from the process_indicators table, where the key is a processindicatorid and the value
 // is a PodUid.
 func setPodUidsUsingProcessIndicators(ctx context.Context, plopStore plopDatastore.Store, podUIDMap map[string]string, batchSize int) error {
+	startTime := time.Now()
 	plops := make([]*storage.ProcessListeningOnPortStorage, batchSize)
 	count := 0
+	totalCount := 0
 	err := plopStore.Walk(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if plop.GetPodUid() == "" {
@@ -88,6 +102,7 @@ func setPodUidsUsingProcessIndicators(ctx context.Context, plopStore plopDatasto
 
 				if count == batchSize {
 					err := plopStore.UpsertMany(ctx, plops)
+					totalCount += count
 					count = 0
 					if err != nil {
 						return err
@@ -98,6 +113,7 @@ func setPodUidsUsingProcessIndicators(ctx context.Context, plopStore plopDatasto
 			return nil
 		})
 
+	totalCount += count
 	if count > 0 {
 		plops = plops[:count]
 		err := plopStore.UpsertMany(ctx, plops)
@@ -105,6 +121,10 @@ func setPodUidsUsingProcessIndicators(ctx context.Context, plopStore plopDatasto
 			return err
 		}
 	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("setPodUidsUsingProcessIndicators took %s", duration)
+	log.Infof("totalCount= %d", totalCount)
 
 	return err
 }
@@ -140,6 +160,7 @@ func getPodKey(podName, deploymentID string) string {
 // Get a map where the key is a combination of the pod name and deploymenid and the value is the
 // PodUid. This is later used to set the PodUids in the listening endpoints table.
 func getPodUIDMap(ctx context.Context, podStore podDatastore.Store) (map[string]string, error) {
+	startTime := time.Now()
 	podUIDMap := make(map[string]string)
 
 	err := podStore.Walk(ctx,
@@ -148,6 +169,10 @@ func getPodUIDMap(ctx context.Context, podStore podDatastore.Store) (map[string]
 			podUIDMap[podKey] = pod.GetId()
 			return nil
 		})
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("getPodUIDMap took %s", duration)
+	log.Infof("len(podUIDMap)= %d", len(podUIDMap))
 
 	return podUIDMap, err
 }
@@ -155,8 +180,10 @@ func getPodUIDMap(ctx context.Context, podStore podDatastore.Store) (map[string]
 // Walks through the listening_endpoints table and sets the value of PodUid using a map obtained from the
 // pods table where the key is a combination of the pod name and deploymentid.
 func setPodUidsUsingPods(ctx context.Context, plopStore plopDatastore.Store, podUIDMap map[string]string, batchSize int) error {
+	startTime := time.Now()
 	plops := make([]*storage.ProcessListeningOnPortStorage, batchSize)
 	count := 0
+	totalCount := 0
 	err := plopStore.Walk(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			// Don't set the PodUid if it is already set. The process information has the
@@ -172,6 +199,7 @@ func setPodUidsUsingPods(ctx context.Context, plopStore plopDatastore.Store, pod
 
 				if count == batchSize {
 					err := plopStore.UpsertMany(ctx, plops)
+					totalCount += count
 					count = 0
 					if err != nil {
 						return err
@@ -182,6 +210,7 @@ func setPodUidsUsingPods(ctx context.Context, plopStore plopDatastore.Store, pod
 			return nil
 		})
 
+	totalCount += count
 	if count > 0 {
 		plops = plops[:count]
 		err := plopStore.UpsertMany(ctx, plops)
@@ -189,6 +218,10 @@ func setPodUidsUsingPods(ctx context.Context, plopStore plopDatastore.Store, pod
 			return err
 		}
 	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("setPodUidsUsingPods took %s", duration)
+	log.Infof("totalCount= %d", totalCount)
 
 	return err
 }
@@ -227,15 +260,27 @@ func updatePodUids(ctx context.Context, database *types.Databases) error {
 	plopStore := plopDatastore.New(database.PostgresDB)
 	processIndicatorStore := processIndicatorDatastore.New(database.PostgresDB)
 
+	firstStartTime := time.Now()
+	startTime := time.Now()
 	err := setPodUIDsUsingProcessIndicators(ctx, processIndicatorStore, plopStore, batchSize)
 	if err != nil {
 		return err
 	}
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	log.Infof("setPodUIDsUsingProcessIndicators took %s", duration)
 
+	startTime = time.Now()
 	err = setPodUIDsUsingPods(ctx, podStore, plopStore, batchSize)
 	if err != nil {
 		return err
 	}
+	endTime = time.Now()
+	duration = endTime.Sub(startTime)
+	log.Infof("setPodUIDsUsingPods took %s", duration)
+
+	duration = endTime.Sub(firstStartTime)
+	log.Infof("Migration took %s", duration)
 
 	return err
 }
