@@ -27,7 +27,7 @@ shorten_tag() {
 
     long_tag=$1
 
-    short_tag_regex='[1-9]+\.[1-9]+\.[1-9xX]+'
+    short_tag_regex='([1-9]+\.[1-9]+\.[1-9xX]+)'
 
     if [[ $long_tag =~ $short_tag_regex ]]; then
         echo "${BASH_REMATCH[1]}"
