@@ -1,5 +1,6 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 
+import waitForNextUpdate from 'test-utils/waitForNextUpdate';
 import useRestMutation from './useRestMutation';
 
 // Utility function to track the order of callbacks as the hook transitions
@@ -29,7 +30,7 @@ describe('useRestMutation hook', () => {
 
         const callbackResults: string[] = [];
 
-        const { result, waitForNextUpdate } = renderHook(() =>
+        const { result } = renderHook(() =>
             useRestMutation(requestFn, trackCallbacksInArray(callbackResults, 'global'))
         );
 
@@ -55,7 +56,7 @@ describe('useRestMutation hook', () => {
 
         // Expire timeout timer and wait for state to change
         jest.runAllTimers();
-        await waitForNextUpdate();
+        await waitForNextUpdate(result);
 
         // Check success state
         expect(result.current.isIdle).toBe(false);
@@ -97,7 +98,7 @@ describe('useRestMutation hook', () => {
 
         const callbackResults: string[] = [];
 
-        const { result, waitForNextUpdate } = renderHook(() =>
+        const { result } = renderHook(() =>
             useRestMutation(requestFn, trackCallbacksInArray(callbackResults, 'global'))
         );
 
@@ -123,7 +124,7 @@ describe('useRestMutation hook', () => {
 
         // Expire timeout timer and wait for state to change
         jest.runAllTimers();
-        await waitForNextUpdate();
+        await waitForNextUpdate(result);
 
         // Check failure state
         expect(result.current.isIdle).toBe(false);

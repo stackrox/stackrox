@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { AnyAction, Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
@@ -61,6 +61,7 @@ mobxConfigure({ isolateGlobalState: true });
 installRaven();
 
 const rootNode = document.getElementById('root');
+const root = createRoot(rootNode);
 const history = createHistory();
 const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
@@ -74,7 +75,7 @@ dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
 dispatch(fetchCentralCapabilitiesThunk());
 
-ReactDOM.render(
+root.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
             <ConnectedRouter history={history}>
@@ -85,6 +86,5 @@ ReactDOM.render(
                 </ThemeProvider>
             </ConnectedRouter>
         </ApolloProvider>
-    </Provider>,
-    rootNode
+    </Provider>
 );
