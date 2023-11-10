@@ -17,7 +17,7 @@ go install golang.org/x/perf/cmd/benchstat@latest
 benchstat -csv old.txt new.txt
 ```
 
-## API (aka k6)
+## Load (aka k6 API tests)
 
 Please use `README.ipynb` for local developnment of performance tests. That README is designed to be easy executable.
 

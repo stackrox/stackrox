@@ -21,13 +21,6 @@ export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
 ## Deploy Central + Sensor
 
-You can use utils scripts from `stackrox/performance-scale-tests` repo to deploy central and sensor.
-
-Clone repository locally:
-```
-git clone git@github.com:stackrox/performance-scale-tests.git
-```
-
 And run the following commands:
 ```
 ./utilities/start-central-and-scanner.sh "${ARTIFACTS_DIR}"
