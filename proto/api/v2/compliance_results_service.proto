@@ -104,7 +104,7 @@ message ListComplianceScanResultsResponse {
 
 // ComplianceScanResultsCount gives count of scan results
 message CountComplianceScanResults{
-    int32     count=1;
+    int32 count = 1;
 }
 
 service ComplianceResultsService {
