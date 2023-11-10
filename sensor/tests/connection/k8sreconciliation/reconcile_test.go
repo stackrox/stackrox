@@ -98,6 +98,12 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 			}
 		}
 
+		// We have to sleep for a while here for make sure that all kubernetes changes to NginxUnchanged will happen.
+		// Otherwise, this test might flake out because a Pod update could come to NginxUnchanged while we are offline
+		// e.g. a Status update. Causing sensor to not send the ID in the ResourcesSynced message, but as its own
+		// individual SYNC event instead.
+		time.Sleep(time.Minute)
+
 		testContext.StopCentralGRPC()
 
 		messagesBeforeStopping := c.GetFakeCentral().GetAllMessages()
