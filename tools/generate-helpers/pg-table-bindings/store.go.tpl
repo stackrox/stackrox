@@ -98,7 +98,7 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-    return pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[storeType, *storeType](
+    return pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}{{ if .CachedStore }}WithCache{{end}}[storeType, *storeType](
             db,
             schema,
             pkGetter,

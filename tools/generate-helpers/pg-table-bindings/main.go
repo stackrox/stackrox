@@ -133,6 +133,9 @@ type properties struct {
 
 	// The feature flag that specifies if the schema should be registered
 	FeatureFlag string
+
+	// Indicates the store should be mirrored in memory
+	CachedStore bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -204,6 +207,7 @@ func main() {
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
+	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	/**
@@ -318,6 +322,7 @@ func main() {
 			"SearchScope":    searchScope,
 			"RegisterSchema": !props.ConversionFuncs,
 			"FeatureFlag":    props.FeatureFlag,
+			"CachedStore":    props.CachedStore,
 		}
 
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
