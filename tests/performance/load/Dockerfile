@@ -19,10 +19,10 @@ RUN apk add --no-cache bash
 USER 12345
 
 # Order of directories is based on change probability
-COPY ./scripts ./scripts
-COPY ./src ./src
-COPY ./tests ./tests
-COPY ./groups ./groups
+COPY scripts ./scripts
+COPY src ./src
+COPY tests ./tests
+COPY groups ./groups
 
 ENTRYPOINT [ "/bin/sh", "-c" ]
 
