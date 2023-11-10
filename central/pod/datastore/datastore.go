@@ -26,7 +26,6 @@ type DataStore interface {
 	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 
 	GetPod(ctx context.Context, id string) (*storage.Pod, bool, error)
-	WalkAll(ctx context.Context, fn func(pod *storage.Pod) error) error
 
 	UpsertPod(ctx context.Context, pod *storage.Pod) error
 

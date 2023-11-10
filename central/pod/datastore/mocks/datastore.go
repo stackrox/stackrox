@@ -129,17 +129,3 @@ func (mr *MockDataStoreMockRecorder) UpsertPod(ctx, pod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPod", reflect.TypeOf((*MockDataStore)(nil).UpsertPod), ctx, pod)
 }
-
-// WalkAll mocks base method.
-func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.Pod) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WalkAll indicates an expected call of WalkAll.
-func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
-}
