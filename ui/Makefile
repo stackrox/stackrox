@@ -13,7 +13,7 @@ PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -fa
 
 export REACT_APP_ROX_PRODUCT_BRANDING := $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
 
-deps: yarn.lock $(PACKAGE_JSON_FILES)
+deps: $(PACKAGE_JSON_FILES)
 	yarn install --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
 	@touch deps
 
@@ -31,6 +31,15 @@ build: deps $(SOURCES)
 	@echo "+ $@"
 	yarn build
 	@touch build
+
+deps-bun: $(PACKAGE_JSON_FILES)
+	bun install --yarn
+	@touch deps-bun
+
+build-bun: deps-bun $(SOURCES)
+	@echo "+ $@"
+	bun run build
+	@touch build-bun
 
 .PHONY: start
 start: deps
@@ -50,10 +59,14 @@ test-e2e: deps $(SOURCES)
 .PHONY: clean
 clean:
 	@echo "+ $@"
-	yarn clean
+	bun run clean
+	bun run --cwd packages/tailwind-config clean
+	bun run --cwd packages/ui-components clean
 	rm -f deps
 	rm -f lint
-	rm -rf build
+	rm -f build
+	rm -f deps-bun
+	rm -f build-bun
 	rm -rf node_modules apps/*/node_modules packages/*/node_modules
 
 .PHONY: publish-packages
