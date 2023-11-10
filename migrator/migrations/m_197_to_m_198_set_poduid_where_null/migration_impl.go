@@ -66,12 +66,18 @@ func getProcessIndicatorPodUIDMap(ctx context.Context, processIndicatorStore pro
 func getProcessIndicatorIdsOfInterest(ctx context.Context, plopStore plopDatastore.Store) (map[string]bool, error) {
 	processIndicatorIds := make(map[string]bool)
 
+	count := 0
 	startTime := time.Now()
 	err := plopStore.Walk(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if count % 100 == 0 {
+				log.Infof("plop.GetPodUid() == ''= %+v", plop.GetPodUid() == "")
+				log.Infof("plop.GetProcess() == nil = %+v", plop.GetProcess() == nil)
+			}
 			if plop.GetPodUid() == "" && plop.GetProcess() == nil {
 				processIndicatorIds[plop.GetProcessIndicatorId()] = true
 			}
+			count++
 			return nil
 		})
 	endTime := time.Now()
