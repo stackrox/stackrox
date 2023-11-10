@@ -18,8 +18,8 @@ var (
 	}
 )
 
-// ConvertInternalToV1Storage converts internal api V2 check result to a V1 storage check result
-func ConvertInternalToV1Storage(internalResult *central.ComplianceOperatorCheckResultV2) *storage.ComplianceOperatorCheckResult {
+// ComplianceOperatorCheckResult converts internal api V2 check result to a V1 storage check result
+func ComplianceOperatorCheckResult(internalResult *central.ComplianceOperatorCheckResultV2) *storage.ComplianceOperatorCheckResult {
 	return &storage.ComplianceOperatorCheckResult{
 		Id:           internalResult.GetId(),
 		CheckId:      internalResult.GetCheckId(),

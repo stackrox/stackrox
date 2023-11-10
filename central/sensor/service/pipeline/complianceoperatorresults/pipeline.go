@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov1storage"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -23,26 +24,6 @@ import (
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
-
-	statusToV2 = map[central.ComplianceOperatorCheckResultV2_CheckStatus]storage.ComplianceOperatorCheckResultV2_CheckStatus{
-		central.ComplianceOperatorCheckResultV2_UNSET:          storage.ComplianceOperatorCheckResultV2_UNSET,
-		central.ComplianceOperatorCheckResultV2_PASS:           storage.ComplianceOperatorCheckResultV2_PASS,
-		central.ComplianceOperatorCheckResultV2_FAIL:           storage.ComplianceOperatorCheckResultV2_FAIL,
-		central.ComplianceOperatorCheckResultV2_ERROR:          storage.ComplianceOperatorCheckResultV2_ERROR,
-		central.ComplianceOperatorCheckResultV2_INFO:           storage.ComplianceOperatorCheckResultV2_INFO,
-		central.ComplianceOperatorCheckResultV2_MANUAL:         storage.ComplianceOperatorCheckResultV2_MANUAL,
-		central.ComplianceOperatorCheckResultV2_NOT_APPLICABLE: storage.ComplianceOperatorCheckResultV2_NOT_APPLICABLE,
-		central.ComplianceOperatorCheckResultV2_INCONSISTENT:   storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-	}
-
-	severityToV2 = map[central.ComplianceOperatorRuleSeverity]storage.RuleSeverity{
-		central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY:   storage.RuleSeverity_UNSET_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY: storage.RuleSeverity_UNKNOWN_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY:    storage.RuleSeverity_INFO_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY:     storage.RuleSeverity_LOW_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY:  storage.RuleSeverity_MEDIUM_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY:    storage.RuleSeverity_HIGH_RULE_SEVERITY,
-	}
 
 	log = logging.LoggerForModule()
 )
@@ -157,27 +138,10 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 		return s.v2Datastore.DeleteResult(ctx, event.GetId())
 	default:
 		// Still need to store the V1 version to maintain both
-		if err := s.datastore.Upsert(ctx, internaltov1storage.ConvertInternalToV1Storage(checkResult)); err != nil {
+		if err := s.datastore.Upsert(ctx, internaltov1storage.ComplianceOperatorCheckResult(checkResult)); err != nil {
 			return err
 		}
 
-		return s.v2Datastore.UpsertResult(ctx, s.convertSensorMsgToV2Storage(checkResult, clusterID))
-	}
-}
-
-func (s *pipelineImpl) convertSensorMsgToV2Storage(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) *storage.ComplianceOperatorCheckResultV2 {
-	return &storage.ComplianceOperatorCheckResultV2{
-		Id:             sensorData.GetId(),
-		CheckId:        sensorData.GetCheckId(),
-		CheckName:      sensorData.GetCheckName(),
-		ClusterId:      clusterID,
-		Status:         statusToV2[sensorData.GetStatus()],
-		Severity:       severityToV2[sensorData.GetSeverity()],
-		Description:    sensorData.GetDescription(),
-		Instructions:   sensorData.GetInstructions(),
-		Labels:         sensorData.GetLabels(),
-		Annotations:    sensorData.GetAnnotations(),
-		CreatedTime:    sensorData.GetCreatedTime(),
-		ScanConfigName: sensorData.GetSuiteName(),
+		return s.v2Datastore.UpsertResult(ctx, internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID))
 	}
 }
