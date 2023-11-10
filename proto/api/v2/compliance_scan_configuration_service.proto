@@ -47,7 +47,7 @@ message ComplianceScanConfigurationStatus {
     SlimUser                                   modified_by           = 7;
 }
 
-message ComplianceScanConfigurationCount{
+message ComplianceScanConfigurationsCount{
     int32  count = 1;
 }
 
