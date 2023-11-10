@@ -48,7 +48,7 @@ message ComplianceScanConfigurationStatus {
 }
 
 message ComplianceScanConfigurationCount{
-    int32                                       count                =1;
+    int32  count = 1;
 }
 
 // Next available tag: 2
