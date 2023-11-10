@@ -32,4 +32,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_195_to_m_196_vuln_request_users"
 	_ "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_vulnerability_requests_for_legacy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_set_poduid_where_null"
+	_ "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_remove_listening_endpoints_where_pod_uid_is_null"
 )
