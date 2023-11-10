@@ -7,12 +7,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	v1ResultMocks "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore/mocks"
 	v2ResultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
-	v2ConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -25,10 +23,9 @@ const (
 )
 
 var (
-	createdTime  = types.TimestampNow()
-	id           = uuid.NewV4().String()
-	scanConfigID = uuid.NewV4().String()
-	checkID      = uuid.NewV4().String()
+	createdTime = types.TimestampNow()
+	id          = uuid.NewV4().String()
+	checkID     = uuid.NewV4().String()
 )
 
 func TestPipeline(t *testing.T) {
@@ -40,7 +37,6 @@ type PipelineTestSuite struct {
 
 	v1ResultDS *v1ResultMocks.MockDataStore
 	v2ResultDS *v2ResultMocks.MockDataStore
-	v2ConfigDS *v2ConfigMocks.MockDataStore
 	mockCtrl   *gomock.Controller
 }
 
@@ -56,7 +52,6 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.v1ResultDS = v1ResultMocks.NewMockDataStore(suite.mockCtrl)
 	suite.v2ResultDS = v2ResultMocks.NewMockDataStore(suite.mockCtrl)
-	suite.v2ConfigDS = v2ConfigMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -66,14 +61,9 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
-	suite.v2ConfigDS.EXPECT().GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, mockSuiteName).ProtoQuery()).Return([]*storage.ComplianceOperatorScanConfigurationV2{
-		{
-			Id: scanConfigID,
-		},
-	}, nil)
+	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -86,7 +76,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 						CheckId:      checkID,
 						CheckName:    mockCheckRuleName,
 						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_INCONSISTENT,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
 						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
 						Description:  "this is a test",
 						Instructions: "this is a test",
@@ -108,8 +98,9 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
+	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -122,7 +113,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 						CheckId:      checkID,
 						CheckName:    mockCheckRuleName,
 						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_INCONSISTENT,
+						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
 						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
 						Description:  "this is a test",
 						Instructions: "this is a test",
@@ -145,7 +136,7 @@ func (suite *PipelineTestSuite) TestRunV1Create() {
 	ctx := context.Background()
 
 	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -177,7 +168,7 @@ func (suite *PipelineTestSuite) TestRunV1Delete() {
 	ctx := context.Background()
 
 	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
-	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
+	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -207,18 +198,18 @@ func (suite *PipelineTestSuite) TestRunV1Delete() {
 
 func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 	return &storage.ComplianceOperatorCheckResultV2{
-		Id:           id,
-		CheckId:      checkID,
-		CheckName:    mockCheckRuleName,
-		ClusterId:    clusterID,
-		Status:       storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-		Severity:     storage.RuleSeverity_HIGH_RULE_SEVERITY,
-		Description:  "this is a test",
-		Instructions: "this is a test",
-		Labels:       nil,
-		Annotations:  nil,
-		CreatedTime:  createdTime,
-		ScanConfigId: scanConfigID,
+		Id:             id,
+		CheckId:        checkID,
+		CheckName:      mockCheckRuleName,
+		ClusterId:      clusterID,
+		Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
+		Severity:       storage.RuleSeverity_HIGH_RULE_SEVERITY,
+		Description:    "this is a test",
+		Instructions:   "this is a test",
+		Labels:         nil,
+		Annotations:    nil,
+		CreatedTime:    createdTime,
+		ScanConfigName: mockSuiteName,
 	}
 }
 
