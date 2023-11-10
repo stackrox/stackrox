@@ -101,7 +101,7 @@ service ComplianceScanConfigurationService {
         };
     }
 
-    rpc GetComplianceScanConfigurationCount(RawQuery) returns (ComplianceScanConfigurationCount){
+    rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount){
         option (google.api.http) = {
           get: "/v2/compliance/scan/count/configurations"
         };
