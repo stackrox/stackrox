@@ -9,10 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	pkgEnv "github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -106,6 +109,15 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 	chartMetaValues, err := cfg.getChartMetaValues(buildinfo.ReleaseBuild)
 	if err != nil {
 		return errors.Wrap(err, "unable to get chart meta values")
+	}
+
+	if version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "" {
+		chartMetaValues.TelemetryEnabled = true
+		chartMetaValues.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
+		chartMetaValues.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
+	} else {
+		chartMetaValues.TelemetryKey = phonehome.DisabledKey
+		chartMetaValues.TelemetryEnabled = false
 	}
 
 	// load image with templates

@@ -86,6 +86,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
 		FeatureFlags:             getFeatureFlags(),
+		TelemetryEnabled:         true,
 
 		AutoSensePodSecurityPolicies: true,
 	}

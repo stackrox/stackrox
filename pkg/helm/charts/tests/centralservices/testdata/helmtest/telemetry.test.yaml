@@ -21,7 +21,7 @@ tests:
     expect: |
       envVars(.deployments.central; "central")["ROX_TELEMETRY_STORAGE_KEY_V1"] | assertThat(. == "key")
 
-  - name: Central telemetry should have a DISABLED key when not enabled
+  - name: Central telemetry should have DISABLED key when not enabled
     set:
       central.telemetry.enabled: false
       central.telemetry.storage.key: "key"
