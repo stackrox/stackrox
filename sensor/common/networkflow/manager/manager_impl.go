@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -476,7 +477,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			if conn.incoming {
 				log.Warnf("Incoming connection to container %s/%s from %q. "+
 					"Marking it as 'External Entities' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String()+":"+strconv.Itoa(int(port)))
 			} else {
 				log.Warnf("Outgoing connection from container %s/%s to %q. "+
 					"Marking it as 'External Entities' in the network graph.",
