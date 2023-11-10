@@ -113,6 +113,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				// Enhance sync with all the observed IDs
 				msg.GetEvent().GetSynced().UnchangedIds = unchangedIds
 				log.Infof("Sending synced signal to Central. Adding %d events as unchanged", len(unchangedIds))
+				metrics.SetResourcesSyncedUnchangedGauge(len(unchangedIds))
+				for i, str := range unchangedIds {
+					log.Debugf("unchangedIds[%d]: %s", i, str)
+				}
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {

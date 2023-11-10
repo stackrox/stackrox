@@ -27,6 +27,7 @@ func init() {
 		k8sObjectProcessingDuration,
 		k8sObjectIngestionToSendDuration,
 		resolverChannelSize,
+		resourcesSyncedUnchaged,
 		outputChannelSize,
 		telemetryInfo,
 		telemetrySecuredNodes,

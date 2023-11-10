@@ -155,6 +155,13 @@ var (
 		Help:      "A gauge to track the resolver channel size",
 	})
 
+	resourcesSyncedUnchaged = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resources_synced_unchanged",
+		Help:      "A gauge to track how many resources were sent in ResourcesSynced message as stub ids",
+	})
+
 	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -230,6 +237,11 @@ func IncrementProcessDedupeCacheMisses() {
 // RegisterSensorIndicatorChannelFullCounter registers the number of indicators dropped
 func RegisterSensorIndicatorChannelFullCounter() {
 	sensorIndicatorChannelFullCounter.Inc()
+}
+
+// SetResourcesSyncedUnchangedGauge sets the number of resources synced transmitted in the last sync event
+func SetResourcesSyncedUnchangedGauge(value int) {
+	resourcesSyncedUnchaged.Set(float64(value))
 }
 
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
