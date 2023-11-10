@@ -42,11 +42,11 @@ func NewRemoteIndexer(ctx context.Context, address string) (*remoteIndexer, erro
 }
 
 // Close closes the remote indexer.
-func (r *remoteIndexer) Close(ctx context.Context) error {
+func (r *remoteIndexer) Close(_ context.Context) error {
 	return r.conn.Close()
 }
 
-// GetIndexReport call the remote service to retrieve an IndexReport for the given hash ID.
+// GetIndexReport calls the remote service to retrieve an IndexReport for the given hash ID.
 func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	resp, err := r.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
 	if err != nil {
