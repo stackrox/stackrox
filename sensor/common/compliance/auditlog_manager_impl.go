@@ -12,11 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
 const (
-	defaultInterval = 1 * time.Minute
+	defaultInterval = 1 * time.Millisecond
 )
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
@@ -167,6 +168,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
+		HashKey:   clusterid.Get(),
+		DedupeKey: clusterid.Get(),
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
