@@ -71,6 +71,7 @@ func getProcessIndicatorIdsOfInterest(ctx context.Context, plopStore plopDatasto
 	err := plopStore.Walk(ctx,
 		func(plop *storage.ProcessListeningOnPortStorage) error {
 			if count % 100 == 0 {
+				log.Infof("plop.GetPodUid()= %s", plop.GetPodUid())
 				log.Infof("plop.GetPodUid() == ''= %+v", plop.GetPodUid() == "")
 				log.Infof("plop.GetProcess() == nil = %+v", plop.GetProcess() == nil)
 			}
