@@ -466,12 +466,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Fake a lookup result.
+			// Fake a lookup result. This shows "External Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
 					Entity:         networkgraph.InternetEntity(),
 					ContainerPorts: []uint16{port},
 				},
+			}
+			if conn.incoming {
+				log.Warnf("Incoming connection to container %s/%s from %q. "+
+					"Marking it as 'External Entities' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
+			} else {
+				log.Warnf("Outgoing connection from container %s/%s to %q. "+
+					"Marking it as 'External Entities' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
 			}
 		} else {
 			lookupResults = []clusterentities.LookupResult{
