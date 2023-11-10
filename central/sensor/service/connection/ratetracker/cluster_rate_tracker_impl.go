@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// Tracker
 type messageRateTracker struct {
 	mutex sync.Mutex
 
@@ -101,6 +100,7 @@ func (t *messageRateTracker) Remove(clusterID string) {
 	}
 }
 
+// NewClusterRateTracker creates and returns a new ClusterRateTracker.
 func NewClusterRateTracker(period time.Duration, maxClusters int) ClusterRateTracker {
 	return newMessageRateTracker(period, maxClusters)
 }

@@ -1,6 +1,6 @@
 package ratetracker
 
-// ClusterRateTracker  defines methods for tracking message rates in clusters.
+// ClusterRateTracker defines methods for tracking message rates in clusters.
 type ClusterRateTracker interface {
 	// ReceiveMsg records the receipt of a message from the specified cluster.
 	ReceiveMsg(clusterID string)
