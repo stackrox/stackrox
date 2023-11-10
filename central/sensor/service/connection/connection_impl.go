@@ -181,8 +181,10 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 		}
 
 		if c.sensorEventHandler.getRateLimitMgr().limitClusterMsg(c.clusterID) {
-			errRateLimit := status.Error(codes.ResourceExhausted, "Stream message is rejected by sensor event rate limiter")
-			c.stopSig.SignalWithError(errors.Wrap(errRateLimit, "recv error"))
+			msg := "The cluster message stream is closed by the message rate limiter"
+			log.Warnw(msg, logging.ClusterID(c.clusterID))
+
+			c.stopSig.SignalWithError(errors.Wrap(status.Error(codes.ResourceExhausted, msg), "recv error"))
 			return
 		}
 

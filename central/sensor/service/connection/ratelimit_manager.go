@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection/ratetracker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -78,8 +79,7 @@ func (m *rateLimitManager) throttleMsg(clusterID string) bool {
 	if m == nil || m.msgRateLimiter == nil || m.msgRateTracker == nil {
 		return false
 	}
-
-	log.Warnf("Throttling messages from cluster %q.", clusterID)
+	log.Warnw("Messages from the cluster are throttled by the message rate limiter", logging.ClusterID(clusterID))
 
 	return m.msgRateLimiter.Limit()
 }
