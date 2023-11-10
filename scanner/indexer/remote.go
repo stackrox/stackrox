@@ -14,6 +14,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// RemoteIndexer represents the interface offered by remote indexers.
+type RemoteIndexer interface {
+	ReportGetter
+	Close(context.Context) error
+}
+
 // remoteIndexer is the Indexer implementation that connects to a remote indexer
 // using gRPC.
 type remoteIndexer struct {

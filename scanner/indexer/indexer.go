@@ -32,12 +32,6 @@ type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
 }
 
-// RemoteIndexer represents the interface offered by remote indexers.
-type RemoteIndexer interface {
-	ReportGetter
-	Close(context.Context) error
-}
-
 // Indexer represents an image indexer.
 //
 //go:generate mockgen-wrapper
