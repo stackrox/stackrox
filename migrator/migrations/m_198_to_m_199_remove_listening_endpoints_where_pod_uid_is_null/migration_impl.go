@@ -3,49 +3,61 @@ package m198tom199
 import (
 	"github.com/stackrox/rox/migrator/types"
 )
+import (
+	"context"
+	"fmt"
 
-// TODO(dont-merge): generate/write and import any store required for the migration (skip any unnecessary step):
-//  - create a schema subdirectory
-//  - create a schema/old subdirectory
-//  - create a schema/new subdirectory
-//  - create a stores subdirectory
-//  - create a stores/previous subdirectory
-//  - create a stores/updated subdirectory
-//  - copy the old schemas from pkg/postgres/schema to schema/old
-//  - copy the old stores from their location in central to appropriate subdirectories in stores/previous
-//  - generate the new schemas in pkg/postgres/schema and the new stores where they belong
-//  - copy the newly generated schemas from pkg/postgres/schema to schema/new
-//  - remove the calls to GetSchemaForTable and to RegisterTable from the copied schema files
-//  - remove the xxxTableName constant from the copied schema files
-//  - copy the newly generated stores from their location in central to appropriate subdirectories in stores/updated
-//  - remove any unused function from the copied store files (the minimum for the public API should contain Walk, UpsertMany, DeleteMany)
-//  - remove the scoped access control code from the copied store files
-//  - remove the metrics collection code from the copied store files
+	"github.com/stackrox/rox/generated/storage"
+	listeningEndpointsSchema "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_remove_listening_endpoints_where_pod_uid_is_null/schema/listening_endpoints"
+	plopDatastore "github.com/stackrox/rox/migrator/migrations/m_198_to_m_199_remove_listening_endpoints_where_pod_uid_is_null/store/processlisteningonport"
+	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
+)
 
-// TODO(dont-merge): Determine if this change breaks a previous releases database.
-// If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately
-// following the release that cannot tolerate the change in pkg/migrations/internal/fallback_seq_num.go.
-//
-// For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.
-// All the code from 4.2 onward will not reference `column_v1`. At some point in the future a rollback to 4.1
-// will not longer be supported and we want to remove `column_v1`. To do so, we will upgrade the schema to remove
-// the column and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
-// as 4.1 will no longer be supported. The migration process will inform the user of an error when trying to migrate
-// to a software version that can no longer be supported by the database.
+var (
+	log = logging.LoggerForModule()
+)
 
 func migrate(database *types.Databases) error {
-	_ = database // TODO(dont-merge): remove this line, it is there to make the compiler happy while the migration code is being written.
-	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
+	ctx := sac.WithAllAccess(context.Background())
+	pgutils.CreateTableFromModel(ctx, database.GormDB, listeningEndpointsSchema.CreateTableListeningEndpointsStmt)
 
-	// TODO(dont-merge): Migration code comes here
-	// TODO(dont-merge): When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
-	// TODO(dont-merge): db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-	// TODO(dont-merge): query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
-	// TODO(dont-merge): See README for more details
+	batchSize := 10000
+
+	return updatePodUids(ctx, database, batchSize
+}
+
+func removeListeningEndpointsWherePodUidIsNull(ctx context.Context, database *types.Databases, batchSize int) error {
+	idsToDelete := make([]string, batchSize)
+	count := 0
+
+	err := plopStore.Walk(ctx,
+		func(plop *storage.ProcessListeningOnPortStorage) error {
+			if plop.GetPodUid() == "" {
+				idsToDelete[count] = plop.Id
+				count++
+			}
+
+			if count == batchSize {
+				err := plopStore.DeleteMany(ctx, idsToDelete)
+				count = 0
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if count > 0 {
+			idsToDelete = idsToDelete[:count]
+			err := plopStore.DeleteMany(ctx, idsToDelete)
+			if err != nil {
+				return err
+			}
+		}
 
 	return nil
 }
-
-// TODO(dont-merge): Write the additional code to support the migration
-
-// TODO(dont-merge): remove any pending TODO
