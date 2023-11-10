@@ -17,7 +17,7 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
 # Scale up the cluster to support postgres
-cluster = OpenShiftScaleWorkersCluster(increment=1)
+cluster = OpenShiftScaleWorkersCluster(increment=4)
 
 ClusterTestRunner(
     cluster=cluster,
