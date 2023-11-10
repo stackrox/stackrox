@@ -238,7 +238,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurat
 			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
 				Return(1, nil).Times(1)
 
-			configs, err := s.service.GetComplianceScanConfigurationCount(allAccessContext, tc.query)
+			configs, err := s.service.GetComplianceScanConfigurationsCount(allAccessContext, tc.query)
 			s.Require().NoError(err)
 			s.Require().Equal(int32(1), configs.Count)
 		})

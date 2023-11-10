@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/index"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -15,10 +14,9 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage pgStore.Store, indexer index.Indexer, search search.Searcher) *searcherImpl {
+func New(storage pgStore.Store, search search.Searcher) *searcherImpl {
 	return &searcherImpl{
 		storage:  storage,
-		indexer:  indexer,
 		searcher: search,
 	}
 }

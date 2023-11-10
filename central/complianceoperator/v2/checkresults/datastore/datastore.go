@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,6 +30,6 @@ type DataStore interface {
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store, db postgres.DB) DataStore {
-	return &datastoreImpl{store: store, db: db}
+func New(store store.Store, db postgres.DB, searcher search.Searcher) DataStore {
+	return &datastoreImpl{store: store, db: db, searcher: searcher}
 }
