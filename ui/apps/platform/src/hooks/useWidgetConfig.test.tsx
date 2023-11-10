@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import React from 'react';
-import { render, act as reactAct } from '@testing-library/react';
-import { renderHook, act as hooksAct } from '@testing-library/react-hooks';
+import { render, renderHook, act } from '@testing-library/react';
 import useWidgetConfig, { defaultStorageKey } from 'hooks/useWidgetConfig';
 
 beforeEach(() => {
@@ -24,13 +23,13 @@ describe('useWidgetConfig hook', () => {
         expect(firstResult.current[0]).toEqual(defaultConfig);
 
         // By default changes should merge the new and old configs
-        hooksAct(() => {
+        act(() => {
             const [, updateConfig] = firstResult.current;
             updateConfig({ filter: 'Namespace:stackrox' });
         });
         expect(firstResult.current[0]).toEqual({ sort: 'asc', filter: 'Namespace:stackrox' });
 
-        hooksAct(() => {
+        act(() => {
             const [, updateConfig] = firstResult.current;
             updateConfig({ sort: 'desc' });
         });
@@ -63,7 +62,7 @@ describe('useWidgetConfig hook', () => {
 
         expect(firstResult.current[0]).toEqual(defaultConfig);
 
-        hooksAct(() => {
+        act(() => {
             const [, updateConfig] = firstResult.current;
             updateConfig({ filter: 'Namespace:stackrox' });
         });
@@ -72,7 +71,7 @@ describe('useWidgetConfig hook', () => {
         // replacing it with the default value
         expect(firstResult.current[0]).toEqual({ sort: 'asc', filter: 'Namespace:stackrox' });
 
-        hooksAct(() => {
+        act(() => {
             const [, updateConfig] = firstResult.current;
             updateConfig({ sort: 'desc' });
         });
@@ -80,7 +79,7 @@ describe('useWidgetConfig hook', () => {
         // The `filter` property is overwritten and replaced with the default value
         expect(firstResult.current[0]).toEqual({ sort: 'desc', filter: '' });
 
-        hooksAct(() => {
+        act(() => {
             const [, updateConfig] = firstResult.current;
             updateConfig({});
         });
@@ -102,7 +101,7 @@ describe('useWidgetConfig hook', () => {
         expect(firstResult.current[1][0]).toEqual(defaultConfig);
 
         // Update the state of each widget config
-        hooksAct(() => {
+        act(() => {
             firstResult.current[0][1]({ sort: 'desc' });
             firstResult.current[1][1]({ filter: 'Namespace:stackrox' });
         });
@@ -143,7 +142,7 @@ describe('useWidgetConfig hook', () => {
         expect(renderSpies[idA]).toHaveBeenCalledTimes(1);
         expect(renderSpies[idB]).toHaveBeenCalledTimes(1);
 
-        reactAct(() => {
+        act(() => {
             hookReturns[idA][1]({ sort: 'desc' });
         });
 
@@ -154,7 +153,7 @@ describe('useWidgetConfig hook', () => {
         expect(hookReturns[idA][0]).toEqual({ sort: 'desc', filter: '' });
         expect(hookReturns[idB][0]).toEqual({ sort: 'asc', filter: '' });
 
-        reactAct(() => {
+        act(() => {
             hookReturns[idB][1]({ filter: 'Namespace:stackrox' });
         });
 
