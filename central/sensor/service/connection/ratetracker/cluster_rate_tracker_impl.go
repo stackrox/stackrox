@@ -95,8 +95,10 @@ func (t *messageRateTracker) Remove(clusterID string) {
 	}
 
 	delete(t.clusterRates, clusterID)
-	heap.Remove(t.clusterRatesHeap, clRate.index)
-	t.clusterLimitCandidates.Remove(clusterID)
+	if t.clusterLimitCandidates.Contains(clusterID) {
+		heap.Remove(t.clusterRatesHeap, clRate.index)
+		t.clusterLimitCandidates.Remove(clusterID)
+	}
 }
 
 func NewClusterRateTracker(period time.Duration, maxClusters int) ClusterRateTracker {
