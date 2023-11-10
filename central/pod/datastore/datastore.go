@@ -31,8 +31,6 @@ type DataStore interface {
 	UpsertPod(ctx context.Context, pod *storage.Pod) error
 
 	RemovePod(ctx context.Context, id string) error
-
-	GetPodIDs(ctx context.Context) ([]string, error)
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
