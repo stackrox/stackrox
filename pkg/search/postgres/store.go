@@ -85,6 +85,9 @@ type genericStore[T any, PT clonedUnmarshaler[T]] struct {
 	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
+	cache                            map[string]PT
+	useCache                         bool
+	cacheLock                        sync.RWMutex
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
@@ -120,6 +123,8 @@ func NewGenericStore[T any, PT clonedUnmarshaler[T]](
 		}(),
 		upsertAllowed:  upsertAllowed,
 		targetResource: targetResource,
+		cache:          nil,
+		useCache:       false,
 	}
 }
 
@@ -154,6 +159,8 @@ func NewGenericStoreWithPermissionChecker[T any, PT clonedUnmarshaler[T]](
 			return setPostgresOperationDurationTime
 		}(),
 		permissionChecker: checker,
+		cache:             nil,
+		useCache:          false,
 	}
 }
 
@@ -376,9 +383,13 @@ func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 		return err
 	}
 
-	return pgutils.Retry(func() error {
+	dbErr := pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
+	if dbErr != nil {
+		return dbErr
+	}
+	return nil
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
@@ -394,7 +405,7 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		return err
 	}
 
-	return pgutils.Retry(func() error {
+	dbErr := pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
@@ -413,6 +424,10 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 		return s.copyFrom(ctx, objs...)
 	})
+	if dbErr != nil {
+		return dbErr
+	}
+	return nil
 }
 
 // region Helper functions
@@ -504,6 +519,32 @@ func GloballyScopedUpsertChecker[T any, PT clonedUnmarshaler[T]](targetResource 
 		}
 		return nil
 	}
+}
+
+func (s *genericStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
+	if s.hasPermissionsChecker() {
+		allowed, err := s.permissionChecker.ReadAllowed(ctx)
+		if err != nil {
+			return false
+		}
+		return allowed
+	}
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker = scopeChecker.AccessMode(storage.Access_READ_ACCESS)
+	scopeChecker = scopeChecker.Resource(s.targetResource)
+	switch s.targetResource.GetScope() {
+	case permissions.NamespaceScope:
+		var interfaceObj interface{}
+		interfaceObj = obj
+		namespaceScopedObj := interfaceObj.(sac.NamespaceScopedObject)
+		scopeChecker = scopeChecker.ForNamespaceScopedObject(namespaceScopedObj)
+	case permissions.ClusterScope:
+		var interfaceObj interface{}
+		interfaceObj = obj
+		clusterScopedObj := interfaceObj.(sac.ClusterScopedObject)
+		scopeChecker = scopeChecker.ForClusterScopedObject(clusterScopedObj)
+	}
+	return scopeChecker.IsAllowed()
 }
 
 // endregion Helper functions
