@@ -3322,14 +3322,14 @@
                 "Name": "rh-maven35-log4j12",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "1.2.17-19.2.el7.noarch",
+                "Version": "1.2.17-19.2.el7",
                 "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84"
             },
             {
                 "Name": "rh-maven35-jackson-databind",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "2.7.6-2.10.el7.noarch",
+                "Version": "2.7.6-2.10.el7",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4173",
@@ -3363,7 +3363,7 @@
                 "Name": "vim-minimal",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "2:7.4.629-6.el7.x86_64",
+                "Version": "2:7.4.629-6.el7",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-1000382",
@@ -3466,14 +3466,14 @@
                 "Name": "rh-maven35-log4j12",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "1.2.17-19.2.el7.noarch",
+                "Version": "1.2.17-19.2.el7",
                 "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84"
             },
             {
                 "Name": "rh-maven35-jackson-databind",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "2.7.6-2.10.el7.noarch",
+                "Version": "2.7.6-2.10.el7",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4173",
@@ -3507,7 +3507,7 @@
                 "Name": "vim-minimal",
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
-                "Version": "2:7.4.629-6.el7.x86_64",
+                "Version": "2:7.4.629-6.el7",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-1000382",
@@ -4989,7 +4989,7 @@
         "required_feature_flag": null
     },
     {
-        "image": "ubi9/ubi:9.0.0-1576@sha256:f22a438f4967419bd477c648d25ed0627f54b81931d0143dc45801c8356bd379",
+        "image": "registry.access.redhat.com/ubi9/ubi:9.0.0-1576@sha256:f22a438f4967419bd477c648d25ed0627f54b81931d0143dc45801c8356bd379",
         "registry": "https://registry.access.redhat.com",
         "username": "",
         "password": "",
@@ -5000,7 +5000,7 @@
                 "Name": "openssl",
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
-                "Version": "1:3.0.1-23.el9_0.x86_64",
+                "Version": "1:3.0.1-23.el9_0",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
@@ -5034,7 +5034,7 @@
                 "Name": "openssl-libs",
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
-                "Version": "1:3.0.1-23.el9_0.x86_64",
+                "Version": "1:3.0.1-23.el9_0",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
@@ -5068,14 +5068,14 @@
                 "Name": "python3-urllib3",
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
-                "Version": "1.26.5-3.el9.noarch",
+                "Version": "1.26.5-3.el9",
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996"
             },
             {
                 "Name": "vim-minimal",
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
-                "Version": "2:8.2.2637-16.el9_0.2.x86_64",
+                "Version": "2:8.2.2637-16.el9_0.2",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:5942",
