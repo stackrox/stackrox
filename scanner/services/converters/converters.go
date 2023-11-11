@@ -23,7 +23,16 @@ var (
 		claircore.High:       v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 	}
-	vulnNamePattern = regexp.MustCompile(`((CVE|ALAS|DSA)-\d{4}-\d+)|((RHSA|RHBA|RHEA)-\d{4}:\d+)`)
+	// vulnNamePatterns is a prioritized list of regexes to match against
+	// vulnerability information to extract their ID.
+	vulnNamePatterns = []*regexp.Regexp{
+		regexp.MustCompile(`((RHSA|RHBA|RHEA)-\d{4}:\d+)|(ALAS[A-Z]*-\d{4}-\d+)`),
+		regexp.MustCompile(`CVE-\d{4}-\d+`),
+		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
+		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
+		// Catchall.
+		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
+	}
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -282,22 +291,15 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 // vulnerability name pattern from the report, or the original name if none
 // found.
 func getVulnName(vuln *claircore.Vulnerability) string {
-	vulnID := vulnNamePattern.FindString(vuln.Name)
-	if vulnID != "" {
-		return vulnID
-	}
-	found := vulnNamePattern.FindAllString(vuln.Links, -1)
-	// Prioritize RHSA > CVE > anything else.
-	for _, p := range []string{"RHSA", "CVE"} {
-		for _, s := range found {
-			if strings.HasPrefix(s, p) {
-				return s
-			}
+	for _, p := range vulnNamePatterns {
+		v := p.FindString(vuln.Name)
+		if v != "" {
+			return v
 		}
-	}
-	// Otherwise return the first one found.
-	if len(found) > 0 {
-		return found[0]
+		v = p.FindString(vuln.Links)
+		if v != "" {
+			return v
+		}
 	}
 	return vuln.Name
 }

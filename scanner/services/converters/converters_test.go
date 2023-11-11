@@ -689,10 +689,6 @@ func Test_getVulnName(t *testing.T) {
 			name:     "DSA-4591-1 cyrus-sasl2",
 			expected: "DSA-4591-1",
 		},
-		"pyup.io": {
-			name:     "pyup.io-38834 (CVE-2020-26137)",
-			expected: "CVE-2020-26137",
-		},
 		"RHEL": {
 			name:     "RHSA-2023:0173: libxml2 security update (Moderate)",
 			expected: "RHSA-2023:0173",
@@ -701,13 +697,26 @@ func Test_getVulnName(t *testing.T) {
 			name:     "CVE-2022-45061 on Ubuntu 22.04 LTS (jammy) - medium.",
 			expected: "CVE-2022-45061",
 		},
+		"GHSA": {
+			name:     "GHSA-5wvp-7f3h-6wmm PyArrow: Arbitrary code execution when loading a malicious data file",
+			expected: "GHSA-5wvp-7f3h-6wmm",
+		},
 		"Unknown": {
 			name:     "cool CVE right here",
 			expected: "cool CVE right here",
 		},
-		"Links with CVE and RHSA": {
+		"CVE over GHSA": {
+			name:     "GHSA-5wvp-7f3h-6wmm PyArrow: Arbitrary code execution when loading a malicious data file",
+			links:    "https://nvd.nist.gov/vuln/detail/CVE-2023-47248",
+			expected: "CVE-2023-47248",
+		},
+		"RHEL over CVE": {
 			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 			expected: "RHSA-2023:1866",
+		},
+		"ALAS over CVE": {
+			links:    "https://alas.aws.amazon.com/AL2023/ALAS-2023-356.html https://alas.aws.amazon.com/cve/html/CVE-2023-39189.html",
+			expected: "ALAS-2023-356",
 		},
 	}
 	for name, testcase := range testcases {
