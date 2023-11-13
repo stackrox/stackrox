@@ -5744,7 +5744,7 @@ attr-accept@^1.1.3:
   dependencies:
     core-js "^2.5.0"
 
-autoprefixer@10.4.5, autoprefixer@^10.2.5, autoprefixer@^10.4.5, autoprefixer@^10.4.7:
+autoprefixer@10.4.5, autoprefixer@^10.2.5, autoprefixer@^10.4.7:
   version "10.4.5"
   resolved "https://registry.yarnpkg.com/autoprefixer/-/autoprefixer-10.4.5.tgz#662193c744094b53d3637f39be477e07bd904998"
   integrity sha512-Fvd8yCoA7lNX/OUllvS+aS1I7WRBclGXsepbvT8ZaPgrH24rgXpZzF0/6Hh3ZEkwg+0AES/Osd196VZmYoEFtw==
