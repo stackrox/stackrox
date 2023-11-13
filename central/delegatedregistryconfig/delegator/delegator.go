@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/waiter"
 )
@@ -54,7 +56,9 @@ type delegatorImpl struct {
 // GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
 // true if enrichment should be delegated to a secured cluster, false otherwise.
 func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *storage.ImageName) (string, bool, error) {
-	config, exists, err := d.deleRegConfigDS.GetConfig(ctx)
+	// Reading the delegated registry config requires admin access.
+	adminCtx := withAdminRead(ctx)
+	config, exists, err := d.deleRegConfigDS.GetConfig(adminCtx)
 	if err != nil || !exists {
 		return "", false, err
 	}
@@ -181,4 +185,17 @@ func (d *delegatorImpl) ValidateCluster(clusterID string) error {
 	}
 
 	return nil
+}
+
+// withAdminRead elevates a context to include admin read access.
+func withAdminRead(ctx context.Context) context.Context {
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+
+	return elevatedCtx
 }
