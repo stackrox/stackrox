@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -58,21 +59,23 @@ var (
 
 // deduper takes care of deduping sensor events.
 type deduper struct {
-	stream   messagestream.SensorMessageStream
-	lastSent map[Key]uint64
+	stream         messagestream.SensorMessageStream
+	lastSent       map[deduperkey.Key]uint64
+	observationSet *ObservationSet
 
 	hasher *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[Key]uint64) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *ObservationSet) messagestream.SensorMessageStream {
 	if deduperState == nil {
-		deduperState = make(map[Key]uint64)
+		deduperState = make(map[deduperkey.Key]uint64)
 	}
 	return &deduper{
-		stream:   stream,
-		lastSent: deduperState,
-		hasher:   hash.NewHasher(),
+		stream:         stream,
+		lastSent:       deduperState,
+		hasher:         hash.NewHasher(),
+		observationSet: observationSet,
 	}
 }
 
@@ -87,7 +90,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
 		return nil
 	}
-	key := Key{
+	key := deduperkey.Key{
 		ID:           event.GetId(),
 		ResourceType: reflect.TypeOf(event.GetResource()),
 	}
@@ -104,8 +107,13 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 
 	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 	if ok {
+
 		// If the hash is valid, then check for deduping
 		if d.lastSent[key] == hashValue {
+			// If this is a SYNC event, we have to keep track of this event
+			if msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
+				d.observationSet.LogObserved(key)
+			}
 			return nil
 		}
 		event.SensorHashOneof = &central.SensorEvent_SensorHash{

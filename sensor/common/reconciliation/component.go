@@ -6,10 +6,10 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -24,7 +24,7 @@ var _ common.SensorComponent = (*DeduperStateProcessor)(nil)
 // resources.
 type DeduperStateProcessor struct {
 	responseC      chan *message.ExpiringMessage
-	deduperState   map[deduper.Key]uint64
+	deduperState   map[deduperkey.Key]uint64
 	stateLock      sync.RWMutex
 	contextLock    sync.RWMutex
 	reconciler     store.HashReconciler
@@ -38,14 +38,14 @@ func NewDeduperStateProcessor(reconciler store.HashReconciler) *DeduperStateProc
 	return &DeduperStateProcessor{
 		responseC:    make(chan *message.ExpiringMessage),
 		stateLock:    sync.RWMutex{},
-		deduperState: make(map[deduper.Key]uint64),
+		deduperState: make(map[deduperkey.Key]uint64),
 		reconciler:   reconciler,
 	}
 }
 
 // SetDeduperState should be used when the Deduper State message is received from central, and it should be called
 // only once per active connection. Any new state received will overwrite the existing state in this component.
-func (c *DeduperStateProcessor) SetDeduperState(state map[deduper.Key]uint64) {
+func (c *DeduperStateProcessor) SetDeduperState(state map[deduperkey.Key]uint64) {
 	if len(c.deduperState) != 0 {
 		log.Warnf("SetDeduperState called but current deduperState is not empty (%d entries being overwritten)", len(state))
 	}
@@ -82,7 +82,7 @@ func (c *DeduperStateProcessor) cleanState() {
 
 	c.stateLock.Lock()
 	defer c.stateLock.Unlock()
-	c.deduperState = make(map[deduper.Key]uint64)
+	c.deduperState = make(map[deduperkey.Key]uint64)
 }
 
 func (c *DeduperStateProcessor) swapContext() {

@@ -1,4 +1,4 @@
-package deduper
+package deduperkey
 
 import (
 	"fmt"
@@ -7,10 +7,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 )
 
 var (
+	log          = logging.LoggerForModule()
 	deduperTypes = []any{
 		&central.SensorEvent_NetworkPolicy{},
 		&central.SensorEvent_Deployment{},
@@ -39,6 +41,27 @@ var (
 type Key struct {
 	ID           string
 	ResourceType reflect.Type
+}
+
+func (k Key) String() string {
+	return fmt.Sprintf("%s:%s", eventPkg.GetEventTypeWithoutPrefix(k.ResourceType), k.ID)
+}
+
+// ParseKeySlice returns a list of Key objects from a list a string formatted keys.
+func ParseKeySlice(keys []string) []Key {
+	if keys == nil {
+		return make([]Key, 0)
+	}
+	result := make([]Key, len(keys))
+	for i, v := range keys {
+		parsedKey, err := keyFrom(v)
+		if err != nil {
+			log.Warnf("Key list has malformed entry %s: %s", v, err)
+			continue
+		}
+		result[i] = parsedKey
+	}
+	return result
 }
 
 // ParseDeduperState makes a copy of the deduper state.

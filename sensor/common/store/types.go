@@ -3,8 +3,8 @@ package store
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
@@ -94,5 +94,5 @@ type NodeStore interface {
 
 // HashReconciler is the logic that will generate sensor messages based on a deduper state.
 type HashReconciler interface {
-	ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor
+	ProcessHashes(h map[deduperkey.Key]uint64) []central.MsgFromSensor
 }

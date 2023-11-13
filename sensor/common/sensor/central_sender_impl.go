@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -16,11 +17,12 @@ type centralSenderImpl struct {
 	senders             []common.SensorComponent
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
-	initialDeduperState map[deduper.Key]uint64
+	initialDeduperState map[deduperkey.Key]uint64
+	observationSet      *deduper.ObservationSet
 	onSync              func()
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
 	s.initialDeduperState = initialDeduperState
 	go s.send(stream, onStops...)
 }
@@ -64,7 +66,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState)
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, s.observationSet)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
@@ -112,10 +114,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if msg.GetEvent().GetSynced() != nil {
-				log.Info("Sending synced signal to Central")
-				if s.onSync != nil {
-					go s.onSync()
-				}
+				unchangedIds := s.observationSet.Close()
+				// Enhance sync with all the observed IDs
+				msg.GetEvent().GetSynced().UnchangedIds = unchangedIds
+				log.Infof("Sending synced signal to Central. Adding %d events as unchanged", len(unchangedIds))
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {

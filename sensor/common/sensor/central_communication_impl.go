@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/reconciliation"
@@ -40,7 +40,7 @@ type centralCommunicationImpl struct {
 	sender              CentralSender
 	components          []common.SensorComponent
 	clientReconcile     bool
-	initialDeduperState map[deduper.Key]uint64
+	initialDeduperState map[deduperkey.Key]uint64
 	syncTimeout         time.Duration
 
 	stopper concurrency.Stopper
@@ -192,12 +192,12 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
 
-	if s.clientReconcile {
-		s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
-		s.sender.OnSync(func() {
-			s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
-		})
-	}
+	// if s.clientReconcile {
+	//	s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
+	//	s.sender.OnSync(func() {
+	//		s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
+	//	})
+	//}
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
@@ -327,7 +327,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		}
 		current++
 	}
-	s.initialDeduperState = deduper.ParseDeduperState(deduperState)
+	s.initialDeduperState = deduperkey.ParseDeduperState(deduperState)
 	return nil
 }
 
