@@ -38,10 +38,6 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.scannerV4.indexer.affinity | nindent 8 }}
-      initContainers:
-      - name: update-ca-trust
-        image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
-        command: ["update-ca-trust"] # ["/bin/bash", "-c", "sleep 1000"]
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
@@ -72,6 +68,8 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end }}
+        - name: ROX_METRICS_PORT
+          value: ":{{- ._rox.scannerV4.indexer.metricsPort -}}"
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-indexer" "scanner-v4-indexer") | nindent 8 }}
         resources:
           {{- ._rox.scannerV4.indexer._resources | nindent 10 }}

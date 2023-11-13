@@ -68,6 +68,8 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end }}
+        - name: ROX_METRICS_PORT
+          value: ":{{- ._rox.scannerV4.matcher.metricsPort -}}"
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-matcher" "scanner-v4-matcher") | nindent 8 }}
         resources:
           {{- ._rox.scannerV4.matcher._resources | nindent 10 }}

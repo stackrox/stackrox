@@ -167,6 +167,7 @@ defaults:
   scannerV4:
     disable: true
     matcher:
+      metricsPort: 9090
       autoscaling:
         minReplicas: 2
         maxReplicas: 5
@@ -181,6 +182,7 @@ defaults:
         name: [< required "" .ScannerV4ImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
     indexer:
+      metricsPort: 9090
       autoscaling:
         minReplicas: 2
         maxReplicas: 5

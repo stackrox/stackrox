@@ -1,6 +1,7 @@
 scannerV4:
   disable: null # bool
   indexer:
+    metricsPort: null # int
     disable: null # bool
     logLevel: null # string
     image:
@@ -22,6 +23,7 @@ scannerV4:
       key: null # string
       generate: null # bool
   matcher:
+    metricsPort: null # int
     disable: null # bool
     logLevel: null # string
     image:

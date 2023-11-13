@@ -46,7 +46,7 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: 9090
+    - port: {{ ._rox.scannerV4.indexer.metricsPort }}
       protocol: TCP
   podSelector:
     matchLabels:
