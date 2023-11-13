@@ -41,6 +41,8 @@ export const selectors = {
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
+    nthTableRow: (n) =>
+        `.workload-cves-table-container > table > tbody:nth-of-type(${n}) > tr:nth-of-type(1)`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
