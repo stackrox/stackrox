@@ -54,6 +54,8 @@ updates:
     ignore:
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
+      - dependency-name: "github.com/docker/docker"
+        update-types: ["version-update:semver-patch"]
     groups:
       k8s.io:
         patterns:
