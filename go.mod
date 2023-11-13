@@ -436,6 +436,9 @@ require (
 // The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
 // for Go build tools to accept the `go.mod`.
 replace (
+	// version 24 does not work on Mac: `pkg/chrootarchive/archive_unix.go:31:8: undefined: goInChroot`
+	github.com/docker/docker => github.com/docker/docker v23.0.7+incompatible
+
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
 	// we need https://github.com/fullsailor/pkcs7/pull/42 to be merged
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
