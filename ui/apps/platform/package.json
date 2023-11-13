@@ -111,7 +111,7 @@
     },
     "devDependencies": {
         "@babel/core": "7.12.3",
-        "@stackrox/tailwind-config": "*",
+        "@tailwindcss/forms": "^0.2.1",
         "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^14.0.0",
         "@testing-library/react-hooks": "^7.0.2",
