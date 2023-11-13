@@ -72,21 +72,6 @@ func (mr *MockDataStoreMockRecorder) GetPod(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPod", reflect.TypeOf((*MockDataStore)(nil).GetPod), ctx, id)
 }
 
-// GetPodIDs mocks base method.
-func (m *MockDataStore) GetPodIDs(ctx context.Context) ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPodIDs", ctx)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPodIDs indicates an expected call of GetPodIDs.
-func (mr *MockDataStoreMockRecorder) GetPodIDs(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodIDs", reflect.TypeOf((*MockDataStore)(nil).GetPodIDs), ctx)
-}
-
 // RemovePod mocks base method.
 func (m *MockDataStore) RemovePod(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -143,18 +128,4 @@ func (m *MockDataStore) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 func (mr *MockDataStoreMockRecorder) UpsertPod(ctx, pod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPod", reflect.TypeOf((*MockDataStore)(nil).UpsertPod), ctx, pod)
-}
-
-// WalkAll mocks base method.
-func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.Pod) error) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WalkAll indicates an expected call of WalkAll.
-func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
 }
