@@ -118,7 +118,7 @@ func (c *MatcherConfig) validate() error {
 	if c.RemoteIndexer {
 		_, _, err := net.SplitHostPort(c.IndexerAddr)
 		if err != nil {
-			return fmt.Errorf("indexer_addr: failed to parse address: %v", err)
+			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
 		}
 	}
 	return nil
