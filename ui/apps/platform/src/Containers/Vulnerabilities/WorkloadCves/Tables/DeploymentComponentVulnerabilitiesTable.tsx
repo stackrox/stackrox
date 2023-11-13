@@ -4,6 +4,7 @@ import { gql } from '@apollo/client';
 
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import { VulnerabilityState } from 'types/cve.proto';
 import ImageNameTd from '../components/ImageNameTd';
 import {
     imageMetadataContextFragment,
@@ -16,6 +17,7 @@ import FixedByVersionTd from '../components/FixedByVersionTd';
 import DockerfileLayerTd from '../components/DockerfileLayerTd';
 import ComponentLocationTd from '../components/ComponentLocationTd';
 import CvssTd from '../components/CvssTd';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
@@ -34,6 +36,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             scoreVersion
             fixedByVersion
             discoveredAtImage
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;
@@ -47,10 +50,14 @@ export type DeploymentComponentVulnerabilitiesTableProps = {
         imageMetadataContext: ImageMetadataContext;
         componentVulnerabilities: DeploymentComponentVulnerability[];
     }[];
+    cve: string;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
 function DeploymentComponentVulnerabilitiesTable({
     images,
+    cve,
+    vulnerabilityState,
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
@@ -95,13 +102,22 @@ function DeploymentComponentVulnerabilitiesTable({
                     index !== componentVulns.length - 1
                         ? { borderBottom: '1px solid var(--pf-c-table--BorderColor)' }
                         : {};
+                const hasPendingException = componentVulns.some(
+                    (vuln) => vuln.pendingExceptionCount > 0
+                );
 
                 return (
                     <Tbody key={`${image.id}:${name}:${version}:${vulnerabilityId}`} style={style}>
                         <Tr>
                             <Td>
                                 {image.name ? (
-                                    <ImageNameTd name={image.name} id={image.id} />
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={hasPendingException}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    >
+                                        <ImageNameTd name={image.name} id={image.id} />
+                                    </PendingExceptionLabelLayout>
                                 ) : (
                                     'Image name not available'
                                 )}
