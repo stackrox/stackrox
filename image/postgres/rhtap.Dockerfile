@@ -1,7 +1,3 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as builder
-
-COPY . /stackrox
-
 FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
 
 USER root
@@ -37,11 +33,9 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-COPY --from=builder --chown=postgres:postgres \
-    /stackrox/image/postgres/scripts/docker-entrypoint.sh \
-    /usr/local/bin/
-COPY --from=builder \
-    /stackrox/image/postgres/scripts/init-entrypoint.sh \
+USER 70:70
+
+COPY image/postgres/scripts \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"
@@ -56,5 +50,3 @@ EXPOSE 5432
 CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
 
 HEALTHCHECK --interval=10s --timeout=5s CMD pg_isready
-
-USER 70:70
