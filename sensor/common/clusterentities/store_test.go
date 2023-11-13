@@ -86,24 +86,6 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 			},
 			expectedEndpoints: []string{"10.3.0.1", "10.0.0.2"},
 		},
-		// TODO(ROX-20716): Enable this test after fixing the issue of External Entities appearing for past IPs
-		// "The store shall remember past IP of a container": {
-		//	entityUpdates: []eUpdate{
-		//		{
-		//			containerID: "pod1",
-		//			ipAddr:      "10.0.0.1",
-		//			port:        80,
-		//			incremental: true,
-		//		},
-		//		{
-		//			containerID: "pod1",
-		//			ipAddr:      "10.3.0.1",
-		//			port:        80,
-		//			incremental: false,
-		//		},
-		// 	},
-		// 	expectedEndpoints: []string{"10.3.0.1", "10.0.0.1"},
-		// },
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
