@@ -1,4 +1,4 @@
-name: Cut RC
+name: "RELEASE: Cut RC"
 on:
   milestone:
     types:

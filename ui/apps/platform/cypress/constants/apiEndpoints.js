@@ -90,9 +90,3 @@ export const integration = {
         revoke: '/v1/cluster-init/init-bundles/revoke',
     },
 };
-
-export const riskAcceptance = {
-    getImageVulnerabilities: graphql('getImageVulnerabilities'),
-    deferVulnerability: graphql('deferVulnerability'),
-    markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
-};

@@ -230,7 +230,7 @@ func TestScrubEmbeddedConfig(t *testing.T) {
 func TestScrubSecretsWithoutPasswordSetWithReplacement(t *testing.T) {
 	testStruct := &toplevel{Name: "name", Password: ""}
 	ScrubSecretsFromStructWithReplacement(testStruct, ScrubReplacementStr)
-	assert.Empty(t, testStruct.Password)
+	assert.NotEmpty(t, testStruct.Password)
 	assert.Equal(t, testStruct.Name, "name")
 }
 

@@ -13,13 +13,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
+- The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
 
-### Deprecated Fatures
+### Deprecated Features
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
   to prevent OOMs during DB initialization in case of memory pressure on the node.
 - ROX-20105: Scanner slim will now read additional CAs from the `additional-ca-sensor` secret.
+- ROX-20623: Fixed bug mistakenly requiring admin access to delegate ad-hoc scan requests to secured clusters.
 
 ## [4.3.0]
 

@@ -6,6 +6,7 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
+BENCHCOUNT ?= 1
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,
@@ -304,7 +305,7 @@ clean-proto-generated-srcs:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs
 
-deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
+deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
 
@@ -318,6 +319,7 @@ ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
+	$(SILENT)go mod download
 	$(SILENT)touch $@
 
 .PHONY: clean-deps
@@ -452,12 +454,6 @@ syslog-build:build-prep
 	@echo "+ $@"
 	CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
 
-.PHONY: mock-grpc-server-build
-mock-grpc-server-build: build-prep
-	for GOARCH in $$(echo $(PLATFORM) | sed -e 's/,/ /g') ; do \
-		GOARCH="$${GOARCH##*/}" CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server; \
-	done
-
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
 	@echo "+ $@"
@@ -512,7 +508,7 @@ go-postgres-unit-tests: build-prep test-prep
 go-postgres-bench-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -v \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -664,21 +660,6 @@ syslog-image: syslog-build
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
 
-.PHONY: mock-grpc-server-image
-mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --load \
-		-t stackrox/grpc-server:$(TAG) \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
-.PHONY: mock-grpc-server-image-push
-mock-grpc-server-image-push: mock-grpc-server-build
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --push \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
 .PHONY: central-db-image
 central-db-image:
 	$(DOCKERBUILD) \
@@ -701,7 +682,6 @@ clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin image/rhel/bin
 	git clean -xdf image/ui image/rhel/ui image/rhel/docs
-	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
 

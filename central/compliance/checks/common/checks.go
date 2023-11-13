@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/central/compliance/framework"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/logging"
@@ -211,19 +210,12 @@ This control checks that all deployments have ingress and egress network policie
 // has ingress and egress network policies and does not use host network namespace.
 // Use this with DeploymentKind control checks.
 func CheckNetworkPoliciesByDeployment(ctx framework.ComplianceContext) {
-	// Map deployments to nodes.
-	networkGraph := ctx.Data().NetworkGraph()
-	deploymentIDToNodes := make(map[string]*v1.NetworkNode, len(networkGraph.GetNodes()))
-	for _, node := range networkGraph.GetNodes() {
-		if node.GetEntity().GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
-			continue
-		}
-		deploymentIDToNodes[node.GetEntity().GetId()] = node
-	}
+	// Map deployments to NetworkPolicies
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasNetworkPolicies(ctx, deployment, deploymentIDToNodes)
+		deploymentHasNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
@@ -231,47 +223,31 @@ func CheckNetworkPoliciesByDeployment(ctx framework.ComplianceContext) {
 // not use host network namespace.
 func ClusterHasIngressNetworkPolicies(ctx framework.ComplianceContext) {
 	// Map deployments to nodes.
-	networkGraph := ctx.Data().NetworkGraph()
-	deploymentIDToNodes := make(map[string]*v1.NetworkNode, len(networkGraph.GetNodes()))
-	for _, node := range networkGraph.GetNodes() {
-		if node.GetEntity().GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
-			continue
-		}
-		deploymentIDToNodes[node.GetEntity().GetId()] = node
-	}
-
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasIngressNetworkPolicies(ctx, deployment, deploymentIDToNodes)
+		deploymentHasIngressNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
 // ClusterHasEgressNetworkPolicies ensures the cluster has egress network policies and does
 // not use host network namespace.
 func ClusterHasEgressNetworkPolicies(ctx framework.ComplianceContext) {
-	// Map deployments to nodes.
-	networkGraph := ctx.Data().NetworkGraph()
-	deploymentIDToNodes := make(map[string]*v1.NetworkNode, len(networkGraph.GetNodes()))
-	for _, node := range networkGraph.GetNodes() {
-		if node.GetEntity().GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
-			continue
-		}
-		deploymentIDToNodes[node.GetEntity().GetId()] = node
-	}
+	deploymentsToNetworkPolicies := ctx.Data().DeploymentsToNetworkPolicies()
 
 	// Use the deployment node map to validate each deployment.
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		deploymentHasEgressNetworkPolicies(ctx, deployment, deploymentIDToNodes)
+		deploymentHasEgressNetworkPolicies(ctx, deployment, deploymentsToNetworkPolicies)
 	})
 }
 
-func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNetworkPolicies map[string][]*storage.NetworkPolicy) {
 	if isKubeSystem(deployment) {
 		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
-	hasEgress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
+	hasEgress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if hasIngress && hasEgress && !usesHostNamespace {
@@ -289,7 +265,7 @@ func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *s
 	}
 }
 
-func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNetworkPolicies map[string][]*storage.NetworkPolicy) {
 	checkFailed := false
 
 	if isKubeSystem(deployment) {
@@ -297,7 +273,7 @@ func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deploy
 		return
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNetworkPolicies, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if usesHostNamespace {
@@ -315,7 +291,7 @@ func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deploy
 	}
 }
 
-func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string][]*storage.NetworkPolicy) {
 	checkFailed := false
 
 	if isKubeSystem(deployment) {
@@ -323,7 +299,7 @@ func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deploym
 		return
 	}
 
-	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if usesHostNamespace {
@@ -341,10 +317,14 @@ func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deploym
 	}
 }
 
-func deploymentHasSpecifiedNetworkPolicy(ctx framework.ComplianceContext, policyType storage.NetworkPolicyType, deploymentIDToNodes map[string]*v1.NetworkNode, deployment *storage.Deployment) bool {
-	for _, policyID := range deploymentIDToNodes[deployment.GetId()].GetPolicyIds() {
-		policy := ctx.Data().NetworkPolicies()[policyID]
-		if policy == nil || !policyIsOfType(policy.GetSpec(), policyType) {
+func deploymentHasSpecifiedNetworkPolicy(policyType storage.NetworkPolicyType, deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy, deployment *storage.Deployment) bool {
+	netPols, ok := deploymentsToNetworkPolicies[deployment.GetId()]
+	if !ok {
+		return false
+	}
+
+	for _, netPol := range netPols {
+		if !policyIsOfType(netPol.GetSpec(), policyType) {
 			continue
 		}
 		return true

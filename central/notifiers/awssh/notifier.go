@@ -107,32 +107,35 @@ func init() {
 	})
 }
 
-func validateNotifierConfiguration(awssh *storage.AWSSecurityHub) (*storage.AWSSecurityHub, error) {
+// Validate AWSSecurityHub notifier
+func Validate(awssh *storage.AWSSecurityHub, validateSecret bool) error {
 	if awssh == nil {
-		return nil, errors.New("AWSSecurityHub configuration is required")
+		return errors.New("AWSSecurityHub configuration is required")
 	}
 
 	if awssh.GetRegion() == "" {
-		return nil, errors.New("AWS region must not be empty")
+		return errors.New("AWS region must not be empty")
 	}
 
 	if awssh.GetAccountId() == "" {
-		return nil, errors.New("AWS account ID must not be empty")
+		return errors.New("AWS account ID must not be empty")
 	}
 
-	if awssh.GetCredentials() == nil {
-		return nil, errors.New("AWS credentials must not be empty")
+	if validateSecret {
+		if awssh.GetCredentials() == nil {
+			return errors.New("AWS credentials must not be empty")
+		}
+
+		if awssh.GetCredentials().GetAccessKeyId() == "" {
+			return errors.New("AWS access key ID must not be empty")
+		}
+
+		if awssh.GetCredentials().GetSecretAccessKey() == "" {
+			return errors.New("AWS secret access key must not be empty")
+		}
 	}
 
-	if awssh.GetCredentials().GetAccessKeyId() == "" {
-		return nil, errors.New("AWS access key ID must not be empty")
-	}
-
-	if awssh.GetCredentials().GetSecretAccessKey() == "" {
-		return nil, errors.New("AWS secret access key must not be empty")
-	}
-
-	return awssh, nil
+	return nil
 }
 
 type configuration struct {
@@ -163,7 +166,8 @@ type notifier struct {
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
-	awssh, err := validateNotifierConfiguration(configuration.descriptor.GetAwsSecurityHub())
+	awssh := configuration.descriptor.GetAwsSecurityHub()
+	err := Validate(awssh, !env.EncNotifierCreds.BooleanSetting())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config for AWS SecurityHub")
 	}

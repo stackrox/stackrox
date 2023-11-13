@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -13,11 +13,10 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
-import { isVulnerabilitySeverity } from 'types/cve.proto';
+import { VulnerabilityState, isVulnerabilitySeverity } from 'types/cve.proto';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import useMap from 'hooks/useMap';
 import { getEntityPagePath } from '../searchUtils';
@@ -36,6 +35,9 @@ import { getAnyVulnerabilityIsFixable } from './table.utils';
 import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
+import TooltipTh from '../components/TooltipTh';
+import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -46,6 +48,7 @@ export const imageVulnerabilitiesFragment = gql`
         cvss
         scoreVersion
         discoveredAtImage
+        pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
             ...ImageComponentVulnerabilities
         }
@@ -59,6 +62,7 @@ export type ImageVulnerability = {
     cvss: number;
     scoreVersion: string;
     discoveredAtImage: string | null;
+    pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
 };
 
@@ -70,6 +74,7 @@ export type ImageVulnerabilitiesTableProps = {
     isFiltered: boolean;
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
 };
 
@@ -79,11 +84,17 @@ function ImageVulnerabilitiesTable({
     isFiltered,
     canSelectRows,
     selectedCves,
+    vulnerabilityState,
     createTableActions,
 }: ImageVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
+    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
-    const colSpan = 6 + (canSelectRows ? 1 : 0) + (createTableActions ? 1 : 0);
+    const colSpan =
+        6 +
+        (canSelectRows ? 1 : 0) +
+        (createTableActions ? 1 : 0) +
+        (showExceptionDetailsLink ? 1 : 0);
 
     return (
         <TableComposable variant="compact">
@@ -103,6 +114,11 @@ function ImageVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th>First discovered</Th>
+                    {showExceptionDetailsLink && (
+                        <TooltipTh tooltip="View information about this exception request">
+                            Request details
+                        </TooltipTh>
+                    )}
                     {createTableActions && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
@@ -117,6 +133,7 @@ function ImageVulnerabilitiesTable({
                         scoreVersion,
                         imageComponents,
                         discoveredAtImage,
+                        pendingExceptionCount,
                     },
                     rowIndex
                 ) => {
@@ -142,14 +159,13 @@ function ImageVulnerabilitiesTable({
                                     />
                                 )}
                                 <Td dataLabel="CVE">
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('CVE', cve)}
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={pendingExceptionCount > 0}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
                                     >
-                                        {cve}
-                                    </Button>
+                                        <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                    </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVE severity">
                                     {isVulnerabilitySeverity(severity) && (
@@ -170,6 +186,12 @@ function ImageVulnerabilitiesTable({
                                 <Td dataLabel="First discovered">
                                     <DateDistanceTd date={discoveredAtImage} />
                                 </Td>
+                                {showExceptionDetailsLink && (
+                                    <ExceptionDetailsCell
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    />
+                                )}
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn

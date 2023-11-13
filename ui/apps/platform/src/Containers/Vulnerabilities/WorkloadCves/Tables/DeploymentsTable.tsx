@@ -1,10 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Button, ButtonVariant, Truncate } from '@patternfly/react-core';
+import { Truncate } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { getEntityPagePath } from '../searchUtils';
 import SeverityCountLabels from '../components/SeverityCountLabels';
@@ -112,14 +112,9 @@ function DeploymentsTable({
                         >
                             <Tr>
                                 <Td>
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id)}
-                                    >
+                                    <Link to={getEntityPagePath('Deployment', id)}>
                                         <Truncate position="middle" content={name} />
-                                    </Button>
+                                    </Link>
                                 </Td>
                                 <Td>
                                     <SeverityCountLabels

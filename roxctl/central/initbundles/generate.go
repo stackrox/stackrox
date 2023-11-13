@@ -21,11 +21,13 @@ type output struct {
 	filename string
 }
 
-func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output, timeout time.Duration) error {
+func generateInitBundle(cliEnvironment environment.Environment, name string,
+	outputs []output, timeout time.Duration, retryTimeout time.Duration,
+) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
 		return err
 	}
@@ -129,7 +131,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if len(outputs) == 0 {
 				return common.ErrInvalidCommandOption.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
 			}
-			return generateInitBundle(cliEnvironment, name, outputs, flags.Timeout(cmd))
+			return generateInitBundle(cliEnvironment, name, outputs, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")

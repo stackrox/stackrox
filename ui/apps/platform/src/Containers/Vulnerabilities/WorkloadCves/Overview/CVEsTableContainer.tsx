@@ -55,6 +55,8 @@ function CVEsTableContainer({
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount:
+                vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'],
         },
     });
 
@@ -158,6 +160,7 @@ function CVEsTableContainer({
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                         selectedCves={selectedCves}
                         canSelectRows={canSelectRows}
+                        vulnerabilityState={vulnerabilityState}
                         createTableActions={createTableActions}
                     />
                 </div>

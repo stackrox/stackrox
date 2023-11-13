@@ -12,6 +12,9 @@ import (
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,22 +40,56 @@ type Scanner interface {
 
 // gRPCScanner A scanner client implementation based on gRPC endpoints.
 type gRPCScanner struct {
-	indexer        v4.IndexerClient
-	matcher        v4.MatcherClient
-	gRPCConnection *grpc.ClientConn
+	indexer         v4.IndexerClient
+	matcher         v4.MatcherClient
+	gRPCConnections []*grpc.ClientConn
 }
 
 // NewGRPCScanner creates a new gRPC scanner client.
 func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 	o := makeOptions(opts...)
+	var connList []*grpc.ClientConn
+	conn, err := createGRPCConn(ctx, o.indexerOpts)
+	if err != nil {
+		return nil, err
+	}
+	iConn, mConn := conn, conn
+	connList = append(connList, conn)
+	if !o.comboMode {
+		mConn, err = createGRPCConn(ctx, o.matcherOpts)
+		if err != nil {
+			utils.IgnoreError(conn.Close)
+			return nil, err
+		}
+		connList = append(connList, mConn)
+	}
+	indexerClient := v4.NewIndexerClient(iConn)
+	matcherClient := v4.NewMatcherClient(mConn)
+	return &gRPCScanner{
+		gRPCConnections: connList,
+		indexer:         indexerClient,
+		matcher:         matcherClient,
+	}, nil
+}
+
+// Close closes the gRPC connection.
+func (c *gRPCScanner) Close() error {
+	errList := errorhelpers.NewErrorList("closing connections")
+	for _, conn := range c.gRPCConnections {
+		errList.AddError(conn.Close())
+	}
+	return errList.ToError()
+}
+
+func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
 	connOpt := clientconn.Options{
 		TLS: clientconn.TLSConfigOptions{
 			GRPCOnly:           true,
 			InsecureSkipVerify: true,
 		},
 	}
-	if o.withTLSVerify {
-		ca, err := o.GetCA()
+	if !o.skipTLS {
+		ca, err := mtls.LoadDefaultCA()
 		if err != nil {
 			return nil, fmt.Errorf("creating CA: %w", err)
 		}
@@ -61,22 +98,7 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 		connOpt.TLS.UseClientCert = clientconn.MustUseClientCert
 		connOpt.TLS.ServerName = o.serverName
 	}
-	conn, err := clientconn.GRPCConnection(ctx, o.mtlsSubject, o.address, connOpt)
-	if err != nil {
-		return nil, err
-	}
-	indexerClient := v4.NewIndexerClient(conn)
-	matcherClient := v4.NewMatcherClient(conn)
-	return &gRPCScanner{
-		gRPCConnection: conn,
-		indexer:        indexerClient,
-		matcher:        matcherClient,
-	}, nil
-}
-
-// Close closes the gRPC connection.
-func (c *gRPCScanner) Close() error {
-	return c.gRPCConnection.Close()
+	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt)
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first

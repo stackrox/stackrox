@@ -1,7 +1,6 @@
 package framework
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,7 +25,7 @@ type ComplianceDataRepository interface {
 
 	UnresolvedAlerts() []*storage.ListAlert
 	NetworkPolicies() map[string]*storage.NetworkPolicy
-	NetworkGraph() *v1.NetworkGraph
+	DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy
 	// Policies returns all policies, keyed by their name.
 	Policies() map[string]*storage.Policy
 	Images() []*storage.ListImage

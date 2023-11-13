@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import {
     ActionsColumn,
@@ -11,12 +12,12 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Button, ButtonVariant, Text } from '@patternfly/react-core';
+import { Text } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
+import { VulnerabilityState } from 'types/cve.proto';
 import { VulnerabilitySeverityLabel } from '../types';
 import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
@@ -36,9 +37,15 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
+import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const cveListQuery = gql`
-    query getImageCVEList($query: String, $pagination: Pagination) {
+    query getImageCVEList(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -64,6 +71,7 @@ export const cveListQuery = gql`
                 cvss
                 scoreVersion
             }
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;
@@ -73,6 +81,10 @@ export const unfilteredImageCountQuery = gql`
         imageCount
     }
 `;
+
+export type CVEListQueryResult = {
+    imageCVEs: ImageCVE[];
+};
 
 type ImageCVE = {
     cve: string;
@@ -91,6 +103,7 @@ type ImageCVE = {
         cvss: number;
         scoreVersion: string;
     }[];
+    pendingExceptionCount: number;
 };
 
 export type CVEsTableProps = {
@@ -102,6 +115,7 @@ export type CVEsTableProps = {
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
 function CVEsTable({
@@ -113,10 +127,16 @@ function CVEsTable({
     canSelectRows,
     selectedCves,
     createTableActions,
+    vulnerabilityState,
 }: CVEsTableProps) {
     const expandedRowSet = useSet<string>();
+    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
-    const colSpan = 6 + (canSelectRows ? 1 : 0) + (createTableActions ? 1 : 0);
+    const colSpan =
+        6 +
+        (canSelectRows ? 1 : 0) +
+        (createTableActions ? 1 : 0) +
+        (showExceptionDetailsLink ? 1 : 0);
 
     return (
         <TableComposable borders={false} variant="compact">
@@ -149,6 +169,11 @@ function CVEsTable({
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    {showExceptionDetailsLink && (
+                        <TooltipTh tooltip="View information about this exception request">
+                            Request details
+                        </TooltipTh>
+                    )}
                     {createTableActions && <Th aria-label="CVE actions" />}
                 </Tr>
             </Thead>
@@ -162,6 +187,7 @@ function CVEsTable({
                         affectedImageCount,
                         firstDiscoveredInSystem,
                         distroTuples,
+                        pendingExceptionCount,
                     },
                     rowIndex
                 ) => {
@@ -201,14 +227,13 @@ function CVEsTable({
                                     />
                                 )}
                                 <Td dataLabel="CVE">
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('CVE', cve)}
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={pendingExceptionCount > 0}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
                                     >
-                                        {cve}
-                                    </Button>
+                                        <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                    </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
@@ -235,6 +260,12 @@ function CVEsTable({
                                 <Td dataLabel="First discovered">
                                     <DateDistanceTd date={firstDiscoveredInSystem} />
                                 </Td>
+                                {showExceptionDetailsLink && (
+                                    <ExceptionDetailsCell
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    />
+                                )}
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn

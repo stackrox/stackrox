@@ -1,0 +1,30 @@
+{
+	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61",
+	"containerEnv":{
+		"CI":"true"
+	},
+	"remoteEnv":{
+		"PATH":"${containerEnv:PATH}:/workspaces/stackrox/.gotools/bin/"
+	},
+	"forwardPorts":[
+		"db:5432"
+	],
+	"postCreateCommand":"git config --global --add safe.directory /workspaces/stackrox && make dev deps",
+	"customizations":{
+		"vscode":{
+			"extensions":[
+				"golang.go",
+				"eamodio.gitlens",
+				"zxh404.vscode-proto3",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml",
+				"IBM.output-colorizer"
+			],
+			"settings":{
+				"files.eol":"\n",
+				"go.useLanguageServer":true,
+				"go.lintTool":"golangci-lint"
+			}
+		}
+	}
+}

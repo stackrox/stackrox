@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -12,11 +12,10 @@ import {
 import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
@@ -29,6 +28,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import DateDistanceTd from '../components/DatePhraseTd';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -41,6 +41,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             vulnerabilityId: id
             cve
             summary
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             images(query: $query) {
                 imageId: id
                 imageComponents(query: $query) {
@@ -58,6 +59,7 @@ export type DeploymentWithVulnerabilities = {
         vulnerabilityId: string;
         cve: string;
         summary: string;
+        pendingExceptionCount: number;
         images: {
             imageId: string;
             imageComponents: DeploymentComponentVulnerability[];
@@ -79,6 +81,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     summary: string;
     affectedComponentsText: string;
     images: DeploymentVulnerabilityImageMapping[];
+    pendingExceptionCount: number;
 }[] {
     // Create a map of image ID to image metadata for easy lookup
     // We use 'Partial' here because there is no guarantee that the image will be found
@@ -88,7 +91,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { vulnerabilityId, cve, summary, images } = vulnerability;
+        const { vulnerabilityId, cve, summary, images, pendingExceptionCount } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerableComponents);
@@ -124,6 +127,7 @@ function formatVulnerabilityData(deployment: DeploymentWithVulnerabilities): {
             summary,
             affectedComponentsText,
             images: vulnerabilityImages,
+            pendingExceptionCount,
         };
     });
 }
@@ -132,12 +136,14 @@ export type DeploymentVulnerabilitiesTableProps = {
     deployment: DeploymentWithVulnerabilities;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
 function DeploymentVulnerabilitiesTable({
     deployment,
     getSortParams,
     isFiltered,
+    vulnerabilityState,
 }: DeploymentVulnerabilitiesTableProps) {
     const expandedRowSet = useSet<string>();
 
@@ -172,6 +178,7 @@ function DeploymentVulnerabilitiesTable({
                     images,
                     affectedComponentsText,
                     discoveredAtImage,
+                    pendingExceptionCount,
                 } = vulnerability;
                 const isExpanded = expandedRowSet.has(cve);
 
@@ -186,14 +193,13 @@ function DeploymentVulnerabilitiesTable({
                                 }}
                             />
                             <Td dataLabel="CVE">
-                                <Button
-                                    variant={ButtonVariant.link}
-                                    isInline
-                                    component={LinkShim}
-                                    href={getEntityPagePath('CVE', cve)}
+                                <PendingExceptionLabelLayout
+                                    hasPendingException={pendingExceptionCount > 0}
+                                    cve={cve}
+                                    vulnerabilityState={vulnerabilityState}
                                 >
-                                    {cve}
-                                </Button>
+                                    <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                </PendingExceptionLabelLayout>
                             </Td>
                             <Td modifier="nowrap" dataLabel="Severity">
                                 <VulnerabilitySeverityIconText severity={severity} />
@@ -211,7 +217,11 @@ function DeploymentVulnerabilitiesTable({
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
                                     <p className="pf-u-mb-md">{summary}</p>
-                                    <DeploymentComponentVulnerabilitiesTable images={images} />
+                                    <DeploymentComponentVulnerabilitiesTable
+                                        images={images}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    />
                                 </ExpandableRowContent>
                             </Td>
                         </Tr>

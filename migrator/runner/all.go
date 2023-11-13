@@ -30,4 +30,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_193_to_m_194_policy_updates_for_4_3"
 	_ "github.com/stackrox/rox/migrator/migrations/m_194_to_m_195_vuln_request_global_scope"
 	_ "github.com/stackrox/rox/migrator/migrations/m_195_to_m_196_vuln_request_users"
+	_ "github.com/stackrox/rox/migrator/migrations/m_196_to_m_197_vulnerability_requests_for_legacy"
 )

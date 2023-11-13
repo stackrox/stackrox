@@ -40,6 +40,13 @@ func updateGlobalScope(ctx context.Context, database *types.Databases) error {
 		if approvers := obj.GetApprovers(); len(approvers) > 0 {
 			updated.ApproversV2 = convertSlimUserToApprovers(obj.GetApprovers())
 		}
+		if obj.GetDeferralReq() != nil && obj.GetDeferralReq().GetExpiry() != nil {
+			if obj.GetDeferralReq().GetExpiry().GetExpiresWhenFixed() {
+				updated.GetDeferralReq().Expiry.ExpiryType = storage.RequestExpiry_ANY_CVE_FIXABLE
+			} else {
+				updated.GetDeferralReq().Expiry.ExpiryType = storage.RequestExpiry_TIME
+			}
+		}
 
 		updatedObjs = append(updatedObjs, updated)
 		count++

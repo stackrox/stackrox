@@ -9,65 +9,64 @@ import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationU
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 
-type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
-
-type ScheduleIntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
-
-type UnsetSchedule = {
-    intervalType: 'UNSET';
-} & BaseSchedule;
-
-type DailySchedule = {
-    intervalType: 'DAILY';
-} & BaseSchedule;
-
-type WeeklySchedule = {
-    intervalType: 'WEEKLY';
-    // Sunday = 0, Monday = 1, .... Saturday =  6
-    daysOfWeek: {
-        day: number[]; // int32
-    };
-} & BaseSchedule;
-
-type MonthlySchedule = {
-    intervalType: 'WEEKLY';
-    // Sunday = 0, Monday = 1, .... Saturday =  6
-    daysOfMonth: {
-        day: number[]; // int32
-    };
-} & BaseSchedule;
-
-type BaseSchedule = {
-    intervalType: ScheduleIntervalType;
+type ScheduleBase = {
     hour: number;
     minute: number;
 };
 
-// API types for Scan Configs:
-// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_scan_configuration_service
-export type BaseComplianceScanConfigurationSettings = {
-    oneTimeScan: boolean;
-    profiles: string[];
-    scanSchedule: Schedule | null;
+type UnsetSchedule = ScheduleBase & {
+    intervalType: 'UNSET';
 };
 
-export type ClusterScanStatus = {
+type DailySchedule = ScheduleBase & {
+    intervalType: 'DAILY';
+};
+
+type WeeklySchedule = ScheduleBase & {
+    intervalType: 'WEEKLY';
+    daysOfWeek: { days: number[] };
+};
+
+type MonthlySchedule = ScheduleBase & {
+    intervalType: 'MONTHLY';
+    daysOfMonth: { days: number[] };
+};
+
+export type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
+
+// API types for Scan Configs:
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_scan_configuration_service
+type BaseComplianceScanConfigurationSettings = {
+    oneTimeScan: boolean;
+    profiles: string[];
+    scanSchedule: Schedule;
+};
+
+type ClusterScanStatus = {
     clusterId: string;
     errors: string[];
     clusterName: string;
 };
 
-export type ScanConfig = {
+export type ComplianceScanConfiguration = {
     id?: string;
     scanName: string;
-    clusters: string[];
     scanConfig: BaseComplianceScanConfigurationSettings;
-    clusterStatus?: ClusterScanStatus[];
-    createdTime?: string; // ISO 8601 date string
-    lastUpdatedTime?: string; // ISO 8601 date string
-    modifiedBy?: SlimUser;
+    clusters: string[];
 };
 
+export type ComplianceScanConfigurationStatus = {
+    id: string;
+    scanName: string;
+    scanConfig: BaseComplianceScanConfigurationSettings;
+    clusterStatus: ClusterScanStatus[];
+    createdTime: string; // ISO 8601 date string;
+    lastUpdatedTime: string; // ISO 8601 date string;
+    modifiedBy: SlimUser;
+};
+
+// API types for Scan Configs:
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_results_service
 interface ComplianceScanStatsShim {
     id: string; // TODO: id should be included in api response/proto
     scanName: string;
@@ -121,18 +120,44 @@ export function complianceResultsOverview(
 /*
  * Get a Scan Schedule.
  */
-export function getScanConfig(scanConfigId: string): Promise<ScanConfig> {
+export function getScanConfig(scanConfigId: string): Promise<ComplianceScanConfigurationStatus> {
     return axios
-        .get<ScanConfig>(`${scanScheduleUrl}/${scanConfigId}`)
+        .get<ComplianceScanConfigurationStatus>(`${scanScheduleUrl}/${scanConfigId}`)
+        .then((response) => response.data);
+}
+
+/*
+ * Create a Scan Schedule.
+ */
+export function createScanConfig(
+    complianceScanConfiguration: ComplianceScanConfiguration
+): Promise<ComplianceScanConfiguration> {
+    return axios
+        .post<ComplianceScanConfiguration>(`${scanScheduleUrl}`, complianceScanConfiguration)
         .then((response) => response.data);
 }
 
 /*
  * Get policies filtered by an optional query string.
  */
-export function getScanConfigs(query = ''): Promise<ScanConfig[]> {
+export function getScanConfigs(
+    sortOption: ApiSortOption,
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceScanConfigurationStatus[]> {
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        pagination: { offset, limit: pageSize, sortOption },
+    };
     const params = qs.stringify({ query });
     return axios
-        .get<{ scanSchedules: ScanConfig[] }>(`${scanScheduleUrl}?${params}`)
-        .then((response) => response?.data?.scanSchedules ?? []);
+        .get<{ configurations: ComplianceScanConfigurationStatus[] }>(
+            `${scanScheduleUrl}?${params}`
+        )
+        .then((response) => {
+            return response?.data?.configurations ?? [];
+        });
 }

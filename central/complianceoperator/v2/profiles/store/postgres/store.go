@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,11 +22,6 @@ import (
 const (
 	baseTable = "compliance_operator_profile_v2"
 	storeName = "ComplianceOperatorProfileV2"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -49,6 +44,7 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -95,14 +91,13 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetVersion(),
+		obj.GetProfileVersion(),
 		obj.GetProductType(),
 		obj.GetStandard(),
-		obj.GetProduct(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, Version, ProductType, Standard, Product, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, ProfileVersion, ProductType, Standard, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -134,6 +129,10 @@ func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.C
 }
 
 func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfileV2) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -143,10 +142,9 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 	copyCols := []string{
 		"id",
 		"name",
-		"version",
+		"profileversion",
 		"producttype",
 		"standard",
-		"product",
 		"serialized",
 	}
 
@@ -164,10 +162,9 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetName(),
-			obj.GetVersion(),
+			obj.GetProfileVersion(),
 			obj.GetProductType(),
 			obj.GetStandard(),
-			obj.GetProduct(),
 			serialized,
 		})
 
@@ -205,6 +202,10 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 }
 
 func copyFromComplianceOperatorProfileV2Rules(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorProfileV2ID string, objs ...*storage.ComplianceOperatorProfileV2_Rule) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

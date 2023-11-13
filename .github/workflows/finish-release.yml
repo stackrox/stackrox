@@ -1,4 +1,4 @@
-name: Finish Release
+name: "RELEASE: Finish Release"
 on:
   workflow_dispatch:
     inputs:
@@ -176,6 +176,7 @@ jobs:
           git fetch origin
           git switch "$BRANCH"
       - name: Update the demo version in the infra chart definition
+        id: update-infra-demo-version
         run: |
           CURRENT_VERSION="$(yq '.annotations.acsDemoVersion' < chart/infra-server/Chart.yaml)"
           if printf '%s\n%s\n' "${CURRENT_VERSION}" "${{ inputs.version }}" | sort --check=quiet --version-sort; then
@@ -184,15 +185,18 @@ jobs:
             if ! git diff-index --quiet HEAD; then
               git commit --message "Bump demo versions for ${{ inputs.version }}"
               echo "Demo versions were bumped in infra." >> "$GITHUB_STEP_SUMMARY"
+              echo "update-required=true" >> "$GITHUB_OUTPUT"
             else
               echo "Demo versions were not updated in infra, because there is no diff." >> "$GITHUB_STEP_SUMMARY"
+              echo "update-required=false" >> "$GITHUB_OUTPUT"
             fi
           else
             echo "Demo versions were not updated in infra, because the current version is newer." >> "$GITHUB_STEP_SUMMARY"
+            echo "update-required=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Push changes & open PR
-        if: env.DRY_RUN == 'false'
+        if: env.DRY_RUN == 'false' && steps.update-infra-demo-version.outputs.update-required == 'true'
         env:
           GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
         run: |

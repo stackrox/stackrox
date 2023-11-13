@@ -1,5 +1,6 @@
 import React from 'react';
-import { Flex, Button, ButtonVariant, pluralize, Truncate } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Flex, pluralize, Truncate } from '@patternfly/react-core';
 import {
     TableComposable,
     Thead,
@@ -11,9 +12,9 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { VulnerabilityState } from 'types/cve.proto';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -66,6 +67,8 @@ export type AffectedDeploymentsTableProps = {
     deployments: DeploymentForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    cve: string;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
@@ -73,6 +76,8 @@ function AffectedDeploymentsTable({
     deployments,
     getSortParams,
     isFiltered,
+    cve,
+    vulnerabilityState,
     filteredSeverities,
 }: AffectedDeploymentsTableProps) {
     const expandedRowSet = useSet<string>();
@@ -133,14 +138,9 @@ function AffectedDeploymentsTable({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
-                                    <Button
-                                        variant={ButtonVariant.link}
-                                        isInline
-                                        component={LinkShim}
-                                        href={getEntityPagePath('Deployment', id)}
-                                    >
+                                    <Link to={getEntityPagePath('Deployment', id)}>
                                         <Truncate position="middle" content={name} />
-                                    </Button>{' '}
+                                    </Link>
                                 </Flex>
                             </Td>
                             <Td modifier="nowrap" dataLabel="Images by severity">
@@ -168,6 +168,8 @@ function AffectedDeploymentsTable({
                                 <ExpandableRowContent>
                                     <DeploymentComponentVulnerabilitiesTable
                                         images={imageComponentVulns}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
                                     />
                                 </ExpandableRowContent>
                             </Td>
