@@ -26,8 +26,8 @@ type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
 	clusterDS     clusterDatastore.DataStore
-	keyedMutex    *concurrency.KeyedMutex
 	searcher      scanConfigSearch.Searcher
+	keyedMutex    *concurrency.KeyedMutex
 }
 
 // GetScanConfiguration retrieves the scan configuration specified by id
@@ -148,5 +148,10 @@ func (ds *datastoreImpl) GetScanConfigClusterStatus(ctx context.Context, scanID 
 }
 
 func (ds *datastoreImpl) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := scanConfigurationsSAC.ReadAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, nil
+	}
 	return ds.searcher.Count(ctx, q)
 }

@@ -126,12 +126,12 @@ func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
+
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}
-	res := &v2.CountComplianceScanResults{
+	return &v2.CountComplianceScanResults{
 		Count: int32(count),
-	}
-	return res, nil
+	}, nil
 }

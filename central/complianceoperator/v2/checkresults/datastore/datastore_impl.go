@@ -128,6 +128,11 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, sac.ErrResourceAccessDenied
+	}
 	return d.searcher.Count(ctx, q)
 }
 

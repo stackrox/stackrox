@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Searcher is searcher for check results
+// Searcher provides search functionality on existing check results
 type Searcher interface {
 	Count(ctx context.Context, query *v1.Query) (int, error)
 }
