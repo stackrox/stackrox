@@ -186,17 +186,3 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 
 	return errPlop
 }
-
-func (ds *datastoreImpl) GetPodIDs(ctx context.Context) ([]string, error) {
-	return ds.podStore.GetIDs(ctx)
-}
-
-func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pod *storage.Pod) error) error {
-	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	// Postgres retry in caller.
-	return ds.podStore.Walk(ctx, fn)
-}
