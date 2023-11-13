@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/quay/claircore"
-	"github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/scanner/mappers"
