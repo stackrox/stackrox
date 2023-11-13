@@ -11,6 +11,7 @@ import {
 } from '../../helpers/policies';
 import { closeModalByButton } from '../../helpers/modal';
 import { hasFeatureFlag } from '../../helpers/features';
+import { getInputByLabel } from '../../helpers/formHelpers';
 
 const dataTransfer = new DndSimulatorDataTransfer();
 
@@ -206,11 +207,24 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 // TODO: (vjw, 2023-10-30) currently, this feature flag is only _adding_ another way to add policy criteria fields
                 //       after adding fields has been thoroughly tested, this flag will indicate _whether_ to test the old way or the new way
                 if (hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL')) {
-                    cy.log('flag on');
                     cy.get('.policy-section-card button:contains("Add policy field")').click();
                     cy.get('.pf-c-modal-box__title-text:contains("Add policy criteria field")');
 
+                    // ensure closing modal with no actions
                     closeModalByButton('Cancel');
+
+                    // now, add a field with modal
+                    cy.get('.policy-section-card button:contains("Add policy field")').click();
+                    cy.get(
+                        'button.pf-c-tree-view__node:contains("Container configuration")'
+                    ).click();
+                    cy.get('button.pf-c-tree-view__node:contains("Environment variable")')
+                        .click()
+                        .should('have.class', 'pf-m-current');
+                    cy.get('.pf-c-modal-box__footer button:contains("Add policy field")').click();
+
+                    getInputByLabel('Key').clear().type('dev');
+                    getInputByLabel('Value').clear().type('true');
                 }
             });
 
