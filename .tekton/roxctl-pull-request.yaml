@@ -232,6 +232,21 @@ spec:
       - name: source
         workspace: workspace
 
+    - name: check-workspace-size
+      runAfter:
+      - prefetch-dependencies
+      workspaces:
+      - name: source
+        workspace: workspace
+      taskSpec:
+        steps:
+        - name: check-space
+          image: registry.access.redhat.com/ubi8/ubi
+          script: |
+            df -h
+            du -hs /workspace/source
+            du -hs /workspace/source/*
+
     - name: build-container
       params:
       - name: IMAGE
