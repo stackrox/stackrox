@@ -9,8 +9,8 @@ USER root
 LABEL \
     com.redhat.component="rhacs-central-db-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="Central DB for RHACS" \
-    io.k8s.description="Central DB for RHACS" \
+    description="Central Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
+    io.k8s.description="Central Database Image for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="central-db" \
     io.openshift.tags="rhacs,central-db,stackrox" \
     maintainer="Red Hat, Inc." \
