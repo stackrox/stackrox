@@ -160,7 +160,7 @@ func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
 	// Convert every expected package found in the report, or convert an empty
 	// package if not found.
 	var ret []Feature
-	for idx, _ := range tc.Features {
+	for idx := range tc.Features {
 		f := &tc.Features[idx]
 		versions, nameFound := pkgs[f.Name]
 		var p *v4.Package
@@ -198,7 +198,7 @@ func (tc *TestCase) mapFillVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, fe
 	}
 	// Convert all package vulnerabilities.
 	var vulns []Vulnerability
-	for idx, _ := range feat.Vulnerabilities {
+	for idx := range feat.Vulnerabilities {
 		featVuln := &feat.Vulnerabilities[idx]
 		// If not found, convert an empty vulnerability case.
 		v, ok := vrVulns[featVuln.Name]
