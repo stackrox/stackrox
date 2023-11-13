@@ -55,6 +55,8 @@ function CVEsTableContainer({
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount:
+                vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'],
         },
     });
 

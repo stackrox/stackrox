@@ -68,7 +68,12 @@ const summaryQuery = gql`
 const vulnerabilityQuery = gql`
     ${imageMetadataContextFragment}
     ${deploymentWithVulnerabilitiesFragment}
-    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCvesForDeployment(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
         deployment(id: $id) {
             imageVulnerabilityCount(query: $query)
             ...DeploymentWithVulnerabilities
@@ -113,9 +118,16 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
             } | null;
         },
-        { id: string; query: string }
+        { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
-        variables: { id: deploymentId, query },
+        variables: {
+            id: deploymentId,
+            query,
+            statusesForExceptionCount:
+                currentVulnerabilityState === 'OBSERVED'
+                    ? ['PENDING']
+                    : ['APPROVED_PENDING_UPDATE'],
+        },
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
@@ -265,6 +277,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                     deployment={vulnerabilityData.deployment}
                                     getSortParams={getSortParams}
                                     isFiltered={isFiltered}
+                                    vulnerabilityState={currentVulnerabilityState}
                                 />
                             </div>
                         )}
