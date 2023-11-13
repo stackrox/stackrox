@@ -89,7 +89,7 @@ func checkCall(call *ast.CallExpr, pass *analysis.Pass) {
 	}
 
 	switch s[len(s)-1] {
-	case '.', ':', '!', '\n':
+	case '.', '!', '\n':
 		pass.Report(analysis.Diagnostic{
 			Pos:     call.Pos(),
 			Message: fmt.Sprintf("Log message should not end with punctuation or newlines: %q", s),
