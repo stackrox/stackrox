@@ -39,10 +39,10 @@ const (
 
 // ComplianceOperatorRuleV2 holds the Gorm model for Postgres table `compliance_operator_rule_v2`.
 type ComplianceOperatorRuleV2 struct {
-	Name        string               `gorm:"column:name;type:varchar;primaryKey"`
-	Version     string               `gorm:"column:version;type:varchar"`
-	RuleVersion string               `gorm:"column:ruleversion;type:varchar"`
-	RuleType    string               `gorm:"column:ruletype;type:varchar"`
-	Severity    storage.RuleSeverity `gorm:"column:severity;type:integer"`
-	Serialized  []byte               `gorm:"column:serialized;type:bytea"`
+	Name            string               `gorm:"column:name;type:varchar;primaryKey"`
+	OperatorVersion string               `gorm:"column:operatorversion;type:varchar"`
+	RuleVersion     string               `gorm:"column:ruleversion;type:varchar"`
+	RuleType        string               `gorm:"column:ruletype;type:varchar"`
+	Severity        storage.RuleSeverity `gorm:"column:severity;type:integer"`
+	Serialized      []byte               `gorm:"column:serialized;type:bytea"`
 }

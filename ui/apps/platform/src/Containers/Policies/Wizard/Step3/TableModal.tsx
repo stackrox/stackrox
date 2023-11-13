@@ -37,7 +37,7 @@ function TableModal({
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const isPreSelected = useCallback(
-        (row) => (value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false),
+        (row: any) => (value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false),
         [value]
     );
 

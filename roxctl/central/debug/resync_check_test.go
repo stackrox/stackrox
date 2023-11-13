@@ -127,8 +127,6 @@ func Test_GetAlertsDelta(t *testing.T) {
 			if testCase.hasWarning {
 				assert.Contains(t, errOut.String(), testCase.warningMessage)
 			}
-
 		})
-
 	}
 }

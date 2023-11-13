@@ -66,9 +66,6 @@ func Test_SensorHello2(t *testing.T) {
 }
 
 func Test_SensorReconnects(t *testing.T) {
-	// TODO(ROX-18197) Address flakiness
-	t.Skipf("This test is too flaky. Has to be fixed before re-enabled")
-
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")

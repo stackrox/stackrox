@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_194_to_m_195_vuln_request_global_scope/schema"

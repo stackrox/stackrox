@@ -7,10 +7,15 @@ import {
     selectUnwatchedImageTextFromTable,
     watchImageFlowFromModal,
     unwatchImageFromModal,
+    typeAndSelectCustomResourceFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
-describe('Workload CVE watched images flow', () => {
+// TODO - dv 2023-11-8
+//  These tests are disabled due to usable images with CVEs not being available in the test environment
+//  at the time the tests are executed. This issue is being tracked in ROX-20728 and these tests
+// should be re-enabled or reworked once that issue is resolved.
+describe.skip('Workload CVE watched images flow', () => {
     withAuth();
 
     before(function () {
@@ -35,6 +40,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
@@ -54,6 +60,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 // Open the modal and watch the image
@@ -82,6 +89,7 @@ describe('Workload CVE watched images flow', () => {
     it('should not allow adding a blank or invalid image name to the watch list', () => {
         visitWorkloadCveOverview();
         selectEntityTab('Image');
+        typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
         cy.get(selectors.manageWatchedImagesButton).click();
 
@@ -114,6 +122,7 @@ describe('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
+            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();

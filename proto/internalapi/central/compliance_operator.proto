@@ -113,6 +113,18 @@ message ComplianceResponse {
     }
 }
 
+// Represents the severity of the rule
+enum ComplianceOperatorRuleSeverity {
+    UNSET_RULE_SEVERITY = 0;
+    UNKNOWN_RULE_SEVERITY = 1;
+    INFO_RULE_SEVERITY = 2;
+    LOW_RULE_SEVERITY = 3;
+    MEDIUM_RULE_SEVERITY = 4;
+    HIGH_RULE_SEVERITY = 5;
+}
+
+// ComplianceOperatorCheckResultV2 is a message from Sensor (to Central) representing a compliance check result.
+// Next tag: 16.
 message ComplianceOperatorCheckResultV2 {
     enum CheckStatus {
         UNSET          = 0;
@@ -125,28 +137,52 @@ message ComplianceOperatorCheckResultV2 {
         INCONSISTENT   = 7;
     }
 
-    enum RuleSeverity {
-        UNSET_RULE_SEVERITY = 0;
-        UNKNOWN_RULE_SEVERITY = 1;
-        INFO_RULE_SEVERITY = 2;
-        LOW_RULE_SEVERITY = 3;
-        MEDIUM_RULE_SEVERITY = 4;
-        HIGH_RULE_SEVERITY = 5;
-    }
+    string                         id           = 1;
+    string                         check_id     = 2;
+    string                         check_name   = 3;
+    string                         cluster_id   = 4;
+    CheckStatus                    status       = 5;
+    ComplianceOperatorRuleSeverity severity     = 6;
+    string                         description  = 7;
+    string                         instructions = 8;
+    map<string, string>            labels       = 9;
+    map<string, string>            annotations  = 10;
+    google.protobuf.Timestamp      created_time = 11;
+    string                         standard     = 12;
+    string                         control      = 13;
+    string                         scan_name    = 14;
+    string                         suite_name   = 15;
+}
 
-    string                    id           = 1;
-    string                    check_id     = 2;
-    string                    check_name   = 3;
-    string                    cluster_id   = 4;
-    CheckStatus               status       = 5;
-    RuleSeverity              severity     = 6;
-    string                    description  = 7;
-    string                    instructions = 8;
-    map<string, string>       labels       = 9;
-    map<string, string>       annotations  = 10;
-    google.protobuf.Timestamp created_time = 11;
-    string                    standard     = 12;
-    string                    control      = 13;
-    string                    scan_name    = 14;
-    string                    suite_name   = 15;
+// ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
+// Next tag: 10.
+message ComplianceOperatorProfileV2 {
+    string              id              = 1;
+    string              profile_id      = 2;
+    string              name            = 3;
+    string              profile_version = 4;
+    map<string, string> labels          = 5;
+    map<string, string> annotations     = 6;
+    string              description     = 7;
+    message Rule {
+        string rule_name       = 1;
+    }
+    repeated Rule       rules       = 8;
+    string              title       = 9;
+}
+
+// ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
+// Next tag: 12.
+message ComplianceOperatorRuleV2 {
+    string                         name         = 1;
+    string                         version      = 2;
+    string                         rule_version = 3;
+    string                         rule_type    = 4;
+    ComplianceOperatorRuleSeverity severity     = 5;
+    map<string, string>            labels       = 6;
+    map<string, string>            annotations  = 7;
+    string                         title        = 8;
+    string                         description  = 9;
+    string                         rationale    = 10;
+    string                         fixes        = 11;
 }

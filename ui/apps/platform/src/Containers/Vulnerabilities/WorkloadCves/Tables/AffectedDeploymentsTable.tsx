@@ -14,6 +14,7 @@ import { gql } from '@apollo/client';
 
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { VulnerabilityState } from 'types/cve.proto';
 import { getEntityPagePath } from '../searchUtils';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
@@ -66,6 +67,8 @@ export type AffectedDeploymentsTableProps = {
     deployments: DeploymentForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    cve: string;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     filteredSeverities?: VulnerabilitySeverityLabel[];
 };
 
@@ -73,6 +76,8 @@ function AffectedDeploymentsTable({
     deployments,
     getSortParams,
     isFiltered,
+    cve,
+    vulnerabilityState,
     filteredSeverities,
 }: AffectedDeploymentsTableProps) {
     const expandedRowSet = useSet<string>();
@@ -163,6 +168,8 @@ function AffectedDeploymentsTable({
                                 <ExpandableRowContent>
                                     <DeploymentComponentVulnerabilitiesTable
                                         images={imageComponentVulns}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
                                     />
                                 </ExpandableRowContent>
                             </Td>

@@ -101,7 +101,11 @@ export const imageCveSummaryQuery = gql`
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
-    query getImagesForCVE($query: String, $pagination: Pagination) {
+    query getImagesForCVE(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         images(query: $query, pagination: $pagination) {
             ...ImagesForCVE
         }
@@ -118,6 +122,7 @@ export const imageCveAffectedDeploymentsQuery = gql`
         $moderateImageCountQuery: String
         $importantImageCountQuery: String
         $criticalImageCountQuery: String
+        $statusesForExceptionCount: [String!]
     ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
@@ -431,6 +436,8 @@ function ImageCvePage() {
                                                 images={imageData?.images ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                         {entityTab === 'Deployment' && (
@@ -441,6 +448,8 @@ function ImageCvePage() {
                                                 filteredSeverities={
                                                     searchFilter.Severity as VulnerabilitySeverityLabel[]
                                                 }
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                     </div>

@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -529,6 +530,25 @@ func (c *TestContext) LastDeploymentState(t *testing.T, name string, assertion A
 	c.LastDeploymentStateWithTimeout(t, name, assertion, message, defaultWaitTimeout)
 }
 
+// LastDeploymentStateWithID checks that a deployment with id reaches a state asserted by `assertion`.
+func (c *TestContext) LastDeploymentStateWithID(t *testing.T, id string, assertion AssertFunc, message string, timeout time.Duration) {
+	require.Eventuallyf(t, func() bool {
+		messages := c.GetFakeCentral().GetAllMessages()
+		lastDeploymentUpdate := GetLastMessageWithDeploymentID(messages, id)
+		deployment := lastDeploymentUpdate.GetEvent().GetDeployment()
+		action := lastDeploymentUpdate.GetEvent().GetAction()
+		if deployment != nil {
+			if err := assertion(deployment, action); err != nil {
+				t.Logf("%s: assertion failed: %s", message, err)
+				return false
+			}
+			return true
+		}
+		t.Logf("%s: deployment not found", message)
+		return false
+	}, timeout, defaultTicker, "waiting for deployment state: %s", message)
+}
+
 // LastDeploymentStateWithTimeout checks that a deployment reaches a state asserted by `assertion`. If the deployment does not reach
 // that state until `timeout` the test fails.
 func (c *TestContext) LastDeploymentStateWithTimeout(t *testing.T, name string, assertion AssertFunc, message string, timeout time.Duration) {
@@ -899,6 +919,19 @@ func GetFirstMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, na
 		}
 	}
 	return nil
+}
+
+// GetLastMessageWithDeploymentID find most recent sensor messages by namespace and deployment name
+func GetLastMessageWithDeploymentID(messages []*central.MsgFromSensor, id string) *central.MsgFromSensor {
+	var lastMessage *central.MsgFromSensor
+	for i := len(messages) - 1; i >= 0; i-- {
+		deployment := messages[i].GetEvent().GetDeployment()
+		if deployment.GetId() == id {
+			lastMessage = messages[i]
+			break
+		}
+	}
+	return lastMessage
 }
 
 // GetLastMessageWithDeploymentName find most recent sensor messages by namespace and deployment name

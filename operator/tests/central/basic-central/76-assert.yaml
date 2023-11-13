@@ -1,45 +1,11 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-collectors:
-- type: pod
-  selector: app=central-db
-  tail: -1
-- type: pod
-  selector: app=central
-  tail: -1
-- type: pod
-  selector: app=scanner
-  tail: -1
-- type: pod
-  selector: app=scanner-db
-  tail: -1
----
+# Assert only things specific to this step.
+# General sanity is asserted by the other assert file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
   annotations:
     test-step: "76"
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: central-db
-status:
-  availableReplicas: 1
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: central-db
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
 ---
 apiVersion: v1
 kind: Pod

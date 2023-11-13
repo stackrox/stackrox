@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,11 +22,6 @@ import (
 const (
 	baseTable = "compliance_operator_rule_v2"
 	storeName = "ComplianceOperatorRuleV2"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -94,20 +89,24 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.Complianc
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetName(),
-		obj.GetVersion(),
+		obj.GetOperatorVersion(),
 		obj.GetRuleVersion(),
 		obj.GetRuleType(),
 		obj.GetSeverity(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, Version, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Version = EXCLUDED.Version, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, OperatorVersion, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
 func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorRuleV2) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -116,7 +115,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 
 	copyCols := []string{
 		"name",
-		"version",
+		"operatorversion",
 		"ruleversion",
 		"ruletype",
 		"severity",
@@ -136,7 +135,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetName(),
-			obj.GetVersion(),
+			obj.GetOperatorVersion(),
 			obj.GetRuleVersion(),
 			obj.GetRuleType(),
 			obj.GetSeverity(),

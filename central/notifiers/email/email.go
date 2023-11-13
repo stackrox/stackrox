@@ -128,7 +128,8 @@ func (s *smtpServer) endpoint() string {
 	return fmt.Sprintf("%v:%v", s.host, s.port)
 }
 
-func validate(emailConf *storage.Email) error {
+// Validate Email notifier
+func Validate(emailConf *storage.Email, validateSecret bool) error {
 	if emailConf == nil {
 		return errors.New("Email configuration is required")
 	}
@@ -144,7 +145,7 @@ func validate(emailConf *storage.Email) error {
 		if emailConf.GetUsername() == "" {
 			errorList.AddString("Username must be specified")
 		}
-		if emailConf.GetPassword() == "" {
+		if validateSecret && emailConf.GetPassword() == "" {
 			errorList.AddString("Password must be specified")
 		}
 	}
@@ -157,7 +158,7 @@ func validate(emailConf *storage.Email) error {
 func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
 	conf := notifier.GetEmail()
-	if err := validate(conf); err != nil {
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 
@@ -536,6 +537,10 @@ func (e *email) tlsConfig() *tls.Config {
 }
 
 func (e *email) getPassword() (string, error) {
+	if e.config.GetAllowUnauthenticatedSmtp() {
+		return "", nil
+	}
+
 	if e.creds != "" {
 		return e.creds, nil
 	}

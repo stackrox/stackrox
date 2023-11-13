@@ -104,17 +104,15 @@ function ExpiryField({ formik }: ExpiryFieldProps) {
                             label={`For ${numDays} days`}
                         />
                     ))}
-                {/* TODO - Awaiting backend support for indefinite deferrals
-                                         config.expiryOptions.indefinite && (
-                                            <Radio
-                                                id="indefinite"
-                                                name="indefinite"
-                                                isChecked={values.expiry?.type === 'INDEFINITE'}
-                                                onChange={() => {}}
-                                                label="Indefinitely"
-                                            />
-                                        )
-                                        */}
+                {config.expiryOptions.indefinite && (
+                    <Radio
+                        id="indefinite"
+                        name="indefinite"
+                        isChecked={values.expiry?.type === 'INDEFINITE'}
+                        onChange={() => setExpiry({ type: 'INDEFINITE' })}
+                        label="Indefinitely"
+                    />
+                )}
                 {config.expiryOptions.customDate && (
                     <Radio
                         id="custom-date"

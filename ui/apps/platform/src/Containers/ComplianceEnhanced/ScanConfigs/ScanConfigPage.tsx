@@ -1,14 +1,18 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner, Button } from '@patternfly/react-core';
 
 import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
-import { getScanConfig, ScanConfig } from 'services/ComplianceEnhancedService';
+import {
+    getScanConfig,
+    ComplianceScanConfigurationStatus,
+    createScanConfig,
+    ComplianceScanConfiguration,
+} from 'services/ComplianceEnhancedService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { BasePageAction } from 'utils/queryStringUtils';
 
-import { initialScanConfig } from './scanConfigs.utils';
 // import ScanConfigWizard from './Wizard/ScanConfigWizard';
 
 // type WizardScanConfigState = {
@@ -29,7 +33,7 @@ function ScanConfigPage({
     scanConfigId,
 }: ScanConfigPageProps): ReactElement {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [scanConfig, setScanConfig] = useState<ScanConfig>();
+    const [scanConfig, setScanConfig] = useState<ComplianceScanConfigurationStatus>();
     //     pageAction === 'generate' && wizardScanConfig
     //         ? getClientWizardScanConfig(wizardScanConfig)
     //         : initialScanConfig
@@ -47,7 +51,6 @@ function ScanConfigPage({
                     setScanConfig(clientWizardScanConfig);
                 })
                 .catch((error) => {
-                    setScanConfig(initialScanConfig);
                     // TODO: conditionally render specific or generic title string for actual status 404 or not
                     // Something like hasStatusNotFound(error) seems worthwhile in responseErrorUtils.ts file.
                     setScanConfigError(
@@ -65,6 +68,27 @@ function ScanConfigPage({
         }
     }, [pageAction, scanConfigId]);
 
+    // TODO: delete
+    const createFakeSchedule = async () => {
+        const mockScanConfig: ComplianceScanConfiguration = {
+            scanName: 'random180',
+            scanConfig: {
+                oneTimeScan: false,
+                profiles: ['profile-5', 'profile-3'],
+                scanSchedule: {
+                    intervalType: 'WEEKLY',
+                    hour: 20,
+                    minute: 10,
+                    daysOfWeek: {
+                        days: [4],
+                    },
+                },
+            },
+            clusters: ['8e6fc93d-b5fb-418b-8835-1c42a512a8f6'],
+        };
+        await createScanConfig(mockScanConfig);
+    };
+
     return (
         <>
             <PageTitle title="ScanConfig Management - ScanConfig" />
@@ -75,7 +99,14 @@ function ScanConfigPage({
             ) : (
                 scanConfigError || // TODO ROX-8487: Improve ScanConfigPage when request fails
                 (pageAction ? (
-                    <div>ScanConfigWizard goes here</div>
+                    <div>
+                        <span>ScanConfigWizard goes here</span>
+                        <div>
+                            <Button className="pf-u-m-xl" onClick={createFakeSchedule}>
+                                Create
+                            </Button>
+                        </div>
+                    </div>
                 ) : (
                     <div>ScanConfigDetail goes here</div>
                 ))

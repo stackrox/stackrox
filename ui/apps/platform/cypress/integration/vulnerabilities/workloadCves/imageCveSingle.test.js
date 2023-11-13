@@ -2,7 +2,6 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
-    selectResourceFilterType,
     typeAndSelectResourceFilterValue,
     typeAndSelectCustomResourceFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
@@ -93,7 +92,6 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get(`${selectors.firstTableRow} td[data-label="Namespace"]`).then(([$namespace]) => {
             const namespace = $namespace.innerText;
 
-            selectResourceFilterType('Namespace');
             typeAndCreateResourceFilterValue('Namespace', `bogus-${namespace}`);
 
             cy.get(`table tbody tr td[data-label="Namespace"]:contains("${namespace}")`).should(

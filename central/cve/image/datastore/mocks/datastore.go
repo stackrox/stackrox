@@ -42,6 +42,25 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ApplyException mocks base method.
+func (m *MockDataStore) ApplyException(ctx context.Context, start, expiry *types.Timestamp, cves ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, start, expiry}
+	for _, a := range cves {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ApplyException", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyException indicates an expected call of ApplyException.
+func (mr *MockDataStoreMockRecorder) ApplyException(ctx, start, expiry any, cves ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, start, expiry}, cves...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyException", reflect.TypeOf((*MockDataStore)(nil).ApplyException), varargs...)
+}
+
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -113,6 +132,25 @@ func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.I
 func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+}
+
+// RevertException mocks base method.
+func (m *MockDataStore) RevertException(ctx context.Context, cves ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range cves {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RevertException", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RevertException indicates an expected call of RevertException.
+func (mr *MockDataStoreMockRecorder) RevertException(ctx any, cves ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, cves...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevertException", reflect.TypeOf((*MockDataStore)(nil).RevertException), varargs...)
 }
 
 // Search mocks base method.

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -56,10 +56,10 @@ describe('Resource scope bar', () => {
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // The default state is all clusters selected, with the ns dropdown disabled
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
         expect(await screen.findByLabelText('All clusters', { selector: 'input' })).toBeChecked();
         expect(namespaceDropdownToggle).toBeDisabled();
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
     });
 
     it('allows selection of multiple clusters and namespaces', async () => {
@@ -70,39 +70,39 @@ describe('Resource scope bar', () => {
         await waitFor(() => expect(clusterDropdownToggle).not.toBeDisabled());
 
         // Selecting one or more clusters enables the ns dropdown
-        await user.click(clusterDropdownToggle);
-        await user.click(screen.getByLabelText('production'));
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('production')));
+        await act(() => user.click(clusterDropdownToggle));
         expect(namespaceDropdownToggle).not.toBeDisabled();
         expect(clusterDropdownToggle).toHaveTextContent('Clusters1');
 
         // Enable some namespaces and check that the select badge updates
-        await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByLabelText('frontend'));
-        await user.click(screen.getByLabelText('backend'));
-        await user.click(screen.getByLabelText('payments'));
-        await user.click(namespaceDropdownToggle);
+        await act(() => user.click(namespaceDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('frontend')));
+        await act(() => user.click(screen.getByLabelText('backend')));
+        await act(() => user.click(screen.getByLabelText('payments')));
+        await act(() => user.click(namespaceDropdownToggle));
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces3');
 
         // Selecting another cluster when other namespaces are selected will explicitly select
         // all namespaces in that cluster
-        await user.click(clusterDropdownToggle);
-        await user.click(screen.getByLabelText('security'));
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('security')));
+        await act(() => user.click(clusterDropdownToggle));
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces6');
 
         // Selecting "All Namespaces" and then a single namespaces will result in a single
         // namespace being selected
-        await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByLabelText('All namespaces'));
-        await user.click(screen.getByLabelText('frontend'));
-        await user.click(namespaceDropdownToggle);
+        await act(() => user.click(namespaceDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('All namespaces')));
+        await act(() => user.click(screen.getByLabelText('frontend')));
+        await act(() => user.click(namespaceDropdownToggle));
         expect(namespaceDropdownToggle).toHaveTextContent('Namespaces1');
 
         // Selecting "All Clusters" will clear the namespace selection and disable the dropdown
-        await user.click(clusterDropdownToggle);
-        await user.click(screen.getByLabelText('All clusters'));
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('All clusters')));
+        await act(() => user.click(clusterDropdownToggle));
         expect(clusterDropdownToggle).toHaveTextContent('All clusters');
         expect(namespaceDropdownToggle).toHaveTextContent('All namespaces');
         expect(namespaceDropdownToggle).toBeDisabled();
@@ -121,9 +121,9 @@ describe('Resource scope bar', () => {
         expect(history.location.search).toBe('');
 
         // Select a cluster and verify it has been added to the URL
-        await user.click(clusterDropdownToggle);
-        await user.click(screen.getByLabelText('production'));
-        await user.click(clusterDropdownToggle);
+        await act(() => user.click(clusterDropdownToggle));
+        await act(() => user.click(screen.getByLabelText('production')));
+        await act(() => user.click(clusterDropdownToggle));
         expect(history.location.search).toMatch(new RegExp(`s\\[Cluster\\]\\[\\d\\]=production`));
 
         // Select multiple namespaces and verify they have been added to the URL
@@ -137,10 +137,10 @@ describe('Resource scope bar', () => {
         const frontend = productionNamespaces.find(findNsWithName('frontend')) as Namespace;
         const backend = productionNamespaces.find(findNsWithName('backend')) as Namespace;
         const payments = productionNamespaces.find(findNsWithName('payments')) as Namespace;
-        await user.click(namespaceDropdownToggle);
-        await user.click(screen.getByLabelText(frontend.metadata.name));
-        await user.click(screen.getByLabelText(backend.metadata.name));
-        await user.click(namespaceDropdownToggle);
+        await act(() => user.click(namespaceDropdownToggle));
+        await act(() => user.click(screen.getByLabelText(frontend.metadata.name)));
+        await act(() => user.click(screen.getByLabelText(backend.metadata.name)));
+        await act(() => user.click(namespaceDropdownToggle));
         expect(history.location.search).toMatch(new RegExp(`s\\[Cluster\\]\\[\\d\\]=production`));
         // Namespaces are tracked _by id_ in the URL, not name
         expect(history.location.search).toMatch(

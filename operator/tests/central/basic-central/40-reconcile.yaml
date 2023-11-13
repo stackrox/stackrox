@@ -5,4 +5,5 @@ metadata:
 spec:
   customize:
     annotations:
+      # Applying an annotation forces central pod re-creation and thus re-reading password.
       test-step: "40"

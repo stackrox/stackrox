@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,6 +24,12 @@ const (
 	batchAfter      = 100
 	cursorBatchSize = 50
 	deleteBatchSize = 5000
+
+	// MaxBatchSize sets the maximum number of elements in a batch.
+	// Using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	MaxBatchSize = 10000
 )
 
 var (
@@ -72,15 +78,25 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	targetResource permissions.ResourceMetadata,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
-		db:                               db,
-		schema:                           schema,
-		pkGetter:                         pkGetter,
-		insertInto:                       insertInto,
-		copyFromObj:                      copyFromObj,
-		setAcquireDBConnDuration:         setAcquireDBConnDuration,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		upsertAllowed:                    upsertAllowed,
-		targetResource:                   targetResource,
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		upsertAllowed:  upsertAllowed,
+		targetResource: targetResource,
 	}
 }
 

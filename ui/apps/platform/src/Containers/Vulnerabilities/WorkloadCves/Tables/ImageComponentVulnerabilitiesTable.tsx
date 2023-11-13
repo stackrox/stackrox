@@ -28,6 +28,7 @@ export const imageComponentVulnerabilitiesFragment = gql`
             vulnerabilityId: id
             severity
             fixedByVersion
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;

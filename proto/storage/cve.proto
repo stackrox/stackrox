@@ -126,9 +126,9 @@ message ImageCVE {
     VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];
     float                     impact_score          = 6 [(gogoproto.moretags) = 'search:"Impact Score"'];
 
-    bool                      snoozed               = 7 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
-    google.protobuf.Timestamp snooze_start          = 8;
-    google.protobuf.Timestamp snooze_expiry         = 9 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+    bool                      snoozed               = 7 [deprecated=true, (gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 8 [deprecated=true];
+    google.protobuf.Timestamp snooze_expiry         = 9 [deprecated=true, (gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
 }
 
 message NodeCVE {

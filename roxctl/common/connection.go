@@ -20,8 +20,18 @@ import (
 	"google.golang.org/grpc"
 )
 
+// GRPCOption encodes behavior of a gRPC connection.
+type GRPCOption func(*grpcConfig)
+
+// WithRetryTimeout sets a retry timeout for the gRPC connection.
+func WithRetryTimeout(timeout time.Duration) GRPCOption {
+	return func(config *grpcConfig) {
+		config.retryTimeout = timeout
+	}
+}
+
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(am auth.Method, logger logger.Logger) (*grpc.ClientConn, error) {
+func GetGRPCConnection(am auth.Method, logger logger.Logger, connectionOpts ...GRPCOption) (*grpc.ClientConn, error) {
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
@@ -30,21 +40,27 @@ func GetGRPCConnection(am auth.Method, logger logger.Logger) (*grpc.ClientConn, 
 	if err != nil {
 		return nil, errors.Wrapf(err, "obtaining auth information for %s", endpoint)
 	}
-	opts, err := getOpts(logger)
+	clientOpts, err := getClientOpts(logger)
 	if err != nil {
 		return nil, err
 	}
-	opts.PerRPCCreds = perRPCCreds
+	clientOpts.PerRPCCreds = perRPCCreds
 
-	return createGRPCConn(grpcConfig{
+	config := grpcConfig{
 		usePlaintext:  usePlaintext,
 		insecure:      flags.UseInsecure(),
-		opts:          opts,
+		opts:          clientOpts,
 		serverName:    serverName,
 		useDirectGRPC: flags.UseDirectGRPC(),
 		forceHTTP1:    flags.ForceHTTP1(),
 		endpoint:      endpoint,
-	})
+	}
+
+	for _, opt := range connectionOpts {
+		opt(&config)
+	}
+
+	return createGRPCConn(config)
 }
 
 type grpcConfig struct {
@@ -55,6 +71,7 @@ type grpcConfig struct {
 	useDirectGRPC bool
 	forceHTTP1    bool
 	endpoint      string
+	retryTimeout  time.Duration
 }
 
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
@@ -63,6 +80,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(initialBackoffDuration)),
 		// First retry after 100ms, last retry after 51.2s.
 		grpc_retry.WithMax(10),
+		grpc_retry.WithPerRetryTimeout(c.retryTimeout),
 	}
 
 	grpcDialOpts := []grpc.DialOption{
@@ -103,7 +121,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 	return connection, errors.WithStack(err)
 }
 
-func getOpts(logger logger.Logger) (clientconn.Options, error) {
+func getClientOpts(logger logger.Logger) (clientconn.Options, error) {
 	tlsOpts, err := tlsConfigOptsForCentral(logger)
 	if err != nil {
 		return clientconn.Options{}, err

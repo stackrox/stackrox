@@ -15,7 +15,4 @@ runs:
           /github/home/.cache/yarn
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-        key: npm-v2-${{ hashFiles(inputs.lockFile) }}-${{ github.job }}
-        restore-keys: |
-          npm-v2-${{ hashFiles(inputs.lockFile) }}-${{ github.job }}
-          npm-v2-${{ hashFiles(inputs.lockFile) }}-
+        key: npm-v2-${{ hashFiles(inputs.lockFile) }}

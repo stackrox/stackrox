@@ -65,14 +65,15 @@ type config struct {
 	SourceID       string `json:"sourceID"`
 }
 
-func (c config) validate() error {
-	if c.ServiceAccount == "" {
+// Validate Cscc notifier
+func Validate(cscc *storage.CSCC, validateSecret bool) error {
+	if validateSecret && cscc.ServiceAccount == "" {
 		return errors.New("serviceAccount must be defined in the Cloud SCC Configuration")
 	}
-	if c.SourceID == "" {
+	if cscc.SourceId == "" {
 		return errors.New("sourceID must be defined in the Cloud SCC Configuration")
 	}
-	if err := client.ValidateSourceID(c.SourceID); err != nil {
+	if err := client.ValidateSourceID(cscc.SourceId); err != nil {
 		return err
 	}
 	return nil
@@ -257,11 +258,10 @@ func (c *cscc) initFinding(_ context.Context, alert *storage.Alert, clusterDatas
 }
 
 func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*cscc, error) {
-	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
-	if !ok {
-		return nil, errors.New("Cloud SCC config is required")
+	conf := protoNotifier.GetCscc()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
+		return nil, err
 	}
-	conf := csccConfig.Cscc
 
 	decCreds := conf.ServiceAccount
 	var err error
@@ -278,10 +278,6 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	cfg := &config{
 		ServiceAccount: decCreds,
 		SourceID:       conf.SourceId,
-	}
-
-	if err := cfg.validate(); err != nil {
-		return nil, err
 	}
 	return &cscc{
 		Notifier: protoNotifier,

@@ -31,23 +31,23 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	unresolvedAlerts      []*storage.ListAlert
-	networkPolicies       map[string]*storage.NetworkPolicy
-	networkGraph          *v1.NetworkGraph
-	policies              map[string]*storage.Policy
-	images                []*storage.ListImage
-	imageIntegrations     []*storage.ImageIntegration
-	registries            []framework.ImageMatcher
-	scanners              []framework.ImageMatcher
-	sshProcessIndicators  []*storage.ProcessIndicator
-	hasProcessIndicators  bool
-	networkFlows          []*storage.NetworkFlow
-	notifiers             []*storage.Notifier
-	roles                 []*storage.K8SRole
-	bindings              []*storage.K8SRoleBinding
-	cisDockerRunCheck     bool
-	cisKubernetesRunCheck bool
-	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
+	unresolvedAlerts             []*storage.ListAlert
+	networkPolicies              map[string]*storage.NetworkPolicy
+	deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy
+	policies                     map[string]*storage.Policy
+	images                       []*storage.ListImage
+	imageIntegrations            []*storage.ImageIntegration
+	registries                   []framework.ImageMatcher
+	scanners                     []framework.ImageMatcher
+	sshProcessIndicators         []*storage.ProcessIndicator
+	hasProcessIndicators         bool
+	networkFlows                 []*storage.NetworkFlow
+	notifiers                    []*storage.Notifier
+	roles                        []*storage.K8SRole
+	bindings                     []*storage.K8SRoleBinding
+	cisDockerRunCheck            bool
+	cisKubernetesRunCheck        bool
+	categoryToPolicies           map[string]set.StringSet // maps categories to policy set
 
 	complianceOperatorResults map[string][]*storage.ComplianceOperatorCheckResult
 
@@ -72,8 +72,8 @@ func (r *repository) NetworkPolicies() map[string]*storage.NetworkPolicy {
 	return r.networkPolicies
 }
 
-func (r *repository) NetworkGraph() *v1.NetworkGraph {
-	return r.networkGraph
+func (r *repository) DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy {
+	return r.deploymentsToNetworkPolicies
 }
 
 func (r *repository) Policies() map[string]*storage.Policy {
@@ -228,7 +228,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		networkTree = f.netTreeMgr.CreateNetworkTree(ctx, clusterID)
 	}
 
-	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, nil, deployments, networkTree, networkPolicies, false)
+	r.deploymentsToNetworkPolicies = f.networkGraphEvaluator.GetApplyingPoliciesPerDeployment(deployments, networkTree, networkPolicies)
 
 	policies, err := f.policyStore.GetAllPolicies(ctx)
 	if err != nil {

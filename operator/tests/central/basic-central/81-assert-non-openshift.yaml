@@ -5,13 +5,8 @@ testRunSelector:
   matchLabels:
     openshift: "false"
 ---
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-collectors:
-- type: pod
-  selector: app=central
-  tail: -1
----
+# Assert only things specific to this step.
+# General sanity is asserted by the assert-common file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -44,5 +39,3 @@ spec:
                 secretKeyRef:
                   key: NO_PROXY
                   name: central-stackrox-central-services-proxy-env
-status:
-  availableReplicas: 1
