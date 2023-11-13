@@ -33,7 +33,8 @@ spec:
   #- name: hermetic
   #  value: "true"
   - name: prefetch-input
-    value: '{"type": "npm", "path": "image/rhel/rhtap-bootstrap-yarn"}'
+    value: ''
+    #value: '{"type": "npm", "path": "image/rhel/rhtap-bootstrap-yarn"}'
   pipelineSpec:
     finally:
     - name: show-sbom
