@@ -36,6 +36,9 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
+  # No language dependencies are required for central-db image.
+  - name: prefetch-input
+    value: ''
 
   workspaces:
   - name: workspace
@@ -189,6 +192,11 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      # A shallow repo clone is sufficient for central-db build.
+      - name: depth
+        value: "1"
+      - name: fetchTags
+        value: "false"
       runAfter:
       - init
       taskRef:
@@ -225,10 +233,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace
