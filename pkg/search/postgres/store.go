@@ -635,6 +635,9 @@ func (s *GenericStore[T, PT]) doDBWalk(ctx context.Context, walkFn func(PT) erro
 }
 
 func (s *GenericStore[T, PT]) resetCache(ctx context.Context) {
+	if !s.useCache {
+		return
+	}
 	s.cacheLock.Lock()
 	defer s.cacheLock.Unlock()
 	unrestrictedCtx := sac.WithAllAccess(ctx)
@@ -646,6 +649,9 @@ func (s *GenericStore[T, PT]) resetCache(ctx context.Context) {
 }
 
 func (s *GenericStore[T, PT]) pushManyToCache(objs []PT) {
+	if !s.useCache {
+		return
+	}
 	s.cacheLock.Lock()
 	defer s.cacheLock.Unlock()
 	for _, obj := range objs {
@@ -654,6 +660,9 @@ func (s *GenericStore[T, PT]) pushManyToCache(objs []PT) {
 }
 
 func (s *GenericStore[T, PT]) pushToCache(obj PT) {
+	if !s.useCache {
+		return
+	}
 	s.cacheLock.Lock()
 	defer s.cacheLock.Unlock()
 	s.cache[s.pkGetter(obj)] = obj
@@ -664,6 +673,9 @@ func (s *GenericStore[T, PT]) pushToCacheNoLock(obj PT) {
 }
 
 func (s *GenericStore[T, PT]) removeManyFromCache(ids []string) {
+	if !s.useCache {
+		return
+	}
 	s.cacheLock.Lock()
 	defer s.cacheLock.Unlock()
 	for _, id := range ids {
@@ -672,9 +684,12 @@ func (s *GenericStore[T, PT]) removeManyFromCache(ids []string) {
 }
 
 func (s *GenericStore[T, PT]) removeFromCache(id string) {
+	if !s.useCache {
+		return
+	}
 	s.cacheLock.Lock()
 	defer s.cacheLock.Unlock()
-	delete(s.cache, id)
+	s.removeFromCacheNoLock(id)
 }
 
 func (s *GenericStore[T, PT]) removeFromCacheNoLock(id string) {
@@ -682,6 +697,9 @@ func (s *GenericStore[T, PT]) removeFromCacheNoLock(id string) {
 }
 
 func (s *GenericStore[T, PT]) getFromCache(ctx context.Context, id string) (PT, bool, error) {
+	if !s.useCache {
+		return nil, false, nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	val, found := s.cache[id]
@@ -690,6 +708,13 @@ func (s *GenericStore[T, PT]) getFromCache(ctx context.Context, id string) (PT, 
 }
 
 func (s *GenericStore[T, PT]) getManyFromCache(ctx context.Context, identifiers []string) ([]PT, []int, error) {
+	if !s.useCache {
+		missed := make([]int, 0, len(identifiers))
+		for ix := range identifiers {
+			missed = append(missed, ix)
+		}
+		return nil, missed, nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	results := make([]PT, 0, len(identifiers))
@@ -707,6 +732,9 @@ func (s *GenericStore[T, PT]) getManyFromCache(ctx context.Context, identifiers 
 }
 
 func (s *GenericStore[T, PT]) getIDsFromCache(ctx context.Context) ([]string, error) {
+	if !s.useCache {
+		return nil, nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	results := make([]string, 0, len(s.cache))
@@ -720,6 +748,9 @@ func (s *GenericStore[T, PT]) getIDsFromCache(ctx context.Context) ([]string, er
 }
 
 func (s *GenericStore[T, PT]) getAllFromCache(ctx context.Context) ([]PT, error) {
+	if !s.useCache {
+		return nil, nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	results := make([]PT, 0, len(s.cache))
@@ -733,6 +764,9 @@ func (s *GenericStore[T, PT]) getAllFromCache(ctx context.Context) ([]PT, error)
 }
 
 func (s *GenericStore[T, PT]) existsInCache(ctx context.Context, id string) (bool, error) {
+	if !s.useCache {
+		return false, nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	val, found := s.cache[id]
@@ -741,6 +775,9 @@ func (s *GenericStore[T, PT]) existsInCache(ctx context.Context, id string) (boo
 }
 
 func (s *GenericStore[T, PT]) walkCache(ctx context.Context, walkFn func(obj PT) error) error {
+	if !s.useCache {
+		return nil
+	}
 	s.cacheLock.RLock()
 	defer s.cacheLock.RUnlock()
 	for _, v := range s.cache {
@@ -756,6 +793,9 @@ func (s *GenericStore[T, PT]) walkCache(ctx context.Context, walkFn func(obj PT)
 }
 
 func (s *GenericStore[T, PT]) countFromCache(ctx context.Context) (int, error) {
+	if !s.useCache {
+		return 0, nil
+	}
 	count := 0
 	err := s.walkCache(ctx, func(_ PT) error {
 		count++
