@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
@@ -275,7 +276,12 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		case strings.HasPrefix(field, "type"):
 			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 			opts.ColumnType = typeName
-
+		case strings.HasPrefix(field, "flag"):
+			flag := stringutils.GetAfter(field, "=")
+			if _, ok := features.Flags[flag]; !ok {
+				log.Fatalf("Flag %s is not a valid feature flag", flag)
+			}
+			opts.Flag = flag
 		case field == "":
 		default:
 			// ignore for just right now
@@ -358,7 +364,6 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 		if opts.Ignored {
 			continue
 		}
-
 		searchOpts, derivedFields := getSearchOptions(ctx, structField.Tag.Get("search"))
 		field := Field{
 			Schema:              schema,
@@ -414,6 +419,7 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				Type:         elemType.String(),
 				TypeName:     elemType.Elem().Name(),
 				ObjectGetter: ctx.Getter(field.Name),
+				Flag:         opts.Flag,
 			}
 
 			// Take all the primary keys of the parent and copy them into the child schema

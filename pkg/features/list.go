@@ -75,4 +75,16 @@ var (
 
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", true)
+
+	// DeploymentVolumeSearch enables search on the volume fields of deployments
+	DeploymentVolumeSearch = registerFeature("Enables search on the volume fields of deployments", "ROX_DEPLOYMENT_VOLUME_SEARCH", false)
+
+	// DeploymentSecretSearch enables search on the secret fields of deployments
+	DeploymentSecretSearch = registerFeature("Enables search on the secret fields of deployments", "ROX_DEPLOYMENT_SECRET_SEARCH", false)
+
+	// DeploymentEnvvarSearch enables search on the secret fields of deployments
+	DeploymentEnvvarSearch = registerFeature("Enables search on the environment variable fields of deployments", "ROX_DEPLOYMENT_ENVVAR_SEARCH", false)
+
+	// SecretFileSearch enables search on the file fields of secrets
+	SecretFileSearch = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", false)
 )
