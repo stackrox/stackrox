@@ -12,7 +12,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
-	"honnef.co/go/tools/go/types/typeutil"
+	"golang.org/x/tools/go/types/typeutil"
 )
 
 // Analyzer is the analyzer.
