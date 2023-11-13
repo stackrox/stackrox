@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -113,9 +114,16 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				// Enhance sync with all the observed IDs
 				msg.GetEvent().GetSynced().UnchangedIds = unchangedIds
 				log.Infof("Sending synced signal to Central. Adding %d events as unchanged", len(unchangedIds))
-				metrics.SetResourcesSyncedUnchangedGauge(len(unchangedIds))
-				for i, str := range unchangedIds {
-					log.Debugf("unchangedIds[%d]: %s", i, str)
+
+				// Set metrics count for unchanged IDs
+				for i, key := range unchangedIds {
+					parts := strings.SplitN(key, ":", 2)
+					if len(parts) != 2 {
+						log.Warnf("unchangedIds has incorrect key format: %s", key)
+						continue
+					}
+					metrics.IncResourceSyncedStubID(parts[0])
+					log.Debugf("unchangedIds[%d]: %s", i, key)
 				}
 			}
 

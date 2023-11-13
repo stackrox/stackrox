@@ -132,6 +132,13 @@ var (
 		Help:      "A counter for the total number of typed k8s events processed by Sensor",
 	}, []string{"Action", "Resource"})
 
+	resourcesSyncedUnchaged = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resources_synced_unchanged",
+		Help:      "A gauge to track how many resources were sent in ResourcesSynced message as stub ids",
+	}, []string{"Resource"})
+
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -153,13 +160,6 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resolver_channel_size",
 		Help:      "A gauge to track the resolver channel size",
-	})
-
-	resourcesSyncedUnchaged = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "resources_synced_unchanged",
-		Help:      "A gauge to track how many resources were sent in ResourcesSynced message as stub ids",
 	})
 
 	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -239,9 +239,11 @@ func RegisterSensorIndicatorChannelFullCounter() {
 	sensorIndicatorChannelFullCounter.Inc()
 }
 
-// SetResourcesSyncedUnchangedGauge sets the number of resources synced transmitted in the last sync event
-func SetResourcesSyncedUnchangedGauge(value int) {
-	resourcesSyncedUnchaged.Set(float64(value))
+// IncResourceSyncedStubID sets the number of resources synced transmitted in the last sync event
+func IncResourceSyncedStubID(keyName string) {
+	resourcesSyncedUnchaged.With(prometheus.Labels{
+		"Resource": keyName,
+	}).Inc()
 }
 
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
