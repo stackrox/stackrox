@@ -35,6 +35,15 @@ describe('Workload CVE List deferral and false positive flows', () => {
         }
     });
 
+    after(() => {
+        if (
+            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
+        ) {
+            cancelAllCveExceptions();
+        }
+    });
+
     it('should disable multi-cve controls when no rows are selected', () => {
         visitWorkloadCveOverview();
         // Check that the select all checkbox is disabled
