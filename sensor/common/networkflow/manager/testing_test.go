@@ -38,6 +38,25 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
 
+func createManagerWithEntityStore(mockCtrl *gomock.Controller, eStore *clusterentities.Store) (*networkFlowManager, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
+	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
+	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	mgr := &networkFlowManager{
+		clusterEntities:   eStore,
+		externalSrcs:      mockExternalStore,
+		policyDetector:    mockDetector,
+		done:              concurrency.NewSignal(),
+		connectionsByHost: make(map[string]*hostConnections),
+		sensorUpdates:     make(chan *message.ExpiringMessage),
+		publicIPs:         newPublicIPsManager(),
+		centralReady:      concurrency.NewSignal(),
+		enricherTicker:    ticker,
+		finished:          &sync.WaitGroup{},
+	}
+	return mgr, mockExternalStore, mockDetector
+}
+
 type expectFn func()
 
 func (f expectFn) runIfSet() {
