@@ -3,7 +3,6 @@ import { Bullseye, Spinner, Button } from '@patternfly/react-core';
 
 import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
-import PageTitle from 'Components/PageTitle';
 import {
     getScanConfig,
     ComplianceScanConfigurationStatus,
@@ -91,7 +90,6 @@ function ScanConfigPage({
 
     return (
         <>
-            <PageTitle title="ScanConfig Management - ScanConfig" />
             {isLoading ? (
                 <Bullseye>
                     <Spinner isSVG />

@@ -10,47 +10,45 @@ export const scanConfigsPath = `${basePath}/scan-configs`;
 // visit helpers
 export const scanConfigsAlias = 'configurations';
 
-const routeMatcherMapToComplianceEnhancedDashboard = null;
+// TODO: (vjw, 13 Nov 2023) after the API endpoints for the dashboard are published,
+// we will add them to the routeMatcherMap here
+const routeMatcherMapForComplianceDashboard = null;
 
-const routeMatcherMapToComplianceEnhancedScanConfigs = {
+const routeMatcherMapForComplianceScanConfigs = {
     [scanConfigsAlias]: {
         method: 'GET',
         url: '/v2/compliance/scan/configurations*',
     },
 };
 
-export function visitComplianceEnhancedFromLeftNav() {
+export function visitComplianceEnhancedFromLeftNav(staticResponseMap) {
     visitFromLeftNavExpandable(
         'Compliance (2.0)',
         'Compliance Status',
-        routeMatcherMapToComplianceEnhancedDashboard
+        routeMatcherMapForComplianceDashboard,
+        staticResponseMap
     );
-
-    cy.location('pathname').should('eq', statusDashboardPath);
 }
 
-export function visitComplianceEnhancedDashboard() {
+export function visitComplianceEnhancedDashboard(staticResponseMap) {
     // TODO: (vjw, 1 Nov 2023) add routes matchers to this function, after API is available for Status
-    visit(basePath, routeMatcherMapToComplianceEnhancedDashboard);
-
-    cy.location('pathname').should('eq', statusDashboardPath);
+    visit(basePath, routeMatcherMapForComplianceDashboard, staticResponseMap);
     cy.get(`h1:contains("Compliance")`);
 }
 
-export function visitComplianceEnhancedScanConfigsFromLeftNav() {
+export function visitComplianceEnhancedScanConfigsFromLeftNav(staticResponseMap) {
     visitFromLeftNavExpandable(
         'Compliance (2.0)',
         'Scheduling',
-        routeMatcherMapToComplianceEnhancedScanConfigs
+        routeMatcherMapForComplianceScanConfigs,
+        staticResponseMap
     );
 
-    cy.location('pathname').should('eq', scanConfigsPath);
     cy.get(`h1:contains("Scan schedules")`);
 }
 
-export function visitComplianceEnhancedScanConfigs() {
-    // TODO: (vjw, 1 Nov 2023) add routes matchers to this function, after API is available for Status
-    visit(scanConfigsPath, routeMatcherMapToComplianceEnhancedDashboard);
+export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
+    visit(scanConfigsPath, routeMatcherMapForComplianceScanConfigs, staticResponseMap);
 
     cy.get(`h1:contains("Scan schedules")`);
 }

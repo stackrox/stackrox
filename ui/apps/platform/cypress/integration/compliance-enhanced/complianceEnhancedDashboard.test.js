@@ -6,6 +6,8 @@ import {
     visitComplianceEnhancedDashboard,
     visitComplianceEnhancedFromLeftNav,
     visitComplianceEnhancedScanConfigsFromLeftNav,
+    statusDashboardPath,
+    scanConfigsPath,
 } from './ComplianceEnhanced.helpers';
 
 describe('Compliance Dashboard', () => {
@@ -20,11 +22,15 @@ describe('Compliance Dashboard', () => {
     it('should visit using the left nav', () => {
         visitComplianceEnhancedFromLeftNav();
 
+        cy.location('pathname').should('eq', statusDashboardPath);
+
         cy.title().should('match', getRegExpForTitleWithBranding('Compliance Status Dashboard'));
     });
 
     it('should have expected elements on the status page', () => {
         visitComplianceEnhancedDashboard();
+
+        cy.location('pathname').should('eq', statusDashboardPath);
 
         cy.title().should('match', getRegExpForTitleWithBranding('Compliance Status Dashboard'));
 
@@ -41,13 +47,14 @@ describe('Compliance Dashboard', () => {
     it('should visit scan configurations scheduling from the left nav', () => {
         visitComplianceEnhancedScanConfigsFromLeftNav();
 
-        cy.title().should('match', getRegExpForTitleWithBranding('Scan Schedules'));
+        cy.location('pathname').should('eq', scanConfigsPath);
+        cy.title().should('match', getRegExpForTitleWithBranding('Compliance Scan Schedules'));
     });
 
     it('should have expected elements on the scans page', () => {
         visitComplianceEnhancedScanConfigsFromLeftNav();
 
-        cy.title().should('match', getRegExpForTitleWithBranding('Scan Schedules'));
+        cy.title().should('match', getRegExpForTitleWithBranding('Compliance Scan Schedules'));
 
         cy.get('th[scope="col"]:contains("Name")');
         cy.get('th[scope="col"]:contains("Schedule")');
