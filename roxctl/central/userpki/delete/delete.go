@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/central/userpki/list"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -28,13 +29,13 @@ type centralUserPkiDeleteCommand struct {
 	providerArg string
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
+	env          environment.Environment
+	timeout      time.Duration
+	retryTimeout time.Duration
 }
 
-// Command adds the userpki delete command
+// Command adds the userpki delete command.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-
 	c := &cobra.Command{
 		Use:   "delete id|name",
 		Short: "Delete a user certificate authentication provider.",
@@ -56,14 +57,16 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	flags.AddForce(c)
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }
 
 func makeCentralUserPkiDeleteCommand(cliEnvironment environment.Environment, cmd *cobra.Command, args []string) *centralUserPkiDeleteCommand {
 	return &centralUserPkiDeleteCommand{
-		providerArg: args[0],
-		env:         cliEnvironment,
-		timeout:     flags.Timeout(cmd),
+		providerArg:  args[0],
+		env:          cliEnvironment,
+		timeout:      flags.Timeout(cmd),
+		retryTimeout: flags.RetryTimeout(cmd),
 	}
 }
 
@@ -87,8 +90,7 @@ func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient
 }
 
 func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, error) {
-
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +126,6 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 		_, err := authService.DeleteAuthProvider(ctx, &v1.DeleteByIDWithForce{
 			Id: prov.GetId(),
 		})
-
 		if err != nil {
 			return err
 		}
@@ -144,7 +145,6 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 				PreviousGroups: relevantGroups,
 				RequiredGroups: nil,
 			})
-
 			if err != nil {
 				return err
 			}

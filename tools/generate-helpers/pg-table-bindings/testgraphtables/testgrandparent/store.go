@@ -22,11 +22,6 @@ import (
 const (
 	baseTable = "test_grandparents"
 	storeName = "TestGrandparent"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -159,6 +154,10 @@ func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage
 }
 
 func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.TestGrandparent) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -226,6 +225,10 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, objs ...*storage.TestGrandparent_Embedded) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -271,6 +274,10 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 }
 
 func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, testGrandparentID string, testGrandparentEmbeddedIdx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

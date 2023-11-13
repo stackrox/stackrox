@@ -38,9 +38,8 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
-  # TODO(ROX-20482): Enable dependencies prefetch
-  # - name: prefetch-input
-  #   value: '{"type": "gomod", "path": "."}'
+  - name: prefetch-input
+    value: '{"type": "gomod", "path": "."}'
 
   workspaces:
   - name: workspace
@@ -52,7 +51,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 10Gi
       status: { }
   - name: git-auth
     secret:
@@ -229,10 +228,6 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace

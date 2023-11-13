@@ -17,7 +17,7 @@ function DuplicatePolicyForm({
     // this creates a partially applied function to update the radio button value,
     //   and then notified the parent
     const changeRadio = useCallback(
-        (handler, name, value) => () => {
+        (handler: any, name: any, value: any) => () => {
             handler(name)(value);
             updateResolution(name, value);
         },
@@ -27,7 +27,7 @@ function DuplicatePolicyForm({
     // this creates a partially applied function to update a text value,
     //   and then notified the parent
     const changeText = useCallback(
-        (handler, name) => (value) => {
+        (handler: any, name: any) => (value) => {
             handler(name)(value);
             updateResolution(name, value);
         },

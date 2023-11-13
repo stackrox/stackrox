@@ -305,7 +305,7 @@ clean-proto-generated-srcs:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs
 
-deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
+deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
 
@@ -319,6 +319,7 @@ ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
+	$(SILENT)go mod download
 	$(SILENT)touch $@
 
 .PHONY: clean-deps

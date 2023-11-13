@@ -32,7 +32,7 @@ function ClustersPage(): ReactElement {
 
     // Handle changes to the currently selected deployment.
     const setSelectedClusterId = useCallback(
-        (newCluster) => {
+        (newCluster: any) => {
             const newClusterId = newCluster?.id || newCluster || '';
             const newWorkflowState = newClusterId
                 ? workflowState.pushRelatedEntity(entityTypes.CLUSTER, newClusterId)

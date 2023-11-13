@@ -260,7 +260,12 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                             />
                         </SplitItem>
                     </Split>
-                    <div className="workload-cves-table-container">
+                    <div
+                        className="workload-cves-table-container"
+                        role="region"
+                        aria-live="polite"
+                        aria-busy={loading ? 'true' : 'false'}
+                    >
                         <ImageVulnerabilitiesTable
                             image={vulnerabilityData.image}
                             getSortParams={getSortParams}

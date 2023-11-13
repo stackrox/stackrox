@@ -76,6 +76,10 @@ export const unfilteredImageCountQuery = gql`
     }
 `;
 
+export type CVEListQueryResult = {
+    imageCVEs: ImageCVE[];
+};
+
 type ImageCVE = {
     cve: string;
     affectedImageCountBySeverity: {

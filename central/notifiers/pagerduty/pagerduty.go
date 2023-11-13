@@ -55,12 +55,8 @@ type pagerDuty struct {
 }
 
 func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*pagerDuty, error) {
-	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
-	if !ok {
-		return nil, errors.New("PagerDuty configuration required")
-	}
-	conf := pagerDutyConfig.Pagerduty
-	if err := validate(conf); err != nil {
+	conf := notifier.GetPagerduty()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 
@@ -87,8 +83,9 @@ func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	}, nil
 }
 
-func validate(conf *storage.PagerDuty) error {
-	if len(conf.ApiKey) == 0 {
+// Validate PagerDuty notifier
+func Validate(conf *storage.PagerDuty, validateSecret bool) error {
+	if validateSecret && len(conf.ApiKey) == 0 {
 		return errors.New("PagerDuty API key must be specified")
 	}
 	return nil

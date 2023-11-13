@@ -58,6 +58,8 @@ export const selectors = {
     // Exception flow selectors
     deferCveModal: '*[role="dialog"]:contains("Request deferral for")',
     markCveFalsePositiveModal: '*[role="dialog"]:contains("Mark"):contains("as false positive")',
+    exceptionOptionsTab: 'button[role="tab"]:contains("Options")',
+    cveSelectionTab: 'button[role="tab"]:contains("CVE selections")',
 
     // Watched image selectors
     watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,

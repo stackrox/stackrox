@@ -26,11 +26,6 @@ import (
 const (
 	baseTable = "deployments"
 	storeName = "Deployment"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -316,6 +311,10 @@ func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.Port
 }
 
 func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Deployment) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -412,6 +411,10 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 }
 
 func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.Container) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -487,6 +490,10 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 }
 
 func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -530,6 +537,10 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 }
 
 func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.Volume) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -577,6 +588,10 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 }
 
 func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentContainerIdx int, objs ...*storage.EmbeddedSecret) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -618,6 +633,10 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 }
 
 func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, objs ...*storage.PortConfig) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -667,6 +686,10 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 }
 
 func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, deploymentID string, deploymentPortIdx int, objs ...*storage.PortConfig_ExposureInfo) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

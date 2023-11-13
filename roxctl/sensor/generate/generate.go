@@ -133,7 +133,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
 
 	id, err := s.createCluster(ctx, service)
-
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
 	if err != nil {

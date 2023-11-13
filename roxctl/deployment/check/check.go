@@ -275,7 +275,8 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logg
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out logger.Logger) {
+	out logger.Logger,
+) {
 	if amountViolatedPolicies == 0 {
 		return
 	}

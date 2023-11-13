@@ -1,7 +1,22 @@
+import { addDays, format } from 'date-fns';
+import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 
 const basePath = '/main/vulnerabilities/workload-cves/';
+
+export function getDateString(date) {
+    return format(date, 'MM/DD/YYYY');
+}
+
+/**
+ * Get a date in the future by a number of days
+ * @param {number} days
+ * @returns {Date}
+ */
+export function getFutureDateByDays(days) {
+    return addDays(new Date(), days);
+}
 
 export function visitWorkloadCveOverview() {
     visit(basePath);
@@ -107,6 +122,24 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
     ];
 }
 
+export function cancelAllCveExceptions() {
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
+
+    cy.get('@vulnExceptions').then((res) => {
+        res.body.exceptions.forEach(({ id, expired }) => {
+            if (!expired) {
+                cy.request({
+                    url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                    auth,
+                    method: 'POST',
+                });
+            }
+        });
+    });
+}
+
 /**
  * Selects the first CVE for the table and opens the exception modal
  * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
@@ -172,6 +205,65 @@ export function selectMultipleCvesForException(exceptionType) {
 
             return Promise.resolve(cveNames);
         });
+}
+
+export function verifySelectedCvesInModal(cveNames) {
+    cy.get(selectors.cveSelectionTab).click();
+
+    cveNames.forEach((cve) => {
+        cy.get(`*[role="dialog"] a:contains("${cve}")`);
+    });
+}
+
+export function visitAnyImageSinglePage() {
+    visitWorkloadCveOverview();
+    selectEntityTab('Image');
+    cy.get('tbody tr td[data-label="Image"] a').first().click();
+
+    return cy.get('h1').then(($h1) => {
+        return $h1.text().split(':');
+    });
+}
+
+/**
+ * Fill out the exception form and submit it
+ * @param {Object} param
+ * @param {string} param.comment
+ * @param {string=} param.scopeLabel
+ * @param {string=} param.expiryLabel
+ */
+export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }) {
+    cy.get(selectors.exceptionOptionsTab).click();
+    if (expiryLabel) {
+        cy.get(`label:contains('${expiryLabel}')`).click();
+    }
+    if (scopeLabel) {
+        cy.get(`label:contains('${scopeLabel}')`).click();
+    }
+    cy.get('textarea[name="comment"]').type(comment);
+    cy.get('button:contains("Submit request")').click();
+    cy.get('header').contains(/Request .* has been submitted/);
+}
+
+/**
+ * Verify that the confirmation details for an exception are correct
+ * @param {Object} params
+ * @param {('Deferral' | 'False positive')} params.expectedAction
+ * @param {string[]} params.cves
+ * @param {string} params.scope
+ * @param {string=} params.expiry
+ */
+export function verifyExceptionConfirmationDetails(params) {
+    const { expectedAction, cves, scope, expiry } = params;
+    getDescriptionListGroup('Requested action', expectedAction);
+    getDescriptionListGroup('Requested', getDateString(new Date()));
+    getDescriptionListGroup('CVEs', String(cves.length));
+    if (expiry) {
+        getDescriptionListGroup('Expires', expiry);
+    }
+    if (scope) {
+        getDescriptionListGroup('Scope', scope);
+    }
 }
 
 /**

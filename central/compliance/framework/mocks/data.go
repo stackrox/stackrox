@@ -12,7 +12,6 @@ import (
 	reflect "reflect"
 
 	framework "github.com/stackrox/rox/central/compliance/framework"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
@@ -135,6 +134,20 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
 }
 
+// DeploymentsToNetworkPolicies mocks base method.
+func (m *MockComplianceDataRepository) DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeploymentsToNetworkPolicies")
+	ret0, _ := ret[0].(map[string][]*storage.NetworkPolicy)
+	return ret0
+}
+
+// DeploymentsToNetworkPolicies indicates an expected call of DeploymentsToNetworkPolicies.
+func (mr *MockComplianceDataRepositoryMockRecorder) DeploymentsToNetworkPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentsToNetworkPolicies", reflect.TypeOf((*MockComplianceDataRepository)(nil).DeploymentsToNetworkPolicies))
+}
+
 // HasProcessIndicators mocks base method.
 func (m *MockComplianceDataRepository) HasProcessIndicators() bool {
 	m.ctrl.T.Helper()
@@ -231,20 +244,6 @@ func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
 func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
-}
-
-// NetworkGraph mocks base method.
-func (m *MockComplianceDataRepository) NetworkGraph() *v1.NetworkGraph {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkGraph")
-	ret0, _ := ret[0].(*v1.NetworkGraph)
-	return ret0
-}
-
-// NetworkGraph indicates an expected call of NetworkGraph.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkGraph() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkGraph", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkGraph))
 }
 
 // NetworkPolicies mocks base method.

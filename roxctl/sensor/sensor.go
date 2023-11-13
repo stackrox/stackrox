@@ -21,5 +21,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		generatecerts.Command(cliEnvironment),
 	)
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }

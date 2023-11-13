@@ -181,7 +181,6 @@ func (i *imageCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
 // provided values
 func (i *imageCheckCommand) Validate() error {
-
 	// TODO: remove this once we have fully deprecated the old output format
 	// Only print warnings specific to old --json format when no printer is created
 	if i.objectPrinter == nil {
@@ -306,7 +305,8 @@ func printPolicySummary(image string, numOfPolicyViolations map[string]int, out 
 // policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
 // and if there are any failed policies
 func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int,
-	out logger.Logger) {
+	out logger.Logger,
+) {
 	if numTotalViolatedPolicies == 0 {
 		return
 	}

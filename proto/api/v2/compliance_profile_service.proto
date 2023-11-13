@@ -27,13 +27,13 @@ message ComplianceRule {
 message ComplianceProfile {
     string                        id                = 1;
     string                        name              = 2;
-    string                        operator_version  = 3;
-    string                        profile_version   = 4;
-    repeated string               product_type      = 5;
-    string                        standard          = 6;
-    string                        description       = 7;
-    repeated ComplianceRule       rules             = 8;
-    string                        product           = 9;
+    string                        profile_version   = 3;
+    repeated string               product_type      = 4;
+    string                        standard          = 5;
+    string                        description       = 6;
+    repeated ComplianceRule       rules             = 7;
+    string                        product           = 8;
+    string                        title             = 9;
 }
 
 message ListComplianceProfilesResponse {

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/central/notifiers/splunk"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
+	"github.com/stackrox/rox/central/notifiers/validation"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -138,6 +139,9 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, errors.Wrapf(errox.InvalidArgs, "notifier type %v is not a valid notifier type", request.GetNotifier().GetType())
 	}
 	upgradeNotifierConfig(request.GetNotifier())
+	if err := validation.ValidateNotifierConfig(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
 	if request.GetUpdatePassword() {
 		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
@@ -165,6 +169,9 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
+	if err := validation.ValidateNotifierConfig(request, true); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
 	_, err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
 		// Don't send out error from crypto lib
@@ -195,6 +202,9 @@ func (s *serviceImpl) TestNotifier(ctx context.Context, notifier *storage.Notifi
 // TestUpdatedNotifier tests to see if the config is setup properly
 func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.UpdateNotifierRequest) (*v1.Empty, error) {
 	if err := validateNotifier(request.GetNotifier()); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	if err := validation.ValidateNotifierConfig(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {

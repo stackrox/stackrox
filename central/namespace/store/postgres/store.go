@@ -26,11 +26,6 @@ import (
 const (
 	baseTable = "namespaces"
 	storeName = "NamespaceMetadata"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -131,6 +126,10 @@ func insertIntoNamespaces(batch *pgx.Batch, obj *storage.NamespaceMetadata) erro
 }
 
 func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NamespaceMetadata) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
