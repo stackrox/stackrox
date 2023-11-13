@@ -13,6 +13,8 @@ import { kebabCase } from 'lodash';
 
 import { Descriptor } from './policyCriteriaDescriptors';
 
+import './PolicyCriteriaModal.css';
+
 function getEmptyPolicyFieldCard(field) {
     const defaultValue = field.defaultValue !== undefined ? field.defaultValue : '';
     return {
@@ -106,7 +108,8 @@ function PolicyCriteriaModal({
                             activeItems={activeItems}
                             data={treeList}
                             onSelect={onSelect}
-                            variant="compact"
+                            variant="compactNoBackground"
+                            hasGuides
                             allExpanded={allExpanded}
                         />
                     </FlexItem>
