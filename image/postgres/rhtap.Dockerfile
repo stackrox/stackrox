@@ -2,7 +2,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as builder
 
 COPY . /stackrox
 
-FROM registry.redhat.io/rhel8/postgresql-13 as final
+FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
 
 USER root
 
