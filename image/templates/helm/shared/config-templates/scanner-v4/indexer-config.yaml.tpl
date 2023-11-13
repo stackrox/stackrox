@@ -18,8 +18,9 @@ indexer:
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.statementTimeoutMs) -}} statement_timeout={{._rox.scannerV4.db.source.statementTimeoutMs}} {{- end }}
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.minConns) -}} pool_min_conns={{._rox.scannerV4.db.source.minConns}} {{- end }}
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
+      client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
   get_layer_timeout: 1m
 matcher:
   enable: false
-log_level: debug
+log_level: info

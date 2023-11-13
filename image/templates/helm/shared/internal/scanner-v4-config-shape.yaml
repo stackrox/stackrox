@@ -51,7 +51,7 @@ scannerV4:
     source:
       minConns: null # int
       maxConns: null # int
-      statementTimeoutMs: null #int
+      statementTimeoutMs: null # int
     configOverride: null # string
     password:
       value: null # string

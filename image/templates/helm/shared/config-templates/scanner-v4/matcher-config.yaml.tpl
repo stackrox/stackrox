@@ -16,10 +16,10 @@ matcher:
       port=5432
       sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
       user=postgres
-      sslmode={{- if eq .Release.Namespace "stackrox" -}} verify-full {{- else -}} verify-ca {{- end }}
+      sslmode=verify-full
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.statementTimeoutMs) -}} statement_timeout={{._rox.scannerV4.db.source.statementTimeoutMs}} {{- end }}
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.minConns) -}} pool_min_conns={{._rox.scannerV4.db.source.minConns}} {{- end }}
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
+      client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
-  get_layer_timeout: 1m
 log_level: debug

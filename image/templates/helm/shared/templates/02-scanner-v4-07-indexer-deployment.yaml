@@ -75,7 +75,7 @@ spec:
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-indexer" "scanner-v4-indexer") | nindent 8 }}
         resources:
           {{- ._rox.scannerV4.indexer._resources | nindent 10 }}
-        command: # ["/bin/bash", "-c", "sleep 1000"]
+        command:
         - /entrypoint.sh
         - --conf=/etc/scanner/config.yaml
         ports:

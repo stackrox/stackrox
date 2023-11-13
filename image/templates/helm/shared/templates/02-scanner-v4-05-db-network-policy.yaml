@@ -14,6 +14,7 @@ spec:
     matchLabels:
       app: scanner-v4-db
   ingress:
+{{- if ._rox.scannerV4._indexerEnabled }}
   - from:
     - podSelector:
         matchLabels:
@@ -21,6 +22,8 @@ spec:
     ports:
     - port: 5432
       protocol: TCP
+{{- end }}
+{{- if ._rox.scannerV4._matcherEnabled }}
   - from:
     - podSelector:
         matchLabels:
@@ -30,4 +33,5 @@ spec:
       protocol: TCP
   policyTypes:
   - Ingress
+{{- end }}
 {{- end }}
