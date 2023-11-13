@@ -51,7 +51,7 @@ all: images
 ###############################################################
 
 OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN): | build-go-check-ver
+$(OSSLS_BIN):
 	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
 
@@ -87,7 +87,7 @@ $(build-t): $(build-deps-t)
 	@echo "+ $@"
 	$(build-cmd) -o $@ ./cmd/$(@F)
 
-$(build-deps-t): ../go.mod | build-go-check-ver
+$(build-deps-t): ../go.mod
 	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
@@ -98,15 +98,6 @@ ifdef CI
 endif
 	$(SILENT)go mod verify
 	$(SILENT)touch $@
-
-.PHONY: build-go-check-ver
-build-go-check-ver:
-ifdef CI
-	@echo "+ $@"
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
-endif
 
 ############
 ## Images ##
