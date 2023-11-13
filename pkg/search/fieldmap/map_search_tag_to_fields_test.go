@@ -20,9 +20,9 @@ type nestedFirst struct {
 }
 
 type testObj struct {
-	A             int           `search:"A" protobuf:"blah"`
-	Nested        []nestedFirst `protobuf:"blah"`
-	NestedIgnored nestedIgnored `protobuf:"blah" search:"-"`
+	A             int            `search:"A" protobuf:"blah"`
+	Nested        []*nestedFirst `protobuf:"blah"`
+	NestedIgnored *nestedIgnored `protobuf:"blah" search:"-"`
 }
 
 func fieldPathToPath(path FieldPath) []string {
