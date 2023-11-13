@@ -13,7 +13,7 @@ import (
 
 const (
 	encryptionKeyFile      = "/run/secrets/stackrox.io/central-encryption-key/encryption-key"
-	encryptionKeyChainFile = "/run/secrets/stackrox.io/central-encryption-key-chain/key-chain"
+	encryptionKeyChainFile = "/run/secrets/stackrox.io/central-encryption-key-chain/key-chain.yaml"
 )
 
 // KeyChain contains the keychain for notifier crypto
