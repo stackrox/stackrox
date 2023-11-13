@@ -583,6 +583,15 @@ func init() {
 		if err != nil {
 			utils.CrashOnError(err)
 		}
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+		cryptoKeyChain, err := notifierUtils.GetNotifierEncryptionKeyChain()
+		if err != nil {
+			log.Errorf("Error getting notifier encryption keychain: %v", err)
+		}
+		log.Infof("Notifier encryption keychain: %v", cryptoKeyChain)
 	}
 	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		e, err := newEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
