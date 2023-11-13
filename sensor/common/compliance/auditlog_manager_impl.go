@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultInterval = 1 * time.Millisecond
+	defaultInterval = 1 * time.Minute
 )
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
