@@ -155,6 +155,8 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 // Walk iterates over all the objects in the store and applies the closure.
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
+
 	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return err
