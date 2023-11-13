@@ -160,7 +160,8 @@ func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
 	// Convert every expected package found in the report, or convert an empty
 	// package if not found.
 	var ret []Feature
-	for _, f := range tc.Features {
+	for idx, _ := range tc.Features {
+		f := &tc.Features[idx]
 		versions, nameFound := pkgs[f.Name]
 		var p *v4.Package
 		if nameFound {
@@ -177,7 +178,7 @@ func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
 			Name:            p.GetName(),
 			NamespaceName:   mapNamespace(vr),
 			Version:         p.GetVersion(),
-			Vulnerabilities: tc.mapFillVulns(vr, p, &f),
+			Vulnerabilities: tc.mapFillVulns(vr, p, f),
 			// TODO Pending fields not currently available in the vulnerability report.
 			VersionFormat: f.VersionFormat,
 			AddedBy:       f.AddedBy,
@@ -197,7 +198,8 @@ func (tc *TestCase) mapFillVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, fe
 	}
 	// Convert all package vulnerabilities.
 	var vulns []Vulnerability
-	for _, featVuln := range feat.Vulnerabilities {
+	for idx, _ := range feat.Vulnerabilities {
+		featVuln := &feat.Vulnerabilities[idx]
 		// If not found, convert an empty vulnerability case.
 		v, ok := vrVulns[featVuln.Name]
 		if !ok {
@@ -206,7 +208,7 @@ func (tc *TestCase) mapFillVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, fe
 			// Delete from map, so we can check the remaining items.
 			delete(vrVulns, featVuln.Name)
 		}
-		vulns = append(vulns, tc.mapFillVuln(v, &featVuln))
+		vulns = append(vulns, tc.mapFillVuln(v, featVuln))
 	}
 	if !tc.OnlyCheckSpecifiedVulns {
 		// Add the remaining vulnerabilities.
