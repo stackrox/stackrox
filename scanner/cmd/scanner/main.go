@@ -208,7 +208,7 @@ func getServices(b *Backends) []grpc.APIService {
 		// local indexer. A nil getter is ok, see implementation.
 		var getter indexer.ReportGetter
 		getter = b.RemoteIndexer
-		if getter != nil {
+		if getter == nil {
 			getter = b.Indexer
 		}
 		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter))
