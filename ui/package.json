@@ -6,8 +6,8 @@
     "private": true,
     "workspaces": {
         "packages": [
-            "packages/*",
-            "apps/*"
+            "packages/tailwind-config",
+            "apps/platform"
         ],
         "nohoist": [
             "**/mocha-multi-reporters",
