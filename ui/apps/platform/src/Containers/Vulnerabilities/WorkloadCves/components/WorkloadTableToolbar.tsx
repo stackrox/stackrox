@@ -7,11 +7,15 @@ import { SearchFilter } from 'types/search';
 import { Globe } from 'react-feather';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { SearchOption } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { DefaultFilters } from '../types';
 import FilterAutocomplete, {
     FilterAutocompleteSelectProps,
 } from '../../components/FilterAutocomplete';
 import CVESeverityDropdown from './CVESeverityDropdown';
+import CVEStatusDropdown from './CVEStatusDropdown';
+
+import './WorkloadTableToolbar.css';
 
 type FilterChipProps = {
     isGlobal?: boolean;
@@ -49,6 +53,9 @@ function WorkloadTableToolbar({
     autocompleteSearchContext,
     onFilterChange = noop,
 }: WorkloadTableToolbarProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
+
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     function onChangeSearchFilter(newFilter: SearchFilter) {
@@ -76,8 +83,54 @@ function WorkloadTableToolbar({
         }
     }
 
+    const filterChipGroupDescriptors = [
+        {
+            displayName: 'Deployment',
+            searchFilterName: 'DEPLOYMENT',
+        },
+        {
+            displayName: 'CVE',
+            searchFilterName: 'CVE',
+        },
+        {
+            displayName: 'Image',
+            searchFilterName: 'IMAGE',
+        },
+        {
+            displayName: 'Namespace',
+            searchFilterName: 'NAMESPACE',
+        },
+        {
+            displayName: 'Cluster',
+            searchFilterName: 'CLUSTER',
+        },
+        {
+            displayName: 'Severity',
+            searchFilterName: 'Severity',
+            render: (filter: string) => (
+                <FilterChip
+                    isGlobal={defaultFilters.Severity?.some((severity) => severity === filter)}
+                    name={filter}
+                />
+            ),
+        },
+    ];
+
+    if (isFixabilityFiltersEnabled) {
+        filterChipGroupDescriptors.push({
+            displayName: 'Fixable',
+            searchFilterName: 'Fixable',
+            render: (filter: string) => (
+                <FilterChip
+                    isGlobal={defaultFilters.Fixable?.some((fixability) => fixability === filter)}
+                    name={filter}
+                />
+            ),
+        });
+    }
+
     return (
-        <Toolbar>
+        <Toolbar className="workload-table-toolbar">
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
@@ -87,45 +140,14 @@ function WorkloadTableToolbar({
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
-                    {/* CVEStatusDropdown is disabled until fixability filters are fixed */}
+                    {isFixabilityFiltersEnabled && (
+                        <CVEStatusDropdown searchFilter={searchFilter} onSelect={onSelect} />
+                    )}
                 </ToolbarGroup>
                 <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
                     <SearchFilterChips
                         onFilterChange={onFilterChange}
-                        filterChipGroupDescriptors={[
-                            {
-                                displayName: 'Deployment',
-                                searchFilterName: 'DEPLOYMENT',
-                            },
-                            {
-                                displayName: 'CVE',
-                                searchFilterName: 'CVE',
-                            },
-                            {
-                                displayName: 'Image',
-                                searchFilterName: 'IMAGE',
-                            },
-                            {
-                                displayName: 'Namespace',
-                                searchFilterName: 'NAMESPACE',
-                            },
-                            {
-                                displayName: 'Cluster',
-                                searchFilterName: 'CLUSTER',
-                            },
-                            {
-                                displayName: 'Severity',
-                                searchFilterName: 'Severity',
-                                render: (filter: string) => (
-                                    <FilterChip
-                                        isGlobal={defaultFilters.Severity?.includes(
-                                            filter as VulnerabilitySeverityLabel
-                                        )}
-                                        name={filter}
-                                    />
-                                ),
-                            },
-                        ]}
+                        filterChipGroupDescriptors={filterChipGroupDescriptors}
                     />
                 </ToolbarGroup>
             </ToolbarContent>

@@ -5,7 +5,6 @@ The container image scanner.  Built with [ClairCore](https://github.com/quay/cla
 ## Development
 
 It is recommended to use the [EXPECTED_GO_VERSION](../EXPECTED_GO_VERSION), but this is not enforced for development.
-It is, however, enforced in CI.
 
 ### Running locally
 

@@ -30,7 +30,7 @@ export type RequesterProps = {
     requester: VulnerabilityException['requester'];
 };
 export function Requester({ requester }: RequesterProps) {
-    return <div>{requester.name}</div>;
+    return <div>{requester?.name || '-'}</div>;
 }
 
 export type RequestedActionProps = {
