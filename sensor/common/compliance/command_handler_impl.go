@@ -199,7 +199,7 @@ func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {
 				c.sendUpdate(update)
 			}
 		} else {
-			log.Debug("sendUpdate() called while in offline mode, ScrapeUpdate discarded.")
+			log.Debug("sendUpdate() called while in offline mode, ScrapeUpdate discarded")
 		}
 	}
 }

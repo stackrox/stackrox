@@ -40,12 +40,12 @@ func initialize() {
 
 	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)
 	utils.CrashOnError(err)
-	log.Infof("Injecting %d policies into detectors.", len(policies))
+	log.Infof("Injecting %d policies into detectors", len(policies))
 	for _, policy := range policies {
 		err = manager.UpsertPolicy(policy)
 		utils.Should(errors.Wrap(err, "could not inject policy"))
 	}
-	log.Info("Done injecting policies.")
+	log.Info("Done injecting policies")
 
 	go manager.buildIndicatorFilter()
 }

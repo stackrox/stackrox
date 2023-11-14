@@ -77,5 +77,5 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (h *handler) OnWatchError(err error) {
-	log.Errorf("Error watching TLS certificate directory %q: %v. Not updating TLS certificates!", h.dir, err)
+	log.Errorf("Error watching TLS certificate directory %q: %v. Not updating TLS certificates", h.dir, err)
 }

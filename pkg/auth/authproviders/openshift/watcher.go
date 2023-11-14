@@ -48,17 +48,17 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 	// Expect always a [][]byte.
 	caBytes := val.([][]byte)
 	if caBytes == nil {
-		log.Info("No updated CA bytes found, using the default system CA cert pool.")
+		log.Info("No updated CA bytes found, using the default system CA cert pool")
 		return
 	}
 
-	log.Info("Found an update to the root CAs for Openshift auth providers. Updating the providers.")
+	log.Info("Found an update to the root CAs for Openshift auth providers. Updating the providers")
 	h.onCertPoolUpdate()
 }
 
 func (h *handler) OnWatchError(err error) {
 	if !os.IsNotExist(err) {
-		log.Errorw("Failed watching CAs.",
+		log.Errorw("Failed watching CAs",
 			logging.Err(err))
 	}
 }

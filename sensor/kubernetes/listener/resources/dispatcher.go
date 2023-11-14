@@ -165,7 +165,7 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	for _, e := range events.ForwardMessages {
 		ev, err := marshaler.MarshalToString(e)
 		if err != nil {
-			log.Warnf("Error marshaling msg: %s\n", err.Error())
+			log.Warnf("Error marshaling msg: %s", err.Error())
 			return events
 		}
 		eventsOutput = append(eventsOutput, ev)
@@ -179,11 +179,11 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 		EventsOutput: eventsOutput,
 	})
 	if err != nil {
-		log.Warnf("Error marshaling msg: %s\n", err.Error())
+		log.Warnf("Error marshaling msg: %s", err.Error())
 		return events
 	}
 	if _, err := m.writer.Write(jsonLine); err != nil {
-		log.Warnf("Error writing msg: %s\n", err.Error())
+		log.Warnf("Error writing msg: %s", err.Error())
 	}
 	return events
 }

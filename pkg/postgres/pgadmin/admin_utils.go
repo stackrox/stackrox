@@ -432,7 +432,7 @@ func GetDatabaseSize(postgresConfig *postgres.Config, dbName string) (int64, err
 		return 0, err
 	}
 
-	log.Debugf("%q size = %d.", dbName, dbSize)
+	log.Debugf("%q size = %d", dbName, dbSize)
 	return dbSize, nil
 }
 

@@ -416,7 +416,7 @@ func (t *nRadixTree) Remove(key string) {
 
 	node := t.valueNodes[key]
 	if node == nil {
-		log.Errorf("Network to delete (id=%s) not found in tree. Noop.", key)
+		log.Errorf("Network to delete (id=%s) not found in tree. Noop", key)
 		return
 	}
 

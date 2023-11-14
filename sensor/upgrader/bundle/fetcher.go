@@ -21,7 +21,7 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 	// If we are not in standalone mode which means we should be fetching a bundle,
 	// and cluster id is empty, panic.
 	if f.ctx.ClusterID() == "" {
-		log.Panic("Cluster id is empty, unable to fetch bundle for upgrade.")
+		log.Panic("Cluster id is empty, unable to fetch bundle for upgrade")
 	}
 
 	resByID := &v1.ResourceByID{

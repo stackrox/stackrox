@@ -197,7 +197,7 @@ func (b *backend) recreateOpenshiftConnector() {
 	openshiftConnector, err := createOpenshiftConnector()
 	if err != nil {
 		log.Errorw("failed to create updated dex openshiftConnector for OpenShift's OAuth Server with new CAs, "+
-			"new certs will not be applied. This may lead to unwanted TLS connection issues.", logging.Err(err))
+			"new certs will not be applied. This may lead to unwanted TLS connection issues", logging.Err(err))
 		return
 	}
 

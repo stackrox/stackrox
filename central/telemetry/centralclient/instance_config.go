@@ -106,11 +106,11 @@ func InstanceConfig() *phonehome.Config {
 		var props map[string]any
 		config, props, err = getInstanceConfig()
 		if err != nil {
-			log.Errorf("Failed to get telemetry configuration: %v.", err)
+			log.Errorf("Failed to get telemetry configuration: %v", err)
 			return
 		}
 		if config == nil {
-			log.Info("Phonehome telemetry collection disabled.")
+			log.Info("Phonehome telemetry collection disabled")
 			return
 		}
 		log.Info("Central ID: ", config.ClientID)
@@ -178,7 +178,7 @@ func Disable() {
 	cfg.Gatherer().Stop()
 	cfg.RemoveInterceptors()
 	enabled = false
-	log.Info("Telemetry collection has been disabled.")
+	log.Info("Telemetry collection has been disabled")
 	cfg.Telemeter().Track("Telemetry Disabled", nil)
 }
 
@@ -206,7 +206,7 @@ func Enable() *phonehome.Config {
 	}
 	cfg.Gatherer().Start(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	enabled = true
-	log.Info("Telemetry collection has been enabled.")
+	log.Info("Telemetry collection has been enabled")
 	cfg.Telemeter().Track("Telemetry Enabled", nil)
 	return cfg
 }

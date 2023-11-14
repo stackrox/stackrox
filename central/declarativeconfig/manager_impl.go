@@ -112,7 +112,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 	m.once.Do(func() {
 		if err := m.verifyUpdaters(); err != nil {
 			utils.Should(err)
-			log.Error("Received an error during verification of updaters. No reconciliation will be done.")
+			log.Error("Received an error during verification of updaters. No reconciliation will be done")
 			return
 		}
 
@@ -249,7 +249,7 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 	// run the reconciliation.
 	if !hasChanges && !m.lastUpsertFailed.Get() && !m.lastDeletionFailed.Get() {
 		log.Debug("No changes found compared to the previous reconciliation, and no errors have occurred." +
-			" The reconciliation will be skipped.")
+			" The reconciliation will be skipped")
 		return
 	}
 

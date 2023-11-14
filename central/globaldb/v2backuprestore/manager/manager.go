@@ -170,7 +170,7 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 func (m *manager) waitForRestore(process *restoreProcess) {
 	err := concurrency.WaitForError(process.Completion())
 	if err == nil {
-		log.Infof("Database restore process %s succeeded!", process.Metadata().GetId())
+		log.Infof("Database restore process %s succeeded", process.Metadata().GetId())
 		log.Info("Bouncing central to pick up newly imported DB")
 		time.Sleep(restartGracePeriod)
 		osutils.Restart()

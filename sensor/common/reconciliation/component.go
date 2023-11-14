@@ -59,7 +59,7 @@ func (c *DeduperStateProcessor) SetDeduperState(state map[deduperkey.Key]uint64)
 func (c *DeduperStateProcessor) Notify(e common.SensorComponentEvent) {
 	if e == common.SensorComponentEventSyncFinished {
 		if !c.stateReceived.Load() {
-			log.Warnf("Processing sync event in reconciler without having received a deduper state. No deletes will be generated.")
+			log.Warnf("Processing sync event in reconciler without having received a deduper state. No deletes will be generated")
 		}
 
 		c.stateLock.RLock()

@@ -178,7 +178,7 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 
 	subject := mtls.SubjectFromCommonName(leaf.Subject.CommonName)
 	if subject.Identifier == centralsensor.EphemeralInitCertClusterID {
-		log.Debug("Not checking revocation for operator-issued init cert.")
+		log.Debug("Not checking revocation for operator-issued init cert")
 		return nil
 	}
 

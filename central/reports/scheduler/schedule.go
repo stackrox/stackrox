@@ -310,7 +310,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	); err != nil {
 		return err
 	}
-	log.Infof("Report generation for '%s' completed, email notification sent.", rc.Name)
+	log.Infof("Report generation for '%s' completed, email notification sent", rc.Name)
 	return nil
 }
 

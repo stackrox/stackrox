@@ -630,7 +630,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
 			img.SignatureVerificationData = nil
 			log.Debugf("No signatures associated with image %q but existing results were found, "+
-				"deleting those.", imgName)
+				"deleting those", imgName)
 			return true, nil
 		}
 

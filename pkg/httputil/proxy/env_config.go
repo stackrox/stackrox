@@ -37,7 +37,7 @@ func readConfigFromEnv() environmentConfig {
 			continue
 		}
 		if _, err := url.Parse(*val); err != nil {
-			log.Warnf("Invalid setting %q for %s/%s environment variable: %v. Ignoring setting.", *val, name, strings.ToUpper(name), err)
+			log.Warnf("Invalid setting %q for %s/%s environment variable: %v. Ignoring setting", *val, name, strings.ToUpper(name), err)
 			*val = ""
 		}
 	}

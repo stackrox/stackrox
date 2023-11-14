@@ -114,7 +114,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 // to read these certs.
 func FetchAndSetupCertificates(ctx context.Context) error {
 	if allExist, err := fileutils.AllExist(certFile, keyFile); err != nil {
-		log.Error("Failed to stat certificates in cached location. Assuming they don't exist.")
+		log.Error("Failed to stat certificates in cached location. Assuming they don't exist")
 	} else if allExist {
 		log.Info("Reusing cached certificates from previous run")
 		return changeCertAndKeyFileEnvVars()

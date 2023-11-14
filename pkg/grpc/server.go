@@ -287,7 +287,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		}
 
 		if !a.shutdownInProgress.Load() {
-			log.Fatal("Unexpected local API server termination.")
+			log.Fatal("Unexpected local API server termination")
 		}
 	}()
 	return dialContext

@@ -55,7 +55,7 @@ func (m *orchestratorCVEManager) Reconcile() {
 		log.Errorf("failed to get clusters %v", err)
 		return
 	}
-	log.Infof("Found %d clusters to scan for orchestrator vulnerabilities.", len(clusters))
+	log.Infof("Found %d clusters to scan for orchestrator vulnerabilities", len(clusters))
 
 	err = m.reconcileCVEs(clusters, utils.K8s)
 	if err != nil {

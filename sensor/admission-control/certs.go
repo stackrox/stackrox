@@ -66,6 +66,6 @@ func configureCerts(namespace string) error {
 	if err := fetchcerts.FetchAndSetupCertificates(context.Background()); err != nil {
 		return errors.Wrap(err, "failed to fetch certificates from sensor")
 	}
-	log.Info("Obtained certificates from sensor. We're good to go.")
+	log.Info("Obtained certificates from sensor. We're good to go")
 	return nil
 }

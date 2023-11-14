@@ -132,7 +132,7 @@ func (t *tlsConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certif
 			log.Errorw("Error checking if monitoring TLS certificate file exists", logging.Err(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping TLS watcher cycle.", certFile)
+		log.Infof("Monitoring TLS certificate file %q does not exist. Skipping TLS watcher cycle", certFile)
 		return nil, nil
 	}
 
@@ -142,7 +142,7 @@ func (t *tlsConfigurerImpl) getCertificateFromDirectory(dir string) (*tls.Certif
 			log.Errorw("Error checking if monitoring TLS key file exists", logging.Err(err))
 			return nil, err
 		}
-		log.Infof("Monitoring TLS key file %q does not exist. Skipping TLS watcher cycle.", keyFile)
+		log.Infof("Monitoring TLS key file %q does not exist. Skipping TLS watcher cycle", keyFile)
 		return nil, nil
 	}
 

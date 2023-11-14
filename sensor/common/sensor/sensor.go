@@ -345,7 +345,7 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 		log.Errorf("Sensor reported an error: %v", err)
 		s.stoppedSig.SignalWithError(err)
 	} else {
-		log.Info("Terminating central connection.")
+		log.Info("Terminating central connection")
 		s.stoppedSig.Signal()
 	}
 }
@@ -418,9 +418,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 					}
 					s.reconcile.Store(false)
 				}
-				log.Infof("Communication with Central stopped with error: %s. Retrying.", err)
+				log.Infof("Communication with Central stopped with error: %s. Retrying", err)
 			} else {
-				log.Info("Communication with Central stopped. Retrying.")
+				log.Info("Communication with Central stopped. Retrying")
 			}
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
@@ -441,7 +441,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
 	})
 
-	log.Info("Stopping gRPC connection retry loop.")
+	log.Info("Stopping gRPC connection retry loop")
 
 	if err != nil {
 		log.Warnf("Backoff returned error: %s", err)

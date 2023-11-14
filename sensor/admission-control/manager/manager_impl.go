@@ -222,7 +222,7 @@ func (m *manager) run() {
 // ProcessNewSettings processes new settings
 func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSettings) {
 	if newSettings == nil {
-		log.Info("DISABLING admission control service (config map was deleted).")
+		log.Info("DISABLING admission control service (config map was deleted)")
 		atomic.StorePointer(&m.statePtr, nil)
 		m.lastSettingsUpdate = nil
 		m.settingsStream.Push(newSettings) // typed nil ptr, not nil!
@@ -339,7 +339,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	log.Infof("Applied new admission control settings "+
 		"(enforcing on %d deploy-time policies; "+
 		"detecting on %d run-time policies; "+
-		"enforcing on %d run-time policies).",
+		"enforcing on %d run-time policies)",
 		len(deployTimePolicySet.GetCompiledPolicies()),
 		len(allRuntimePolicySet.GetCompiledPolicies()),
 		enforceablePolicies)

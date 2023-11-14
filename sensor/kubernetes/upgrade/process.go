@@ -387,7 +387,7 @@ func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorR
 			Message: "no upgrade container found",
 		}
 	} else if upgraderContainerStatus.State.Running != nil {
-		log.Infof("Upgrader pod %s is running!", pod.GetName())
+		log.Infof("Upgrader pod %s is running", pod.GetName())
 		s.Started = true
 	} else if terminatedState := upgraderContainerStatus.State.Terminated; terminatedState != nil {
 		s.Started = true

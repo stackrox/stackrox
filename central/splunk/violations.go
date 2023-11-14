@@ -212,7 +212,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 
 	if processViolation := alert.GetProcessViolation(); processViolation != nil {
 		if len(processViolation.GetProcesses()) == 0 {
-			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert.", logging.AlertID(alert.GetId()))
+			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert", logging.AlertID(alert.GetId()))
 		}
 		for _, procIndicator := range processViolation.GetProcesses() {
 			seenViolations = true
@@ -280,7 +280,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 	}
 
 	if !seenViolations {
-		log.Warnw("Did not detect any extractable violations from the Alert. Information about the alert will not be available in Splunk.", logging.AlertID(alert.GetId()))
+		log.Warnw("Did not detect any extractable violations from the Alert. Information about the alert will not be available in Splunk", logging.AlertID(alert.GetId()))
 	}
 
 	return result, nil
@@ -443,7 +443,7 @@ func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integra
 			lineage = append(lineage, x.Clone())
 		}
 	} else {
-		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.",
+		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete",
 			logging.String("ProcessIndicator.Id", from.GetId()), logging.AlertID(alertID))
 	}
 
@@ -482,7 +482,7 @@ func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkVio
 
 func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.SplunkViolation_PolicyInfo {
 	if from == nil {
-		log.Warnw("Detected Alert without Policy. Resulting violation item will not have policy details.",
+		log.Warnw("Detected Alert without Policy. Resulting violation item will not have policy details",
 			logging.AlertID(alertID))
 		return nil
 	}
@@ -544,7 +544,7 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 		// ignore for now. Resource cannot be converted to deployment. It will correctly get populated into its own entity later
 		return nil
 	default:
-		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", logging.AlertID(from.GetId()))
+		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details", logging.AlertID(from.GetId()))
 	}
 
 	return &res

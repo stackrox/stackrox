@@ -62,7 +62,7 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !buildinfo.ReleaseBuild {
 		if validationErrs := h.Schema.ValidateWithVariables(params.Query, params.Variables); len(validationErrs) > 0 {
 			log.Errorf("UNEXPECTED: GraphQL operation %s: received a query failing schema validation: %v", params.OperationName, validationErrs)
-			log.Errorf("Full query:\n%s\nVariables:\n%+v\n", params.Query, params.Variables)
+			log.Errorf("Full query:\n%s\nVariables:\n%+v", params.Query, params.Variables)
 		}
 	}
 

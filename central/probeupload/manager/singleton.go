@@ -17,7 +17,7 @@ func Singleton() Manager {
 		instance = newManager(blobstore.Singleton())
 		if err := instance.Initialize(); err != nil {
 			utils.Should(err)
-			log.Error("There was an error initializing the probe upload functionality. Probe upload/download functionality will likely be affected.")
+			log.Error("There was an error initializing the probe upload functionality. Probe upload/download functionality will likely be affected")
 		}
 	})
 	return instance

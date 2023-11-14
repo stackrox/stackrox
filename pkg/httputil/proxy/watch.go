@@ -37,7 +37,7 @@ func (r *reloadProxyConfigHandler) OnChange(dir string) (interface{}, error) {
 
 func (r *reloadProxyConfigHandler) OnStableUpdate(val interface{}, err error) {
 	if err != nil {
-		log.Errorf("Error reading proxy config file: %v. Not modifying proxy config.", err)
+		log.Errorf("Error reading proxy config file: %v. Not modifying proxy config", err)
 		return
 	}
 

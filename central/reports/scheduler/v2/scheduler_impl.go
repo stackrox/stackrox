@@ -124,7 +124,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 // This func will log errors if the scheduler fails to start.
 func (s *scheduler) Start() {
 	if s.isStopped.Load() {
-		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
+		log.Error("Scheduler already stopped. It cannot be re-started once stopped")
 		return
 	}
 	swapped := s.isStarted.CompareAndSwap(false, true)

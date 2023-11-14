@@ -107,7 +107,7 @@ func (q *Queue[T]) Push(item T) {
 	defer q.mutex.Unlock()
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
-		log.Warnf("Queue size limit reached (%d). New items added to the queue will be dropped.", q.maxSize)
+		log.Warnf("Queue size limit reached (%d). New items added to the queue will be dropped", q.maxSize)
 		return
 	}
 

@@ -115,7 +115,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 				return
 			case _, ok := <-c.umh.RetryCommand():
 				if c.cache == nil {
-					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					log.Debug("Requested to retry but cache is empty. Resetting scan timer")
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss)
 					t.Reset(time.Second)
 				} else if ok {
@@ -204,7 +204,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 				auditReader = c.startAuditLogCollection(ctx, client, r.StartReq)
 			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
 				if auditReader != nil {
-					log.Infof("Stopping audit log reader on node %s.", c.nodeNameProvider.GetNodeName())
+					log.Infof("Stopping audit log reader on node %s", c.nodeNameProvider.GetNodeName())
 					auditReader.StopReader()
 					auditReader = nil
 				} else {

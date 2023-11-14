@@ -53,6 +53,6 @@ func Ensure(versionStore vStore.Store) error {
 
 	// TYPICAL CASE: DB is of the same version. This happens if Central does a regular restart, and was not patched.
 
-	log.Info("Version found in the DB was current. We're good to go!")
+	log.Info("Version found in the DB was current. We're good to go")
 	return nil
 }

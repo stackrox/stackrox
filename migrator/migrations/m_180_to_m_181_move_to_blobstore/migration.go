@@ -78,7 +78,7 @@ func moveScannerDefinitions(db *gorm.DB) {
 	}
 
 	if err != nil {
-		log.Errorf("Failed to move scanner definition to blob store with error \n%v \nPlease upload the scanner definition again to continue working with offline mode.", err)
+		log.Errorf("Failed to move scanner definition to blob store with error \n%v \nPlease upload the scanner definition again to continue working with offline mode", err)
 	} else {
 		log.Info("Migrate scanner definitions successfully")
 	}
@@ -185,7 +185,7 @@ func moveProbesToBlob(db *gorm.DB) {
 			err = tx.Commit().Error
 		}
 		if err != nil {
-			log.Errorf("failed to move module probe version %s to blob store with error \n%v \nPlease upload it again to continue working with offline mode.", ent.Name(), err)
+			log.Errorf("failed to move module probe version %s to blob store with error \n%v \nPlease upload it again to continue working with offline mode", ent.Name(), err)
 		} else {
 			log.Infof("Migrate module version %s successfully", ent.Name())
 		}

@@ -173,7 +173,7 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 	dbType := v1.DatabaseStatus_PostgresDB
 	if err := s.db.Ping(ctx); err != nil {
 		dbStatus.DatabaseAvailable = false
-		log.Warn("central is unable to communicate with the database.")
+		log.Warn("central is unable to communicate with the database")
 		return dbStatus, nil
 	}
 

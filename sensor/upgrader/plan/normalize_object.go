@@ -61,7 +61,7 @@ func clearAdmissionWebhookDefaultFields(obj *unstructured.Unstructured) {
 		return
 	}
 	if !found {
-		log.Error("No webhooks field found in validating admission webhook configuration.")
+		log.Error("No webhooks field found in validating admission webhook configuration")
 		return
 	}
 	for _, webhookInterface := range webhooks {

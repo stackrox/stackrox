@@ -29,7 +29,7 @@ func (h *watchHandler) OnStableUpdate(val interface{}, err error) {
 	var hashFile *htpasswd.HashFile
 	if err != nil {
 		log.Warnf("Error reading htpasswd file: %v. Basic (username/password) auth will be disabled until the issue is remediated", err)
-		log.Warn("Note: if you intended to disable basic auth, you can suppress this warning by populating the secret with an empty htpasswd file.")
+		log.Warn("Note: if you intended to disable basic auth, you can suppress this warning by populating the secret with an empty htpasswd file")
 	} else {
 		hashFile, _ = val.(*htpasswd.HashFile)
 		if hashFile == nil {

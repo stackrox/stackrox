@@ -160,7 +160,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		} else if cachedClusterID != "" {
 			helmManagedCfg = helmManagedCfg.Clone()
 			helmManagedCfg.ClusterId = cachedClusterID
-			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
+			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod", cachedClusterID)
 		}
 
 		sensorHello.HelmManagedConfigInit = helmManagedCfg
@@ -187,7 +187,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	log.Info("Established connection to Central.")
+	log.Info("Established connection to Central")
 
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
@@ -197,12 +197,12 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
 	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
-	log.Info("Communication with central started.")
+	log.Info("Communication with central started")
 
 	// Wait for stop.
 	/////////////////
 	<-s.stopper.Flow().StopRequested()
-	log.Info("Communication with central ended.")
+	log.Info("Communication with central ended")
 }
 
 func (s *centralCommunicationImpl) initialSync(stream central.SensorService_CommunicateClient, hello *central.SensorHello, configHandler config.Handler, detector detector.Detector) error {
@@ -255,7 +255,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	if err := safe.RunE(func() error {
 		return certdistribution.PersistCertificates(centralHello.GetCertBundle())
 	}); err != nil {
-		log.Warnf("Failed to persist certificates for distribution: %v. This might cause issues with the admission control service.", err)
+		log.Warnf("Failed to persist certificates for distribution: %v. This might cause issues with the admission control service", err)
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`

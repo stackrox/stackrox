@@ -587,7 +587,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	clusterRetention := config.GetDecommissionedClusterRetention()
 	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
 	if retentionDays == 0 {
-		log.Info("[Cluster Pruning] pruning is disabled.")
+		log.Info("[Cluster Pruning] pruning is disabled")
 		return
 	}
 
@@ -608,7 +608,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 	if timeutil.TimeDiffDays(time.Now(), lastUpdateTime) < 1 {
 		// Allow 24 hr grace period after a change in config
-		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config.")
+		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config")
 		return
 	}
 
@@ -621,7 +621,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
 		// In this case, the clusters that became unhealthy after config creation would also be unhealthy for fewer than retention days
 		// and pruning can be skipped
-		log.Info("[Cluster Pruning] skipping pruning as retention period only starts after upgrade to version 3.71.0.")
+		log.Info("[Cluster Pruning] skipping pruning as retention period only starts after upgrade to version 3.71.0")
 		return
 	}
 
@@ -631,7 +631,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 
 	if allClusterCount == 0 {
-		log.Info("[Cluster Pruning] skipping pruning because no clusters were found.")
+		log.Info("[Cluster Pruning] skipping pruning because no clusters were found")
 		return
 	}
 
@@ -661,20 +661,20 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 		}
 		if hasCentral {
 			// Warning because it's important to know that your central cluster is unhealthy
-			log.Warnf("[Cluster Pruning] skipping pruning cluster with id %s because this cluster contains the central deployment.", cluster.GetId())
+			log.Warnf("[Cluster Pruning] skipping pruning cluster with id %s because this cluster contains the central deployment", cluster.GetId())
 			continue
 		}
 		clustersToPrune = append(clustersToPrune, cluster.GetId())
 	}
 
 	if allClusterCount == len(clustersToPrune) {
-		log.Warnf("[Cluster Pruning] skipping pruning because all %d cluster(s) are unhealthy and this is an abnormal state. Please remove any manually if desired.", allClusterCount)
+		log.Warnf("[Cluster Pruning] skipping pruning because all %d cluster(s) are unhealthy and this is an abnormal state. Please remove any manually if desired", allClusterCount)
 		return
 	}
 
 	if len(clustersToPrune) == 0 {
 		// Debug log as it's be noisy, but is helpful if debugging
-		log.Debug("[Cluster Pruning] no inactive, non excluded clusters found.")
+		log.Debug("[Cluster Pruning] no inactive, non excluded clusters found")
 		return
 	}
 
@@ -731,7 +731,7 @@ func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, p
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 	alertRetention := config.GetAlertRetention()
 	if alertRetention == nil {
-		log.Info("[Alert pruning] Alert pruning has been disabled.")
+		log.Info("[Alert pruning] Alert pruning has been disabled")
 		return
 	}
 
