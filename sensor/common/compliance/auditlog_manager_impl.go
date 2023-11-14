@@ -167,6 +167,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
+		HashKey:   a.clusterIDGetter(),
+		DedupeKey: a.clusterIDGetter(),
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
