@@ -1,10 +1,10 @@
 Policy check results for deployments: [wordpress]
-(TOTAL: 6, [34;2mLOW[0m: 1, [33mMEDIUM[0m: 3, [95mHIGH[0m: 1, [31;1mCRITICAL[0m: 1)
+(TOTAL: 6, [34;2mLOW[0;22m: 1, [33mMEDIUM[0m: 3, [95mHIGH[0m: 1, [31;1mCRITICAL[0;22m: 1)
 
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
 |  POLICY  | SEVERITY | BREAKS DEPLOY | DEPLOYMENT |     DESCRIPTION      |           VIOLATION            |     REMEDIATION      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 1 | [31;1mCRITICAL[0m |       -       | wordpress  | policy 1 for testing |    - testing multiple alert    | policy 1 for testing |
+| policy 1 | [31;1mCRITICAL[0;22m |       -       | wordpress  | policy 1 for testing |    - testing multiple alert    | policy 1 for testing |
 |          |          |               |            |                      |      violation messages 1      |                      |
 |          |          |               |            |                      |                                |                      |
 |          |          |               |            |                      |    - testing multiple alert    |                      |
@@ -46,6 +46,6 @@ Policy check results for deployments: [wordpress]
 | policy 6 |  [33mMEDIUM[0m  |       -       | wordpress  | policy 6 for testing |   - testing alert violation    | policy 6 for testing |
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
-| policy 7 |   [34;2mLOW[0m    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
+| policy 7 |   [34;2mLOW[0;22m    |       -       | wordpress  | policy 7 for testing |   - testing alert violation    | policy 7 for testing |
 |          |          |               |            |                      |            message             |                      |
 +----------+----------+---------------+------------+----------------------+--------------------------------+----------------------+
