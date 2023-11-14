@@ -18,7 +18,7 @@ type ScanConfigsHeaderProps = {
 function ScanConfigsHeader({ description, actions }: ScanConfigsHeaderProps) {
     return (
         <>
-            <PageTitle title="Scan Schedules" />
+            <PageTitle title="Compliance Scan Schedules" />
             <PageSection variant="light">
                 <Title headingLevel="h1">Scan schedules</Title>
             </PageSection>
