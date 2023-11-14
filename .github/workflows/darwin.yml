@@ -36,10 +36,20 @@ jobs:
         path: dev/nix
         ref: e04df0d3dfe31c3bf53105a3a3818b7b5c45594d
 
-    - name: Build Go Binaries
+    - name: Run tests
       env:
         CGO_ENABLED: "0"
         GOOS: "darwin"
         GOARCH: "amd64"
       shell: nix develop ./dev/nix --quiet --command bash -e {0}
-      run: make test
+      run: make go-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
