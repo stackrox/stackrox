@@ -340,7 +340,11 @@ function ImageCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <VulnerabilityStateTabs titleOverrides={{ observed: 'Workloads' }} isBox />
+                <VulnerabilityStateTabs
+                    titleOverrides={{ observed: 'Workloads' }}
+                    isBox
+                    onChange={() => setPage(1)}
+                />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
                         <WorkloadTableToolbar
