@@ -41,6 +41,7 @@ describe('Workload CVE Image Single page', () => {
 
         selectEntityTab('Image');
         // Find any image with at least one CVE
+
         cy.get(
             `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts}) td[data-label="Image"] a`
         )
@@ -125,7 +126,7 @@ describe('Workload CVE Image Single page', () => {
                         cy.get(selectors.filteredViewLabel);
 
                         // Check that the row count in the header above the table matches the CVE count for the image
-                        cy.get(`*:contains("${count} results found")`);
+                        cy.get(`*`).contains(new RegExp(`${count} results? found`));
 
                         // Check that the count and severity in the summary card still match after the filter is applied
                         cy.get(`${bySeverityCard} ${selectors.iconText(`${count} ${severity}`)}`);

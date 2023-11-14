@@ -40,8 +40,15 @@ describe('Workload CVE overview page tests', () => {
         cy.get(selectors.filterChipGroup).should('not.exist');
     });
 
-    it('should correctly handle applied filters across entity tabs', () => {
+    it('should correctly handle applied filters across entity tabs', function () {
+        if (!hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            this.skip();
+        }
         visitWorkloadCveOverview();
+
+        // We want to manually test filter application, so clear the default filters
+        cy.get(selectors.clearFiltersButton).click();
+        cy.get(selectors.hiddenSeverityCount('Critical')).should('not.exist');
 
         // Get the first CVE row from the table with a non-zero severity count for -any- severity
         cy.get(selectors.nonZeroImageSeverityCounts)
