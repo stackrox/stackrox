@@ -101,7 +101,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get() {
 	t := s.T()
 	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
 
-	h := New(nil, s.datastore, handlerOpts{})
+	h := New(s.datastore, handlerOpts{})
 
 	// No scanner defs found.
 	req := s.mustGetRequest(t)
@@ -120,7 +120,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get() {
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	t := s.T()
-	h := New(nil, s.datastore, handlerOpts{})
+	h := New(s.datastore, handlerOpts{})
 
 	w := mock.NewResponseWriter()
 
