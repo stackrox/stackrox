@@ -4,8 +4,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getCriteriaAllowedByLifecycle } from 'Containers/Policies/policies.utils';
-import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
+import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
@@ -18,18 +17,9 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
     const { values } = useFormikContext<Policy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const unfilteredDescriptors =
-        values.eventSource === 'AUDIT_LOG_EVENT'
-            ? auditLogDescriptor
-            : policyConfigurationDescriptor;
-    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
-        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
-        }
-        return true;
-    });
-    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
-        descriptors,
+    const filteredDescriptors = getPolicyDescriptors(
+        isFeatureFlagEnabled,
+        values.eventSource,
         values.lifecycleStages
     );
 
@@ -43,7 +33,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
-                                descriptors={descriptorsFilteredByLifecycle}
+                                descriptors={filteredDescriptors}
                                 readOnly={readOnly}
                             />
                         </GridItem>
@@ -70,7 +60,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
-                            descriptors={descriptorsFilteredByLifecycle}
+                            descriptors={filteredDescriptors}
                             readOnly={readOnly}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
