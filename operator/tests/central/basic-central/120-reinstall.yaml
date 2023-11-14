@@ -1,0 +1,41 @@
+# Uninstall Central. Then check that the central pod is healthy.
+# This is to test the case that, when Central is reinstalled, the operator reuses the existing PVC,
+# and Central is able to connect to the database using the existing central-db-password secret.
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+    db:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 1
+          memory: 4Gi
+    adminPasswordSecret:
+      name: admin-pass
+  scanner:
+    analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          memory: 500Mi
+          cpu: 500m
+        limits:
+          memory: 2500Mi
+          cpu: 2000m
+  monitoring:
+    openshift:
+      enabled: false
