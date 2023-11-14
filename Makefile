@@ -122,7 +122,6 @@ include make/gotools.mk
 
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
-$(call go-tool, CONTROLLER_GEN_BIN, sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
 $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
