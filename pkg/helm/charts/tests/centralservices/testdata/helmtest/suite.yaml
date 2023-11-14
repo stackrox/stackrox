@@ -62,4 +62,3 @@ values:
       serviceTLS:
         cert: "ScannerDB cert"
         key: "ScannerDB key"
-

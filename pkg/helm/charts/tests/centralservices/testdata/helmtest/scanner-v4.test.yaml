@@ -34,10 +34,10 @@ tests:
   tests:
     - name: "indexer is enabled"
       set:
-        scannerV4.indexer.disabled: false
+        scannerV4.indexer.disable: false
     - name: "matcher is enabled"
       set:
-        scannerV4.matcher.disabled: false
+        scannerV4.matcher.disable: false
 
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:

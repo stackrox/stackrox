@@ -126,8 +126,11 @@
 {{- else -}}
 
   {{/* High-level scannerV4.disable is true. */}}
-  {{- if or (not $scannerV4Cfg.indexer.disable) (not $scannerV4Cfg.matcher.disable) -}}
-    {{- include "srox.fail" (printf "scannerV4.disable=false required in order to be able to deploy either Scanner V4 indexer or matcher.") -}}
+  {{- if and (not (kindIs "invalid" $scannerV4Cfg.indexer.disable)) (not $scannerV4Cfg.indexer.disable) -}}
+    {{- include "srox.fail" (printf "scannerV4.disable=false required in order to be able to deploy Scanner V4 indexer.") -}}
+  {{- end -}}
+  {{- if and (not (kindIs "invalid" $scannerV4Cfg.matcher.disable)) (not $scannerV4Cfg.matcher.disable) -}}
+    {{- include "srox.fail" (printf "scannerV4.disable=false required in order to be able to deploy Scanner V4 matcher.") -}}
   {{- end -}}
 
 {{- end -}}
