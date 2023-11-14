@@ -197,6 +197,8 @@ function withAdjustedBehavior(SelectComponent) {
         };
 
         render() {
+            // disable because unused onChange might be specified for rest spread idiom.
+            /* eslint-disable no-unused-vars */
             const {
                 getOptionValue,
                 onChange,
@@ -210,6 +212,7 @@ function withAdjustedBehavior(SelectComponent) {
                 isDisabled,
                 ...rest
             } = this.props;
+            /* eslint-enable no-unused-vars */
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
             let mergedComponents = {
                 ...defaultComponents,

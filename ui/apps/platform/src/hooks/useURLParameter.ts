@@ -10,7 +10,7 @@ export type Action = 'push' | 'replace';
 
 export type UseURLParameterResult = [
     QueryValue,
-    (newValue: QueryValue, historyAction?: Action) => void
+    (newValue: QueryValue, historyAction?: Action) => void,
 ];
 
 /**

@@ -76,8 +76,8 @@ function ViolationDetailsPage(): ReactElement {
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
-        ? alert.deployment.name
-        : '';
+          ? alert.deployment.name
+          : '';
     /* eslint-enable no-nested-ternary */
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
