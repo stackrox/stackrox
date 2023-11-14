@@ -48,6 +48,22 @@ type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...P
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
+type Store[T any, PT unmarshaler[T]] interface {
+	Exists(ctx context.Context, id string) (bool, error)
+	Count(ctx context.Context) (int, error)
+	Walk(ctx context.Context, fn func(obj PT) error) error
+	GetAll(ctx context.Context) ([]PT, error)
+	Get(ctx context.Context, id string) (PT, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, identifiers []string) error
+	Upsert(ctx context.Context, obj PT) error
+	UpsertMany(ctx context.Context, objs []PT) error
+}
+
 // GenericStore implements subset of Store interface for resources with single ID.
 type GenericStore[T any, PT unmarshaler[T]] struct {
 	mutex                            sync.RWMutex
@@ -61,9 +77,6 @@ type GenericStore[T any, PT unmarshaler[T]] struct {
 	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
-	cache                            map[string]PT
-	useCache                         bool
-	cacheLock                        sync.RWMutex
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
@@ -78,7 +91,7 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	setPostgresOperationDurationTime durationTimeSetter,
 	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
-) *GenericStore[T, PT] {
+) Store[T, PT] {
 	return &GenericStore[T, PT]{
 		db:          db,
 		schema:      schema,
@@ -99,8 +112,6 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 		}(),
 		upsertAllowed:  upsertAllowed,
 		targetResource: targetResource,
-		cache:          nil,
-		useCache:       false,
 	}
 }
 
@@ -115,7 +126,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
 	checker walker.PermissionChecker,
-) *GenericStore[T, PT] {
+) Store[T, PT] {
 	return &GenericStore[T, PT]{
 		db:          db,
 		schema:      schema,
@@ -135,96 +146,12 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 			return setPostgresOperationDurationTime
 		}(),
 		permissionChecker: checker,
-		cache:             nil,
-		useCache:          false,
 	}
-}
-
-// NewGenericStoreWithCache returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
-	setAcquireDBConnDuration durationTimeSetter,
-	setPostgresOperationDurationTime durationTimeSetter,
-	upsertAllowed upsertChecker[T, PT],
-	targetResource permissions.ResourceMetadata,
-) *GenericStore[T, PT] {
-	store := &GenericStore[T, PT]{
-		db:          db,
-		schema:      schema,
-		pkGetter:    pkGetter,
-		insertInto:  insertInto,
-		copyFromObj: copyFromObj,
-		setAcquireDBConnDuration: func() durationTimeSetter {
-			if setAcquireDBConnDuration == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setAcquireDBConnDuration
-		}(),
-		setPostgresOperationDurationTime: func() durationTimeSetter {
-			if setPostgresOperationDurationTime == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setPostgresOperationDurationTime
-		}(),
-		upsertAllowed:  upsertAllowed,
-		targetResource: targetResource,
-		cache:          make(map[string]PT),
-		useCache:       true,
-	}
-	store.resetCache(sac.WithAllAccess(context.Background()))
-	return store
-}
-
-// NewGenericStoreWithPermissionCheckerWithCache returns new subStore implementation for given resource.
-// subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionCheckerWithCache[T any, PT unmarshaler[T]](
-	db postgres.DB,
-	schema *walker.Schema,
-	pkGetter primaryKeyGetter[T, PT],
-	insertInto inserter[T, PT],
-	copyFromObj copier[T, PT],
-	setAcquireDBConnDuration durationTimeSetter,
-	setPostgresOperationDurationTime durationTimeSetter,
-	checker walker.PermissionChecker,
-) *GenericStore[T, PT] {
-	store := &GenericStore[T, PT]{
-		db:          db,
-		schema:      schema,
-		pkGetter:    pkGetter,
-		copyFromObj: copyFromObj,
-		insertInto:  insertInto,
-		setAcquireDBConnDuration: func() durationTimeSetter {
-			if setAcquireDBConnDuration == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setAcquireDBConnDuration
-		}(),
-		setPostgresOperationDurationTime: func() durationTimeSetter {
-			if setPostgresOperationDurationTime == nil {
-				return doNothingDurationTimeSetter
-			}
-			return setPostgresOperationDurationTime
-		}(),
-		permissionChecker: checker,
-		cache:             make(map[string]PT),
-		useCache:          true,
-	}
-	store.resetCache(sac.WithAllAccess(context.Background()))
-	return store
 }
 
 // Exists tells whether the ID exists in the store.
 func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
-
-	if s.useCache {
-		return s.existsInCache(ctx, id)
-	}
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
@@ -238,10 +165,6 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
-	if s.useCache {
-		return s.countFromCache(ctx)
-	}
-
 	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 }
 
@@ -249,10 +172,26 @@ func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
 
-	if s.useCache {
-		return s.walkCache(ctx, fn)
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
+	if err != nil {
+		return err
 	}
-	return s.doDBWalk(ctx, fn)
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 // GetAll retrieves all objects from the store.
@@ -272,10 +211,6 @@ func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 // Get returns the object, if it exists from the store.
 func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
-
-	if s.useCache {
-		return s.getFromCache(ctx, id)
-	}
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
@@ -305,10 +240,6 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 
-	if s.useCache {
-		return s.getIDsFromCache(ctx)
-	}
-
 	result, err := RunSearchRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return nil, err
@@ -328,10 +259,6 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	if len(identifiers) == 0 {
 		return nil, nil, nil
-	}
-
-	if s.useCache {
-		return s.getManyFromCache(ctx, identifiers)
 	}
 
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
@@ -424,7 +351,6 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 			s.resetCache(ctx)
 			return errors.Wrap(err, "unable to delete the records")
 		}
-		s.removeManyFromCache(identifierBatch)
 
 		// Move the slice forward to start the next batch
 		identifiers = identifiers[localBatchSize:]
@@ -449,15 +375,9 @@ func (s *GenericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 		return err
 	}
 
-	dbErr := pgutils.Retry(func() error {
+	return pgutils.Retry(func() error {
 		return s.upsert(ctx, obj)
 	})
-	if dbErr != nil {
-		s.resetCache(ctx)
-		return dbErr
-	}
-	s.pushToCache(obj)
-	return nil
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
@@ -473,7 +393,7 @@ func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 		return err
 	}
 
-	dbErr := pgutils.Retry(func() error {
+	return pgutils.Retry(func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations
@@ -492,12 +412,6 @@ func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 		return s.copyFrom(ctx, objs...)
 	})
-	if dbErr != nil {
-		s.resetCache(ctx)
-		return dbErr
-	}
-	s.pushManyToCache(objs)
-	return nil
 }
 
 // region Helper functions
@@ -589,228 +503,6 @@ func GloballyScopedUpsertChecker[T any, PT unmarshaler[T]](targetResource permis
 		}
 		return nil
 	}
-}
-
-func (s *GenericStore[T, PT]) doDBWalk(ctx context.Context, walkFn func(PT) error) error {
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := walkFn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
-}
-
-func (s *GenericStore[T, PT]) resetCache(ctx context.Context) {
-	if !s.useCache {
-		return
-	}
-	s.cacheLock.Lock()
-	defer s.cacheLock.Unlock()
-	unrestrictedCtx := sac.WithAllAccess(ctx)
-	s.cache = make(map[string]PT)
-	_ = s.doDBWalk(unrestrictedCtx, func(obj PT) error {
-		s.pushToCacheNoLock(obj)
-		return nil
-	})
-}
-
-func (s *GenericStore[T, PT]) pushManyToCache(objs []PT) {
-	if !s.useCache {
-		return
-	}
-	s.cacheLock.Lock()
-	defer s.cacheLock.Unlock()
-	for _, obj := range objs {
-		s.pushToCacheNoLock(obj)
-	}
-}
-
-func (s *GenericStore[T, PT]) pushToCache(obj PT) {
-	if !s.useCache {
-		return
-	}
-	s.cacheLock.Lock()
-	defer s.cacheLock.Unlock()
-	s.cache[s.pkGetter(obj)] = obj
-}
-
-func (s *GenericStore[T, PT]) pushToCacheNoLock(obj PT) {
-	s.cache[s.pkGetter(obj)] = obj
-}
-
-func (s *GenericStore[T, PT]) removeManyFromCache(ids []string) {
-	if !s.useCache {
-		return
-	}
-	s.cacheLock.Lock()
-	defer s.cacheLock.Unlock()
-	for _, id := range ids {
-		s.removeFromCacheNoLock(id)
-	}
-}
-
-func (s *GenericStore[T, PT]) removeFromCache(id string) {
-	if !s.useCache {
-		return
-	}
-	s.cacheLock.Lock()
-	defer s.cacheLock.Unlock()
-	s.removeFromCacheNoLock(id)
-}
-
-func (s *GenericStore[T, PT]) removeFromCacheNoLock(id string) {
-	delete(s.cache, id)
-}
-
-func (s *GenericStore[T, PT]) getFromCache(ctx context.Context, id string) (PT, bool, error) {
-	if !s.useCache {
-		return nil, false, nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	val, found := s.cache[id]
-	found = found && s.isReadAllowed(ctx, val)
-	return val, found, nil
-}
-
-func (s *GenericStore[T, PT]) getManyFromCache(ctx context.Context, identifiers []string) ([]PT, []int, error) {
-	if !s.useCache {
-		missed := make([]int, 0, len(identifiers))
-		for ix := range identifiers {
-			missed = append(missed, ix)
-		}
-		return nil, missed, nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	results := make([]PT, 0, len(identifiers))
-	misses := make([]int, 0, len(identifiers))
-	for ix, id := range identifiers {
-		val, found := s.cache[id]
-		found = found && s.isReadAllowed(ctx, val)
-		if found {
-			results = append(results, val)
-		} else {
-			misses = append(misses, ix)
-		}
-	}
-	return results, misses, nil
-}
-
-func (s *GenericStore[T, PT]) getIDsFromCache(ctx context.Context) ([]string, error) {
-	if !s.useCache {
-		return nil, nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	results := make([]string, 0, len(s.cache))
-	for k, v := range s.cache {
-		if !s.isReadAllowed(ctx, v) {
-			continue
-		}
-		results = append(results, k)
-	}
-	return results, nil
-}
-
-func (s *GenericStore[T, PT]) getAllFromCache(ctx context.Context) ([]PT, error) {
-	if !s.useCache {
-		return nil, nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	results := make([]PT, 0, len(s.cache))
-	for _, v := range s.cache {
-		if !s.isReadAllowed(ctx, v) {
-			continue
-		}
-		results = append(results, v)
-	}
-	return results, nil
-}
-
-func (s *GenericStore[T, PT]) existsInCache(ctx context.Context, id string) (bool, error) {
-	if !s.useCache {
-		return false, nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	val, found := s.cache[id]
-	found = found && s.isReadAllowed(ctx, val)
-	return found, nil
-}
-
-func (s *GenericStore[T, PT]) walkCache(ctx context.Context, walkFn func(obj PT) error) error {
-	if !s.useCache {
-		return nil
-	}
-	s.cacheLock.RLock()
-	defer s.cacheLock.RUnlock()
-	for _, v := range s.cache {
-		if !s.isReadAllowed(ctx, v) {
-			continue
-		}
-		err := walkFn(v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *GenericStore[T, PT]) countFromCache(ctx context.Context) (int, error) {
-	if !s.useCache {
-		return 0, nil
-	}
-	count := 0
-	err := s.walkCache(ctx, func(_ PT) error {
-		count++
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func (s *GenericStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
-	if s.hasPermissionsChecker() {
-		allowed, err := s.permissionChecker.ReadAllowed(ctx)
-		if err != nil {
-			return false
-		}
-		return allowed
-	}
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeChecker = scopeChecker.AccessMode(storage.Access_READ_ACCESS)
-	scopeChecker = scopeChecker.Resource(s.targetResource)
-	switch s.targetResource.GetScope() {
-	case permissions.NamespaceScope:
-		var interfaceObj interface{}
-		interfaceObj = obj
-		namespaceScopedObj := interfaceObj.(sac.NamespaceScopedObject)
-		scopeChecker = scopeChecker.ForNamespaceScopedObject(namespaceScopedObj)
-	case permissions.ClusterScope:
-		var interfaceObj interface{}
-		interfaceObj = obj
-		clusterScopedObj := interfaceObj.(sac.ClusterScopedObject)
-		scopeChecker = scopeChecker.ForClusterScopedObject(clusterScopedObj)
-	}
-	return scopeChecker.IsAllowed()
 }
 
 // endregion Helper functions
