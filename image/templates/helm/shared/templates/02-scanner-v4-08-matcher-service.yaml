@@ -20,7 +20,7 @@ spec:
   {{ if ._rox.scannerV4.exposeMonitoring -}}
   - name: monitoring
     port: 9090
-    targetPort: 9090
+    targetPort: monitoring
   {{- end }}
 
 {{- if ._rox.env.istio }}

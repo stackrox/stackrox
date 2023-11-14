@@ -81,8 +81,8 @@ spec:
           containerPort: 8443
         {{ if ._rox.scannerV4.exposeMonitoring -}}
         - name: monitoring
-          containerPort: 9090
-        {{- end}}
+          containerPort: {{ ._rox.scannerV4.matcher.metricsPort }}
+        {{- end }}
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
