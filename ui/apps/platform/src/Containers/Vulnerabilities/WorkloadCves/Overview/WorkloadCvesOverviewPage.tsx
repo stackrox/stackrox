@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     PageSection,
     Title,
@@ -8,8 +8,13 @@ import {
     Card,
     CardBody,
     Button,
+    Toolbar,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { useApolloClient, useQuery } from '@apollo/client';
+import cloneDeep from 'lodash/cloneDeep';
+import difference from 'lodash/difference';
+import isEmpty from 'lodash/isEmpty';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -19,7 +24,14 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, { WATCH_IMAGE_MODAL_OPENED } from 'hooks/useAnalytics';
-import { VulnMgmtLocalStorage, entityTabValues } from '../types';
+import useLocalStorage from 'hooks/useLocalStorage';
+import { SearchFilter } from 'types/search';
+import {
+    DefaultFilters,
+    VulnMgmtLocalStorage,
+    entityTabValues,
+    isVulnMgmtLocalStorage,
+} from '../types';
 import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
@@ -29,16 +41,32 @@ import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import DefaultFilterModal from '../components/DefaultFilterModal';
 
-const emptyStorage: VulnMgmtLocalStorage = {
-    preferences: {
-        defaultFilters: {
-            // TODO: re-add default filters to include critical, important, and fixable
-            Severity: [],
-            Fixable: [],
-        },
-    },
-};
+// Merge the default filters with the local filters.
+// - Default filters that were removed are removed from the local filters.
+// - Default filters that were added are added to the local filters.
+// - Existing local filters are preserved.
+function mergeDefaultAndLocalFilters(
+    oldDefaults: DefaultFilters,
+    newDefaults: DefaultFilters,
+    searchFilter: SearchFilter
+): SearchFilter {
+    const filter = cloneDeep(searchFilter);
+
+    let Severity = filter.Severity ?? [];
+    let Fixable = filter.Fixable ?? [];
+
+    // Remove existing applied filters that are no longer in the default filters, then
+    // add the new default filters.
+    Severity = difference(Severity, oldDefaults.Severity, newDefaults.Severity);
+    Severity = Severity.concat(newDefaults.Severity);
+
+    Fixable = difference(Fixable, oldDefaults.Fixable, newDefaults.Fixable);
+    Fixable = Fixable.concat(newDefaults.Fixable);
+
+    return { ...filter, Severity, Fixable };
+}
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
@@ -46,12 +74,13 @@ function WorkloadCvesOverviewPage() {
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+    const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
 
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
 
@@ -64,7 +93,48 @@ function WorkloadCvesOverviewPage() {
         }
     );
 
+    const defaultStorage: VulnMgmtLocalStorage = {
+        preferences: {
+            defaultFilters: {
+                Severity: isFixabilityFiltersEnabled ? ['Critical', 'Important'] : [],
+                Fixable: isFixabilityFiltersEnabled ? ['Fixable'] : [],
+            },
+        },
+    } as const;
+
+    const [storedValue, setStoredValue] = useLocalStorage(
+        'vulnerabilityManagement',
+        defaultStorage,
+        isVulnMgmtLocalStorage
+    );
+    // Until the ROX_VULN_MGMT_FIXABILITY_FILTERS feature flag is removed, we need to used empty default filters
+    // as a fallback
+    const localStorageValue = isFixabilityFiltersEnabled ? storedValue : defaultStorage;
+
     const pagination = useURLPagination(20);
+
+    function updateDefaultFilters(values: DefaultFilters) {
+        pagination.setPage(1);
+        setStoredValue({ preferences: { defaultFilters: values } });
+        setSearchFilter(
+            mergeDefaultAndLocalFilters(
+                localStorageValue.preferences.defaultFilters,
+                values,
+                searchFilter
+            )
+        );
+    }
+
+    // When the page is initially visited and no local filters are applied, apply the default filters.
+    //
+    // Note that this _does not_ take into account a direct navigation via the left navigation when the user
+    // is already on the page. This is because we do not distinguish between navigation via the
+    // sidebar and e.g. clearing the page filters.
+    useEffect(() => {
+        if (isFixabilityFiltersEnabled && isEmpty(searchFilter)) {
+            setSearchFilter(localStorageValue.preferences.defaultFilters, 'replace');
+        }
+    }, []);
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
     const watchedImagesModalToggle = useSelectToggle();
@@ -79,7 +149,18 @@ function WorkloadCvesOverviewPage() {
     return (
         <>
             <PageTitle title="Workload CVEs Overview" />
-            {/* Default filters are disabled until fixability filters are fixed */}
+            {isFixabilityFiltersEnabled && (
+                <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                    <Toolbar>
+                        <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <DefaultFilterModal
+                                defaultFilters={localStorageValue.preferences.defaultFilters}
+                                setLocalStorage={updateDefaultFilters}
+                            />
+                        </ToolbarItem>
+                    </Toolbar>
+                </PageSection>
+            )}
             <Divider component="div" />
             <PageSection
                 className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
@@ -119,7 +200,7 @@ function WorkloadCvesOverviewPage() {
                         <CardBody>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
-                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    defaultFilters={localStorageValue.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
                                     vulnerabilityState={currentVulnerabilityState}
@@ -128,7 +209,7 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
-                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    defaultFilters={localStorageValue.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
                                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
@@ -146,7 +227,7 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
-                                    defaultFilters={emptyStorage.preferences.defaultFilters}
+                                    defaultFilters={localStorageValue.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
                                     vulnerabilityState={currentVulnerabilityState}
