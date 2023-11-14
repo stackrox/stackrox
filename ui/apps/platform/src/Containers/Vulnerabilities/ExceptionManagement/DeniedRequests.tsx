@@ -16,7 +16,7 @@ import {
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     REQUESTER_SEARCH_OPTION,
-    REQUEST_ID_SEARCH_OPTION,
+    REQUEST_NAME_SEARCH_OPTION,
     SearchOption,
 } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 
@@ -34,7 +34,7 @@ import FilterAutocompleteSelect from '../components/FilterAutocomplete';
 import { deniedRequests as vulnerabilityExceptions } from './mockUtils';
 
 const searchOptions: SearchOption[] = [
-    REQUEST_ID_SEARCH_OPTION,
+    REQUEST_NAME_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
