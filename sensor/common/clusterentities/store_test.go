@@ -87,7 +87,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 			expectedEndpoints: []string{"10.3.0.1", "10.0.0.2"},
 		},
 		// TODO(ROX-20716): Enable this test after fixing the issue of External Entities appearing for past IPs
-		//"The store shall remember past IP of a container": {
+		// "The store shall remember past IP of a container": {
 		//	entityUpdates: []eUpdate{
 		//		{
 		//			containerID: "pod1",
