@@ -296,6 +296,13 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
 	numRecordsToDelete := len(identifiers)
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		panic(err)
+	}
+	ctx = postgres.ContextWithTx(ctx, tx)
+
 	for {
 		if len(identifiers) == 0 {
 			break
@@ -306,6 +313,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		}
 
 		identifierBatch := identifiers[:localBatchSize]
+
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
@@ -316,7 +324,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		identifiers = identifiers[localBatchSize:]
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 // Upsert saves the current state of an object in storage.
