@@ -295,11 +295,16 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "could not create transaction for deletes")
+	var err error
+	var tx *postgres.Tx
+	if !postgres.HasTxInContext(ctx) {
+		tx, err = s.db.Begin(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not create transaction for deletes")
+		}
+
+		ctx = postgres.ContextWithTx(ctx, tx)
 	}
-	ctx = postgres.ContextWithTx(ctx, tx)
 
 	for {
 		if len(identifiers) == 0 {
@@ -315,8 +320,10 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
-			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-				return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
+			if tx != nil {
+				if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+					return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
+				}
 			}
 			return errors.Wrap(err, "unable to delete the records")
 		}
@@ -325,7 +332,10 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		identifiers = identifiers[localBatchSize:]
 	}
 
-	return tx.Commit(ctx)
+	if tx != nil {
+		return tx.Commit(ctx)
+	}
+	return nil
 }
 
 // Upsert saves the current state of an object in storage.
