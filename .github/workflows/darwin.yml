@@ -42,4 +42,4 @@ jobs:
         GOOS: "darwin"
         GOARCH: "amd64"
       shell: nix develop ./dev/nix --quiet --command bash -e {0}
-      run: make main-build-nodeps cli-darwin
+      run: make test
