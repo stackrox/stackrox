@@ -139,6 +139,13 @@ var (
 		Help:      "A gauge to track how many resources were sent in ResourcesSynced message as stub ids",
 	}, []string{"Resource"})
 
+	resourcesSyncedMessageSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resources_synced_size",
+		Help:      "A gauge to track how large ResourcesSynced message is",
+	})
+
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -244,6 +251,11 @@ func IncResourceSyncedStubID(keyName string) {
 	resourcesSyncedUnchaged.With(prometheus.Labels{
 		"Resource": keyName,
 	}).Inc()
+}
+
+// SetResourcesSyncedSize sets the latest resources synced message size transmitted to central.
+func SetResourcesSyncedSize(size int) {
+	resourcesSyncedMessageSize.Set(float64(size))
 }
 
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed

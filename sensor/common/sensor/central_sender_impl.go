@@ -125,6 +125,8 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 					metrics.IncResourceSyncedStubID(parts[0])
 					log.Debugf("unchangedIds[%d]: %s", i, key)
 				}
+
+				metrics.SetResourcesSyncedSize(msg.Size())
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
