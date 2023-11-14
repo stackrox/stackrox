@@ -34,7 +34,7 @@ jobs:
       with:
         repository: stackrox/stackrox-env
         path: dev/nix
-        ref: e04df0d3dfe31c3bf53105a3a3818b7b5c45594d
+        ref: 77a2d872be4e38046abe86308ec0c36f8a508e78
 
     - name: Run tests
       env:
