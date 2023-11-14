@@ -38,7 +38,7 @@ jobs:
 
     - name: Run tests
       env:
-        CGO_ENABLED: "0"
+        CGO_ENABLED: "1"
         GOOS: "darwin"
         GOARCH: "amd64"
       shell: nix develop ./dev/nix --quiet --command bash -e {0}
