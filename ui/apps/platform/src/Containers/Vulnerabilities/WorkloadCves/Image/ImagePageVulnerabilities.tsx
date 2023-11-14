@@ -45,6 +45,7 @@ import { DynamicTableLabel } from '../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -135,10 +136,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             pagination,
-            statusesForExceptionCount:
-                currentVulnerabilityState === 'OBSERVED'
-                    ? ['PENDING']
-                    : ['APPROVED_PENDING_UPDATE'],
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
 

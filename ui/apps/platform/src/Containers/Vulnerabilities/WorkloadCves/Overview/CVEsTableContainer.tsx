@@ -13,7 +13,11 @@ import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CV
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import {
+    getStatusesForExceptionCount,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
@@ -55,8 +59,7 @@ function CVEsTableContainer({
                 limit: perPage,
                 sortOption,
             },
-            statusesForExceptionCount:
-                vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'],
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
