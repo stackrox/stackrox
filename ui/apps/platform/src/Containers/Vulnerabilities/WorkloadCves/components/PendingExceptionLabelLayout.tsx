@@ -29,8 +29,8 @@ function PendingExceptionLabelLayout({
     cve,
     vulnerabilityState,
 }: PendingExceptionLabelLayoutProps) {
-    const query = getUrlQueryStringForSearchFilter({ cve });
-    const url = `${exceptionManagementPath}/exceptions?${query}`;
+    const query = getUrlQueryStringForSearchFilter({ CVE: [cve] });
+    const url = `${exceptionManagementPath}/pending-requests?${query}`;
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
             {children}
