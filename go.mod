@@ -69,7 +69,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/moby/sys/mountinfo v0.6.2
 	github.com/np-guard/cluster-topology-analyzer v1.9.0
-	github.com/np-guard/netpol-analyzer v0.4.3
+	github.com/np-guard/netpol-analyzer v1.0.1
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.13.0
@@ -94,7 +94,7 @@ require (
 	github.com/sergi/go-diff v1.3.1
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.4
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20230920075407-d83ac0b1e48e
