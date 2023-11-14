@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,21 +44,11 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 		}
 	})
 
-	b.Run("createNetworkTree", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			b.StopTimer()
-			mgr := initialize(b, entitiesByCluster)
-			b.StartTimer()
-
-			t := mgr.CreateNetworkTree(context.Background(), "c2")
-			require.NotNil(b, t)
-		}
-	})
-
 	b.Run("insertIntoNetworkTree", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			b.StopTimer()
-			t := createNetworkTree(b, entitiesByCluster)
+			mgr := initialize(b, entitiesByCluster)
+			t := mgr.CreateNetworkTree(context.Background(), "c2")
 			b.StartTimer()
 
 			for _, entity := range entities {
@@ -67,13 +56,6 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 			}
 		}
 	})
-}
-
-func createNetworkTree(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) tree.NetworkTree {
-	mgr := initialize(b, entitiesByCluster)
-	t := mgr.CreateNetworkTree(context.Background(), "c2")
-	require.NotNil(b, t)
-	return t
 }
 
 func initialize(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) Manager {
