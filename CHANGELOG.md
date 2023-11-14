@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
   to prevent OOMs during DB initialization in case of memory pressure on the node.
+- ROX-20105: Scanner slim will now read additional CAs from the `additional-ca-sensor` secret.
 - ROX-20623: Fixed bug mistakenly requiring admin access to delegate ad-hoc scan requests to secured clusters.
 
 ## [4.3.0]
