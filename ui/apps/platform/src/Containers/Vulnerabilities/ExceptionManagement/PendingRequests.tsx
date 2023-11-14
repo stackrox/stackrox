@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
+    Bullseye,
     PageSection,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -12,15 +14,19 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import useURLPagination from 'hooks/useURLPagination';
 
 import useURLSearch from 'hooks/useURLSearch';
+import useRestQuery from 'hooks/useRestQuery';
+import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 import {
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     REQUESTER_SEARCH_OPTION,
-    REQUEST_ID_SEARCH_OPTION,
+    REQUEST_NAME_SEARCH_OPTION,
     SearchOption,
 } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import useURLSort from 'hooks/useURLSort';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import {
     RequestExpires,
     RequestIDLink,
@@ -31,21 +37,81 @@ import {
     RequestScope,
 } from './components/ExceptionRequestTableCells';
 import FilterAutocompleteSelect from '../components/FilterAutocomplete';
-import { pendingRequests as vulnerabilityExceptions } from './mockUtils';
+import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 
 const searchOptions: SearchOption[] = [
-    REQUEST_ID_SEARCH_OPTION,
+    REQUEST_NAME_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 ];
 
+const sortFields = [
+    'Request Name',
+    'Requester User Name',
+    'Created Time',
+    'Request Expiry Time',
+    'Image Registry Scope',
+];
+const defaultSortOption = {
+    field: sortFields[0],
+    direction: 'desc',
+} as const;
+
 function PendingApprovals() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
+
+    const vulnerabilityExceptionsFn = useCallback(
+        () =>
+            fetchVulnerabilityExceptions(
+                {
+                    ...searchFilter,
+                    'Request Status': ['PENDING', 'APPROVED_PENDING_UPDATE'],
+                },
+                sortOption,
+                page - 1,
+                perPage
+            ),
+        [searchFilter, sortOption, page, perPage]
+    );
+    const { data, loading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
     function onFilterChange() {
         setPage(1);
+    }
+
+    if (loading && !data) {
+        return (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
+    }
+
+    if (error) {
+        return (
+            <PageSection variant="light">
+                <TableErrorComponent
+                    error={error}
+                    message="An error occurred. Try refreshing again"
+                />
+            </PageSection>
+        );
+    }
+
+    if (!data) {
+        return (
+            <NotFoundMessage
+                title="404: We couldn't find that page"
+                message="Pending vulnerability exception requests could not be found."
+            />
+        );
     }
 
     return (
@@ -59,7 +125,14 @@ function PendingApprovals() {
                     />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination
-                            itemCount={1}
+                            toggleTemplate={({ firstIndex, lastIndex }) => (
+                                <span>
+                                    <b>
+                                        {firstIndex} - {lastIndex}
+                                    </b>{' '}
+                                    of <b>many</b>
+                                </span>
+                            )}
                             page={page}
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -83,17 +156,17 @@ function PendingApprovals() {
             <TableComposable borders={false}>
                 <Thead noWrap>
                     <Tr>
-                        <Th>Request ID</Th>
-                        <Th>Requester</Th>
+                        <Th sort={getSortParams('Request Name')}>Request name</Th>
+                        <Th sort={getSortParams('Requester User Name')}>Requester</Th>
                         <Th>Requested action</Th>
-                        <Th>Requested</Th>
-                        <Th>Expires</Th>
-                        <Th>Scope</Th>
+                        <Th sort={getSortParams('Created Time')}>Requested</Th>
+                        <Th sort={getSortParams('Request Expiry Time')}>Expires</Th>
+                        <Th sort={getSortParams('Image Registry Scope')}>Scope</Th>
                         <Th>Requested items</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {vulnerabilityExceptions.map((exception) => {
+                    {data.map((exception) => {
                         const { id, name, requester, createdAt, scope } = exception;
                         return (
                             <Tr key={id}>
