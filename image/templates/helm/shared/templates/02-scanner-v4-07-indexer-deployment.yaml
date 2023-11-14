@@ -88,8 +88,7 @@ spec:
             drop: ["NET_RAW"]
           runAsNonRoot: true
           runAsUser: 65534
-{{/* Activate readiness probe for gRPC port. */}}
-{{- if false }}
+{{ if semverCompare ">= 1.24.0" ._rox._apiServer.version }}
         readinessProbe:
           grpc:
             port: 8443

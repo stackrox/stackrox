@@ -27,7 +27,16 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
-
+- name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
+  set:
+    scannerV4.disable: false
+    meta.apiServer.version: "1.23.99"
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].readinessProbe.grpc | assertThat(. == null)
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].readinessProbe.grpc | assertThat(. == null)
+# TODO(ROX-20842): Add test which checks existence of gRPC health probes on Kubernetes >= 1.24.0.
+# Cannot be added right away because helmtest would need to be updated, as the validation of
+# the manifests it baked in bails out on grpc readinessProbes (probably outdated schemas).
 - name: "scanner V4 indexer and matcher can be enabled with built-in defaulting"
   set:
     scannerV4.disable: false
