@@ -111,16 +111,6 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 		return errors.Wrap(err, "unable to get chart meta values")
 	}
 
-	if (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
-		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
-		chartMetaValues.TelemetryEnabled = true
-		chartMetaValues.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
-		chartMetaValues.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
-	} else {
-		chartMetaValues.TelemetryEnabled = false
-		chartMetaValues.TelemetryKey = phonehome.DisabledKey
-	}
-
 	// load image with templates
 	templateImage := image.GetDefaultImage()
 	if flags.IsDebug() {
@@ -159,7 +149,19 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	if err != nil {
 		return nil, errox.InvalidArgs.Newf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
-	return charts.GetMetaValuesForFlavor(imageFlavor), nil
+
+	values := charts.GetMetaValuesForFlavor(imageFlavor)
+
+	if (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
+		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
+		values.TelemetryEnabled = true
+		values.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
+		values.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
+	} else {
+		values.TelemetryEnabled = false
+		values.TelemetryKey = phonehome.DisabledKey
+	}
+	return values, nil
 }
 
 func handleRhacsWarnings(rhacs, _ bool, logger logger.Logger) {
