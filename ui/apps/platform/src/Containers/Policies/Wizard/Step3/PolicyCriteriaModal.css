@@ -1,0 +1,12 @@
+.pf-c-tree-view__content {
+    outline-color: 0 0 #000 !important;
+}
+
+.pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node-container:hover {
+    background-color: var(--pf-global--BackgroundColor--200) !important;
+    cursor: pointer;
+}
+
+.pf-c-tree-view__node.pf-m-current .pf-c-tree-view__node-container {
+    background-color: var(--pf-global--palette--blue-50) !important;
+}

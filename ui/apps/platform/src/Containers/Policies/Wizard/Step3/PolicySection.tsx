@@ -50,6 +50,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
         );
     }
 
+    function addPolicyFieldCardHandler(fieldCard) {
+        setFieldValue(`policySections[${sectionIndex.toString()}].policyGroups`, [
+            ...policyGroups,
+            fieldCard,
+        ]);
+    }
+
     return (
         <>
             <Card isFlat isCompact className={!readOnly ? 'policy-section-card' : ''}>
@@ -146,7 +153,12 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                 </CardBody>
             </Card>
             {showPolicyCriteriaModal && (
-                <PolicyCriteriaModal isModalOpen={isModalOpen} onClose={closeModal} />
+                <PolicyCriteriaModal
+                    descriptors={descriptors}
+                    isModalOpen={isModalOpen}
+                    onClose={closeModal}
+                    addPolicyFieldCardHandler={addPolicyFieldCardHandler}
+                />
             )}
         </>
     );

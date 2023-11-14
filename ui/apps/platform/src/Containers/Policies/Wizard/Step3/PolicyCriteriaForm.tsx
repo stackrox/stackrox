@@ -6,8 +6,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { getCriteriaAllowedByLifecycle } from 'Containers/Policies/policies.utils';
-import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
+import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
@@ -36,18 +35,9 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         }
     }
 
-    const unfilteredDescriptors =
-        values.eventSource === 'AUDIT_LOG_EVENT'
-            ? auditLogDescriptor
-            : policyConfigurationDescriptor;
-    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
-        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
-        }
-        return true;
-    });
-    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
-        descriptors,
+    const filteredDescriptors = getPolicyDescriptors(
+        isFeatureFlagEnabled,
+        values.eventSource,
         values.lifecycleStages
     );
 
@@ -132,7 +122,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                 </Flex>
                 <Divider component="div" isVertical />
                 <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
-                    <PolicyCriteriaKeys keys={descriptorsFilteredByLifecycle} />
+                    <PolicyCriteriaKeys keys={filteredDescriptors} />
                 </Flex>
             </Flex>
         </DndProvider>
