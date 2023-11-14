@@ -111,13 +111,14 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 		return errors.Wrap(err, "unable to get chart meta values")
 	}
 
-	if version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "" {
+	if (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
+		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
 		chartMetaValues.TelemetryEnabled = true
 		chartMetaValues.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
 		chartMetaValues.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
 	} else {
-		chartMetaValues.TelemetryKey = phonehome.DisabledKey
 		chartMetaValues.TelemetryEnabled = false
+		chartMetaValues.TelemetryKey = phonehome.DisabledKey
 	}
 
 	// load image with templates
