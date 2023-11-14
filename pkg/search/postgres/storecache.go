@@ -100,6 +100,7 @@ type CachedStore[T any, PT unmarshaler[T]] struct {
 	cacheLock                     sync.RWMutex
 }
 
+// Upsert saves the current state of an object in storage.
 func (c *CachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	dbErr := c.underlyingStore.Upsert(ctx, obj)
 	c.cacheLock.Lock()
@@ -112,6 +113,7 @@ func (c *CachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	return nil
 }
 
+// UpsertMany saves the state of multiple objects in the storage.
 func (c *CachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	dbErr := c.underlyingStore.UpsertMany(ctx, objs)
 	c.cacheLock.Lock()
@@ -126,6 +128,7 @@ func (c *CachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	return nil
 }
 
+// Delete removes the object associated to the specified ID from the store.
 func (c *CachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	dbErr := c.underlyingStore.Delete(ctx, id)
 	c.cacheLock.Lock()
@@ -138,6 +141,7 @@ func (c *CachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+// DeleteMany removes the objects associated to the specified IDs from the store.
 func (c *CachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	dbErr := c.underlyingStore.DeleteMany(ctx, identifiers)
 	c.cacheLock.Lock()
@@ -152,6 +156,7 @@ func (c *CachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	return nil
 }
 
+// Exists tells whether the ID exists in the store.
 func (c *CachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -162,6 +167,7 @@ func (c *CachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 	return c.isReadAllowed(ctx, obj), nil
 }
 
+// Count returns the number of objects in the store.
 func (c *CachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -176,6 +182,7 @@ func (c *CachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 	return count, nil
 }
 
+// Get returns the object, if it exists from the store.
 func (c *CachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -189,6 +196,7 @@ func (c *CachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	return obj, true, nil
 }
 
+// GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
 func (c *CachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
 	if len(identifiers) == 0 {
 		return nil, nil, nil
@@ -212,16 +220,19 @@ func (c *CachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 	return results, misses, nil
 }
 
+// Walk iterates over all the objects in the store and applies the closure.
 func (c *CachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	return c.walkCacheNoLock(ctx, fn)
 }
 
+// GetByQuery returns the objects from the store matching the query.
 func (c *CachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
+// DeleteByQuery removes the objects from the store based on the passed query.
 func (c *CachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	dbErr := c.underlyingStore.DeleteByQuery(ctx, query)
 	c.cacheLock.Lock()
@@ -230,6 +241,7 @@ func (c *CachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query)
 	return dbErr
 }
 
+// GetIDs returns all the IDs for the store.
 func (c *CachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -244,6 +256,9 @@ func (c *CachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	return result, nil
 }
 
+// GetAll retrieves all objects from the store.
+//
+// Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
 func (c *CachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
