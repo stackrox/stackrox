@@ -164,7 +164,11 @@ function ImageVulnerabilitiesTable({
                                         cve={cve}
                                         vulnerabilityState={vulnerabilityState}
                                     >
-                                        <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                        <Link
+                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                        >
+                                            {cve}
+                                        </Link>
                                     </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVE severity">

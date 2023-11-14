@@ -7,6 +7,7 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import DateDistanceTd from '../components/DatePhraseTd';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { getEntityPagePath } from '../searchUtils';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export type DeploymentResources = {
     deploymentCount: number;
@@ -38,6 +39,7 @@ export type DeploymentResourceTableProps = {
 };
 
 function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTableProps) {
+    const vulnerabilityState = useVulnerabilityState();
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -59,7 +61,9 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                     >
                         <Tr>
                             <Td>
-                                <Link to={getEntityPagePath('Deployment', id)}>{name}</Link>
+                                <Link to={getEntityPagePath('Deployment', id, vulnerabilityState)}>
+                                    {name}
+                                </Link>
                             </Td>
                             <Td>{clusterName}</Td>
                             <Td>{namespace}</Td>

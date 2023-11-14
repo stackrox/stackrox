@@ -13,6 +13,7 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel } from '../types';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -69,6 +70,7 @@ function DeploymentsTable({
     isFiltered,
     filteredSeverities,
 }: DeploymentsTableProps) {
+    const vulnerabilityState = useVulnerabilityState();
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -112,7 +114,9 @@ function DeploymentsTable({
                         >
                             <Tr>
                                 <Td>
-                                    <Link to={getEntityPagePath('Deployment', id)}>
+                                    <Link
+                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                    >
                                         <Truncate position="middle" content={name} />
                                     </Link>
                                 </Td>
