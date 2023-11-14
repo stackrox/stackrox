@@ -8,7 +8,7 @@ import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../ty
 
 type DefaultFilterModalProps = {
     defaultFilters: DefaultFilters;
-    setLocalStorage: (values) => void;
+    setLocalStorage: (values: DefaultFilters) => void;
 };
 
 function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterModalProps) {
