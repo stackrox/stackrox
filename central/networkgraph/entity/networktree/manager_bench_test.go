@@ -38,9 +38,20 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 	// Above data will create one of the worst possible tree since each CIDR is disjoint aka all nodes are leaves,
 	// hence resulting in comparison with every node for each new entry.
 
+	b.Run("initialize", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			mgr := initialize(b, entitiesByCluster)
+			require.NotNil(b, mgr)
+		}
+	})
+
 	b.Run("createNetworkTree", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			t := createNetworkTree(b, entitiesByCluster)
+			b.StopTimer()
+			mgr := initialize(b, entitiesByCluster)
+			b.StartTimer()
+
+			t := mgr.CreateNetworkTree(context.Background(), "c2")
 			require.NotNil(b, t)
 		}
 	})
@@ -59,12 +70,17 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 }
 
 func createNetworkTree(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) tree.NetworkTree {
-	mgr := newManager()
-	err := mgr.Initialize(entitiesByCluster)
-	require.NoError(b, err)
+	mgr := initialize(b, entitiesByCluster)
 	t := mgr.CreateNetworkTree(context.Background(), "c2")
 	require.NotNil(b, t)
 	return t
+}
+
+func initialize(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) Manager {
+	mgr := newManager()
+	err := mgr.Initialize(entitiesByCluster)
+	require.NoError(b, err)
+	return mgr
 }
 
 func nextIP(ip net.IP) net.IP {
