@@ -61,8 +61,7 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 
-	outOfTree := make([]driver.Updater, 0)
-	outOfTree = append(outOfTree, manualSet.Updaters()...)
+	outOfTree := append([]driver.Updater{}, manualSet.Updaters()...)
 
 	for i, uSet := range [][]string{
 		{"oracle"}, {"photon"},
@@ -93,10 +92,10 @@ func Export(ctx context.Context, outputDir string) error {
 			return err
 		}
 
-		if err = jsonStore.Store(zstdWriter); err != nil {
+		if err := jsonStore.Store(zstdWriter); err != nil {
 			return err
 		}
-		if err = zstdWriter.Flush(); err != nil {
+		if err := zstdWriter.Flush(); err != nil {
 			zlog.Error(ctx).Err(err).Msg("Failed to flush zstd writer")
 		}
 	}

@@ -6,7 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater"
 )
@@ -17,8 +18,8 @@ func tryExport(outputDir string) error {
 	defer cancel()
 
 	err := updater.Export(ctx, outputDir)
-	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		zlog.Error(ctx).Err(ctx.Err()).Msg("Data export attempt failed; will attempt retry if within retry limits")
+	if errors.Is(err, context.DeadlineExceeded) {
+		zlog.Error(ctx).Err(err).Msg("Export timed out")
 		return ctx.Err()
 	}
 	if err != nil {
@@ -42,8 +43,9 @@ func main() {
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		err := tryExport(*outputDir)
 		if errors.Is(err, context.DeadlineExceeded) {
+			zlog.Error(context.Background()).Err(err).Msg("Data export attempt failed; will attempt retry if within retry limits")
 			continue
-		} else if err == nil {
+		} else if errors.Is(err, nil) {
 			break
 		} else {
 			log.Fatal("The data export process has failed.")
