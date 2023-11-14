@@ -15,7 +15,7 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 set -euo pipefail
 
 test_compliance_e2e() {
-    info "Starting compliance e2e tests"
+    info "Starting compliance v2 e2e tests"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
@@ -24,22 +24,25 @@ test_compliance_e2e() {
 
     export_test_environment
 
+    export SENSOR_HELM_DEPLOY=true
+
     setup_deployment_env false false
     remove_existing_stackrox_resources
+    remove_compliance_operator_resources
     setup_default_TLS_certs
 
+    # Compliance v2 requires the Compliance Operator to be installed.
+    install_the_compliance_operator
     deploy_stackrox
-    # This is what installs the Compliance Operator if the
-    # INSTALL_COMPLIANCE_OPERATOR environment variable is set to "true".
-    deploy_optional_e2e_components
 
     run_compliance_e2e_tests
 }
 
 run_compliance_e2e_tests() {
-    info "Running compliance e2e tests"
+    info "Running compliance v2 e2e tests"
 
-    make -C tests compliance-tests || touch FAIL
+    rm -f FAIL
+    make -C tests compliance-v2-tests || touch FAIL
 
     store_test_results "compliance/test-results/reports" "reports"
 
