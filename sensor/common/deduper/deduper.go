@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
@@ -63,18 +64,26 @@ var (
 type deduper struct {
 	stream         messagestream.SensorMessageStream
 	lastSent       map[deduperkey.Key]uint64
-	observationSet *ClosableSet
+	centralState   set.StringSet
+	observationSet *CloseableSet
 
 	hasher *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *ClosableSet) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *CloseableSet) messagestream.SensorMessageStream {
 	if deduperState == nil {
 		deduperState = make(map[deduperkey.Key]uint64)
 	}
+
+	centralOriginalState := set.NewStringSet()
+	for k := range deduperState {
+		centralOriginalState.Add(k.String())
+	}
+
 	return &deduper{
 		stream:         stream,
+		centralState:   centralOriginalState,
 		lastSent:       deduperState,
 		hasher:         hash.NewHasher(),
 		observationSet: observationSet,
@@ -123,7 +132,10 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if d.lastSent[key] == hashValue {
 			// If this is a SYNC event, we have to keep track of this event
 			if msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
-				d.observationSet.AddIfOpen(getKey(msg))
+				key := getKey(msg)
+				if d.centralState.Contains(key) {
+					d.observationSet.AddIfOpen(getKey(msg))
+				}
 			}
 			return nil
 		}

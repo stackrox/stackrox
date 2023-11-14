@@ -22,6 +22,6 @@ func NewCentralSender(finished *sync.WaitGroup, senders ...common.SensorComponen
 		stopper:        concurrency.NewStopper(),
 		senders:        senders,
 		finished:       finished,
-		observationSet: deduper.NewClosableSet(),
+		observationSet: deduper.NewCloseableSet(),
 	}
 }

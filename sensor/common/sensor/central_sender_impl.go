@@ -19,7 +19,7 @@ type centralSenderImpl struct {
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
 	initialDeduperState map[deduperkey.Key]uint64
-	observationSet      *deduper.ClosableSet
+	observationSet      *deduper.CloseableSet
 }
 
 func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
