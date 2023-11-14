@@ -27,6 +27,18 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
+- name: "rendering fails if scannerV4 is disabled but"
+  expectError: true
+  set:
+    scannerV4.disable: true
+  tests:
+    - name: "indexer is enabled"
+      set:
+        scannerV4.indexer.disabled: false
+    - name: "matcher is enabled"
+      set:
+        scannerV4.matcher.disabled: false
+
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:
     scannerV4.disable: false
@@ -110,23 +122,26 @@ tests:
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
 
-- name: "Installation fails if"
+- name: "Warning is emitted if"
   tests:
-    - name: "indexer is enabled without matcher also being enabled"
+    - name: "indexer is enabled and matcher is disabled"
       values:
         scannerV4:
+          disable: false
           indexer:
             disable: false
           matcher:
             disable: true
-    - name: "matcher is enabled without indexer also being enabled"
+    - name: "indexer is disabled and matcher is enabled"
       values:
         scannerV4:
+          disable: false
           indexer:
             disable: true
           matcher:
             disable: false
-  expectError: true
+  expect:
+    .notes | assertThat(contains("Unsupported Scanner V4 configuration detected"))
 
 - name: "scanner v4 DB uses expected default configuration"
   values:
