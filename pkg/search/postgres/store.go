@@ -48,6 +48,7 @@ type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...P
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
+// Store is the interface to interact with the storage for the generic type T
 type Store[T any, PT unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context) (int, error)
