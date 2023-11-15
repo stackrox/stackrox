@@ -148,3 +148,15 @@ export function getVulnStateScopedQueryString(
         ...vulnerabilityStateFilter,
     });
 }
+
+/**
+ * Returns the statuses that should be used to query for exception counts given
+ * the current vulnerability state.
+ * @param vulnerabilityState
+ * @returns ‘PENDING’ if the vulnerability state is ‘OBSERVED’, otherwise ‘APPROVED_PENDING_UPDATE’
+ */
+export function getStatusesForExceptionCount(
+    vulnerabilityState: VulnerabilityState | undefined
+): string[] {
+    return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
+}

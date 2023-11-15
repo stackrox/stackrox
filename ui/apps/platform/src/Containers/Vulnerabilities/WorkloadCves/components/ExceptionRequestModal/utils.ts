@@ -11,22 +11,33 @@ export type ScopeContext =
     | 'GLOBAL'
     | { imageName: { registry: string; remote: string; tag: string } };
 
-export const exceptionValidationSchema = yup.object({
-    cves: yup.array().of(yup.string()).min(1, 'At least one CVE must be selected'),
+const baseValidationSchema = yup.object({
+    cves: yup
+        .array()
+        .of(yup.string().required())
+        .min(1, 'At least one CVE must be selected')
+        .required(),
     comment: yup.string().required('A rationale is required'),
+    scope: yup
+        .object({
+            imageScope: yup.object({
+                registry: yup.string().required(),
+                remote: yup.string().required(),
+                tag: yup.string().required(),
+            }),
+        })
+        .required('A scope is required'),
 });
 
-export type ExceptionValues = {
-    cves: string[];
-    comment: string;
-    scope: {
-        imageScope: {
-            registry: string;
-            remote: string;
-            tag: string;
-        };
-    };
-};
+export const deferralValidationSchema = baseValidationSchema.concat(
+    yup.object({
+        expiry: yup.object().required('An expiry is required'),
+    })
+);
+
+export const falsePositiveValidationSchema = baseValidationSchema;
+
+export type ExceptionValues = yup.InferType<typeof baseValidationSchema>;
 
 export type FalsePositiveValues = ExceptionValues;
 
