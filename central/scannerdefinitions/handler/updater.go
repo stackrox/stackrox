@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,6 +28,10 @@ type updater struct {
 	interval    time.Duration
 	once        sync.Once
 	stopSig     concurrency.Signal
+}
+
+func (u *updater) OpenFile() (*os.File, time.Time, error) {
+	return u.file.Open()
 }
 
 // newUpdater creates a new updater.

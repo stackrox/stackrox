@@ -2,13 +2,13 @@ package handler
 
 import (
 	"fmt"
-	"io"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v3"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -31,13 +31,14 @@ type mappingUpdater struct {
 
 const (
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket
-	baseURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
-
-	mappingZip = "mapping.zip"
+	baseURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
 )
 
-// NewMappingUpdater creates a new updater.
-func NewMappingUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *mappingUpdater {
+// newMappingUpdater creates a new updater for RH repository mapping data.
+func newMappingUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *mappingUpdater {
+	if downloadURL == "" {
+		downloadURL = baseURL
+	}
 	return &mappingUpdater{
 		file:        file,
 		client:      client,
@@ -57,9 +58,16 @@ func (u *mappingUpdater) Stop() {
 func (u *mappingUpdater) Start() {
 	u.once.Do(func() {
 		// Run the first update in a blocking-manner.
-		u.update()
+		err := u.update()
+		if err != nil {
+			log.Errorf("Failed to start Scanner v4 repository mapping updater: %v", err)
+		}
 		go u.runForever()
 	})
+}
+
+func (u *mappingUpdater) OpenFile() (*os.File, time.Time, error) {
+	return u.file.Open()
 }
 
 func (u *mappingUpdater) runForever() {
@@ -69,7 +77,10 @@ func (u *mappingUpdater) runForever() {
 	for {
 		select {
 		case <-timer.C:
-			u.update()
+			err := u.update()
+			if err != nil {
+				log.Errorf("Failed to update Scanner v4 repository mapping: %v", err)
+			}
 			// Reset the timer with a new interval
 			timer.Reset(u.interval + nextInterval())
 		case <-u.stopSig.Done():
@@ -87,45 +98,48 @@ func (u *mappingUpdater) update() error {
 }
 
 func (u *mappingUpdater) doUpdate() error {
-	err := downloadFromURL(baseURL+mappingZip, u.file.Path())
+	err := u.downloadFromURL(u.downloadURL)
 	if err != nil {
-		return fmt.Errorf("failed to download %s: %v", mappingZip, err)
+		return fmt.Errorf("failed to download %s: %v", u.downloadURL, err)
 	}
 
 	log.Info("Finished downloading repo mapping data for Scanner V4")
 	return nil
 }
 
-func downloadFromURL(url, pathToFile string) error {
-	operation := func() error {
+func (u *mappingUpdater) downloadFromURL(url string) error {
+	download := func() error {
 		resp, err := http.Get(url)
 		if err != nil {
 			return err
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode == http.StatusOK {
-			out, err := os.Create(pathToFile)
-			if err != nil {
-				return err
-			}
-			defer out.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("received non-200 status code: %d", resp.StatusCode)
+		}
 
-			_, err = io.Copy(out, resp.Body)
+		lastModified, err := time.Parse(time.RFC1123, resp.Header.Get(lastModifiedHeader))
+		if err != nil {
+			return errors.Errorf("unable to determine upstream definitions file's modified time: %v", err)
+		}
+		err = u.file.Write(resp.Body, lastModified)
+		if err != nil {
 			return err
 		}
-		return fmt.Errorf("received non-200 status code: %d", resp.StatusCode)
+
+		return nil // Success case
 	}
 
 	// Notify function will log the error and the backoff delay duration
 	notify := func(err error, duration time.Duration) {
-		fmt.Printf("Error: %v. Retrying in %v...\n", err, duration)
+		log.Errorf("Error: %v. Retrying in %v...\n", err, duration)
 	}
 
 	b := backoff.NewExponentialBackOff()
 	backoff.WithMaxRetries(b, 3) // Set max retry attempts to 3
 
-	return backoff.RetryNotify(operation, b, notify)
+	return backoff.RetryNotify(download, b, notify)
 }
 
 func nextInterval() time.Duration {

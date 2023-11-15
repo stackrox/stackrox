@@ -45,6 +45,10 @@ const (
 
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
+
+	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
+	v4StorageDomain = "https://storage.googleapis.com/scanner-v4-test/"
+	mappingFile     = "redhat-repository-mappings/mapping.zip"
 )
 
 var (
@@ -167,28 +171,12 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 // identified by the given uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
 func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
-	h.lock.Lock()
-	defer h.lock.Unlock()
+	return h.getUpdaterHelper(uuid, false)
+}
 
-	u, exists := h.updaters[uuid]
-	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, uuid+".zip")
-
-		h.updaters[uuid] = &requestedUpdater{
-			RequestedUpdater: newUpdater(
-				file.New(filePath),
-				client,
-				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),
-				h.interval,
-			),
-		}
-
-		u = h.updaters[uuid]
-	}
-
-	u.lastRequestedTime = time.Now()
-
-	return u
+// getMappingUpdater gets or creates the updater for RH repository mapping data
+func (h *httpHandler) getMappingUpdater(key string) *requestedUpdater {
+	return h.getUpdaterHelper(key, true)
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -341,7 +329,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 	// Open both the "online" and "offline", and save their modification times.
 	var onlineFile *vulDefFile
-	onlineOSFile, onlineTime, err := u.file.Open()
+	onlineOSFile, onlineTime, err := u.OpenFile()
 	if err != nil {
 		return
 	}
@@ -416,4 +404,40 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, nil
+}
+
+func (h *httpHandler) getUpdaterHelper(key string, isMapping bool) *requestedUpdater {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	u, exists := h.updaters[key]
+	if !exists {
+		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
+		url := path.Join(v4StorageDomain, mappingFile)
+		if !isMapping {
+			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
+			h.updaters[key] = &requestedUpdater{
+				RequestedUpdater: newUpdater(
+					file.New(filePath),
+					client,
+					url,
+					h.interval,
+				),
+			}
+		} else {
+			h.updaters[key] = &requestedUpdater{
+				RequestedUpdater: newMappingUpdater(
+					file.New(filePath),
+					client,
+					url,
+					h.interval,
+				),
+			}
+		}
+
+		u = h.updaters[key]
+	}
+
+	u.lastRequestedTime = time.Now()
+	return u
 }
