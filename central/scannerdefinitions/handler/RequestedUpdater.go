@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// RequestedUpdater defines the methods for updating files.
+// RequestedUpdater Interface defining methods for updating the data necessary for scanning
 type RequestedUpdater interface {
 	Start()
 	Stop()
