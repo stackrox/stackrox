@@ -118,9 +118,10 @@ func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, err
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,
 	images []*storage.Image,
+	applied *NetworkPoliciesApplied,
 	flow *NetworkFlowDetails,
 ) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images, nil)
+	obj, err := ConstructDeployment(deployment, images, applied)
 	if err != nil {
 		return nil, err
 	}
