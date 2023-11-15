@@ -1,10 +1,10 @@
 Policy check results for image: nginx:test
-(TOTAL: 7, [34;2mLOW[0m: 1, [33mMEDIUM[0m: 3, [95mHIGH[0m: 2, [31;1mCRITICAL[0m: 1)
+(TOTAL: 7, [34;2mLOW[0;22m: 1, [33mMEDIUM[0m: 3, [95mHIGH[0m: 2, [31;1mCRITICAL[0;22m: 1)
 
 +----------+----------+--------------+----------------------+--------------------+----------------------+
 |  POLICY  | SEVERITY | BREAKS BUILD |     DESCRIPTION      |     VIOLATION      |     REMEDIATION      |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 1 | [31;1mCRITICAL[0m |      X       | policy 1 for testing | - test violation 1 | policy 1 for testing |
+| policy 1 | [31;1mCRITICAL[0;22m |      X       | policy 1 for testing | - test violation 1 | policy 1 for testing |
 |          |          |              |                      |                    |                      |
 |          |          |              |                      | - test violation 2 |                      |
 |          |          |              |                      |                    |                      |
@@ -34,5 +34,5 @@ Policy check results for image: nginx:test
 |          |          |              |                      |                    |                      |
 |          |          |              |                      | - test violation 3 |                      |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
-| policy 7 |   [34;2mLOW[0m    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
+| policy 7 |   [34;2mLOW[0;22m    |      -       | policy 7 for testing | - test violation 1 | policy 7 for testing |
 +----------+----------+--------------+----------------------+--------------------+----------------------+
