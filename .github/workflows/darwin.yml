@@ -30,6 +30,6 @@ jobs:
       env:
         CGO_ENABLED: "1"
         GOOS: "darwin"
-        GOARCH: "arm64"
+        GOARCH: "amd64"
       shell: nix develop ./nix --quiet --command bash -e {0}
       run: make main-build-nodeps
