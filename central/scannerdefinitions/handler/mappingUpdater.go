@@ -17,7 +17,7 @@ import (
 var (
 	_       RequestedUpdater = (*mappingUpdater)(nil)
 	randGen                  = rand.New(rand.NewSource(time.Now().UnixNano()))
-)
+) /**/
 
 type mappingUpdater struct {
 	file *file.File
@@ -100,7 +100,7 @@ func (u *mappingUpdater) update() error {
 func (u *mappingUpdater) doUpdate() error {
 	err := u.downloadFromURL(u.downloadURL)
 	if err != nil {
-		return fmt.Errorf("failed to download %s: %v", u.downloadURL, err)
+		return err
 	}
 
 	log.Info("Finished downloading repo mapping data for Scanner V4")
@@ -113,7 +113,12 @@ func (u *mappingUpdater) downloadFromURL(url string) error {
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Errorf("Error closing response body: %v", err)
+			}
+		}()
 
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("received non-200 status code: %d", resp.StatusCode)
