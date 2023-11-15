@@ -140,7 +140,6 @@ message ComplianceOperatorCheckResultV2 {
     string                    standard         = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
     string                    control          = 13;
     string                    scan_id          = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
-    string                    scan_config_id   = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"'];
     string                    scan_config_name = 17;
 }
 
