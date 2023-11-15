@@ -29,9 +29,6 @@ endif
 
 GOOS := $(HOST_OS)
 
-GO_VERSION          = $(firstword $(subst go version ,,$(shell go version)))
-EXPECTED_GO_VERSION = $(shell cat ../EXPECTED_GO_VERSION)
-
 GO_BUILD_FLAGS = CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
