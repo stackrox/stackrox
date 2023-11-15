@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-go-binaries:
-    runs-on: macos-13
+    runs-on: macos-13-arm
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -30,16 +30,6 @@ jobs:
       env:
         CGO_ENABLED: "1"
         GOOS: "darwin"
-        GOARCH: "amd64"
+        GOARCH: "arm64"
       shell: nix develop ./nix --quiet --command bash -e {0}
       run: make main-build-nodeps
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
