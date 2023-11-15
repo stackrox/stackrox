@@ -54,9 +54,6 @@ func (k *Key) String() string {
 // ParseKeySlice returns a list of Key objects from a list a string formatted keys. An error returned means that some
 // of the keys might have failed when being parsed.
 func ParseKeySlice(keys []string) ([]Key, error) {
-	if keys == nil {
-		return make([]Key, 0), nil
-	}
 	errList := errorhelpers.NewErrorList("malformed key entries")
 	result := make([]Key, len(keys))
 	for i, v := range keys {

@@ -79,7 +79,6 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		messageCallbackLock:  sync.RWMutex{},
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
 		deduperState:         &central.DeduperState{ResourceHashes: make(map[string]uint64)},
-		deduperStateLock:     sync.RWMutex{},
 	}
 }
 

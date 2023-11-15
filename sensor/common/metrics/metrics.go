@@ -132,12 +132,12 @@ var (
 		Help:      "A counter for the total number of typed k8s events processed by Sensor",
 	}, []string{"Action", "Resource"})
 
-	resourcesSyncedUnchaged = prometheus.NewCounterVec(prometheus.CounterOpts{
+	resourcesSyncedUnchaged = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resources_synced_unchanged",
-		Help:      "A gauge to track how many resources were sent in ResourcesSynced message as stub ids",
-	}, []string{"Resource"})
+		Help:      "A counter to track how many resources were sent in ResourcesSynced message as stub ids",
+	})
 
 	resourcesSyncedMessageSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -246,11 +246,9 @@ func RegisterSensorIndicatorChannelFullCounter() {
 	sensorIndicatorChannelFullCounter.Inc()
 }
 
-// IncResourceSyncedStubID sets the number of resources synced transmitted in the last sync event
-func IncResourceSyncedStubID(keyName string) {
-	resourcesSyncedUnchaged.With(prometheus.Labels{
-		"Resource": keyName,
-	}).Inc()
+// IncrementTotalResourcesSyncSent sets the number of resources synced transmitted in the last sync event
+func IncrementTotalResourcesSyncSent(value int) {
+	resourcesSyncedUnchaged.Add(float64(value))
 }
 
 // SetResourcesSyncedSize sets the latest resources synced message size transmitted to central.

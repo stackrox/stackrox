@@ -320,10 +320,6 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		}
 		current++
 	}
-	// TODO: Remove this before merging
-	for k, v := range deduperState {
-		log.Debugf("RECEIVED: deduperState[%s]: %d", k, v)
-	}
 	s.initialDeduperState = deduperkey.ParseDeduperState(deduperState)
 	return nil
 }

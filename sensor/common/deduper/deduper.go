@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/messagestream"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 var (
@@ -62,16 +63,16 @@ var (
 
 // deduper takes care of deduping sensor events.
 type deduper struct {
-	stream         messagestream.SensorMessageStream
-	lastSent       map[deduperkey.Key]uint64
-	centralState   set.StringSet
-	observationSet *CloseableSet
-
-	hasher *hash.Hasher
+	stream       messagestream.SensorMessageStream
+	lastSent     map[deduperkey.Key]uint64
+	centralState set.StringSet
+	unchangedIDs set.StringSet
+	synced       bool
+	hasher       *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64, observationSet *CloseableSet) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[deduperkey.Key]uint64) messagestream.SensorMessageStream {
 	if deduperState == nil {
 		deduperState = make(map[deduperkey.Key]uint64)
 	}
@@ -82,11 +83,11 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 	}
 
 	return &deduper{
-		stream:         stream,
-		centralState:   centralOriginalState,
-		lastSent:       deduperState,
-		hasher:         hash.NewHasher(),
-		observationSet: observationSet,
+		stream:       stream,
+		centralState: centralOriginalState,
+		lastSent:     deduperState,
+		hasher:       hash.NewHasher(),
+		unchangedIDs: set.NewStringSet(),
 	}
 }
 
@@ -106,6 +107,16 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return d.stream.Send(msg)
 	}
 	event := eventMsg.Event
+
+	resourcesSynced := event.GetSynced()
+	if resourcesSynced != nil {
+		d.synced = true
+		log.Infof("Sending synced signal to Central. Adding %d events as unchanged", len(d.unchangedIDs))
+		resourcesSynced.UnchangedIds = d.unchangedIDs.AsSlice()
+		metrics.IncrementTotalResourcesSyncSent(len(d.unchangedIDs))
+		metrics.SetResourcesSyncedSize(msg.Size())
+	}
+
 	// This filter works around race conditions in which image integrations may be initialized prior to CentralHello being received
 	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
 		return nil
@@ -127,15 +138,12 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 
 	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 	if ok {
-
 		// If the hash is valid, then check for deduping
 		if d.lastSent[key] == hashValue {
 			// If this is a SYNC event, we have to keep track of this event
 			if msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
 				key := getKey(msg)
-				if d.centralState.Contains(key) {
-					d.observationSet.AddIfOpen(getKey(msg))
-				}
+				d.unchangedIDs.AddMatching(d.centralState.Contains, key)
 			}
 			return nil
 		}

@@ -25,14 +25,13 @@ var (
 
 func Test_DeduperParseKeyFromEvent(t *testing.T) {
 	fake := new(fakeStream)
-	observationSet := NewCloseableSet()
 
 	k1, err := deduperkey.KeyFrom("Deployment:1234")
 	require.NoError(t, err)
 
 	deduperStream := NewDedupingMessageStream(fake, map[deduperkey.Key]uint64{
 		k1: 0,
-	}, observationSet)
+	})
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -62,8 +61,23 @@ func Test_DeduperParseKeyFromEvent(t *testing.T) {
 	require.NoError(t, deduperStream.Send(msg2))
 	require.NoError(t, deduperStream.Send(msg2))
 
-	observedIDs := observationSet.Close()
+	// observedIDs := observationSet.Close()
+	err = deduperStream.Send(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Resource: &central.SensorEvent_Synced{
+					Synced: &central.SensorEvent_ResourcesSynced{},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
 
-	require.Len(t, observedIDs, 1)
-	assert.Equal(t, "Deployment:1234", observedIDs[0])
+	lastEventSent := fake.orderedMessages[len(fake.orderedMessages)-1]
+	syncMessage := lastEventSent.GetEvent().GetSynced()
+	require.NotNilf(t, syncMessage, "%+v", lastEventSent)
+
+	assert.Len(t, syncMessage.UnchangedIds, 1)
+	assert.Equal(t, syncMessage.UnchangedIds[0], "Deployment:1234")
+
 }

@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,7 +18,6 @@ type centralSenderImpl struct {
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
 	initialDeduperState map[deduperkey.Key]uint64
-	observationSet      *deduper.CloseableSet
 }
 
 func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
@@ -62,7 +60,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, s.observationSet)
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
@@ -110,23 +108,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if msg.GetEvent().GetSynced() != nil {
-				unchangedIds := s.observationSet.Close()
-				// Enhance sync with all the observed IDs
-				msg.GetEvent().GetSynced().UnchangedIds = unchangedIds
-				log.Infof("Sending synced signal to Central. Adding %d events as unchanged", len(unchangedIds))
-
-				// Set metrics count for unchanged IDs
-				for i, key := range unchangedIds {
-					parts := strings.SplitN(key, ":", 2)
-					if len(parts) != 2 {
-						log.Warnf("unchangedIds has incorrect key format: %s", key)
-						continue
-					}
-					metrics.IncResourceSyncedStubID(parts[0])
-					log.Debugf("unchangedIds[%d]: %s", i, key)
-				}
-
-				metrics.SetResourcesSyncedSize(msg.Size())
+				log.Infof("Sending synced signal to Central")
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {

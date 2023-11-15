@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/deduper"
 )
 
 // CentralSender handles sending from sensor to central.
@@ -19,9 +18,8 @@ type CentralSender interface {
 // NewCentralSender returns a new instance of a CentralSender.
 func NewCentralSender(finished *sync.WaitGroup, senders ...common.SensorComponent) CentralSender {
 	return &centralSenderImpl{
-		stopper:        concurrency.NewStopper(),
-		senders:        senders,
-		finished:       finished,
-		observationSet: deduper.NewCloseableSet(),
+		stopper:  concurrency.NewStopper(),
+		senders:  senders,
+		finished: finished,
 	}
 }
