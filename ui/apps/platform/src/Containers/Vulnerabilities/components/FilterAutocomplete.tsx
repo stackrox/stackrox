@@ -5,9 +5,10 @@ import { useQuery } from '@apollo/client';
 import { SearchFilter } from 'types/search';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
-import SearchOptionsDropdown, { SearchOption } from './SearchOptionsDropdown';
+import SearchOptionsDropdown from './SearchOptionsDropdown';
 
 import './FilterAutocomplete.css';
+import { SearchOption } from '../searchOptions';
 
 function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
     return data?.map((value) => <SelectOption key={value} value={value} />);
@@ -107,7 +108,11 @@ function FilterAutocompleteSelect({
                 searchOption={searchOption}
             >
                 {searchOptions.map(({ label, value }) => {
-                    return <SelectOption value={value}>{label}</SelectOption>;
+                    return (
+                        <SelectOption key={label} value={value}>
+                            {label}
+                        </SelectOption>
+                    );
                 })}
             </SearchOptionsDropdown>
             <Select

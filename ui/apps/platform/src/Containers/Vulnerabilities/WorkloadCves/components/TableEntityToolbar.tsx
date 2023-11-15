@@ -12,7 +12,7 @@ import {
     IMAGE_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
 import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';

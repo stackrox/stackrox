@@ -13,7 +13,7 @@ type DefaultFilterModalProps = {
 
 function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterModalProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const totalFilters = defaultFilters.Severity.length + defaultFilters.Fixable.length;
+    const totalFilters = defaultFilters.SEVERITY.length + defaultFilters.FIXABLE.length;
 
     const formik = useFormik({
         initialValues: cloneDeep(defaultFilters),
@@ -24,8 +24,8 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
     });
 
     const { submitForm, values, setFieldValue, setValues } = formik;
-    const severityValues = values.Severity;
-    const fixableValues = values.Fixable;
+    const severityValues = values.SEVERITY;
+    const fixableValues = values.FIXABLE;
 
     function handleModalToggle() {
         if (isOpen) {
@@ -41,7 +41,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         } else {
             newSeverityValues = newSeverityValues.filter((val) => val !== severity);
         }
-        setFieldValue('Severity', newSeverityValues).catch(() => {});
+        setFieldValue('SEVERITY', newSeverityValues).catch(() => {});
     }
 
     function handleFixableChange(fixable: FixableStatus, isChecked: boolean) {
@@ -51,7 +51,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         } else {
             newFixableValues = newFixableValues.filter((val) => val !== fixable);
         }
-        setFieldValue('Fixable', newFixableValues).catch(() => {});
+        setFieldValue('FIXABLE', newFixableValues).catch(() => {});
     }
 
     return (
