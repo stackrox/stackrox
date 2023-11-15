@@ -50,7 +50,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 1",
 			Instructions:   "instructions 1",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID1,
 			ScanConfigName: scanConfigName1,
 		},
 		{
@@ -62,7 +61,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_PASS,
 			Description:    "description 1",
 			Instructions:   "instructions 1",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID1,
 			ScanConfigName: scanConfigName1,
 		},
 		{
@@ -74,7 +72,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_PASS,
 			Description:    "description 2",
 			Instructions:   "instructions 2",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID1,
 			ScanConfigName: scanConfigName1,
 		},
 		{
@@ -86,7 +83,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 2",
 			Instructions:   "instructions 2",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID2,
 			ScanConfigName: scanConfigName2,
 		},
 		{
@@ -98,7 +94,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 3",
 			Instructions:   "instructions 3",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID3,
 			ScanConfigName: scanConfigName3,
 		},
 		{
@@ -110,7 +105,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
 			Description:    "description 3",
 			Instructions:   "instructions 3",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID3,
 			ScanConfigName: scanConfigName3,
 		},
 		{
@@ -122,7 +116,6 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 3",
 			Instructions:   "instructions 3",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID3,
 			ScanConfigName: scanConfigName3,
 		},
 	}
@@ -140,7 +133,6 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 1",
 			Instructions:   "instructions 1",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID1,
 			ScanConfigName: scanConfigName1,
 		},
 		{
@@ -152,7 +144,6 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 2",
 			Instructions:   "instructions 2",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID2,
 			ScanConfigName: scanConfigName2,
 		},
 		{
@@ -164,7 +155,6 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			Status:         storage.ComplianceOperatorCheckResultV2_INFO,
 			Description:    "description 3",
 			Instructions:   "instructions 3",
-			ScanConfigId:   fixtureconsts.ComplianceScanConfigID3,
 			ScanConfigName: scanConfigName3,
 		},
 	}
