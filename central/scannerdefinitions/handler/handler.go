@@ -248,6 +248,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 			log.Warnf("Failed to remove temp dir for scanner defs: %v", err)
 		}
 	}()
+	defer utils.IgnoreError(r.Body.Close)
 
 	tempFile := filepath.Join(tempDir, "tempfile.zip")
 	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
