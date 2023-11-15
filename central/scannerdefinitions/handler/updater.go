@@ -16,6 +16,8 @@ const (
 	ifModifiedSinceHeader = "If-Modified-Since"
 )
 
+var _ RequestedUpdater = (*updater)(nil)
+
 // updater periodically updates a file by downloading the contents from the downloadURL.
 type updater struct {
 	file *file.File
