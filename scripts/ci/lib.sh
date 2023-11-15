@@ -965,9 +965,6 @@ ensure_writable_home_dir() {
 
 openshift_ci_import_creds() {
     shopt -s nullglob
-    for cred in /tmp/secret/**/[A-Z]*; do
-        export "$(basename "$cred")"="$(cat "$cred")"
-    done
     for cred in /tmp/vault/**/[A-Z]*; do
         export "$(basename "$cred")"="$(cat "$cred")"
     done
