@@ -88,7 +88,7 @@ func Export(ctx context.Context, outputDir string) error {
 		if err != nil {
 			return err
 		}
-		if err = mgr.Run(ctx); err != nil {
+		if err := mgr.Run(ctx); err != nil {
 			return err
 		}
 
