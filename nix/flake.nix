@@ -23,6 +23,7 @@
   outputs = { self, nixpkgs, nixpkgs-rocksdb-6_15_5, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
+        callPackage = pkgs.darwin.apple_sdk.callPackage or pkgs.callPackage;
         pkgs = import nixpkgs { inherit system; };
         pkgs-rocksdb = import nixpkgs-rocksdb-6_15_5 { inherit system; };
         darwin-pkgs =
