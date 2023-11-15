@@ -41,6 +41,6 @@ func saveFeature(name, envVar string, defaultValue, overridable bool) FeatureFla
 		defaultValue: defaultValue,
 		overridable:  overridable,
 	}
-	Flags[f.Name()] = f
+	Flags[f.envVar] = f
 	return f
 }

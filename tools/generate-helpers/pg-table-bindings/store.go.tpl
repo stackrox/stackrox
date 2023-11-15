@@ -33,6 +33,7 @@ import (
     "github.com/jackc/pgx/v5"
     "github.com/pkg/errors"
     "github.com/stackrox/rox/central/metrics"
+    "github.com/stackrox/rox/pkg/features"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -201,6 +202,9 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{end}}
 
     {{range $index, $child := $schema.Children }}
+    {{ if $child.Flag }}
+    if features.Flags["{{$child.Flag}}"].Enabled() {
+    {{- end }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
@@ -209,6 +213,9 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
     query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
+    {{- if $child.Flag }}
+    }
+    {{- end}}
     {{- end}}
     return nil
 }
