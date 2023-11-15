@@ -103,8 +103,8 @@ type MatcherConfig struct {
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
 	IndexerAddr string `yaml:"indexer_addr"`
-	// RemoteIndexer internal and generated flag, true when the remote indexer is enabled.
-	RemoteIndexer bool
+	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
+	RemoteIndexerEnabled bool
 }
 
 func (c *MatcherConfig) validate() error {
@@ -114,8 +114,8 @@ func (c *MatcherConfig) validate() error {
 	if err := c.Database.validate(); err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
-	c.RemoteIndexer = c.IndexerAddr != ""
-	if c.RemoteIndexer {
+	c.RemoteIndexerEnabled = c.IndexerAddr != ""
+	if c.RemoteIndexerEnabled {
 		_, _, err := net.SplitHostPort(c.IndexerAddr)
 		if err != nil {
 			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)

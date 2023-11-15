@@ -135,14 +135,14 @@ func Test_MatcherConfig_validate(t *testing.T) {
 			c := MatcherConfig{Enable: true, IndexerAddr: addr, Database: Database{ConnString: "host=foobar"}}
 			err := c.validate()
 			assert.NoError(t, err)
-			assert.True(t, c.RemoteIndexer)
+			assert.True(t, c.RemoteIndexerEnabled)
 		}
 	})
 	t.Run("when addr is empty then remote addr is not set", func(t *testing.T) {
 		c := MatcherConfig{Enable: true, IndexerAddr: "", Database: Database{ConnString: "host=foobar"}}
 		err := c.validate()
 		assert.NoError(t, err)
-		assert.False(t, c.RemoteIndexer)
+		assert.False(t, c.RemoteIndexerEnabled)
 	})
 }
 

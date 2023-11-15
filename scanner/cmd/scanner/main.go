@@ -179,7 +179,7 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	}
 	if cfg.Matcher.Enable {
 		zlog.Info(ctx).Msg("matcher is enabled")
-		if cfg.Matcher.RemoteIndexer {
+		if cfg.Matcher.RemoteIndexerEnabled {
 			// Create a remote indexer only if the matcher was configured to use one.
 			zlog.Info(ctx).Msg("remote indexer is enabled")
 			b.RemoteIndexer, err = indexer.NewRemoteIndexer(ctx, cfg.Matcher.IndexerAddr)
