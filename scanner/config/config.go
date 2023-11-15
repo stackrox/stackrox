@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -54,7 +55,6 @@ type Config struct {
 }
 
 func (c *Config) validate() error {
-
 	if err := c.MTLS.validate(); err != nil {
 		return fmt.Errorf("mtls: %w", err)
 	}
@@ -99,6 +99,12 @@ type MatcherConfig struct {
 	Database Database `yaml:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
 	Enable bool `yaml:"enable"`
+	// IndexerAddr forces the matcher to retrieve index reports from a remote indexer
+	// instance at the specified address, instead of the local indexer (when the
+	// indexer is enabled).
+	IndexerAddr string `yaml:"indexer_addr"`
+	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
+	RemoteIndexerEnabled bool
 }
 
 func (c *MatcherConfig) validate() error {
@@ -107,6 +113,13 @@ func (c *MatcherConfig) validate() error {
 	}
 	if err := c.Database.validate(); err != nil {
 		return fmt.Errorf("database: %w", err)
+	}
+	c.RemoteIndexerEnabled = c.IndexerAddr != ""
+	if c.RemoteIndexerEnabled {
+		_, _, err := net.SplitHostPort(c.IndexerAddr)
+		if err != nil {
+			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
+		}
 	}
 	return nil
 }
