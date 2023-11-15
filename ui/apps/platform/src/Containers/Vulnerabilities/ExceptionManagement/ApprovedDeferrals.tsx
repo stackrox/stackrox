@@ -178,28 +178,19 @@ function ApprovedDeferrals() {
                                     <Requester requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedAction
-                                        exception={exception}
-                                        context="APPROVED_DEFERRALS"
-                                    />
+                                    <RequestedAction exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <RequestCreatedAt createdAt={createdAt} />
                                 </Td>
                                 <Td>
-                                    <RequestExpires
-                                        exception={exception}
-                                        context="APPROVED_DEFERRALS"
-                                    />
+                                    <RequestExpires exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <RequestScope scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItems
-                                        exception={exception}
-                                        context="APPROVED_DEFERRALS"
-                                    />
+                                    <RequestedItems exception={exception} context="CURRENT" />
                                 </Td>
                             </Tr>
                         );

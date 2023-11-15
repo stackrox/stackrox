@@ -1,17 +1,17 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
     Divider,
     Flex,
     FlexItem,
     PageSection,
     Spinner,
+    Tab,
+    TabContent,
+    TabTitleText,
+    Tabs,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -24,22 +24,20 @@ import { ensureExhaustive } from 'utils/type.utils';
 import {
     VulnerabilityException,
     fetchVulnerabilityExceptionById,
+    isDeferralException,
+    isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import {
-    RequestExpires,
-    RequestedAction,
-    RequestCreatedAt,
-    RequestScope,
-    RequestComments,
-    RequestComment,
-} from './components/ExceptionRequestTableCells';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
+import RequestOverview from './components/RequestOverview';
 
 import './ExceptionRequestDetailsPage.css';
+import { RequestContext } from './components/ExceptionRequestTableCells';
+
+type RequestDetailsTab = 'REQUESTED_UPDATE' | 'LATEST_APPROVED'
 
 function getSubtitleText(exception: VulnerabilityException) {
     const numCVEs = `${pluralize(exception.cves.length, 'CVE')}`;
@@ -51,15 +49,28 @@ function getSubtitleText(exception: VulnerabilityException) {
         case 'APPROVED':
             return `Approved (${numCVEs})`;
         case 'APPROVED_PENDING_UPDATE':
-            return `Approved pending update (${numCVEs})`;
+            return `Approved, pending update`;
         default:
             return ensureExhaustive(exception.status);
     }
 }
 
+export function getCVEsForUpdatedRequest(exception: VulnerabilityException): string[] {
+     if (isDeferralException(exception) && exception.deferralUpdate) {
+         return exception.deferralUpdate.cves;
+     }
+     if (isFalsePositiveException(exception) && exception.falsePositiveUpdate) {
+         return exception.falsePositiveUpdate.cves;
+     }
+     return exception.cves;
+}
+
 function ExceptionRequestDetailsPage() {
+    // @TODO: Incorporate this section into the URL, enabling direct linking based on the user's context upon arrival
+    const [selectedTab, setSelectedTab] = useState<RequestDetailsTab>('REQUESTED_UPDATE');
     const expandedRowSet = useSet<string>();
     const { requestId } = useParams();
+
     const vulnerabilityExceptionByIdFn = useCallback(
         () => fetchVulnerabilityExceptionById(requestId),
         [requestId]
@@ -69,6 +80,10 @@ function ExceptionRequestDetailsPage() {
         loading,
         error,
     } = useRestQuery(vulnerabilityExceptionByIdFn);
+
+    function handleTabClick(event, value) {
+        setSelectedTab(value);
+    }
 
     if (loading && !vulnerabilityException) {
         return (
@@ -98,12 +113,14 @@ function ExceptionRequestDetailsPage() {
         );
     }
 
-    // There will always be at least 1 comment
-    const latestComment =
-        vulnerabilityException.comments[vulnerabilityException.comments.length - 1];
-
-    // @TODO: Will need to figure out a good way to distinguish the original request cves from the updated one
-    const { cves, scope } = vulnerabilityException;
+    const { status, cves, scope } = vulnerabilityException;
+    const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
+    const context: RequestContext =
+        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate ? 'CURRENT' : 'PENDING_UPDATE';
+    const relevantCVEs =
+        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
+            ? cves
+            : getCVEsForUpdatedRequest(vulnerabilityException);
 
     return (
         <>
@@ -122,68 +139,35 @@ function ExceptionRequestDetailsPage() {
                     <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection>
-                <PageSection variant="light">
-                    <Flex direction={{ default: 'column' }}>
-                        <Title headingLevel="h2">Overview</Title>
-                        <DescriptionList className="vulnerability-exception-request-overview">
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Requestor</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {vulnerabilityException.requester?.name || '-'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Requested action</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestedAction
-                                        exception={vulnerabilityException}
-                                        context="PENDING_REQUESTS" // @TODO: We need a smarter way to distinguish original vs. updated values here
-                                    />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Requested</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestCreatedAt
-                                        createdAt={vulnerabilityException.createdAt}
-                                    />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Expires</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestExpires
-                                        exception={vulnerabilityException}
-                                        context="PENDING_REQUESTS" // @TODO: We need a smarter way to distinguish original vs. updated values here
-                                    />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Scope</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestScope scope={vulnerabilityException.scope} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Comments</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestComments comments={vulnerabilityException.comments} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Latest comment</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <RequestComment comment={latestComment} />
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </DescriptionList>
-                    </Flex>
+            <PageSection className="pf-u-p-0">
+                {isApprovedPendingUpdate && (
+                    <Tabs
+                        activeKey={selectedTab}
+                        onSelect={handleTabClick}
+                        component="nav"
+                        className="pf-u-pl-lg pf-u-background-color-100"
+                    >
+                        <Tab
+                            eventKey="REQUESTED_UPDATE"
+                            title={<TabTitleText>Requested update</TabTitleText>}
+                        />
+                        <Tab
+                            eventKey="LATEST_APPROVED"
+                            title={<TabTitleText>Latest approved</TabTitleText>}
+                        />
+                    </Tabs>
+                )}
+
+                <PageSection>
+                    <RequestOverview exception={vulnerabilityException} context={context} />
                 </PageSection>
-            </PageSection>
-            <PageSection>
-                {/* @TODO: Consider reusability with the Workload CVEs CVE table */}
-                <RequestCVEsTable cves={cves} scope={scope} expandedRowSet={expandedRowSet} />
+                <PageSection>
+                    <RequestCVEsTable
+                        cves={relevantCVEs}
+                        scope={scope}
+                        expandedRowSet={expandedRowSet}
+                    />
+                </PageSection>
             </PageSection>
         </>
     );

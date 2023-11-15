@@ -54,7 +54,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
@@ -77,7 +77,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
@@ -105,7 +105,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
@@ -133,7 +133,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'APPROVED_DEFERRALS';
+            const context: RequestContext = 'CURRENT';
 
             const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
@@ -152,7 +152,7 @@ describe('ExceptionRequestTableCells', () => {
                 status: 'PENDING',
                 falsePositiveRequest: {},
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -170,7 +170,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -188,7 +188,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -207,7 +207,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -226,7 +226,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -252,7 +252,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -278,7 +278,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'APPROVED_DEFERRALS';
+            const context: RequestContext = 'CURRENT';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 

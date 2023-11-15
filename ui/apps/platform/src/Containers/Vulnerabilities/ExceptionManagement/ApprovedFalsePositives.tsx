@@ -170,10 +170,7 @@ function ApprovedFalsePositives() {
                                     <Requester requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedAction
-                                        exception={exception}
-                                        context="APPROVED_FALSE_POSITIVES"
-                                    />
+                                    <RequestedAction exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <RequestCreatedAt createdAt={createdAt} />
@@ -182,10 +179,7 @@ function ApprovedFalsePositives() {
                                     <RequestScope scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItems
-                                        exception={exception}
-                                        context="APPROVED_FALSE_POSITIVES"
-                                    />
+                                    <RequestedItems exception={exception} context="CURRENT" />
                                 </Td>
                             </Tr>
                         );
