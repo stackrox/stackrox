@@ -281,11 +281,10 @@ func (c *openshiftConnector) identity(ctx context.Context, s connector.Scopes, t
 	}
 
 	identity = connector.Identity{
-		UserID:            user.UID,
-		Username:          user.Name,
-		PreferredUsername: user.Name,
-		Email:             user.Name,
-		Groups:            user.Groups,
+		UserID:   user.UID,
+		Username: user.Name,
+		Email:    user.Name,
+		Groups:   user.Groups,
 	}
 
 	if s.OfflineAccess {
