@@ -42,13 +42,14 @@ func main() {
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		err := tryExport(*outputDir)
+		if err == nil {
+			break
+		}
 		if errors.Is(err, context.DeadlineExceeded) {
 			zlog.Error(context.Background()).Err(err).Msg("Data export attempt failed; will attempt retry if within retry limits")
 			continue
-		} else if errors.Is(err, nil) {
-			break
-		} else {
-			log.Fatal("The data export process has failed.")
 		}
+
+		log.Fatalf("The data export process failed: %v", err)
 	}
 }
