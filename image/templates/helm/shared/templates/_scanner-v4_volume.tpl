@@ -43,8 +43,10 @@
   {{ if $scannerV4DBPVCCfg.createClaim }}
     {{ $_ = set $scannerV4DBCfg.persistence "_pvcCfg" $scannerV4DBPVCCfg }}
   {{ end }}
+  {{ if $scannerV4DBPVCCfg.storageClass }}
+    {{ $_ = set $._rox._state "referencedStorageClasses" (mustAppend $._rox._state.referencedStorageClasses $scannerV4DBPVCCfg.storageClass | uniq) }}
+  {{ end }}
   {{ $scannerV4DBVolumeHumanReadable = printf "PVC (%s)" $scannerV4DBPVCCfg.claimName }}
-  
 {{ end }}
 
 {{ $allPersistenceMethods := keys $scannerV4DBVolumeCfg | sortAlpha }}

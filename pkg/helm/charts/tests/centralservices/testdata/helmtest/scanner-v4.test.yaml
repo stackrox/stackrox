@@ -38,6 +38,16 @@ tests:
     - name: "matcher is enabled"
       set:
         scannerV4.matcher.disable: false
+- name: "StorageClass stackrox-gke-ssd is created when scannerV4 references this storage class in its PVC configuration"
+  values:
+    scannerV4:
+      disable: false
+      db:
+        persistence:
+          persistentVolumeClaim:
+            storageClass: "stackrox-gke-ssd"
+  expect: |
+    .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 1)
 
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:
