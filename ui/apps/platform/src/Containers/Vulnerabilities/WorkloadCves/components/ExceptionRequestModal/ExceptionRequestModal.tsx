@@ -14,6 +14,8 @@ import {
     DeferralValues,
     FalsePositiveValues,
     ScopeContext,
+    deferralValidationSchema,
+    falsePositiveValidationSchema,
     formValuesToDeferralRequest,
     formValuesToFalsePositiveRequest,
 } from './utils';
@@ -77,12 +79,14 @@ function ExceptionRequestModal({
                   formHeaderText: `CVEs will be marked as deferred after approval`,
                   commentFieldLabel: `Deferral rationale`,
                   onSubmit: onDeferralSubmit,
+                  validationSchema: deferralValidationSchema,
                   showExpiryField: true,
               }
             : {
                   formHeaderText: `CVEs will be marked as false positive after approval`,
                   commentFieldLabel: `False positive rationale`,
                   onSubmit: onFalsePositiveSubmit,
+                  validationSchema: falsePositiveValidationSchema,
                   showExpiryField: false,
               };
 
