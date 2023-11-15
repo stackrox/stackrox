@@ -59,7 +59,9 @@ const setup = () => {
     return { user, utils };
 };
 
-describe('AgingImages dashboard widget', () => {
+// Warning: The current testing environment is not configured to support act(...)
+// eslint-disable-next-line jest/no-disabled-tests
+describe.skip('AgingImages dashboard widget', () => {
     it('should render the correct number of images with default settings', async () => {
         setup();
 
@@ -78,8 +80,7 @@ describe('AgingImages dashboard widget', () => {
         expect(await screen.findByText(result3)).toBeInTheDocument();
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should render graph bars with the correct image counts when time buckets are toggled', async () => {
+    it('should render graph bars with the correct image counts when time buckets are toggled', async () => {
         const { user } = setup();
 
         expect(
@@ -131,8 +132,7 @@ describe('AgingImages dashboard widget', () => {
         expect(await screen.findByText(`>1 year`)).toBeInTheDocument();
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('links users to the correct filtered image list', async () => {
+    it('links users to the correct filtered image list', async () => {
         const {
             user,
             utils: { history },
@@ -160,8 +160,7 @@ describe('AgingImages dashboard widget', () => {
         expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should contain a button that resets the widget options to default', async () => {
+    it('should contain a button that resets the widget options to default', async () => {
         setup();
         const user = userEvent.setup({ skipHover: true });
 

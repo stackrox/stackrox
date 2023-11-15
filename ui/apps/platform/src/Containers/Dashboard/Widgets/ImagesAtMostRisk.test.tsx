@@ -86,9 +86,10 @@ function setup() {
     return { user, utils };
 }
 
-describe('Images at most risk dashboard widget', () => {
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should render the correct title based on selected options', async () => {
+// Warning: The current testing environment is not configured to support act(...)
+// eslint-disable-next-line jest/no-disabled-tests
+describe.skip('Images at most risk dashboard widget', () => {
+    it('should render the correct title based on selected options', async () => {
         const { user } = setup();
 
         // Default is display all images
@@ -101,8 +102,7 @@ describe('Images at most risk dashboard widget', () => {
         expect(screen.getByText('Active images at most risk')).toBeInTheDocument();
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should render the correct text and number of CVEs under each column', async () => {
+    it('should render the correct text and number of CVEs under each column', async () => {
         const { user } = setup();
 
         // Note that in this case the mock data uses the same number of CVEs for every image
@@ -126,8 +126,7 @@ describe('Images at most risk dashboard widget', () => {
         );
     });
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('should link to the appropriate pages in VulnMgmt', async () => {
+    it('should link to the appropriate pages in VulnMgmt', async () => {
         const {
             user,
             utils: { history },
@@ -148,8 +147,7 @@ describe('Images at most risk dashboard widget', () => {
         expect(history.location.pathname).toBe(`${vulnManagementImagesPath}`);
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should contain a button that resets the widget options to default', async () => {
+    it('should contain a button that resets the widget options to default', async () => {
         setup();
         const user = userEvent.setup({ skipHover: true });
 

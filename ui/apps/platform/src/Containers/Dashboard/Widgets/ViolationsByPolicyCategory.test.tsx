@@ -70,9 +70,10 @@ function waitForAxisLinksToBe(linkText: string[]) {
     });
 }
 
-describe('Violations by policy category widget', () => {
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should sort a policy violations by category widget by severity and volume of violations', async () => {
+// Warning: The current testing environment is not configured to support act(...)
+// eslint-disable-next-line jest/no-disabled-tests
+describe.skip('Violations by policy category widget', () => {
+    it('should sort a policy violations by category widget by severity and volume of violations', async () => {
         const { user } = setup();
 
         expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
@@ -100,8 +101,7 @@ describe('Violations by policy category widget', () => {
         ]);
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should allow toggling of severities for a policy violations by category widget', async () => {
+    it('should allow toggling of severities for a policy violations by category widget', async () => {
         const { user } = setup();
 
         expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
@@ -124,8 +124,7 @@ describe('Violations by policy category widget', () => {
         ]);
     });
 
-    // Warning: The current testing environment is not configured to support act(...)
-    it.skip('should contain a button that resets the widget options to default', async () => {
+    it('should contain a button that resets the widget options to default', async () => {
         setup();
         const user = userEvent.setup({ skipHover: true });
 
