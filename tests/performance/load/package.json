@@ -6,11 +6,11 @@
     "private": true,
     "scripts": {
         "test": "k6 run tests/testSacScopes.js",
-        "har-to-k6": "../node_modules/.bin/har-to-k6",
-        "format:check": "../node_modules/.bin/prettier --check .",
-        "format:fix": "../node_modules/.bin/prettier --write .",
-        "lint:check": "../node_modules/.bin/eslint .",
-        "lint:fix": "../node_modules/.bin/eslint --fix ."
+        "har-to-k6": "har-to-k6",
+        "format:check": "prettier --check .",
+        "format:fix": "prettier --write .",
+        "lint:check": "eslint .",
+        "lint:fix": "eslint --fix ."
     },
     "devDependencies": {
         "eslint": "^8.27.0",
