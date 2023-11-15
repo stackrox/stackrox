@@ -201,20 +201,18 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     var query string
     {{end}}
 
-    {{ $indent := "" }}
     {{range $index, $child := $schema.Children }}
     {{ if $child.Flag }}
     if features.Flags["{{$child.Flag}}"].Enabled() {
-    {{- $indent = "    " }}
     {{- end }}
-    {{$indent}}for childIndex, child := range obj.{{$child.ObjectGetter}} {
-    {{$indent}}    if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
-    {{$indent}}        return err
-    {{$indent}}    }
-    {{$indent}}}
+    for childIndex, child := range obj.{{$child.ObjectGetter}} {
+        if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
+            return err
+        }
+    }
 
-    {{$indent}}query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
-    {{$indent}}batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
+    query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
+    batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     {{- if $child.Flag }}
     }
     {{- end}}

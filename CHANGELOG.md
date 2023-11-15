@@ -16,6 +16,15 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
 
 ### Deprecated Features
+- The following search terms will be disabled in the next release and removed from the deployment context in 2 releases:
+  - Environment variable terms that can be removed by setting ROX_DEPLOYMENT_ENVVAR_SEARCH=false:
+    - Environment Key, Environment Value, Environment Variable Source
+  - Volume terms that can be removed by setting ROX_DEPLOYMENT_VOLUME_SEARCH=false:
+    - Volume Destination, Volume Name, Volume ReadOnly, Volume Source, Volume Type
+  - Secret terms that can be removed by setting ROX_DEPLOYMENT_SECRET_SEARCH=false:
+    - Secret, Secret Path
+- The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
+  - Secret Type, Cert Expiration,Image Pull Secret Registry
 
 ### Technical Changes
 - Increased default memory request for scanner-db from 200MiB to 512MiB,
