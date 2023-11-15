@@ -31,6 +31,7 @@ tests:
     .deployments["scanner-db"] | assertThat(. != null)
     .services["scanner"] | assertThat(. != null)
     .services["scanner-db"] | assertThat(. != null)
+    .deployments["scanner"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca")
   tests:
   - name: "in full mode"
     expect: |

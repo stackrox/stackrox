@@ -12,7 +12,13 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { FixableStatus, QuerySearchFilter } from './types';
+import {
+    FixableStatus,
+    QuerySearchFilter,
+    VulnerabilitySeverityLabel,
+    isFixableStatus,
+    isVulnerabilitySeverityLabel,
+} from './types';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
@@ -54,6 +60,25 @@ export function getEntityPagePath(
     }
 }
 
+export function fixableStatusToFixability(fixableStatus: FixableStatus): 'true' | 'false' {
+    return fixableStatus === 'Fixable' ? 'true' : 'false';
+}
+
+export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): VulnerabilitySeverity {
+    switch (label) {
+        case 'Critical':
+            return 'CRITICAL_VULNERABILITY_SEVERITY';
+        case 'Important':
+            return 'IMPORTANT_VULNERABILITY_SEVERITY';
+        case 'Moderate':
+            return 'MODERATE_VULNERABILITY_SEVERITY';
+        case 'Low':
+            return 'LOW_VULNERABILITY_SEVERITY';
+        default:
+            return ensureExhaustive(label);
+    }
+}
+
 /**
  * Parses an open `SearchFilter` obtained from the URL into a restricted `SearchFilter` that
  * matches the fields and values expected by the backend.
@@ -64,43 +89,22 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
     // SearchFilter values that can be directly translated over to the backend equivalent
     const unprocessedSearchKeys = ['CVE', 'IMAGE', 'DEPLOYMENT', 'NAMESPACE', 'CLUSTER'] as const;
     unprocessedSearchKeys.forEach((key) => {
-        if (rawSearchFilter[key]) {
-            cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);
-        }
+        cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);
     });
 
-    if (rawSearchFilter.Fixable) {
-        const rawFixable = searchValueAsArray(rawSearchFilter.Fixable);
-        const cleanFixable: ('true' | 'false')[] = [];
+    const fixable = searchValueAsArray(rawSearchFilter.Fixable);
 
-        rawFixable.forEach((status) => {
-            if (status === 'Fixable') {
-                cleanFixable.push('true');
-            } else if (status === 'Not fixable') {
-                cleanFixable.push('false');
-            }
-        });
+    cleanSearchFilter.Fixable =
+        fixable.length > 0
+            ? fixable.filter(isFixableStatus).map(fixableStatusToFixability)
+            : undefined;
 
-        // TODO We are explicitly excluding "Fixable" from the search filter until this functionality is re-enabled
-        // cleanSearchFilter.Fixable = cleanFixable;
-    }
+    const severity = searchValueAsArray(rawSearchFilter.Severity);
 
-    if (rawSearchFilter.Severity) {
-        const rawSeverities = searchValueAsArray(rawSearchFilter.Severity);
-        cleanSearchFilter.Severity = [];
-
-        rawSeverities.forEach((rs) => {
-            if (rs === 'Critical') {
-                cleanSearchFilter.Severity?.push('CRITICAL_VULNERABILITY_SEVERITY');
-            } else if (rs === 'Important') {
-                cleanSearchFilter.Severity?.push('IMPORTANT_VULNERABILITY_SEVERITY');
-            } else if (rs === 'Moderate') {
-                cleanSearchFilter.Severity?.push('MODERATE_VULNERABILITY_SEVERITY');
-            } else if (rs === 'Low') {
-                cleanSearchFilter.Severity?.push('LOW_VULNERABILITY_SEVERITY');
-            }
-        });
-    }
+    cleanSearchFilter.Severity =
+        severity.length > 0
+            ? severity.filter(isVulnerabilitySeverityLabel).map(severityLabelToSeverity)
+            : undefined;
 
     return cleanSearchFilter;
 }
@@ -143,4 +147,16 @@ export function getVulnStateScopedQueryString(
         ...searchFilter,
         ...vulnerabilityStateFilter,
     });
+}
+
+/**
+ * Returns the statuses that should be used to query for exception counts given
+ * the current vulnerability state.
+ * @param vulnerabilityState
+ * @returns ‘PENDING’ if the vulnerability state is ‘OBSERVED’, otherwise ‘APPROVED_PENDING_UPDATE’
+ */
+export function getStatusesForExceptionCount(
+    vulnerabilityState: VulnerabilityState | undefined
+): string[] {
+    return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
 }

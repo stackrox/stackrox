@@ -44,6 +44,7 @@ import {
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
+    getStatusesForExceptionCount,
 } from '../searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
@@ -68,7 +69,12 @@ const summaryQuery = gql`
 const vulnerabilityQuery = gql`
     ${imageMetadataContextFragment}
     ${deploymentWithVulnerabilitiesFragment}
-    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCvesForDeployment(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
         deployment(id: $id) {
             imageVulnerabilityCount(query: $query)
             ...DeploymentWithVulnerabilities
@@ -113,9 +119,13 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
             } | null;
         },
-        { id: string; query: string }
+        { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
-        variables: { id: deploymentId, query },
+        variables: {
+            id: deploymentId,
+            query,
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+        },
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
@@ -138,9 +148,15 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             id: string;
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(vulnerabilityQuery, {
-        variables: { id: deploymentId, query, pagination },
+        variables: {
+            id: deploymentId,
+            query,
+            pagination,
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+        },
     });
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
@@ -265,6 +281,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                     deployment={vulnerabilityData.deployment}
                                     getSortParams={getSortParams}
                                     isFiltered={isFiltered}
+                                    vulnerabilityState={currentVulnerabilityState}
                                 />
                             </div>
                         )}

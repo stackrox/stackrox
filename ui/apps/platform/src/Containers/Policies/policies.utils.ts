@@ -2,6 +2,12 @@ import pluralize from 'pluralize';
 import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
 
+import {
+    policyConfigurationDescriptor,
+    auditLogDescriptor,
+    imageSigningCriteriaName,
+    Descriptor,
+} from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
 import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import { ClusterScopeObject } from 'services/RolesService';
@@ -23,7 +29,6 @@ import {
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
-import { imageSigningCriteriaName, Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -474,7 +479,7 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
     if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
             excludedDeploymentScopes.map(
-                (deployment) => ({ deployment } as PolicyDeploymentExclusion)
+                (deployment) => ({ deployment }) as PolicyDeploymentExclusion
             )
         );
     }
@@ -482,7 +487,7 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
     const { excludedImageNames } = policy;
     if (excludedImageNames && excludedImageNames.length > 0) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
-            excludedImageNames.map((name) => ({ image: { name } } as PolicyImageExclusion))
+            excludedImageNames.map((name) => ({ image: { name } }) as PolicyImageExclusion)
         );
     }
 
@@ -688,6 +693,29 @@ export function getLifeCyclesUpdates(
     return changedValues;
 }
 
+export function getPolicyDescriptors(
+    isFeatureFlagEnabled: (string) => boolean,
+    eventSource: PolicyEventSource,
+    lifecycleStages: LifecycleStage[]
+) {
+    const unfilteredDescriptors =
+        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyConfigurationDescriptor;
+
+    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
+        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+        }
+        return true;
+    });
+
+    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
+        descriptors,
+        lifecycleStages
+    );
+
+    return descriptorsFilteredByLifecycle;
+}
+
 export function getCriteriaAllowedByLifecycle(
     criteria: Descriptor[],
     lifecycleStages: LifecycleStage[]
@@ -697,4 +725,19 @@ export function getCriteriaAllowedByLifecycle(
     );
 
     return filteredCriteria;
+}
+
+export function getEmptyPolicyFieldCard(fieldKey) {
+    const defaultValue = fieldKey.defaultValue !== undefined ? fieldKey.defaultValue : '';
+    return {
+        fieldName: fieldKey.name,
+        booleanOperator: 'OR',
+        values: [
+            {
+                value: defaultValue,
+            },
+        ],
+        negate: false,
+        fieldKey,
+    };
 }

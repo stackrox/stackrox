@@ -6,8 +6,7 @@
     "private": true,
     "workspaces": {
         "packages": [
-            "packages/*",
-            "apps/*"
+            "apps/platform"
         ],
         "nohoist": [
             "**/mocha-multi-reporters",
@@ -28,13 +27,12 @@
         "prestart": "chalk italic yellowBright 'Why CI=true? See https://github.com/facebook/create-react-app/issues/8685'",
         "start": "CI=true lerna run start --parallel --stream",
         "start:coverage": "CI=true lerna run start:coverage --scope @stackrox/platform-app --stream",
-        "lint": "yarn build:packages && lerna run lint --parallel --stream",
-        "test": "yarn build:packages && CI=true TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test --parallel --no-bail --stream",
+        "lint": "lerna run lint --parallel --stream",
+        "test": "CI=true TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test --parallel --no-bail --stream",
         "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e --parallel --no-bail --stream",
         "test-e2e:coverage": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e:coverage --parallel --stream",
         "posttest-e2e:coverage": "mv apps/platform/coverage/ ./test-results/artifacts/",
         "test-e2e-demo": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e-demo --scope @stackrox/platform-app --stream",
-        "build:packages": "lerna run build --stream --ignore @stackrox/*-app",
         "prebuild": "yarn clean",
         "build": "lerna run build --stream",
         "postbuild": "mv apps/platform/build/ .",
@@ -44,8 +42,10 @@
         "forward": "../scripts/port-forward-ui.sh"
     },
     "resolutions": {
-        "@typescript-eslint/parser": "^4.32.0",
+        "@typescript-eslint/eslint-plugin": "6.9.1",
+        "@typescript-eslint/parser": "6.9.1",
         "autoprefixer": "10.4.5",
+        "eslint-plugin-jest": "^27.6.0",
         "eslint-plugin-testing-library": "^6.0.1"
     },
     "devDependencies": {

@@ -1,6 +1,0 @@
-@import './light.theme.css';
-@import './dark.theme.css';
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;

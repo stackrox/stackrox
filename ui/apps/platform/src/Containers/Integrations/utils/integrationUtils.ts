@@ -86,23 +86,23 @@ export const timesOfDay = getTimes();
 // Categories alternatives correspond to mutually exclusive toggle group items.
 type CategoriesAlternatives<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 > = [
     [[category0: Category0]],
     [[category1: Category1]],
     // The alternative for both categories includes both orders.
-    [[category0: Category0, category1: Category1], [category1: Category1, category0: Category0]]
+    [[category0: Category0, category1: Category1], [category1: Category1, category0: Category0]],
 ];
 
 // Compiler verifies that first argument of matchCategoriesAlternative method is a category alternative.
 type CategoriesAlternative<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 > = CategoriesAlternatives<Category0, Category1>[number];
 
 function getCategoriesUtils<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 >([category0, category1]: [Category0, Category1], [text0, text1]: [string, string]) {
     const categoriesAlternatives: CategoriesAlternatives<Category0, Category1> = [
         [[category0]],

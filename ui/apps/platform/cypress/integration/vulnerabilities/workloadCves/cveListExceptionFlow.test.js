@@ -35,7 +35,17 @@ describe('Workload CVE List deferral and false positive flows', () => {
         }
     });
 
-    it('should disable multi-cve controls when no rows are selected', () => {
+    after(() => {
+        if (
+            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
+        ) {
+            cancelAllCveExceptions();
+        }
+    });
+
+    // TODO - Update this test to mock the server response since we can't rely on multiple pages of data
+    it.skip('should disable multi-cve controls when no rows are selected', () => {
         visitWorkloadCveOverview();
         // Check that the select all checkbox is disabled
         // Check that the bulk action menu is disabled
@@ -80,13 +90,16 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
         selectSingleCveForException('DEFERRAL').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm('Test comment', 'When all CVEs are fixable');
-            verifyExceptionConfirmationDetails(
-                'Deferral',
-                [cveName],
-                'All images',
-                'When all CVEs are fixable'
-            );
+            fillAndSubmitExceptionForm({
+                comment: 'Test comment',
+                expiryLabel: 'When all CVEs are fixable',
+            });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: [cveName],
+                scope: 'All images',
+                expiry: 'When all CVEs are fixable',
+            });
         });
     });
 
@@ -95,14 +108,14 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
         selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);
-            fillAndSubmitExceptionForm('Test comment', '30 days');
+            fillAndSubmitExceptionForm({ comment: 'Test comment', expiryLabel: '30 days' });
 
-            verifyExceptionConfirmationDetails(
-                'Deferral',
-                cveNames,
-                'All images',
-                `${getDateString(getFutureDateByDays(30))} (30 days)`
-            );
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: cveNames,
+                scope: 'All images',
+                expiry: `${getDateString(getFutureDateByDays(30))} (30 days)`,
+            });
         });
     });
 
@@ -111,8 +124,12 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
-            fillAndSubmitExceptionForm('Test comment');
-            verifyExceptionConfirmationDetails('False positive', [cveName], 'All images');
+            fillAndSubmitExceptionForm({ comment: 'Test comment' });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'False positive',
+                cves: [cveName],
+                scope: 'All images',
+            });
         });
     });
 
@@ -121,8 +138,12 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
         selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);
-            fillAndSubmitExceptionForm('Test comment');
-            verifyExceptionConfirmationDetails('False positive', cveNames, 'All images');
+            fillAndSubmitExceptionForm({ comment: 'Test comment' });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'False positive',
+                cves: cveNames,
+                scope: 'All images',
+            });
         });
     });
 });

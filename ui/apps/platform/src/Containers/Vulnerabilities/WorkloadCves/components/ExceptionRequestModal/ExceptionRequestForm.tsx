@@ -11,8 +11,9 @@ import {
     TabContent,
 } from '@patternfly/react-core';
 import { FormikHelpers, useFormik } from 'formik';
+import * as yup from 'yup';
 
-import { ScopeContext, exceptionValidationSchema, ExceptionValues } from './utils';
+import { ScopeContext, ExceptionValues } from './utils';
 import ExceptionScopeField, { ALL } from './ExceptionScopeField';
 import CveSelections, { CveSelectionsProps } from './CveSelections';
 import ExpiryField from './ExpiryField';
@@ -36,7 +37,8 @@ export type ExceptionRequestFormProps = {
     onCancel: () => void;
     formHeaderText: string;
     commentFieldLabel: string;
-    showExpiryField?: boolean;
+    validationSchema: yup.ObjectSchema<ExceptionValues>;
+    showExpiryField: boolean;
 };
 
 function ExceptionRequestForm({
@@ -46,7 +48,8 @@ function ExceptionRequestForm({
     onCancel,
     formHeaderText,
     commentFieldLabel,
-    showExpiryField = false,
+    validationSchema,
+    showExpiryField,
 }: ExceptionRequestFormProps) {
     const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
 
@@ -56,11 +59,19 @@ function ExceptionRequestForm({
             scopeContext
         ),
         onSubmit,
-        validationSchema: exceptionValidationSchema,
+        validationSchema,
     });
 
-    const { handleBlur, setFieldValue, touched, handleSubmit, submitForm, isSubmitting, errors } =
-        formik;
+    const {
+        handleBlur,
+        setFieldValue,
+        touched,
+        handleSubmit,
+        submitForm,
+        isSubmitting,
+        isValid,
+        errors,
+    } = formik;
 
     return (
         <>
@@ -115,7 +126,11 @@ function ExceptionRequestForm({
                     <CveSelections cves={cves} />
                 </TabContent>
                 <Flex>
-                    <Button isLoading={isSubmitting} isDisabled={isSubmitting} onClick={submitForm}>
+                    <Button
+                        isLoading={isSubmitting}
+                        isDisabled={isSubmitting || !isValid}
+                        onClick={submitForm}
+                    >
                         Submit request
                     </Button>
                     <Button isDisabled={isSubmitting} variant="secondary" onClick={onCancel}>

@@ -39,15 +39,15 @@ export const CLUSTER_SEARCH_OPTION: SearchOption = {
     category: 'CLUSTERS',
 };
 
-export const REQUEST_ID_SEARCH_OPTION: SearchOption = {
-    label: 'Request ID',
-    value: 'REQUEST_ID',
+export const REQUEST_NAME_SEARCH_OPTION: SearchOption = {
+    label: 'Request name',
+    value: 'Request Name',
     category: 'VULN_REQUEST', // This might need to change
 };
 
 export const REQUESTER_SEARCH_OPTION: SearchOption = {
     label: 'Requester',
-    value: 'REQUESTER',
+    value: 'Requester User Name',
     category: 'VULN_REQUEST', // This might need to change
 };
 

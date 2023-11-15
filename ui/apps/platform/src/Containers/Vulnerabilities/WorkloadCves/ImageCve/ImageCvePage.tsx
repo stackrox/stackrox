@@ -40,6 +40,7 @@ import {
 import {
     getHiddenSeverities,
     getOverviewCvesPath,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -101,7 +102,11 @@ export const imageCveSummaryQuery = gql`
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
-    query getImagesForCVE($query: String, $pagination: Pagination) {
+    query getImagesForCVE(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         images(query: $query, pagination: $pagination) {
             ...ImagesForCVE
         }
@@ -118,6 +123,7 @@ export const imageCveAffectedDeploymentsQuery = gql`
         $moderateImageCountQuery: String
         $importantImageCountQuery: String
         $criticalImageCountQuery: String
+        $statusesForExceptionCount: [String!]
     ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
@@ -211,6 +217,7 @@ function ImageCvePage() {
         {
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
@@ -220,6 +227,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Image',
     });
@@ -241,6 +249,7 @@ function ImageCvePage() {
             importantImageCountQuery: string;
             criticalImageCountQuery: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
@@ -254,6 +263,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Deployment',
     });
@@ -431,6 +441,8 @@ function ImageCvePage() {
                                                 images={imageData?.images ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                         {entityTab === 'Deployment' && (
@@ -441,6 +453,8 @@ function ImageCvePage() {
                                                 filteredSeverities={
                                                     searchFilter.Severity as VulnerabilitySeverityLabel[]
                                                 }
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                     </div>

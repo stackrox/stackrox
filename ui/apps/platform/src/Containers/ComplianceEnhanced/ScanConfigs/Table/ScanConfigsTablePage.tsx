@@ -227,7 +227,7 @@ function ScanConfigsTablePage({
                             <Tr>
                                 <Th sort={getSortParams('Name')}>Name</Th>
                                 <Th>Schedule</Th>
-                                <Th sort={getSortParams('Last Run')}>Last Run</Th>
+                                <Th sort={getSortParams('Last Run')}>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 <Td />

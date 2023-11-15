@@ -45,6 +45,7 @@ import { DynamicTableLabel } from '../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -62,7 +63,12 @@ const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
-    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCVEsForImage(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
         image(id: $id) {
             ...ImageMetadataContext
             imageCVECountBySeverity(query: $query) {
@@ -123,12 +129,14 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
             id: string;
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             pagination,
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
 
@@ -260,7 +268,12 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                             />
                         </SplitItem>
                     </Split>
-                    <div className="workload-cves-table-container">
+                    <div
+                        className="workload-cves-table-container"
+                        role="region"
+                        aria-live="polite"
+                        aria-busy={loading ? 'true' : 'false'}
+                    >
                         <ImageVulnerabilitiesTable
                             image={vulnerabilityData.image}
                             getSortParams={getSortParams}

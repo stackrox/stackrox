@@ -22,18 +22,22 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
 	// create output json file
-	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
+	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.zst"))
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := outputFile.Close(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("Failed to close output file")
+		}
+	}()
 
-	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
+	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
 			limiter:   limiter,
@@ -52,39 +56,47 @@ func Export(ctx context.Context, outputDir string) error {
 		}
 	}()
 
-	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	manualSet, err := manual.UpdaterSet(ctx, nil)
 	if err != nil {
 		return err
 	}
-	outOfTree := [][]driver.Updater{
-		make([]driver.Updater, 0),
-	}
-	outOfTree = append(outOfTree, updaterSet.Updaters())
+
+	outOfTree := append([]driver.Updater{}, manualSet.Updaters()...)
 
 	for i, uSet := range [][]string{
-		{"oracle", "photon", "suse", "aws", "rhcc"},
-		{"alpine", "rhel", "ubuntu", "osv", "debian"},
+		{"oracle"}, {"photon"},
+		{"suse"}, {"aws"},
+		{"alpine"}, {"rhel"},
+		{"debian"}, {"rhcc"},
+		{"ubuntu"}, {"osv"},
 	} {
 		jsonStore, err := jsonblob.New()
 		if err != nil {
 			return err
 		}
-
-		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
-			updates.WithEnabled(uSet),
-			updates.WithOutOfTree(outOfTree[i]),
-		)
+		var mgr *updates.Manager
+		if i == 0 {
+			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+				updates.WithEnabled(uSet),
+				updates.WithOutOfTree(outOfTree),
+			)
+		} else {
+			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+				updates.WithEnabled(uSet),
+			)
+		}
 		if err != nil {
 			return err
 		}
-
-		if err := updateMgr.Run(ctx); err != nil {
+		if err := mgr.Run(ctx); err != nil {
 			return err
 		}
 
-		err = jsonStore.Store(zstdWriter)
-		if err != nil {
+		if err := jsonStore.Store(zstdWriter); err != nil {
 			return err
+		}
+		if err := zstdWriter.Flush(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("Failed to flush zstd writer")
 		}
 	}
 

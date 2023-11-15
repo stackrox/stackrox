@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"net/http"
@@ -26,12 +27,17 @@ import (
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
+// ReportGetter can get index reports from an Indexer.
+type ReportGetter interface {
+	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
+}
+
 // Indexer represents an image indexer.
 //
 //go:generate mockgen-wrapper
 type Indexer interface {
-	IndexContainerImage(context.Context, claircore.Digest, string, ...Option) (*claircore.IndexReport, error)
-	GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error)
+	ReportGetter
+	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
 }
 
@@ -100,11 +106,15 @@ func (i *localIndexer) Close(ctx context.Context) error {
 // the layer's URI and headers.
 func (i *localIndexer) IndexContainerImage(
 	ctx context.Context,
-	manifestDigest claircore.Digest,
+	hashID string,
 	imageURL string,
 	opts ...Option,
 ) (*claircore.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer")
+	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, err
+	}
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
@@ -130,7 +140,7 @@ func (i *localIndexer) IndexContainerImage(
 		if err != nil {
 			return nil, fmt.Errorf("getting layer digests: %w", err)
 		}
-		// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
+		// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 		layerReq, err := getLayerRequest(httpClient, imgRef, layerDigest)
 		if err != nil {
 			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
@@ -203,15 +213,29 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 	return res.Request, nil
 }
 
-// GetIndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
-func (i *localIndexer) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
+// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists.
+func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, false, err
+	}
 	return i.libIndex.IndexReport(ctx, manifestDigest)
+}
+
+// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
+func createManifestDigest(hashID string) (claircore.Digest, error) {
+	hashIDSum := sha512.Sum512([]byte(hashID))
+	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
+	if err != nil {
+		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
+	}
+	return d, nil
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
 // a list of layers.
 func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
-	// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
+	// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
 	if err != nil {
 		return nil, err
@@ -227,7 +251,7 @@ func getContainerImageLayers(ctx context.Context, ref name.Reference, o options)
 	return layers, nil
 }
 
-// parseContainerImageURL returns a image reference from an image URL.
+// parseContainerImageURL returns an image reference from an image URL.
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
 	// We expect input was sanitized, so all errors here are considered internal errors.
 	if imageURL == "" {

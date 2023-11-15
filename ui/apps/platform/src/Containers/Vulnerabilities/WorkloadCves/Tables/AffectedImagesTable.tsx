@@ -14,6 +14,7 @@ import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import { VulnerabilityState } from 'types/cve.proto';
 import {
     getAnyVulnerabilityIsFixable,
     getHighestCvssScore,
@@ -31,6 +32,7 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
 import { WatchStatus } from '../types';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export type ImageForCve = {
     id: string;
@@ -82,9 +84,17 @@ export type AffectedImagesTableProps = {
     images: ImageForCve[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
+    cve: string;
+    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
-function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImagesTableProps) {
+function AffectedImagesTable({
+    images,
+    getSortParams,
+    isFiltered,
+    cve,
+    vulnerabilityState,
+}: AffectedImagesTableProps) {
     const expandedRowSet = useSet<string>();
 
     return (
@@ -113,6 +123,11 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                 const topSeverity = getHighestVulnerabilitySeverity(imageComponents);
                 const isFixable = getAnyVulnerabilityIsFixable(imageComponents);
                 const { cvss, scoreVersion } = getHighestCvssScore(imageComponents);
+                const hasPendingException = imageComponents.some((imageComponent) =>
+                    imageComponent.imageVulnerabilities.some(
+                        (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
+                    )
+                );
 
                 const isExpanded = expandedRowSet.has(id);
 
@@ -128,7 +143,13 @@ function AffectedImagesTable({ images, getSortParams, isFiltered }: AffectedImag
                             />
                             <Td dataLabel="Image">
                                 {name ? (
-                                    <ImageNameTd name={name} id={id} />
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={hasPendingException}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    >
+                                        <ImageNameTd name={name} id={id} />
+                                    </PendingExceptionLabelLayout>
                                 ) : (
                                     'Image name not available'
                                 )}

@@ -16,7 +16,7 @@ func TestColorPrinter(t *testing.T) {
 	})
 	printer := DefaultColorPrinter()
 	in := "(TOTAL: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)"
-	out := "(TOTAL: 0, \x1b[34;2mLOW\x1b[0m: 0, \x1b[33mMEDIUM\x1b[0m: 0, \x1b[95mHIGH\x1b[0m: 0, \x1b[31;1mCRITICAL\x1b[0m: 0)"
+	out := "(TOTAL: 0, \x1b[34;2mLOW\x1b[0;22m: 0, \x1b[33mMEDIUM\x1b[0m: 0, \x1b[95mHIGH\x1b[0m: 0, \x1b[31;1mCRITICAL\x1b[0;22m: 0)"
 	assert.Equal(t, out, printer.ColorWords(in))
 }
 

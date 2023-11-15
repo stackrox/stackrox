@@ -1,7 +1,7 @@
 @import 'css/style.css';
 
-@import '~@stackrox/tailwind-config/light.theme.css';
-@import '~@stackrox/tailwind-config/dark.theme.css';
+@import 'css/light.theme.css';
+@import 'css/dark.theme.css';
 
 .theme-dark .react-select__option:hover,
 .theme-dark .react-select__option:focus,

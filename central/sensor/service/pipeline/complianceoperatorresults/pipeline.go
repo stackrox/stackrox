@@ -6,7 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
-	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	"github.com/stackrox/rox/central/convert/internaltov1storage"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -18,32 +19,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
-
-	statusToV2 = map[central.ComplianceOperatorCheckResultV2_CheckStatus]storage.ComplianceOperatorCheckResultV2_CheckStatus{
-		central.ComplianceOperatorCheckResultV2_UNSET:          storage.ComplianceOperatorCheckResultV2_UNSET,
-		central.ComplianceOperatorCheckResultV2_PASS:           storage.ComplianceOperatorCheckResultV2_PASS,
-		central.ComplianceOperatorCheckResultV2_FAIL:           storage.ComplianceOperatorCheckResultV2_FAIL,
-		central.ComplianceOperatorCheckResultV2_ERROR:          storage.ComplianceOperatorCheckResultV2_ERROR,
-		central.ComplianceOperatorCheckResultV2_INFO:           storage.ComplianceOperatorCheckResultV2_INFO,
-		central.ComplianceOperatorCheckResultV2_MANUAL:         storage.ComplianceOperatorCheckResultV2_MANUAL,
-		central.ComplianceOperatorCheckResultV2_NOT_APPLICABLE: storage.ComplianceOperatorCheckResultV2_NOT_APPLICABLE,
-		central.ComplianceOperatorCheckResultV2_INCONSISTENT:   storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-	}
-
-	severityToV2 = map[central.ComplianceOperatorRuleSeverity]storage.RuleSeverity{
-		central.ComplianceOperatorRuleSeverity_UNSET_RULE_SEVERITY:   storage.RuleSeverity_UNSET_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY: storage.RuleSeverity_UNKNOWN_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY:    storage.RuleSeverity_INFO_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY:     storage.RuleSeverity_LOW_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY:  storage.RuleSeverity_MEDIUM_RULE_SEVERITY,
-		central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY:    storage.RuleSeverity_HIGH_RULE_SEVERITY,
-	}
 
 	log = logging.LoggerForModule()
 )
@@ -53,25 +33,23 @@ func GetPipeline() pipeline.Fragment {
 	// Central may have the flag on, but sensor may not.  So the pipeline
 	// needs to handle both old and new results in that case.
 	if features.ComplianceEnhancements.Enabled() {
-		return NewPipeline(datastore.Singleton(), v2.Singleton(), scanConfigDS.Singleton())
+		return NewPipeline(datastore.Singleton(), v2.Singleton())
 	}
 
-	return NewPipeline(datastore.Singleton(), nil, nil)
+	return NewPipeline(datastore.Singleton(), nil)
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(datastore datastore.DataStore, v2Datastore v2.DataStore, scanConfigDatastore scanConfigDS.DataStore) pipeline.Fragment {
+func NewPipeline(datastore datastore.DataStore, v2Datastore v2.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		datastore:           datastore,
-		v2Datastore:         v2Datastore,
-		scanConfigDatastore: scanConfigDatastore,
+		datastore:   datastore,
+		v2Datastore: v2Datastore,
 	}
 }
 
 type pipelineImpl struct {
-	datastore           datastore.DataStore
-	v2Datastore         v2.DataStore
-	scanConfigDatastore scanConfigDS.DataStore
+	datastore   datastore.DataStore
+	v2Datastore v2.DataStore
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -79,11 +57,9 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	if features.ComplianceEnhancements.Enabled() {
-		// Due to forthcoming historical result requirements, the removal of V2 results will occur through
-		// pruning and retention policies as opposed to reconciliation.
-		return nil
-	}
+	// Due to forthcoming historical result requirements, the removal of V2 results will occur through
+	// pruning and retention policies as opposed to reconciliation.  However, during the transition V1 compliance
+	// must remain feature complete so reconciliation will always reconcile V1
 
 	existingIDs := set.NewStringSet()
 	walkFn := func() error {
@@ -153,40 +129,19 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
+		// V1 still needs to function so remove it too
+		if err := s.datastore.Delete(ctx, event.GetId()); err != nil {
+			return err
+		}
+
 		// use V2 datastore
 		return s.v2Datastore.DeleteResult(ctx, event.GetId())
 	default:
-		convertedResult, err := s.convertSensorMsgToV2Storage(ctx, checkResult, clusterID)
-		if err != nil {
+		// Still need to store the V1 version to maintain both
+		if err := s.datastore.Upsert(ctx, internaltov1storage.ComplianceOperatorCheckResult(checkResult)); err != nil {
 			return err
 		}
-		return s.v2Datastore.UpsertResult(ctx, convertedResult)
-	}
-}
 
-func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) (*storage.ComplianceOperatorCheckResultV2, error) {
-	scanConfigs, err := s.scanConfigDatastore.GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, sensorData.GetSuiteName()).ProtoQuery())
-	if err != nil {
-		return nil, err
+		return s.v2Datastore.UpsertResult(ctx, internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID))
 	}
-	if len(scanConfigs) != 1 {
-		return nil, errors.Errorf("Unable to find matching scan configuration for scan %q", sensorData.GetSuiteName())
-	}
-
-	return &storage.ComplianceOperatorCheckResultV2{
-		Id:             sensorData.GetId(),
-		CheckId:        sensorData.GetCheckId(),
-		CheckName:      sensorData.GetCheckName(),
-		ClusterId:      clusterID,
-		Status:         statusToV2[sensorData.GetStatus()],
-		Severity:       severityToV2[sensorData.GetSeverity()],
-		Description:    sensorData.GetDescription(),
-		Instructions:   sensorData.GetInstructions(),
-		Labels:         sensorData.GetLabels(),
-		Annotations:    sensorData.GetAnnotations(),
-		CreatedTime:    sensorData.GetCreatedTime(),
-		ScanConfigId:   scanConfigs[0].GetId(),
-		ScanConfigName: scanConfigs[0].GetScanName(),
-	}, nil
 }

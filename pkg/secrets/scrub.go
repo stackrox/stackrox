@@ -36,9 +36,7 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 			if field.Type() != reflect.TypeOf(replacement) {
 				utils.CrashOnError(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
 			}
-			if field.String() != "" {
-				field.Set(reflect.ValueOf(replacement))
-			}
+			field.Set(reflect.ValueOf(replacement))
 		case scrubTagMapValues:
 			if field.Kind() != reflect.Map {
 				utils.CrashOnError(errors.Errorf("expected map kind, got %s", field.Kind()))

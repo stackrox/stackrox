@@ -28,3 +28,13 @@ export type ValueOf<T extends Record<string | number | symbol, unknown>> = T[key
  *
  */
 export type Override<T1, T2> = Omit<T1, keyof T2> & T2;
+
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonObject = { [key in string]: JsonValue } & {
+    [Key in string]?: JsonValue | undefined;
+};
+export type JsonArray = JsonValue[];
+/**
+ * A type that represents any value that can be serialized to JSON.
+ */
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;

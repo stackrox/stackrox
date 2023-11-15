@@ -112,8 +112,8 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                                     id === currentUser?.authProvider?.id
                                                         ? 'Cannot delete current auth provider'
                                                         : isImmutable
-                                                        ? 'Cannot delete unmodifiable auth provider'
-                                                        : '',
+                                                          ? 'Cannot delete unmodifiable auth provider'
+                                                          : '',
                                             },
                                         ],
                                     }}

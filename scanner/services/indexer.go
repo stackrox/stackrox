@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"crypto/sha512"
-	"fmt"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -14,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/services/converters"
+	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
@@ -40,15 +38,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	if err := validators.ValidateContainerImageRequest(req); err != nil {
 		return nil, err
 	}
-	manifestDigest, err := createManifestDigest(req.GetHashId())
-	if err != nil {
-		return nil, err
-	}
-
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/service/indexer",
-		"resource_type", resourceType,
-		"manifest_digest", manifestDigest.String())
+	ctx = zlog.ContextWithValues(ctx, "resource_type", resourceType)
 
 	// Setup authentication.
 	var opts []indexer.Option
@@ -67,14 +57,14 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		Msg("creating index report for container image")
 	clairReport, err := s.indexer.IndexContainerImage(
 		ctx,
-		manifestDigest,
+		req.GetHashId(),
 		req.GetContainerImage().GetUrl(),
 		opts...)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
@@ -90,7 +80,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	if err != nil {
 		return nil, err
 	}
-	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
@@ -108,24 +98,10 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 	return &types.Empty{}, nil
 }
 
-// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
-func createManifestDigest(hashID string) (claircore.Digest, error) {
-	hashIDSum := sha512.Sum512([]byte(hashID))
-	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
-	if err != nil {
-		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
-	}
-	return d, nil
-}
-
 // getClairIndexReport query and return a claircore index report, return a "not
 // found" error when the report does not exist.
 func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashID)
-	if err != nil {
-		return nil, err
-	}
-	clairReport, ok, err := s.indexer.GetIndexReport(ctx, manifestDigest)
+	clairReport, ok, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
 		return nil, err
 	}

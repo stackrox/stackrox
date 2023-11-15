@@ -179,15 +179,11 @@ export function selectMultipleCvesForException(exceptionType) {
     // Select the first CVE on the first page and the first CVE on the second page
     // to test multi-deferral flows
     return cy
-        .get(selectors.firstTableRow)
+        .get(selectors.nthTableRow(1))
         .then(($row) => {
             cveNames.push($row.find('td[data-label="CVE"]').text());
             cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
-            cy.get(selectors.paginationNext).click();
-            // Wait for the table to finish updating
-            cy.get(selectors.isUpdatingTable).should('not.exist');
-
-            return cy.get(selectors.firstTableRow);
+            return cy.get(selectors.nthTableRow(2));
         })
         .then(($nextRow) => {
             cveNames.push($nextRow.find('td[data-label="CVE"]').text());
@@ -195,8 +191,6 @@ export function selectMultipleCvesForException(exceptionType) {
 
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
-        })
-        .then(() => {
             cy.get('button:contains("CVE selections")').click();
             // TODO - Update this code when modal form is completed
             cveNames.forEach((name) => {
@@ -215,13 +209,24 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
+export function visitAnyImageSinglePage() {
+    visitWorkloadCveOverview();
+    selectEntityTab('Image');
+    cy.get('tbody tr td[data-label="Image"] a').first().click();
+
+    return cy.get('h1').then(($h1) => {
+        return $h1.text().split(':');
+    });
+}
+
 /**
  * Fill out the exception form and submit it
- * @param {string} comment
- * @param {string=} scopeLabel
- * @param {string=} expiryLabel
+ * @param {Object} param
+ * @param {string} param.comment
+ * @param {string=} param.scopeLabel
+ * @param {string=} param.expiryLabel
  */
-export function fillAndSubmitExceptionForm(comment, scopeLabel, expiryLabel) {
+export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }) {
     cy.get(selectors.exceptionOptionsTab).click();
     if (expiryLabel) {
         cy.get(`label:contains('${expiryLabel}')`).click();
@@ -236,12 +241,14 @@ export function fillAndSubmitExceptionForm(comment, scopeLabel, expiryLabel) {
 
 /**
  * Verify that the confirmation details for an exception are correct
- * @param {('Deferral' | 'False positive')} expectedAction
- * @param {string[]} cves
- * @param {string} scope
- * @param {string=} expiry
+ * @param {Object} params
+ * @param {('Deferral' | 'False positive')} params.expectedAction
+ * @param {string[]} params.cves
+ * @param {string} params.scope
+ * @param {string=} params.expiry
  */
-export function verifyExceptionConfirmationDetails(expectedAction, cves, scope, expiry) {
+export function verifyExceptionConfirmationDetails(params) {
+    const { expectedAction, cves, scope, expiry } = params;
     getDescriptionListGroup('Requested action', expectedAction);
     getDescriptionListGroup('Requested', getDateString(new Date()));
     getDescriptionListGroup('CVEs', String(cves.length));

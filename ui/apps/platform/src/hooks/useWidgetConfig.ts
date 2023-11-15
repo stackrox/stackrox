@@ -5,7 +5,7 @@ import { WidgetConfigStorage, RouteId, WidgetId, WidgetConfig } from 'types/widg
 
 export type UseWidgetConfigReturn<ConfigT extends WidgetConfig, UpdateAction> = [
     ConfigT,
-    (action: UpdateAction) => Promise<ConfigT>
+    (action: UpdateAction) => Promise<ConfigT>,
 ];
 
 export const defaultStorageKey = 'widgetConfigurations';
@@ -99,7 +99,7 @@ function useWidgetConfig<ConfigT extends WidgetConfig, ActionT = Partial<ConfigT
     });
 
     const configUpdateFn = useCallback(
-        (config) => {
+        (config: any) => {
             const nextValue = reducer
                 ? reducer(widgetRouteConfig, config)
                 : { ...widgetRouteConfig, ...config };

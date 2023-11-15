@@ -139,6 +139,8 @@ type Schema struct {
 
 	ScopingResource   permissions.ResourceMetadata
 	PermissionChecker PermissionChecker
+
+	Flag string
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -442,6 +444,10 @@ type PostgresOptions struct {
 	// IgnoreChildIndexes is an option used to tell the walker that
 	// index options of children of this field should be ignored.
 	IgnoreChildIndexes bool
+
+	// Flag is an option used to tell the walker that the child fields
+	// are dependent on a feature flag and should not be included if the flag is false
+	Flag string
 }
 
 type foreignKeyRef struct {

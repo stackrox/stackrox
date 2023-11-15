@@ -75,10 +75,13 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
     // we'll construct a map of sort fields to indices that will make it easier to work with
     // PatternFly
     useEffect(() => {
-        const newFieldToIndexMap = sortFields.reduce((acc, curr, index) => {
-            acc[curr] = index;
-            return acc;
-        }, {} as Record<string, number>);
+        const newFieldToIndexMap = sortFields.reduce(
+            (acc, curr, index) => {
+                acc[curr] = index;
+                return acc;
+            },
+            {} as Record<string, number>
+        );
         setFieldToIndexMap(newFieldToIndexMap);
     }, [sortFields]);
 

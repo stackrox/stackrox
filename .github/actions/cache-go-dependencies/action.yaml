@@ -15,7 +15,15 @@ runs:
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
+        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+
+    - name: Cache Go Build
+      uses: actions/cache@v3
+      with:
+        path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        key: go-build-v1-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Download Go modules
+      run: make deps --always-make
+      shell: bash

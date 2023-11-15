@@ -30,7 +30,7 @@ export type RequesterProps = {
     requester: VulnerabilityException['requester'];
 };
 export function Requester({ requester }: RequesterProps) {
-    return <div>{requester.name}</div>;
+    return <div>{requester?.name || '-'}</div>;
 }
 
 export type RequestedActionProps = {
@@ -42,7 +42,7 @@ export function getShouldUseUpdatedRequest(
     exception: VulnerabilityException,
     context: RequestContext
 ): boolean {
-    switch (exception.exceptionStatus) {
+    switch (exception.status) {
         case 'APPROVED_PENDING_UPDATE':
             if (context === 'PENDING_REQUESTS') {
                 if (isDeferralException(exception) && exception.deferralUpdate) {
