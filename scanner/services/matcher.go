@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
-	"github.com/stackrox/rox/scanner/services/converters"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,7 +24,7 @@ import (
 type matcherService struct {
 	v4.UnimplementedMatcherServer
 	// indexer is used to retrieve index reports.
-	indexer indexer.Indexer
+	indexer indexer.ReportGetter
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
@@ -32,8 +32,8 @@ type matcherService struct {
 }
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
-// empty content in enrich requests, pass a nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.Indexer) *matcherService {
+// empty content in enrich requests, pass a non-nil indexer.
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
@@ -68,7 +68,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	if err != nil {
 		return nil, err
 	}
-	report, err := converters.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +78,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 
 // retrieveIndexReport will pull an index report from the Indexer backend.
 func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashID)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: %w", err)
-	}
-	ir, found, err := s.indexer.GetIndexReport(ctx, manifestDigest)
+	ir, found, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -94,7 +90,7 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 
 // parseIndexReport will generate an index report from a Contents payload.
 func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
-	ir, err := converters.ToClairCoreIndexReport(contents)
+	ir, err := mappers.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
 		return nil, fmt.Errorf("internal error: %w", err)

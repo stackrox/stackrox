@@ -1,4 +1,4 @@
-package converters
+package mappers
 
 import (
 	"context"
