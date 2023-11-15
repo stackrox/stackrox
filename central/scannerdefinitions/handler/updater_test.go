@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"archive/zip"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,6 +16,8 @@ import (
 
 const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
+
+	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
 )
 
 var (
@@ -57,4 +60,37 @@ func mustGetModTime(t *testing.T, path string) time.Time {
 
 func mustSetModTime(t *testing.T, path string, modTime time.Time) {
 	require.NoError(t, os.Chtimes(path, time.Now(), modTime))
+}
+
+func TestMappingUpdate(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "test.zip")
+	u := NewMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
+
+	// Should fetch first time.
+	require.NoError(t, u.doUpdate())
+	assertOnFileExistence(t, filePath, true)
+
+	n, err := countFilesInZip(filePath)
+	if err != nil {
+		t.Fatalf("Failed to count files in zip: %v", err)
+	}
+	assert.Equal(t, n, 2)
+}
+
+// countFilesInZip counts the number of files inside a zip archive.
+func countFilesInZip(zipFilePath string) (int, error) {
+	r, err := zip.OpenReader(zipFilePath)
+	if err != nil {
+		return 0, err
+	}
+	defer r.Close()
+
+	count := 0
+	for _, f := range r.File {
+		if !f.FileInfo().IsDir() {
+			count++
+		}
+	}
+
+	return count, nil
 }

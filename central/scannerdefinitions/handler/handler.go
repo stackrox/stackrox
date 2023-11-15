@@ -57,7 +57,7 @@ var (
 )
 
 type requestedUpdater struct {
-	*updater
+	RequestedUpdater
 	lastRequestedTime time.Time
 }
 
@@ -175,7 +175,7 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 		filePath := filepath.Join(h.onlineVulnDir, uuid+".zip")
 
 		h.updaters[uuid] = &requestedUpdater{
-			updater: newUpdater(
+			RequestedUpdater: newUpdater(
 				file.New(filePath),
 				client,
 				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),
