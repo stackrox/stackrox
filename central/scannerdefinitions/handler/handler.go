@@ -47,8 +47,9 @@ const (
 	defaultCleanupAge      = 1 * time.Hour
 
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
-	v4StorageDomain = "https://storage.googleapis.com/scanner-v4-test/"
-	mappingFile     = "redhat-repository-mappings/mapping.zip"
+	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
+	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	mappingUpdaterKey = "mapping"
 )
 
 var (
@@ -58,6 +59,11 @@ var (
 	}
 
 	log = logging.LoggerForModule()
+
+	v4FileMapping = map[string]string{
+		"name2cpe": "repomapping-tmp/container-name-repos-map.json",
+		"repo2cpe": "repomapping-tmp/repository-to-cpe.json",
+	}
 )
 
 type requestedUpdater struct {
@@ -113,6 +119,14 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
+	fileType := r.URL.Query().Get("type")
+	if fileType != "" {
+		if v4FileName, exists := v4FileMapping[fileType]; exists {
+			h.getMappingFileHelper(w, r, v4FileName)
+			return
+		}
+	}
+
 	// Open the most recent definitions file for the provided `uuid`.
 	uuid := r.URL.Query().Get(`uuid`)
 	f, err := h.openMostRecentDefinitions(r.Context(), uuid)
@@ -171,12 +185,15 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 // identified by the given uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
 func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
-	return h.getUpdaterHelper(uuid, false)
+	return h.getUpdaterHelper(uuid)
 }
 
-// getMappingUpdater gets or creates the updater for RH repository mapping data
-func (h *httpHandler) getMappingUpdater(key string) *requestedUpdater {
-	return h.getUpdaterHelper(key, true)
+// getV4Updater gets or creates the updater for RH repository mapping data
+func (h *httpHandler) getV4Updater(key string) *requestedUpdater {
+	if key != mappingUpdaterKey {
+		return nil
+	}
+	return h.getUpdaterHelper(key)
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -353,6 +370,39 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
+func (h *httpHandler) openMostRecentMappings(fileName string) (file *vulDefFile, err error) {
+	// TODO(ROX-20520): enable fetching offline file
+	u := h.getV4Updater(mappingUpdaterKey)
+	if u == nil {
+		return nil, errors.New("Failed to initialize mapping updater")
+	}
+	u.Start()
+
+	toClose := func(f *vulDefFile) {
+		if file != f && f != nil {
+			utils.IgnoreError(f.Close)
+		}
+	}
+	var onlineFile *vulDefFile
+	onlineZipFile, onlineTime, err := u.OpenFile()
+	if err != nil || onlineZipFile == nil {
+		return
+	}
+	log.Infof("Compressed repository mapping file is available: %s", onlineZipFile.Name())
+
+	targetFile, err := openFromArchive(onlineZipFile.Name(), fileName)
+	if err != nil {
+		return nil, err
+	}
+	if targetFile != nil {
+		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
+	}
+	defer toClose(onlineFile)
+
+	file = onlineFile
+	return file, nil
+}
+
 // openFromArchive returns a file object for a name within the definitions
 // bundle. The file object has a file descriptor allocated on the filesystem, but
 // its name is removed. Meaning once the file object is closed, the data will be
@@ -406,18 +456,18 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getUpdaterHelper(key string, isMapping bool) *requestedUpdater {
+func (h *httpHandler) getUpdaterHelper(key string) *requestedUpdater {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
 	u, exists := h.updaters[key]
 	if !exists {
 		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
-		url := path.Join(v4StorageDomain, mappingFile)
-		if !isMapping {
-			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
+
+		if key == mappingUpdaterKey {
+			url := strings.Join([]string{v4StorageDomain, mappingFile}, "/")
 			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newUpdater(
+				RequestedUpdater: newMappingUpdater(
 					file.New(filePath),
 					client,
 					url,
@@ -425,8 +475,9 @@ func (h *httpHandler) getUpdaterHelper(key string, isMapping bool) *requestedUpd
 				),
 			}
 		} else {
+			url := strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
 			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newMappingUpdater(
+				RequestedUpdater: newUpdater(
 					file.New(filePath),
 					client,
 					url,
@@ -440,4 +491,14 @@ func (h *httpHandler) getUpdaterHelper(key string, isMapping bool) *requestedUpd
 
 	u.lastRequestedTime = time.Now()
 	return u
+}
+
+func (h *httpHandler) getMappingFileHelper(w http.ResponseWriter, r *http.Request, fileName string) {
+	file, err := h.openMostRecentMappings(fileName)
+	if err != nil {
+		log.Errorf("Failed to find JSON file: %v", err)
+		http.Error(w, "JSON file not found", http.StatusNotFound)
+		return
+	}
+	http.ServeContent(w, r, file.Name(), file.modTime, file)
 }

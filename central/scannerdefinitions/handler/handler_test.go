@@ -63,8 +63,8 @@ func (s *handlerTestSuite) SetupTest() {
 func (s *handlerTestSuite) TearDownSuite() {
 	entries, err := os.ReadDir(s.tmpDir)
 	s.NoError(err)
-	s.LessOrEqual(len(entries), 1)
-	if len(entries) == 1 {
+	s.LessOrEqual(len(entries), 2)
+	if len(entries) == 2 {
 		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
 	}
 
@@ -76,6 +76,14 @@ func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {
 	centralURL := "https://central.stackrox.svc/scannerdefinitions?uuid=e799c68a-671f-44db-9682-f24248cd0ffe"
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 
+	require.NoError(t, err)
+
+	return req
+}
+
+func (s *handlerTestSuite) getRequestWithJSONFile(t *testing.T, file string) *http.Request {
+	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?type=%s", file)
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	require.NoError(t, err)
 
 	return req
@@ -168,6 +176,32 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotModified, w.Code)
 	assert.Empty(t, w.Data.String())
+}
+
+func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
+	t := s.T()
+	h := New(s.datastore, handlerOpts{})
+
+	w := mock.NewResponseWriter()
+
+	// Nothing should be found
+	req := s.getRequestWithJSONFile(t, "randomName")
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	// Should get mapping json file from online update.
+	req = s.getRequestWithJSONFile(t, "name2cpe")
+	w.Data.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+
+	// Should get mapping json file from online update.
+	req = s.getRequestWithJSONFile(t, "repo2cpe")
+	w.Data.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
 func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {

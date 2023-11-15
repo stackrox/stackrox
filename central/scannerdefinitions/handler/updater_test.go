@@ -83,7 +83,11 @@ func countFilesInZip(zipFilePath string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			log.Errorf("Error closing zip reader: %v", err)
+		}
+	}()
 
 	count := 0
 	for _, f := range r.File {

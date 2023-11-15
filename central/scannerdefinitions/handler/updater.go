@@ -30,10 +30,6 @@ type updater struct {
 	stopSig     concurrency.Signal
 }
 
-func (u *updater) OpenFile() (*os.File, time.Time, error) {
-	return u.file.Open()
-}
-
 // newUpdater creates a new updater.
 func newUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *updater {
 	return &updater{
@@ -58,6 +54,10 @@ func (u *updater) Start() {
 		u.update()
 		go u.runForever()
 	})
+}
+
+func (u *updater) OpenFile() (*os.File, time.Time, error) {
+	return u.file.Open()
 }
 
 func (u *updater) runForever() {
