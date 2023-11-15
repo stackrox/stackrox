@@ -454,9 +454,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
+		if !status.used {
+			flowMetrics.ExternalFlowCounter.Inc()
+		}
 		status.used = true
-
-		flowMetrics.ExternalFlowCounter.Inc()
 
 		var port uint16
 		if conn.incoming {
