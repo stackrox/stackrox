@@ -179,15 +179,11 @@ export function selectMultipleCvesForException(exceptionType) {
     // Select the first CVE on the first page and the first CVE on the second page
     // to test multi-deferral flows
     return cy
-        .get(selectors.firstTableRow)
+        .get(selectors.nthTableRow(1))
         .then(($row) => {
             cveNames.push($row.find('td[data-label="CVE"]').text());
             cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
-            cy.get(selectors.paginationNext).click();
-            // Wait for the table to finish updating
-            cy.get(selectors.isUpdatingTable).should('not.exist');
-
-            return cy.get(selectors.firstTableRow);
+            return cy.get(selectors.nthTableRow(2));
         })
         .then(($nextRow) => {
             cveNames.push($nextRow.find('td[data-label="CVE"]').text());
@@ -195,8 +191,6 @@ export function selectMultipleCvesForException(exceptionType) {
 
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
-        })
-        .then(() => {
             cy.get('button:contains("CVE selections")').click();
             // TODO - Update this code when modal form is completed
             cveNames.forEach((name) => {

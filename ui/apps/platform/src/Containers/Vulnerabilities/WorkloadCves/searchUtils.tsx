@@ -92,13 +92,19 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
         cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);
     });
 
-    cleanSearchFilter.Fixable = searchValueAsArray(rawSearchFilter.Fixable)
-        .filter(isFixableStatus)
-        .map(fixableStatusToFixability);
+    const fixable = searchValueAsArray(rawSearchFilter.Fixable);
 
-    cleanSearchFilter.Severity = searchValueAsArray(rawSearchFilter.Severity)
-        .filter(isVulnerabilitySeverityLabel)
-        .map(severityLabelToSeverity);
+    cleanSearchFilter.Fixable =
+        fixable.length > 0
+            ? fixable.filter(isFixableStatus).map(fixableStatusToFixability)
+            : undefined;
+
+    const severity = searchValueAsArray(rawSearchFilter.Severity);
+
+    cleanSearchFilter.Severity =
+        severity.length > 0
+            ? severity.filter(isVulnerabilitySeverityLabel).map(severityLabelToSeverity)
+            : undefined;
 
     return cleanSearchFilter;
 }

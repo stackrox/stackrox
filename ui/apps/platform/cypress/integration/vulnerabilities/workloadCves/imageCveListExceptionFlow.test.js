@@ -29,6 +29,15 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         cancelAllCveExceptions();
     });
 
+    after(() => {
+        if (
+            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
+        ) {
+            cancelAllCveExceptions();
+        }
+    });
+
     it('should defer a single CVE', () => {
         visitAnyImageSinglePage().then(([image]) => {
             selectSingleCveForException('DEFERRAL').then((cveName) => {
