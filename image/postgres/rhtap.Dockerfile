@@ -33,8 +33,6 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-USER 70:70
-
 COPY image/postgres/scripts \
     /usr/local/bin/
 
@@ -50,3 +48,5 @@ EXPOSE 5432
 CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
 
 HEALTHCHECK --interval=10s --timeout=5s CMD pg_isready
+
+USER 70:70
