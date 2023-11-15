@@ -56,6 +56,7 @@
             # misc
             pkgs.gcc
             pkgs.gnumake
+            pkgs.go_1_20
             pkgs.jq
             pkgs.jsonnet-bundler
             pkgs.go-jsonnet

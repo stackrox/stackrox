@@ -19,9 +19,6 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
     - uses: cachix/install-nix-action@v22
       with:
         extra_nix_config: |
