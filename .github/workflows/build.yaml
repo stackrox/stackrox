@@ -566,6 +566,44 @@ jobs:
         run: |
           make -C operator/ docker-push-index | cat
 
+  scan-go-binaries:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    needs:
+    - pre-build-cli
+    - pre-build-go-binaries
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: cli-build
+
+    - name: Unpack cli build
+      run: |
+        tar xvzf cli-build.tgz
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: go-binaries-build-amd64-default
+
+    - name: Unpack Go binaries build
+      run: |
+        tar xvzf go-binaries-build.tgz
+
+    - name: Scan
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        find bin/linux_amd64 -maxdepth 1 -type f -print -exec govulncheck -mode=binary {} \; | tee vuln.txt
+        grep -q affect vuln.txt && (exit 1)
+
   scan-images-with-roxctl:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
