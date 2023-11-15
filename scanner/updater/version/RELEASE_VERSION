@@ -3,6 +3,6 @@
 # Subsequently, this updated data is uploaded to Google Storage.
 # For each individual version of Scanner's vulnerability updater, corresponding vulnerability data is collected and then seamlessly uploaded to Google Storage.
 # This process ensures that each version's vulnerability data is accurately captured and maintained in accordance with its respective version.
-4.3.x-157-g0aadbd861a
+4.3.x-173-g6bbb2e07dc
 4.2.0
 4.3.0

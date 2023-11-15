@@ -52,6 +52,5 @@ func main() {
 		zlog.Error(context.Background()).Err(err).Msg("Data updater failed to update vulnerabilities")
 		log.Fatal("The data export process has failed.")
 	}
-	
 	log.Fatal("The data export process has failed: max retries exceeded")
 }
