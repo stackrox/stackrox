@@ -35,7 +35,7 @@ jobs:
         GOOS: "darwin"
         GOARCH: "amd64"
       shell: nix develop ./nix --quiet --command bash -e {0}
-      run: make go-unit-tests
+      run: make main-build-nodeps
 
     - name: Generate junit report
       if: always()
