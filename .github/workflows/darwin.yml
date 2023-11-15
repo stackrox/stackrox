@@ -29,19 +29,12 @@ jobs:
           trusted-substituters = https://stackrox.cachix.org https://cache.nixos.org/
           trusted-public-keys = stackrox.cachix.org-1:Wnn8TKAitOTWKfTvvHiHzJjXy0YfiwoK6rrVzXt/trA= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
-    - name: Checkout stackrox-env flake
-      uses: actions/checkout@v4
-      with:
-        repository: stackrox/stackrox-env
-        path: dev/nix
-        ref: 3a51c3e2ef6d113ee1bdd79e9e8c1be191fd7de6
-
     - name: Run tests
       env:
         CGO_ENABLED: "1"
         GOOS: "darwin"
         GOARCH: "amd64"
-      shell: nix develop ./dev/nix --quiet --command bash -e {0}
+      shell: nix develop ./nix --quiet --command bash -e {0}
       run: make go-unit-tests
 
     - name: Generate junit report
