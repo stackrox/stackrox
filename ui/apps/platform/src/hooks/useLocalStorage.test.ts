@@ -23,6 +23,7 @@ test('should reject loading invalid values into memory when saved via raw localS
     const { result } = renderHook(() =>
         useLocalStorage('test', 'initial', (v: unknown): v is string => typeof v === 'string')
     );
+
     // Check that the hook initializes with the initial value instead of the invalid value
     expect(result.current[0]).toBe('initial');
     expect(window.localStorage.getItem('test')).toBe('4');
