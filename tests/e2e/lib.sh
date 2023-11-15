@@ -239,6 +239,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
     customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
     customize_envVars+=$'\n        value: "15s"'
+    customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
+    customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images

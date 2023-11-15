@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.11.2
+	cloud.google.com/go/containeranalysis v0.11.3
 	cloud.google.com/go/storage v1.34.1
 	github.com/BurntSushi/toml v1.3.2
 	github.com/ComplianceAsCode/compliance-operator v1.3.1
@@ -85,7 +85,7 @@ require (
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.45.0
-	github.com/quay/claircore v1.5.20
+	github.com/quay/claircore v1.5.19
 	github.com/quay/zlog v1.1.7
 	github.com/rs/zerolog v1.31.0
 	github.com/russellhaering/gosaml2 v0.9.1

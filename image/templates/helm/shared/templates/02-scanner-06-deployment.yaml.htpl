@@ -127,7 +127,11 @@ spec:
         secret:
           defaultMode: 420
           optional: true
+          {{- if eq ._rox.scanner.mode "slim" }}
+          secretName: additional-ca-sensor
+          {{- else }}
           secretName: additional-ca
+          {{- end }}
       - name: scanner-etc-ssl-volume
         emptyDir: {}
       - name: scanner-etc-pki-volume

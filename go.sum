@@ -32,8 +32,8 @@ cloud.google.com/go/compute v1.23.1/go.mod h1:CqB3xpmPKKt3OJpW2ndFIXnA9A4xAy/F3X
 cloud.google.com/go/compute/metadata v0.2.0/go.mod h1:zFmK7XCadkQkj6TtorcaGlCW1hT1fIilQDwofLpJ20k=
 cloud.google.com/go/compute/metadata v0.2.3 h1:mg4jlk7mCAj6xXp9UJ4fjI9VUI5rubuGBW5aJ7UnBMY=
 cloud.google.com/go/compute/metadata v0.2.3/go.mod h1:VAV5nSsACxMJvgaAuX6Pk2AawlZn8kiOGuCv6gTkwuA=
-cloud.google.com/go/containeranalysis v0.11.2 h1:AKyhqlO1Cjdrp7Ht0C3uQALliri2RegVRpEZseOKwWo=
-cloud.google.com/go/containeranalysis v0.11.2/go.mod h1:xibioGBC1MD2j4reTyV1xY1/MvKaz+fyM9ENWhmIeP8=
+cloud.google.com/go/containeranalysis v0.11.3 h1:5rhYLX+3a01drpREqBZVXR9YmWH45RnML++8NsCtuD8=
+cloud.google.com/go/containeranalysis v0.11.3/go.mod h1:kMeST7yWFQMGjiG9K7Eov+fPNQcGhb8mXj/UcTiWw9U=
 cloud.google.com/go/datastore v1.0.0/go.mod h1:LXYbyblFSglQ5pkeyhO+Qmw7ukd3C+pD7TKLgZqpHYE=
 cloud.google.com/go/datastore v1.1.0/go.mod h1:umbIZjpQpHh4hmRpGhH4tLFup+FVzqBi1b3c64qFpCk=
 cloud.google.com/go/firestore v1.1.0/go.mod h1:ulACoGHTpvq5r8rxGJ4ddJZBZqakUQqClKRT5SZwBmk=
@@ -1182,8 +1182,8 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/quasilyte/go-ruleguard v0.2.0/go.mod h1:2RT/tf0Ce0UDj5y243iWKosQogJd8+1G3Rs2fxmlYnw=
 github.com/quasilyte/regex/syntax v0.0.0-20200407221936-30656e2c4a95/go.mod h1:rlzQ04UMyJXu/aOvhd8qT+hvDrFpiwqp8MRXDY9szc0=
-github.com/quay/claircore v1.5.20 h1:pR4lKRgdznk9wBqTXHSmYJPdYAPMRQTtSMzi6P3Vg9s=
-github.com/quay/claircore v1.5.20/go.mod h1:vz6VeOwzk2QLWGWAWrzjmPlUPkL9WwdeV3myHOwGwvA=
+github.com/quay/claircore v1.5.19 h1:nQ6Lg0yodxXPRbBj2yOHt0irit/79aKqaa37qSe3ak8=
+github.com/quay/claircore v1.5.19/go.mod h1:PrexKaa8EamLaA/dnOebPH8pWT31mg+AoXHlVDU4kn0=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/toolkit v1.1.1 h1:9GFy14ffOkIOpl0fbR+bHr4i19VEwms1pXw8S8up0e4=
 github.com/quay/claircore/toolkit v1.1.1/go.mod h1:ZZHA/b/qpfUcNHFJeYVA0bOp7aL4r3CTFhlBV/ezoFI=
