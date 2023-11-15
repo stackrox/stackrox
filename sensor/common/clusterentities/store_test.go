@@ -101,9 +101,9 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 		//			port:        80,
 		//			incremental: false,
 		//		},
-		//	},
-		//	expectedEndpoints: []string{"10.3.0.1", "10.0.0.1"},
-		//},
+		// 	},
+		// 	expectedEndpoints: []string{"10.3.0.1", "10.0.0.1"},
+		// },
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
