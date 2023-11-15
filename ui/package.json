@@ -42,8 +42,10 @@
         "forward": "../scripts/port-forward-ui.sh"
     },
     "resolutions": {
-        "@typescript-eslint/parser": "^4.32.0",
+        "@typescript-eslint/eslint-plugin": "6.9.1",
+        "@typescript-eslint/parser": "6.9.1",
         "autoprefixer": "10.4.5",
+        "eslint-plugin-jest": "^27.6.0",
         "eslint-plugin-testing-library": "^6.0.1"
     },
     "devDependencies": {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useMemo } from 'react';
 
 export type UseTimeoutReturn<Args extends unknown[]> = [
     (delay: number, ...args: Args) => void,
-    () => void
+    () => void,
 ];
 
 /**

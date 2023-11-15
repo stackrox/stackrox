@@ -19,7 +19,6 @@ const RelatedEntity = ({
     entityType,
     entityId,
     value,
-    link,
     ...rest
 }) => {
     const workflowState = useContext(workflowStateContext);

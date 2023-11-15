@@ -90,8 +90,8 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : !expirationDate || !currentDatetime
-        ? ErrorIcon
-        : healthIconMap[getCredentialExpiryVariant(expirationDate, currentDatetime)];
+          ? ErrorIcon
+          : healthIconMap[getCredentialExpiryVariant(expirationDate, currentDatetime)];
 
     return (
         <Card isCompact>
