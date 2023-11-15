@@ -32,6 +32,8 @@ import { Pagination as PaginationParam } from 'services/types';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import {
     CLUSTER_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
     DEPLOYMENT_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
@@ -163,6 +165,8 @@ const searchOptions: SearchOption[] = [
     DEPLOYMENT_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     CLUSTER_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
 function ImageCvePage() {

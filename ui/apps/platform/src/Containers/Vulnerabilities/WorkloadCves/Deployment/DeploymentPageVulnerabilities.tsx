@@ -27,6 +27,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import {
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     SearchOption,
@@ -84,7 +86,12 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE'];
 
-const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION];
+const searchOptions: SearchOption[] = [
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
