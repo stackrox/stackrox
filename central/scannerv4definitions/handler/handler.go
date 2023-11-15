@@ -15,6 +15,7 @@ import (
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -59,7 +60,7 @@ var (
 )
 
 type requestedUpdater struct {
-	*mappingUpdater
+	*handler.mappingUpdater
 	lastRequestedTime time.Time
 }
 
@@ -174,7 +175,7 @@ func (h *httpHandler) getUpdater() {
 
 	if h.updater == nil || h.updater.mappingUpdater == nil {
 		h.updater = &requestedUpdater{
-			mappingUpdater: NewMappingUpdater(
+			mappingUpdater: handler.NewMappingUpdater(
 				file.New(pathToFile),
 				client,
 				repoMappingURL,
@@ -230,13 +231,6 @@ func (h *httpHandler) openOfflineFile(ctx context.Context, fileName string) (*os
 	}
 	return snap.File, modTime, nil
 
-}
-
-func nextInterval() time.Duration {
-	addMinutes := []int{10, 20, 30, 40}
-	randomMinutes := addMinutes[randGen.Intn(len(addMinutes))] // pick a random number from addMinutes
-	duration := defaultUpdateInterval + time.Duration(randomMinutes)*time.Minute
-	return duration
 }
 
 // ExtractJSONFromZip ExtractExampleJSONFromZip ExtractJSONFromZip extracts the json file from the provided ZIP file

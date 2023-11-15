@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +12,11 @@ import (
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	_       RequestedUpdater = (*mappingUpdater)(nil)
+	randGen                  = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
 type mappingUpdater struct {
@@ -57,13 +63,15 @@ func (u *mappingUpdater) Start() {
 }
 
 func (u *mappingUpdater) runForever() {
-	t := time.NewTicker(u.interval)
-	defer t.Stop()
+	timer := time.NewTimer(u.interval)
+	defer timer.Stop()
 
 	for {
 		select {
-		case <-t.C:
+		case <-timer.C:
 			u.update()
+			// Reset the timer with a new interval
+			timer.Reset(u.interval + nextInterval())
 		case <-u.stopSig.Done():
 			return
 		}
@@ -120,4 +128,8 @@ func downloadFromURL(url, pathToFile string) error {
 	return backoff.RetryNotify(operation, b, notify)
 }
 
-// The rest of your code...
+func nextInterval() time.Duration {
+	addMinutes := []int{10, 20, 30, 40}
+	randomMinutes := addMinutes[randGen.Intn(len(addMinutes))] // pick a random number from addMinutes
+	return time.Duration(randomMinutes) * time.Minute
+}

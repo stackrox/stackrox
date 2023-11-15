@@ -45,6 +45,8 @@ const (
 
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
+
+	repoMappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
 )
 
 var (
@@ -57,7 +59,7 @@ var (
 )
 
 type requestedUpdater struct {
-	*updater
+	RequestedUpdater
 	lastRequestedTime time.Time
 }
 
@@ -163,6 +165,31 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 	http.ServeContent(w, r, name, modTime, content)
 }
 
+func (h *httpHandler) getMappingUpdater() *requestedUpdater {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	u, exists := h.updaters["mapping"]
+	if !exists {
+		filePath := filepath.Join(h.onlineVulnDir, "mapping.zip")
+
+		h.updaters["mapping"] = &requestedUpdater{
+			RequestedUpdater: NewMappingUpdater(
+				file.New(filePath),
+				client,
+				repoMappingURL,
+				h.interval,
+			),
+		}
+
+		u = h.updaters["mapping"]
+	}
+
+	u.lastRequestedTime = time.Now()
+
+	return u
+}
+
 // getUpdater gets or creates the updater for the scanner definitions
 // identified by the given uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
@@ -175,7 +202,7 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 		filePath := filepath.Join(h.onlineVulnDir, uuid+".zip")
 
 		h.updaters[uuid] = &requestedUpdater{
-			updater: newUpdater(
+			RequestedUpdater: newUpdater(
 				file.New(filePath),
 				client,
 				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),

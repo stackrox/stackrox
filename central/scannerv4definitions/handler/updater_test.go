@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	"github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stretchr/testify/require"
 
@@ -26,7 +27,7 @@ func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
 
 func TestUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.zip")
-	u := NewMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
+	u := handler.NewMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
