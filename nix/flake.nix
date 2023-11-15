@@ -28,6 +28,7 @@
         darwin-pkgs =
           if pkgs.stdenv.isDarwin then [
             pkgs.darwin.apple_sdk_11_0.frameworks.Foundation
+            pkgs.darwin.apple_sdk.frameworks.Foundation
             pkgs.colima
             pkgs.docker
           ]
