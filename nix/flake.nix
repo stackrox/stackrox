@@ -23,13 +23,10 @@
   outputs = { self, nixpkgs, nixpkgs-rocksdb-6_15_5, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        callPackage = pkgs.darwin.apple_sdk_11_0.callPackage or pkgs.callPackage;
         pkgs = import nixpkgs { inherit system; };
         pkgs-rocksdb = import nixpkgs-rocksdb-6_15_5 { inherit system; };
         darwin-pkgs =
           if pkgs.stdenv.isDarwin then [
-            pkgs.darwin.apple_sdk_11_0.frameworks.Foundation
-            pkgs.clang_8
             pkgs.colima
             pkgs.docker
           ]
