@@ -17,7 +17,7 @@ import (
 const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
-	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/"
+	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
 )
 
 var (
@@ -64,7 +64,7 @@ func mustSetModTime(t *testing.T, path string, modTime time.Time) {
 
 func TestMappingUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.zip")
-	u := NewMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
+	u := newMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
