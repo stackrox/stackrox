@@ -5,7 +5,7 @@ import { NonEmptyArray } from 'utils/type.utils';
 
 export type UseURLStringUnionReturn<Value> = [
     Value,
-    (nextValue: unknown, historyAction?: Action) => void
+    (nextValue: unknown, historyAction?: Action) => void,
 ];
 
 function isValidValue<Values extends Readonly<NonEmptyArray<unknown>>>(
