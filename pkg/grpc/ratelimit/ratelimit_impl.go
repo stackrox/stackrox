@@ -38,13 +38,17 @@ func newRateLimiter(maxPerSec int, maxThrottleDuration time.Duration) *rateLimit
 // Limit implements "ratelimit.Limiter" interface.
 func (limiter *rateLimiter) Limit() bool {
 	if limiter.maxThrottleDuration < time.Second {
-		return !limiter.tokenBucketLimiter.Allow()
+		return limiter.LimitWithoutThrottle()
 	}
 
 	ctx, cancelFnc := context.WithTimeout(context.Background(), limiter.maxThrottleDuration)
 	defer cancelFnc()
 
 	return limiter.tokenBucketLimiter.Wait(ctx) != nil
+}
+
+func (limiter *rateLimiter) LimitWithoutThrottle() bool {
+	return !limiter.tokenBucketLimiter.Allow()
 }
 
 func (limiter *rateLimiter) modifyRateLimit(limitDelta int) {

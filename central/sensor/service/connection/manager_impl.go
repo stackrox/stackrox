@@ -66,7 +66,7 @@ type manager struct {
 	imageIntegrationMgr        common.ImageIntegrationManager
 	manager                    hashManager.Manager
 	complianceOperatorMgr      common.ComplianceOperatorManager
-	initSyncMgr                *initSyncManager
+	rateLimitMgr               *rateLimitManager
 	autoTriggerUpgrades        *concurrency.Flag
 }
 
@@ -75,7 +75,7 @@ func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
-		initSyncMgr:            NewInitSyncManager(),
+		rateLimitMgr:           newRateLimitManager(),
 	}
 }
 
@@ -234,7 +234,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 
 // CloseConnection is only used when deleting a cluster hence the removal of the deduper
 func (m *manager) CloseConnection(clusterID string) {
-	m.initSyncMgr.Remove(clusterID)
+	m.rateLimitMgr.removeCluster(clusterID)
 
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
@@ -253,7 +253,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
-	if !m.initSyncMgr.Add(clusterID) {
+	if !m.rateLimitMgr.addInitSync(clusterID) {
 		return errors.Wrap(errox.ResourceExhausted, "Central has reached the maximum number of allowed Sensors in init sync state")
 	}
 
@@ -272,14 +272,14 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.imageIntegrationMgr,
 			m.manager,
 			m.complianceOperatorMgr,
-			m.initSyncMgr,
+			m.rateLimitMgr,
 		)
 	ctx = withConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)
-		m.initSyncMgr.Remove(clusterID)
+		m.rateLimitMgr.removeCluster(clusterID)
 		return errors.Wrap(err, "replacing old connection")
 	}
 
@@ -293,7 +293,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 
 	// Address the scenario in which the sensor loses its connection during
 	// the initial synchronization process.
-	m.initSyncMgr.Remove(clusterID)
+	m.rateLimitMgr.removeCluster(clusterID)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
 		connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]

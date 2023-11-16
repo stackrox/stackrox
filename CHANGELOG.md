@@ -11,6 +11,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-20468: A new environment variables have been introduced in Central.
+    - `ROX_CENTRAL_SENSOR_MAX_EVENTS_PER_SECOND` functions as global rate limiter of Sensor messages to be sent from all connected secured clusters to Central. It is set to a default value `0` (unlimited).
+
+      **Important Notice:** This configuration is primarily intended to safeguard against incorrectly configured Sensor deployments. If set to a low value, it can result in rapid depletion of limits and the termination of Sensor connections, potentially causing instability throughout the entire RHACS stack.
+
+    - `ROX_CENTRAL_SENSOR_MAX_EVENTS_THROTTLE_DURATION` setting allows you to specify the maximum throttle duration when the global rate limit for sensor messages is reached. If set to less than 1 second (or 0), messages are immediately rejected. The default value is `2s` (2 seconds).
+
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
 - The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
@@ -51,14 +58,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 
 - ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
-- The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`. 
+- The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`.
 - The `/v1/report` APIs have been removed. Please use `/v2/reports/` APIs.
 
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
 - The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
-- Vulnerability deferral management for host(/node) and platform(/cluster) vulnerabilities has been deprecated and 
-will be removed in the future. Once removed, deferral cannot be created for host and platform vulnerabilities 
+- Vulnerability deferral management for host(/node) and platform(/cluster) vulnerabilities has been deprecated and
+will be removed in the future. Once removed, deferral cannot be created for host and platform vulnerabilities
 and the existing exceptions enforced on host and platform vulnerabilities will be reverted. The affected APIs are
 `/v1/nodecves/suppress`, `/v1/nodecves/unsuppress`, `/v1/clustercves/suppress`, and `/v1/clustercves/unsuppress`.
 
