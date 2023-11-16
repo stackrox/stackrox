@@ -132,6 +132,8 @@ spec:
           readOnly: true
         - name: cache
           mountPath: /var/cache/stackrox
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
         [<- if not .KubectlOutput >]
         - name: helm-cluster-config
           mountPath: /run/secrets/stackrox.io/helm-cluster-config/
@@ -169,6 +171,14 @@ spec:
         emptyDir: {}
       - name: cache
         emptyDir: {}
+      - name: sensor-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+            path: token
+            audience: openshift
+            expirationSeconds: 3600
       [<- if not .KubectlOutput >]
       - name: helm-cluster-config
         secret:

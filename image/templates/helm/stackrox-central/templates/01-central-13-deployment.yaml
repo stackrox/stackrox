@@ -159,6 +159,9 @@ spec:
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
+        - name: central-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+          readOnly: true
         {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
         - name: central-encryption-key
@@ -237,6 +240,14 @@ spec:
         configMap:
           name: central-external-db
           optional: true
+      - name: central-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: openshift
+              expirationSeconds: 3600
       {{- if ._rox.central.notifierSecretsEncryption }}
       {{- if ._rox.central.notifierSecretsEncryption.enabled }}
       - name: central-encryption-key
