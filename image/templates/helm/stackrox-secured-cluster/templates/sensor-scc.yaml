@@ -1,47 +1,61 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
-
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
+# TODO: What about openshift 3? Can we add the ServiceAccount to the SCC via Helm?
+{{- if eq ._rox.env.openshift 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: stackrox-sensor
+  name: sensor-scc
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-sensor") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
+    {{- include "srox.labels" (list . "role" "sensor-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-sensor") | nindent 4 }}
-    kubernetes.io/description: stackrox-sensor is the security constraint for the sensor
-users:
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader
-priority: 0
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-  - '*'
-supplementalGroups:
-  type: RunAsAny
-fsGroup:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: true
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: true
-allowPrivilegedContainer: false
-allowedCapabilities: []
-defaultAddCapabilities: []
-requiredDropCapabilities: []
-volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - secret
-
+    {{- include "srox.annotations" (list . "role" "sensor-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - restricted-v2
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "sensor-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sensor-scc
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{.Release.Namespace}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensor-upgrader-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "sensor-upgrader-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "sensor-upgrader-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sensor-scc
+subjects:
+- kind: ServiceAccount
+  name: sensor-upgrader
+  namespace: {{.Release.Namespace}}
 {{- end }}
+

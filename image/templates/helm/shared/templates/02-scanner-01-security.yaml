@@ -1,19 +1,19 @@
 {{- include "srox.init" . -}}
 
 {{- if not ._rox.scanner.disable }}
-# TODO: What about openshift 3? Can we add the scanner ServiceAccount to the SCC via Helm?
+# TODO: What about openshift 3? Can we add the ServiceAccount to the SCC via Helm?
 
 {{- if eq ._rox.env.openshift 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-nonroot-v2-scc
+  name: scanner-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "scanner-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "scanner-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
@@ -36,7 +36,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-nonroot-v2-scc
+  name: scanner-scc
 subjects:
 - kind: ServiceAccount
   name: scanner

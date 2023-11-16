@@ -1,46 +1,42 @@
 {{- include "srox.init" . -}}
-
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
-
-apiVersion: security.openshift.io/v1
-kind: SecurityContextConstraints
+  
+# TODO: What about openshift 3? Can we add the ServiceAccount to the SCC via Helm?
+{{- if eq ._rox.env.openshift 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: stackrox-admission-control
+  name: admission-control-scc
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-admission-control") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
+    {{- include "srox.labels" (list . "role" "admission-control-sccc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-admission-control") | nindent 4 }}
-    kubernetes.io/description: stackrox-admission-control is the security constraint for the admission controller
-users:
-  - system:serviceaccount:{{ ._rox._namespace }}:admission-control
-priority: 0
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-  - '*'
-supplementalGroups:
-  type: RunAsAny
-fsGroup:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: true
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-allowedCapabilities: []
-defaultAddCapabilities: []
-requiredDropCapabilities: []
-volumes:
-  - configMap
-  - downwardAPI
-  - emptyDir
-  - secret
-
+    {{- include "srox.annotations" (list . "role" "admission-control-sccc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - restricted-v2
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admission-control-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "admission-control-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: admission-control-scc
+subjects:
+- kind: ServiceAccount
+  name: admission-control
+  namespace: {{.Release.Namespace}}
 {{- end }}

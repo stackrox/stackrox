@@ -1,61 +1,24 @@
 {{- include "srox.init" . -}}
 
-{{- if and ._rox.env.openshift (not ._rox.central.db.external) ._rox.system.createSCCs }}
-kind: SecurityContextConstraints
-apiVersion: security.openshift.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
-  labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
-  annotations:
-    kubernetes.io/description: stackrox-central-db is the security constraint for the central database
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
-allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
-allowedCapabilities: []
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-defaultAddCapabilities: []
-fsGroup:
-  type: MustRunAs
-  ranges:
-    - max: 70
-      min: 70
-priority: 0
-readOnlyRootFilesystem: false
-requiredDropCapabilities: []
-runAsUser:
-  type: MustRunAs
-  uid: 70
-seLinuxContext:
-  type: "RunAsAny"
-seccompProfiles:
-  - '*'
-users:
-  - system:serviceaccount:{{ .Release.Namespace }}:central-db
-volumes:
-  - '*'
-{{- else if eq ._rox.env.openshift 4 }}
+# TODO: What about openshift 3? Can we add the ServiceAccount to the SCC via Helm?
+{{- if eq ._rox.env.openshift 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-central-db-scc
+  name: central-db-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-central-db-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "central-db-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-central-db-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "central-db-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   resourceNames:
-  - anyuid
+  - nonroot-v2
   {{- if ._rox.central.persistence.hostPath }}
   - hostmount-anyuid
   {{- end }}
@@ -74,7 +37,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-central-db-scc
+  name: central-db-scc
 subjects:
 - kind: ServiceAccount
   name: central-db
