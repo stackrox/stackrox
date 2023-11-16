@@ -152,7 +152,7 @@ module.exports = [
             ...parserAndOptions,
             globals: {
                 ...browserGlobals,
-                ...nodeGlobals, // TODO limit to minimum used like process.env.WHATEVER
+                process: false, // for JavaScript files which have process.env.NODE_ENV and so on
             },
         },
 
