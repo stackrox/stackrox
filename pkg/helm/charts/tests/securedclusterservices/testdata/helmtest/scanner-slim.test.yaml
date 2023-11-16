@@ -15,7 +15,6 @@ tests:
   expect: |
     container(.deployments["scanner"]; "scanner").image | contains("slim")
     container(.deployments["scanner-db"]; "db").image | contains("slim")
-    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner", "stackrox-sensor"])
     envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
     .deployments.["scanner"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
   tests:

@@ -63,26 +63,9 @@ tests:
     .rolebindings["stackrox-central-psp"] | assertThat(. == null)
     .clusterroles["stackrox-central-psp"] | assertThat(. == null)
 
-- name: "central with OpenShift 3 and enabled SCCs"
-  server:
-    visibleSchemas:
-    - openshift-3.11.0
-    availableSchemas:
-    - openshift-3.11.0
-  values:
-    env:
-      openshift: 3
-    system:
-      createSCCs: true
-  expect: |
-    .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
-    .roles["use-central-scc"] | assertThat(. == null)
-    .rolebindings["central-use-scc"] | assertThat(. == null)
-    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    verifyNodeAffinities(.deployments["central"])
-    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
 
-- name: "central with OpenShift 4 and disabled SCCs"
+# FIXME: Add test case for OS4 with stock SCCs and set hostPath, to check for hostmount-anyuid
+- name: "central with OpenShift 4 and stock SCCs"
   server:
     visibleSchemas:
     - openshift-4.1.0
@@ -91,12 +74,9 @@ tests:
   values:
     env:
       openshift: 4
-    system:
-      createSCCs: false
   expect: |
-    .roles["use-central-scc"] | assertThat(. != null)
+    .roles["use-central-scc"] | .rules[0].resourceNames[0] | assertThat(contains("nonroot-v2")) 
     .rolebindings["central-use-scc"] | assertThat(. != null)
-    .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)

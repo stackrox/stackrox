@@ -53,16 +53,17 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
+	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
 
 	// Monitoring configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 }
 

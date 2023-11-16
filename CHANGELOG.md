@@ -15,6 +15,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
 - The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
+- ROX-12982: All custom `stackrox-*` SecurityContextConstraints (SCC) have been replaced with default SCCs (deprecation announced in 4.1 release notes).
 
 ### Deprecated Features
 - The following search terms will be disabled in the next release and removed from the deployment context in 2 releases:

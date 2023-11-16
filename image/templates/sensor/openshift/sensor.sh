@@ -31,8 +31,6 @@ echo "Creating sensor secrets..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
 echo "Creating sensor RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-rbac.yaml"
-echo "Creating sensor security context constraints..."
-${KUBE_COMMAND} apply -f "$DIR/sensor-scc.yaml"
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml"
 
@@ -88,8 +86,6 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-echo "Creating admission controller security context constraints..."
-${KUBE_COMMAND} apply -f "$DIR/admission-controller-scc.yaml"
 echo "Creating admission controller secrets..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
 echo "Creating admission controller RBAC roles..."
