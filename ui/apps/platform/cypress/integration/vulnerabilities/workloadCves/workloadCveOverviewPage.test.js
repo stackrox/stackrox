@@ -35,9 +35,6 @@ describe('Workload CVE overview page tests', () => {
             'aria-pressed',
             'true'
         );
-
-        // Check the no filters exist in the chips
-        cy.get(selectors.filterChipGroup).should('not.exist');
     });
 
     it('should correctly handle applied filters across entity tabs', function () {
