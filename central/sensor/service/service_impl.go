@@ -115,6 +115,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
 			CentralId:      installInfo.GetId(),
 			Capabilities:   capabilities,
+			// TODO(ROX-20878): send deduper state conditionally on errors receiving unchanged IDs.
+			SendDeduperState: true,
 		}
 
 		if err := safe.RunE(func() error {
