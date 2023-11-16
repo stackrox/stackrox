@@ -939,7 +939,7 @@ openshift_ci_mods() {
     info "END OpenShift CI mods"
 }
 
-# openshift_ci_debug() - store useful state (env & git) to help debug CI. 
+# openshift_ci_debug() - store useful state (env & git) to help debug CI.
 # NOTE: only run before any creds are imported to the environment.
 openshift_ci_debug() {
     local debug="${ARTIFACT_DIR:-/tmp}/debug.txt"
