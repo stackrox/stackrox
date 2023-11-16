@@ -735,6 +735,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
+		"disablePriority: Boolean!",
 		"issueType: String!",
 		"password: String!",
 		"priorityMappings: [Jira_PriorityMapping]!",
@@ -8682,6 +8683,11 @@ func (resolver *Resolver) wrapJirasWithContext(ctx context.Context, values []*st
 
 func (resolver *jiraResolver) DefaultFieldsJson(ctx context.Context) string {
 	value := resolver.data.GetDefaultFieldsJson()
+	return value
+}
+
+func (resolver *jiraResolver) DisablePriority(ctx context.Context) bool {
+	value := resolver.data.GetDisablePriority()
 	return value
 }
 
