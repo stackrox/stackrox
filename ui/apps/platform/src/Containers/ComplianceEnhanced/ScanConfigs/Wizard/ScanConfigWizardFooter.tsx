@@ -72,8 +72,8 @@ function ScanConfigWizardFooter({
                 ]}
             >
                 <p>
-                    Are you sure you want to cancel? Any unsaved changes will be lost. You&apos;ll
-                    be taken back to the list of scan configurations.
+                    Are you sure you want to cancel? Any unsaved changes will be lost. You will be
+                    taken back to the list of scan configurations.
                 </p>
             </Modal>
         );

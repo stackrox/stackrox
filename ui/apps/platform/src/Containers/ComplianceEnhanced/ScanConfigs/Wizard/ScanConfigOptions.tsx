@@ -40,7 +40,6 @@ function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
         _seconds?: number,
         isValid?: boolean
     ): void {
-        formik.setFieldTouched('parameters.time', true, true);
         if (isValid && hour !== undefined) {
             const date = new Date();
             date.setHours(hour, minute, 0, 0);
@@ -53,10 +52,6 @@ function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
 
     function onScheduledDaysChange(id: string, selection: string[]) {
         formik.setFieldValue(id, selection);
-    }
-
-    function updateFormikTouched(fieldName: string) {
-        formik.setFieldTouched(fieldName, true, true);
     }
 
     return (
@@ -141,11 +136,7 @@ function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
                                                     }
                                                     handleSelect={handleSelectChange}
                                                     includeDailyOption
-                                                    onBlur={() =>
-                                                        updateFormikTouched(
-                                                            'parameters.intervalType'
-                                                        )
-                                                    }
+                                                    onBlur={formik.handleBlur}
                                                 />
                                             </FormLabelGroup>
                                         </FlexItem>
@@ -192,15 +183,13 @@ function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
                                                         formik.values.parameters.intervalType ===
                                                             'WEEKLY'
                                                     }
-                                                    onBlur={() => {
-                                                        const fieldName =
-                                                            formik.values.parameters
-                                                                .intervalType === 'WEEKLY'
-                                                                ? 'parameters.daysOfWeek'
-                                                                : 'parameters.daysOfMonth';
-
-                                                        updateFormikTouched(fieldName);
-                                                    }}
+                                                    toggleId={
+                                                        formik.values.parameters.intervalType ===
+                                                        'WEEKLY'
+                                                            ? 'parameters.daysOfWeek'
+                                                            : 'parameters.daysOfMonth'
+                                                    }
+                                                    onBlur={formik.handleBlur}
                                                 />
                                             </FormLabelGroup>
                                         </FlexItem>
@@ -216,6 +205,10 @@ function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
                                             <TimePicker
                                                 time={formik.values.parameters.time}
                                                 onChange={handleTimeChange}
+                                                inputProps={{
+                                                    onBlur: formik.handleBlur,
+                                                    name: 'parameters.time',
+                                                }}
                                             />
                                         </FormLabelGroup>
                                     </FlexItem>

@@ -3,7 +3,7 @@ import * as yup from 'yup';
 
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 
-export type Parameters = {
+export type ScanConfigParameters = {
     name: string;
     description: string;
     intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | null;
@@ -13,7 +13,7 @@ export type Parameters = {
 };
 
 export type ScanConfigFormValues = {
-    parameters: Parameters;
+    parameters: ScanConfigParameters;
 };
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
