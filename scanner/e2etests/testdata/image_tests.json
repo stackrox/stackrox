@@ -3311,6 +3311,7 @@
         "required_feature_flag": null
     },
     {
+        "disabled_reason": "CVE-2017-1000382 is unfixable, and ClairCore doesn't report it.",
         "image": "quay.io/rhacs-eng/qa:sandbox-jenkins-agent-maven-35-rhel7",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -3323,6 +3324,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "1.2.17-19.2.el7",
+                "Arch": "noarch",
                 "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84"
             },
             {
@@ -3330,6 +3332,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "2.7.6-2.10.el7",
+                "Arch": "noarch",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4173",
@@ -3364,6 +3367,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "2:7.4.629-6.el7",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-1000382",
@@ -3467,6 +3471,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "1.2.17-19.2.el7",
+                "Arch": "noarch",
                 "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84"
             },
             {
@@ -3474,6 +3479,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "2.7.6-2.10.el7",
+                "Arch": "noarch",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4173",
@@ -3508,6 +3514,7 @@
                 "NamespaceName": "rhel:7",
                 "VersionFormat": "rpm",
                 "Version": "2:7.4.629-6.el7",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2017-1000382",
@@ -3560,6 +3567,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "1:10.21.0-3.module+el8.2.0+7071+d2377ea3",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2021:0548",
@@ -3618,6 +3626,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "2.9.1-4.el8",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4952",
@@ -3652,6 +3661,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "0.7.7-1.el8",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2020:4508",
@@ -5001,6 +5011,7 @@
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
                 "Version": "1:3.0.1-23.el9_0",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
@@ -5035,6 +5046,7 @@
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
                 "Version": "1:3.0.1-23.el9_0",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:7288",
@@ -5069,6 +5081,7 @@
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
                 "Version": "1.26.5-3.el9",
+                "Arch": "noarch",
                 "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996"
             },
             {
@@ -5076,6 +5089,7 @@
                 "NamespaceName": "rhel:9",
                 "VersionFormat": "rpm",
                 "Version": "2:8.2.2637-16.el9_0.2",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHSA-2022:5942",
@@ -5131,6 +5145,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "6.0.6-1.el8_6",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
@@ -5165,6 +5180,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "6.0.6-1.el8_6",
+                "Arch": "x86_64",
                 "Vulnerabilities": [
                     {
                         "Name": "RHBA-2022:5747",
@@ -5360,6 +5376,7 @@
                 "NamespaceName": "rhel:8",
                 "VersionFormat": "rpm",
                 "Version": "4.10.1650890594-1.el8",
+                "Arch": "noarch",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2021-26291",

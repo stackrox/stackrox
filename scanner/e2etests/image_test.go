@@ -34,6 +34,7 @@ type Feature struct {
 	NamespaceName   string          `json:"NamespaceName"`
 	VersionFormat   string          `json:"VersionFormat"`
 	Version         string          `json:"Version"`
+	Arch            string          `json:"Arch"`
 	Vulnerabilities []Vulnerability `json:"Vulnerabilities"`
 	AddedBy         string          `json:"AddedBy"`
 	Location        string          `json:"Location"`
@@ -143,18 +144,31 @@ func (tc *TestCase) mapFillReport(vr *v4.VulnerabilityReport) *TestWant {
 	}
 }
 
+func getDefault[K comparable, V any](m map[K]V, k K, defaultFunc func() V) V {
+	v, ok := m[k]
+	if !ok {
+		v = defaultFunc()
+		m[k] = v
+	}
+	return v
+}
+
 // mapFillFeatures creates a features slice by converting values found in the
 // vulnerability report or using empty entries when not found.
 func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
+	type VA struct {
+		V string
+		A string
+	}
 	// Populate map with all packages in the report.
-	pkgs := make(map[string]map[string]*v4.Package)
+	pkgs := make(map[string]map[VA]*v4.Package)
 	for _, p := range vr.GetContents().GetPackages() {
 		versions, ok := pkgs[p.Name]
 		if !ok {
-			versions = make(map[string]*v4.Package)
+			versions = make(map[VA]*v4.Package)
 			pkgs[p.Name] = versions
 		}
-		versions[p.Version] = p
+		versions[VA{V: p.Version, A: p.Arch}] = p
 	}
 	// Convert every expected package found in the report, or convert an empty
 	// package if not found.
@@ -164,7 +178,7 @@ func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
 		versions, nameFound := pkgs[f.Name]
 		var p *v4.Package
 		if nameFound {
-			version, versionFound := versions[f.Version]
+			version, versionFound := versions[VA{V: f.Version, A: f.Arch}]
 			if versionFound {
 				p = version
 			} else {
@@ -177,6 +191,7 @@ func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
 			Name:            p.GetName(),
 			NamespaceName:   mapNamespace(vr),
 			Version:         p.GetVersion(),
+			Arch:            p.GetArch(),
 			Vulnerabilities: tc.mapFillVulns(vr, p, f),
 			// TODO Pending fields not currently available in the vulnerability report.
 			VersionFormat: f.VersionFormat,
