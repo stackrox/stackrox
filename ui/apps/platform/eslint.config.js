@@ -208,7 +208,6 @@ module.exports = [
             ...pluginReact.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
-            // 'react/display-name': 'off', // TODO delete after eslint-disable in ReactSelect and URLSearchInputWithAutocomplete
             'react/jsx-key': 'off', // more that 30 errors
 
             'react/forbid-prop-types': [
