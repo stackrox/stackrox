@@ -120,6 +120,24 @@ func request_DebugService_StreamAuthzTraces_0(ctx context.Context, marshaler run
 
 }
 
+func request_DebugService_ResetPGStatStatements_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := client.ResetPGStatStatements(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_DebugService_ResetPGStatStatements_0(ctx context.Context, marshaler runtime.Marshaler, server DebugServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Empty
+	var metadata runtime.ServerMetadata
+
+	msg, err := server.ResetPGStatStatements(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterDebugServiceHandlerServer registers the http handlers for service DebugService to "mux".
 // UnaryRPC     :call DebugServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -177,6 +195,29 @@ func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
+	})
+
+	mux.Handle("POST", pattern_DebugService_ResetPGStatStatements_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_DebugService_ResetPGStatStatements_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DebugService_ResetPGStatStatements_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
 	})
 
 	return nil
@@ -280,6 +321,26 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 
 	})
 
+	mux.Handle("POST", pattern_DebugService_ResetPGStatStatements_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_DebugService_ResetPGStatStatements_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_DebugService_ResetPGStatStatements_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -289,6 +350,8 @@ var (
 	pattern_DebugService_SetLogLevel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_DebugService_StreamAuthzTraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "debug", "authz", "trace"}, "", runtime.AssumeColonVerbOpt(false)))
+
+	pattern_DebugService_ResetPGStatStatements_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "debug", "db", "stats", "reset"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
@@ -297,4 +360,6 @@ var (
 	forward_DebugService_SetLogLevel_0 = runtime.ForwardResponseMessage
 
 	forward_DebugService_StreamAuthzTraces_0 = runtime.ForwardResponseStream
+
+	forward_DebugService_ResetPGStatStatements_0 = runtime.ForwardResponseMessage
 )
