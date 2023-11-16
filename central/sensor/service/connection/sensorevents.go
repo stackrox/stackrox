@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -42,7 +43,15 @@ type sensorEventHandler struct {
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, initSyncMgr *initSyncManager) *sensorEventHandler {
+func newSensorEventHandler(
+	cluster *storage.Cluster,
+	sensorVersion string,
+	pipeline pipeline.ClusterPipeline,
+	injector common.MessageInjector,
+	stopSig *concurrency.ErrorSignal,
+	deduper hashManager.Deduper,
+	initSyncMgr *initSyncManager,
+) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
 		sensorVersion: sensorVersion,
@@ -87,10 +96,19 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	case *central.SensorEvent_Synced:
 		// Call the reconcile functions
 		log.Info("Receiving reconciliation event")
-		if s.reconciliationMap.IsClosed() {
-			log.Infof("Ignoring SYNC from cluster %s (ClusterID:%s) since reconciliationMap is already closed", s.cluster.GetName(), s.cluster.GetId())
-			return
+
+		unchangedIDs := event.GetSynced().GetUnchangedIds()
+		if unchangedIDs != nil {
+			parsedKeys, err := deduperkey.ParseKeySlice(unchangedIDs)
+			if err != nil {
+				// Show warning for failed keys
+				log.Warnf("Error parsing %d unchanged IDs: %s", len(unchangedIDs), err)
+			}
+			for _, k := range parsedKeys {
+				s.reconciliationMap.AddWithTypeString(k.ResourceType.String(), k.ID)
+			}
 		}
+
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}

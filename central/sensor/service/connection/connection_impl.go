@@ -633,9 +633,8 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			}
 		}
 		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
-		c.sensorEventHandler.disableReconciliation()
 	} else {
-		log.Infof("Sensor (%s) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
+		log.Infof("Sensor (%s) cannot receive deduper state", c.clusterID)
 	}
 
 	go c.runSend(server)

@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common/deduper"
 )
@@ -21,7 +22,7 @@ func NewResourceStoreReconciler(storeProvider *StoreProvider) *ResourceStoreReco
 
 // ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of Sensor messages that
 // should be deleted in Central to keep the state of Sensor and Central in sync.
-func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
+func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduperkey.Key]uint64) []central.MsgFromSensor {
 	events := make([]central.MsgFromSensor, 0)
 	for hash, hashValue := range h {
 		toDeleteID, err := hr.storeProvider.ReconcileDelete(hash.ResourceType.String(), hash.ID, hashValue)
