@@ -25,7 +25,7 @@ spec:
         image: "{{ ( printf "%s/%s:%s" .Values.image.repository .Values.app.scanner.name .Values.image.tag ) }}"
         imagePullPolicy: IfNotPresent
         command:
-          - /entrypoint.sh
+          - entrypoint.sh
         args:
           - -conf
           - /etc/stackrox.d/scanner/config.yaml
