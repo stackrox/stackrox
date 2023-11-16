@@ -71,6 +71,8 @@ const sortOptions = {
     defaultSortOption: { field: reportNameSearchKey, direction: 'asc' } as const,
 };
 
+const emptyReportArray = [];
+
 function VulnReportsPage() {
     const history = useHistory();
 
@@ -129,7 +131,7 @@ function VulnReportsPage() {
         onSelectAll,
         onClearAll: onClearAllSelected,
         getSelectedIds,
-    } = useTableSelection(reportConfigurations || []);
+    } = useTableSelection(reportConfigurations || emptyReportArray);
 
     const {
         openDeleteModal,
