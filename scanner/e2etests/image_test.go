@@ -78,7 +78,6 @@ func TestImage(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s/%s", tc.Namespace, tc.Image), func(t *testing.T) {
-			t.Name()
 			if tc.DisabledReason != "" {
 				t.Skipf("%s disabled: reason: %q", t.Name(), tc.DisabledReason)
 			}
