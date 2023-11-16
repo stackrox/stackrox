@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	v1 "github.com/openshift/api/config/v1"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -41,10 +43,17 @@ type updaterImpl struct {
 
 	updates chan *message.ExpiringMessage
 	stopSig concurrency.Signal
+
+	offlineMode   *atomic.Bool
+	context       context.Context
+	contextMtx    sync.Mutex
+	cancelContext context.CancelFunc
+	// This function is needed to be able to mock in test
+	getProviders func(context.Context) *storage.ProviderMetadata
 }
 
 func (u *updaterImpl) Start() error {
-	go u.run()
+	// We don't do anything on Start, run will be called when Central is reachable.
 	return nil
 }
 
@@ -52,7 +61,39 @@ func (u *updaterImpl) Stop(_ error) {
 	u.stopSig.Signal()
 }
 
-func (u *updaterImpl) Notify(common.SensorComponentEvent) {}
+func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		if u.offlineMode.CompareAndSwap(true, false) {
+			u.createContext()
+			go u.run()
+		}
+	case common.SensorComponentEventOfflineMode:
+		if u.offlineMode.CompareAndSwap(false, true) {
+			u.cancelCurrentContext()
+		}
+	}
+}
+
+func (u *updaterImpl) cancelCurrentContext() {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	if u.cancelContext != nil {
+		u.cancelContext()
+	}
+}
+
+func (u *updaterImpl) createContext() {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	u.context, u.cancelContext = context.WithCancel(context.Background())
+}
+
+func (u *updaterImpl) getCurrentContext() context.Context {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	return u.context
+}
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -67,8 +108,11 @@ func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
+	ctx := u.getCurrentContext()
 	select {
-	case u.updates <- message.New(&central.MsgFromSensor{
+	case <-ctx.Done():
+		return false
+	case u.updates <- message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
 			ClusterStatusUpdate: msg,
 		},
@@ -249,7 +293,7 @@ func (u *updaterImpl) getAPIVersions() []string {
 }
 
 func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
-	m := providers.GetMetadata(ctx)
+	m := u.getProviders(ctx)
 	if m == nil {
 		log.Info("No Cloud Provider metadata is found")
 	}
@@ -258,10 +302,14 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 
 // NewUpdater returns a new ready-to-use updater.
 func NewUpdater(client client.Interface) common.SensorComponent {
+	offlineMode := &atomic.Bool{}
+	offlineMode.Store(true)
 	return &updaterImpl{
-		client:     client,
-		kubeClient: client.Kubernetes(),
-		updates:    make(chan *message.ExpiringMessage),
-		stopSig:    concurrency.NewSignal(),
+		client:       client,
+		kubeClient:   client.Kubernetes(),
+		updates:      make(chan *message.ExpiringMessage),
+		stopSig:      concurrency.NewSignal(),
+		offlineMode:  offlineMode,
+		getProviders: providers.GetMetadata,
 	}
 }
