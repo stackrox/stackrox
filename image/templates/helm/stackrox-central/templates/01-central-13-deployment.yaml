@@ -24,6 +24,7 @@ spec:
       labels:
         app: central
         {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
+        openshift.io/required-scc: {{ include "srox.globalResourceName" (list . "stackrox-central") }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}

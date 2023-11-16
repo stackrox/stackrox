@@ -25,6 +25,7 @@ spec:
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "daemonset" "collector") | nindent 8 }}
+        openshift.io/required-scc: stackrox-collector
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:

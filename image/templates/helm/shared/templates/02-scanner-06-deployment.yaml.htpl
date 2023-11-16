@@ -12,6 +12,7 @@ metadata:
     {{- include "srox.labels" (list . "deployment" "scanner") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "deployment" "scanner") | nindent 4 }}
+    openshift.io/required-scc: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
 spec:
   replicas: {{ ._rox.scanner.replicas }}
   minReadySeconds: 15

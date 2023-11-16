@@ -26,6 +26,7 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
         {{- include "srox.podAnnotations" (list . "deployment" "admission-control") | nindent 8 }}
+        openshift.io/required-scc: stackrox-admission-control
     spec:
       # Attempt to schedule these on master nodes
       {{- if ._rox.admissionControl.tolerations }}

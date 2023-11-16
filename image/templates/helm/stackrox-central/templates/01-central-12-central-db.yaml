@@ -27,6 +27,7 @@ spec:
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+        openshift.io/required-scc: {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
     spec:
       {{- if ._rox.central.db._nodeSelector }}
       nodeSelector:
