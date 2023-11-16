@@ -2,11 +2,11 @@
 
 
 {{- $name := "stackrox-gke-ssd" -}}
-{{- if has $name ._rox._state.referencedStorageClasses -}}
+{{- if has $name ._rox._state.referencedStorageClasses }}
   {{- $lookupOut := dict -}}
   {{- $globalName := include "srox.globalResourceName" (list . $name) -}}
   {{- $_ := include "srox.safeLookup" (list . $lookupOut "storage.k8s.io/v1" "StorageClass" "" $globalName) -}}
-  {{- if and (not $lookupOut.result) (or .Release.IsInstall $lookupOut.reliable) (not ._rox.meta.noCreateStorageClass) -}}
+  {{- if and (not $lookupOut.result) (or .Release.IsInstall $lookupOut.reliable) (not ._rox.meta.noCreateStorageClass) }}
 
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
