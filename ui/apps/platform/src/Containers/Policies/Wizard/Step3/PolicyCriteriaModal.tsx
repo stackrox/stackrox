@@ -15,6 +15,7 @@ import {
 } from '@patternfly/react-core';
 import { kebabCase } from 'lodash';
 
+import { PolicyGroup } from 'types/policy.proto';
 import { Descriptor } from './policyCriteriaDescriptors';
 
 import './PolicyCriteriaModal.css';
@@ -36,6 +37,7 @@ function getEmptyPolicyFieldCard(field) {
 
 type PolicyCriteriaModalProps = {
     descriptors: Descriptor[];
+    existingGroups: PolicyGroup[];
     isModalOpen: boolean;
     onClose: () => void;
     addPolicyFieldCardHandler: (Descriptor) => void;
@@ -54,18 +56,27 @@ function getKeysByCategory(keys) {
     return categories;
 }
 
-function getPolicyFieldsAsTree(descriptors): TreeViewDataItem[] {
+function getPolicyFieldsAsTree(existingGroups, descriptors): TreeViewDataItem[] {
     const categories = getKeysByCategory(descriptors);
 
     const treeList = Object.keys(categories).map((category) => ({
         name: '',
         title: category,
         id: kebabCase(category),
-        children: categories[category].map<TreeViewDataItem>((child: Descriptor) => ({
-            name: child.longName,
-            title: child.shortName,
-            id: kebabCase(child.shortName),
-        })),
+        children: categories[category]
+            .filter((child) => {
+                const alreadyUsed = existingGroups.find(
+                    (group) =>
+                        group.fieldName.toLowerCase() === child?.name?.toLowerCase() ||
+                        group.fieldName.toLowerCase() === child?.label?.toLowerCase()
+                );
+                return !alreadyUsed;
+            })
+            .map<TreeViewDataItem>((child: Descriptor) => ({
+                name: child.longName,
+                title: child.shortName || child.name,
+                id: kebabCase(child.shortName),
+            })),
     }));
 
     return treeList;
@@ -74,6 +85,7 @@ function getPolicyFieldsAsTree(descriptors): TreeViewDataItem[] {
 function PolicyCriteriaModal({
     addPolicyFieldCardHandler,
     descriptors,
+    existingGroups,
     isModalOpen,
     onClose,
 }: PolicyCriteriaModalProps) {
@@ -82,7 +94,10 @@ function PolicyCriteriaModal({
     const [filteredItems, setFilteredItems] = useState<TreeViewDataItem[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
 
-    const treeDataItems = useMemo(() => getPolicyFieldsAsTree(descriptors), [descriptors]);
+    const treeDataItems = useMemo(
+        () => getPolicyFieldsAsTree(existingGroups, descriptors),
+        [descriptors, existingGroups]
+    );
 
     useEffect(() => {
         setFilteredItems(treeDataItems);
@@ -101,8 +116,8 @@ function PolicyCriteriaModal({
                         const name = typeof child.name === 'string' ? child.name : '';
                         const title = typeof child.title === 'string' ? child.title : '';
                         return (
-                            name.includes(input.toLowerCase()) ||
-                            title.includes(input.toLowerCase())
+                            name.toLowerCase().includes(input.toLowerCase()) ||
+                            title.toLowerCase().includes(input.toLowerCase())
                         );
                     });
 
@@ -126,7 +141,9 @@ function PolicyCriteriaModal({
 
     function addField() {
         const itemKey = activeItems[0].title;
-        const itemToAdd = descriptors.find((descriptor) => descriptor.shortName === itemKey);
+        const itemToAdd = descriptors.find(
+            (descriptor) => descriptor.shortName === itemKey || descriptor.name === itemKey
+        );
         const newPolicyFieldCard = getEmptyPolicyFieldCard(itemToAdd);
 
         addPolicyFieldCardHandler(newPolicyFieldCard);
@@ -167,7 +184,6 @@ function PolicyCriteriaModal({
         >
             <ModalBoxBody>
                 <Flex direction={{ default: 'column' }}>
-                    <FlexItem>Filter by criteria name</FlexItem>
                     <FlexItem>
                         <Button variant="link" onClick={() => setAllExpanded(!allExpanded)}>
                             {allExpanded && 'Collapse all'}
