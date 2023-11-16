@@ -1,59 +1,26 @@
 {{- include "srox.init" . -}}
 
 {{- if not ._rox.scanner.disable }}
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
-kind: SecurityContextConstraints
-apiVersion: security.openshift.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
-  labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
-    kubernetes.io/description: stackrox-scanner is the security constraint for the Scanner container
-priority: 0
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-  - '*'
-users:
-  - system:serviceaccount:{{ .Release.Namespace }}:scanner
-volumes:
-  - '*'
-allowHostDirVolumePlugin: false
-allowedCapabilities: []
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-defaultAddCapabilities: []
-fsGroup:
-  type: RunAsAny
-readOnlyRootFilesystem: false
-requiredDropCapabilities: []
+# TODO: What about openshift 3? Can we add the scanner ServiceAccount to the SCC via Helm?
 
-{{- else if eq ._rox.env.openshift 4 }}
+{{- if eq ._rox.env.openshift 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-scanner-scc
+  name: use-nonroot-v2-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-scanner-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-scanner-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
   resources:
   - securitycontextconstraints
   resourceNames:
-  - anyuid
+  - nonroot-v2
   verbs:
   - use
 ---
@@ -69,10 +36,11 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-scanner-scc
+  name: use-nonroot-v2-scc
 subjects:
 - kind: ServiceAccount
   name: scanner
   namespace: {{ .Release.Namespace }}
 {{- end }}
+
 {{- end }}
