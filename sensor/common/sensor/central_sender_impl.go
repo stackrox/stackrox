@@ -20,9 +20,9 @@ type centralSenderImpl struct {
 	initialDeduperState map[deduperkey.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
 	s.initialDeduperState = initialDeduperState
-	go s.send(stream, onStops...)
+	go s.send(stream, sendUnchangedIDs, onStops...)
 }
 
 func (s *centralSenderImpl) Stop(_ error) {
@@ -51,7 +51,7 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 	}
 }
 
-func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
@@ -60,7 +60,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState)
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, sendUnchangedIDs)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
