@@ -1,4 +1,4 @@
-package deduper
+package deduperkey
 
 import (
 	"fmt"
@@ -7,10 +7,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
+	log          = logging.LoggerForModule()
 	deduperTypes = []any{
 		&central.SensorEvent_NetworkPolicy{},
 		&central.SensorEvent_Deployment{},
@@ -41,6 +45,28 @@ type Key struct {
 	ResourceType reflect.Type
 }
 
+// String returns the string version of the key
+func (k *Key) String() string {
+	typ := stringutils.GetAfter(k.ResourceType.String(), "_")
+	return fmt.Sprintf("%s:%s", typ, k.ID)
+}
+
+// ParseKeySlice returns a list of Key objects from a list a string formatted keys. An error returned means that some
+// of the keys might have failed when being parsed.
+func ParseKeySlice(keys []string) ([]Key, error) {
+	errList := errorhelpers.NewErrorList("malformed key entries")
+	result := make([]Key, len(keys))
+	for i, v := range keys {
+		parsedKey, err := KeyFrom(v)
+		if err != nil {
+			errList.AddError(errors.Wrapf(err, "key: %s", v))
+			continue
+		}
+		result[i] = parsedKey
+	}
+	return result, errList.ToError()
+}
+
 // ParseDeduperState makes a copy of the deduper state.
 func ParseDeduperState(state map[string]uint64) map[Key]uint64 {
 	if state == nil {
@@ -49,7 +75,7 @@ func ParseDeduperState(state map[string]uint64) map[Key]uint64 {
 
 	result := make(map[Key]uint64, len(state))
 	for k, v := range state {
-		parsedKey, err := keyFrom(k)
+		parsedKey, err := KeyFrom(k)
 		if err != nil {
 			log.Warnf("Deduper state has malformed entry: %s->%d: %s", k, v, err)
 			continue
@@ -59,7 +85,8 @@ func ParseDeduperState(state map[string]uint64) map[Key]uint64 {
 	return result
 }
 
-func keyFrom(v string) (Key, error) {
+// KeyFrom parses a string key into Key
+func KeyFrom(v string) (Key, error) {
 	parts := strings.Split(v, ":")
 	if len(parts) != 2 {
 		return Key{}, fmt.Errorf("invalid Key format: %s", v)

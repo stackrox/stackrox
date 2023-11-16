@@ -13,8 +13,8 @@ import (
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
+	deduperkey "github.com/stackrox/rox/pkg/deduperkey"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
-	deduper "github.com/stackrox/rox/sensor/common/deduper"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
 	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
@@ -695,7 +695,7 @@ func (m *MockHashReconciler) EXPECT() *MockHashReconcilerMockRecorder {
 }
 
 // ProcessHashes mocks base method.
-func (m *MockHashReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
+func (m *MockHashReconciler) ProcessHashes(h map[deduperkey.Key]uint64) []central.MsgFromSensor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessHashes", h)
 	ret0, _ := ret[0].([]central.MsgFromSensor)

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -33,6 +34,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -65,10 +67,11 @@ const (
 
 // K8sResourceInfo is a test file in YAML or a struct
 type K8sResourceInfo struct {
-	Kind     string
-	YamlFile string
-	Obj      interface{}
-	Name     string
+	Kind      string
+	YamlFile  string
+	Obj       interface{}
+	Name      string
+	PatchFile string
 }
 
 // requiredWaitResources slice of resources that need to be awaited
@@ -83,9 +86,9 @@ func shouldRetryResource(kind string) bool {
 	return false
 }
 
-// objByKind returns the supported dynamic k8s resources that can be created
+// ObjByKind returns the supported dynamic k8s resources that can be created
 // add new ones here to support adding new resource types
-func objByKind(kind string) k8s.Object {
+func ObjByKind(kind string) k8s.Object {
 	switch kind {
 	case "Deployment":
 		return &appsV1.Deployment{}
@@ -119,15 +122,17 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
 // and assertions.
 type TestContext struct {
-	r               *resources.Resources
-	env             *envconf.Config
-	fakeCentral     *centralDebug.FakeService
-	centralReceived chan *central.MsgFromSensor
-	stopFn          func()
-	sensorStopped   concurrency.ReadOnlyErrorSignal
-	centralStopped  atomic.Bool
-	config          CentralConfig
-	grpcFactory     centralDebug.FakeGRPCFactory
+	r                *resources.Resources
+	env              *envconf.Config
+	fakeCentral      *centralDebug.FakeService
+	centralReceived  chan *central.MsgFromSensor
+	stopFn           func()
+	sensorStopped    concurrency.ReadOnlyErrorSignal
+	centralStopped   atomic.Bool
+	config           CentralConfig
+	grpcFactory      centralDebug.FakeGRPCFactory
+	deduperStateLock sync.Mutex
+	deduperState     *central.DeduperState
 
 	// archivedMessages holds messages sent from Sensor to FakeCentral before stopping Central. These can be fetched
 	// in case the test needs to assert on messages sent right before stopping the gRPC connection.
@@ -146,6 +151,7 @@ func DefaultCentralConfig() CentralConfig {
 	return CentralConfig{
 		InitialSystemPolicies: policies,
 		CertFilePath:          "../../../../tools/local-sensor/certs/",
+		SendDeduperState:      false,
 	}
 }
 
@@ -168,6 +174,11 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
+		deduperState: &central.DeduperState{
+			ResourceHashes: nil,
+			Current:        1,
+			Total:          1,
+		},
 	}
 
 	tc.StartFakeGRPC()
@@ -280,12 +291,19 @@ func (c *TestContext) RestartFakeCentralConnection() {
 
 // StartFakeGRPC will start a gRPC server to act as Central.
 func (c *TestContext) StartFakeGRPC() {
+	c.deduperStateLock.Lock()
+	defer c.deduperStateLock.Unlock()
+
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello(certID),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
-		message.NetworkBaselineSync(nil))
+		message.NetworkBaselineSync(nil),
+		message.DeduperState(c.deduperState.ResourceHashes, c.deduperState.Current, c.deduperState.Total))
+
+	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
+	fakeCentral.SetDeduperState(c.deduperState)
 
 	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 
@@ -332,7 +350,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 	var removeFunctions []func() error
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
-		obj := objByKind(resources[i].Kind)
+		obj := ObjByKind(resources[i].Kind)
 		removeFn, err := c.ApplyResourceAndWait(context.Background(), t, DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
@@ -410,6 +428,19 @@ func (c *TestContext) LastResourceState(t *testing.T, matchResourceFn MatchResou
 	c.LastResourceStateWithTimeout(t, matchResourceFn, assertFn, message, defaultWaitTimeout)
 }
 
+// GetLastMessageTypeMatcher will check that message has a certain type.
+type GetLastMessageTypeMatcher func(m *central.MsgFromSensor) bool
+
+// GetLastMessageWithEventIDAndType returns the last state sent to central that matches this ID.
+func GetLastMessageWithEventIDAndType(messages []*central.MsgFromSensor, id string, fn GetLastMessageTypeMatcher) *central.MsgFromSensor {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].GetEvent().GetId() == id && fn(messages[i]) {
+			return messages[i]
+		}
+	}
+	return nil
+}
+
 // LastResourceStateWithTimeout filters all messages by `matchResourceFn` and checks that the last message matches `assertFn`. Timeouts after `timeout`.
 func (c *TestContext) LastResourceStateWithTimeout(t *testing.T, matchResourceFn MatchResource, assertFn AssertFuncAny, message string, timeout time.Duration) {
 	timer := time.NewTimer(timeout)
@@ -453,19 +484,37 @@ func (c *TestContext) WaitForHello(t *testing.T, timeout time.Duration) *central
 }
 
 // WaitForSyncEvent will wait until sensor transmits a `Synced` event to Central, at the end of the reconciliation.
-func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) {
+func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) *central.SensorEvent_ResourcesSynced {
 	ticker := time.NewTicker(defaultTicker)
 	timeoutTimer := time.NewTicker(timeout)
 	for {
 		select {
 		case <-timeoutTimer.C:
 			t.Errorf("timeout (%s) reached waiting for sync event", timeout)
-			return
+			return nil
 		case <-ticker.C:
 			messages := c.GetFakeCentral().GetAllMessages()
 			for _, m := range messages {
 				if m.GetEvent().GetSynced() != nil {
-					return
+					return m.GetEvent().GetSynced()
+				}
+			}
+		}
+	}
+}
+
+// WaitForMessageWithEventID will wait until timeout and check if a message with ID was sent to fake central.
+func (c *TestContext) WaitForMessageWithEventID(id string, timeout time.Duration) (*central.MsgFromSensor, error) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(defaultTicker)
+	for {
+		select {
+		case <-timer.C:
+			return nil, errors.Errorf("message with ID %s not found", id)
+		case <-ticker.C:
+			for _, msg := range c.GetFakeCentral().GetAllMessages() {
+				if msg.GetEvent().GetId() == id {
+					return msg, nil
 				}
 			}
 		}
@@ -594,6 +643,13 @@ func (c *TestContext) DeploymentNotReceived(t *testing.T, name string) {
 	messages := c.GetFakeCentral().GetAllMessages()
 	lastDeploymentUpdate := GetLastMessageWithDeploymentName(messages, DefaultNamespace, name)
 	assert.Nilf(t, lastDeploymentUpdate, "should not have found deployment with name %s: %+v", name, lastDeploymentUpdate)
+}
+
+// EventIDNotReceived checks that an event with id that matches GetLastMessageTypeMatcher was not received.
+func (c *TestContext) EventIDNotReceived(t *testing.T, id string, typeFn GetLastMessageTypeMatcher) {
+	messages := c.GetFakeCentral().GetAllMessages()
+	lastMessage := GetLastMessageWithEventIDAndType(messages, id, typeFn)
+	assert.Nilf(t, lastMessage, "should not have found event with id %s: %+v", id, lastMessage)
 }
 
 // GetLastMessageMatching finds last element in slice matching `matchFn`.
@@ -728,6 +784,7 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 	CertFilePath          string
+	SendDeduperState      bool
 }
 
 func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
@@ -785,10 +842,29 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, closeF
 }
 
+// SetCentralDeduperState will update the deduper state from Central so that the next restart will return this state.
+func (c *TestContext) SetCentralDeduperState(state *central.DeduperState) {
+	c.deduperStateLock.Lock()
+	defer c.deduperStateLock.Unlock()
+
+	c.deduperState = state
+}
+
+// PatchResource uses K8sResourceInfo and tries to patch a resource using patch file in K8sResourceInfo.
+func (c *TestContext) PatchResource(ctx context.Context, t *testing.T, obj k8s.Object, resource *K8sResourceInfo) {
+	content, err := os.ReadFile(path.Join("yaml", resource.PatchFile))
+	require.NoErrorf(t, err, "Failed to read patch file for resource %v", resource)
+	err = c.r.Patch(ctx, obj, k8s.Patch{
+		PatchType: types.StrategicMergePatchType,
+		Data:      content,
+	})
+	require.NoErrorf(t, err, "Failed to patch resource (%s): %s . Using JSON patch: %s", resource.Kind, err, string(content))
+}
+
 // ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
 // Use this if there is no need to get or manipulate the data in the YAML file.
 func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, t *testing.T, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
-	obj := objByKind(resource.Kind)
+	obj := ObjByKind(resource.Kind)
 	return c.ApplyResourceAndWait(ctx, t, ns, &resource, obj, retryFn)
 }
 
@@ -908,6 +984,16 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 			}
 		}
 	}
+}
+
+// CheckEventReceived will look at all received messages in Fake Central and validate if event with ID was received.
+func (c *TestContext) CheckEventReceived(uid string) bool {
+	for _, msg := range c.GetFakeCentral().GetAllMessages() {
+		if msg.GetEvent().GetId() == uid {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFirstMessageWithDeploymentName find the first sensor message by namespace and deployment name

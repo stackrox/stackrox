@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -274,31 +275,31 @@ func makeNode(id types.UID) *nodeWrap {
 	}
 }
 
-func makeKey(id string, t reflect.Type) deduper.Key {
-	return deduper.Key{ID: id, ResourceType: t}
+func makeKey(id string, t reflect.Type) deduperkey.Key {
+	return deduperkey.Key{ID: id, ResourceType: t}
 }
 
 func (s *HashReconciliationSuite) TestProcessHashes() {
 	cases := map[string]struct {
-		dstate     map[deduper.Key]uint64
+		dstate     map[deduperkey.Key]uint64
 		deletedIDs []string
 	}{
 		"No Deployment": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeDeployment): 76543,
 				makeKey("2", deduper.TypeDeployment): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Deployment": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeDeployment): 87654,
 				makeKey("1", deduper.TypeDeployment):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Deployments": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeDeployment): 87654,
 				makeKey("98", deduper.TypeDeployment): 88888,
 				makeKey("97", deduper.TypeDeployment): 77777,
@@ -307,21 +308,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "98", "97"},
 		},
 		"No Pod": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("3", deduper.TypePod): 76543,
 				makeKey("4", deduper.TypePod): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Pod": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypePod): 87654,
 				makeKey("3", deduper.TypePod):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Pods": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypePod):  87654,
 				makeKey("100", deduper.TypePod): 87654,
 				makeKey("101", deduper.TypePod): 87654,
@@ -330,21 +331,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "100", "101"},
 		},
 		"No ServiceAccount": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("5", deduper.TypeServiceAccount): 76543,
 				makeKey("6", deduper.TypeServiceAccount): 65432,
 			},
 			deletedIDs: []string{},
 		},
 		"Single ServiceAccount": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeServiceAccount): 87654,
 				makeKey("5", deduper.TypeServiceAccount):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple ServiceAccounts": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeServiceAccount):  87654,
 				makeKey("100", deduper.TypeServiceAccount): 87654,
 				makeKey("101", deduper.TypeServiceAccount): 87654,
@@ -353,21 +354,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "100", "101"},
 		},
 		"No Secret": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("5000", deduper.TypeSecret): 76543,
 				makeKey("5001", deduper.TypeSecret): 65432,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Secret": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeSecret):   87654,
 				makeKey("5000", deduper.TypeSecret): 76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Secrets": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeSecret):   87654,
 				makeKey("100", deduper.TypeSecret):  87654,
 				makeKey("101", deduper.TypeSecret):  87654,
@@ -376,21 +377,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "100", "101"},
 		},
 		"No Node": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("42", deduper.TypeNode): 87654,
 				makeKey("43", deduper.TypeNode): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Node": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNode): 87654,
 				makeKey("42", deduper.TypeNode): 76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Nodes": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNode): 87654,
 				makeKey("98", deduper.TypeNode): 33333,
 				makeKey("97", deduper.TypeNode): 76654,
@@ -399,21 +400,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "98", "97"},
 		},
 		"No Network Policy": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeNetworkPolicy): 12345,
 				makeKey("2", deduper.TypeNetworkPolicy): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Network Policy": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNetworkPolicy): 34567,
 				makeKey("1", deduper.TypeNetworkPolicy):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Network Policies": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNetworkPolicy): 34567,
 				makeKey("98", deduper.TypeNetworkPolicy): 34567,
 				makeKey("97", deduper.TypeNetworkPolicy): 34567,
@@ -422,14 +423,14 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No RBACs": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("6001", deduper.TypeRole):    76543,
 				makeKey("6003", deduper.TypeBinding): 87654,
 			},
 			deletedIDs: []string{},
 		},
 		"One role, one binding": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("6002", deduper.TypeRole):    76543,
 				makeKey("6004", deduper.TypeBinding): 87654,
 				makeKey("99", deduper.TypeRole):      76543,
@@ -438,21 +439,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"99", "98"},
 		},
 		"No Namespace": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeNamespace): 12345,
 				makeKey("2", deduper.TypeNamespace): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Namespace": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNamespace): 34567,
 				makeKey("1", deduper.TypeNamespace):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Namespaces": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeNamespace): 34567,
 				makeKey("98", deduper.TypeNamespace): 34567,
 				makeKey("97", deduper.TypeNamespace): 34567,
@@ -461,21 +462,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No Compliance Operator Profile": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeComplianceOperatorProfile): 12345,
 				makeKey("2", deduper.TypeComplianceOperatorProfile): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Compliance Operator Profile": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorProfile): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorProfile):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Compliance Operator Profiles": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorProfile): 34567,
 				makeKey("98", deduper.TypeComplianceOperatorProfile): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorProfile): 34567,
@@ -484,21 +485,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No Compliance Operator Result": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeComplianceOperatorResult): 12345,
 				makeKey("2", deduper.TypeComplianceOperatorResult): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Compliance Operator Result": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorResult): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorResult):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Compliance Operator Results": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorResult): 34567,
 				makeKey("98", deduper.TypeComplianceOperatorResult): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorResult): 34567,
@@ -507,21 +508,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No Compliance Operator Rule": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeComplianceOperatorRule): 12345,
 				makeKey("2", deduper.TypeComplianceOperatorRule): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Compliance Operator Rule": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorRule): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorRule):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Compliance Operator Rules": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorRule): 34567,
 				makeKey("98", deduper.TypeComplianceOperatorRule): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorRule): 34567,
@@ -530,21 +531,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No Compliance Operator Scan": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeComplianceOperatorScan): 12345,
 				makeKey("2", deduper.TypeComplianceOperatorScan): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Compliance Operator Scan": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorScan): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorScan):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Compliance Operator Scans": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorScan): 34567,
 				makeKey("98", deduper.TypeComplianceOperatorScan): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorScan): 34567,
@@ -553,21 +554,21 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			deletedIDs: []string{"97", "98", "99"},
 		},
 		"No Compliance Operator Scan Setting Binding": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding): 12345,
 				makeKey("2", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Compliance Operator Scan Setting Binding": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding):  12345,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Compliance Operator Scan Setting Bindings": {
-			dstate: map[deduper.Key]uint64{
+			dstate: map[deduperkey.Key]uint64{
 				makeKey("99", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 				makeKey("98", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
