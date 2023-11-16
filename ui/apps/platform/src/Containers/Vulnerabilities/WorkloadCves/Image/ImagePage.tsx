@@ -23,6 +23,7 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../types';
@@ -72,6 +73,7 @@ function ImagePage() {
         variables: { id: imageId },
     });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+    const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
     const imageData = data && data.image;
     const imageName = imageData?.name
@@ -155,6 +157,7 @@ function ImagePage() {
                                         tag: '',
                                     }
                                 }
+                                refetchAll={refetchAll}
                             />
                         </Tab>
                         <Tab
