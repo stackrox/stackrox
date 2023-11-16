@@ -19,8 +19,7 @@ type TableCountLinksProps = {
 };
 
 function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
-    const fixableVulnType: (typeof entityTypes)[keyof typeof entityTypes] | '' | null | undefined =
-        useContext(fixableVulnTypeContext);
+    const fixableVulnType: string | null | undefined = useContext(fixableVulnTypeContext);
     const workflowState = useContext(workflowStateContext);
     const entityType = workflowState.getCurrentEntityType();
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
