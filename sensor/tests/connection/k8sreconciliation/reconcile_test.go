@@ -48,6 +48,9 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		t.Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
 		t.SkipNow()
 	}
+
+	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
+
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
