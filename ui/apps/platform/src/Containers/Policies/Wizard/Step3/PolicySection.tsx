@@ -128,7 +128,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             )
                         );
                     })}
-                    {!readOnly && (
+                    {!showPolicyCriteriaModal && !readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}
                             descriptors={descriptors}
