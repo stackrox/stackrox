@@ -346,7 +346,7 @@ module.exports = [
                 },
             ],
 
-            // ...pluginJestDOM.configs.recommended.rules, // TODO fix errors
+            ...pluginJestDOM.configs.recommended.rules, // TODO fix errors
 
             ...pluginTestingLibrary.configs.react.rules,
 
