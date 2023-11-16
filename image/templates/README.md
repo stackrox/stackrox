@@ -13,6 +13,7 @@ Location: `./helm/stackrox-central`
 Installs:
  - `central`
  - `scanner`, if enabled
+ - `scanner-v4`, if enabled
 
 ## StackRox secured cluster services
 

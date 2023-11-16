@@ -14,12 +14,12 @@ spec:
     app: scanner-v4-matcher
   clusterIP: None
   ports:
-  - name: grpcs-scanner-v4-matcher
+  - name: grpc-scanner-v4-matcher
     port: 8443
     targetPort: 8443
   {{ if ._rox.scannerV4.exposeMonitoring -}}
   - name: monitoring
-    port: 9090
+    port: {{ ._rox.scannerV4.matcher.metricsPort }}
     targetPort: monitoring
   {{- end }}
 

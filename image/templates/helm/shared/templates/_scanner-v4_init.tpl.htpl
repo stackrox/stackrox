@@ -100,7 +100,7 @@
   {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
   {{- if eq $.Chart.Name "stackrox-central-services" -}}
     {{/* Only generate certificate when installing central-services. */}}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -130,7 +130,7 @@
     {{- include "srox.fail" (printf "scannerV4.disable=false required in order to be able to deploy Scanner V4 indexer.") -}}
   {{- end -}}
   {{- if and (not (kindIs "invalid" $scannerV4Cfg.matcher.disable)) (not $scannerV4Cfg.matcher.disable) -}}
-    {{- include "srox.fail" (printf "scannerV4.disable=false required in order to be able to deploy Scanner V4 matcher.") -}}
+    {{- include "srox.fail" (printf "scannerV4.disable=false required to deploy Scanner V4 matcher.") -}}
   {{- end -}}
 
 {{- end -}}

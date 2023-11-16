@@ -22,4 +22,4 @@ matcher:
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
-log_level: debug
+log_level: info
