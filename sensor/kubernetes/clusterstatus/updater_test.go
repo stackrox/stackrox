@@ -5,11 +5,17 @@ import (
 	"testing"
 	"time"
 
+	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
+	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
+	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stretchr/testify/suite"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type updaterSuite struct {
@@ -21,9 +27,38 @@ func TestClusterStatusUpdater(t *testing.T) {
 	suite.Run(t, new(updaterSuite))
 }
 
+type fakeClientSet struct {
+	k8s kubernetes.Interface
+}
+
+func (c *fakeClientSet) Kubernetes() kubernetes.Interface {
+	return c.k8s
+}
+
+func (c *fakeClientSet) Dynamic() dynamic.Interface {
+	return nil
+}
+
+func (c *fakeClientSet) OpenshiftApps() appVersioned.Interface {
+	return nil
+}
+
+func (c *fakeClientSet) OpenshiftConfig() configVersioned.Interface {
+	return nil
+}
+
+func (c *fakeClientSet) OpenshiftRoute() routeVersioned.Interface {
+	return nil
+}
+
+func (c *fakeClientSet) OpenshiftOperator() operatorVersioned.Interface {
+	return nil
+}
+
 func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata) {
-	cl := k8s.MakeFakeClient()
-	s.updater = NewUpdater(cl)
+	s.updater = NewUpdater(&fakeClientSet{
+		k8s: fake.NewSimpleClientset(),
+	})
 	s.updater.(*updaterImpl).getProviders = getProviders
 }
 
