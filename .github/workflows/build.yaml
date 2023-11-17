@@ -658,6 +658,7 @@ jobs:
       - build-and-push-main
       - build-and-push-operator
       - scan-images-with-roxctl
+      - scan-go-binaries
     permissions:
       actions: read
     steps:
