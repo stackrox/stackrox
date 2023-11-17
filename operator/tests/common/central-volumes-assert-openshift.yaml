@@ -60,6 +60,9 @@ spec:
         - mountPath: /etc/pki/injected-ca-trust/
           name: trusted-ca-volume
           readOnly: true
+        - name: central-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+          readOnly: true
       volumes:
       - emptyDir: {}
         name: varlog
@@ -123,6 +126,14 @@ spec:
           name: central-external-db
           optional: true
         name: central-external-db-volume
+      - name: central-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              audience: openshift
+              expirationSeconds: 3600
+              path: token
       - name: stackrox-db
         emptyDir: {}
       - configMap:
