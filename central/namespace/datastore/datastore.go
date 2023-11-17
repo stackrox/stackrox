@@ -102,11 +102,11 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 	walkFn := func() error {
 		allowedNamespaces = allowedNamespaces[:0]
 		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-				IsAllowed() {
-				return nil
-			}
+			//scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
+			//if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
+			//	IsAllowed() {
+			//	return nil
+			//}
 			allowedNamespaces = append(allowedNamespaces, namespace)
 			return nil
 		})

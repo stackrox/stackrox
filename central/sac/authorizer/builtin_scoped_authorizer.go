@@ -26,8 +26,8 @@ var (
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
 
-	clusterCache   = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
-	namespaceCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchNamespacesFromDB)
+	clusterCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
+	// namespaceCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchNamespacesFromDB)
 )
 
 const (
@@ -380,7 +380,8 @@ func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
 }
 
 func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	return namespaceCache.GetObjects(ctx)
+	return fetchNamespacesFromDB(ctx)
+	//return namespaceCache.GetObjects(ctx)
 }
 
 func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
