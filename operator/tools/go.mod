@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/operator/tools
 
-go 1.19
+go 1.20
 
 require (
 	github.com/kudobuilder/kuttl v0.15.0
