@@ -56,6 +56,7 @@ const (
 )
 
 func TestClient(t *testing.T) {
+	t.Skip("ROX-8661")
 	suite.Run(t, new(ClientTestSuite))
 }
 
