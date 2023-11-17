@@ -605,12 +605,12 @@ jobs:
         go install golang.org/x/vuln/cmd/govulncheck@latest
         find bin/linux_amd64 -maxdepth 1 -type f -exec govulncheck -mode=binary -json {} \; | tee vulns.json
         source "scripts/ci/lib.sh"
-        cat vulns.json | jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r | sort -u | while IFS=$'\t' read -r -a vulns
+        jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
         do
           id="${vulns[0]}"
           summary="${vulns[1]}"
           details="${vulns[2]}"
-          echo $id $summary
+          echo "$id" "$summary"
           save_junit_failure "$id" "$summary" "$details"
         done
         grep -q finding vulns.json && (exit 1)
