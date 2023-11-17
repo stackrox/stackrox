@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - 'release-*'
+    - 'gavin/ROX-20643/switch-github-bot-release-ci'
     tags-ignore:
     - '*-nightly-*'
 
