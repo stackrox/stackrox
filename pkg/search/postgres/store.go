@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -429,23 +428,15 @@ func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	}
 	defer conn.Release()
 
+	batch := &pgx.Batch{}
 	for _, obj := range objs {
-		batch := &pgx.Batch{}
 		if err := s.insertInto(batch, obj); err != nil {
-			return err
+			return errors.Wrap(err, "error on insertInto")
 		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
+	}
+	batchResults := conn.SendBatch(ctx, batch)
+	if err := batchResults.Close(); err != nil {
+		return errors.Wrap(err, "closing batch")
 	}
 	return nil
 }
