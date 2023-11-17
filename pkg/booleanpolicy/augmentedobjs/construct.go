@@ -27,8 +27,8 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 }
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
-func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images, nil)
+func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
+	obj, err := ConstructDeployment(deployment, images, applied)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +118,10 @@ func ConstructNetworkFlow(flow *NetworkFlowDetails) (*pathutil.AugmentedObj, err
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,
 	images []*storage.Image,
+	applied *NetworkPoliciesApplied,
 	flow *NetworkFlowDetails,
 ) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images, nil)
+	obj, err := ConstructDeployment(deployment, images, applied)
 	if err != nil {
 		return nil, err
 	}

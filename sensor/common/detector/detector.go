@@ -515,8 +515,9 @@ func (d *detectorImpl) processIndicator(ctx context.Context, pi *storage.Process
 
 	// Run detection now
 	alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: d.getNetworkPoliciesApplied(deployment),
 	}, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
@@ -594,8 +595,9 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 
 	images := d.enricher.getImages(deployment)
 	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: d.getNetworkPoliciesApplied(deployment),
 	}, flowDetails)
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
