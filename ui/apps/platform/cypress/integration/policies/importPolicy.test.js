@@ -120,7 +120,8 @@ describe('Import policy', () => {
         cy.get(selectors.importUploadModal.resumeButton).should('be.disabled');
 
         // Input a new name to enable the button (but cannot import the incomplete policy).
-        cy.get(selectors.importUploadModal.renameInput).click().type('A whole new world');
+        cy.get(selectors.importUploadModal.renameInput).click();
+        cy.get(selectors.importUploadModal.renameInput).type('A whole new world');
         cy.get(selectors.importUploadModal.resumeButton).should('be.enabled');
     });
 
@@ -248,7 +249,8 @@ describe('Import policy', () => {
         cy.get(selectors.importUploadModal.resumeButton).should('be.disabled');
 
         // Input a new name to enable the button (but cannot import the incomplete policy).
-        cy.get(selectors.importUploadModal.renameInput).click().type('Two are better than one');
+        cy.get(selectors.importUploadModal.renameInput).click();
+        cy.get(selectors.importUploadModal.renameInput).type('Two are better than one');
         cy.get(selectors.importUploadModal.resumeButton).should('be.enabled');
     });
 });

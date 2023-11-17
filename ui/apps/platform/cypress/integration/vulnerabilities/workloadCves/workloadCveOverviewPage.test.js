@@ -85,6 +85,8 @@ describe('Workload CVE overview page tests', () => {
                 ].join(',');
 
                 // Check all rows for the CVE table
+                // TODO David can you rewrite with safe chain?
+                /* eslint-disable cypress/unsafe-to-chain-command */
                 cy.get('table tbody tr:nth-of-type(1)')
                     .each(($row) => cy.wrap($row).find(imageSeverityCountSelector))
                     // Check all rows for the Image table
@@ -99,6 +101,7 @@ describe('Workload CVE overview page tests', () => {
                         return cy.get('table tbody tr:nth-of-type(1)');
                     })
                     .each(($row) => cy.wrap($row).find(cveSeverityCountSelector));
+                /* eslint-disable cypress/unsafe-to-chain-command */
             });
     });
 });
