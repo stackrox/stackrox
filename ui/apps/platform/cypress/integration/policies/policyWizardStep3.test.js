@@ -11,6 +11,9 @@ import {
 import { closeModalByButton } from '../../helpers/modal';
 import { hasFeatureFlag } from '../../helpers/features';
 
+const TREE_VIEW_SEARCH_INPUT = '.pf-c-tree-view__search input[name="search-input"]';
+const TREE_VIEW_FIRST_LEVEL_CHILD = '.pf-c-tree-view__list-item .pf-c-tree-view__list-item';
+
 // open Policy Fields modal, select given field, and add it to the section card
 function addPolicyField(fieldName) {
     cy.get('.policy-section-card button:contains("Add policy field")').click();
@@ -19,13 +22,13 @@ function addPolicyField(fieldName) {
     // TreeView search field has a bug where it doesn't accept spaces
     const firstWordOfFieldName = fieldName.split(' ')[0];
     cy.log(firstWordOfFieldName);
-    cy.get('.pf-c-tree-view__search input[name="search-input"]').type(firstWordOfFieldName);
+    cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
     cy.get(
-        `.pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node-title:contains(${fieldName})`
+        `${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-c-tree-view__node-title:contains(${fieldName})`
     ).click();
 
-    cy.get('.pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node').should(
+    cy.get(`${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-c-tree-view__node`).should(
         'have.class',
         'pf-m-current'
     );
@@ -41,10 +44,10 @@ function assertPolicyFieldNotAvailable(fieldName) {
     // TreeView search field has a bug where it doesn't accept spaces
     const firstWordOfFieldName = fieldName.split(' ')[0];
     cy.log(firstWordOfFieldName);
-    cy.get('.pf-c-tree-view__search input[name="search-input"]').type(firstWordOfFieldName);
+    cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
     cy.get(
-        `.pf-c-tree-view__list-item .pf-c-tree-view__list-item .pf-c-tree-view__node-title:contains(${fieldName})`
+        `${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-c-tree-view__node-title:contains(${fieldName})`
     ).should('not.exist');
 
     closeModalByButton('Cancel');
@@ -116,7 +119,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             'Image signature',
         ];
         cy.get('.pf-c-tree-view__list-item:first').click();
-        cy.get('.pf-c-tree-view__list-item .pf-c-tree-view__list-item').each((element, index) => {
+        cy.get(TREE_VIEW_FIRST_LEVEL_CHILD).each((element, index) => {
             element.get(
                 `.pf-c-tree-view__node-title:contains(${FIELDS_AVAILABLE_FOR_DEPLOY_POLICY[index]})`
             );

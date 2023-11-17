@@ -101,6 +101,7 @@ function PolicyCriteriaModal({
 
     useEffect(() => {
         setFilteredItems(treeDataItems);
+        setIsFiltered(false);
     }, [treeDataItems]);
 
     function onSearch(evt) {
@@ -111,7 +112,7 @@ function PolicyCriteriaModal({
         } else {
             const filtered = treeDataItems.map((item) => {
                 const filteredItem = { ...item };
-                if (item.children && item.children.length && item.children.length > 0) {
+                if (item.children && item.children.length > 0) {
                     const filteredChildren = item.children.filter((child) => {
                         const name = typeof child.name === 'string' ? child.name : '';
                         const title = typeof child.title === 'string' ? child.title : '';
@@ -158,7 +159,7 @@ function PolicyCriteriaModal({
                         onSearch={onSearch}
                         id="input-search"
                         name="search-input"
-                        aria-label="Search input example"
+                        aria-label="Filter policy criteria"
                     />
                 </ToolbarItem>
             </ToolbarContent>
