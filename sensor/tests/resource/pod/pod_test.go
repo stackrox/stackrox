@@ -157,7 +157,12 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 			return nil
 		}, "deployment should be deleted", time.Minute)
 		testC.LastViolationStateByIDWithTimeout(t, id, func(alertResults *central.AlertResults) error {
-			if alertResults.GetAlerts() != nil {
+			if alertResults.GetAlerts() != nil && len(alertResults.GetAlerts()) > 0 {
+				var alertNames []string
+				for _, a := range alertResults.GetAlerts() {
+					alertNames = append(alertNames, a.GetPolicy().GetName())
+				}
+				t.Logf("AlertResults are not empty: %v", alertNames)
 				return errors.New("AlertResults should be empty")
 			}
 			return nil
