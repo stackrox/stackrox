@@ -20,7 +20,7 @@ export type VulnerabilitiesExceptionConfig = {
 export function fetchVulnerabilitiesExceptionConfig(): Promise<VulnerabilitiesExceptionConfig> {
     return axios
         .get<{ config: VulnerabilitiesExceptionConfig }>(vulnBaseUrl)
-        .then(({ data }) => data.config);
+        .then(({ data }) => new Promise((resolve) => setTimeout(() => resolve(data.config), 2000)));
 }
 
 export function updateVulnerabilitiesExceptionConfig(

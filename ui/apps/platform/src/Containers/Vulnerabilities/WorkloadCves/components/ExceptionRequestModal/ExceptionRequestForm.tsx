@@ -93,6 +93,8 @@ function ExceptionRequestForm({
                     className="pf-u-flex-1"
                     hidden={activeKeyTab !== 'options'}
                 >
+                    <div className="pf-u-mb-lg pf-u-font-size-xs">{JSON.stringify(formik)}</div>
+
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsLg' }}
