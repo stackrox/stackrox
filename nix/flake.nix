@@ -30,6 +30,7 @@
             pkgs.darwin.apple_sdk.frameworks.Security
             pkgs.colima
             pkgs.docker
+            pkgs.clang
           ]
           else [ ];
         # Add Python packages here.
