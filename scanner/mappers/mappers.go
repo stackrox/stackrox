@@ -26,7 +26,7 @@ var (
 	// vulnNamePatterns is a prioritized list of regexes to match against
 	// vulnerability information to extract their ID.
 	vulnNamePatterns = []*regexp.Regexp{
-		regexp.MustCompile(`((RHSA|RHBA|RHEA)-\d{4}:\d+)|(ALAS[A-Z]*-\d{4}-\d+)`),
+		regexp.MustCompile(`((RHSA|RHBA|RHEA)-\d{4}:\d+)|(ALAS\d*-\d{4}-\d+)`),
 		regexp.MustCompile(`CVE-\d{4}-\d+`),
 		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
 		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
