@@ -271,14 +271,10 @@ module.exports = [
             '@typescript-eslint/no-unsafe-member-access': 'off',
 
             // Turn off new rules until after we fix errors in follow-up contributions.
-            '@typescript-eslint/no-duplicate-type-constituents': 'off', // fix 1 error
             '@typescript-eslint/no-explicit-any': 'off', // fix 7 errors
             '@typescript-eslint/no-floating-promises': 'off', // fix 7 errors
             '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
-            '@typescript-eslint/no-redundant-type-constituents': 'off', // fix 3 errors
             '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
-            '@typescript-eslint/no-unsafe-return': 'off', // fix 1 error
-            // '@typescript-eslint/no-unused-vars': 'off', // fix 4 errors
             '@typescript-eslint/require-await': 'off', // about 20 errors
 
             '@typescript-eslint/array-type': 'error',

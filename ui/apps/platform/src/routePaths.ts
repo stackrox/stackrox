@@ -368,7 +368,7 @@ export function isRouteEnabled(
  * New Framwork-related route paths
  */
 
-export const urlEntityListTypes = {
+export const urlEntityListTypes: Record<string, string> = {
     [resourceTypes.NAMESPACE]: 'namespaces',
     [resourceTypes.CLUSTER]: 'clusters',
     [resourceTypes.NODE]: 'nodes',
@@ -389,7 +389,7 @@ export const urlEntityListTypes = {
     [rbacConfigTypes.ROLE]: 'roles',
 };
 
-export const urlEntityTypes = {
+export const urlEntityTypes: Record<string, string> = {
     [resourceTypes.NAMESPACE]: 'namespace',
     [resourceTypes.CLUSTER]: 'cluster',
     [resourceTypes.NODE]: 'node',
@@ -411,21 +411,21 @@ export const urlEntityTypes = {
     [rbacConfigTypes.ROLE]: 'role',
 };
 
-const vulnManagementPathToLabelMap = {
+const vulnManagementPathToLabelMap: Record<string, string> = {
     [vulnManagementPath]: 'Dashboard',
     // TODO: add mapping for Deferrals
     [vulnManagementReportsPath]: 'Reporting',
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
-const vulnerabilitiesPathToLabelMap = {
+const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
     [exceptionManagementPath]: 'Exception Management',
 };
 
-export const basePathToLabelMap = {
+export const basePathToLabelMap: Record<string, string> = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
     [listeningEndpointsBasePath]: 'Listening Endpoints',

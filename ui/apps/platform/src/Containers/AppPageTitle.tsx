@@ -22,10 +22,9 @@ const getTitleFromWorkflowState = (workflowState): string => {
     return useCase;
 };
 
-const getPageTitleText = (location: Location): string | null => {
+const getPageTitleText = (location: Location): string | null | undefined => {
     if (basePathToLabelMap[location.pathname]) {
-        const topPageLabel = basePathToLabelMap[location.pathname];
-        return topPageLabel.toString();
+        return basePathToLabelMap[location.pathname];
     }
     const workflowState = parseURL(location);
     const useCase = workflowState.getUseCase();
