@@ -33,12 +33,16 @@ message SensorHello {
 
     // sensor_state defines in what state sensor is (e.g. it's starting up or it's reconnecting)
     SensorState sensor_state = 6;
+
+    // request_deduper_state is a request to central to communicate its deduper state.
+    bool request_deduper_state = 7;
 }
 
 message CentralHello {
-    string              cluster_id      = 1;
-    map<string, string> cert_bundle     = 2;
-    bool                managed_central = 3;
-    string              central_id      = 4;
-    repeated string     capabilities    = 5;
+    string              cluster_id          = 1;
+    map<string, string> cert_bundle         = 2;
+    bool                managed_central     = 3;
+    string              central_id          = 4;
+    repeated string     capabilities        = 5;
+    bool                send_deduper_state  = 6;
 }
