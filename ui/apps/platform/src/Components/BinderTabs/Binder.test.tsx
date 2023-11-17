@@ -17,7 +17,7 @@ describe('BinderTabs', () => {
                 </Tab>
             </BinderTabs>
         );
-        expect(screen.getByText('Tab 1 Content')).toBeDefined();
+        expect(screen.getByText('Tab 1 Content')).toBeInTheDocument();
     });
 
     test("selecting a new tab render's the new tab's contents", async () => {
@@ -35,6 +35,6 @@ describe('BinderTabs', () => {
 
         await act(() => user.click(screen.getByText('tab 2')));
 
-        expect(screen.getByText('Tab 2 Content')).toBeDefined();
+        expect(screen.getByText('Tab 2 Content')).toBeInTheDocument();
     });
 });

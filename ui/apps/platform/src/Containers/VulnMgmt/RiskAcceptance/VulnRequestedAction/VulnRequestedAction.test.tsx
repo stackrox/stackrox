@@ -18,7 +18,7 @@ describe('VulnRequestedAction', () => {
                 currentDate={new Date()}
             />
         );
-        expect(screen.getByText('False positive')).toBeDefined();
+        expect(screen.getByText('False positive')).toBeInTheDocument();
     });
 
     it('should show the requested action for an until fixed deferral', () => {
@@ -33,7 +33,7 @@ describe('VulnRequestedAction', () => {
                 currentDate={new Date()}
             />
         );
-        expect(screen.getByText('Deferral (until fixed)')).toBeDefined();
+        expect(screen.getByText('Deferral (until fixed)')).toBeInTheDocument();
     });
 
     it('should show the requested action for a 2 week deferral', () => {
@@ -52,7 +52,7 @@ describe('VulnRequestedAction', () => {
                 currentDate={currentDate}
             />
         );
-        expect(screen.getByText('Deferral (14 days)')).toBeDefined();
+        expect(screen.getByText('Deferral (14 days)')).toBeInTheDocument();
     });
 
     it('should show the requested action for a 30 day deferral', () => {
@@ -71,7 +71,7 @@ describe('VulnRequestedAction', () => {
                 currentDate={currentDate}
             />
         );
-        expect(screen.getByText('Deferral (30 days)')).toBeDefined();
+        expect(screen.getByText('Deferral (30 days)')).toBeInTheDocument();
     });
 
     it('should show the requested action for a 90 day deferral', () => {
@@ -90,7 +90,7 @@ describe('VulnRequestedAction', () => {
                 currentDate={currentDate}
             />
         );
-        expect(screen.getByText('Deferral (90 days)')).toBeDefined();
+        expect(screen.getByText('Deferral (90 days)')).toBeInTheDocument();
     });
 
     // @TODO: Add test for indefinite deferral
