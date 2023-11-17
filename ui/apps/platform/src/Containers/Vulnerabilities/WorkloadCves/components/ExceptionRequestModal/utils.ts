@@ -4,6 +4,7 @@ import * as yup from 'yup';
 import {
     CreateDeferVulnerabilityExceptionRequest,
     CreateFalsePositiveVulnerabilityExceptionRequest,
+    VulnerabilityExceptionScope,
 } from 'services/VulnerabilityExceptionService';
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -23,7 +24,7 @@ const baseValidationSchema = yup.object({
             imageScope: yup.object({
                 registry: yup.string().required(),
                 remote: yup.string().required(),
-                tag: yup.string().required(),
+                tag: yup.string(),
             }),
         })
         .required('A scope is required'),
@@ -57,6 +58,18 @@ export function futureDateValidator(date: Date): string {
     return isAfter(new Date(), date) ? 'Date must be in the future' : '';
 }
 
+// If tag is falsy, set it to an empty string. This is necessary because the backend
+// requires a `tag` field, but the `yup` validation library does not allow a required
+// string to be empty.
+function scopeWithTag(rawScope: ExceptionValues['scope']): VulnerabilityExceptionScope {
+    return {
+        imageScope: {
+            ...rawScope.imageScope,
+            tag: rawScope.imageScope.tag ?? '',
+        },
+    };
+}
+
 /**
  * Converts form values to a request body for creating a deferral exception. The `expiry` field
  * has been separated from the rest of the form values to ensure that it is not null. Null checking
@@ -76,7 +89,7 @@ export function formValuesToDeferralRequest(
         return {
             cves: formValues.cves,
             comment: formValues.comment,
-            scope: formValues.scope,
+            scope: scopeWithTag(formValues.scope),
             exceptionExpiry,
         };
     }
@@ -106,6 +119,6 @@ export function formValuesToFalsePositiveRequest(
     return {
         cves: formValues.cves,
         comment: formValues.comment,
-        scope: formValues.scope,
+        scope: scopeWithTag(formValues.scope),
     };
 }
