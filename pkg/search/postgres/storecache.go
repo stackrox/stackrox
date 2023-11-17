@@ -301,13 +301,26 @@ func (c *CachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
 	case permissions.NamespaceScope:
 		var interfaceObj interface{}
 		interfaceObj = obj
-		namespaceScopedObj := interfaceObj.(sac.NamespaceScopedObject)
-		scopeChecker = scopeChecker.ForNamespaceScopedObject(namespaceScopedObj)
+		switch interfaceObj.(type) {
+		case *storage.NamespaceMetadata:
+			ns := interfaceObj.(*storage.NamespaceMetadata)
+			scopeChecker = scopeChecker.ClusterID(ns.GetClusterId())
+			scopeChecker = scopeChecker.Namespace(ns.GetName())
+		default:
+			namespaceScopedObj := interfaceObj.(sac.NamespaceScopedObject)
+			scopeChecker = scopeChecker.ForNamespaceScopedObject(namespaceScopedObj)
+		}
 	case permissions.ClusterScope:
 		var interfaceObj interface{}
 		interfaceObj = obj
-		clusterScopedObj := interfaceObj.(sac.ClusterScopedObject)
-		scopeChecker = scopeChecker.ForClusterScopedObject(clusterScopedObj)
+		switch interfaceObj.(type) {
+		case *storage.Cluster:
+			cluster := interfaceObj.(*storage.Cluster)
+			scopeChecker = scopeChecker.ClusterID(cluster.GetId())
+		default:
+			clusterScopedObj := interfaceObj.(sac.ClusterScopedObject)
+			scopeChecker = scopeChecker.ForClusterScopedObject(clusterScopedObj)
+		}
 	}
 	return scopeChecker.IsAllowed()
 }
