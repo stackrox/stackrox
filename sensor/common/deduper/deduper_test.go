@@ -31,7 +31,7 @@ func Test_DeduperParseKeyFromEvent(t *testing.T) {
 
 	deduperStream := NewDedupingMessageStream(fake, map[deduperkey.Key]uint64{
 		k1: 0,
-	})
+	}, true)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
