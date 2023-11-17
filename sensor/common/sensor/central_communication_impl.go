@@ -247,12 +247,12 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
 	s.clientReconcile = s.clientReconcile &&
 		centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) &&
-		centralHello.SendDeduperState
+		centralHello.GetSendDeduperState()
 
 	log.Infof("Sensor client reconciliation state=%s (centralCapability=%s, centralHello.SendDeduperState=%s)",
 		strconv.FormatBool(s.clientReconcile),
 		strconv.FormatBool(centralcaps.Has(centralsensor.SensorReconciliationOnReconnect)),
-		strconv.FormatBool(centralHello.SendDeduperState))
+		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
