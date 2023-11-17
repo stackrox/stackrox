@@ -148,12 +148,8 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-    - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
-      uses: ./.github/actions/junit2jira
-      with:
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        directory: 'junit-reports'
+    # Do not create junit report for bench tests:
+    # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
     runs-on: ubuntu-latest
