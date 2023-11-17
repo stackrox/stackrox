@@ -92,7 +92,7 @@ func checkCall(call *ast.CallExpr, pass *analysis.Pass) {
 	case '.', '!', '\n':
 		pass.Report(analysis.Diagnostic{
 			Pos:     msg.End() - 1,
-			Message: fmt.Sprintf("Log message should not end with punctuation or newlines: %q", s),
+			Message: fmt.Sprintf("Log message should not end with punctuation nor newlines: %q", s),
 			SuggestedFixes: []analysis.SuggestedFix{{
 				Message: "Remove trailing punctuation or newline",
 				TextEdits: []analysis.TextEdit{
