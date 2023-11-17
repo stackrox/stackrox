@@ -567,6 +567,7 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   scan-go-binaries:
+    if: github.event_name == 'push'
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
@@ -622,7 +623,6 @@ jobs:
         paths: 'junit-reports/**/*.xml'
 
     - name: Report junit failures in jira
-      if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
