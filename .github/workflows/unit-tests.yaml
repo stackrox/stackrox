@@ -60,7 +60,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled()) && github.event_name == 'push'
+      if: always()
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
