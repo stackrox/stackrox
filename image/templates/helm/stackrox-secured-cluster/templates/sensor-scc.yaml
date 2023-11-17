@@ -58,4 +58,3 @@ subjects:
   name: sensor-upgrader
   namespace: {{.Release.Namespace}}
 {{- end }}
-
