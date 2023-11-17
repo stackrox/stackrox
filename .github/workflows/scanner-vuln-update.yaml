@@ -1,4 +1,4 @@
-name: Update Vulnerabilities
+name: Scanner vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
@@ -60,8 +60,8 @@ jobs:
           exit 1
         fi
 
-        cd scanner
-        go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+        make -C scanner bin/updater
+        ./scanner/bin/updater -output-dir=${{ env.ROX_PRODUCT_VERSION }}
         gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:
