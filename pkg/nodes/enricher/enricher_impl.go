@@ -110,6 +110,7 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	scan, err := scanner.GetNodeInventoryScan(node, nodeInventory)
 
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName())
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
 	}
