@@ -567,6 +567,8 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   scan-go-binaries:
+    env:
+      ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
@@ -601,8 +603,30 @@ jobs:
     - name: Scan
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
-        find bin/linux_amd64 -maxdepth 1 -type f -print -exec govulncheck -mode=binary {} \; | tee vuln.txt
-        grep -q affect vuln.txt && (exit 1)
+        find bin/linux_amd64 -maxdepth 1 -type f -exec govulncheck -mode=binary -json {} \; | tee vulns.json
+        source "scripts/ci/lib.sh"
+        cat vulns.json | jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r | sort -u | while IFS=$'\t' read -r -a vulns
+        do
+          id="${vulns[0]}"
+          summary="${vulns[1]}"
+          details="${vulns[2]}"
+          echo $id $summary
+          save_junit_failure "$id" "$summary" "$details"
+        done
+        grep -q finding vulns.json && (exit 1)
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled()) && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
 
   scan-images-with-roxctl:
     if: github.event_name == 'push'
