@@ -1,9 +1,11 @@
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
-ARG RPMS_BASE_IMAGE=ubi8
 ARG BASE_TAG=latest
 
-FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS postgres_rpms
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
 COPY download.sh /download.sh
 RUN /download.sh
@@ -26,19 +28,20 @@ COPY signatures/RPM-GPG-KEY-PGDG-13 /
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade --nobest && \
+RUN microdnf upgrade -y --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf install shadow-utils && \
+    microdnf install -y shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
-    microdnf install \
+    microdnf install -y \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt && \
+    if [[ "$(uname -m)" == "s390x" ]]; then microdnf install -y python3 uuid; fi && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
-    microdnf reinstall tzdata && \
+    microdnf reinstall -y tzdata && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa shadow-utils curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
