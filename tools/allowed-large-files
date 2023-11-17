@@ -46,7 +46,7 @@ sensor/tests/replay/data/safety-net-alerts-k8s-trace.jsonl
 sensor/tests/replay/data/safety-net-resources-central-out.bin
 sensor/tests/replay/data/safety-net-resources-k8s-trace.jsonl
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
-tests/performance/package-lock.json
+tests/performance/load/package-lock.json
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
