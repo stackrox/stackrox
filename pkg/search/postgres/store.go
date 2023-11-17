@@ -23,7 +23,7 @@ import (
 const (
 	batchAfter      = 100
 	cursorBatchSize = 50
-	deleteBatchSize = 5000
+	deleteBatchSize = 65000
 
 	// MaxBatchSize sets the maximum number of elements in a batch.
 	// Using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -295,7 +295,17 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
+	var err error
+	var tx *postgres.Tx
+	if !postgres.HasTxInContext(ctx) {
+		tx, err = s.db.Begin(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not create transaction for deletes")
+		}
+
+		ctx = postgres.ContextWithTx(ctx, tx)
+	}
+
 	for {
 		if len(identifiers) == 0 {
 			break
@@ -306,16 +316,25 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		}
 
 		identifierBatch := identifiers[:localBatchSize]
+
 		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
-			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
+			if tx != nil {
+				if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+					return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
+				}
+			}
+			return errors.Wrap(err, "unable to delete the records")
 		}
 
 		// Move the slice forward to start the next batch
 		identifiers = identifiers[localBatchSize:]
 	}
 
+	if tx != nil {
+		return tx.Commit(ctx)
+	}
 	return nil
 }
 
