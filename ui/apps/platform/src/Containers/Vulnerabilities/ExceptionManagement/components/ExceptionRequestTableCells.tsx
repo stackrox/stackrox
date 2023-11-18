@@ -203,7 +203,7 @@ export function RequestComments({ comments }: RequestCommentsProps) {
                 <List isPlain isBordered>
                     {comments.map((comment) => {
                         return (
-                            <ListItem>
+                            <ListItem key={comment.id}>
                                 <RequestComment comment={comment} />
                             </ListItem>
                         );
