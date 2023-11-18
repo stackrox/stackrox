@@ -618,6 +618,9 @@ mark_collector_release() {
         gitbot push origin "${branch_name}"
     fi
 
+    # shellcheck disable=SC2034
+    GH_TOKEN="${RHACS_BOT_GITHUB_TOKEN}"
+
     PRs=$(gh pr list -s open \
             --head "${branch_name}" \
             --json number \
