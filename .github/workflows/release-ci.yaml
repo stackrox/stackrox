@@ -82,6 +82,7 @@ jobs:
           RHACS_BOT_GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
           RHACS_BOT_GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
           RHACS_BOT_GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           scripts/ci/lib.sh \
             mark_collector_release "${STACKROX_TAG}"
