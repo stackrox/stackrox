@@ -6,7 +6,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-[[ -n "${GITHUB_TOKEN}" ]] || die "No GitHub token found"
+[[ -n "${RHACS_BOT_GITHUB_TOKEN}" ]] || die "No GitHub token found"
 
 remote_repository="https://github.com/stackrox/release-artifacts.git"
 remote_subdirectory="helm-charts"
