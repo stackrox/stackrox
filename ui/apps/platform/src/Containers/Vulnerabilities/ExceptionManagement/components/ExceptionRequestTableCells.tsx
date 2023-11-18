@@ -1,15 +1,27 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    List,
+    ListItem,
+    Modal,
+    Text,
+    TextVariants,
+} from '@patternfly/react-core';
 
 import { exceptionManagementPath } from 'routePaths';
 import {
     ExceptionExpiry,
     VulnerabilityException,
+    VulnerabilityExceptionComment,
     isDeferralException,
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
-import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import useModal from 'hooks/useModal';
 
 export type RequestContext =
     | 'PENDING_REQUESTS'
@@ -154,4 +166,50 @@ export function RequestedItems({ exception, context }: RequestedItemsProps) {
         cvesCount = exception.falsePositiveUpdate.cves.length;
     }
     return <div>{`${cvesCount} ${pluralize('CVE', cvesCount)}`}</div>;
+}
+
+export type RequestCommentProps = {
+    comment: VulnerabilityExceptionComment;
+};
+
+export function RequestComment({ comment }: RequestCommentProps) {
+    return (
+        <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Text className="pf-u-font-weight-bold" component={TextVariants.p}>
+                    {comment.user.name}
+                </Text>
+                <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
+            </Flex>
+            <FlexItem>{comment.message}</FlexItem>
+        </Flex>
+    );
+}
+
+export type RequestCommentsProps = {
+    comments: VulnerabilityExceptionComment[];
+};
+
+export function RequestComments({ comments }: RequestCommentsProps) {
+    const { isModalOpen, openModal, closeModal } = useModal();
+
+    return (
+        <>
+            <Button variant="link" isInline onClick={openModal}>{`${comments.length} ${pluralize(
+                'comment',
+                comments.length
+            )}`}</Button>
+            <Modal variant="small" title="Comments" isOpen={isModalOpen} onClose={closeModal}>
+                <List isPlain isBordered>
+                    {comments.map((comment) => {
+                        return (
+                            <ListItem key={comment.id}>
+                                <RequestComment comment={comment} />
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            </Modal>
+        </>
+    );
 }

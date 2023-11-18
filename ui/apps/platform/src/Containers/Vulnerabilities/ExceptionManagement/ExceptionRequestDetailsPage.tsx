@@ -12,8 +12,6 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Text,
-    TextVariants,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -22,7 +20,6 @@ import { useParams } from 'react-router-dom';
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
-import { getDateTime } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
     VulnerabilityException,
@@ -36,6 +33,8 @@ import {
     RequestedAction,
     RequestCreatedAt,
     RequestScope,
+    RequestComments,
+    RequestComment,
 } from './components/ExceptionRequestTableCells';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
@@ -169,29 +168,13 @@ function ExceptionRequestDetailsPage() {
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Comments</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    {vulnerabilityException.comments.length}
+                                    <RequestComments comments={vulnerabilityException.comments} />
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Latest comment</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <Flex direction={{ default: 'column' }}>
-                                        <Flex
-                                            direction={{ default: 'row' }}
-                                            spaceItems={{ default: 'spaceItemsSm' }}
-                                        >
-                                            <Text
-                                                className="pf-u-font-weight-bold"
-                                                component={TextVariants.p}
-                                            >
-                                                {latestComment.user.name}
-                                            </Text>
-                                            <Text component={TextVariants.small}>
-                                                ({getDateTime(latestComment.createdAt)})
-                                            </Text>
-                                        </Flex>
-                                        <FlexItem>{latestComment.message}</FlexItem>
-                                    </Flex>
+                                    <RequestComment comment={latestComment} />
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         </DescriptionList>
