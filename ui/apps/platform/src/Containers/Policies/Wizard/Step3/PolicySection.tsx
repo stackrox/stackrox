@@ -128,7 +128,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             )
                         );
                     })}
-                    {!readOnly && (
+                    {!showPolicyCriteriaModal && !readOnly && (
                         <PolicySectionDropTarget
                             sectionIndex={sectionIndex}
                             descriptors={descriptors}
@@ -155,6 +155,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
             {showPolicyCriteriaModal && (
                 <PolicyCriteriaModal
                     descriptors={descriptors}
+                    existingGroups={policyGroups}
                     isModalOpen={isModalOpen}
                     onClose={closeModal}
                     addPolicyFieldCardHandler={addPolicyFieldCardHandler}
