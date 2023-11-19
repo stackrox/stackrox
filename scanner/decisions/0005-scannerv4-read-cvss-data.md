@@ -17,9 +17,18 @@ The NVD JSON feed offers bundled data on a yearly basis, spanning from 2002 to t
 
 The updated NVD CVSS GitHub Workflow (CI) has transitioned to sourcing data from the NVD CVE API, rather than the NVD JSON feeds, ensuring the timely update of the NVD CVSS data bundle in Google Storage. The workflow is designed to download data by specifying a range of start and end dates, spanning from the year 2002 to the current year. For instance, a command listed below could be used:
 ```
-curl "https://services.nvd.nist.gov/rest/json/cves/2.0/?pubStartDate=2021-08-04T00:00:00.000&pubEndDate=2021-10-22T00:00:00.000&startIndex=0" > 2021-test.json
+curl "https://services.nvd.nist.gov/rest/json/cves/2.0?noRejected&pubStartDate=2021-08-04T00:00:00.000&pubEndDate=2021-10-22T00:00:00.000&startIndex=0" > 2021-0-0.json
 ``` 
-In every 120-day range, it iteratively exhausts the startIndex to capture all associated data in that date range. After all json files downloaded, they will be compressed to one data bundle as one single compressed file. We choose start and end date to be 120 days of range because this is the maximum range that NVD supports.
+We will break every year down to 4 quarters, such as:
+```
+periods=(
+        "${year}-01-01T00:00:00.000 ${year}-03-31T23:59:59.999"
+        "${year}-04-01T00:00:00.000 ${year}-06-30T23:59:59.999"
+        "${year}-07-01T00:00:00.000 ${year}-09-30T23:59:59.999"
+        "${year}-10-01T00:00:00.000 ${year}-12-31T23:59:59.999"
+    )
+```
+For each quarter, it iteratively exhausts the startIndex to capture all associated data in that date range. After successfully downloading all JSON files for a given year, we consolidate the 'vulnerabilities' field from each file into a single comprehensive JSON file. Upon generating these annual consolidated files, we then compress them into a singular archive for efficient storage and handling. Our decision to divide the data retrieval into four quarters annually is both clear and concise, aligning with the NVD's maximum supported range of 120 days per request.
 
 We've chosen to base our API requests on publish date starting from year 2002 to ensure vulnerability reports are enriched with either CVSS V3 score or CVSS V2 score if V3 score is missing.
 
