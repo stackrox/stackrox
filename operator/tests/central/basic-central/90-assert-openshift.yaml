@@ -57,6 +57,9 @@ spec:
            name: central-db-password
          - mountPath: /etc/ext-db
            name: central-external-db-volume
+         - name: central-bound-sa-token
+           mountPath: /var/run/secrets/openshift/serviceaccount
+           readOnly: true
          - name: config-map-1
            mountPath: /run/stackrox.io/declarative-configuration/config-map-1
            readOnly: true
@@ -135,6 +138,14 @@ spec:
           name: central-external-db
           optional: true
         name: central-external-db-volume
+      - name: central-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              audience: openshift
+              expirationSeconds: 3600
+              path: token
       - name: stackrox-db
         emptyDir: {}
       - name: config-map-1
