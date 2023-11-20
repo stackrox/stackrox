@@ -27,6 +27,14 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
+- name: "additional-ca-volume is backed by additional-ca secret"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec
+      | .volumes[] | select(.name == "additional-ca-volume")
+      | .secret.secretName
+      | assertThat(. == "additional-ca")
 - name: "rendering fails if scannerV4 is disabled but"
   expectError: true
   set:

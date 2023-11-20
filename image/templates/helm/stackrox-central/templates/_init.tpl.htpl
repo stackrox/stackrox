@@ -176,6 +176,9 @@
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
+{{/* Add environment information which should not be modifiable by the user. */}}
+{{ $_ := set $env "centralServices" true }}
+
 {{/* Initial image pull secret setup.
 
      Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,

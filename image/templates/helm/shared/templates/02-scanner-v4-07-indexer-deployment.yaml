@@ -122,7 +122,11 @@ spec:
       - name: additional-ca-volume
         secret:
           optional: true
+          {{- if ._rox.env.centralServices }}
           secretName: additional-ca
+          {{- else }}
+          {{- include "srox.fail" "Internal error: failed to setup additional-ca-volume for Scanner V4 Indexer due to undefined StackRox environment" }}
+          {{- end }}
       - name: etc-ssl-volume
         emptyDir: {}
       - name: etc-pki-volume
