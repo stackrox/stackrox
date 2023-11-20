@@ -4,6 +4,8 @@ This directory brings modified RHTAP Enterprise Contract (integration test) to a
 
 ## Installation instructions
 
+Run the following against the RHTAP cluster:
+
 ```bash
 oc apply -f acs-enterprise-contract-allow-quay-registry.yaml
 ```
