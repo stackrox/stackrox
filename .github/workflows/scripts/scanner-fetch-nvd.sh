@@ -13,7 +13,7 @@ fetch_data_for_period () {
   while : ; do
     local file_name="${period_start_date}_${current_start_index}.json"
 
-    echo "Fetching data from $period_start_date to $period_end_date, starting at index $current_start_index..."
+    echo "Fetching data from ${period_start_date} to ${period_end_date}, starting at index ${current_start_index}..."
 
     retry_intervals=(3 6 12) # Array of retry intervals in seconds
     success=false
