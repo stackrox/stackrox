@@ -19,7 +19,7 @@ ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/image/rhel/rhtap-bootstrap-y
 
 # UI build is not hermetic because Cachi2 does not support pulling packages according to yarn.lock yet.
 # TODO(ROX-20723): make UI builds hermetic when Cachi2 supports that.
-RUN make -C ui build
+#RUN make -C ui build
 
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
@@ -33,7 +33,7 @@ RUN microdnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
+#COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
