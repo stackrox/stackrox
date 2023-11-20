@@ -29,6 +29,7 @@ import (
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
@@ -351,6 +352,10 @@ func startServices() {
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
+	}
+
+	if err := gcp.Singleton().Start(); err != nil {
+		log.Error("Failed to start GCP cloud credentials manager: ", err)
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -882,6 +887,7 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
+		{obj: gcp.Singleton(), name: "GCP cloud credentials watcher"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
