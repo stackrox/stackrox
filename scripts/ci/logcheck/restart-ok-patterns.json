@@ -18,6 +18,12 @@
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
     },
     {
+        "comment": "scanner restart due to slow postgres db start",
+        "job": "^(ocp|openshift)",
+        "logfile": "scanner-previous",
+        "logline": "Failed to open database despite multiple retries"
+    },
+    {
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
