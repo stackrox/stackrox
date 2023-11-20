@@ -57,11 +57,11 @@ spec:
           name: central-db-password
         - mountPath: /etc/ext-db
           name: central-external-db-volume
-        - mountPath: /etc/pki/injected-ca-trust/
-          name: trusted-ca-volume
-          readOnly: true
         - name: central-bound-sa-token
           mountPath: /var/run/secrets/openshift/serviceaccount
+          readOnly: true
+        - mountPath: /etc/pki/injected-ca-trust/
+          name: trusted-ca-volume
           readOnly: true
       volumes:
       - emptyDir: {}
