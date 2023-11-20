@@ -6,9 +6,8 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/docker/image"
-	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -38,18 +37,14 @@ func lineToInstructionAndValue(line string) (instruction string, value string) {
 	return
 }
 
-func convertImageToDockerFileLine(img *image.V1Image) *storage.ImageLayer {
-	line := strings.Join(img.ContainerConfig.Cmd, " ")
+func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
+	line := strings.Join(img.Config.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
-	protoTS, err := types.TimestampProto(img.Created)
-	if err != nil {
-		log.Error(err)
-	}
 	return &storage.ImageLayer{
 		Instruction: instruction,
 		Value:       value,
-		Created:     protoTS,
+		Created:     protoconv.ConvertTimeToTimestampOrNow(img.Created),
 		Author:      img.Author,
 	}
 }
@@ -61,7 +56,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 	labels := make(map[string]string)
 	for i := len(manifest.History) - 1; i > -1; i-- {
 		historyLayer := manifest.History[i]
-		var v1Image image.V1Image
+		var v1Image v1.Image
 		if err := json.Unmarshal([]byte(historyLayer.V1Compatibility), &v1Image); err != nil {
 			return nil, errors.Wrap(err, "Failed unmarshalling v1 capability")
 		}
@@ -70,11 +65,9 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			latest = *layer
 		}
 		layers = append(layers, layer)
-		if v1Image.Config != nil {
-			// Last label takes precedence and there seems to be a separate image object per layer
-			for labelKey, labelValue := range v1Image.Config.Labels {
-				labels[labelKey] = labelValue
-			}
+		// Last label takes precedence and there seems to be a separate image object per layer
+		for labelKey, labelValue := range v1Image.Config.Labels {
+			labels[labelKey] = labelValue
 		}
 	}
 	// Orient the layers to be oldest to newest
@@ -127,7 +120,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	if err != nil {
 		return nil, err
 	}
-	img := &image.Image{}
+	img := &v1.Image{}
 	if err := json.Unmarshal(val, img); err != nil {
 		return nil, err
 	}
@@ -137,38 +130,32 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 		// See github.com/moby/moby/image/image.go
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
 		layers = append(layers, &storage.ImageLayer{
-			Created:     protoconv.ConvertTimeToTimestamp(h.Created),
-			Author:      h.Author,
+			Created:     protoconv.ConvertTimeToTimestampOrNow(h.Created),
+			Author:      h.CreatedBy,
 			Instruction: instruction,
 			Value:       value,
 			Empty:       h.EmptyLayer,
 		})
 	}
 
-	var labels map[string]string
-	if img.Config != nil {
-		labels = img.Config.Labels
-	}
-
 	var metadata = &storage.V1Metadata{
 		Digest:  ref.String(),
-		Created: protoconv.ConvertTimeToTimestamp(img.Created),
-		Labels:  labels,
+		Created: protoconv.ConvertTimeToTimestampOrNow(img.Created),
+		Labels:  img.Config.Labels,
 	}
 
-	if img.Config != nil {
-		metadata.Volumes = make([]string, 0, len(img.Config.Volumes))
-		for k := range img.Config.Volumes {
-			metadata.Volumes = append(metadata.Volumes, k)
-		}
-
-		metadata.User = "root"
-		if img.Config.User != "" {
-			metadata.User = img.Config.User
-		}
-		metadata.Command = img.Config.Cmd
-		metadata.Entrypoint = img.Config.Entrypoint
+	metadata.Volumes = make([]string, 0, len(img.Config.Volumes))
+	for k := range img.Config.Volumes {
+		metadata.Volumes = append(metadata.Volumes, k)
 	}
+
+	metadata.User = "root"
+	if img.Config.User != "" {
+		metadata.User = img.Config.User
+	}
+	metadata.Command = img.Config.Cmd
+	metadata.Entrypoint = img.Config.Entrypoint
+
 	if len(layers) != 0 {
 		lastLayer := layers[len(layers)-1]
 		metadata.Author = lastLayer.Author
