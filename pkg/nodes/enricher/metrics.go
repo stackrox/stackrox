@@ -28,7 +28,6 @@ func (m *metricsImpl) SetScanDurationTime(start time.Time, scanner string, err e
 }
 
 func (m *metricsImpl) SetNodeInventoryNumberComponents(count int, clusterName string, nodeName string) {
-	fmt.Printf("Generating prom metric node_scan_num_components with count %v for node %v/%v\n", count, clusterName, nodeName)
 	m.nodeInventoryComponentSize.WithLabelValues(clusterName, nodeName).Set(float64(count))
 }
 
