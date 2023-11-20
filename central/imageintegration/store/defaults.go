@@ -89,6 +89,17 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 		},
 	},
 	{
+		Id:         "5febb194-a21d-4109-9fad-6880dd632adc",
+		Name:       "Public Amazon ECR",
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "public.ecr.aws",
+			},
+		},
+	},
+	{
 		Id:         "54107745-5717-49c1-9073-a2b72f7a3b49",
 		Name:       "registry.access.redhat.com",
 		Type:       "rhel",
