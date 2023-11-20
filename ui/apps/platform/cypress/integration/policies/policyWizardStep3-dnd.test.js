@@ -9,47 +9,28 @@ import {
     cloneFirstPolicyFromTable,
     goToStep3,
 } from '../../helpers/policies';
-import { closeModalByButton } from '../../helpers/modal';
 import { hasFeatureFlag } from '../../helpers/features';
-import { getInputByLabel } from '../../helpers/formHelpers';
 
 const dataTransfer = new DndSimulatorDataTransfer();
 
 function dragFieldIntoSection(fieldSelector) {
-    cy.get(fieldSelector)
-        .trigger('mousedown', {
-            which: 1,
-        })
-        .trigger('dragstart', {
-            dataTransfer,
-        })
-        .trigger('drag');
-    cy.get(selectors.step3.policySection.dropTarget)
-        .trigger('dragover', {
-            dataTransfer,
-        })
-        .trigger('drop', {
-            dataTransfer,
-        })
-        .trigger('dragend', {
-            dataTransfer,
-        })
-        .trigger('mouseup', {
-            which: 1,
-        });
+    cy.get(fieldSelector).trigger('mousedown', { which: 1 });
+    cy.get(fieldSelector).trigger('dragstart', { dataTransfer });
+    cy.get(fieldSelector).trigger('drag');
+    cy.get(selectors.step3.policySection.dropTarget).trigger('dragover', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('drop', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('dragend', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('mouseup', { which: 1 });
 }
 
 function addPolicyFieldCard(index) {
-    cy.get(selectors.step3.policyCriteria.key)
-        .eq(index)
-        .trigger('mousedown', { which: 1 })
-        .trigger('dragstart', { dataTransfer })
-        .trigger('drag');
-    cy.get(selectors.step3.policySection.dropTarget)
-        .trigger('dragover', { dataTransfer })
-        .trigger('drop', { dataTransfer })
-        .trigger('dragend', { dataTransfer })
-        .trigger('mouseup', { which: 1 });
+    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('mousedown', { which: 1 });
+    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('dragstart', { dataTransfer });
+    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('drag');
+    cy.get(selectors.step3.policySection.dropTarget).trigger('dragover', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('drop', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('dragend', { dataTransfer });
+    cy.get(selectors.step3.policySection.dropTarget).trigger('mouseup', { which: 1 });
 }
 
 function clickPolicyKeyGroup(categoryName) {
@@ -103,7 +84,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             expect(values).to.have.length(GROUPS_AVAILABLE_FOR_DEPLOY_POLICY);
         });
 
-        cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView().should('be.visible');
+        cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView();
+        cy.get(`${selectors.step3.policyCriteria.key}:first`).should('be.visible');
     });
 
     describe('Policy section', () => {
@@ -132,7 +114,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             goToPoliciesAndCloneToStep3();
 
             cy.get(selectors.step3.policySection.nameEditBtn).click();
-            cy.get(selectors.step3.policySection.nameInput).clear().type('New Section');
+            cy.get(selectors.step3.policySection.nameInput).clear();
+            cy.get(selectors.step3.policySection.nameInput).type('New Section');
             cy.get(selectors.step3.policySection.nameSaveBtn).click();
             cy.get(selectors.step3.policySection.name).contains('New Section');
         });
@@ -209,29 +192,6 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                     cy.get(selectors.step3.policyCriteria.value.deleteBtn).should('not.exist');
                     cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.exist');
                 });
-
-                // TODO: (vjw, 2023-10-30) currently, this feature flag is only _adding_ another way to add policy criteria fields
-                //       after adding fields has been thoroughly tested, this flag will indicate _whether_ to test the old way or the new way
-                if (hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL')) {
-                    cy.get('.policy-section-card button:contains("Add policy field")').click();
-                    cy.get('.pf-c-modal-box__title-text:contains("Add policy criteria field")');
-
-                    // ensure closing modal with no actions
-                    closeModalByButton('Cancel');
-
-                    // now, add a field with modal
-                    cy.get('.policy-section-card button:contains("Add policy field")').click();
-                    cy.get(
-                        'button.pf-c-tree-view__node:contains("Container configuration")'
-                    ).click();
-                    cy.get('button.pf-c-tree-view__node:contains("Environment variable")')
-                        .click()
-                        .should('have.class', 'pf-m-current');
-                    cy.get('.pf-c-modal-box__footer button:contains("Add policy field")').click();
-
-                    getInputByLabel('Key').clear().type('dev');
-                    getInputByLabel('Value').clear().type('true');
-                }
             });
 
             it('should not add multiple field values for the same field if not applicable', () => {
