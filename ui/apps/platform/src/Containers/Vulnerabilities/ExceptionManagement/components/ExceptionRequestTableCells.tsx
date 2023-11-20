@@ -142,9 +142,12 @@ export type RequestScopeProps = {
 };
 
 export function RequestScope({ scope }: RequestScopeProps) {
-    return (
-        <div>{`${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`}</div>
-    );
+    const { registry, remote, tag } = scope.imageScope;
+    const text =
+        registry === '.*' && remote === '.*' && tag === '.*'
+            ? '.*'
+            : `${registry}/${remote}:${tag}`;
+    return <div>{text}</div>;
 }
 
 export type RequestedItemsProps = {
