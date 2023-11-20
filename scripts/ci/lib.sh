@@ -581,7 +581,7 @@ mark_collector_release() {
     fi
 
     local tag="$1"
-    local username="${RHACS_BOT_GITHUB_USERNAME}"
+    local username="${GITHUB_USERNAME}"
 
     info "Check out collector source code"
 
@@ -632,9 +632,9 @@ mark_collector_release() {
 }
 
 gitbot() {
-    git -c "user.name=${RHACS_BOT_GITHUB_USERNAME}" \
-        -c "user.email=${RHACS_BOT_GITHUB_EMAIL}" \
-        -c "url.https://${RHACS_BOT_GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
+    git -c "user.name=${GITHUB_USERNAME}" \
+        -c "user.email=${GITHUB_EMAIL}" \
+        -c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
         "${@}"
 }
 

@@ -6,7 +6,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-[[ -n "${RHACS_BOT_GITHUB_TOKEN}" ]] || die "No GitHub token found"
+[[ -n "${GITHUB_TOKEN}" ]] || die "No GitHub token found"
 
 remote_repository="https://github.com/stackrox/release-artifacts.git"
 remote_subdirectory="helm-charts"
@@ -78,7 +78,7 @@ to an unreleased version."
 
 curl -sS --fail \
 	-X POST \
-	-H "Authorization: token ${RHACS_BOT_GITHUB_TOKEN}" \
+	-H "Authorization: token ${GITHUB_TOKEN}" \
 	'https://api.github.com/repos/stackrox/release-artifacts/pulls' \
 	-d"{
 	\"title\": \"Publishing release artifacts for release ${version}\",
