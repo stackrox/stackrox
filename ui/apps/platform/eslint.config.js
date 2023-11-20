@@ -34,6 +34,7 @@ module.exports = [
         ignores: [
             'build/**',
             'coverage/**',
+            'react-app-rewired/**',
             'scripts/**',
             'src/setupProxy.js',
             'src/setupTests.js',
