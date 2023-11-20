@@ -9,10 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	pkgEnv "github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -146,7 +149,19 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	if err != nil {
 		return nil, errox.InvalidArgs.Newf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
-	return charts.GetMetaValuesForFlavor(imageFlavor), nil
+
+	values := charts.GetMetaValuesForFlavor(imageFlavor)
+
+	if (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
+		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
+		values.TelemetryEnabled = true
+		values.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
+		values.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
+	} else {
+		values.TelemetryEnabled = false
+		values.TelemetryKey = phonehome.DisabledKey
+	}
+	return values, nil
 }
 
 func handleRhacsWarnings(rhacs, _ bool, logger logger.Logger) {
