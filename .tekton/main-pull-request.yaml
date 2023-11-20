@@ -192,12 +192,27 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+    - name: download-external-content
+      runAfter:
+      - clone-repository
+      workspaces:
+      - name: source
+        workspace: workspace
+      taskSpec:
+        steps:
+        # TODO(ROX-20651): use postgres from RHEL repos (see downstream dockerfile) once available instead of downloading.
+        - name: download-entitled-rpms
+          image: registry.access.redhat.com/ubi8/ubi:latest
+          script: |
+            set -euo pipefail
+            cd /workspace/source/source/image/rhel
+            DEBUG_BUILD=no output_dir=./download ./download.sh
     - name: prefetch-dependencies
       params:
       - name: input
         value: $(params.prefetch-input)
       runAfter:
-      - clone-repository
+      - download-external-content
       taskRef:
         params:
         - name: name

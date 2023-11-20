@@ -4,3 +4,4 @@ scripts
 Dockerfile.gen
 ui
 THIRD_PARTY_NOTICES
+download/

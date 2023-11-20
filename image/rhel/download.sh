@@ -15,7 +15,7 @@ elif [[ "$arch" == "arm64" ]]; then
     dnf_list_args=('--nogpgcheck')
 fi
 
-output_dir="/output"
+output_dir="${output_dir:-/output}"
 mkdir -p "${output_dir}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
   if [[ "$OSTYPE" != "linux-gnu"* ]]; then

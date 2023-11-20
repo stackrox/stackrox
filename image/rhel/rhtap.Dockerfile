@@ -24,11 +24,18 @@ ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/image/rhel/rhtap-bootstrap-y
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
+COPY ./image/rhel/download/rpms/*.rpm /tmp/
+
 # find and ca-certificates are used in /stackrox/import-additional-cas
 # snappy provides libsnappy.so.1, which is needed by most stackrox binaries
 RUN microdnf upgrade -y --nobest && \
-    microdnf module enable -y postgresql:13 && \
-    microdnf install -y ca-certificates findutils snappy zstd postgresql && \
+    microdnf install -y ca-certificates findutils zstd && \
+    # TODO(ROX-20651): install snappy and postgresql from RHEL RPMs once available. \
+    rpm -i /tmp/snappy.rpm && \
+    rpm -i --nodeps /tmp/postgres-libs.rpm && \
+    rpm -i --nodeps /tmp/postgres.rpm && \
+    rm /tmp/*.rpm && \
+    # End of TODO
     microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
