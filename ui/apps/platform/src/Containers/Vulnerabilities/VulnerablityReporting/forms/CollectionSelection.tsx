@@ -1,4 +1,4 @@
-import React, { useMemo, useState, ReactElement, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, ReactElement, useCallback } from 'react';
 import {
     Button,
     ButtonVariant,
@@ -13,7 +13,12 @@ import {
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
-import { Collection, CollectionSlim, listCollections } from 'services/CollectionsService';
+import {
+    Collection,
+    CollectionSlim,
+    getCollection,
+    listCollections,
+} from 'services/CollectionsService';
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
@@ -24,6 +29,7 @@ import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/fo
 import CollectionsFormModal, {
     CollectionFormModalAction,
 } from 'Containers/Collections/CollectionFormModal';
+import useRestQuery from 'hooks/useRestQuery';
 
 const COLLECTION_PAGE_SIZE = 10;
 
@@ -73,6 +79,17 @@ function CollectionSelection({
         COLLECTION_PAGE_SIZE
     );
 
+    // If there is an existing collection selected, fetch the details for it. This allows
+    // us to display the collection name in the dropdown even if the collection is not
+    // in the current page of results.
+    const selectedCollectionFetch = useCallback(() => {
+        if (selectedScope?.id) {
+            return getCollection(selectedScope?.id).request;
+        }
+        return Promise.resolve(undefined);
+    }, [selectedScope?.id]);
+    const { data: selectedScopeDetails } = useRestQuery(selectedCollectionFetch);
+
     // Combines the server-side fetched pages of collections data with the local cache
     // of created collections to create a flattened array sorted by name. This is intended to keep
     // the collection dropdown up to date with any collections that the user creates while in the form.
@@ -86,25 +103,18 @@ function CollectionSelection({
     const sortedCollections = useMemo(() => {
         const availableScopes: CollectionSlim[] = [...data.flat(), ...createdCollections];
 
+        // Add the individual pre-selected collection to the list of available scopes. If it already
+        // exists in the list, it will be uniq'd out.
+        if (selectedScopeDetails) {
+            availableScopes.push(selectedScopeDetails.collection);
+        }
+
         // This is inefficient due to the multiple loops and the fact that we are already tracking
         // uniqueness for the _server side_ values, but need to do it twice to handle possible client
         // side values. However, 'N' should be small here and we are memoizing the result.
         const sorted = sortBy(availableScopes, ({ name }) => name.toLowerCase());
         return uniqBy(sorted, 'id');
-    }, [data, createdCollections]);
-
-    // This makes sure that if a collection was deleted then we clear the scopeId
-    useEffect(() => {
-        if (!isFetchingNextPage) {
-            const selectedCollection = sortedCollections.find(
-                (collection) => collection.id === selectedScope?.id
-            );
-            if (!selectedCollection) {
-                onChange(null);
-            }
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, isFetchingNextPage]);
+    }, [data, createdCollections, selectedScopeDetails]);
 
     function onOpenViewCollectionModal() {
         if (selectedScope) {
