@@ -603,8 +603,9 @@ jobs:
 
     - name: Scan
       run: |
-        go install golang.org/x/vuln/cmd/govulncheck@latest
-        find bin/linux_amd64 -maxdepth 1 -type f -exec govulncheck -mode=binary -json {} \; | tee vulns.json
+        GOVULNCHECK_BIN=$PWD/.gotools/bin/govulncheck
+        make "$GOVULNCHECK_BIN"
+        find bin/linux_amd64 -maxdepth 1 -type f -exec "$GOVULNCHECK_BIN" -mode=binary -json {} \; | tee vulns.json
         source "scripts/ci/lib.sh"
         jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
         do
