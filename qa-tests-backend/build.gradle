@@ -106,7 +106,7 @@ dependencies {
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.35.1'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.36.0'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
