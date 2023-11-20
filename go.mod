@@ -489,3 +489,5 @@ replace (
 exclude k8s.io/client-go v12.0.0+incompatible
 
 exclude github.com/openshift/client-go v3.9.0+incompatible
+
+replace github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230329111138-12e09aba5ebd => github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230919221257-8b5d3ce2d11d
