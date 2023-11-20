@@ -323,7 +323,7 @@ function ImagePageVulnerabilities({
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox />
+                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         searchOptions={searchOptions}
