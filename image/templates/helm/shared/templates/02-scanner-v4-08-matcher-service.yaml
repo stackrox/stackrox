@@ -16,7 +16,7 @@ spec:
   ports:
   - name: grpc-scanner-v4-matcher
     port: 8443
-    targetPort: 8443
+    targetPort: grpc
   {{ if ._rox.scannerV4.exposeMonitoring -}}
   - name: monitoring
     port: {{ ._rox.scannerV4.matcher.metricsPort }}
