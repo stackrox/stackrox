@@ -317,7 +317,7 @@ func (m *manager) handleConnectionError(clusterID string, err error) {
 			log.Warnf("gRPC connection received a payload too large to be processed: %s", err)
 			log.Warnf("Increase ROX_GRPC_MAX_MESSAGE_SIZE to allow larger payloads. Central will temporarily disable client reconciliation to avoid receiving large payloads from Sensor.")
 			pref := m.GetConnectionPreference(clusterID)
-			pref.AvoidLargeSyncPayloads = true
+			pref.SendDeduperState = false
 			m.connectionPreference.Store(clusterID, pref)
 		}
 	}
@@ -329,7 +329,10 @@ func (m *manager) GetConnectionPreference(clusterID string) Preferences {
 	var p Preferences
 	pref, exists := m.connectionPreference.Load(clusterID)
 	if !exists {
-		p = Preferences{}
+		p = Preferences{
+			SendDeduperState: true,
+		}
+		m.connectionPreference.Store(clusterID, p)
 	} else {
 		var ok bool
 		p, ok = (pref).(Preferences)

@@ -12,16 +12,16 @@ import (
 func Test_AvoidLargePayloads(t *testing.T) {
 	wrappedErr := errors.Wrap(status.Error(codes.ResourceExhausted, "gRPC exhausted"), "recv error")
 	errToPreferenece := map[error]bool{
-		wrappedErr: true,
-		status.Error(codes.ResourceExhausted, "gRPC exhausted"): true,
-		status.Error(codes.Canceled, "gRPC canceled"):           false,
-		status.Error(codes.Internal, "gRPC internal"):           false,
-		nil:                      false,
-		errors.New("custom err"): false,
+		wrappedErr: false,
+		status.Error(codes.ResourceExhausted, "gRPC exhausted"): false,
+		status.Error(codes.Canceled, "gRPC canceled"):           true,
+		status.Error(codes.Internal, "gRPC internal"):           true,
+		nil:                      true,
+		errors.New("custom err"): true,
 	}
 	for err, pref := range errToPreferenece {
 		m := manager{}
 		m.handleConnectionError("1234", err)
-		assert.Equal(t, pref, m.GetConnectionPreference("1234").AvoidLargeSyncPayloads)
+		assert.Equal(t, pref, m.GetConnectionPreference("1234").SendDeduperState)
 	}
 }

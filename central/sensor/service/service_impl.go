@@ -109,14 +109,15 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			capabilities = append(capabilities, centralsensor.SensorReconciliationOnReconnect)
 		}
 
+		preferences := s.manager.GetConnectionPreference(cluster.GetId())
+
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId:      cluster.GetId(),
-			ManagedCentral: env.ManagedCentral.BooleanSetting(),
-			CentralId:      installInfo.GetId(),
-			Capabilities:   capabilities,
-			// TODO(ROX-20878): send deduper state conditionally on errors receiving unchanged IDs.
-			SendDeduperState: true,
+			ClusterId:        cluster.GetId(),
+			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
+			CentralId:        installInfo.GetId(),
+			Capabilities:     capabilities,
+			SendDeduperState: preferences.SendDeduperState,
 		}
 
 		if err := safe.RunE(func() error {

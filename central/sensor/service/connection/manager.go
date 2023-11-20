@@ -12,10 +12,10 @@ import (
 
 // Preferences determines preferences for the connection learned from sensor.
 type Preferences struct {
-	// AvoidLargeSyncPayloads can be set by Central when it learns that one Sensor could send a ResourcesSynced event
+	// SendDeduperState is set to true by default and can be switched off by Central a Sensor sends a ResourcesSynced event
 	// with too many resources which could lead to a resourcesExhausted error in the gRPC connection. If this is set
-	// to true, the connected sensor will fall back to the classic reconciliation (i.e. no deduper state is transmitted).
-	AvoidLargeSyncPayloads bool
+	// to false, the connected sensor will fall back to the classic reconciliation (i.e. no deduper state is transmitted).
+	SendDeduperState bool
 }
 
 // Manager is responsible for managing all active connections from sensors.
