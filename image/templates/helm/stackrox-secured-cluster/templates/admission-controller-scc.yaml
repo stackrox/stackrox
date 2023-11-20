@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-# TODO: What about openshift 3? Can we add the ServiceAccount to the SCC via Helm?
 {{- if eq ._rox.env.openshift 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
