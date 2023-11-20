@@ -73,6 +73,7 @@ func init() {
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.NotificationSchedule{}:                         resources.Notifications,
 		&storage.Notifier{}:                                     resources.Integration,
+		&storage.NotifierCryptoConfig{}:                         resources.InstallationInfo,
 		&storage.PermissionSet{}:                                resources.Access,
 		&storage.Pod{}:                                          resources.Deployment,
 		&storage.Policy{}:                                       resources.WorkflowAdministration,
