@@ -30,6 +30,7 @@
         "test": "CI=true TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test --parallel --no-bail --stream",
         "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e --parallel --no-bail --stream",
         "test-e2e:coverage": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e:coverage --parallel --stream",
+        "test-component": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-component --parallel --no-bail --stream",
         "posttest-e2e:coverage": "mv apps/platform/coverage/ ./test-results/artifacts/",
         "test-e2e-demo": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e-demo --scope @stackrox/platform-app --stream",
         "prebuild": "yarn clean",
