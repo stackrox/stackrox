@@ -45,9 +45,10 @@ export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): str
 export function getEntityPagePath(
     workloadCveEntity: EntityTab,
     id: string,
+    vulnerabilityState: VulnerabilityState | undefined, // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     queryOptions?: qs.ParsedQs
 ): string {
-    const queryString = getQueryString(queryOptions);
+    const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
         case 'CVE':
             return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
