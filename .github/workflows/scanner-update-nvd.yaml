@@ -14,8 +14,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up JQ
-      run: sudo apt-get install jq
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v1
