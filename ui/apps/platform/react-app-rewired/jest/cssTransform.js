@@ -5,6 +5,9 @@
 
 module.exports = {
   process() {
+    // See config-overrides.js file
+    // See node_modules/react-scripts/config/jest/cssTransform.js
+    // Return object instead of string.
     return {
       code: 'module.exports = {};',
     };

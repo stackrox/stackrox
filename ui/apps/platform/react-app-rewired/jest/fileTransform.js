@@ -17,6 +17,9 @@ module.exports = {
         pascalCase: true,
       });
       const componentName = `Svg${pascalCaseFilename}`;
+      // See config-overrides.js file
+      // See node_modules/react-scripts/config/jest/fileTransform.js
+      // Return object instead of string.
       return {
         code: `const React = require('react');
         module.exports = {
@@ -37,6 +40,9 @@ module.exports = {
       };
     }
 
+    // See config-overrides.js file
+    // See node_modules/react-scripts/config/jest/cssTransform.js
+    // Return object instead of string.
     return {
         code: `module.exports = ${assetFilename};`
     };
