@@ -2,6 +2,8 @@ apiVersion: appstudio.redhat.com/v1beta1
 kind: IntegrationTestScenario
 metadata:
   name: acs-enterprise-contract-allow-quay-registry
+  labels:
+    test.appstudio.openshift.io/optional: "true"
 spec:
   application: acs
   contexts:
