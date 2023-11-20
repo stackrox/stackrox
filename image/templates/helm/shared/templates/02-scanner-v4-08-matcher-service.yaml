@@ -41,7 +41,7 @@ spec:
   trafficPolicy:
     portLevelSettings:
     - port:
-        number: {{ ._rox.scannerV4.matcher.metricsPort }}
+        number: 8443
       tls:
         mode: DISABLE
 {{- end }}
