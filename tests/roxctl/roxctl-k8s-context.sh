@@ -12,6 +12,10 @@ eecho() {
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl central whoami"
+  echo "Kube contexts:"
+  kubectl config get-contexts
+  echo "Central service endpoints:"
+  kubectl get ep central
 
   # Verify central whoami using current k8s context.
   if OUTPUT=$(roxctl --insecure-skip-tls-verify -p "$ROX_PASSWORD" central whoami --use-current-k8s-context \
