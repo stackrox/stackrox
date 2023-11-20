@@ -4,5 +4,5 @@ rule_data_custom:
   - registry.access.redhat.com/
   - registry.redhat.io/
   - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
-  # Allow this for collector-slim builds until entitled RPMs are allowed
+  # Allow this for collector-slim builds until entitled RPMs can be used
   - quay.io/centos/centos:stream9
