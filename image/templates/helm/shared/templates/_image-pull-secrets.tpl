@@ -36,9 +36,7 @@
     {{ end }}
   {{ end }}
 {{ end }}
-{{ $imagePullCreds := dict }}
 {{ if $imagePullSecrets._username }}
-  {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
   {{ $imagePullSecretNames = append $imagePullSecretNames $secretResourceName }}
 {{ else if $imagePullSecrets._password }}
   {{ $msg := printf "Username missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}
@@ -51,7 +49,6 @@
 
 {{ $imagePullSecretNames = concat (append $imagePullSecretNames $secretResourceName) $defaultSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
-{{ $_ := set $imagePullSecrets "_creds" $imagePullCreds }}
 
 {{ end }}
 
