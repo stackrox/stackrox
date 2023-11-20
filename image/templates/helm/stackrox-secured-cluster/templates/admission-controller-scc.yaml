@@ -8,9 +8,9 @@ metadata:
   name: admission-control-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "admission-control-sccc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "admission-control-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "admission-control-sccc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "admission-control-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
