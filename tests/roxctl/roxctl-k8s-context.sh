@@ -12,6 +12,10 @@ eecho() {
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl central whoami"
+  echo "Namespaces:"
+  kubectl get ns
+  echo "Switching the context to the stackrox namespace..."
+  kubectl config set-context --current --namespace stackrox
   echo "Kube contexts:"
   kubectl config get-contexts
   echo "Central service endpoints:"
