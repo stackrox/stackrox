@@ -1,0 +1,6 @@
+rule_data_custom:
+  allowed_registry_prefixes:
+  - registry.access.redhat.com/
+  - registry.redhat.io/
+  # Allow this for collector-slim builds until entitled RPMs are allowed
+  - quay.io/centos/centos:stream9

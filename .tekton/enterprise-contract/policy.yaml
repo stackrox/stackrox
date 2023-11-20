@@ -1,0 +1,47 @@
+# This is a copy of https://github.com/enterprise-contract/config/blob/main/redhat-no-hermetic/policy.yaml
+# TODO: how to keep our copy in sync with remote?
+
+#
+# To use this policy with the ec command line:
+#   ec validate image \
+#     --image $IMAGE \
+#     --public-key key.pub \
+#     --policy github.com/enterprise-contract/config//redhat-no-hermetic
+#
+# To use with an RHTAP Enterprise Contract Integration Test CR:
+#   ...
+#   spec:
+#     params:
+#     - name: POLICY_CONFIGURATION
+#       value: github.com/enterprise-contract/config//redhat-no-hermetic
+#     ...
+#
+name: Red Hat (non hermetic)
+description: >-
+  Includes most of the rules and policies required internally by Red Hat when building Red Hat products. It excludes the requirement of hermetic builds.
+  Available collections are defined in
+  https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/release_policy.html#_available_rule_collections.
+  If a different policy configuration is desired, this resource can serve as a starting point.
+  See the docs on how to include and exclude rules
+  https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules.
+
+publicKey: "k8s://openshift-pipelines/public-key"
+
+sources:
+- name: Default
+  policy:
+  - github.com/enterprise-contract/ec-policies//policy/lib
+  - github.com/enterprise-contract/ec-policies//policy/release
+  data:
+  - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest
+  - github.com/release-engineering/rhtap-ec-policy//data
+  # Here's our custom data configuration
+  - github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+
+configuration:
+  include:
+  - '@redhat'
+
+  exclude:
+  - hermetic_build_task
+  - tasks.required_tasks_found:prefetch-dependencies
