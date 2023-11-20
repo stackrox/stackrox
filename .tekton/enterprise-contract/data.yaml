@@ -1,3 +1,4 @@
+# Originally defined in https://github.com/release-engineering/rhtap-ec-policy/blob/main/data/rule_data.yml#L4-L8.
 rule_data_custom:
   allowed_registry_prefixes:
   - registry.access.redhat.com/
