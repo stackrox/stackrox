@@ -1,19 +1,26 @@
 {{/*
-  srox.configureImagePullSecrets $ $cfgName $imagePullSecrets $secretResourceName $defaultSecretNames $namespace
+  srox.configureImagePullSecretsNames $ $cfgName $imagePullSecrets $secretResourceName $defaultSecretNames $namespace
 
-  Configures image pull secrets.
+  Configures image pull secrets names.
 
   This function enriches $imagePullSecrets based on the exposed configuration parameters to contain
-  a list of Kubernetes secret names as `_names` to be used as image pull secrets within the chart
-  templates. This list contains the following secrets:
+  a list of Kubernetes secret names as field `_names`. The chart templates then use this field
+  to populate imagePullSecrets lists in ServiceAccount objects.
+
+  This list contains the following secrets:
 
   - Secrets referenced via $imagePullSecrets.useExisting.
-  - Image pull secrets associated with the default service account (if
-    $imagePullSecrets.useFromDefaultServiceAccount is true).
-  - $secretResourceName, if $imagePullSecrets.username is set.
-  - $defaultSecretNames. */}}
+  - Image pull secrets associated with the default service account (unless
+    $imagePullSecrets.useFromDefaultServiceAccount was set to false by the user).
+  - $secretResourceName.
+  - $defaultSecretNames.
 
-{{ define "srox.configureImagePullSecrets" }}
+  Additionally, this function fails execution if the list resulting from first three bullet points
+  combined is empty.
+
+*/}}
+
+{{ define "srox.configureImagePullSecretsNames" }}
 {{ $ := index . 0 }}
 {{ $cfgName := index . 1 }}
 {{ $imagePullSecrets := index . 2 }}
@@ -37,6 +44,7 @@
   {{ end }}
 {{ end }}
 {{ if $imagePullSecrets._username }}
+  {{/* When username is present, existence of $secretResourceName will be assured by the templates; add to the list. */}}
   {{ $imagePullSecretNames = append $imagePullSecretNames $secretResourceName }}
 {{ else if $imagePullSecrets._password }}
   {{ $msg := printf "Username missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}

@@ -162,9 +162,9 @@
 {{ end }}
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecretsNames" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.mergeInto" (list $._rox.collectorImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecretsNames" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
 {{/* Additional CAs. */}}
 {{ $additionalCAList := list }}
@@ -253,7 +253,7 @@
   {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
-  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+  {{ include "srox.configureImagePullSecretsNames" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
 [<- end >]
 
