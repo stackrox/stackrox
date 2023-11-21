@@ -131,7 +131,7 @@ func atomicWriteFile(filename string, bytes []byte, mode os.FileMode) error {
 	}
 
 	if err = os.Rename(tempName, filename); err != nil {
-		return errors.Wrapf(err, "could not rename %s", tempName)
+		return errors.Wrapf(err, "could not rename %q to %q", tempName, filename)
 	}
 
 	return nil
