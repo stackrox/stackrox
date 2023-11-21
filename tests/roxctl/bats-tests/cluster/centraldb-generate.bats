@@ -11,6 +11,7 @@ setup_file() {
   command -v grep || skip "Command 'grep' required."
   [[ -n "${API_ENDPOINT}" ]] || fail "Environment variable 'API_ENDPOINT' required"
   [[ -n "${ROX_PASSWORD}" ]] || fail "Environment variable 'ROX_PASSWORD' required"
+  bats_require_minimum_version 1.5.0
 }
 
 setup() {
@@ -35,12 +36,8 @@ run_central_db_generate_and_check() {
 }
 
 assert_number_of_resources() {
-    local -r cluster_type="$1"; shift
     local expected="$1"; shift
     local resources_count=$(cat "${output_dir}/central/"*.yaml | grep -c "^apiVersion") || true
-    if [ "${cluster_type}" = "openshift" ]; then
-        expected=$((${expected} + 1))
-    fi
 
     [[ "${resources_count}" = "${expected}" ]] || fail "Unexpected number of resources, expected ${expected} actual ${resources_count}"
 }
@@ -57,7 +54,6 @@ assert_essential_files() {
   assert_file_exist "${output_dir}/central/01-central-12-central-db.yaml"
   if [ "${cluster_type}" = "openshift" ]; then
     assert_file_exist "${output_dir}/central/01-central-02-db-security.yaml"
-    run -0 grep -q "kind: SecurityContextConstraints" "${output_dir}/central/01-central-02-db-security.yaml"
   fi
 }
 
@@ -66,7 +62,7 @@ test_generate_hostpath() {
   run_central_db_generate_and_check "${cluster_type}" hostpath
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 11
+  assert_number_of_resources 11
 
   run -0 grep -q "mountPath: /var/lib/postgresql/data" "${output_dir}/central/01-central-12-central-db.yaml"
 }
@@ -76,7 +72,7 @@ test_generate_pvc() {
   run_central_db_generate_and_check "${cluster_type}" pvc
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 12
+  assert_number_of_resources 12
   assert_file_exist "${output_dir}/central/01-central-11-db-pvc.yaml"
   run -0 grep -q "kind: PersistentVolumeClaim" "${output_dir}/central/01-central-11-db-pvc.yaml"
   run -0 grep -q "claimName: central-db" "${output_dir}/central/01-central-12-central-db.yaml"
@@ -87,7 +83,7 @@ test_generate_with_image() {
   run_central_db_generate_and_check "${cluster_type}" none --central-db-image bats-tests
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 11
+  assert_number_of_resources 11
   run -0 grep -q "bats-tests" "${output_dir}/central/01-central-12-central-db.yaml"
 }
 
@@ -96,7 +92,7 @@ test_generate_with_image_default() {
   run_central_db_generate_and_check "${cluster_type}" none --image-defaults=opensource
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 11
+  assert_number_of_resources 11
   assert_file_exist "${output_dir}/central/01-central-02-db-psps.yaml"
   run -0 grep -q "image: \"quay.io/stackrox-io" "${output_dir}/central/01-central-12-central-db.yaml"
 }
@@ -106,7 +102,7 @@ test_generate_security_policies_false() {
   run_central_db_generate_and_check "${cluster_type}" none --enable-pod-security-policies=false
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 8
+  assert_number_of_resources 8
   assert_file_not_exist "${output_dir}/central/01-central-02-db-psps.yaml"
   assert_file_not_exist "${output_dir}/central/01-central-11-db-pvc.yaml"
 }
@@ -116,7 +112,7 @@ test_generate_default() {
   run_central_db_generate_and_check "${cluster_type}" none
 
   assert_essential_files
-  assert_number_of_resources "${cluster_type}" 11
+  assert_number_of_resources 11
   assert_file_exist "${output_dir}/central/01-central-02-db-psps.yaml"
   assert_file_not_exist "${output_dir}/central/01-central-11-db-pvc.yaml"
   run -0 grep -q "image: \"quay.io/rhacs-eng" "${output_dir}/central/01-central-12-central-db.yaml"

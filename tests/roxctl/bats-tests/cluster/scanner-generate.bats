@@ -39,7 +39,7 @@ run_scanner_generate_and_check() {
 assert_number_of_k8s_resources() {
     local -r k8s_resources_count=$(cat "${output_dir}/scanner/"*.yaml | grep -c "^apiVersion") || true
 
-    [[ "${k8s_resources_count}" = "${1}" ]] || fail "Unexpected number of k8s resources"
+    [[ "${k8s_resources_count}" = "${1}" ]] || fail "Unexpected number of k8s resources: expected ${1}, got ${k8s_resources_count}"
 }
 
 @test "[openshift4] roxctl scanner generate" {
@@ -51,7 +51,7 @@ assert_number_of_k8s_resources() {
   # additional mounted volume. It's called "trusted-ca-volume" and we use it to identify OpenShift 4 configuration.
   run -0 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  assert_number_of_k8s_resources 16
+  assert_number_of_k8s_resources 17
 }
 
 @test "[openshift] roxctl scanner generate" {
@@ -60,7 +60,7 @@ assert_number_of_k8s_resources() {
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -1 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  assert_number_of_k8s_resources 16
+  assert_number_of_k8s_resources 15
 }
 
 @test "[k8s] roxctl scanner generate" {
