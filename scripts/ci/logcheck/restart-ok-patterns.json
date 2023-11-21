@@ -19,7 +19,7 @@
     },
     {
         "comment": "scanner restart due to slow postgres db start",
-        "job": "^(ocp|openshift)",
+        "job": "^(ocp|openshift|ibmcloudz)",
         "logfile": "scanner-previous",
         "logline": "Failed to open database despite multiple retries"
     },
