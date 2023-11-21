@@ -11,7 +11,6 @@ RUN scripts/rhtap/fail-build-if-git-is-dirty.sh
 RUN mkdir -p image/bin
 
 # Build the operator binary.
-# ENV BUILD_TAG="${CI_VERSION}"
 # TODO(ROX-20240): enable non-release development builds.
 ENV CI=1 GOFLAGS="" GOTAGS="release"
 
