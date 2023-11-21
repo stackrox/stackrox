@@ -1,7 +1,6 @@
 package deduper
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -93,15 +92,6 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 	}
 }
 
-func buildKey(typ, id string) string {
-	return fmt.Sprintf("%s:%s", typ, id)
-}
-
-func getKey(msg *central.MsgFromSensor) string {
-	event := msg.GetEvent()
-	return buildKey(eventPkg.GetEventTypeWithoutPrefix(event.GetResource()), event.GetId())
-}
-
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
 	if !ok || eventMsg.Event.GetProcessIndicator() != nil || alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
@@ -144,7 +134,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if d.lastSent[key] == hashValue {
 			// If this is a SYNC event, we have to keep track of this event
 			if d.appendUnchangedIDs && msg.GetEvent().GetAction() == central.ResourceAction_SYNC_RESOURCE {
-				key := getKey(msg)
+				key := eventPkg.GetKeyFromMessage(msg)
 				d.unchangedIDs.AddMatching(d.centralState.Contains, key)
 			}
 			return nil
