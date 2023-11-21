@@ -75,6 +75,31 @@ tests:
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
+- name: "Install mode is reported by Helm chart installation notes"
+  tests:
+  - name: "when installing neither indexer nor matcher"
+    scannerV4.disable: true
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +none"))
+  - name: "when installing indexer and matcher"
+    set:
+      scannerV4.disable: false
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-and-matcher"))
+  - name: "when installing only indexer"
+    set:
+      scannerV4.disable: false
+      scannerV4.indexer.disable: false
+      scannerV4.matcher.disable: true
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-only"))
+  - name: "when installing only matcher"
+    set:
+      scannerV4.disable: false
+      scannerV4.indexer.disable: true
+      scannerV4.matcher.disable: false
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +matcher-only"))
 # This test can be deleted once the scanner V2 is removed.
 - name: "enabling scanner V4 keeps scanner V2 enabled"
   set:
