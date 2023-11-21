@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	pgstore "github.com/stackrox/rox/central/notifier/cryptoconfig/datastore/store/postgres"
+	pgstore "github.com/stackrox/rox/central/notifier/encconfig/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -20,8 +20,8 @@ var (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetConfig() (*storage.NotifierCryptoConfig, error)
-	UpsertConfig(*storage.NotifierCryptoConfig) error
+	GetConfig() (*storage.NotifierEncConfig, error)
+	UpsertConfig(config *storage.NotifierEncConfig) error
 }
 
 // New returns an instance of DataStore.
@@ -36,12 +36,12 @@ type datastoreImpl struct {
 }
 
 // GetConfig returns notifier crypto config
-func (d *datastoreImpl) GetConfig() (*storage.NotifierCryptoConfig, error) {
+func (d *datastoreImpl) GetConfig() (*storage.NotifierEncConfig, error) {
 	config, _, err := d.store.Get(configCtx)
 	return config, err
 }
 
 // UpsertConfig upserts notifier crypto config
-func (d *datastoreImpl) UpsertConfig(config *storage.NotifierCryptoConfig) error {
+func (d *datastoreImpl) UpsertConfig(config *storage.NotifierEncConfig) error {
 	return d.store.Upsert(configCtx, config)
 }

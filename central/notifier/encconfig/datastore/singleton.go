@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	pgstore "github.com/stackrox/rox/central/notifier/cryptoconfig/datastore/store/postgres"
+	pgstore "github.com/stackrox/rox/central/notifier/encconfig/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

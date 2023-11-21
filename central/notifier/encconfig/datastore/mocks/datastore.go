@@ -39,10 +39,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // GetConfig mocks base method.
-func (m *MockDataStore) GetConfig() (*storage.NotifierCryptoConfig, error) {
+func (m *MockDataStore) GetConfig() (*storage.NotifierEncConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetConfig")
-	ret0, _ := ret[0].(*storage.NotifierCryptoConfig)
+	ret0, _ := ret[0].(*storage.NotifierEncConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -54,15 +54,15 @@ func (mr *MockDataStoreMockRecorder) GetConfig() *gomock.Call {
 }
 
 // UpsertConfig mocks base method.
-func (m *MockDataStore) UpsertConfig(arg0 *storage.NotifierCryptoConfig) error {
+func (m *MockDataStore) UpsertConfig(config *storage.NotifierEncConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertConfig", arg0)
+	ret := m.ctrl.Call(m, "UpsertConfig", config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertConfig indicates an expected call of UpsertConfig.
-func (mr *MockDataStoreMockRecorder) UpsertConfig(arg0 any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertConfig(config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), config)
 }
