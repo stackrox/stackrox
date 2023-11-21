@@ -9,6 +9,8 @@ export type RepeatScheduleDropdownProps = {
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
     showNoResultsOption?: boolean;
+    includeDailyOption?: boolean;
+    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
 };
 
 function RepeatScheduleDropdown({
@@ -17,10 +19,23 @@ function RepeatScheduleDropdown({
     handleSelect,
     isEditable = true,
     showNoResultsOption = false,
+    includeDailyOption = false,
+    onBlur,
 }: RepeatScheduleDropdownProps): ReactElement {
     let options = [
-        <SelectOption value="WEEKLY">Weekly</SelectOption>,
-        <SelectOption value="MONTHLY">Monthly</SelectOption>,
+        ...(includeDailyOption
+            ? [
+                  <SelectOption key="daily" value="DAILY">
+                      Daily
+                  </SelectOption>,
+              ]
+            : []),
+        <SelectOption key="weekly" value="WEEKLY">
+            Weekly
+        </SelectOption>,
+        <SelectOption key="monthly" value="MONTHLY">
+            Monthly
+        </SelectOption>,
     ];
     if (showNoResultsOption) {
         options = [<SelectOption isNoResultsOption>None</SelectOption>, ...options];
@@ -33,6 +48,7 @@ function RepeatScheduleDropdown({
             isDisabled={!isEditable}
             placeholderText="Select frequency"
             menuAppendTo={() => document.body}
+            onBlur={onBlur}
         >
             {options}
         </SelectSingle>
