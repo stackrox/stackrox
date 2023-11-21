@@ -48,7 +48,7 @@ type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...P
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
-// Store is the interface to interact with the storage for the generic type T
+// Store is the interface to interact with the storage for the generic type T.
 type Store[T any, PT unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context) (int, error)
@@ -65,8 +65,8 @@ type Store[T any, PT unmarshaler[T]] interface {
 	UpsertMany(ctx context.Context, objs []PT) error
 }
 
-// GenericStore implements subset of Store interface for resources with single ID.
-type GenericStore[T any, PT unmarshaler[T]] struct {
+// genericStore implements subset of Store interface for resources with single ID.
+type genericStore[T any, PT unmarshaler[T]] struct {
 	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
@@ -93,7 +93,7 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
 ) Store[T, PT] {
-	return &GenericStore[T, PT]{
+	return &genericStore[T, PT]{
 		db:          db,
 		schema:      schema,
 		pkGetter:    pkGetter,
@@ -128,7 +128,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	setPostgresOperationDurationTime durationTimeSetter,
 	checker walker.PermissionChecker,
 ) Store[T, PT] {
-	return &GenericStore[T, PT]{
+	return &genericStore[T, PT]{
 		db:          db,
 		schema:      schema,
 		pkGetter:    pkGetter,
@@ -151,7 +151,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 }
 
 // Exists tells whether the ID exists in the store.
-func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
+func (s *genericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
@@ -163,14 +163,14 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 }
 
 // Count returns the number of objects in the store.
-func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
+func (s *genericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
 	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
-func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
 
 	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
@@ -198,7 +198,7 @@ func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 // GetAll retrieves all objects from the store.
 //
 // Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
-func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
+func (s *genericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 
 	var objs []PT
@@ -210,7 +210,7 @@ func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
 
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
@@ -224,7 +224,7 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 }
 
 // GetByQuery returns the objects from the store matching the query.
-func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
+func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
 	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
@@ -238,7 +238,7 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 }
 
 // GetIDs returns all the IDs for the store.
-func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
 
 	result, err := RunSearchRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
@@ -255,7 +255,7 @@ func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
+func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetMany)
 
 	if len(identifiers) == 0 {
@@ -301,7 +301,7 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
+func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 	dbErr := RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
@@ -314,7 +314,7 @@ func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
-func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
+func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
 
 	// Batch the deletes
@@ -364,7 +364,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 }
 
 // Upsert saves the current state of an object in storage.
-func (s *GenericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
+func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
 	if s.hasPermissionsChecker() {
@@ -382,7 +382,7 @@ func (s *GenericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
+func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
 	if s.hasPermissionsChecker() {
@@ -417,7 +417,7 @@ func (s *GenericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // region Helper functions
 
-func (s *GenericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
+func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
 	defer s.setAcquireDBConnDuration(time.Now(), op)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -426,11 +426,11 @@ func (s *GenericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*post
 	return conn, nil
 }
 
-func (s *GenericStore[T, PT]) hasPermissionsChecker() bool {
+func (s *genericStore[T, PT]) hasPermissionsChecker() bool {
 	return s.permissionChecker != nil
 }
 
-func (s *GenericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
+func (s *genericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
 	if !s.hasPermissionsChecker() {
 		return utils.ShouldErr(errInvalidOperation)
 	}
@@ -444,7 +444,7 @@ func (s *GenericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context)
 	return nil
 }
 
-func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
+func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	if s.insertInto == nil {
 		return utils.ShouldErr(errInvalidOperation)
 	}
@@ -467,7 +467,7 @@ func (s *GenericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
 	return nil
 }
 
-func (s *GenericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
+func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 	if s.copyFromObj == nil {
 		return utils.ShouldErr(errInvalidOperation)
 	}

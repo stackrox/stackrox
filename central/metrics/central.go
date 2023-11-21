@@ -21,6 +21,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	storeCacheOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cache_op_duration",
+		Help:      "Time taken to perform a cache operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -191,6 +200,12 @@ var (
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+// SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource
+func SetCacheOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	storeCacheOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
 // SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource

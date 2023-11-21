@@ -94,11 +94,21 @@ type Store interface {
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
+{{ define "storeCreator" -}}
+    {{- if and (.PermissionChecker) (.CachedStore) -}}
+        pgSearch.NewGenericStoreWithCacheAndPermissionChecker
+    {{- else if (.PermissionChecker) -}}
+        pgSearch.NewGenericStoreWithPermissionChecker
+    {{- else if .CachedStore -}}
+        pgSearch.NewGenericStoreWithCache
+    {{- else -}}
+        pgSearch.NewGenericStore
+    {{- end -}}
+{{- end }}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-    return pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}{{ if .CachedStore }}WithCache{{end}}[storeType, *storeType](
+    return {{ template "storeCreator" . }}[storeType, *storeType](
             db,
             schema,
             pkGetter,
@@ -115,6 +125,9 @@ func New(db postgres.DB) Store {
             {{- end }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
+            {{- if .CachedStore }}
+            metricsSetCacheOperationDurationTime,
+            {{ end -}}
             {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
             pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
             {{- else if .Obj.IsDirectlyScoped }}
@@ -137,7 +150,13 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
     metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+{{- if .CachedStore }}
 
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+    metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
+{{ end -}}
 {{- if .Obj.IsDirectlyScoped }}
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
     {{ template "defineScopeChecker" "READ_WRITE" }}

@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,6 +24,7 @@ func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
+	setCacheOperationDurationTime durationTimeSetter,
 	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
 ) Store[T, PT] {
@@ -36,23 +39,25 @@ func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
 		upsertAllowed,
 		targetResource,
 	)
-	store := &CachedStore[T, PT]{
+	store := &cachedStore[T, PT]{
 		schema:          schema,
 		pkGetter:        pkGetter,
 		targetResource:  targetResource,
 		cache:           make(map[string]PT),
-		useCache:        true,
 		underlyingStore: underlyingStore,
+
+		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	store.cacheLock.Lock()
 	defer store.cacheLock.Unlock()
-	store.resetCacheNoLock()
+	// Initial population of the cache. Make sure it is in sync with the DB.
+	store.repopulateCacheNoLock()
 	return store
 }
 
-// NewGenericStoreWithPermissionCheckerWithCache returns new subStore implementation for given resource.
+// NewGenericStoreWithCacheAndPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionCheckerWithCache[T any, PT unmarshaler[T]](
+func NewGenericStoreWithCacheAndPermissionChecker[T any, PT unmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -60,6 +65,7 @@ func NewGenericStoreWithPermissionCheckerWithCache[T any, PT unmarshaler[T]](
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
+	setCacheOperationDurationTime durationTimeSetter,
 	checker walker.PermissionChecker,
 ) Store[T, PT] {
 	underlyingStore := NewGenericStoreWithPermissionChecker[T, PT](
@@ -72,23 +78,24 @@ func NewGenericStoreWithPermissionCheckerWithCache[T any, PT unmarshaler[T]](
 		setPostgresOperationDurationTime,
 		checker,
 	)
-	store := &CachedStore[T, PT]{
+	store := &cachedStore[T, PT]{
 		schema:            schema,
 		pkGetter:          pkGetter,
 		permissionChecker: checker,
 		cache:             make(map[string]PT),
-		useCache:          true,
 		underlyingStore:   underlyingStore,
+
+		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	store.cacheLock.Lock()
 	defer store.cacheLock.Unlock()
-	store.resetCacheNoLock()
+	// Initial population of the cache. Make sure it is in sync with the DB.
+	store.repopulateCacheNoLock()
 	return store
 }
 
-// CachedStore implements subset of Store interface for resources with single ID.
-type CachedStore[T any, PT unmarshaler[T]] struct {
-	mutex                         sync.RWMutex
+// cachedStore implements subset of Store interface for resources with single ID.
+type cachedStore[T any, PT unmarshaler[T]] struct {
 	schema                        *walker.Schema
 	pkGetter                      primaryKeyGetter[T, PT]
 	setCacheOperationDurationTime durationTimeSetter
@@ -96,17 +103,16 @@ type CachedStore[T any, PT unmarshaler[T]] struct {
 	targetResource                permissions.ResourceMetadata
 	underlyingStore               Store[T, PT]
 	cache                         map[string]PT
-	useCache                      bool
 	cacheLock                     sync.RWMutex
 }
 
 // Upsert saves the current state of an object in storage.
-func (c *CachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
+func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	dbErr := c.underlyingStore.Upsert(ctx, obj)
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	if dbErr != nil {
-		c.resetCacheNoLock()
 		return dbErr
 	}
 	c.addToCacheNoLock(obj)
@@ -114,12 +120,12 @@ func (c *CachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 }
 
 // UpsertMany saves the state of multiple objects in the storage.
-func (c *CachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
+func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	dbErr := c.underlyingStore.UpsertMany(ctx, objs)
+	defer c.setCacheOperationDurationTime(time.Now(), ops.UpdateMany)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	if dbErr != nil {
-		c.resetCacheNoLock()
 		return dbErr
 	}
 	for _, obj := range objs {
@@ -129,12 +135,12 @@ func (c *CachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 }
 
 // Delete removes the object associated to the specified ID from the store.
-func (c *CachedStore[T, PT]) Delete(ctx context.Context, id string) error {
+func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	dbErr := c.underlyingStore.Delete(ctx, id)
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	if dbErr != nil {
-		c.resetCacheNoLock()
 		return dbErr
 	}
 	delete(c.cache, id)
@@ -142,12 +148,12 @@ func (c *CachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
-func (c *CachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
+func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	dbErr := c.underlyingStore.DeleteMany(ctx, identifiers)
+	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
 	c.cacheLock.Lock()
 	defer c.cacheLock.RUnlock()
 	if dbErr != nil {
-		c.resetCacheNoLock()
 		return dbErr
 	}
 	for _, id := range identifiers {
@@ -157,7 +163,8 @@ func (c *CachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 }
 
 // Exists tells whether the ID exists in the store.
-func (c *CachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
+func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Exists)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	obj, found := c.cache[id]
@@ -168,7 +175,8 @@ func (c *CachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 }
 
 // Count returns the number of objects in the store.
-func (c *CachedStore[T, PT]) Count(ctx context.Context) (int, error) {
+func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Count)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	count := 0
@@ -183,7 +191,8 @@ func (c *CachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 }
 
 // Get returns the object, if it exists from the store.
-func (c *CachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Get)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	obj, found := c.cache[id]
@@ -197,7 +206,8 @@ func (c *CachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
-func (c *CachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
+func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.GetMany)
 	if len(identifiers) == 0 {
 		return nil, nil, nil
 	}
@@ -221,28 +231,44 @@ func (c *CachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
-func (c *CachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	return c.walkCacheNoLock(ctx, fn)
 }
 
 // GetByQuery returns the objects from the store matching the query.
-func (c *CachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
+func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
+	// defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (c *CachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
-	dbErr := c.underlyingStore.DeleteByQuery(ctx, query)
+func (c *cachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	objs, dbFetchErr := c.underlyingStore.GetByQuery(ctx, query)
+	if dbFetchErr != nil {
+		return dbFetchErr
+	}
+	identifiersToRemove := make([]string, 0, len(objs))
+	for _, obj := range objs {
+		identifiersToRemove = append(identifiersToRemove, c.pkGetter(obj))
+	}
+	dbRemoveErr := c.underlyingStore.DeleteMany(ctx, identifiersToRemove)
+	if dbRemoveErr != nil {
+		return dbRemoveErr
+	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	c.resetCacheNoLock()
-	return dbErr
+	for _, id := range identifiersToRemove {
+		delete(c.cache, id)
+	}
+	return nil
 }
 
 // GetIDs returns all the IDs for the store.
-func (c *CachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.GetAll)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	result := make([]string, 0, len(c.cache))
@@ -259,7 +285,8 @@ func (c *CachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 // GetAll retrieves all objects from the store.
 //
 // Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
-func (c *CachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
+func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
+	defer c.setCacheOperationDurationTime(time.Now(), ops.GetAll)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	result := make([]PT, 0, len(c.cache))
@@ -273,7 +300,7 @@ func (c *CachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	return result, nil
 }
 
-func (c *CachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT) error) error {
+func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT) error) error {
 	for _, obj := range c.cache {
 		if !c.isReadAllowed(ctx, obj) {
 			continue
@@ -286,7 +313,7 @@ func (c *CachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 	return nil
 }
 
-func (c *CachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
+func (c *cachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
 	if c.hasPermissionsChecker() {
 		allowed, err := c.permissionChecker.ReadAllowed(ctx)
 		if err != nil {
@@ -321,11 +348,11 @@ func (c *CachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
 	return scopeChecker.IsAllowed()
 }
 
-func (c *CachedStore[T, PT]) hasPermissionsChecker() bool {
+func (c *cachedStore[T, PT]) hasPermissionsChecker() bool {
 	return c.permissionChecker != nil
 }
 
-func (c *CachedStore[T, PT]) resetCacheNoLock() {
+func (c *cachedStore[T, PT]) repopulateCacheNoLock() {
 	c.cache = make(map[string]PT)
 	_ = c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
 		c.cache[c.pkGetter(obj)] = obj
@@ -333,6 +360,6 @@ func (c *CachedStore[T, PT]) resetCacheNoLock() {
 	})
 }
 
-func (c *CachedStore[T, PT]) addToCacheNoLock(obj PT) {
+func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {
 	c.cache[c.pkGetter(obj)] = obj
 }
