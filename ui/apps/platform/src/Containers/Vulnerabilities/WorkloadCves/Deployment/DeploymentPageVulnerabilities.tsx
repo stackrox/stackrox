@@ -27,12 +27,12 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import {
+    SearchOption,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import TableErrorComponent from '../components/TableErrorComponent';

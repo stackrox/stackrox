@@ -14,13 +14,6 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import useURLPagination from 'hooks/useURLPagination';
 
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    IMAGE_CVE_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-    REQUESTER_SEARCH_OPTION,
-    REQUEST_NAME_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
@@ -37,6 +30,13 @@ import {
 } from './components/ExceptionRequestTableCells';
 import FilterAutocompleteSelect from '../components/FilterAutocomplete';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
+import {
+    SearchOption,
+    REQUEST_NAME_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+} from '../searchOptions';
 
 const searchOptions: SearchOption[] = [
     REQUEST_NAME_SEARCH_OPTION,

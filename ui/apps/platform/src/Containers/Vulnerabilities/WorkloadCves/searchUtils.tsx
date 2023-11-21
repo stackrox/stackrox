@@ -19,6 +19,15 @@ import {
     isFixableStatus,
     isVulnerabilitySeverityLabel,
 } from './types';
+import {
+    IMAGE_CVE_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+} from '../searchOptions';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
 
@@ -89,31 +98,34 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
 
     // SearchFilter values that can be directly translated over to the backend equivalent
     const unprocessedSearchKeys = [
-        'CVE',
-        'IMAGE',
-        'DEPLOYMENT',
-        'NAMESPACE',
-        'CLUSTER',
-        'COMPONENT',
-        'COMPONENT SOURCE',
+        IMAGE_CVE_SEARCH_OPTION.value,
+        IMAGE_SEARCH_OPTION.value,
+        DEPLOYMENT_SEARCH_OPTION.value,
+        NAMESPACE_SEARCH_OPTION.value,
+        CLUSTER_SEARCH_OPTION.value,
+        COMPONENT_SEARCH_OPTION.value,
+        COMPONENT_SOURCE_SEARCH_OPTION.value,
     ] as const;
     unprocessedSearchKeys.forEach((key) => {
-        cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);
+        const values = searchValueAsArray(rawSearchFilter[key]);
+        if (values.length > 0) {
+            cleanSearchFilter[key] = values;
+        }
     });
 
-    const fixable = searchValueAsArray(rawSearchFilter.Fixable);
+    const fixable = searchValueAsArray(rawSearchFilter.FIXABLE);
 
-    cleanSearchFilter.Fixable =
-        fixable.length > 0
-            ? fixable.filter(isFixableStatus).map(fixableStatusToFixability)
-            : undefined;
+    if (fixable.length > 0) {
+        cleanSearchFilter.FIXABLE = fixable.filter(isFixableStatus).map(fixableStatusToFixability);
+    }
 
-    const severity = searchValueAsArray(rawSearchFilter.Severity);
+    const severity = searchValueAsArray(rawSearchFilter.SEVERITY);
 
-    cleanSearchFilter.Severity =
-        severity.length > 0
-            ? severity.filter(isVulnerabilitySeverityLabel).map(severityLabelToSeverity)
-            : undefined;
+    if (severity.length > 0) {
+        cleanSearchFilter.SEVERITY = severity
+            .filter(isVulnerabilitySeverityLabel)
+            .map(severityLabelToSeverity);
+    }
 
     return cleanSearchFilter;
 }
@@ -122,14 +134,14 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
 export function getHiddenSeverities(
     querySearchFilter: QuerySearchFilter
 ): Set<VulnerabilitySeverity> {
-    return querySearchFilter.Severity
-        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.Severity?.includes(s)))
+    return querySearchFilter.SEVERITY
+        ? new Set(vulnerabilitySeverities.filter((s) => !querySearchFilter.SEVERITY?.includes(s)))
         : new Set([]);
 }
 
 export function getHiddenStatuses(querySearchFilter: QuerySearchFilter): Set<FixableStatus> {
     const hiddenStatuses = new Set<FixableStatus>([]);
-    const fixableFilters = querySearchFilter?.Fixable ?? [];
+    const fixableFilters = querySearchFilter?.FIXABLE ?? [];
 
     if (fixableFilters.length > 0) {
         if (!fixableFilters.includes('true')) {

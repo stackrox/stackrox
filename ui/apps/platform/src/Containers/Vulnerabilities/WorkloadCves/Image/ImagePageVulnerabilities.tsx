@@ -29,11 +29,11 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import {
+    SearchOption,
+    IMAGE_CVE_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,

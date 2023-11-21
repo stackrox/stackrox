@@ -5,9 +5,9 @@ import { Toolbar, ToolbarGroup, ToolbarContent, Flex } from '@patternfly/react-c
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { Globe } from 'react-feather';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { SearchOption } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+import SearchFilterChips, { SearchFilterChipsProps } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import { SearchOption, SearchOptionValue } from 'Containers/Vulnerabilities/searchOptions';
 import { DefaultFilters } from '../types';
 import FilterAutocomplete, {
     FilterAutocompleteSelectProps,
@@ -35,11 +35,10 @@ function FilterChip({ isGlobal, name }: FilterChipProps) {
 }
 
 const emptyDefaultFilters = {
-    Severity: [],
-    Fixable: [],
+    SEVERITY: [],
+    FIXABLE: [],
 };
 
-type FilterType = 'Severity' | 'Fixable';
 type WorkloadTableToolbarProps = {
     defaultFilters?: DefaultFilters;
     searchOptions: SearchOption[];
@@ -63,8 +62,11 @@ function WorkloadTableToolbar({
         onFilterChange(newFilter);
     }
 
-    function onSelect(type: FilterType, e, selection) {
-        const { checked } = e.target as HTMLInputElement;
+    function onSelect(
+        type: Extract<SearchOptionValue, 'SEVERITY' | 'FIXABLE'>,
+        checked: boolean,
+        selection: string
+    ) {
         const selectedSearchFilter = searchFilter[type] as string[];
         if (searchFilter[type]) {
             onChangeSearchFilter({
@@ -83,7 +85,9 @@ function WorkloadTableToolbar({
         }
     }
 
-    const filterChipGroupDescriptors = [
+    const filterChipGroupDescriptors: (SearchFilterChipsProps['filterChipGroupDescriptors'][number] & {
+        searchFilterName: SearchOptionValue;
+    })[] = [
         {
             displayName: 'Deployment',
             searchFilterName: 'DEPLOYMENT',
@@ -114,10 +118,10 @@ function WorkloadTableToolbar({
         },
         {
             displayName: 'Severity',
-            searchFilterName: 'Severity',
+            searchFilterName: 'SEVERITY',
             render: (filter: string) => (
                 <FilterChip
-                    isGlobal={defaultFilters.Severity?.some((severity) => severity === filter)}
+                    isGlobal={defaultFilters.SEVERITY?.some((severity) => severity === filter)}
                     name={filter}
                 />
             ),
@@ -127,10 +131,10 @@ function WorkloadTableToolbar({
     if (isFixabilityFiltersEnabled) {
         filterChipGroupDescriptors.push({
             displayName: 'Fixable',
-            searchFilterName: 'Fixable',
+            searchFilterName: 'FIXABLE',
             render: (filter: string) => (
                 <FilterChip
-                    isGlobal={defaultFilters.Fixable?.some((fixability) => fixability === filter)}
+                    isGlobal={defaultFilters.FIXABLE?.some((fixability) => fixability === filter)}
                     name={filter}
                 />
             ),
