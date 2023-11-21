@@ -108,8 +108,8 @@ tests:
     system:
       createSCCs: true
   expect: |
-    .securitycontextconstraints["stackrox-scanner"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:scanner"))
-    .roles["use-scanner-scc"] | assertThat(. == null)
+    .securitycontextconstraints["nonroot-v2"] | assertThat(. == null)
+    .roles["scanner-scc"] | assertThat(. == null)
     .rolebindings["scanner-use-scc"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
@@ -132,9 +132,9 @@ tests:
     system:
       createSCCs: false
   expect: |
-    .roles["use-scanner-scc"] | assertThat(. != null)
+    .roles["scanner-scc"] | assertThat(. != null)
     .rolebindings["scanner-use-scc"] | assertThat(. != null)
-    .securitycontextconstraints["stackrox-scanner"] | assertThat(. == null)
+    .securitycontextconstraints["restricted-v2"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["scanner"])

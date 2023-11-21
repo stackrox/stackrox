@@ -72,9 +72,9 @@ tests:
     env:
       openshift: 4
   expect: |
-    .roles["use-central-scc"] | assertThat(. != null)
+    .roles["central-scc"] | assertThat(. != null)
     .rolebindings["central-use-scc"] | assertThat(. != null)
-    .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
+    .securitycontextconstraints["restricted-v2"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
