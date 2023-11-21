@@ -105,6 +105,14 @@ function WorkloadTableToolbar({
             searchFilterName: 'CLUSTER',
         },
         {
+            displayName: 'Component',
+            searchFilterName: 'COMPONENT',
+        },
+        {
+            displayName: 'Component Source',
+            searchFilterName: 'COMPONENT SOURCE',
+        },
+        {
             displayName: 'Severity',
             searchFilterName: 'Severity',
             render: (filter: string) => (
