@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	localIPNet = "127.0.0.0/16"
+)
+
 func TestDockerInfoBasedChecks(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -26,7 +30,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			name: standards.NIST800190CheckName("4_2_1"),
 			cri: &compliance.ContainerRuntimeInfo{
 				InsecureRegistries: &compliance.InsecureRegistriesConfig{
-					InsecureCidrs: []string{"127.0.0.0/16"},
+					InsecureCidrs: []string{localIPNet},
 				},
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
