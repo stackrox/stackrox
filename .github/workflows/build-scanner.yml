@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # If this is updated, be sure to update architectures in push-manifests below.
-        goarch: ['amd64', 'arm64', 'ppc64le']
+        goarch: ['amd64', 'arm64', 'ppc64le', 's390x']
         goos: ['linux']
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
@@ -88,6 +88,6 @@ jobs:
         source ./scripts/ci/lib.sh
 
         # If this is updated, be sure to update goarch in build-and-push above.
-        architectures="amd64,arm64,ppc64le"
+        architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"
