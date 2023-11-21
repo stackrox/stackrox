@@ -327,18 +327,14 @@ func (m *manager) handleConnectionError(clusterID string, err error) {
 // GetConnectionPreference returns the connection preference for cluster ID.
 func (m *manager) GetConnectionPreference(clusterID string) Preferences {
 	var p Preferences
-	pref, exists := m.connectionPreference.Load(clusterID)
-	if !exists {
+	var ok bool
+	if pref, exists := m.connectionPreference.Load(clusterID); !exists {
 		p = Preferences{
 			SendDeduperState: true,
 		}
 		m.connectionPreference.Store(clusterID, p)
-	} else {
-		var ok bool
-		p, ok = (pref).(Preferences)
-		if !ok {
-			log.Warnf("Incorrect entry in Connection preferences map for cluster ID: %s", clusterID)
-		}
+	} else if p, ok = (pref).(Preferences); !ok {
+		log.Warnf("Incorrect entry in Connection preferences map for cluster ID: %s", clusterID)
 	}
 	return p
 }

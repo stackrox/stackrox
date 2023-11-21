@@ -12,7 +12,7 @@ import (
 
 // Preferences determines preferences for the connection learned from sensor.
 type Preferences struct {
-	// SendDeduperState is set to true by default and can be switched off by Central a Sensor sends a ResourcesSynced event
+	// SendDeduperState is set to true by default and can be switched off by Central if a Sensor sends a ResourcesSynced event
 	// with too many resources which could lead to a resourcesExhausted error in the gRPC connection. If this is set
 	// to false, the connected sensor will fall back to the classic reconciliation (i.e. no deduper state is transmitted).
 	SendDeduperState bool
