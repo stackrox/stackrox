@@ -172,9 +172,7 @@ export function RequestComment({ comment }: RequestCommentProps) {
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Text className="pf-u-font-weight-bold">
-                    {comment.user.name}
-                </Text>
+                <Text className="pf-u-font-weight-bold">{comment.user.name}</Text>
                 <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
             </Flex>
             <FlexItem>{comment.message}</FlexItem>

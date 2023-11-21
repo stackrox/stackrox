@@ -9,7 +9,6 @@ import {
     PageSection,
     Spinner,
     Tab,
-    TabContent,
     TabTitleText,
     Tabs,
     Title,
@@ -37,7 +36,7 @@ import RequestOverview from './components/RequestOverview';
 import './ExceptionRequestDetailsPage.css';
 import { RequestContext } from './components/ExceptionRequestTableCells';
 
-type RequestDetailsTab = 'REQUESTED_UPDATE' | 'LATEST_APPROVED'
+type RequestDetailsTab = 'REQUESTED_UPDATE' | 'LATEST_APPROVED';
 
 function getSubtitleText(exception: VulnerabilityException) {
     const numCVEs = `${pluralize(exception.cves.length, 'CVE')}`;
@@ -56,13 +55,13 @@ function getSubtitleText(exception: VulnerabilityException) {
 }
 
 export function getCVEsForUpdatedRequest(exception: VulnerabilityException): string[] {
-     if (isDeferralException(exception) && exception.deferralUpdate) {
-         return exception.deferralUpdate.cves;
-     }
-     if (isFalsePositiveException(exception) && exception.falsePositiveUpdate) {
-         return exception.falsePositiveUpdate.cves;
-     }
-     return exception.cves;
+    if (isDeferralException(exception) && exception.deferralUpdate) {
+        return exception.deferralUpdate.cves;
+    }
+    if (isFalsePositiveException(exception) && exception.falsePositiveUpdate) {
+        return exception.falsePositiveUpdate.cves;
+    }
+    return exception.cves;
 }
 
 function ExceptionRequestDetailsPage() {
@@ -116,7 +115,9 @@ function ExceptionRequestDetailsPage() {
     const { status, cves, scope } = vulnerabilityException;
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
     const context: RequestContext =
-        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate ? 'CURRENT' : 'PENDING_UPDATE';
+        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
+            ? 'CURRENT'
+            : 'PENDING_UPDATE';
     const relevantCVEs =
         selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
             ? cves

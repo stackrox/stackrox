@@ -177,19 +177,28 @@ function PendingApprovals() {
                                     <Requester requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedAction exception={exception} context="PENDING_UPDATE" />
+                                    <RequestedAction
+                                        exception={exception}
+                                        context="PENDING_UPDATE"
+                                    />
                                 </Td>
                                 <Td>
                                     <RequestCreatedAt createdAt={createdAt} />
                                 </Td>
                                 <Td>
-                                    <RequestExpires exception={exception} context="PENDING_UPDATE" />
+                                    <RequestExpires
+                                        exception={exception}
+                                        context="PENDING_UPDATE"
+                                    />
                                 </Td>
                                 <Td>
                                     <RequestScope scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItems exception={exception} context="PENDING_UPDATE" />
+                                    <RequestedItems
+                                        exception={exception}
+                                        context="PENDING_UPDATE"
+                                    />
                                 </Td>
                             </Tr>
                         );

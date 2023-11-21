@@ -21,7 +21,7 @@ import {
 
 export type RequestOverviewProps = {
     exception: VulnerabilityException;
-    context: RequestContext
+    context: RequestContext;
 };
 
 function RequestOverview({ exception, context }: RequestOverviewProps) {
