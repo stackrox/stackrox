@@ -1,13 +1,13 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "tm/rhtap-operator"
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "master"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
@@ -15,19 +15,50 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: operator-on-push
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
     value: operator/rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
+  - name: image-expires-after
+    value: '13w'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-acs-tenant/acs/operator:{{revision}}
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: "true"
+  - name: prefetch-input
+    value: '{"type": "gomod", "path": "."}'
+  - name: build-source-image
+    value: 'true'
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: { }
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
   pipelineSpec:
+
     finally:
     - name: show-sbom
       params:
@@ -61,6 +92,7 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     params:
     - description: Source Repository URL
       name: git-url
@@ -90,10 +122,6 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "true"
-      description: Skip optional checks, set false if you want to run optional checks
-      name: skip-optional
-      type: string
     - default: "false"
       description: Execute the build with network isolation
       name: hermetic
@@ -110,10 +138,12 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
-    - default: "false"
+      type: string
+    - default: "true"
       description: Build a source image.
       name: build-source-image
       type: string
+
     results:
     - description: ""
       name: IMAGE_URL
@@ -130,17 +160,19 @@ spec:
     - description: ""
       name: JAVA_COMMUNITY_DEPENDENCIES
       value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+
+    workspaces:
+    - name: workspace
+    - name: git-auth
+
     tasks:
+
     - name: init
       params:
       - name: image-url
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      - name: skip-checks
-        value: $(params.skip-checks)
-      - name: skip-optional
-        value: $(params.skip-optional)
       - name: pipelinerun-name
         value: $(context.pipelineRun.name)
       - name: pipelinerun-uid
@@ -154,12 +186,18 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+
     - name: clone-repository
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      # A shallow repo clone is sufficient for operator build.
+      - name: depth
+        value: "1"
+      - name: fetchTags
+        value: "false"
       runAfter:
       - init
       taskRef:
@@ -174,13 +212,13 @@ spec:
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: output
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+
     - name: prefetch-dependencies
       params:
       - name: input
@@ -196,14 +234,10 @@ spec:
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(params.hermetic)
-        operator: in
-        values:
-        - "true"
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-container
       params:
       - name: IMAGE
@@ -234,11 +268,11 @@ spec:
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: source
         workspace: workspace
+
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -259,15 +293,14 @@ spec:
       when:
       - input: $(tasks.init.results.build)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       - input: $(params.build-source-image)
         operator: in
-        values:
-        - "true"
+        values: [ "true" ]
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
@@ -286,8 +319,8 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: clair-scan
       params:
       - name: image-digest
@@ -308,8 +341,8 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sast-snyk-check
       runAfter:
       - clone-repository
@@ -325,11 +358,11 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
       workspaces:
       - name: workspace
         workspace: workspace
+
     - name: clamav-scan
       params:
       - name: image-digest
@@ -350,8 +383,8 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
+        values: [ "false" ]
+
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
@@ -372,26 +405,7 @@ spec:
       when:
       - input: $(params.skip-checks)
         operator: in
-        values:
-        - "false"
-    workspaces:
-    - name: workspace
-    - name: git-auth
-      optional: true
-  taskRunTemplate: {}
-  workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: {}
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-status: {}
+        values: [ "false" ]
+
+status: { }
+taskRunTemplate: { }
