@@ -6,9 +6,9 @@ import { SearchFilter } from 'types/search';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
+import { SearchOption } from '../searchOptions';
 
 import './FilterAutocomplete.css';
-import { SearchOption } from '../searchOptions';
 
 function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
     return data?.map((value) => <SelectOption key={value} value={value} />);

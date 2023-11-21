@@ -64,7 +64,7 @@ export const COMPONENT_SEARCH_OPTION = {
 } as const;
 
 export const COMPONENT_SOURCE_SEARCH_OPTION = {
-    label: 'Component Source',
+    label: 'Component source',
     value: 'COMPONENT SOURCE',
     category: 'IMAGE_VULNERABILITIES',
 } as const;
