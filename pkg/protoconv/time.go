@@ -37,6 +37,14 @@ func ConvertTimestampToTimeOrDefault(gogo *gogoTimestamp.Timestamp, defaultVal t
 	return t
 }
 
+// ConvertTimeToTimestampOrNow converts golang time to proto timestamp.
+func ConvertTimeToTimestampOrNow(goTime *time.Time) *gogoTimestamp.Timestamp {
+	if goTime == nil {
+		return gogoTimestamp.TimestampNow()
+	}
+	return ConvertTimeToTimestamp(*goTime)
+}
+
 // ConvertTimeToTimestamp converts golang time to proto timestamp.
 func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)
