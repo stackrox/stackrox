@@ -29,6 +29,8 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import {
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     SearchOption,
 } from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
@@ -83,7 +85,11 @@ export const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION];
+const searchOptions: SearchOption[] = [
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;

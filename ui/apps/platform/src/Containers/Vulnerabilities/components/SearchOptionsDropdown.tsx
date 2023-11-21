@@ -39,6 +39,18 @@ export const CLUSTER_SEARCH_OPTION: SearchOption = {
     category: 'CLUSTERS',
 };
 
+export const COMPONENT_SEARCH_OPTION: SearchOption = {
+    label: 'Component',
+    value: 'COMPONENT',
+    category: 'IMAGE_COMPONENTS',
+};
+
+export const COMPONENT_SOURCE_SEARCH_OPTION: SearchOption = {
+    label: 'Component Source',
+    value: 'COMPONENT SOURCE',
+    category: 'IMAGE_VULNERABILITIES',
+};
+
 export const REQUEST_NAME_SEARCH_OPTION: SearchOption = {
     label: 'Request name',
     value: 'Request Name',
