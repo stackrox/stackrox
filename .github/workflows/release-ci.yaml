@@ -78,7 +78,9 @@ jobs:
       - name: Patch RELEASED_VERSIONS
         env:
           STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
+          GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           scripts/ci/lib.sh \
             mark_collector_release "${STACKROX_TAG}"
@@ -99,7 +101,9 @@ jobs:
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
+          GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
           RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
         run: |
