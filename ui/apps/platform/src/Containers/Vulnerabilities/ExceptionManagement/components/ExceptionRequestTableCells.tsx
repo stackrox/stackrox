@@ -22,16 +22,19 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useModal from 'hooks/useModal';
+import { getQueryString } from 'utils/queryStringUtils';
 
 export type RequestContext = 'CURRENT' | 'PENDING_UPDATE';
 
 export type RequestIDLinkProps = {
     id: VulnerabilityException['id'];
     name: VulnerabilityException['name'];
+    context: RequestContext;
 };
 
-export function RequestIDLink({ id, name }: RequestIDLinkProps) {
-    return <Link to={`${exceptionManagementPath}/requests/${id}`}>{name}</Link>;
+export function RequestIDLink({ id, name, context }: RequestIDLinkProps) {
+    const query = getQueryString({ context })
+    return <Link to={`${exceptionManagementPath}/requests/${id}${query}`}>{name}</Link>;
 }
 
 export type RequesterProps = {

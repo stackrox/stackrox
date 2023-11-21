@@ -32,11 +32,11 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 
 import './ExceptionRequestDetailsPage.css';
-import { RequestContext } from './components/ExceptionRequestTableCells';
 
-type RequestDetailsTab = 'REQUESTED_UPDATE' | 'LATEST_APPROVED';
+export const contextValues = ['CURRENT', 'PENDING_UPDATE'] as const;
 
 function getSubtitleText(exception: VulnerabilityException) {
     const numCVEs = `${pluralize(exception.cves.length, 'CVE')}`;
@@ -65,8 +65,7 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 }
 
 function ExceptionRequestDetailsPage() {
-    // @TODO: Incorporate this section into the URL, enabling direct linking based on the user's context upon arrival
-    const [selectedTab, setSelectedTab] = useState<RequestDetailsTab>('REQUESTED_UPDATE');
+    const [selectedContext, setSelectedContext] = useURLStringUnion('context', contextValues);
     const expandedRowSet = useSet<string>();
     const { requestId } = useParams();
 
@@ -81,7 +80,7 @@ function ExceptionRequestDetailsPage() {
     } = useRestQuery(vulnerabilityExceptionByIdFn);
 
     function handleTabClick(event, value) {
-        setSelectedTab(value);
+        setSelectedContext(value);
     }
 
     if (loading && !vulnerabilityException) {
@@ -114,12 +113,8 @@ function ExceptionRequestDetailsPage() {
 
     const { status, cves, scope } = vulnerabilityException;
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
-    const context: RequestContext =
-        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
-            ? 'CURRENT'
-            : 'PENDING_UPDATE';
     const relevantCVEs =
-        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
+        selectedContext === 'CURRENT'
             ? cves
             : getCVEsForUpdatedRequest(vulnerabilityException);
 
@@ -143,24 +138,24 @@ function ExceptionRequestDetailsPage() {
             <PageSection className="pf-u-p-0">
                 {isApprovedPendingUpdate && (
                     <Tabs
-                        activeKey={selectedTab}
+                        activeKey={selectedContext}
                         onSelect={handleTabClick}
                         component="nav"
                         className="pf-u-pl-lg pf-u-background-color-100"
                     >
                         <Tab
-                            eventKey="REQUESTED_UPDATE"
+                            eventKey="PENDING_UPDATE"
                             title={<TabTitleText>Requested update</TabTitleText>}
                         />
                         <Tab
-                            eventKey="LATEST_APPROVED"
+                            eventKey="CURRENT"
                             title={<TabTitleText>Latest approved</TabTitleText>}
                         />
                     </Tabs>
                 )}
 
                 <PageSection>
-                    <RequestOverview exception={vulnerabilityException} context={context} />
+                    <RequestOverview exception={vulnerabilityException} context={selectedContext} />
                 </PageSection>
                 <PageSection>
                     <RequestCVEsTable

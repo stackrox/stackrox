@@ -167,11 +167,12 @@ function PendingApprovals() {
                 </Thead>
                 <Tbody>
                     {data.map((exception) => {
-                        const { id, name, requester, createdAt, scope } = exception;
+                        const { id, name, status, requester, createdAt, scope } = exception;
+                        const context = status === 'APPROVED_PENDING_UPDATE' ? 'PENDING_UPDATE' : 'CURRENT';
                         return (
                             <Tr key={id}>
                                 <Td>
-                                    <RequestIDLink id={id} name={name} />
+                                    <RequestIDLink id={id} name={name} context={context} />
                                 </Td>
                                 <Td>
                                     <Requester requester={requester} />
