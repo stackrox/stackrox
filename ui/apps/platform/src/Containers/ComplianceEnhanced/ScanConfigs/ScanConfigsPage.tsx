@@ -1,45 +1,48 @@
 import React from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
 
+import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { getQueryObject, BasePageAction } from 'utils/queryStringUtils';
+import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
-import ScanConfigPage from './ScanConfigPage';
+import CreateScanConfigPage from './CreateScanConfigPage';
+
+type PageActions = 'create' | 'edit' | 'clone';
 
 function ScanConfigsPage() {
     /*
      * Examples of urls for ScanConfigPage:
-     * /main/compliance-enhanced/scan-configs/:policyId
-     * /main/compliance-enhanced/scan-configs/:policyId?action=edit
-     * /main/compliance-enhanced/scan-configs?action=create
-     *
-     * Examples of urls for PolicyTablePage:
      * /main/compliance-enhanced/scan-configs
-     * /main/compliance-enhanced/scan-configs?s[Lifecycle Stage]=BUILD
-     * /main/compliance-enhanced/scan-configs?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
-     * /main/compliance-enhanced/scan-configs?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
+     * /main/compliance-enhanced/scan-configs?action=create
+     * /main/compliance-enhanced/scan-configs/configId
      */
-    const location = useLocation();
-    const { search } = location;
-    const queryObject = getQueryObject(search);
-    const { action } = queryObject;
-    const { scanConfigId } = useParams();
+    const { pageAction } = usePageAction<PageActions>();
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
-    if (action || scanConfigId) {
-        return (
-            <ScanConfigPage
-                hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                pageAction={action as BasePageAction}
-                scanConfigId={scanConfigId}
+    return (
+        <Switch>
+            <Route
+                exact
+                path={complianceEnhancedScanConfigsBasePath}
+                render={() => {
+                    if (pageAction === 'create' && hasWriteAccessForCompliance) {
+                        return <CreateScanConfigPage />;
+                    }
+                    if (pageAction === undefined) {
+                        return (
+                            <ScanConfigsTablePage
+                                hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                            />
+                        );
+                    }
+                    return <Redirect to={complianceEnhancedScanConfigsBasePath} />;
+                }}
             />
-        );
-    }
-
-    return <ScanConfigsTablePage hasWriteAccessForCompliance={hasWriteAccessForCompliance} />;
+        </Switch>
+    );
 }
 
 export default ScanConfigsPage;

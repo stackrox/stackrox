@@ -48,13 +48,13 @@ describe('Compliance Dashboard', () => {
         visitComplianceEnhancedScanConfigsFromLeftNav();
 
         cy.location('pathname').should('eq', scanConfigsPath);
-        cy.title().should('match', getRegExpForTitleWithBranding('Compliance Scan Schedules'));
+        cy.title().should('match', getRegExpForTitleWithBranding('Scan schedules'));
     });
 
     it('should have expected elements on the scans page', () => {
         visitComplianceEnhancedScanConfigsFromLeftNav();
 
-        cy.title().should('match', getRegExpForTitleWithBranding('Compliance Scan Schedules'));
+        cy.title().should('match', getRegExpForTitleWithBranding('Scan schedules'));
 
         cy.get('th[scope="col"]:contains("Name")');
         cy.get('th[scope="col"]:contains("Schedule")');
