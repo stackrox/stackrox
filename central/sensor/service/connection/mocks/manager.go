@@ -96,6 +96,20 @@ func (mr *MockManagerMockRecorder) GetConnection(clusterID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnection", reflect.TypeOf((*MockManager)(nil).GetConnection), clusterID)
 }
 
+// GetConnectionPreference mocks base method.
+func (m *MockManager) GetConnectionPreference(clusterID string) connection.Preferences {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConnectionPreference", clusterID)
+	ret0, _ := ret[0].(connection.Preferences)
+	return ret0
+}
+
+// GetConnectionPreference indicates an expected call of GetConnectionPreference.
+func (mr *MockManagerMockRecorder) GetConnectionPreference(clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConnectionPreference", reflect.TypeOf((*MockManager)(nil).GetConnectionPreference), clusterID)
+}
+
 // HandleConnection mocks base method.
 func (m *MockManager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	m.ctrl.T.Helper()
