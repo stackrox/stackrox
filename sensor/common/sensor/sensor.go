@@ -383,10 +383,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
-	if features.SensorReconciliationOnReconnect.Enabled() {
-		s.reconcile.Store(true)
-	}
-
+	s.reconcile.Store(true)
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {

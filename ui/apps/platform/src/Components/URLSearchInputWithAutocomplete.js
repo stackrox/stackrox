@@ -18,16 +18,18 @@ const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
 const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
 // Render readonly input with placeholder instead of span to prevent insufficient color contrast.
-export const placeholderCreator = (placeholderText) => () =>
-    (
-        <span className="flex h-full items-center pointer-events-none">
-            <input
-                className="bg-base-100 text-base-600 absolute pf-u-w-100"
-                placeholder={placeholderText}
-                readOnly
-            />
-        </span>
-    );
+export const placeholderCreator = (placeholderText) =>
+    function Placeholder() {
+        return (
+            <span className="flex h-full items-center pointer-events-none">
+                <input
+                    className="bg-base-100 text-base-600 absolute pf-u-w-100"
+                    placeholder={placeholderText}
+                    readOnly
+                />
+            </span>
+        );
+    };
 
 const isCategoryChip = (value) => value.endsWith(':');
 

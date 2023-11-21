@@ -187,6 +187,11 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
                                 const cveURL = getEntityPagePath(
                                     'CVE',
                                     cve,
+                                    // TODO: (dv 2023-11-15)
+                                    //      We need to pass the appropriate request state here in order to link to the correct tab
+                                    //      This will change depending on what type of request we are looking at as well as
+                                    //      the state of the request
+                                    'OBSERVED',
                                     omitBy(cveURLQueryOptions, (value) => value === '')
                                 );
 

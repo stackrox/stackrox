@@ -23,8 +23,7 @@ ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
 ENV LANG=en_US.utf8
 
 COPY signatures/RPM-GPG-KEY-PGDG-13 /
-COPY scripts/docker-entrypoint.sh /usr/local/bin/
-COPY scripts/init-entrypoint.sh /usr/local/bin/
+COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
 RUN microdnf upgrade --nobest && \
@@ -45,8 +44,6 @@ RUN microdnf upgrade --nobest && \
     rpm -e --nodeps $(rpm -qa shadow-utils curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
-    chown postgres:postgres /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /usr/local/bin/docker-entrypoint.sh && \
     mkdir /docker-entrypoint-initdb.d
 
 STOPSIGNAL SIGINT

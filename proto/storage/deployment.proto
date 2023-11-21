@@ -72,9 +72,9 @@ message Container {
 
     ContainerImage image             = 3;
     SecurityContext security_context = 4;
-    repeated Volume volumes          = 5;
+    repeated Volume volumes          = 5 [(gogoproto.moretags) = 'sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"'];
     repeated PortConfig ports        = 6 [(gogoproto.moretags) = 'policy:",ignore" search:"-"']; // Policies use the port config on the top-level deployment.
-    repeated EmbeddedSecret secrets  = 7;
+    repeated EmbeddedSecret secrets  = 7 [(gogoproto.moretags) = 'sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"'];
     Resources resources              = 8;
 
     reserved 9; // previously instances
@@ -233,7 +233,7 @@ message ContainerConfig {
             UNKNOWN         = 6;
         }
     }
-    repeated EnvironmentConfig env  = 1;
+    repeated EnvironmentConfig env  = 1 [(gogoproto.moretags) = 'sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"'];
     repeated string command         = 2;
     repeated string args            = 3;
     string directory                = 4;

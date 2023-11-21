@@ -479,7 +479,7 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
     if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
             excludedDeploymentScopes.map(
-                (deployment) => ({ deployment } as PolicyDeploymentExclusion)
+                (deployment) => ({ deployment }) as PolicyDeploymentExclusion
             )
         );
     }
@@ -487,7 +487,7 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
     const { excludedImageNames } = policy;
     if (excludedImageNames && excludedImageNames.length > 0) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
-            excludedImageNames.map((name) => ({ image: { name } } as PolicyImageExclusion))
+            excludedImageNames.map((name) => ({ image: { name } }) as PolicyImageExclusion)
         );
     }
 

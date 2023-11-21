@@ -30,6 +30,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: ROX_TELEMETRY_STORAGE_KEY_V1
+              value: DISABLED
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH

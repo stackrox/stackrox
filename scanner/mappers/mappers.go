@@ -1,9 +1,10 @@
-package converters
+package mappers
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
@@ -21,6 +22,16 @@ var (
 		claircore.Medium:     v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 		claircore.High:       v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 		claircore.Critical:   v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+	}
+	// vulnNamePatterns is a prioritized list of regexes to match against
+	// vulnerability information to extract their ID.
+	vulnNamePatterns = []*regexp.Regexp{
+		regexp.MustCompile(`((RHSA|RHBA|RHEA)-\d{4}:\d+)|(ALAS\d*-\d{4}-\d+)`),
+		regexp.MustCompile(`CVE-\d{4}-\d+`),
+		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
+		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
+		// Catchall.
+		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
 )
 
@@ -261,7 +272,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
-			Name:               v.Name,
+			Name:               getVulnName(v),
 			Description:        v.Description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -274,6 +285,23 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// getVulnName returns the first vulnerability name that matches a known
+// vulnerability name pattern from the report, or the original name if none
+// found.
+func getVulnName(vuln *claircore.Vulnerability) string {
+	for _, p := range vulnNamePatterns {
+		v := p.FindString(vuln.Name)
+		if v != "" {
+			return v
+		}
+		v = p.FindString(vuln.Links)
+		if v != "" {
+			return v
+		}
+	}
+	return vuln.Name
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {

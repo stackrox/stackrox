@@ -44,6 +44,7 @@ import {
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
+    getStatusesForExceptionCount,
 } from '../searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
@@ -65,7 +66,7 @@ const summaryQuery = gql`
     }
 `;
 
-const vulnerabilityQuery = gql`
+export const deploymentVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${deploymentWithVulnerabilitiesFragment}
     query getCvesForDeployment(
@@ -123,10 +124,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         variables: {
             id: deploymentId,
             query,
-            statusesForExceptionCount:
-                currentVulnerabilityState === 'OBSERVED'
-                    ? ['PENDING']
-                    : ['APPROVED_PENDING_UPDATE'],
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
 
@@ -150,9 +148,15 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             id: string;
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
-    >(vulnerabilityQuery, {
-        variables: { id: deploymentId, query, pagination },
+    >(deploymentVulnerabilitiesQuery, {
+        variables: {
+            id: deploymentId,
+            query,
+            pagination,
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+        },
     });
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
@@ -183,7 +187,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox />
+                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         autocompleteSearchContext={{

@@ -74,6 +74,8 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
+        {{- /* If telemetry.enabled is true or null, configure the endpoint and
+               the key, if provided. */}}
         {{- if ._rox.central.telemetry.storage.endpoint }}
         - name: ROX_TELEMETRY_ENDPOINT
           value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
@@ -82,6 +84,12 @@ spec:
         - name: ROX_TELEMETRY_STORAGE_KEY_V1
           value: {{ ._rox.central.telemetry.storage.key | quote }}
         {{- end }}
+        {{- /* Otherwise... */}}
+        {{- else }}
+        {{- /* ... if telemetry.enabled is false, configure the key to disable
+               telemetry collection */}}
+        - name: ROX_TELEMETRY_STORAGE_KEY_V1
+          value: "DISABLED"
         {{- end }}
         - name: ROX_OFFLINE_MODE
           value: {{ ._rox.env.offlineMode | quote }}
@@ -159,6 +167,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
+        {{- if ._rox.env.openshift }}
+        - name: central-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+          readOnly: true
+        {{- end }}
         {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
         - name: central-encryption-key
@@ -237,6 +250,16 @@ spec:
         configMap:
           name: central-external-db
           optional: true
+      {{- if ._rox.env.openshift }}
+      - name: central-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: openshift
+              expirationSeconds: 3600
+      {{- end }}
       {{- if ._rox.central.notifierSecretsEncryption }}
       {{- if ._rox.central.notifierSecretsEncryption.enabled }}
       - name: central-encryption-key

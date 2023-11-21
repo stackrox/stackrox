@@ -19,3 +19,8 @@ func TxFromContext(ctx context.Context) (*Tx, bool) {
 	}
 	return obj.(*Tx), true
 }
+
+// HasTxInContext returns true if the tx is in the context
+func HasTxInContext(ctx context.Context) bool {
+	return ctx.Value(txContextKey{}) != nil
+}

@@ -64,14 +64,11 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		V:    []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
 
-	manifestDigest, err := createManifestDigest("/v4/containerimage/foobar")
-	s.NoError(err)
-
 	s.Run("when empty content is enable and empty contents then retrieve index report", func() {
 		ir := &claircore.IndexReport{}
 		s.indexerMock.
 			EXPECT().
-			GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
+			GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
 			Return(ir, true, nil)
 		s.matcherMock.
 			EXPECT().

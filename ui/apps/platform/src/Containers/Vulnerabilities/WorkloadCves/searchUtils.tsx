@@ -45,9 +45,10 @@ export function getOverviewCvesPath(workloadCvesSearch: WorkloadCvesSearch): str
 export function getEntityPagePath(
     workloadCveEntity: EntityTab,
     id: string,
+    vulnerabilityState: VulnerabilityState | undefined, // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     queryOptions?: qs.ParsedQs
 ): string {
-    const queryString = getQueryString(queryOptions);
+    const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
         case 'CVE':
             return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
@@ -92,13 +93,19 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
         cleanSearchFilter[key] = searchValueAsArray(rawSearchFilter[key]);
     });
 
-    cleanSearchFilter.Fixable = searchValueAsArray(rawSearchFilter.Fixable)
-        .filter(isFixableStatus)
-        .map(fixableStatusToFixability);
+    const fixable = searchValueAsArray(rawSearchFilter.Fixable);
 
-    cleanSearchFilter.Severity = searchValueAsArray(rawSearchFilter.Severity)
-        .filter(isVulnerabilitySeverityLabel)
-        .map(severityLabelToSeverity);
+    cleanSearchFilter.Fixable =
+        fixable.length > 0
+            ? fixable.filter(isFixableStatus).map(fixableStatusToFixability)
+            : undefined;
+
+    const severity = searchValueAsArray(rawSearchFilter.Severity);
+
+    cleanSearchFilter.Severity =
+        severity.length > 0
+            ? severity.filter(isVulnerabilitySeverityLabel).map(severityLabelToSeverity)
+            : undefined;
 
     return cleanSearchFilter;
 }
@@ -141,4 +148,16 @@ export function getVulnStateScopedQueryString(
         ...searchFilter,
         ...vulnerabilityStateFilter,
     });
+}
+
+/**
+ * Returns the statuses that should be used to query for exception counts given
+ * the current vulnerability state.
+ * @param vulnerabilityState
+ * @returns ‘PENDING’ if the vulnerability state is ‘OBSERVED’, otherwise ‘APPROVED_PENDING_UPDATE’
+ */
+export function getStatusesForExceptionCount(
+    vulnerabilityState: VulnerabilityState | undefined
+): string[] {
+    return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
 }

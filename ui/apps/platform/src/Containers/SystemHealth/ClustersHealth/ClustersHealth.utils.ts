@@ -66,8 +66,8 @@ export function getSensorUpgradeCounts(clusters: Cluster[]): ClusterStatusCounts
                     upgradeState?.type === 'current'
                         ? 'HEALTHY'
                         : upgradeState?.type === 'failure'
-                        ? 'UNHEALTHY'
-                        : 'DEGRADED';
+                          ? 'UNHEALTHY'
+                          : 'DEGRADED';
                 /* eslint-enable no-nested-ternary */
                 counts[key] += 1;
             }

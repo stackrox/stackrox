@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -454,9 +455,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
+		if !status.used {
+			flowMetrics.ExternalFlowCounter.Inc()
+		}
 		status.used = true
-
-		flowMetrics.ExternalFlowCounter.Inc()
 
 		var port uint16
 		if conn.incoming {
@@ -466,12 +468,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Fake a lookup result.
+			// Fake a lookup result. This shows "External Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
 					Entity:         networkgraph.InternetEntity(),
 					ContainerPorts: []uint16{port},
 				},
+			}
+			if conn.incoming {
+				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
+					"Marking it as 'External Entities' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)))
+			} else {
+				log.Debugf("Outgoing connection from container %s/%s to %s. "+
+					"Marking it as 'External Entities' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
 			}
 		} else {
 			lookupResults = []clusterentities.LookupResult{

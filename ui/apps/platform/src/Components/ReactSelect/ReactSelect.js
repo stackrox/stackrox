@@ -60,7 +60,7 @@ export const defaultSelectStyles = {
  *   3. value property expects only option value (not the whole option object with label and value)
  */
 function withAdjustedBehavior(SelectComponent) {
-    return class extends Component {
+    return class ReactSelectComponent extends Component {
         static propTypes = {
             /* Note: getOptionValue isn't fully supported by react-select Creatable component, it's recommended to use { label, value } options */
             getOptionValue: PropTypes.func,
@@ -197,6 +197,8 @@ function withAdjustedBehavior(SelectComponent) {
         };
 
         render() {
+            // disable because unused onChange might be specified for rest spread idiom.
+            /* eslint-disable no-unused-vars */
             const {
                 getOptionValue,
                 onChange,
@@ -210,6 +212,7 @@ function withAdjustedBehavior(SelectComponent) {
                 isDisabled,
                 ...rest
             } = this.props;
+            /* eslint-enable no-unused-vars */
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
             let mergedComponents = {
                 ...defaultComponents,

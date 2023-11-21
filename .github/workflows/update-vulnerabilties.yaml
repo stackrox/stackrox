@@ -1,7 +1,11 @@
 name: Update Vulnerabilities
 on:
   schedule:
-    - cron: "0 */3 * * *"
+  - cron: "0 */3 * * *"
+  push:
+    branches:
+    - scanner/*
+
 
 jobs:
   read-versions:
@@ -9,61 +13,61 @@ jobs:
     outputs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Generate matrix JSON
-        id: output-matrix
-        run: |
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
-          sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
-          echo "$EOF" >> "$GITHUB_OUTPUT"
+    - name: Generate matrix JSON
+      id: output-matrix
+      run: |
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
+        sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
 
   upload-vulnerabilities:
     needs: read-versions
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false #if one of the versions fails to get updated vulns, we still want to update for the other versions
-      max-parallel: 2 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
+      max-parallel: 1 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
       matrix:
         version: ${{ fromJson(needs.read-versions.outputs.matrix).versions }}
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
 
-      - name: Update vulnerabilities
-        continue-on-error: true
-        run: |
-          DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
-          FILE_NAME=$(basename "$DOWNLOAD_URL")
-          if ! wget "$DOWNLOAD_URL" -O "$FILE_NAME"; then
-            echo "Download failed. Terminating current matrix step."
-            exit 1
-          fi
+    - name: Update vulnerabilities
+      continue-on-error: true
+      run: |
+        DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_VERSION }}.zip"
+        FILE_NAME=$(basename "$DOWNLOAD_URL")
+        if ! wget "$DOWNLOAD_URL" -O "$FILE_NAME"; then
+          echo "Download failed. Terminating current matrix step."
+          exit 1
+        fi
 
-          unzip "$FILE_NAME" -d "${FILE_NAME}-dir"
-          cd "${FILE_NAME}-dir/stackrox-"*
-          if [ ! -d "scanner" ]; then
-            echo "Scanner directory not found. Terminating current matrix step."
-            exit 1
-          fi
+        unzip "$FILE_NAME" -d "${FILE_NAME}-dir"
+        cd "${FILE_NAME}-dir/stackrox-"*
+        if [ ! -d "scanner" ]; then
+          echo "Scanner directory not found. Terminating current matrix step."
+          exit 1
+        fi
 
-          cd scanner
-          go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
-          gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
+        cd scanner
+        go run cmd/updater/main.go -output-dir=${{ env.ROX_PRODUCT_VERSION }}
+        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://scanner-v4-test/vulnerability-bundles"
 
   send-notification:
     needs:
-      - read-versions
-      - upload-vulnerabilities
+    - read-versions
+    - upload-vulnerabilities
     runs-on: ubuntu-latest
     if: failure()
     steps:

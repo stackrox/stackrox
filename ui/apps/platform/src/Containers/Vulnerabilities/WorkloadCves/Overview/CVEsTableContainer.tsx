@@ -9,11 +9,16 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import {
+    getStatusesForExceptionCount,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
@@ -55,12 +60,13 @@ function CVEsTableContainer({
                 limit: perPage,
                 sortOption,
             },
-            statusesForExceptionCount:
-                vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'],
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
+
+    const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
@@ -86,6 +92,7 @@ function CVEsTableContainer({
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
+                        return refetchAll();
                     }}
                     onClose={closeModals}
                 />

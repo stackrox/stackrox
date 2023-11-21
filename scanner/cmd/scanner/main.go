@@ -30,13 +30,15 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Backends holds the potential engines the scanner
-// may use depending on the mode in which it is running.
+// Backends holds the backend engines the scanner may use depending on the
+// configuration and mode in which it is running.
 type Backends struct {
-	// Indexer is the indexing engine.
+	// Indexer is the indexing backend.
 	Indexer indexer.Indexer
-	// Matcher is the vulnerability matching engine.
+	// Matcher is the vulnerability matching backend.
 	Matcher matcher.Matcher
+	// RemoteIndexer is the indexing backend located in a remote scanner instance.
+	RemoteIndexer indexer.RemoteIndexer
 }
 
 func main() {
@@ -156,21 +158,13 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		},
 	})
 
-	// Create and register API services.
-	var srvs []grpc.APIService
-	if backends.Indexer != nil {
-		srvs = append(srvs, services.NewIndexerService(backends.Indexer))
-	}
-	if backends.Matcher != nil {
-		// nil indexer is ok, see implementation.
-		srvs = append(srvs, services.NewMatcherService(backends.Matcher, backends.Indexer))
-	}
-	grpcSrv.Register(srvs...)
+	// Register API services.
+	grpcSrv.Register(getServices(backends)...)
 
 	return grpcSrv, nil
 }
 
-// createAPIServices creates all backends.
+// createBackends creates the scanner backends.
 func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) {
 	var b Backends
 	var err error
@@ -185,6 +179,14 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	}
 	if cfg.Matcher.Enable {
 		zlog.Info(ctx).Msg("matcher is enabled")
+		if cfg.Matcher.RemoteIndexerEnabled {
+			// Create a remote indexer only if the matcher was configured to use one.
+			zlog.Info(ctx).Msg("remote indexer is enabled")
+			b.RemoteIndexer, err = indexer.NewRemoteIndexer(ctx, cfg.Matcher.IndexerAddr)
+			if err != nil {
+				return nil, fmt.Errorf("matcher: remote indexer: %w", err)
+			}
+		}
 		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher)
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
@@ -195,18 +197,43 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	return &b, nil
 }
 
+// getServices returns the list of the API services based on the backends provided.
+func getServices(b *Backends) []grpc.APIService {
+	var srvs []grpc.APIService
+	if b.Indexer != nil {
+		srvs = append(srvs, services.NewIndexerService(b.Indexer))
+	}
+	if b.Matcher != nil {
+		// Set the index report getter to the remote indexer if available, otherwise the
+		// local indexer. A nil getter is ok, see implementation.
+		var getter indexer.ReportGetter
+		getter = b.RemoteIndexer
+		if getter == nil {
+			getter = b.Indexer
+		}
+		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter))
+	}
+	return srvs
+}
+
 // Close closes all the backends used by the scanner.
 func (b *Backends) Close(ctx context.Context) {
-	if b.Matcher != nil {
-		err := b.Matcher.Close(ctx)
-		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing matcher")
-		}
+	type Closeable interface {
+		Close(context.Context) error
 	}
-	if b.Indexer != nil {
-		err := b.Indexer.Close(ctx)
-		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing indexer")
+	for _, backend := range []struct {
+		name     string
+		instance Closeable
+	}{
+		{"matcher", b.Matcher},
+		{"indexer", b.Indexer},
+		{"remote indexer", b.RemoteIndexer},
+	} {
+		if backend.instance != nil {
+			err := backend.instance.Close(ctx)
+			if err != nil {
+				zlog.Error(ctx).Err(err).Msgf("closing %s", backend.name)
+			}
 		}
 	}
 }

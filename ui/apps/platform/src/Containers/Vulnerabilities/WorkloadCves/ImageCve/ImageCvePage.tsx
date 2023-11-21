@@ -40,6 +40,7 @@ import {
 import {
     getHiddenSeverities,
     getOverviewCvesPath,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -216,6 +217,7 @@ function ImageCvePage() {
         {
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
@@ -225,6 +227,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Image',
     });
@@ -246,6 +249,7 @@ function ImageCvePage() {
             importantImageCountQuery: string;
             criticalImageCountQuery: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
@@ -259,6 +263,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Deployment',
     });
@@ -335,7 +340,11 @@ function ImageCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <VulnerabilityStateTabs titleOverrides={{ observed: 'Workloads' }} isBox />
+                <VulnerabilityStateTabs
+                    titleOverrides={{ observed: 'Workloads' }}
+                    isBox
+                    onChange={() => setPage(1)}
+                />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
                         <WorkloadTableToolbar

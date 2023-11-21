@@ -45,6 +45,7 @@ import { DynamicTableLabel } from '../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -58,7 +59,7 @@ import ExceptionRequestModal, {
 import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
 
-const imageVulnerabilitiesQuery = gql`
+export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
@@ -91,9 +92,14 @@ export type ImagePageVulnerabilitiesProps = {
         remote: string;
         tag: string;
     };
+    refetchAll: () => void;
 };
 
-function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabilitiesProps) {
+function ImagePageVulnerabilities({
+    imageId,
+    imageName,
+    refetchAll,
+}: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
 
@@ -135,10 +141,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             pagination,
-            statusesForExceptionCount:
-                currentVulnerabilityState === 'OBSERVED'
-                    ? ['PENDING']
-                    : ['APPROVED_PENDING_UPDATE'],
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
 
@@ -301,6 +304,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
+                        return refetchAll();
                     }}
                     onClose={closeModals}
                 />
@@ -319,7 +323,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox />
+                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         searchOptions={searchOptions}

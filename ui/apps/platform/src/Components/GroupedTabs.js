@@ -43,8 +43,8 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                     data-testid="grouped-tab"
                     className={`
                         ${!isDarkMode ? 'bg-primary-100' : 'bg-base-0'} ${
-                        idx !== 0 ? 'ml-4' : ''
-                    } flex flex-col relative justify-end`}
+                            idx !== 0 ? 'ml-4' : ''
+                        } flex flex-col relative justify-end`}
                     key={group}
                 >
                     {showGroupTab && (

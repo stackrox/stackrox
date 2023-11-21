@@ -138,7 +138,9 @@ function AffectedDeploymentsTable({
                                     direction={{ default: 'column' }}
                                     spaceItems={{ default: 'spaceItemsNone' }}
                                 >
-                                    <Link to={getEntityPagePath('Deployment', id)}>
+                                    <Link
+                                        to={getEntityPagePath('Deployment', id, vulnerabilityState)}
+                                    >
                                         <Truncate position="middle" content={name} />
                                     </Link>
                                 </Flex>

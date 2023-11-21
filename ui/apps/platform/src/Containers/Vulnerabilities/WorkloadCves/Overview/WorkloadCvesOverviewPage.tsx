@@ -193,7 +193,7 @@ function WorkloadCvesOverviewPage() {
                     component="div"
                     className="pf-u-pl-lg pf-u-background-color-100"
                 >
-                    <VulnerabilityStateTabs />
+                    <VulnerabilityStateTabs onChange={() => pagination.setPage(1)} />
                 </PageSection>
                 <PageSection isCenterAligned>
                     <Card>

@@ -47,6 +47,7 @@ import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
+import usePermissions from 'hooks/usePermissions';
 
 import asyncComponent from './AsyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
@@ -219,6 +220,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     useEffect(() => {
         analyticsPageVisit('Page Viewed', '', { path: location.pathname });
     }, [location, analyticsPageVisit]);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForInviting = hasReadWriteAccess('Access');
 
     const { isDarkMode } = useTheme();
 
@@ -244,7 +247,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
-                <InviteUsersModal />
+                {hasWriteAccessForInviting && <InviteUsersModal />}
             </ErrorBoundary>
         </div>
     );

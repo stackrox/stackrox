@@ -23,6 +23,8 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
+    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
+
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
             const newPolicySection = {
@@ -87,6 +89,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     }
 
     return (
+        // TODO: (vjw, 15-Nov-2023) remove the DndProvider after the PolicyCriteriaModal flag has been made unflagged
         <DndProvider backend={HTML5Backend}>
             <Flex fullWidth={{ default: 'fullWidth' }} className="pf-u-h-100">
                 <Flex
@@ -121,9 +124,11 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     </Flex>
                 </Flex>
                 <Divider component="div" isVertical />
-                <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
-                    <PolicyCriteriaKeys keys={filteredDescriptors} />
-                </Flex>
+                {!showPolicyCriteriaModal && (
+                    <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
+                        <PolicyCriteriaKeys keys={filteredDescriptors} />
+                    </Flex>
+                )}
             </Flex>
         </DndProvider>
     );

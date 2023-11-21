@@ -566,6 +566,69 @@ jobs:
         run: |
           make -C operator/ docker-push-index | cat
 
+  scan-go-binaries:
+    if: github.event_name == 'push'
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    needs:
+    - pre-build-cli
+    - pre-build-go-binaries
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: cli-build
+
+    - name: Unpack cli build
+      run: |
+        tar xvzf cli-build.tgz
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: go-binaries-build-amd64-default
+
+    - name: Unpack Go binaries build
+      run: |
+        tar xvzf go-binaries-build.tgz
+
+    - name: Scan
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        find bin/linux_amd64 -maxdepth 1 -type f -exec govulncheck -mode=binary -json {} \; | tee vulns.json
+        source "scripts/ci/lib.sh"
+        jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
+        do
+          id="${vulns[0]}"
+          summary="${vulns[1]}"
+          details="${vulns[2]}"
+          echo "$id" "$summary"
+          save_junit_failure "$id" "$summary" "$details"
+        done
+        grep -q finding vulns.json && (exit 1)
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      uses: ./.github/actions/junit2jira
+      if: always()
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
+
   scan-images-with-roxctl:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -620,6 +683,7 @@ jobs:
       - build-and-push-main
       - build-and-push-operator
       - scan-images-with-roxctl
+      - scan-go-binaries
     permissions:
       actions: read
     steps:

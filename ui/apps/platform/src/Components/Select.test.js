@@ -34,7 +34,7 @@ describe('Component:Select', () => {
         const firstOption = screen.getAllByRole('option')[0];
 
         // assert
-        expect(firstOption).toBeDefined();
+        expect(firstOption).toBeInTheDocument();
         expect(getNodeText(firstOption)).toEqual(initialPlaceholder);
     });
 

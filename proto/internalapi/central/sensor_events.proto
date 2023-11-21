@@ -63,7 +63,9 @@ message SensorEvent {
         uint64 sensor_hash                       = 26;
     }
 
-    message ResourcesSynced {}
+    message ResourcesSynced {
+        repeated string unchanged_ids = 1;
+    }
 
     oneof resource {
         storage.NetworkPolicy          network_policy     = 4;

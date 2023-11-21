@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { getProductBranding } from 'constants/productBranding';
 
 type PageTitleProps = {
-    title: string | null;
+    title: string | null | undefined;
 };
 
 const PageTitle = ({ title }: PageTitleProps): ReactElement => {

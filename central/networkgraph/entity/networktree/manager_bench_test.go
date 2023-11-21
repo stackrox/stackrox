@@ -13,9 +13,10 @@ import (
 func BenchmarkCreateNetworkTree(b *testing.B) {
 	ip := net.ParseIP("1.1.1.1")
 	entities := make([]*storage.NetworkEntityInfo, 10000)
-	for i := 0; i < 10000; i++ {
+	const c1 = "c1"
+	for i := range entities {
 		cidr := ip.String() + "/32"
-		id, _ := externalsrcs.NewClusterScopedID("c1", cidr)
+		id, _ := externalsrcs.NewClusterScopedID(c1, cidr)
 		e := &storage.NetworkEntityInfo{
 			Id:   id.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -31,23 +32,37 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 		entities[i] = e
 		ip = nextIP(ip)
 	}
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{c1: entities}
 
 	// Above data will create one of the worst possible tree since each CIDR is disjoint aka all nodes are leaves,
 	// hence resulting in comparison with every node for each new entry.
 
-	mgr := newManager()
-	b.Run("createNetworkTree", func(b *testing.B) {
-		err := mgr.Initialize(map[string][]*storage.NetworkEntityInfo{"c1": entities})
-		require.NoError(b, err)
+	b.Run("initialize", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			mgr := initialize(b, entitiesByCluster)
+			require.NotNil(b, mgr)
+		}
 	})
 
 	b.Run("insertIntoNetworkTree", func(b *testing.B) {
-		t := mgr.CreateNetworkTree(context.Background(), "c2")
-		require.NotNil(b, t)
-		for _, entity := range entities {
-			require.NoError(b, t.Insert(entity))
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			mgr := initialize(b, entitiesByCluster)
+			t := mgr.CreateNetworkTree(context.Background(), "c2")
+			b.StartTimer()
+
+			for _, entity := range entities {
+				require.NoError(b, t.Insert(entity))
+			}
 		}
 	})
+}
+
+func initialize(b *testing.B, entitiesByCluster map[string][]*storage.NetworkEntityInfo) Manager {
+	mgr := newManager()
+	err := mgr.Initialize(entitiesByCluster)
+	require.NoError(b, err)
+	return mgr
 }
 
 func nextIP(ip net.IP) net.IP {
