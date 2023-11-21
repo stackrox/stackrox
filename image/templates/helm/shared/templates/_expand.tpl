@@ -47,7 +47,7 @@
 {{ end }}
 
 {{/*
-  srox.expand $ $spec
+  srox._expandSingle $ $spec
 
   Parses and expands a "specification string" in the following way:
   - If $spec is a dictionary, return $spec rendered as a YAML.
