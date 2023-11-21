@@ -54,18 +54,18 @@ function mergeDefaultAndLocalFilters(
 ): SearchFilter {
     const filter = cloneDeep(searchFilter);
 
-    let Severity = filter.Severity ?? [];
-    let Fixable = filter.Fixable ?? [];
+    let SEVERITY = filter.SEVERITY ?? [];
+    let FIXABLE = filter.FIXABLE ?? [];
 
     // Remove existing applied filters that are no longer in the default filters, then
     // add the new default filters.
-    Severity = difference(Severity, oldDefaults.Severity, newDefaults.Severity);
-    Severity = Severity.concat(newDefaults.Severity);
+    SEVERITY = difference(SEVERITY, oldDefaults.SEVERITY, newDefaults.SEVERITY);
+    SEVERITY = SEVERITY.concat(newDefaults.SEVERITY);
 
-    Fixable = difference(Fixable, oldDefaults.Fixable, newDefaults.Fixable);
-    Fixable = Fixable.concat(newDefaults.Fixable);
+    FIXABLE = difference(FIXABLE, oldDefaults.FIXABLE, newDefaults.FIXABLE);
+    FIXABLE = FIXABLE.concat(newDefaults.FIXABLE);
 
-    return { ...filter, Severity, Fixable };
+    return { ...filter, SEVERITY, FIXABLE };
 }
 
 function WorkloadCvesOverviewPage() {
@@ -96,8 +96,8 @@ function WorkloadCvesOverviewPage() {
     const defaultStorage: VulnMgmtLocalStorage = {
         preferences: {
             defaultFilters: {
-                Severity: isFixabilityFiltersEnabled ? ['Critical', 'Important'] : [],
-                Fixable: isFixabilityFiltersEnabled ? ['Fixable'] : [],
+                SEVERITY: isFixabilityFiltersEnabled ? ['Critical', 'Important'] : [],
+                FIXABLE: isFixabilityFiltersEnabled ? ['Fixable'] : [],
             },
         },
     } as const;

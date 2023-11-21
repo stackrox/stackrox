@@ -31,14 +31,14 @@ import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import {
+    SearchOption,
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
     CLUSTER_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import {
     getHiddenSeverities,
     getOverviewCvesPath,
@@ -239,7 +239,7 @@ function ImageCvePage() {
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
         const filters = { ...querySearchFilter, CVE: [cveId] };
         if (severity) {
-            filters.Severity = [severity];
+            filters.SEVERITY = [severity];
         }
         return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
     }

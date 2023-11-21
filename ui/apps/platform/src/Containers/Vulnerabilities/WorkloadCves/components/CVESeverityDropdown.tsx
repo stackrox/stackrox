@@ -5,7 +5,7 @@ import { SearchFilter } from 'types/search';
 
 type CVESeverityDropdownProps = {
     searchFilter: SearchFilter;
-    onSelect: (filterType, e, selection) => void;
+    onSelect: (filterType: 'SEVERITY', checked: boolean, selection: string) => void;
 };
 
 function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProps) {
@@ -15,18 +15,16 @@ function CVESeverityDropdown({ searchFilter, onSelect }: CVESeverityDropdownProp
         setCveSeverityIsOpen(isOpen);
     }
 
-    function onCveSeveritySelect(e, selection) {
-        onSelect('Severity', e, selection);
-    }
-
     return (
         <Select
             variant="checkbox"
             aria-label="CVE severity filter menu items"
             toggleAriaLabel="CVE severity filter menu toggle"
             onToggle={onCveSeverityToggle}
-            onSelect={onCveSeveritySelect}
-            selections={searchFilter.Severity}
+            onSelect={(e, selection) => {
+                onSelect('SEVERITY', (e.target as HTMLInputElement).checked, selection as string);
+            }}
+            selections={searchFilter.SEVERITY}
             isOpen={cveSeverityIsOpen}
             placeholderText="CVE severity"
             className="cve-severity-select"
