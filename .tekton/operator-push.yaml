@@ -193,11 +193,10 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      # A shallow repo clone is sufficient for operator build.
       - name: depth
-        value: "1"
+        value: "0"
       - name: fetchTags
-        value: "false"
+        value: "true"
       runAfter:
       - init
       taskRef:
