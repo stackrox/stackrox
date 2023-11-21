@@ -33,7 +33,7 @@ export type RequestIDLinkProps = {
 };
 
 export function RequestIDLink({ id, name, context }: RequestIDLinkProps) {
-    const query = getQueryString({ context })
+    const query = getQueryString({ context });
     return <Link to={`${exceptionManagementPath}/requests/${id}${query}`}>{name}</Link>;
 }
 

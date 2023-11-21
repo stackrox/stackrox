@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -114,9 +114,7 @@ function ExceptionRequestDetailsPage() {
     const { status, cves, scope } = vulnerabilityException;
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
     const relevantCVEs =
-        selectedContext === 'CURRENT'
-            ? cves
-            : getCVEsForUpdatedRequest(vulnerabilityException);
+        selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
 
     return (
         <>

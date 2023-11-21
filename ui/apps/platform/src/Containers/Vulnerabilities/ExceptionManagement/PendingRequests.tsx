@@ -168,7 +168,8 @@ function PendingApprovals() {
                 <Tbody>
                     {data.map((exception) => {
                         const { id, name, status, requester, createdAt, scope } = exception;
-                        const context = status === 'APPROVED_PENDING_UPDATE' ? 'PENDING_UPDATE' : 'CURRENT';
+                        const context =
+                            status === 'APPROVED_PENDING_UPDATE' ? 'PENDING_UPDATE' : 'CURRENT';
                         return (
                             <Tr key={id}>
                                 <Td>
