@@ -79,6 +79,9 @@ build-d   := bin
 
 build-t      := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
 build-deps-t := deps
+ifdef NODEPS
+	build-deps-t :=
+endif
 
 .PHONY: build
 build: $(build-t)
