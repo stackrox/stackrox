@@ -54,13 +54,22 @@ type Store struct {
 	publicIPsListeners map[PublicIPsListener]struct{}
 
 	mutex sync.RWMutex
+
+	// entitiesMemorySize defines how many ticks old endpoint data should be remembered after removal request
+	// Set to 0 to disable memory
+	entitiesMemorySize uint16
 }
 
 // NewStore creates and returns a new store instance.
 // Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
 // `StoreInstance()`.
 func NewStore() *Store {
-	store := &Store{}
+	return NewStoreWithMemory(0)
+}
+
+// NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
+func NewStoreWithMemory(numTicks uint16) *Store {
+	store := &Store{entitiesMemorySize: numTicks}
 	store.initMaps()
 	return store
 }
@@ -132,6 +141,11 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	defer e.mutex.Unlock()
 	defer e.updateMetrics()
 	e.applyNoLock(updates, incremental)
+}
+
+// Tick informs the store that unit of time has passed
+func (e *Store) Tick() {
+	// FIXME: Implement expiration of historical endpoints
 }
 
 func (e *Store) purgeNoLock(deploymentID string) {

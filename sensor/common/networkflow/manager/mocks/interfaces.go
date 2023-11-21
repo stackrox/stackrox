@@ -82,6 +82,18 @@ func (mr *MockEntityStoreMockRecorder) RegisterPublicIPsListener(arg0 any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPublicIPsListener", reflect.TypeOf((*MockEntityStore)(nil).RegisterPublicIPsListener), arg0)
 }
 
+// Tick mocks base method.
+func (m *MockEntityStore) Tick() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Tick")
+}
+
+// Tick indicates an expected call of Tick.
+func (mr *MockEntityStoreMockRecorder) Tick() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tick", reflect.TypeOf((*MockEntityStore)(nil).Tick))
+}
+
 // UnregisterPublicIPsListener mocks base method.
 func (m *MockEntityStore) UnregisterPublicIPsListener(arg0 clusterentities.PublicIPsListener) bool {
 	m.ctrl.T.Helper()

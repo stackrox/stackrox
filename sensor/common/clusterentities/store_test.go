@@ -25,6 +25,7 @@ func buildEndpoint(ip string) net.NumericEndpoint {
 		L4Proto: net.TCP,
 	}
 }
+
 func entityUpdate(ip string, port uint16) *EntityData {
 	ed := &EntityData{}
 	ed.AddEndpoint(buildEndpoint(ip),
@@ -34,6 +35,89 @@ func entityUpdate(ip string, port uint16) *EntityData {
 		})
 	return ed
 }
+
+func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
+	type eUpdate struct {
+		containerID string
+		ipAddr      string
+		port        uint16
+		incremental bool
+	}
+	cases := map[string]struct {
+		numTicksToRemember uint16
+		entityUpdates      []eUpdate
+		endpointsAfterTick []map[string]bool
+	}{
+		"Memory disabled should forget 10.0.0.1 immediately": {
+			numTicksToRemember: 0,
+			entityUpdates: []eUpdate{
+				{
+					containerID: "pod1",
+					ipAddr:      "10.0.0.1",
+					port:        80,
+					incremental: true,
+				},
+				{
+					containerID: "pod1",
+					ipAddr:      "10.3.0.1",
+					port:        80,
+					incremental: false,
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": false, "10.3.0.1": true}, // pre-tick 1: both must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // tick 1: both must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only the younger IP must exist
+			},
+		},
+		"Old IPs should be gone after 1 tick": {
+			numTicksToRemember: 1,
+			entityUpdates: []eUpdate{
+				{
+					containerID: "pod1",
+					ipAddr:      "10.0.0.1",
+					port:        80,
+					incremental: true,
+				},
+				{
+					containerID: "pod1",
+					ipAddr:      "10.3.0.1",
+					port:        80,
+					incremental: false,
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": true, "10.3.0.1": true},  // pre-tick 1: both must exist
+				{"10.0.0.1": true, "10.3.0.1": true},  // tick 1: both must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only the younger IP must exist
+			},
+		},
+	}
+	for name, tCase := range cases {
+		s.Run(name, func() {
+			entityStore := NewStoreWithMemory(tCase.numTicksToRemember)
+			for _, update := range tCase.entityUpdates {
+				entityStore.Apply(map[string]*EntityData{
+					update.containerID: entityUpdate(update.ipAddr, update.port),
+				}, update.incremental)
+			}
+
+			for tickNo, expectation := range tCase.endpointsAfterTick {
+				for endpoint, shallExist := range expectation {
+					result := entityStore.LookupByEndpoint(buildEndpoint(endpoint))
+					if shallExist {
+						s.True(len(result) > 0, "Should find endpoint %q in tick %d", endpoint, tickNo)
+					} else {
+						s.True(len(result) == 0, "Should not find endpoint %q in tick %d", tickNo, endpoint)
+					}
+				}
+				entityStore.Tick()
+				s.T().Logf("Tick %d", tickNo+1)
+			}
+		})
+	}
+}
+
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 	entityStore := NewStore()
 	type eUpdate struct {
