@@ -297,6 +297,36 @@ We see in the diff that `status.unavailableReplicas` is `1` which means the cent
 The reason for that in turn is visible from the pod log collected by `kuttl`.
 In this example, the db password file is missing for some reason.
 
+#### Retrieving operator controller logs
+
+Usually if there is any error in the operator controller, it will be surfaced in the custom resource `.status`
+field. However, in some cases it may be useful to see the log.
+
+It is not fetched by the [kuttl collectors](#collector-ie-pod-log-outputs) because the operator controller manager
+pod runs in a separate namespace. However it is collected by the test job's log collection machinery.
+
+The easiest way to retrieve it for a failed test job run on OpenShift CI is to go to the
+"Additional StackRox e2e artifacts" bucket for the job by selecting the right link under the drop-down
+on the job status page:
+
+![authuser=N links under Additional StackRox e2e artifacts drop down on prow job page](img/prow-dropdown.png)
+
+... then follow the path `k8s-service-logs/stackrox-operator/pods` ...
+
+![path](img/path.png)
+
+... finally select the file ending with `-manager.log` ...
+
+![log](img/log.png)
+
+... and pick the "Authenticated URL" link to see it.
+
+![authenticated URL](img/auth.png)
+
+Then, scroll to the timestamp around the time of the failure reported by `kuttl`.
+
+### If everything fails
+
 If you still do not know what is going on, please do not hesitate to ask!
 Please do not ignore those failures - if something failed in these tests,
 it will most likely fail in some case for the end user too!
