@@ -139,7 +139,10 @@ module.exports = [
             // Allow chai-style expect(x).to.be.true chain.
             'no-unused-expressions': 'off',
 
-            // ...pluginCypress.configs.recommended.rules, // TODO fix errors
+            ...pluginCypress.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'cypress/no-unnecessary-waiting': 'off', // disable or fix about 8 errors
 
             // 'cypress/no-force': 'error', // TODO fix errors
 
