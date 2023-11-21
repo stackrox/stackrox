@@ -6,7 +6,6 @@ Run operator e2e tests in an OCP cluster.
 from runners import ClusterTestRunner
 from clusters import AutomationFlavorsCluster
 from ci_tests import OperatorE2eTest
-from clusters import OpenShiftScaleWorkersCluster
 from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
