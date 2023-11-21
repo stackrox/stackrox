@@ -35,12 +35,6 @@ fi
 
 tmp_remote_repository="$(mktemp -d)"
 
-gitbot(){
-	git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
-		-c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
-		"${@}"
-}
-
 gitbot clone "$remote_repository" "$tmp_remote_repository"
 
 branch_name="release/${version}"
