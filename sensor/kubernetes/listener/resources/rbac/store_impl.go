@@ -1,11 +1,9 @@
 package rbac
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	v1 "k8s.io/api/rbac/v1"
 )
@@ -33,28 +31,6 @@ func (rs *storeImpl) Cleanup() {
 	rs.bucketEvaluator = newBucketEvaluator(nil, nil)
 	rs.roles = make(map[namespacedRoleRef]namespacedRole)
 	rs.bindings = make(map[namespacedBindingID]*namespacedBinding)
-}
-
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (rs *storeImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType == deduper.TypeRole.String() {
-		for _, role := range rs.roles {
-			if role.latestUID == resID {
-				return "", nil
-			}
-		}
-		return resID, nil
-	} else if resType == deduper.TypeBinding.String() {
-		for _, binding := range rs.bindings {
-			if binding.bindingID == resID {
-				return "", nil
-			}
-		}
-		return resID, nil
-	}
-	return "", errors.Errorf("resource type %s not supported", resType)
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {
