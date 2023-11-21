@@ -21,7 +21,7 @@ function addPolicyField(fieldName) {
     // Note: we only use the first word of the field name to filter, because the PatternFly 4
     // TreeView search field has a bug where it doesn't accept spaces
     const firstWordOfFieldName = fieldName.split(' ')[0];
-    cy.log(firstWordOfFieldName);
+    // cy.log(firstWordOfFieldName);
     cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
     cy.get(
@@ -43,7 +43,7 @@ function assertPolicyFieldNotAvailable(fieldName) {
     // Note: we only use the first word of the field name to filter, because the PatternFly 4
     // TreeView search field has a bug where it doesn't accept spaces
     const firstWordOfFieldName = fieldName.split(' ')[0];
-    cy.log(firstWordOfFieldName);
+    // cy.log(firstWordOfFieldName);
     cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
     cy.get(
@@ -154,7 +154,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             goToPoliciesAndCloneToStep3();
 
             cy.get(selectors.step3.policySection.nameEditBtn).click();
-            cy.get(selectors.step3.policySection.nameInput).clear().type('New Section');
+            cy.get(selectors.step3.policySection.nameInput).clear();
+            cy.get(selectors.step3.policySection.nameInput).type('New Section');
             cy.get(selectors.step3.policySection.nameSaveBtn).click();
             cy.get(selectors.step3.policySection.name).contains('New Section');
         });

@@ -175,7 +175,8 @@ describe('Access Control Auth providers', () => {
             .should('not.have.attr', 'placeholder', '*****');
         cy.get(checkboxDoNotUseClientSecret).should('be.enabled').should('not.be.checked');
 
-        cy.get(inputIssuer).clear().type('irrelevant-updated');
+        cy.get(inputIssuer).clear();
+        cy.get(inputIssuer).type('irrelevant-updated');
 
         // Mock responses to save updated auth provider.
         const staticResponseMapForUpdatedAuthProvider = {

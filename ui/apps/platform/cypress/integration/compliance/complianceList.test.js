@@ -5,6 +5,7 @@ import {
     assertComplianceEntityPage,
     interactAndWaitForComplianceEntities,
     interactAndWaitForComplianceEntityInSidePanel,
+    triggerScan,
     visitComplianceEntities,
     visitComplianceStandard,
 } from './Compliance.helpers';
@@ -14,11 +15,14 @@ describe('Compliance entities list', () => {
     withAuth();
 
     it('should filter namespaces table with passing controls', () => {
+        triggerScan(); // in case complianceDashboard.test.js is skipped
         visitComplianceEntities('namespaces');
 
         interactAndWaitForComplianceEntities(() => {
-            cy.get(searchSelectors.input).type('Compliance State:').type('{enter}');
-            cy.get(searchSelectors.input).type('Pass').type('{enter}');
+            cy.get(searchSelectors.input).type('Compliance State:');
+            cy.get(searchSelectors.input).type('{enter}');
+            cy.get(searchSelectors.input).type('Pass');
+            cy.get(searchSelectors.input).type('{enter}');
         }, 'namespaces');
         cy.get('.rt-tbody .rt-tr').should('not.exist');
         cy.get('[data-testid="panel-header"]').should('contain', '0 namespaces');
@@ -28,8 +32,10 @@ describe('Compliance entities list', () => {
         visitComplianceEntities('namespaces');
 
         interactAndWaitForComplianceEntities(() => {
-            cy.get(searchSelectors.input).type('Compliance State:').type('{enter}');
-            cy.get(searchSelectors.input).type('Fail').type('{enter}');
+            cy.get(searchSelectors.input).type('Compliance State:');
+            cy.get(searchSelectors.input).type('{enter}');
+            cy.get(searchSelectors.input).type('Fail');
+            cy.get(searchSelectors.input).type('{enter}');
         }, 'namespaces');
         cy.get('.rt-tbody .rt-tr');
         cy.get('[data-testid="panel-header"]').should('contain', 'namespace');

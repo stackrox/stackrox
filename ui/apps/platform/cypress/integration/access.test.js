@@ -75,7 +75,8 @@ describe.skip('Access Control Page', () => {
             cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('not.be.disabled');
             cy.get(selectors.authProviders.clientSecretInput).should('not.be.disabled');
 
-            cy.get(selectors.input.issuer).clear().type('irrelevant-updated');
+            cy.get(selectors.input.issuer).clear();
+            cy.get(selectors.input.issuer).type('irrelevant-updated');
             cy.get(selectors.saveButton).click();
 
             cy.get(`${selectors.authProviderDetails.clientSecret}:contains("*****")`);
