@@ -115,19 +115,19 @@ func atomicWriteFile(filename string, bytes []byte, mode os.FileMode) error {
 
 	if _, err := tempFile.Write(bytes); err != nil {
 		_ = tempFile.Close()
-		return errors.Wrapf(err, "could not write to %s", tempName)
+		return errors.Wrapf(err, "could not write to %q", tempName)
 	}
 
 	if err := tempFile.Close(); err != nil {
-		return errors.Wrapf(err, "could not close %s", tempName)
+		return errors.Wrapf(err, "could not close %q", tempName)
 	}
 
 	if err := os.Chmod(tempName, mode); err != nil {
-		return errors.Wrapf(err, "could not chmod %s", tempName)
+		return errors.Wrapf(err, "could not chmod %q", tempName)
 	}
 
 	if _, err := os.Stat(tempName); err != nil {
-		return errors.Wrapf(err, "could not stat %s", tempName)
+		return errors.Wrapf(err, "could not stat %q", tempName)
 	}
 
 	if err = os.Rename(tempName, filename); err != nil {
