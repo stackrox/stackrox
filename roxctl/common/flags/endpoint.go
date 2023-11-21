@@ -76,8 +76,8 @@ func AddConnectionFlags(c *cobra.Command) {
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
 	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
 
-	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "k", false,
-		"Use the current kubeconfig context to connect to central via port-forwarding. "+
+	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "", false,
+		"Use the current kubeconfig context to connect to the central service via port-forwarding. "+
 			"Alternatively, set "+env.UseCurrentKubeContext.EnvVar()+" environment variable to true")
 	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, "endpoint")
 }
