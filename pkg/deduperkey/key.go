@@ -48,7 +48,7 @@ type Key struct {
 // String returns the string version of the key
 func (k *Key) String() string {
 	typ := stringutils.GetAfter(k.ResourceType.String(), "_")
-	return fmt.Sprintf("%s:%s", typ, k.ID)
+	return eventPkg.FormatKey(typ, k.ID)
 }
 
 // ParseKeySlice returns a list of Key objects from a list a string formatted keys. An error returned means that some

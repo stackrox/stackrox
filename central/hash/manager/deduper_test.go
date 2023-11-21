@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,8 +273,8 @@ func TestReconciliation(t *testing.T) {
 	deduper.MarkSuccessful(d2)
 	deduper.ProcessSync()
 	assert.Len(t, deduper.successfullyProcessed, 2)
-	assert.Contains(t, deduper.successfullyProcessed, getKey(d1))
-	assert.Contains(t, deduper.successfullyProcessed, getKey(d2))
+	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d1))
+	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d2))
 
 	// Values in successfully processed that should be removed
 	deduper.ShouldProcess(d3)
@@ -286,8 +287,8 @@ func TestReconciliation(t *testing.T) {
 	deduper.MarkSuccessful(d5)
 	deduper.ProcessSync()
 	assert.Len(t, deduper.successfullyProcessed, 2)
-	assert.Contains(t, deduper.successfullyProcessed, getKey(d4))
-	assert.Contains(t, deduper.successfullyProcessed, getKey(d5))
+	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d4))
+	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d5))
 
 	// Should clear out successfully processed
 	deduper.StartSync()
@@ -303,7 +304,7 @@ func TestReconciliation(t *testing.T) {
 	deduper.ShouldProcess(d1)
 	deduper.ProcessSync()
 	assert.Len(t, deduper.successfullyProcessed, 1)
-	assert.Contains(t, deduper.successfullyProcessed, getKey(d1))
+	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d1))
 
 	deduper.StartSync()
 	deduper.ProcessSync()

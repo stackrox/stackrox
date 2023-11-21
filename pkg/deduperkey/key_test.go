@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,26 +18,26 @@ const (
 
 var (
 	stateWithAll = map[string]uint64{
-		fmt.Sprintf("%s:%s", "NetworkPolicy", fixtureconsts.NetworkPolicy1):   stubHash,
-		fmt.Sprintf("%s:%s", "Deployment", fixtureconsts.Deployment1):         stubHash,
-		fmt.Sprintf("%s:%s", "Pod", fixtureconsts.PodUID1):                    stubHash,
-		fmt.Sprintf("%s:%s", "Namespace", fixtureconsts.Namespace1):           stubHash,
-		fmt.Sprintf("%s:%s", "Secret", fixtureconsts.ServiceAccount1):         stubHash,
-		fmt.Sprintf("%s:%s", "Node", fixtureconsts.Node1):                     stubHash,
-		fmt.Sprintf("%s:%s", "ServiceAccount", fixtureconsts.ServiceAccount1): stubHash,
-		fmt.Sprintf("%s:%s", "Role", fixtureconsts.Role1):                     stubHash,
-		fmt.Sprintf("%s:%s", "Binding", fixtureconsts.RoleBinding1):           stubHash,
-		fmt.Sprintf("%s:%s", "NodeInventory", stubID):                         stubHash,
-		fmt.Sprintf("%s:%s", "ProcessIndicator", stubID):                      stubHash,
-		fmt.Sprintf("%s:%s", "ProviderMetadata", stubID):                      stubHash,
-		fmt.Sprintf("%s:%s", "OrchestratorMetadata", stubID):                  stubHash,
-		fmt.Sprintf("%s:%s", "ImageIntegration", stubID):                      stubHash,
-		fmt.Sprintf("%s:%s", "ComplianceOperatorResult", stubID):              stubHash,
-		fmt.Sprintf("%s:%s", "ComplianceOperatorProfile", stubID):             stubHash,
-		fmt.Sprintf("%s:%s", "ComplianceOperatorRule", stubID):                stubHash,
-		fmt.Sprintf("%s:%s", "ComplianceOperatorScanSettingBinding", stubID):  stubHash,
-		fmt.Sprintf("%s:%s", "ComplianceOperatorScan", stubID):                stubHash,
-		fmt.Sprintf("%s:%s", "AlertResults", stubID):                          stubHash,
+		eventPkg.FormatKey("NetworkPolicy", fixtureconsts.NetworkPolicy1):   stubHash,
+		eventPkg.FormatKey("Deployment", fixtureconsts.Deployment1):         stubHash,
+		eventPkg.FormatKey("Pod", fixtureconsts.PodUID1):                    stubHash,
+		eventPkg.FormatKey("Namespace", fixtureconsts.Namespace1):           stubHash,
+		eventPkg.FormatKey("Secret", fixtureconsts.ServiceAccount1):         stubHash,
+		eventPkg.FormatKey("Node", fixtureconsts.Node1):                     stubHash,
+		eventPkg.FormatKey("ServiceAccount", fixtureconsts.ServiceAccount1): stubHash,
+		eventPkg.FormatKey("Role", fixtureconsts.Role1):                     stubHash,
+		eventPkg.FormatKey("Binding", fixtureconsts.RoleBinding1):           stubHash,
+		eventPkg.FormatKey("NodeInventory", stubID):                         stubHash,
+		eventPkg.FormatKey("ProcessIndicator", stubID):                      stubHash,
+		eventPkg.FormatKey("ProviderMetadata", stubID):                      stubHash,
+		eventPkg.FormatKey("OrchestratorMetadata", stubID):                  stubHash,
+		eventPkg.FormatKey("ImageIntegration", stubID):                      stubHash,
+		eventPkg.FormatKey("ComplianceOperatorResult", stubID):              stubHash,
+		eventPkg.FormatKey("ComplianceOperatorProfile", stubID):             stubHash,
+		eventPkg.FormatKey("ComplianceOperatorRule", stubID):                stubHash,
+		eventPkg.FormatKey("ComplianceOperatorScanSettingBinding", stubID):  stubHash,
+		eventPkg.FormatKey("ComplianceOperatorScan", stubID):                stubHash,
+		eventPkg.FormatKey("AlertResults", stubID):                          stubHash,
 	}
 	expectedStateWithAll = map[Key]uint64{
 		withKey(&central.SensorEvent_NetworkPolicy{}, fixtureconsts.NetworkPolicy1):   stubHash,
@@ -86,7 +87,7 @@ func (s *deduperKeySuite) Test_CopyState() {
 		},
 		"With malformed entry": {
 			inputState: map[string]uint64{
-				fmt.Sprintf("%s:%s", "Deployment", fixtureconsts.Deployment1):           stubHash,
+				eventPkg.FormatKey("Deployment", fixtureconsts.Deployment1):             stubHash,
 				fmt.Sprintf("%s_malformed_%s", "Deployment", fixtureconsts.Deployment1): stubHash,
 			},
 			expectedState: map[Key]uint64{
@@ -95,8 +96,8 @@ func (s *deduperKeySuite) Test_CopyState() {
 		},
 		"With invalid type entry": {
 			inputState: map[string]uint64{
-				fmt.Sprintf("%s:%s", "Deployment", fixtureconsts.Deployment1):  stubHash,
-				fmt.Sprintf("%s:%s", "InvalidType", fixtureconsts.Deployment1): stubHash,
+				eventPkg.FormatKey("Deployment", fixtureconsts.Deployment1):  stubHash,
+				eventPkg.FormatKey("InvalidType", fixtureconsts.Deployment1): stubHash,
 			},
 			expectedState: map[Key]uint64{
 				withKey(&central.SensorEvent_Deployment{}, fixtureconsts.Deployment1): stubHash,
