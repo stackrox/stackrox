@@ -127,7 +127,6 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 
 	var layers []*storage.ImageLayer
 	for _, h := range img.History {
-		// See github.com/moby/moby/image/image.go
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
 		layers = append(layers, &storage.ImageLayer{
 			Created:     protoconv.ConvertTimeToTimestampOrNow(h.Created),
