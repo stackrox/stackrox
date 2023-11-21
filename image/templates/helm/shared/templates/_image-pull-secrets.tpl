@@ -60,13 +60,26 @@
 
 {{ end }}
 
-{{ define "srox.configureImagePullSecretsForDockerRegistry" }}
+
+{{/*
+  srox.configureImagePullSecretsCreds $ $imagePullSecrets
+
+  Configures credentials for an image pull Secret.
+
+  Note: This function must be called late in srox.init, as we rely on "srox.configureImage" to collect the
+  set of all referenced images first.
+
+  If username was not set on the passed $imagePullSecrets, this function does nothing.
+
+  Otherwise, it sets a "_dockerAuths" field on the passed $imagePullSecrets to be a
+  map from registry URLs to settings that contain login credentials. The map
+  contains registries for all images passed so far to srox.configureImage invocations.
+*/}}
+
+{{ define "srox.configureImagePullSecretsCreds" }}
 {{ $ := index . 0 }}
 {{ $imagePullSecrets := index . 1 }}
 
-{{/* Setup Image Pull Secrets for Docker Registry.
-     Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
-     set of all referenced images first. */}}
 {{ if $imagePullSecrets._username }}
   {{ $dockerAuths := dict }}
   {{ range $image := keys $._rox._state.referencedImages }}

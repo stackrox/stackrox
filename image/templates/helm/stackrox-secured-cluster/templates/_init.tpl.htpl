@@ -261,8 +261,8 @@
     Post-processing steps.
    */}}
 
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.mainImagePullSecrets) }}
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.collectorImagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.mainImagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.collectorImagePullSecrets) }}
 
 {{ end }}
 

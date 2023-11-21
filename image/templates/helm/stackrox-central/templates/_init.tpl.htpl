@@ -317,7 +317,7 @@
 {{/* Setup Image Pull Secrets for Docker Registry.
      Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
      set of all referenced images first. */}}
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.imagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.imagePullSecrets) }}
 
 {{/* Final warnings based on state. */}}
 {{ if $._rox._state.customCertGen }}
