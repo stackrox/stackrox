@@ -23,11 +23,7 @@ import {
 import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import useModal from 'hooks/useModal';
 
-export type RequestContext =
-    | 'PENDING_REQUESTS'
-    | 'APPROVED_DEFERRALS'
-    | 'APPROVED_FALSE_POSITIVES'
-    | 'DENIED_REQUESTS';
+export type RequestContext = 'CURRENT' | 'PENDING_UPDATE';
 
 export type RequestIDLinkProps = {
     id: VulnerabilityException['id'];
@@ -56,7 +52,7 @@ export function getShouldUseUpdatedRequest(
 ): boolean {
     switch (exception.status) {
         case 'APPROVED_PENDING_UPDATE':
-            if (context === 'PENDING_REQUESTS') {
+            if (context === 'PENDING_UPDATE') {
                 if (isDeferralException(exception) && exception.deferralUpdate) {
                     return true;
                 }
@@ -176,9 +172,7 @@ export function RequestComment({ comment }: RequestCommentProps) {
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Text className="pf-u-font-weight-bold" component={TextVariants.p}>
-                    {comment.user.name}
-                </Text>
+                <Text className="pf-u-font-weight-bold">{comment.user.name}</Text>
                 <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
             </Flex>
             <FlexItem>{comment.message}</FlexItem>

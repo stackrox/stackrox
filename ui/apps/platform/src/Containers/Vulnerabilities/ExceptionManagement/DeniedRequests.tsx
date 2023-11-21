@@ -179,28 +179,19 @@ function DeniedRequests() {
                                     <Requester requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedAction
-                                        exception={exception}
-                                        context="DENIED_REQUESTS"
-                                    />
+                                    <RequestedAction exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <RequestCreatedAt createdAt={createdAt} />
                                 </Td>
                                 <Td>
-                                    <RequestExpires
-                                        exception={exception}
-                                        context="DENIED_REQUESTS"
-                                    />
+                                    <RequestExpires exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <RequestScope scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItems
-                                        exception={exception}
-                                        context="DENIED_REQUESTS"
-                                    />
+                                    <RequestedItems exception={exception} context="CURRENT" />
                                 </Td>
                             </Tr>
                         );

@@ -179,7 +179,7 @@ function PendingApprovals() {
                                 <Td>
                                     <RequestedAction
                                         exception={exception}
-                                        context="PENDING_REQUESTS"
+                                        context="PENDING_UPDATE"
                                     />
                                 </Td>
                                 <Td>
@@ -188,7 +188,7 @@ function PendingApprovals() {
                                 <Td>
                                     <RequestExpires
                                         exception={exception}
-                                        context="PENDING_REQUESTS"
+                                        context="PENDING_UPDATE"
                                     />
                                 </Td>
                                 <Td>
@@ -197,7 +197,7 @@ function PendingApprovals() {
                                 <Td>
                                     <RequestedItems
                                         exception={exception}
-                                        context="PENDING_REQUESTS"
+                                        context="PENDING_UPDATE"
                                     />
                                 </Td>
                             </Tr>
