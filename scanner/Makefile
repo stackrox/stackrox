@@ -37,6 +37,15 @@ GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
+DB_DOCKERBUILD_ARGS =
+ifeq ($(GOARCH),s390x)
+	DB_DOCKERBUILD_ARGS = \
+		--build-arg="RPMS_REGISTRY=quay.io" \
+		--build-arg="RPMS_BASE_IMAGE=centos/centos" \
+		--build-arg="RPMS_BASE_TAG=stream9" \
+		--build-arg="BASE_IMAGE=ubi9-minimal"
+endif
+
 # The namespace to use for targets that require it (E2E, certs, etc).
 SCANNER_NAMESPACE ?= stackrox
 
@@ -122,7 +131,7 @@ scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 	@echo "+ $@"
-	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
+	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##
