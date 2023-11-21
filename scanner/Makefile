@@ -79,9 +79,6 @@ build-d   := bin
 
 build-t      := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
 build-deps-t := deps
-ifdef NODEPS
-	build-deps-t :=
-endif
 
 .PHONY: build
 build: $(build-t)
@@ -92,8 +89,12 @@ clean-build:
 	$(SILENT)rm -rf bin/
 	$(SILENT)rm -f $(build-deps-t)
 
+BUILD_DEPS := $(build-deps-t)
+ifdef NODEPS
+	BUILD_DEPS :=
+endif
 .PHONY: $(build-t)
-$(build-t): $(build-deps-t)
+$(build-t): $(BUILD_DEPS)
 	@echo "+ $@"
 	$(build-cmd) -o $@ ./cmd/$(@F)
 
