@@ -3,6 +3,10 @@
 - **Author(s):** Yi Li <yli3@redhat.com>, J. Victor Martins <jvdm@sdf.org>
 - **Created:** [2023-09-11]
 
+## Status
+
+Updated by [#0005](0005-scannerv4-read-cvss-data.md).
+
 ## Context
 
 We are transitioning the StackRox Scanner to ClairCore as its primary scanning engine. To enrich vulnerabilities with CVSS information, ClairCore pulls CVSS scores from NVD during the Vulnerability Matching. However, Scanner V4 should not contact external endpoints other than registries and only contact Central for external data.
