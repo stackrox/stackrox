@@ -110,6 +110,10 @@ func TestCredentialManager(t *testing.T) {
 			},
 			expected: "",
 		},
+		"no secret": {
+			setupFn:  func(k8sClient *fake.Clientset) error { return nil },
+			expected: "",
+		},
 	}
 
 	for name, c := range cases {
@@ -118,11 +122,10 @@ func TestCredentialManager(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
 			manager := NewCredentialsManager(k8sClient, namespace, secretName)
-			err := manager.Start()
-			require.NoError(t, err)
+			manager.Start()
 			defer manager.Stop()
 
-			err = c.setupFn(k8sClient)
+			err := c.setupFn(k8sClient)
 			require.NoError(t, err)
 
 			// Assert that the secret data has been updated.
