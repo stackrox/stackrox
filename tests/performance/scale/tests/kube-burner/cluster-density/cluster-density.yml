@@ -3,10 +3,16 @@ global:
   gc: true
   indexerConfig:
     enabled: true
+    {{ if env "ELASTICSEARCH_URL" -}}
+    type: elastic  # "opensearch" can be used in kube-burner >=v1.6
+    esServers: [ {{ env "ELASTICSEARCH_URL" }} ]
+    defaultIndex: kube-burner
+    {{ else -}}
     type: local
     metricsDirectory: collected-metrics
     createTarball: true
     tarballName: collected-metrics.tar.gz
+    {{ end }}
   measurements: []
 jobs:
   - name: cluster-density

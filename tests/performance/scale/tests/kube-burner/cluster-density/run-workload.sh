@@ -61,7 +61,7 @@ function check_dependencies() {
 }
 
 function run_workload() {
-    # We have to export following variables for "envsubst"
+    # We have to export following variables for "env" function in golang template.
     export num_namespaces="${1:-100}"
     export num_deployments="${2:-5}"
     export num_pods="${3:-2}"
@@ -100,7 +100,8 @@ function run_workload() {
     local node_type
     node_type="$(oc get machines.machine.openshift.io --namespace openshift-machine-api | grep worker | tail -n 1 | awk '{print $3}')"
 
-    local run_uuid="node-${num_nodes}--${node_type}--dep-${num_deployments}--pod-${num_pods}--workload-${num_namespaces}--run-0"
+    local run_uuid
+    run_uuid="node-${num_nodes}--${node_type}--run-$(date +%s)"
 
     local metadata_path="user-metadata-${run_uuid}.yml"
 
@@ -125,8 +126,11 @@ function run_workload() {
         --user-metadata="${metadata_path}"
     echo "--- Done!"
 
-    echo "Move results to: ${run_uuid}.tar.gz"
-    mv collected-metrics.tar.gz "${run_uuid}.tar.gz"
+    # Support for local index.
+    if [[ -f "collected-metrics.tar.gz" ]]; then
+        echo "Move results to: ${run_uuid}.tar.gz"
+        mv "collected-metrics.tar.gz" "${run_uuid}.tar.gz"
+    fi
 }
 
 function main() {
