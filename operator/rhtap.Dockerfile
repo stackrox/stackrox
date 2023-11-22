@@ -23,8 +23,8 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 LABEL \
     com.redhat.component="rhacs-operator-container" \
     com.redhat.license_terms="https://www.redhat.com/agreements" \
-    description="TODO" \
-    io.k8s.description="TODO" \
+    description="Operator for Red Hat Advanced Cluster Security for Kubernetes" \
+    io.k8s.description="Operator for Red Hat Advanced Cluster Security for Kubernetes" \
     io.k8s.display-name="operator" \
     io.openshift.tags="rhacs,operator,stackrox" \
     maintainer="Red Hat, Inc." \
