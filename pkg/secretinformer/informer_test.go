@@ -105,6 +105,11 @@ func TestSecretInformer(t *testing.T) {
 			expectedOnDeleteCnt: 1,
 			expectedData:        secretData,
 		},
+		"no secret": {
+			setupFn: func(k8sClient *fake.Clientset) error {
+				return nil
+			},
+		},
 	}
 
 	for name, c := range cases {
