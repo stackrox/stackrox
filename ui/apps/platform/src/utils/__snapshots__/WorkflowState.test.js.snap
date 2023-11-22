@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER has trimmed stacks 1`] = `
-Array [
+[
   "CLUSTER CLUSTER-0 CLUSTER_CVE",
   "CLUSTER CLUSTER-0 DEPLOYMENT",
   "CLUSTER CLUSTER-0 DEPLOYMENT DEPLOYMENT-2 IMAGE",
@@ -109,7 +109,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER_CVE has trimmed stacks 1`] = `
-Array [
+[
   "CLUSTER_CVE CLUSTER_CVE-0 CLUSTER",
   "CLUSTER-2 DEPLOYMENT",
   "CLUSTER-2 IMAGE",
@@ -123,7 +123,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management DEPLOYMENT has trimmed stacks 1`] = `
-Array [
+[
   "DEPLOYMENT DEPLOYMENT-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 IMAGE",
@@ -156,7 +156,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE has trimmed stacks 1`] = `
-Array [
+[
   "IMAGE IMAGE-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
   "DEPLOYMENT-2 IMAGE_COMPONENT",
@@ -174,7 +174,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_COMPONENT has trimmed stacks 1`] = `
-Array [
+[
   "IMAGE_COMPONENT IMAGE_COMPONENT-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
   "DEPLOYMENT-2 IMAGE",
@@ -190,7 +190,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_CVE has trimmed stacks 1`] = `
-Array [
+[
   "IMAGE_CVE IMAGE_CVE-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
   "DEPLOYMENT-2 IMAGE",
@@ -206,7 +206,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management NAMESPACE has trimmed stacks 1`] = `
-Array [
+[
   "NAMESPACE NAMESPACE-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 DEPLOYMENT",
@@ -270,7 +270,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management NODE has trimmed stacks 1`] = `
-Array [
+[
   "NODE NODE-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
   "CLUSTER-2 DEPLOYMENT",
@@ -288,7 +288,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management NODE_COMPONENT has trimmed stacks 1`] = `
-Array [
+[
   "NODE_COMPONENT NODE_COMPONENT-0 NODE",
   "NODE-2 CLUSTER",
   "NODE-2 NODE_CVE",
@@ -298,7 +298,7 @@ Array [
 `;
 
 exports[`WorkflowState nav list-item-list for Vulnerability Management NODE_CVE has trimmed stacks 1`] = `
-Array [
+[
   "NODE_CVE NODE_CVE-0 NODE",
   "NODE-2 CLUSTER",
   "NODE-2 NODE_COMPONENT",
