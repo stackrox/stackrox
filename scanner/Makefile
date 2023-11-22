@@ -89,15 +89,15 @@ clean-build:
 	$(SILENT)rm -rf bin/
 	$(SILENT)rm -f $(build-deps-t)
 
-BUILD_DEPS := $(build-deps-t)
-ifdef NODEPS
-	BUILD_DEPS :=
-endif
 .PHONY: $(build-t)
-$(build-t): $(BUILD_DEPS)
+$(build-t): $(build-deps-t)
 	@echo "+ $@"
 	$(build-cmd) -o $@ ./cmd/$(@F)
 
+# Fetch and validate build dependencies unless NODEPS is defined.
+ifdef NODEPS
+.PHONY: $(build-deps-t)
+else
 $(build-deps-t): ../go.mod
 	@echo "+ $@"
 	$(SILENT)go mod tidy
@@ -109,6 +109,7 @@ ifdef CI
 endif
 	$(SILENT)go mod verify
 	$(SILENT)touch $@
+endif
 
 ############
 ## Images ##
