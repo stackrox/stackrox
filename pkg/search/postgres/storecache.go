@@ -152,7 +152,7 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	dbErr := c.underlyingStore.DeleteMany(ctx, identifiers)
 	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
 	c.cacheLock.Lock()
-	defer c.cacheLock.RUnlock()
+	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
