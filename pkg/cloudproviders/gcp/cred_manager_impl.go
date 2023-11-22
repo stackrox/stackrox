@@ -63,7 +63,7 @@ func (c *gcpCredentialsManagerImpl) Stop() {
 // GetCredentials returns GCP credentials based on the environment.
 //
 // The following sources are considered:
-//  1. Cloud credentials secret (stackrox/gcpCloudCredentials) containing the STS configuration
+//  1. Cloud credentials secret (stackrox/gcp-cloud-credentials) containing the STS configuration
 //     for federated workload identities. Ignored if the secret does not exist.
 //  2. The default GCP credentials chain based on the pod's environment and metadata.
 func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google.Credentials, error) {
