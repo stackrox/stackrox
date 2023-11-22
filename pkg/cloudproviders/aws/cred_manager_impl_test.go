@@ -23,7 +23,7 @@ const (
     web_identity_token_file: /var/run/secrets/openshift/serviceaccount/token`
 
 	namespace  = "stackrox"
-	secretName = "awsCloudCredentials"
+	secretName = "aws-cloud-credentials"
 )
 
 func TestCredentialManager(t *testing.T) {

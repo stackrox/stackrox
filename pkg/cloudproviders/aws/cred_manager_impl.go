@@ -83,7 +83,7 @@ func (c *awsCredentialsManagerImpl) Stop() {
 // NewSession returns an AWS session based on the environment.
 //
 // The following sources are considered:
-//  1. Cloud credentials secret (stackrox/awsCloudCredentials) containing the STS configuration
+//  1. Cloud credentials secret (stackrox/aws-cloud-credentials) containing the STS configuration
 //     for pod IAM roles. Ignored if the secret does not exist.
 //  2. The default AWS credentials chain based on the pod's environment and metadata.
 func (c *awsCredentialsManagerImpl) NewSession(cfgs ...*aws.Config) (*session.Session, error) {
