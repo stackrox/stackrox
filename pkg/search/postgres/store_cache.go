@@ -224,7 +224,6 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 // Get returns the object, if it exists from the store.
 func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
-	log.Infof("Getting item %q", id)
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Get)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
@@ -325,7 +324,6 @@ func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 }
 
 func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT) error) error {
-	log.Info("Walking Cache")
 	for _, obj := range c.cache {
 		if !c.isReadAllowed(ctx, obj) {
 			continue
@@ -381,7 +379,6 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 			scopeChecker = scopeChecker.ForClusterScopedObject(data)
 		}
 	}
-	log.Infof("IsReadAllowed for %s: %t", c.pkGetter(obj), scopeChecker.IsAllowed())
 	return scopeChecker.IsAllowed()
 }
 
