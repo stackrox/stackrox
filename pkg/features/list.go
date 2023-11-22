@@ -87,4 +87,7 @@ var (
 
 	// SecretFileSearch enables search on the file fields of secrets
 	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", true)
+
+	// CloudCredentials enables support for short-lived cloud credentials.
+	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
 )

@@ -354,7 +354,9 @@ func startServices() {
 		administrationEventHandler.Singleton().Start()
 	}
 
-	gcp.Singleton().Start()
+	if features.CloudCredentials.Enabled() {
+		gcp.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -885,7 +887,6 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
-		{obj: gcp.Singleton(), name: "GCP cloud credentials watcher"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -896,6 +897,10 @@ func waitForTerminationSignal() {
 
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
+	}
+
+	if features.CloudCredentials.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
 	}
 
 	var wg sync.WaitGroup
