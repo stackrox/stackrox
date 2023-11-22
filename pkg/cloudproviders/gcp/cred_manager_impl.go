@@ -15,16 +15,18 @@ const (
 )
 
 type gcpCredentialsManagerImpl struct {
-	informer  *secretinformer.SecretInformer
-	stsConfig []byte
-	mutex     sync.RWMutex
+	namespace  string
+	secretName string
+	informer   *secretinformer.SecretInformer
+	stsConfig  []byte
+	mutex      sync.RWMutex
 }
 
 var _ CredentialsManager = &gcpCredentialsManagerImpl{}
 
 // NewCredentialsManager creates a new GCP credential manager.
 func NewCredentialsManager(k8sClient kubernetes.Interface, namespace string, secretName string) *gcpCredentialsManagerImpl {
-	mgr := &gcpCredentialsManagerImpl{}
+	mgr := &gcpCredentialsManagerImpl{namespace: namespace, secretName: secretName}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
 		secretName,
@@ -41,7 +43,7 @@ func (c *gcpCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
 		c.stsConfig = []byte(stsConfig)
-		log.Infof("Updated GCP cloud credentials based on %s/%s", c.informer.Namespace, c.informer.SecretName)
+		log.Infof("Updated GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
 
@@ -49,7 +51,7 @@ func (c *gcpCredentialsManagerImpl) deleteSecret() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.stsConfig = []byte{}
-	log.Infof("Deleted GCP cloud credentials based on %s/%s", c.informer.Namespace, c.informer.SecretName)
+	log.Infof("Deleted GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 }
 
 func (c *gcpCredentialsManagerImpl) Start() error {
