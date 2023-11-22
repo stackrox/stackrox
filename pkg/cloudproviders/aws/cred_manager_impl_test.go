@@ -132,7 +132,7 @@ func TestCredentialManager(t *testing.T) {
 			assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 				manager.mutex.RLock()
 				defer manager.mutex.RUnlock()
-				assert.Equal(t, c.fileExists, manager.secretFound)
+				assert.Equal(t, c.fileExists, len(manager.stsConfig) > 0)
 				if c.fileExists {
 					stsConfig, err := os.ReadFile(manager.mirroredFileName)
 					assert.NoError(t, err)

@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"bytes"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,7 +22,7 @@ type awsCredentialsManagerImpl struct {
 	namespace        string
 	secretName       string
 	informer         *secretinformer.SecretInformer
-	secretFound      bool
+	stsConfig        []byte
 	mirroredFileName string
 	mutex            sync.RWMutex
 }
@@ -47,6 +48,7 @@ func newAWSCredentialsManagerImpl(
 	mgr := &awsCredentialsManagerImpl{
 		namespace:        namespace,
 		secretName:       secretName,
+		stsConfig:        []byte{},
 		mirroredFileName: mirroredFileName,
 	}
 	mgr.informer = secretinformer.NewSecretInformer(
@@ -69,7 +71,11 @@ func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
-		if err := mirrorToLocalFile([]byte(stsConfig), c.mirroredFileName); err != nil {
+		if bytes.Equal(c.stsConfig, stsConfig) {
+			return
+		}
+
+		if err := mirrorToLocalFile(stsConfig, c.mirroredFileName); err != nil {
 			log.Errorf(
 				"Failed to mirror AWS cloud credential file for %q for %s/%s: ",
 				c.mirroredFileName,
@@ -77,10 +83,10 @@ func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 				c.secretName,
 				err,
 			)
-			c.secretFound = false
+			c.stsConfig = []byte{}
 			return
 		}
-		c.secretFound = true
+		c.stsConfig = stsConfig
 		log.Infof("Updated AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
@@ -88,9 +94,16 @@ func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 func (c *awsCredentialsManagerImpl) deleteSecret() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.secretFound = false
-	if err := os.Remove(c.mirroredFileName); err != nil {
-		log.Errorf("Could not remove mirrored credentials file %q", c.mirroredFileName)
+	c.stsConfig = []byte{}
+	if err := os.Remove(c.mirroredFileName); err != nil && !os.IsNotExist(err) {
+		log.Errorf(
+			"Could not remove mirrored credentials file %q for %s/%s: ",
+			c.mirroredFileName,
+			c.namespace,
+			c.secretName,
+			err,
+		)
+		return
 	}
 	log.Infof("Deleted AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 }
@@ -103,7 +116,7 @@ func (c *awsCredentialsManagerImpl) Start() {
 
 func (c *awsCredentialsManagerImpl) Stop() {
 	c.informer.Stop()
-	if err := os.Remove(c.mirroredFileName); err != nil {
+	if err := os.Remove(c.mirroredFileName); err != nil && !os.IsNotExist(err) {
 		log.Errorf(
 			"Could not remove mirrored credentials file %q for %s/%s: ",
 			c.mirroredFileName,
@@ -126,7 +139,7 @@ func (c *awsCredentialsManagerImpl) NewSession(cfgs ...*aws.Config) (*session.Se
 
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	if c.secretFound {
+	if len(c.stsConfig) > 0 {
 		opts.SharedConfigState = session.SharedConfigEnable
 		opts.SharedConfigFiles = []string{c.mirroredFileName}
 	}
