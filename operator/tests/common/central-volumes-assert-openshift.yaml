@@ -59,6 +59,8 @@ spec:
           name: central-external-db-volume
         - name: central-bound-sa-token
           mountPath: /var/run/secrets/openshift/serviceaccount
+        - mountPath: /run/secrets/stackrox.io/monitoring-tls
+          name: monitoring-tls
           readOnly: true
         - mountPath: /etc/pki/injected-ca-trust/
           name: trusted-ca-volume
@@ -136,6 +138,11 @@ spec:
               path: token
       - name: stackrox-db
         emptyDir: {}
+      - name: monitoring-tls
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: central-monitoring-tls
       - configMap:
           defaultMode: 420
           items:

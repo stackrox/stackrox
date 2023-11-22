@@ -4,9 +4,3 @@ metadata:
   name: stackrox-central-services
   annotations:
     platform.stackrox.io/obsolete-central-pvc: "true"
-# The disable below is only here so that we can reuse the volume list assert files in this step.
-# TODO(ROX-20649): untangle the coupling between this test and monitoring.
-spec:
-  monitoring:
-    openshift:
-      enabled: false
