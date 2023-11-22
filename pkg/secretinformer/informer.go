@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 )
 
 const resyncTime = 10 * time.Minute
@@ -23,6 +24,8 @@ type SecretInformer struct {
 	onDeleteFn func()
 	stopCh     chan struct{}
 }
+
+var _ cache.ResourceEventHandler = &SecretInformer{}
 
 // NewSecretInformer creates a new secret informer.
 func NewSecretInformer(
