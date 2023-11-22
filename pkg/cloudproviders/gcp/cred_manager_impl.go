@@ -70,7 +70,7 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	if len(c.stsConfig) > 0 {
-		return google.CredentialsFromJSONWithParams(ctx, c.stsConfig, google.CredentialsParams{})
+		return google.CredentialsFromJSON(ctx, c.stsConfig, "https://www.googleapis.com/auth/cloud-platform")
 	}
 	return google.FindDefaultCredentials(ctx)
 }
