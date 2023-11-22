@@ -224,6 +224,7 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 
 // Get returns the object, if it exists from the store.
 func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
+	log.Infof("Getting item %q", id)
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Get)
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()

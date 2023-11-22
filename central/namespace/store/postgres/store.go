@@ -65,6 +65,8 @@ func New(db postgres.DB) Store {
 		copyFromNamespaces,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
+
 		isUpsertAllowed,
 		targetResource,
 	)
@@ -83,6 +85,11 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if scopeChecker.IsAllowed() {
