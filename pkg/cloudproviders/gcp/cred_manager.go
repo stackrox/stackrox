@@ -8,7 +8,7 @@ import (
 
 // CredentialsManager manages GCP credentials based on the environment.
 type CredentialsManager interface {
-	Start() error
+	Start()
 	Stop()
 	GetCredentials(ctx context.Context) (*google.Credentials, error)
 }
@@ -19,7 +19,7 @@ type DefaultCredentialsManager struct{}
 var _ CredentialsManager = &DefaultCredentialsManager{}
 
 // Start is a dummy function to fulfil the interface.
-func (c *DefaultCredentialsManager) Start() error { return nil }
+func (c *DefaultCredentialsManager) Start() {}
 
 // Stop is a dummy function to fulfil the interface.
 func (c *DefaultCredentialsManager) Stop() {}
