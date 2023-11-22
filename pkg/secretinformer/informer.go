@@ -15,8 +15,8 @@ const resyncTime = 10 * time.Minute
 
 // SecretInformer is a convenience wrapper around a Kubernetes informer for a specific secret.
 type SecretInformer struct {
-	Namespace  string
-	SecretName string
+	namespace  string
+	secretName string
 
 	k8sClient  kubernetes.Interface
 	onAddFn    func(*v1.Secret)
@@ -29,16 +29,16 @@ var _ cache.ResourceEventHandler = &SecretInformer{}
 
 // NewSecretInformer creates a new secret informer.
 func NewSecretInformer(
-	Namespace string,
-	SecretName string,
+	namespace string,
+	secretName string,
 	k8sClient kubernetes.Interface,
 	onAddFn func(*v1.Secret),
 	onUpdateFn func(*v1.Secret),
 	onDeleteFn func(),
 ) *SecretInformer {
 	return &SecretInformer{
-		Namespace:  Namespace,
-		SecretName: SecretName,
+		namespace:  namespace,
+		secretName: secretName,
 		k8sClient:  k8sClient,
 		onAddFn:    onAddFn,
 		onUpdateFn: onUpdateFn,
@@ -49,9 +49,9 @@ func NewSecretInformer(
 
 // Start initiates the secret informer loop.
 func (c *SecretInformer) Start() error {
-	nsOption := informers.WithNamespace(c.Namespace)
+	nsOption := informers.WithNamespace(c.namespace)
 	labelOption := informers.WithTweakListOptions(func(opts *metav1.ListOptions) {
-		opts.FieldSelector = "metadata.name=" + c.SecretName
+		opts.FieldSelector = "metadata.name=" + c.secretName
 	})
 	sif := informers.NewSharedInformerFactoryWithOptions(c.k8sClient, resyncTime, nsOption, labelOption)
 
