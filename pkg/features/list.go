@@ -93,4 +93,7 @@ var (
 
 	// ScannerV4 enables various capabilities associated with ACS + Clair consolidated scanner.
 	ScannerV4 = registerUnchangeableFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4", true)
+
+	// CloudCredentials enables support for short-lived cloud credentials.
+	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
 )
