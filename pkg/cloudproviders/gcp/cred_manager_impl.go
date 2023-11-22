@@ -26,7 +26,7 @@ var _ CredentialsManager = &gcpCredentialsManagerImpl{}
 
 // NewCredentialsManager creates a new GCP credential manager.
 func NewCredentialsManager(k8sClient kubernetes.Interface, namespace string, secretName string) *gcpCredentialsManagerImpl {
-	mgr := &gcpCredentialsManagerImpl{namespace: namespace, secretName: secretName}
+	mgr := &gcpCredentialsManagerImpl{namespace: namespace, secretName: secretName, stsConfig: []byte{}}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
 		secretName,
