@@ -21,13 +21,13 @@ func Singleton() aws.CredentialsManager {
 	once.Do(func() {
 		restCfg, err := k8sutil.GetK8sInClusterConfig()
 		if err != nil {
-			log.Error("Could create AWS credentials manager. Continuing with default credentials chain: ", err)
+			log.Error("Could not create AWS credentials manager. Continuing with default credentials chain: ", err)
 			manager = &aws.DefaultCredentialsManager{}
 			return
 		}
 		k8sClient, err := kubernetes.NewForConfig(restCfg)
 		if err != nil {
-			log.Error("Could create AWS credentials manager. Continuing with default credentials chain: ", err)
+			log.Error("Could not create AWS credentials manager. Continuing with default credentials chain: ", err)
 			manager = &aws.DefaultCredentialsManager{}
 			return
 		}

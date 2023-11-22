@@ -34,6 +34,15 @@ func NewCredentialsManager(
 	namespace string,
 	secretName string,
 	mirroredFileName string,
+) CredentialsManager {
+	return newAWSCredentialsManagerImpl(k8sClient, namespace, secretName, mirroredFileName)
+}
+
+func newAWSCredentialsManagerImpl(
+	k8sClient kubernetes.Interface,
+	namespace string,
+	secretName string,
+	mirroredFileName string,
 ) *awsCredentialsManagerImpl {
 	mgr := &awsCredentialsManagerImpl{
 		namespace:        namespace,
@@ -75,14 +84,16 @@ func (c *awsCredentialsManagerImpl) deleteSecret() {
 	log.Infof("Deleted AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 }
 
-func (c *awsCredentialsManagerImpl) Start() error {
-	return c.informer.Start()
+func (c *awsCredentialsManagerImpl) Start() {
+	if err := c.informer.Start(); err != nil {
+		log.Error("Failed to start AWS cloud credentials manager: ", err)
+	}
 }
 
 func (c *awsCredentialsManagerImpl) Stop() {
 	c.informer.Stop()
 	if err := os.Remove(c.mirroredFileName); err != nil {
-		log.Errorf("Could not remove mirrored credentials file %q", c.mirroredFileName)
+		log.Errorf("Could not remove mirrored credentials file %q for %s/%s: ", c.mirroredFileName, c.namespace, c.secretName, err)
 	}
 }
 

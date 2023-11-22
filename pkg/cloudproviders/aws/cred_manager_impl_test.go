@@ -109,6 +109,9 @@ func TestCredentialManager(t *testing.T) {
 			},
 			fileExists: false,
 		},
+		"no secret": {
+			setupFn: func(k8sClient *fake.Clientset) error { return nil },
+		},
 	}
 
 	for name, c := range cases {
@@ -118,12 +121,11 @@ func TestCredentialManager(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
 			// Randomize file name to make sure test runs don't interfere with each other.
 			fileName := fmt.Sprintf("%s-%d", secretName, rand.Int())
-			manager := NewCredentialsManager(k8sClient, namespace, secretName, fileName)
-			err := manager.Start()
-			require.NoError(t, err)
+			manager := newAWSCredentialsManagerImpl(k8sClient, namespace, secretName, fileName)
+			manager.Start()
 			defer manager.Stop()
 
-			err = c.setupFn(k8sClient)
+			err := c.setupFn(k8sClient)
 			require.NoError(t, err)
 
 			// Assert that the secret data has been updated.

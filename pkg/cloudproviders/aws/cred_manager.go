@@ -7,7 +7,7 @@ import (
 
 // CredentialsManager manages AWS credentials based on the environment.
 type CredentialsManager interface {
-	Start() error
+	Start()
 	Stop()
 	NewSession(cfgs ...*aws.Config) (*session.Session, error)
 }
@@ -18,7 +18,7 @@ type DefaultCredentialsManager struct{}
 var _ CredentialsManager = &DefaultCredentialsManager{}
 
 // Start is a dummy function to fulfil the interface.
-func (c *DefaultCredentialsManager) Start() error { return nil }
+func (c *DefaultCredentialsManager) Start() {}
 
 // Stop is a dummy function to fulfil the interface.
 func (c *DefaultCredentialsManager) Stop() {}
