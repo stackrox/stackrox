@@ -18,6 +18,8 @@ const (
 )
 
 type awsCredentialsManagerImpl struct {
+	namespace        string
+	secretName       string
 	informer         *secretinformer.SecretInformer
 	secretFound      bool
 	mirroredFileName string
@@ -33,7 +35,11 @@ func NewCredentialsManager(
 	secretName string,
 	mirroredFileName string,
 ) *awsCredentialsManagerImpl {
-	mgr := &awsCredentialsManagerImpl{mirroredFileName: mirroredFileName}
+	mgr := &awsCredentialsManagerImpl{
+		namespace:        namespace,
+		secretName:       secretName,
+		mirroredFileName: mirroredFileName,
+	}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
 		secretName,
@@ -55,7 +61,7 @@ func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 			return
 		}
 		c.secretFound = true
-		log.Infof("Updated AWS cloud credentials based on %s/%s", c.informer.Namespace, c.informer.SecretName)
+		log.Infof("Updated AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
 
@@ -66,7 +72,7 @@ func (c *awsCredentialsManagerImpl) deleteSecret() {
 	if err := os.Remove(c.mirroredFileName); err != nil {
 		log.Errorf("Could not remove mirrored credentials file %q", c.mirroredFileName)
 	}
-	log.Infof("Deleted AWS cloud credentials based on %s/%s", c.informer.Namespace, c.informer.SecretName)
+	log.Infof("Deleted AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 }
 
 func (c *awsCredentialsManagerImpl) Start() error {
