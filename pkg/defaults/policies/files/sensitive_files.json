@@ -267,6 +267,14 @@
           "namespace": "openshift-machine-config-operator"
         }
       }
+    },
+    {
+      "name": "Don't alert on openshift-logging namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-logging"
+        }
+      }
     }
   ],
   "severity": "MEDIUM_SEVERITY",
