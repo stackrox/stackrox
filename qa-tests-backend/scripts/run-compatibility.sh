@@ -78,16 +78,16 @@ compatibility_test() {
     make -C qa-tests-backend compatibility-test || touch FAIL
 
     update_junit_prefix_with_central_and_sensor_version
-    if [ "$?" -ne 0 ]; then
+    if [ ! "$?" ]; then
         die "compatibility-test failed to shorten central or sensor tags"
     fi
 
-    short_central_tag="$(shorten_tag ${CENTRAL_CHART_VERSION_OVERRIDE})"
-    if [ "$?" -ne 0 ]; then
+    short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
+    if [ ! "$?" ]; then
         die "compatibility-test failed to shorten central tag"
     fi
     short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
-    if [ "$?" -ne 0 ]; then
+    if [ ! "$?" ]; then
         die "compatibility-test failed to shorten sensor tag"
     fi
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
@@ -96,11 +96,11 @@ compatibility_test() {
 
 update_junit_prefix_with_central_and_sensor_version() {
     short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
-    if [ "$?" -ne 0 ]; then
+    if [ ! "$?" ]; then
         die "update_junit_prefix_with_central_and_sensor_version failed to shorten central tag"
     fi
     short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
-    if [ "$?" -ne 0 ]; then
+    if [ ! "$?" ]; then
         die "update_junit_prefix_with_central_and_sensor_version failed to shorten sensor tag"
     fi
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
