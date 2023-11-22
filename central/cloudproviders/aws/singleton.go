@@ -35,7 +35,6 @@ func Singleton() aws.CredentialsManager {
 			k8sClient,
 			env.Namespace.Setting(),
 			env.AWSCloudCredentialsSecret.Setting(),
-			"mirrored-awsCloudCredentials",
 		)
 	})
 	return manager

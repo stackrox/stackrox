@@ -2,6 +2,7 @@ package aws
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,7 +24,7 @@ type awsCredentialsManagerImpl struct {
 	secretName       string
 	informer         *secretinformer.SecretInformer
 	stsConfig        []byte
-	mirroredFileName string
+	mirroredFilename string
 	mutex            sync.RWMutex
 }
 
@@ -34,22 +35,19 @@ func NewCredentialsManager(
 	k8sClient kubernetes.Interface,
 	namespace string,
 	secretName string,
-	mirroredFileName string,
 ) CredentialsManager {
-	return newAWSCredentialsManagerImpl(k8sClient, namespace, secretName, mirroredFileName)
+	return newAWSCredentialsManagerImpl(k8sClient, namespace, secretName)
 }
 
 func newAWSCredentialsManagerImpl(
 	k8sClient kubernetes.Interface,
 	namespace string,
 	secretName string,
-	mirroredFileName string,
 ) *awsCredentialsManagerImpl {
 	mgr := &awsCredentialsManagerImpl{
-		namespace:        namespace,
-		secretName:       secretName,
-		stsConfig:        []byte{},
-		mirroredFileName: mirroredFileName,
+		namespace:  namespace,
+		secretName: secretName,
+		stsConfig:  []byte{},
 	}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
@@ -75,18 +73,21 @@ func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 			return
 		}
 
-		if err := mirrorToLocalFile(stsConfig, c.mirroredFileName); err != nil {
+		filename, err := mirrorToLocalFile(stsConfig, c.secretName)
+		if err != nil {
 			log.Errorf(
 				"Failed to mirror AWS cloud credential file for %q for %s/%s: ",
-				c.mirroredFileName,
+				c.mirroredFilename,
 				c.namespace,
 				c.secretName,
 				err,
 			)
 			c.stsConfig = []byte{}
+			c.mirroredFilename = ""
 			return
 		}
 		c.stsConfig = stsConfig
+		c.mirroredFilename = filename
 		log.Infof("Updated AWS cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
@@ -95,10 +96,10 @@ func (c *awsCredentialsManagerImpl) deleteSecret() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.stsConfig = []byte{}
-	if err := os.Remove(c.mirroredFileName); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(c.mirroredFilename); err != nil && !os.IsNotExist(err) {
 		log.Errorf(
 			"Could not remove mirrored credentials file %q for %s/%s: ",
-			c.mirroredFileName,
+			c.mirroredFilename,
 			c.namespace,
 			c.secretName,
 			err,
@@ -116,15 +117,7 @@ func (c *awsCredentialsManagerImpl) Start() {
 
 func (c *awsCredentialsManagerImpl) Stop() {
 	c.informer.Stop()
-	if err := os.Remove(c.mirroredFileName); err != nil && !os.IsNotExist(err) {
-		log.Errorf(
-			"Could not remove mirrored credentials file %q for %s/%s: ",
-			c.mirroredFileName,
-			c.namespace,
-			c.secretName,
-			err,
-		)
-	}
+	c.deleteSecret()
 }
 
 // NewSession returns an AWS session based on the environment.
@@ -139,23 +132,23 @@ func (c *awsCredentialsManagerImpl) NewSession(cfgs ...*aws.Config) (*session.Se
 
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	if len(c.stsConfig) > 0 {
+	if len(c.mirroredFilename) > 0 {
 		opts.SharedConfigState = session.SharedConfigEnable
-		opts.SharedConfigFiles = []string{c.mirroredFileName}
+		opts.SharedConfigFiles = []string{c.mirroredFilename}
 	}
 
 	return session.NewSessionWithOptions(opts)
 }
 
-func mirrorToLocalFile(data []byte, filename string) error {
-	file, err := os.Create(filename)
+func mirrorToLocalFile(data []byte, filename string) (string, error) {
+	file, err := os.CreateTemp("", fmt.Sprintf("mirrored-%s", filename))
 	if err != nil {
-		return errors.Wrapf(err, "failed to create AWS cloud credentials file %q", filename)
+		return "", errors.Wrapf(err, "failed to create AWS cloud credentials file %q", filename)
 	}
 	defer utils.IgnoreError(file.Close)
 
 	if _, err := file.Write(data); err != nil {
-		return errors.Wrapf(err, "failed to write AWS cloud credentials to %q", filename)
+		return "", errors.Wrapf(err, "failed to write AWS cloud credentials to %q", filename)
 	}
-	return nil
+	return file.Name(), nil
 }
