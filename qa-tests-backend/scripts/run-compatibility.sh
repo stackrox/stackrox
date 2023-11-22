@@ -79,8 +79,16 @@ compatibility_test() {
 
     update_junit_prefix_with_central_and_sensor_version
 
-    short_central_tag=$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")
+    short_central_tag="$(shorten_tag ${CENTRAL_CHART_VERSION_OVERRIDE})"
+    exit_code="$?"
+    if [ $exit_code -ne 0 ]; then
+        die "compatibility-test failed to shorten central tag"
+    fi
     short_sensor_tag=$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")
+    exit_code="$?"
+    if [ $exit_code -ne 0 ]; then
+        die "compatibility-test failed to shorten sensor tag"
+    fi
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
     [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
 }
