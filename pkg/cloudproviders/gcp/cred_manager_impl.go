@@ -72,7 +72,11 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	if len(c.stsConfig) > 0 {
-		return google.CredentialsFromJSON(ctx, c.stsConfig, "https://www.googleapis.com/auth/cloud-platform")
+		// Use a scope to request access to the GCP API. See
+		// https://developers.google.com/identity/protocols/oauth2/scopes
+		// for a list of GCP scopes.
+		scope := "https://www.googleapis.com/auth/cloud-platform"
+		return google.CredentialsFromJSON(ctx, c.stsConfig, scope)
 	}
 	return google.FindDefaultCredentials(ctx)
 }
