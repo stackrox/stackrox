@@ -27,7 +27,7 @@ const (
    }
 }`
 	namespace  = "stackrox"
-	secretName = "gcpCloudCredentials"
+	secretName = "gcp-cloud-credentials"
 )
 
 func TestCredentialManager(t *testing.T) {
