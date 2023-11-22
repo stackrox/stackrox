@@ -586,7 +586,8 @@ check_for_errors_in_stackrox_logs() {
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check.sh $filtered)"; then
-            save_junit_failure "SuspiciousLog" "Suspicious entries in log file(s)" "$check_out"
+            local last_log="${check_out##*.log:}"
+            save_junit_failure "SuspiciousLog" "${last_log##*: }" "$check_out"
             die "ERROR: Found at least one suspicious log file entry."
         else
             save_junit_success "SuspiciousLog" "Suspicious entries in log file(s)"
