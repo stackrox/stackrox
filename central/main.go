@@ -354,9 +354,7 @@ func startServices() {
 		administrationEventHandler.Singleton().Start()
 	}
 
-	if err := gcp.Singleton().Start(); err != nil {
-		log.Error("Failed to start GCP cloud credentials manager: ", err)
-	}
+	gcp.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
