@@ -71,16 +71,6 @@ type Store struct {
 	tlsCheckResults expiringcache.Cache
 }
 
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (rs *Store) ReconcileDelete(_, resID string, _ uint64) (string, error) {
-	if !rs.knownSecretIDs.Contains(resID) {
-		return resID, nil
-	}
-	return "", nil
-}
-
 // CheckTLS defines a function which checks if the given address is using TLS.
 // An example implementation of this is tlscheck.CheckTLS.
 type CheckTLS func(ctx context.Context, origAddr string) (bool, error)

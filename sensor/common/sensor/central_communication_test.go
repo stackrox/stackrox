@@ -19,7 +19,6 @@ import (
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/common/reconciliation"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
@@ -387,7 +386,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(reconciliation.NewDeduperStateProcessor(c.mockReconciliation), false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),

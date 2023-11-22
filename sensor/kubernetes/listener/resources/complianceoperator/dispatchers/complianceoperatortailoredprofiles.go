@@ -6,8 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,15 +14,13 @@ import (
 
 // TailoredProfileDispatcher handles compliance operator tailored profile objects
 type TailoredProfileDispatcher struct {
-	profileLister       cache.GenericLister
-	reconciliationStore reconciliation.Store
+	profileLister cache.GenericLister
 }
 
 // NewTailoredProfileDispatcher creates and returns a new tailored profile dispatcher
-func NewTailoredProfileDispatcher(store reconciliation.Store, profileLister cache.GenericLister) *TailoredProfileDispatcher {
+func NewTailoredProfileDispatcher(profileLister cache.GenericLister) *TailoredProfileDispatcher {
 	return &TailoredProfileDispatcher{
-		profileLister:       profileLister,
-		reconciliationStore: store,
+		profileLister: profileLister,
 	}
 }
 
@@ -101,11 +97,6 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 				ComplianceOperatorProfile: protoProfile,
 			},
 		},
-	}
-	if action == central.ResourceAction_REMOVE_RESOURCE {
-		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
-	} else {
-		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
 	}
 	return component.NewEvent(events...)
 }
