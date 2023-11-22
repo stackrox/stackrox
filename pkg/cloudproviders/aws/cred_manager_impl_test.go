@@ -2,8 +2,6 @@ package aws
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -119,9 +117,7 @@ func TestCredentialManager(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
-			// Randomize file name to make sure test runs don't interfere with each other.
-			fileName := fmt.Sprintf("%s-%d", secretName, rand.Int())
-			manager := newAWSCredentialsManagerImpl(k8sClient, namespace, secretName, fileName)
+			manager := newAWSCredentialsManagerImpl(k8sClient, namespace, secretName)
 			manager.Start()
 			defer manager.Stop()
 
@@ -134,7 +130,7 @@ func TestCredentialManager(t *testing.T) {
 				defer manager.mutex.RUnlock()
 				assert.Equal(t, c.fileExists, len(manager.stsConfig) > 0)
 				if c.fileExists {
-					stsConfig, err := os.ReadFile(manager.mirroredFileName)
+					stsConfig, err := os.ReadFile(manager.mirroredFilename)
 					assert.NoError(t, err)
 					assert.Equal(t, []byte(c.expectedContent), stsConfig)
 				}
