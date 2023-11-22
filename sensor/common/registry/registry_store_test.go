@@ -345,30 +345,3 @@ func TestDataRaceAtCleanup(_ *testing.T) {
 	doneSignal.Signal()
 	wg.Wait()
 }
-
-func TestReconcile(t *testing.T) {
-	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-	testCases := map[string]bool{
-		"a": false,
-		"b": true,
-		"c": true,
-	}
-
-	for secretID, isRemoved := range testCases {
-		regStore.AddSecretID(secretID)
-		if isRemoved {
-			regStore.RemoveSecretID(secretID)
-		}
-	}
-
-	for secretID, isRemoved := range testCases {
-		id, err := regStore.ReconcileDelete("", secretID, 0)
-		require.NoError(t, err)
-		if isRemoved {
-			assert.NotEmpty(t, id)
-		} else {
-			assert.Empty(t, id)
-		}
-	}
-
-}

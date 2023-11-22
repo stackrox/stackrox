@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -28,23 +27,6 @@ type DeploymentStore struct {
 type snapshotEntry struct {
 	dependenciesHash uint64
 	builtDeployment  *storage.Deployment
-}
-
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypeDeployment.String() {
-		return "", nil
-	}
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-	_, exists := ds.deployments[resID]
-	if !exists {
-		// found on Central, not found on Sensor - need to send a Delete message
-		return resID, nil
-	}
-	return "", nil
 }
 
 // newDeploymentStore creates and returns a new deployment store.
