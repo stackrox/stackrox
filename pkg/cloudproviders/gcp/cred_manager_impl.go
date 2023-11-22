@@ -42,7 +42,7 @@ func (c *gcpCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 	if stsConfig, ok := secret.Data[cloudCredentialsKey]; ok {
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
-		c.stsConfig = []byte(stsConfig)
+		c.stsConfig = stsConfig
 		log.Infof("Updated GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
