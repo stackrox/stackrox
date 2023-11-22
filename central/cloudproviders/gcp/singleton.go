@@ -21,13 +21,13 @@ func Singleton() gcp.CredentialsManager {
 	once.Do(func() {
 		restCfg, err := k8sutil.GetK8sInClusterConfig()
 		if err != nil {
-			log.Error("Could create GCP credentials manager. Continuing with default credentials chain: ", err)
+			log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 			manager = &gcp.DefaultCredentialsManager{}
 			return
 		}
 		k8sClient, err := kubernetes.NewForConfig(restCfg)
 		if err != nil {
-			log.Error("Could create GCP credentials manager. Continuing with default credentials chain: ", err)
+			log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 			manager = &gcp.DefaultCredentialsManager{}
 			return
 		}
