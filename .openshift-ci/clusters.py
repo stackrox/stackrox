@@ -126,23 +126,3 @@ class AutomationFlavorsCluster:
 
     def teardown(self):
         pass
-
-
-class OpenShiftScaleWorkersCluster:
-    SCALE_CHANGE_TIMEOUT = 15 * 60
-
-    def __init__(self, increment=1):
-        self.increment = increment
-
-    def provision(self):
-        print("Scaling worker nodes")
-        subprocess.run(
-            ["scripts/ci/openshift.sh", "scale_worker_nodes", str(self.increment)],
-            check=True,
-            timeout=OpenShiftScaleWorkersCluster.SCALE_CHANGE_TIMEOUT,
-        )
-
-        return self
-
-    def teardown(self):
-        pass

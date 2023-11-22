@@ -1,10 +1,11 @@
 #!/usr/bin/env -S python3 -u
 
 """
-Run tests/e2e in a OCP cluster
+Run sensor-integration tests in an OCP cluster.
 """
 import os
 from runners import ClusterTestRunner
+from clusters import AutomationFlavorsCluster
 from pre_tests import PreSystemTests
 from ci_tests import SensorIntegrationOCP
 
@@ -16,6 +17,7 @@ os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 ClusterTestRunner(
+    cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(run_poll_for_system_test_images=False),
     # TODO(ROX-17875): Run the regular SensorIntegration() here after the tests are tuned to work on OCP
     test=SensorIntegrationOCP(),
