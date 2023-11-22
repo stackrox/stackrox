@@ -54,8 +54,10 @@ func (c *gcpCredentialsManagerImpl) deleteSecret() {
 	log.Infof("Deleted GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 }
 
-func (c *gcpCredentialsManagerImpl) Start() error {
-	return c.informer.Start()
+func (c *gcpCredentialsManagerImpl) Start() {
+	if err := c.informer.Start(); err != nil {
+		log.Error("Failed to start GCP cloud credentials manager: ", err)
+	}
 }
 
 func (c *gcpCredentialsManagerImpl) Stop() {
