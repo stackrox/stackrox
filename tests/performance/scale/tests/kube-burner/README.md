@@ -89,12 +89,17 @@ export PROMETHEUS_URL="https://$(oc get route --namespace openshift-monitoring p
 export PROMETHEUS_TOKEN="$(oc serviceaccounts new-token --namespace openshift-monitoring prometheus-k8s)"
 ```
 
-After that you can run the following command to run workload. It will create in total 100 namespaces, 500 deployments and 1000 pods.
+Ensure that the URL for elastic indexer is properly exported:
 ```
-kube-burner init --uuid=node-09--c2d-highcpu-8--dep-5--pod-2--workload-100--run-1 --config=cluster-density.yml --metrics-profile=metrics.yml --alert-profile=alerts.yml --skip-tls-verify --timeout=2h --prometheus-url="${PROMETHEUS_URL}" --token="${PROMETHEUS_TOKEN}"
+export ELASTICSEARCH_URL=https://user:password@elasticserver
 ```
 
-This run will create a directory named `collected-metrics` and a tar file `collected-metrics.tar.gz` with the content of that directory.
+After that you can run the following command to run workload. It will create in total 100 namespaces, 500 deployments and 1000 pods.
+```
+kube-burner init --config=cluster-density.yml --metrics-profile=metrics.yml --alert-profile=alerts.yml --skip-tls-verify --timeout=2h --prometheus-url="${PROMETHEUS_URL}" --token="${PROMETHEUS_TOKEN}"
+```
+
+This run will run workload and import results in the provided elastic indexer.
 
 To run different workflow sizes you can use provided script within `cluster-density` workload directory.
 
@@ -103,18 +108,25 @@ You can run the following command to create workload with 1000 namespaces, 10000
 ./run-workload.sh --kube-burner-path "${KUBE_BURNER_PATH}" --num-namespaces 1000 --num-deployments 10 --num-pods 1
 ```
 
-Results will be stored in a tar file named by using the following pattern:
+### Use local indexer
 
-`node-<num-nodes>--<worker-instance-type>--dep-<num-deployments>--pod-<num-pods>--workload-<num-namespaces>--run-0.tar.gz`
+The local indexer will be used if the environment variable `ELASTICSEARCH_URL` is not provided.
+
+After running the `run-workload.sh` script, results will be stored in a tar file named by using the following pattern:
+-`node-<num-nodes>--<worker-instance-type>--run-<unix-timestamp>.tar.gz`
 
 ## Analyse metrics
 
 There is Google Colab Template that can be used to analyze results. It has helper functions to load results and visualize them.
 It also contains several examples to analyze results.
 
-To start with your analysis. Clone [ACS-Perf-Scale-Test-Results-Analysis-Template](https://colab.research.google.com/drive/1h_xgkCTubqjd_6hPQnp9iV_L0atUnE-0) and set name to match the goal of your analysis. Do all necessary work in your cloned Colab.
+To start with your analysis. Clone [ACS-Perf-Scale-Opensearch-Test-Results-Analysis-Template](https://colab.research.google.com/drive/1rdmxIuSOB3pKmbWqXDKNRgBgs-ke_GIE) and set name to match the goal of your analysis. Do all necessary work in your cloned Colab.
 
 If you develop useful helper functions, consider including them in the base template with some examples by providing comments with code on the base template.
+
+### Analyse results created with local indexer
+
+For analyzing results stored locally, clone [ACS-Perf-Scale-Test-Results-Analysis-Template](https://colab.research.google.com/drive/1h_xgkCTubqjd_6hPQnp9iV_L0atUnE-0) and set name to match the goal of your analysis. Do all necessary work in your cloned Colab.
 
 ## Increase cluster size
 
