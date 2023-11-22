@@ -121,7 +121,7 @@ func TestCredentialManager(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
-			manager := NewCredentialsManager(k8sClient, namespace, secretName)
+			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName)
 			manager.Start()
 			defer manager.Stop()
 
