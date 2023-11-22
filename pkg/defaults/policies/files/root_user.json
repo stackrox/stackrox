@@ -540,6 +540,14 @@
           "namespace": "openshift-kube-scheduler-operator"
         }
       }
+    },
+    {
+      "name": "Don't alert on openshift-logging namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-logging"
+        }
+      }
     }
   ],
   "severity": "LOW_SEVERITY",
