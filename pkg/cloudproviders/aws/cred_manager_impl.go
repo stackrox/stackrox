@@ -62,10 +62,21 @@ func newAWSCredentialsManagerImpl(
 
 func (c *awsCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 	if stsConfig, ok := secret.Data[cloudCredentialsKey]; ok {
+		if len(stsConfig) == 0 {
+			c.deleteSecret()
+			return
+		}
+
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
 		if err := mirrorToLocalFile([]byte(stsConfig), c.mirroredFileName); err != nil {
-			log.Errorf("Failed to mirror AWS cloud credential file for %q", c.mirroredFileName)
+			log.Errorf(
+				"Failed to mirror AWS cloud credential file for %q for %s/%s: ",
+				c.mirroredFileName,
+				c.namespace,
+				c.secretName,
+				err,
+			)
 			c.secretFound = false
 			return
 		}
@@ -93,7 +104,13 @@ func (c *awsCredentialsManagerImpl) Start() {
 func (c *awsCredentialsManagerImpl) Stop() {
 	c.informer.Stop()
 	if err := os.Remove(c.mirroredFileName); err != nil {
-		log.Errorf("Could not remove mirrored credentials file %q for %s/%s: ", c.mirroredFileName, c.namespace, c.secretName, err)
+		log.Errorf(
+			"Could not remove mirrored credentials file %q for %s/%s: ",
+			c.mirroredFileName,
+			c.namespace,
+			c.secretName,
+			err,
+		)
 	}
 }
 
