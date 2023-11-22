@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if eq ._rox.env.openshift 4 }}
+{{- if ._rox.env.openshift }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

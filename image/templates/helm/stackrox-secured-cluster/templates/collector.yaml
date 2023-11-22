@@ -148,7 +148,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-      {{- if eq ._rox.env.openshift 4 }}
+      {{- if ._rox.env.openshift }}
       - name: node-inventory
         image: {{ quote ._rox.image.scanner.fullRef }}
         imagePullPolicy: IfNotPresent

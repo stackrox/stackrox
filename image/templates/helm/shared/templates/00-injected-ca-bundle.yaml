@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if eq ._rox.env.openshift 4 }}
+{{- if ._rox.env.openshift }}
 {{ $injectedCABundleName := printf "injected-cabundle-%s" .Release.Name }}
 apiVersion: v1
 kind: ConfigMap
