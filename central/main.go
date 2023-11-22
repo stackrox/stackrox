@@ -356,10 +356,8 @@ func startServices() {
 	}
 
 	if features.CloudCredentials.Enabled() {
+		aws.Singleton().Start()
 		gcp.Singleton().Start()
-	}
-	if err := aws.Singleton().Start(); err != nil {
-		log.Error("Failed to start AWS cloud credentials manager: ", err)
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -891,7 +889,6 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
-		{obj: aws.Singleton(), name: "AWS cloud credentials manager"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -905,6 +902,7 @@ func waitForTerminationSignal() {
 	}
 
 	if features.CloudCredentials.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{aws.Singleton(), "AWS cloud credentials manager"})
 		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
 	}
 
