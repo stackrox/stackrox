@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/stackrox/rox/pkg/secretinformer"
@@ -46,6 +47,10 @@ func (c *gcpCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 	if stsConfig, ok := secret.Data[cloudCredentialsKey]; ok {
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
+		if bytes.Equal(c.stsConfig, stsConfig) {
+			return
+		}
+
 		c.stsConfig = stsConfig
 		log.Infof("Updated GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
