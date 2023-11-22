@@ -25,7 +25,11 @@ type gcpCredentialsManagerImpl struct {
 var _ CredentialsManager = &gcpCredentialsManagerImpl{}
 
 // NewCredentialsManager creates a new GCP credential manager.
-func NewCredentialsManager(k8sClient kubernetes.Interface, namespace string, secretName string) *gcpCredentialsManagerImpl {
+func NewCredentialsManager(k8sClient kubernetes.Interface, namespace string, secretName string) CredentialsManager {
+	return newCredentialsManagerImpl(k8sClient, namespace, secretName)
+}
+
+func newCredentialsManagerImpl(k8sClient kubernetes.Interface, namespace string, secretName string) *gcpCredentialsManagerImpl {
 	mgr := &gcpCredentialsManagerImpl{namespace: namespace, secretName: secretName, stsConfig: []byte{}}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
