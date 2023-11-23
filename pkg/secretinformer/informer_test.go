@@ -61,8 +61,6 @@ func TestSecretInformer(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				// Allow the state to propagate.
-				time.Sleep(100 * time.Millisecond)
 				_, err = k8sClient.CoreV1().Secrets(namespace).Update(
 					context.Background(),
 					&v1.Secret{
@@ -94,8 +92,6 @@ func TestSecretInformer(t *testing.T) {
 				if err != nil {
 					return err
 				}
-				// Allow the state to propagate.
-				time.Sleep(100 * time.Millisecond)
 				err = k8sClient.CoreV1().Secrets(namespace).Delete(
 					context.Background(), secretName, metav1.DeleteOptions{},
 				)
