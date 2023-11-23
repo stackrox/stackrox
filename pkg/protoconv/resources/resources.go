@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -85,14 +84,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
-
-	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
-	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
-	// between different generated deployments.
-
-	if wrap.Deployment.GetId() == "" {
-		wrap.Deployment.Id = uuid.NewV4().String()
-	}
+	
 	return wrap.Deployment, nil
 
 }
