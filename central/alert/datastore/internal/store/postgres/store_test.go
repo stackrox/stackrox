@@ -294,7 +294,7 @@ func (s *AlertsStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }

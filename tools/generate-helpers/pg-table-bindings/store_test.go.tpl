@@ -339,7 +339,6 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	}
 }
 
-{{ if eq (len .Schema.PrimaryKeys) 1 }}
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
@@ -349,11 +348,10 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
-{{ end }}
 
 func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
@@ -421,7 +419,6 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 	}
 }
 
-{{ if eq (len .Schema.PrimaryKeys) 1 }}
 func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
@@ -471,7 +468,6 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		assert.Nil(t, missingIndices)
 	})
 }
-{{ end }}
 
 {{end}}
 {{- end }}
