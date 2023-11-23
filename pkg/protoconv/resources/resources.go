@@ -90,7 +90,9 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
 	// between different generated deployments.
 
-	wrap.Deployment.Id = uuid.NewV4().String()
+	if wrap.Deployment.GetId() == "" {
+		wrap.Deployment.Id = uuid.NewV4().String()
+	}
 	return wrap.Deployment, nil
 
 }
