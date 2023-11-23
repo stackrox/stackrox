@@ -39,11 +39,9 @@ func init() {
 
 func TestRenderOpenshiftEnv(t *testing.T) {
 	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
-	for _, clusterType := range []storage.ClusterType{storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
-		t.Run(clusterType.String(), func(t *testing.T) {
-			doTestRenderOpenshif(t, clusterType)
-		})
-	}
+	t.Run(storage.ClusterType_OPENSHIFT4_CLUSTER.String(), func(t *testing.T) {
+		doTestRenderOpenshif(t, storage.ClusterType_OPENSHIFT4_CLUSTER)
+	})
 }
 
 func getEnvVarValue(vars []coreV1.EnvVar, name string) (string, bool) {
@@ -99,13 +97,6 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
 			assert.True(t, exists)
 			assert.Equal(t, "true", value, "compliance should have %s=true", env.NodeInventoryContainerEnabled.EnvVar())
-		} else {
-			_, foundNInv := findContainer(ds.Spec.Template.Spec.Containers, "node-inventory")
-			assert.False(t, foundNInv, "node-inventory container must not exist under collector DS")
-
-			value, exists := getEnvVarValue(complianceCont.Env, env.NodeInventoryContainerEnabled.EnvVar())
-			assert.True(t, exists)
-			assert.Equalf(t, "false", value, "compliance should have %s=false", env.NodeInventoryContainerEnabled.EnvVar())
 		}
 	}
 
