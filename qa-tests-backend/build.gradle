@@ -96,7 +96,7 @@ dependencies {
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.9'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.6.0'
 
