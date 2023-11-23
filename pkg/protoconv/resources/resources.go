@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -84,6 +85,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
+	wrap.Deployment.Id = uuid.NewV4().String()
 	return wrap.Deployment, nil
 
 }
