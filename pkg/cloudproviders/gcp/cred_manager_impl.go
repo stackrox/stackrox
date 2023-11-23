@@ -18,20 +18,26 @@ const (
 type gcpCredentialsManagerImpl struct {
 	namespace  string
 	secretName string
+	onChangeFn func()
 	informer   *secretinformer.SecretInformer
 	stsConfig  []byte
 	mutex      sync.RWMutex
 }
 
-var _ CredentialsManager = &gcpCredentialsManagerImpl{}
+var _ credentialsManager = &gcpCredentialsManagerImpl{}
 
-// NewCredentialsManager creates a new GCP credential manager.
-func NewCredentialsManager(k8sClient kubernetes.Interface, namespace string, secretName string) CredentialsManager {
-	return newCredentialsManagerImpl(k8sClient, namespace, secretName)
-}
-
-func newCredentialsManagerImpl(k8sClient kubernetes.Interface, namespace string, secretName string) *gcpCredentialsManagerImpl {
-	mgr := &gcpCredentialsManagerImpl{namespace: namespace, secretName: secretName, stsConfig: []byte{}}
+func newCredentialsManagerImpl(
+	k8sClient kubernetes.Interface,
+	namespace string,
+	secretName string,
+	onChangeFn func(),
+) *gcpCredentialsManagerImpl {
+	mgr := &gcpCredentialsManagerImpl{
+		namespace:  namespace,
+		secretName: secretName,
+		onChangeFn: onChangeFn,
+		stsConfig:  []byte{},
+	}
 	mgr.informer = secretinformer.NewSecretInformer(
 		namespace,
 		secretName,
@@ -45,18 +51,27 @@ func newCredentialsManagerImpl(k8sClient kubernetes.Interface, namespace string,
 
 func (c *gcpCredentialsManagerImpl) updateSecret(secret *v1.Secret) {
 	if stsConfig, ok := secret.Data[cloudCredentialsKey]; ok {
+		var hasChanged bool
+		defer func() {
+			if hasChanged {
+				c.onChangeFn()
+			}
+		}()
+
 		c.mutex.Lock()
 		defer c.mutex.Unlock()
 		if bytes.Equal(c.stsConfig, stsConfig) {
 			return
 		}
 
+		hasChanged = true
 		c.stsConfig = stsConfig
 		log.Infof("Updated GCP cloud credentials based on %s/%s", c.namespace, c.secretName)
 	}
 }
 
 func (c *gcpCredentialsManagerImpl) deleteSecret() {
+	defer c.onChangeFn()
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.stsConfig = []byte{}

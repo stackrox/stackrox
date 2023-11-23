@@ -6,25 +6,25 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-// CredentialsManager manages GCP credentials based on the environment.
-type CredentialsManager interface {
+// credentialsManager manages GCP credentials based on the environment.
+type credentialsManager interface {
 	Start()
 	Stop()
 	GetCredentials(ctx context.Context) (*google.Credentials, error)
 }
 
-// DefaultCredentialsManager always returns the default GCP credential chain.
-type DefaultCredentialsManager struct{}
+// defaultCredentialsManager always returns the default GCP credential chain.
+type defaultCredentialsManager struct{}
 
-var _ CredentialsManager = &DefaultCredentialsManager{}
+var _ credentialsManager = &defaultCredentialsManager{}
 
 // Start is a dummy function to fulfil the interface.
-func (c *DefaultCredentialsManager) Start() {}
+func (c *defaultCredentialsManager) Start() {}
 
 // Stop is a dummy function to fulfil the interface.
-func (c *DefaultCredentialsManager) Stop() {}
+func (c *defaultCredentialsManager) Stop() {}
 
 // GetCredentials returns the default GCP credential chain.
-func (c *DefaultCredentialsManager) GetCredentials(ctx context.Context) (*google.Credentials, error) {
+func (c *defaultCredentialsManager) GetCredentials(ctx context.Context) (*google.Credentials, error) {
 	return google.FindDefaultCredentials(ctx)
 }
