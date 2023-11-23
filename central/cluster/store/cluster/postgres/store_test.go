@@ -38,6 +38,7 @@ func (s *ClustersStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE clusters CASCADE")
 	s.T().Log("clusters", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

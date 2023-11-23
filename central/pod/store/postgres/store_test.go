@@ -38,6 +38,7 @@ func (s *PodsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE pods CASCADE")
 	s.T().Log("pods", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

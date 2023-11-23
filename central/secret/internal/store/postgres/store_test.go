@@ -38,6 +38,7 @@ func (s *SecretsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE secrets CASCADE")
 	s.T().Log("secrets", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -35,6 +35,7 @@ func (s *NotifiersStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE notifiers CASCADE")
 	s.T().Log("notifiers", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -38,6 +38,7 @@ func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE process_baseline_results CASCADE")
 	s.T().Log("process_baseline_results", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

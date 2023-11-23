@@ -38,6 +38,7 @@ func (s *RoleBindingsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE role_bindings CASCADE")
 	s.T().Log("role_bindings", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

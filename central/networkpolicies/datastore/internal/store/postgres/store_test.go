@@ -38,6 +38,7 @@ func (s *NetworkpoliciesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE networkpolicies CASCADE")
 	s.T().Log("networkpolicies", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -38,6 +38,7 @@ func (s *NetworkBaselinesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE network_baselines CASCADE")
 	s.T().Log("network_baselines", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

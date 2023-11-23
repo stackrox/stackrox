@@ -38,6 +38,7 @@ func (s *AlertsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE alerts CASCADE")
 	s.T().Log("alerts", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

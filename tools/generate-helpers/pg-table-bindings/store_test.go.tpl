@@ -54,6 +54,7 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE {{ .Schema.Table }} CASCADE")
 	s.T().Log("{{ .Schema.Table }}", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

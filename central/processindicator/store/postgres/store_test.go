@@ -38,6 +38,7 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE process_indicators CASCADE")
 	s.T().Log("process_indicators", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

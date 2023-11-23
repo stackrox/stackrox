@@ -38,6 +38,7 @@ func (s *NamespacesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE namespaces CASCADE")
 	s.T().Log("namespaces", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

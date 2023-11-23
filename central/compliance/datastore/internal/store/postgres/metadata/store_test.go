@@ -38,6 +38,7 @@ func (s *ComplianceRunMetadataStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_run_metadata CASCADE")
 	s.T().Log("compliance_run_metadata", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
