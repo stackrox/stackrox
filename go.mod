@@ -25,7 +25,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.7.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.0
-	github.com/dexidp/dex v2.12.0+incompatible
+	github.com/dexidp/dex v2.13.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
 	github.com/docker/go-connections v0.4.0 // indirect
