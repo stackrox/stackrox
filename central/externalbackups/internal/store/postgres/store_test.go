@@ -35,6 +35,7 @@ func (s *ExternalBackupsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE external_backups CASCADE")
 	s.T().Log("external_backups", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

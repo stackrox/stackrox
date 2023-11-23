@@ -42,6 +42,7 @@ func (s *ComplianceOperatorProfileV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_profile_v2 CASCADE")
 	s.T().Log("compliance_operator_profile_v2", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
