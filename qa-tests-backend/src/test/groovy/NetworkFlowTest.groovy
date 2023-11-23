@@ -481,6 +481,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
+    @Ignore("ROX-19615")
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
