@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 
 metadata:
@@ -56,6 +56,17 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+
+  taskRunSpecs:
+  - pipelineTaskName: build-container
+    computeResources:
+      requests:
+        cpu: 2
+#    stepSpecs:
+#    - name: build
+#      computeResources:
+#        requests:
+#          cpu: 2
 
   pipelineSpec:
 

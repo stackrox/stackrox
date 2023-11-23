@@ -59,6 +59,17 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
+  taskRunSpecs:
+  - pipelineTaskName: build-container
+    computeResources:
+      requests:
+        cpu: 2
+#    stepSpecs:
+#    - name: build
+#      computeResources:
+#        requests:
+#          cpu: 2
+
   pipelineSpec:
 
     finally:
