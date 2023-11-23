@@ -24,11 +24,11 @@ func Set(value storage.ManagerType) {
 	defer mutex.Unlock()
 
 	switch value {
-	case storage.ManagerType_MANAGER_TYPE_MANUAL:
-		installMethod = "manifest"
 	case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
 		installMethod = "helm"
 	case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
 		installMethod = "operator"
+	default:
+		installMethod = "manifest"
 	}
 }
