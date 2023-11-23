@@ -25,23 +25,19 @@ description: >-
   See the docs on how to include and exclude rules
   https://redhat-appstudio.github.io/docs.stonesoup.io/ec-policies/policy_configuration.html#_including_and_excluding_rules.
 
-publicKey: "k8s://openshift-pipelines/public-key"
-
 sources:
-- name: Default
-  policy:
-  - github.com/enterprise-contract/ec-policies//policy/lib
-  - github.com/enterprise-contract/ec-policies//policy/release
-  data:
-  - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest
-  - github.com/release-engineering/rhtap-ec-policy//data
-  # Here's our custom data configuration
-  - github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
-
-configuration:
-  include:
-  - '@redhat'
-
-  exclude:
-  - hermetic_build_task
-  - tasks.required_tasks_found:prefetch-dependencies
+  - name: Default
+    policy:
+      - github.com/enterprise-contract/ec-policies//policy/lib
+      - github.com/enterprise-contract/ec-policies//policy/release
+    data:
+      - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest
+      - github.com/release-engineering/rhtap-ec-policy//data
+      # Here is our policy
+      - github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+    config:
+      include:
+        - '@redhat'
+      exclude:
+        - hermetic_build_task
+        - tasks.required_tasks_found:prefetch-dependencies
