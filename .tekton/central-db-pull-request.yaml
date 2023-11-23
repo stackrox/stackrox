@@ -8,7 +8,7 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && source_branch.contains("rhtap")
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
