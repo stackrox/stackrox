@@ -137,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRole, *storage.K8SRole, map[string]testCase) {
+func (s *K8sRolesStoreSuite) getTestData(access ...storage.Access) (*storage.K8SRole, *storage.K8SRole, map[string]testCase) {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -164,7 +164,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -177,7 +177,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
@@ -191,7 +191,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				)),
@@ -204,7 +204,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -217,7 +217,7 @@ func (s *K8sRolesStoreSuite) getTestData(access storage.Access) (*storage.K8SRol
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -339,7 +339,7 @@ func (s *K8sRolesStoreSuite) TestSACGet() {
 }
 
 func (s *K8sRolesStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -366,7 +366,7 @@ func (s *K8sRolesStoreSuite) TestSACDelete() {
 }
 
 func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()

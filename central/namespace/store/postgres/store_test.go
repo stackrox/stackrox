@@ -137,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.NamespaceMetadata, *storage.NamespaceMetadata, map[string]testCase) {
+func (s *NamespacesStoreSuite) getTestData(access ...storage.Access) (*storage.NamespaceMetadata, *storage.NamespaceMetadata, map[string]testCase) {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -164,7 +164,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -177,7 +177,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetName()),
@@ -191,7 +191,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				)),
@@ -204,7 +204,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -217,7 +217,7 @@ func (s *NamespacesStoreSuite) getTestData(access storage.Access) (*storage.Name
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -339,7 +339,7 @@ func (s *NamespacesStoreSuite) TestSACGet() {
 }
 
 func (s *NamespacesStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -366,7 +366,7 @@ func (s *NamespacesStoreSuite) TestSACDelete() {
 }
 
 func (s *NamespacesStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()

@@ -137,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*storage.ComplianceRunResults, *storage.ComplianceRunResults, map[string]testCase) {
+func (s *ComplianceRunResultsStoreSuite) getTestData(access ...storage.Access) (*storage.ComplianceRunResults, *storage.ComplianceRunResults, map[string]testCase) {
 	objA := &storage.ComplianceRunResults{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -164,7 +164,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -177,7 +177,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 				)),
@@ -190,7 +190,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 				)),
@@ -203,7 +203,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -216,7 +216,7 @@ func (s *ComplianceRunResultsStoreSuite) getTestData(access storage.Access) (*st
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetRunMetadata().GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -338,7 +338,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACGet() {
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -365,7 +365,7 @@ func (s *ComplianceRunResultsStoreSuite) TestSACDelete() {
 }
 
 func (s *ComplianceRunResultsStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()
