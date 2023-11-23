@@ -2,7 +2,7 @@
   "id": "dce17697-1b72-49d2-b18a-05d893cd9368",
   "name": "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
   "description": "Containers should run as a non-root user",
-  "rationale": "It is good practice to run the container as a non-root user, where possible. This can be done via the USER directive in the Dockerfile.",
+  "rationale": "It is good practice to run the container as a non-root user, where possible. This can be done via the USER directive in the Dockerfile. You can exclude this policy from OpenShift clusters because they run containers using an arbitrarily assigned user ID by default.",
   "remediation": "Ensure that the Dockerfile for each container switches from the root user",
   "categories": [
     "Docker CIS"
