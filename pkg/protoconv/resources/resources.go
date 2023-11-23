@@ -84,7 +84,6 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
-	
 	return wrap.Deployment, nil
 
 }
