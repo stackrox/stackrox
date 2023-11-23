@@ -136,7 +136,17 @@ $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linter
 style: golangci-lint style-slim
 
 .PHONY: style-slim
-style-slim: roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
+style-slim: \
+	blanks \
+	check-service-protos \
+	newlines \
+	no-large-files \
+	openshift-ci-style \
+	qa-tests-style \
+	roxvet \
+	shell-style \
+	storage-protos-compatible \
+	ui-lint
 
 GOLANGCILINT_FLAGS := --verbose --print-resources-usage
 
@@ -177,6 +187,11 @@ qa-tests-style:
 ui-lint:
 	@echo "+ $@"
 	make -C ui lint
+
+.PHONY: openshift-ci-style
+openshift-ci-style:
+	@echo "+ $@"
+	make -C .openshift-ci/ style
 
 .PHONY: shell-style
 shell-style:
