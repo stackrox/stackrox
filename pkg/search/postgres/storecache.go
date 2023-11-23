@@ -136,6 +136,16 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // Delete removes the object associated to the specified ID from the store.
 func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
+	obj, found, err := c.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return nil
+	}
+	if !c.isWriteAllowed(ctx, obj) {
+		return nil
+	}
 	dbErr := c.underlyingStore.Delete(ctx, id)
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
@@ -149,14 +159,25 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
-	dbErr := c.underlyingStore.DeleteMany(ctx, identifiers)
+	objects, _, err := c.GetMany(ctx, identifiers)
+	if err != nil {
+		return err
+	}
+	filteredIDs := make([]string, 0, len(objects))
+	for _, obj := range objects {
+		if !c.isWriteAllowed(ctx, obj) {
+			continue
+		}
+		filteredIDs = append(filteredIDs, c.pkGetter(obj))
+	}
+	dbErr := c.underlyingStore.DeleteMany(ctx, filteredIDs)
 	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
-	for _, id := range identifiers {
+	for _, id := range filteredIDs {
 		delete(c.cache, id)
 	}
 	return nil
@@ -314,15 +335,32 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 }
 
 func (c *cachedStore[T, PT]) isReadAllowed(ctx context.Context, obj PT) bool {
+	return c.isActionAllowed(ctx, storage.Access_READ_ACCESS, obj)
+}
+
+func (c *cachedStore[T, PT]) isWriteAllowed(ctx context.Context, obj PT) bool {
+	return c.isActionAllowed(ctx, storage.Access_READ_WRITE_ACCESS, obj)
+}
+
+func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage.Access, obj PT) bool {
 	if c.hasPermissionsChecker() {
-		allowed, err := c.permissionChecker.ReadAllowed(ctx)
+		var allowed bool
+		var err error
+		switch action {
+		case storage.Access_READ_ACCESS:
+			allowed, err = c.permissionChecker.ReadAllowed(ctx)
+		case storage.Access_READ_WRITE_ACCESS:
+			allowed, err = c.permissionChecker.WriteAllowed(ctx)
+		default:
+			return false
+		}
 		if err != nil {
 			return false
 		}
 		return allowed
 	}
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeChecker = scopeChecker.AccessMode(storage.Access_READ_ACCESS)
+	scopeChecker = scopeChecker.AccessMode(action)
 	scopeChecker = scopeChecker.Resource(c.targetResource)
 	switch c.targetResource.GetScope() {
 	case permissions.NamespaceScope:
