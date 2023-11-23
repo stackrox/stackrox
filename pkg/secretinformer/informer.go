@@ -59,6 +59,7 @@ func (c *SecretInformer) Start() error {
 		return errors.Wrap(err, "could not add event handler")
 	}
 	sif.Start(c.stopCh)
+	sif.WaitForCacheSync(c.stopCh)
 
 	return nil
 }
