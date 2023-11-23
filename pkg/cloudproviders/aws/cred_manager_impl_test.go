@@ -21,7 +21,7 @@ const (
     web_identity_token_file: /var/run/secrets/openshift/serviceaccount/token`
 
 	namespace  = "stackrox"
-	secretName = "aws-cloud-credentials"
+	secretName = "aws-cloud-credentials" // #nosec G101
 )
 
 func TestCredentialManager(t *testing.T) {
