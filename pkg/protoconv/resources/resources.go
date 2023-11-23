@@ -85,6 +85,11 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
+
+	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
+	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// between different generated deployments.
+
 	wrap.Deployment.Id = uuid.NewV4().String()
 	return wrap.Deployment, nil
 
