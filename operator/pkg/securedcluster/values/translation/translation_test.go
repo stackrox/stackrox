@@ -374,9 +374,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.Bool(true),
-						},
 						RegistryOverride: "my.registry.override.com",
 					},
 				},

@@ -75,11 +75,6 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -389,11 +384,6 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
-        displayName: Create SecurityContextConstraints for Operand
-        path: misc.createSCCs
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
@@ -671,11 +661,6 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
-        displayName: Create SecurityContextConstraints for Operand
-        path: misc.createSCCs
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
