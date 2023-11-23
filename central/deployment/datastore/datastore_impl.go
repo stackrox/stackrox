@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
-	deploymentStore "github.com/stackrox/rox/central/deployment/store"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
