@@ -255,8 +255,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dexidp/dex v2.12.0+incompatible h1:7hS+bKH1Nzla9jtaud+jMMOg0gqZjoBlAkYxzg9Z4Ts=
-github.com/dexidp/dex v2.12.0+incompatible/go.mod h1:cRGkPWqKhDD1FMCICe2JbYDdVR2xGLa38F6iuH/jNAs=
+github.com/dexidp/dex v2.13.0+incompatible h1:EQPpzCi51omkwBe0KYpRGaV3rk6CVvjcqeMGCe3Q00w=
+github.com/dexidp/dex v2.13.0+incompatible/go.mod h1:cRGkPWqKhDD1FMCICe2JbYDdVR2xGLa38F6iuH/jNAs=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
