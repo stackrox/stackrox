@@ -96,30 +96,6 @@ tests:
     .secrets["scanner-tls"].stringData | assertThat(.["cert.pem"] | length == 0)
     .secrets["scanner-db-tls"].stringData | assertThat(.["key.pem"] | length == 0)
 
-- name: "scanner with OpenShift 3 and enabled SCCs"
-  server:
-    visibleSchemas:
-    - openshift-3.11.0
-    availableSchemas:
-    - openshift-3.11.0
-  values:
-    env:
-      openshift: 3
-    system:
-      createSCCs: true
-  expect: |
-    .securitycontextconstraints["nonroot-v2"] | assertThat(. == null)
-    .roles["scanner-scc"] | assertThat(. == null)
-    .rolebindings["scanner-use-scc"] | assertThat(. == null)
-    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
-    verifyNodeAffinities(.deployments["scanner"])
-    verifyNodeAffinities(.deployments["scanner-db"])
-    .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
-    .networkpolicys["scanner"].spec.ingress[0] | .ports | assertThat(length == 2)
-    .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
-    .networkpolicys["scanner"].spec.ingress[1] | .ports | assertThat(length == 2)
-
 - name: "scanner with OpenShift 4 and disabled SCCs"
   server:
     visibleSchemas:
