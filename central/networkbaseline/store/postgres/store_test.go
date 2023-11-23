@@ -38,6 +38,7 @@ func (s *NetworkBaselinesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE network_baselines CASCADE")
 	s.T().Log("network_baselines", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
@@ -136,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storage.NetworkBaseline, *storage.NetworkBaseline, map[string]testCase) {
+func (s *NetworkBaselinesStoreSuite) getTestData(access ...storage.Access) (*storage.NetworkBaseline, *storage.NetworkBaseline, map[string]testCase) {
 	objA := &storage.NetworkBaseline{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -163,7 +164,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -176,7 +177,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetNamespace()),
@@ -190,7 +191,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 				)),
@@ -203,7 +204,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -216,7 +217,7 @@ func (s *NetworkBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -293,7 +294,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
@@ -338,7 +339,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGet() {
 }
 
 func (s *NetworkBaselinesStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -365,7 +366,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACDelete() {
 }
 
 func (s *NetworkBaselinesStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()

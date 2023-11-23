@@ -35,6 +35,7 @@ func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_single_key_structs CASCADE")
 	s.T().Log("test_single_key_structs", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

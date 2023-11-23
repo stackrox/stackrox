@@ -35,6 +35,7 @@ func (s *AuthMachineToMachineConfigsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE auth_machine_to_machine_configs CASCADE")
 	s.T().Log("auth_machine_to_machine_configs", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

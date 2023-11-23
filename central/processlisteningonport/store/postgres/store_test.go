@@ -35,6 +35,7 @@ func (s *ListeningEndpointsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE listening_endpoints CASCADE")
 	s.T().Log("listening_endpoints", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

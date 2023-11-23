@@ -35,6 +35,7 @@ func (s *RolesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE roles CASCADE")
 	s.T().Log("roles", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

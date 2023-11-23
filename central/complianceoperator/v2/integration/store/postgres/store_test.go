@@ -35,6 +35,7 @@ func (s *ComplianceIntegrationsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_integrations CASCADE")
 	s.T().Log("compliance_integrations", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
