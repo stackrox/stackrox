@@ -32,7 +32,9 @@ shorten_tag() {
     if [[ $long_tag =~ $short_tag_regex ]]; then
         echo "${BASH_REMATCH[1]}"
     else
-        die "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        echo "${long_tag}"
+        >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        exit 1
     fi
 }
 
@@ -78,31 +80,18 @@ compatibility_test() {
     make -C qa-tests-backend compatibility-test || touch FAIL
 
     update_junit_prefix_with_central_and_sensor_version
-    if [ ! "$?" ]; then
-        die "compatibility-test failed to shorten central or sensor tags"
-    fi
 
     short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
-    if [ ! "$?" ]; then
-        die "compatibility-test failed to shorten central tag"
-    fi
     short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
-    if [ ! "$?" ]; then
-        die "compatibility-test failed to shorten sensor tag"
-    fi
+
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
     [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
 }
 
 update_junit_prefix_with_central_and_sensor_version() {
     short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
-    if [ ! "$?" ]; then
-        die "update_junit_prefix_with_central_and_sensor_version failed to shorten central tag"
-    fi
     short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
-    if [ ! "$?" ]; then
-        die "update_junit_prefix_with_central_and_sensor_version failed to shorten sensor tag"
-    fi
+    
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
     info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
     for f in "$result_folder"/*.xml; do
