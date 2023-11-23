@@ -1,7 +1,7 @@
 {
   "id": "32081d8e-84cd-4d67-b016-fe481c55b93a",
   "name": "Linux User Add Execution",
-  "description": "Detects when the 'useradd' or 'adduser' binary is executed, which can be used to add a new linux user.",
+  "description": "Detects when the 'useradd', 'adduser' or 'usermod' binary is executed, which can be used to add a new linux user.",
   "rationale": "Users or groups added in run time can be used to take ownership of files and processes.",
   "remediation": "Consider using a base image that doesn't have a shell such as SCRATCH or gcr.io/distroless. If not, modify your Dockerfile to use the exec form of CMD/ENTRYPOINT ([\"using braces\"]) instead of the shell form (no braces)",
   "categories": [
@@ -10,6 +10,17 @@
   ],
   "lifecycleStages": [
     "RUNTIME"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
+      "deployment": {
+        "name": "machine-config-daemon",
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    }
   ],
   "eventSource": "DEPLOYMENT_EVENT",
   "severity": "HIGH_SEVERITY",
