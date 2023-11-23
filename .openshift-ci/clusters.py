@@ -58,7 +58,8 @@ class GKECluster:
             try:
                 exitstatus = cmd.wait(GKECluster.PROVISION_TIMEOUT)
                 if exitstatus != 0:
-                    raise RuntimeError(f"Cluster provision failed: exit {exitstatus}")
+                    raise RuntimeError(
+                        f"Cluster provision failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
                 popen_graceful_kill(cmd)
                 raise err

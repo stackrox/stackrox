@@ -9,6 +9,7 @@ from ci_tests import QaE2eTestCompatibility
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner
 
+
 def make_compatibility_test_runner(cluster):
     return ClusterTestSetsRunner(
         cluster=cluster,
@@ -18,8 +19,8 @@ def make_compatibility_test_runner(cluster):
                 "pre_test": PreSystemTests(),
                 "test": QaE2eTestCompatibility(),
                 "post_test": PostClusterTest(
-                   check_stackrox_logs=True,
-                   artifact_destination_prefix="compatibility",
+                    check_stackrox_logs=True,
+                    artifact_destination_prefix="compatibility",
                 ),
             },
         ],

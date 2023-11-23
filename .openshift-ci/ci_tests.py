@@ -23,7 +23,9 @@ class BaseTest:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
                 # Kill child processes as we cannot rely on bash scripts to handle signals and stop tests
-                subprocess.run(["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5)
+                subprocess.run(
+                    ["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5
+                )
                 # Then kill the test command
                 popen_graceful_kill(cmd)
                 raise err
@@ -45,16 +47,25 @@ class UpgradeTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_outputs = [UpgradeTest.TEST_SENSOR_OUTPUT_DIR, UpgradeTest.TEST_OUTPUT_DIR]
+            self.test_outputs = [
+                UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
+                UpgradeTest.TEST_OUTPUT_DIR,
+            ]
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_sensor_run.sh", UpgradeTest.TEST_SENSOR_OUTPUT_DIR],
+            [
+                "tests/upgrade/postgres_sensor_run.sh",
+                UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
+            ],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/legacy_to_postgres_run.sh", UpgradeTest.TEST_LEGACY_OUTPUT_DIR],
+            [
+                "tests/upgrade/legacy_to_postgres_run.sh",
+                UpgradeTest.TEST_LEGACY_OUTPUT_DIR,
+            ],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
@@ -74,11 +85,18 @@ class OperatorE2eTest(BaseTest):
     def __init__(self, *args, **kwargs):
         super(OperatorE2eTest, self).__init__(*args, **kwargs)
         self._operator_cluster_type = kwargs.get(
-            "operator_cluster_type", OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4)
+            "operator_cluster_type", OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
+        )
 
     def run(self):
-        if self._operator_cluster_type != OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4:
-            print("Running on cluster type %s, installing OLM" % self._operator_cluster_type)
+        if (
+            self._operator_cluster_type
+            != OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
+        ):
+            print(
+                "Running on cluster type %s, installing OLM"
+                % self._operator_cluster_type
+            )
             self.run_with_graceful_kill(
                 ["make", "-C", "operator", "olm-install"],
                 OperatorE2eTest.TEST_TIMEOUT_SEC,
@@ -120,7 +138,8 @@ class QaE2eTestCompatibility(BaseTest):
         print("Executing qa-tests-compatibility tests")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-compatibility.sh"], QaE2eTestCompatibility.TEST_TIMEOUT
+            ["qa-tests-backend/scripts/run-compatibility.sh"],
+            QaE2eTestCompatibility.TEST_TIMEOUT,
         )
 
 
@@ -215,7 +234,6 @@ class SensorIntegrationOCP(SensorIntegration):
         print("Skipping the Sensor Integration Tests for OCP")
 
 
-
 class ScaleTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
     PPROF_ZIP_OUTPUT = "/tmp/scale-test/pprof.zip"
@@ -232,6 +250,7 @@ class ScaleTest(BaseTest):
             ScaleTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
 
 class CustomSetTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
