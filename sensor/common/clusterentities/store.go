@@ -31,13 +31,49 @@ type PublicIPsListener interface {
 	OnRemoved(ip net.IPAddress)
 }
 
+func newEntityStatus(numTicks uint16) *entityStatus {
+	return &entityStatus{
+		ticksLeft:    numTicks,
+		isHistorical: false,
+	}
+}
+
+type entityStatus struct {
+	ticksLeft    uint16
+	isHistorical bool
+}
+
+// markHistorical is called when entity would be deleted.
+// Istead, we mark it as historcal and keep it as long as ticksLeft
+func (es *entityStatus) markHistorical(ticksLeft uint16) {
+	if !es.isHistorical {
+		es.ticksLeft = ticksLeft
+	}
+	es.isHistorical = true
+}
+
+// recordTick decreases value of ticksLeft until it reaches 0
+func (es *entityStatus) recordTick() {
+	if !es.isHistorical {
+		return
+	}
+	if es.ticksLeft > 0 {
+		es.ticksLeft--
+	}
+}
+
+// IsExpired returns true if historical entry waited for `ticksLeft` ticks
+func (es *entityStatus) IsExpired() bool {
+	return es.isHistorical && es.ticksLeft == 0
+}
+
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
 // endpoint.
 type Store struct {
 	// ipMap maps ip addresses to sets of deployment ids this IP is associated with.
 	ipMap map[net.IPAddress]map[string]struct{}
 	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
-	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}
+	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus
 	// containerIDMap maps container IDs to container metadata
 	containerIDMap map[string]ContainerMetadata
 
@@ -76,7 +112,7 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 
 func (e *Store) initMaps() {
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
-	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus)
 	e.containerIDMap = make(map[string]ContainerMetadata)
 	e.reverseIPMap = make(map[string]map[net.IPAddress]struct{})
 	e.reverseEndpointMap = make(map[string]map[net.NumericEndpoint]struct{})
@@ -145,7 +181,42 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // Tick informs the store that unit of time has passed
 func (e *Store) Tick() {
-	// FIXME: Implement expiration of historical endpoints
+	// FIXME: Optimize this
+	for numericEndpoint, endpointData := range e.endpointMap {
+		for deploymentID, deploymentData := range endpointData {
+			for _, entityStatus := range deploymentData {
+				entityStatus.recordTick()
+				e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, numericEndpoint)
+			}
+		}
+	}
+}
+
+func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
+	delete(e.endpointMap[ep], deploymentID)
+	if len(e.endpointMap[ep]) == 0 {
+		delete(e.endpointMap, ep)
+	}
+	// TODO: Remove also from reverseEndpointMap
+}
+
+func (e *Store) removeHistoricalExpiredDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
+	_, ok := e.endpointMap[ep][deploymentID]
+	if !ok {
+		return
+	}
+	nonExpired := len(e.endpointMap[ep][deploymentID])
+	for _, entStatus := range e.endpointMap[ep][deploymentID] {
+		if !entStatus.isHistorical {
+			continue
+		}
+		if entStatus.IsExpired() {
+			nonExpired--
+		}
+	}
+	if nonExpired == 0 {
+		e.removeDeploymentEndpoints(deploymentID, ep)
+	}
 }
 
 func (e *Store) purgeNoLock(deploymentID string) {
@@ -161,7 +232,13 @@ func (e *Store) purgeNoLock(deploymentID string) {
 	}
 	for ep := range e.reverseEndpointMap[deploymentID] {
 		set := e.endpointMap[ep]
-		delete(set, deploymentID)
+
+		entry := set[deploymentID]
+		for _, status := range entry {
+			status.markHistorical(e.entitiesMemorySize)
+		}
+		e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, ep)
+
 		if len(set) == 0 {
 			delete(e.endpointMap, ep)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
@@ -207,7 +284,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 
 		epMap := e.endpointMap[ep]
 		if epMap == nil {
-			epMap = make(map[string]map[EndpointTargetInfo]struct{})
+			epMap = make(map[string]map[EndpointTargetInfo]*entityStatus)
 			e.endpointMap[ep] = epMap
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.incPublicIPRefNoLock(ipAddr)
@@ -215,11 +292,11 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		targetSet := epMap[deploymentID]
 		if targetSet == nil {
-			targetSet = make(map[EndpointTargetInfo]struct{})
+			targetSet = make(map[EndpointTargetInfo]*entityStatus)
 			epMap[deploymentID] = targetSet
 		}
 		for _, tgtInfo := range targetInfos {
-			targetSet[tgtInfo] = struct{}{}
+			targetSet[tgtInfo] = newEntityStatus(e.entitiesMemorySize)
 		}
 	}
 

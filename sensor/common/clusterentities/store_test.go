@@ -70,7 +70,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only the younger IP must exist
 			},
 		},
-		"Old IPs should be gone after 1 tick": {
+		"Old IPs should be gone on the first tick": {
 			numTicksToRemember: 1,
 			entityUpdates: []eUpdate{
 				{
@@ -88,14 +88,37 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 			},
 			endpointsAfterTick: []map[string]bool{
 				{"10.0.0.1": true, "10.3.0.1": true},  // pre-tick 1: both must exist
-				{"10.0.0.1": true, "10.3.0.1": true},  // tick 1: both must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only the younger IP must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 1: only the younger IP must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only the younger IP must exist
+			},
+		},
+		"Old IPs should be gone on the 2nd tick": {
+			numTicksToRemember: 2,
+			entityUpdates: []eUpdate{
+				{
+					containerID: "pod1",
+					ipAddr:      "10.0.0.1",
+					port:        80,
+					incremental: true,
+				},
+				{
+					containerID: "pod1",
+					ipAddr:      "10.3.0.1",
+					port:        80,
+					incremental: false,
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": true, "10.3.0.1": true},  // pre-tick 1: both must exist
+				{"10.0.0.1": true, "10.3.0.1": true},  // after-tick 1:  both must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only the younger IP must exist
 			},
 		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			entityStore := NewStoreWithMemory(tCase.numTicksToRemember)
+			// Entities are updated based on the data from K8s
 			for _, update := range tCase.entityUpdates {
 				entityStore.Apply(map[string]*EntityData{
 					update.containerID: entityUpdate(update.ipAddr, update.port),
@@ -108,11 +131,10 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 					if shallExist {
 						s.True(len(result) > 0, "Should find endpoint %q in tick %d", endpoint, tickNo)
 					} else {
-						s.True(len(result) == 0, "Should not find endpoint %q in tick %d", tickNo, endpoint)
+						s.True(len(result) == 0, "Should not find endpoint %q in tick %d", endpoint, tickNo)
 					}
 				}
 				entityStore.Tick()
-				s.T().Logf("Tick %d", tickNo+1)
 			}
 		})
 	}
