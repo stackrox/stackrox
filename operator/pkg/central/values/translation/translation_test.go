@@ -534,9 +534,6 @@ func TestTranslate(t *testing.T) {
 					},
 					"exposeMonitoring": true,
 				},
-				"system": map[string]interface{}{
-					"createSCCs": true,
-				},
 			},
 		},
 

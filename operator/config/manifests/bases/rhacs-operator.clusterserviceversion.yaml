@@ -109,6 +109,14 @@ spec:
           of vulnerability definitions and kernel modules are disabled.
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Set this to true to have the
+          operator create SecurityContextConstraints (SCCs) for the operands. This
+          isn't usually needed, and may interfere with other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
@@ -318,25 +326,14 @@ spec:
         path: central.telemetry
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configures resources within Central in a declarative manner.
-        displayName: Declarative Configuration
-        path: central.declarativeConfiguration
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Overlays
         displayName: Overlays
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Configures the encryption of notifier secrets stored in the Central
-          DB.
-        displayName: Notifier Secrets Encryption
-        path: central.notifierSecretsEncryption
+      - description: Configures resources within Central in a declarative manner.
+        displayName: Declarative Configuration
+        path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
@@ -344,6 +341,12 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Configures the encryption of notifier secrets stored in the Central
+          DB.
+        displayName: Notifier Secrets Encryption
+        path: central.notifierSecretsEncryption
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Stores persistent data on a directory on the host. This is not
           recommended, and should only be used together with a node selector (only
           available in YAML view).
@@ -487,6 +490,12 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
@@ -541,6 +550,14 @@ spec:
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Set this to true to have the
+          operator create SecurityContextConstraints (SCCs) for the operands. This
+          isn't usually needed, and may interfere with other workloads.
+        displayName: Create SecurityContextConstraints for Operand
+        path: misc.createSCCs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
@@ -707,11 +724,6 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -822,6 +834,12 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Deprecated field. It is no longer necessary to specify it. This
+          field will be removed in a future release. Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:

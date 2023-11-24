@@ -539,9 +539,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 					},
 				},
-				"system": map[string]interface{}{
-					"createSCCs": true,
-				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
