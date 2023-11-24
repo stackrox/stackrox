@@ -686,16 +686,14 @@ spec:
                   type: object
                 type: array
               misc:
-                description: Deprecated field. It is no longer necessary to specify
-                  it. This field will be removed in a future release. Miscellaneous
-                  settings.
+                description: Deprecated field. This field will be removed in a future
+                  release. Miscellaneous settings.
                 properties:
                   createSCCs:
-                    description: Deprecated field. It is no longer necessary to specify
-                      it. This field will be removed in a future release. Set this
-                      to true to have the operator create SecurityContextConstraints
-                      (SCCs) for the operands. This isn't usually needed, and may
-                      interfere with other workloads.
+                    description: Deprecated field. This field will be removed in a
+                      future release. Set this to true to have the operator create
+                      SecurityContextConstraints (SCCs) for the operands. This isn't
+                      usually needed, and may interfere with other workloads.
                     type: boolean
                 type: object
               monitoring:

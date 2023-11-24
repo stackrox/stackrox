@@ -85,8 +85,8 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Miscellaneous settings.
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
         displayName: Miscellaneous
         path: misc
         x-descriptors:
@@ -390,10 +390,10 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Set this to true to have the
-          operator create SecurityContextConstraints (SCCs) for the operands. This
-          isn't usually needed, and may interfere with other workloads.
+      - description: Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints
+          (SCCs) for the operands. This isn't usually needed, and may interfere with
+          other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
         x-descriptors:
@@ -603,8 +603,8 @@ spec:
         path: registryOverride
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Miscellaneous settings.
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
         displayName: Miscellaneous
         path: misc
         x-descriptors:
@@ -676,10 +676,10 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Set this to true to have the
-          operator create SecurityContextConstraints (SCCs) for the operands. This
-          isn't usually needed, and may interfere with other workloads.
+      - description: Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints
+          (SCCs) for the operands. This isn't usually needed, and may interfere with
+          other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
         x-descriptors:
