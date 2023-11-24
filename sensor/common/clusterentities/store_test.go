@@ -55,19 +55,19 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 					containerID: "pod1",
 					ipAddr:      "10.0.0.1",
 					port:        80,
-					incremental: true,
+					incremental: true, // append
 				},
 				{
 					containerID: "pod1",
 					ipAddr:      "10.3.0.1",
 					port:        80,
-					incremental: false,
+					incremental: false, // replace
 				},
 			},
 			endpointsAfterTick: []map[string]bool{
-				{"10.0.0.1": false, "10.3.0.1": true}, // pre-tick 1: both must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // tick 1: both must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only the younger IP must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // pre-tick 1: 10.0.0.1 should be overwritten immediately - only 10.3.0.1 should exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // tick 1: only 10.3.0.1 should exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // tick 2: only 10.3.0.1 should exist
 			},
 		},
 		"Old IPs should be gone on the first tick": {
@@ -88,8 +88,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 			},
 			endpointsAfterTick: []map[string]bool{
 				{"10.0.0.1": true, "10.3.0.1": true},  // pre-tick 1: both must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 1: only the younger IP must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only the younger IP must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 1: only 10.3.0.1 should exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only 10.3.0.1 should exist
 			},
 		},
 		"Old IPs should be gone on the 2nd tick": {
@@ -110,8 +110,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 			},
 			endpointsAfterTick: []map[string]bool{
 				{"10.0.0.1": true, "10.3.0.1": true},  // pre-tick 1: both must exist
-				{"10.0.0.1": true, "10.3.0.1": true},  // after-tick 1:  both must exist
-				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only the younger IP must exist
+				{"10.0.0.1": true, "10.3.0.1": true},  // after-tick 1: both must exist
+				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only 10.3.0.1 should exist
 			},
 		},
 	}
