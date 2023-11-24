@@ -248,7 +248,7 @@ spec:
         - name: name
           value: buildah-10gb
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-10gb:0.1@sha256:9bda5d4a36c44c25248d658e193a21549298f76a36929eefb25c22599f7e819f
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-10gb:0.1@sha256:bf34cf6cc8651312461e9aed181706a1e60e6eefb58d5ffcf5c19c1fd20ecb1c
         - name: kind
           value: task
         resolver: bundles
