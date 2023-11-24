@@ -91,7 +91,7 @@ compatibility_test() {
 update_junit_prefix_with_central_and_sensor_version() {
     short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
     short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
-    
+
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
     info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
     for f in "$result_folder"/*.xml; do
