@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
@@ -532,6 +533,221 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 				s.Assert().NotNil(s.deploymentStore.Get(string(after.GetUID())))
 			}
 
+		})
+	}
+}
+
+var (
+	namespaceName            = "test-ns"
+	deleteWithReferenceCases = map[string]struct {
+		deploymentsToAdd           []*v1.Deployment
+		deploymentsToRemove        []*v1.Deployment
+		deploymentsToReference     []string
+		deploymentsToDereference   []string
+		expectedDeletedDeployments []string
+		expectedMarkedDeployments  []string
+	}{
+		"All deleted": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToReference:     []string{"1", "2"},
+			deploymentsToDereference:   []string{"1", "2"},
+			expectedDeletedDeployments: []string{"1", "2"},
+		},
+		"All deleted no extra reference": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			expectedDeletedDeployments: []string{"1", "2"},
+		},
+		"All marked as deleted": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToReference:    []string{"1", "2"},
+			expectedMarkedDeployments: []string{"1", "2"},
+		},
+		"One deleted one marked as deleted": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToReference:     []string{"1"},
+			expectedMarkedDeployments:  []string{"1"},
+			expectedDeletedDeployments: []string{"2"},
+		},
+	}
+	deleteCases = map[string]struct {
+		deploymentsToAdd           []*v1.Deployment
+		deploymentsToRemove        []*v1.Deployment
+		expectedDeletedDeployments []string
+	}{
+		"All deleted": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			expectedDeletedDeployments: []string{"1", "2"},
+		},
+		"One deleted": {
+			deploymentsToAdd: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+				makeDeploymentObject("dep-2", namespaceName, "2"),
+			},
+			deploymentsToRemove: []*v1.Deployment{
+				makeDeploymentObject("dep-1", namespaceName, "1"),
+			},
+			expectedDeletedDeployments: []string{"1"},
+		},
+	}
+)
+
+func (s *deploymentStoreSuite) Test_DeleteDeployments() {
+	for name, tc := range deleteCases {
+		s.Run(name, func() {
+			s.namespaceStore = newNamespaceStore()
+			s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: namespaceName, Id: "1"})
+			s.deploymentStore = newDeploymentStore()
+
+			for _, deploymentToAdd := range tc.deploymentsToAdd {
+				s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(deploymentToAdd))
+			}
+
+			for _, deploymentToRemove := range tc.deploymentsToRemove {
+				s.deploymentStore.removeDeployment(s.createDeploymentWrap(deploymentToRemove))
+			}
+
+			for _, expectedDeleted := range tc.expectedDeletedDeployments {
+				s.Assert().Nil(s.deploymentStore.Get(expectedDeleted))
+			}
+		})
+	}
+}
+
+func (s *deploymentStoreSuite) Test_OnNamespaceDeleted() {
+	deployments := []*deploymentWrap{
+		s.createDeploymentWrap(makeDeploymentObject("dep-1", namespaceName, "1")),
+		s.createDeploymentWrap(makeDeploymentObject("dep-2", namespaceName, "2")),
+	}
+
+	s.namespaceStore = newNamespaceStore()
+	s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: namespaceName, Id: "1"})
+	s.deploymentStore = newDeploymentStore()
+	for _, dep := range deployments {
+		s.deploymentStore.addOrUpdateDeployment(dep)
+	}
+
+	s.deploymentStore.OnNamespaceDeleted(namespaceName)
+
+	for _, dep := range deployments {
+		s.Assert().Nil(s.deploymentStore.Get(dep.GetId()))
+	}
+	s.Assert().Len(s.deploymentStore.deploymentIDs[namespaceName], 0)
+}
+
+func (s *deploymentStoreSuite) Test_DeleteDeploymentsWithReferences() {
+	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	if !features.SensorCapturesIntermediateEvents.Enabled() {
+		s.T().Skipf("Skip tests when %s is disabled", features.SensorCapturesIntermediateEvents.EnvVar())
+		s.T().SkipNow()
+	}
+	for name, tc := range deleteWithReferenceCases {
+		s.Run(name, func() {
+			s.namespaceStore = newNamespaceStore()
+			s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: namespaceName, Id: "1"})
+			s.deploymentStore = newDeploymentStore()
+
+			for _, deploymentToAdd := range tc.deploymentsToAdd {
+				s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(deploymentToAdd))
+			}
+
+			for _, referenceToAdd := range tc.deploymentsToReference {
+				s.deploymentStore.AddReference(referenceToAdd)
+			}
+
+			for _, deploymentToRemove := range tc.deploymentsToRemove {
+				s.deploymentStore.removeDeployment(s.createDeploymentWrap(deploymentToRemove))
+			}
+
+			for _, referenceToRemove := range tc.deploymentsToDereference {
+				s.deploymentStore.RemoveReference(referenceToRemove)
+			}
+
+			for _, expectedDeleted := range tc.expectedDeletedDeployments {
+				s.Assert().Nil(s.deploymentStore.Get(expectedDeleted))
+			}
+
+			for _, expectedMarked := range tc.expectedMarkedDeployments {
+				wrap := s.deploymentStore.getWrap(expectedMarked)
+				s.Require().NotNil(wrap)
+				s.Assert().True(wrap.IsMarkedAsDeleted())
+			}
+			s.Assert().Len(s.deploymentStore.deploymentIDs[namespaceName], len(tc.expectedMarkedDeployments))
+		})
+	}
+}
+
+func (s *deploymentStoreSuite) Test_OnNamespaceDeletedWithReferences() {
+	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	if !features.SensorCapturesIntermediateEvents.Enabled() {
+		s.T().Skipf("Skip tests when %s is disabled", features.SensorCapturesIntermediateEvents.EnvVar())
+		s.T().SkipNow()
+	}
+	for name, tc := range deleteWithReferenceCases {
+		s.Run(name, func() {
+			s.namespaceStore = newNamespaceStore()
+			s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: namespaceName, Id: "1"})
+			s.deploymentStore = newDeploymentStore()
+
+			for _, deploymentToAdd := range tc.deploymentsToAdd {
+				s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(deploymentToAdd))
+			}
+
+			for _, referenceToAdd := range tc.deploymentsToReference {
+				s.deploymentStore.AddReference(referenceToAdd)
+			}
+
+			for _, referenceToRemove := range tc.deploymentsToDereference {
+				s.deploymentStore.RemoveReference(referenceToRemove)
+			}
+
+			s.deploymentStore.OnNamespaceDeleted(namespaceName)
+
+			for _, expectedDeleted := range tc.expectedDeletedDeployments {
+				s.Assert().Nil(s.deploymentStore.Get(expectedDeleted))
+			}
+
+			for _, expectedMarked := range tc.expectedMarkedDeployments {
+				wrap := s.deploymentStore.getWrap(expectedMarked)
+				s.Require().NotNil(wrap)
+				s.Assert().True(wrap.IsMarkedAsDeleted())
+			}
+
+			s.Assert().Len(s.deploymentStore.deploymentIDs[namespaceName], len(tc.expectedMarkedDeployments))
 		})
 	}
 }

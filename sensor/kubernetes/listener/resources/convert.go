@@ -74,6 +74,13 @@ type deploymentWrap struct {
 	// to be processed soon (since we can guarantee that there is a deployment event in the resolver queue).
 	isBuilt bool
 
+	// deleted indicates that the REMOVE event for this deployment was received. If it is set to true, it indicates that
+	// the deployments was deleted from the cluster. We still keep it in the deployment store until the references count to
+	// this deployment is zero.
+	deleted bool
+	// references indicates the number of references to this deployment in difference pipelines (e.g. process indicators, network flows).
+	references int
+
 	mutex sync.RWMutex
 }
 
@@ -266,6 +273,45 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 		return nil
 	}
 	return w.Deployment
+}
+
+// IsMarkedAsDeleted indicates whether the deployment is marked as deleted or not.
+func (w *deploymentWrap) IsMarkedAsDeleted() bool {
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+	return w.deleted
+}
+
+// MarkAsDeleted marks the deployment as deleted.
+func (w *deploymentWrap) MarkAsDeleted() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.deleted = true
+}
+
+// References returns the number of references to the deployment.
+func (w *deploymentWrap) References() int {
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+	return w.references
+}
+
+// RemoveReference removes a reference to the deployment and returns the updated number of references.
+func (w *deploymentWrap) RemoveReference() int {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	if w.references > 0 {
+		w.references--
+	}
+	return w.references
+}
+
+// AddReference adds a reference to the deployment and returns the updated number of references.
+func (w *deploymentWrap) AddReference() int {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.references++
+	return w.references
 }
 
 // Do cheap filtering on pod name based on name of higher level object (deployment, daemonset, etc)

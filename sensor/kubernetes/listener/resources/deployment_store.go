@@ -54,6 +54,7 @@ func (ds *DeploymentStore) addOrUpdateDeploymentNoLock(wrap *deploymentWrap) {
 	ids[wrap.GetId()] = struct{}{}
 
 	ds.deployments[wrap.GetId()] = wrap
+	wrap.AddReference()
 }
 
 // Cleanup deletes all entries from store
@@ -68,13 +69,24 @@ func (ds *DeploymentStore) Cleanup() {
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
-
-	ids := ds.deploymentIDs[wrap.GetNamespace()]
-	if ids == nil {
-		return
+	ds.removeDeploymentNoLock(wrap)
+}
+func (ds *DeploymentStore) removeDeploymentNoLock(wrap *deploymentWrap) {
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		dep, found := ds.deployments[wrap.GetId()]
+		if !found || dep == nil {
+			return
+		}
+		dep.MarkAsDeleted()
+		ds.removeReferenceNoLock(wrap.GetId())
+	} else {
+		ids := ds.deploymentIDs[wrap.GetNamespace()]
+		if ids == nil {
+			return
+		}
+		delete(ids, wrap.GetId())
+		delete(ds.deployments, wrap.GetId())
 	}
-	delete(ids, wrap.GetId())
-	delete(ds.deployments, wrap.GetId())
 }
 
 func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
@@ -132,9 +144,16 @@ func (ds *DeploymentStore) OnNamespaceDeleted(namespace string) {
 	}
 
 	for id := range ids {
-		delete(ds.deployments, id)
+		ds.removeDeploymentNoLock(&deploymentWrap{
+			Deployment: &storage.Deployment{
+				Id:        id,
+				Namespace: namespace,
+			},
+		})
 	}
-	delete(ds.deploymentIDs, namespace)
+	if !features.SensorCapturesIntermediateEvents.Enabled() || len(ds.deploymentIDs[namespace]) == 0 {
+		delete(ds.deploymentIDs, namespace)
+	}
 }
 
 // GetAll returns all deployments.
@@ -308,4 +327,44 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	}
 
 	return clone, true, nil
+}
+
+// AddReference adds a reference to the deployment with the given id.
+func (ds *DeploymentStore) AddReference(id string) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	wrap, found := ds.deployments[id]
+	if !found || wrap == nil {
+		return
+	}
+	wrap.AddReference()
+}
+
+// RemoveReference removes a reference to the deployment with the given id. If the number of references is zero,
+// the deployment will be deleted.
+func (ds *DeploymentStore) RemoveReference(id string) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	ds.removeReferenceNoLock(id)
+}
+
+func (ds *DeploymentStore) removeReferenceNoLock(id string) {
+	wrap, found := ds.deployments[id]
+	if !found || wrap == nil {
+		return
+	}
+
+	if wrap.RemoveReference() == 0 && wrap.IsMarkedAsDeleted() {
+		ids := ds.deploymentIDs[wrap.GetNamespace()]
+		if ids == nil {
+			return
+		}
+		delete(ids, wrap.GetId())
+		delete(ds.deployments, wrap.GetId())
+		if len(ds.deploymentIDs[wrap.GetNamespace()]) == 0 {
+			delete(ds.deploymentIDs, wrap.GetNamespace())
+		}
+	}
 }
