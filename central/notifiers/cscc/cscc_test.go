@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -53,7 +52,12 @@ func TestWithFakeCSCC(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
 	clusterStore.EXPECT().GetCluster(gomock.Any(), "test_id").Return(cluster, true, nil)
-	scc, _ := newCSCC(s, cryptocodec.Singleton(), "stackrox")
+	testCscc := &cscc{
+		config: &config{
+			SourceID: sourceID,
+		},
+		Notifier: s,
+	}
 
 	alertID := "myAlertID"
 	severity := securitycenterpb.Finding_HIGH
@@ -77,7 +81,7 @@ func TestWithFakeCSCC(t *testing.T) {
 	findingID := ""
 	var finding *securitycenterpb.Finding
 	var err error
-	findingID, finding, err = scc.initFinding(context.Background(), testAlert, clusterStore)
+	findingID, finding, err = testCscc.initFinding(context.Background(), testAlert, clusterStore)
 	assert.NoError(t, err)
 	assert.Equal(t, "myAlertID", findingID)
 	assert.NotEmpty(t, finding)

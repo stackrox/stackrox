@@ -17,7 +17,6 @@ import (
 	adminOption "github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
@@ -92,7 +91,6 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	}
 
 	client, err := securitycenter.NewClient(context.Background(),
-		option.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
 		option.WithCredentials(cfg))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating client for security center API")
