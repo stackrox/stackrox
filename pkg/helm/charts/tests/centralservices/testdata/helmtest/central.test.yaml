@@ -72,7 +72,7 @@ tests:
     env:
       openshift: 4
   expect: |
-    .roles["central-scc"] | assertThat(. != null)
+    .roles["use-central-scc"] | assertThat(. != null)
     .rolebindings["central-use-scc"] | assertThat(. != null)
     .securitycontextconstraints["restricted-v2"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)

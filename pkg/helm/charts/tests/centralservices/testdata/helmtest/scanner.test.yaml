@@ -108,7 +108,7 @@ tests:
     system:
       createSCCs: false
   expect: |
-    .roles["scanner-scc"] | assertThat(. != null)
+    .roles["use-scanner-scc"] | assertThat(. != null)
     .rolebindings["scanner-use-scc"] | assertThat(. != null)
     .securitycontextconstraints["restricted-v2"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
