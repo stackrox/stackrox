@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"cloud.google.com/go/secretmanager/apiv1"
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/googleapis/gax-go/v2"
