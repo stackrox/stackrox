@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -20,8 +19,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	// digestPrefixes lists the prefixes for valid, OCI-compliant image digests.
 	// Please see https://github.com/opencontainers/image-spec/blob/main/descriptor.md#registered-algorithms
 	// for more information.

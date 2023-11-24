@@ -86,10 +86,6 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
-func (li *lazyImpl) evaluateDeduping(_ interface{}) bool {
-	return false
-}
-
 func (li *lazyImpl) consumeFromQueue() {
 	for li.toIndex.Length() > 0 {
 		key, value, signal := li.toIndex.Pop()
