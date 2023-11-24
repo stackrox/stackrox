@@ -52,6 +52,9 @@ updates:
       include: scope
       prefix: chore
     ignore:
+      # Dex versions are not compatible with Go nor dependabot.
+      # See: https://github.com/dexidp/dex/issues/2880
+      - dependency-name: "github.com/dexidp/dex"
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
       # This version of ClairCore does not build on Darwin.
