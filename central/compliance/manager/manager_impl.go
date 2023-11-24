@@ -131,24 +131,6 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard *standar
 	return run
 }
 
-func (m *manager) cleanupRuns() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Step 1: Gather runs marked for deletion.
-	runsToDelete := set.NewStringSet()
-	for id, run := range m.runsByID {
-		if run.shouldDelete() {
-			runsToDelete.Add(id)
-		}
-	}
-
-	// Step 3: Actually delete the runs
-	for runID := range runsToDelete {
-		delete(m.runsByID, runID)
-	}
-}
-
 func (m *manager) interrupt() {
 	select {
 	case <-m.stopSig.Done():

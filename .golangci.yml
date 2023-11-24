@@ -11,9 +11,14 @@ output:
   format: "junit-xml:report.xml,colored-line-number"
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-use-default: false
 
   exclude-rules:
+    - path: "(integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+      linters:
+        - unused
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
         - wrapcheck
@@ -178,7 +183,7 @@ linters:
     # - typecheck
     # - unconvert TODO: add in follow-up
     # - unparam TODO: add in follow-up
-    # - unused
+    - unused
     # - varcheck
     # - whitespace
     - wrapcheck

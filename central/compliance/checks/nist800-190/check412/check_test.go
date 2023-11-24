@@ -121,29 +121,6 @@ var (
 		},
 	}
 
-	indicatorsWithoutSSH = []*storage.ProcessIndicator{
-		{
-			Id:            uuid.NewV4().String(),
-			DeploymentId:  testDeployments[0].GetId(),
-			ContainerName: testDeployments[0].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
-				Pid:          15,
-				Name:         "ssh",
-				ExecFilePath: "/bin/bash",
-			},
-		},
-		{
-			Id:            uuid.NewV4().String(),
-			DeploymentId:  testDeployments[1].GetId(),
-			ContainerName: testDeployments[1].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
-				Pid:          32,
-				Name:         "sshd",
-				ExecFilePath: "/bin/zsh",
-			},
-		},
-	}
-
 	privPolicyDisabled = &storage.Policy{
 		Id:                 uuid.NewV4().String(),
 		Name:               "Privileged Container",

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -20,8 +19,6 @@ import (
 )
 
 /// Retrieve Kubernetes Object Definitions from a running cluster.
-
-const contextTimeout = 10 * time.Second
 
 type liveK8sObjectDescription struct {
 	client    dynamic.Interface
