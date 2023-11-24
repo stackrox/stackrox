@@ -16,7 +16,7 @@ issues:
   exclude-use-default: false
 
   exclude-rules:
-    - path: "(migrator|operator|pkg|scanner|sensor)/"
+    - path: "(migrator|pkg|scanner|sensor)/"
       linters:
         - unused
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
