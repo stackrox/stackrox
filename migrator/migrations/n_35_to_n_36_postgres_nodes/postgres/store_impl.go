@@ -495,51 +495,6 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Node) error {
 	})
 }
 
-func (s *storeImpl) copyFromNodesTaints(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.Taint) error {
-	inputRows := [][]interface{}{}
-	var err error
-	copyCols := []string{
-		"nodes_id",
-		"idx",
-		"key",
-		"value",
-		"tainteffect",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		if pgutils.NilOrUUID(nodeID) == nil {
-			log.WriteToStderrf("id is not a valid uuid -- %q", nodeID)
-			continue
-		}
-
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(nodeID),
-			idx,
-			obj.GetKey(),
-			obj.GetValue(),
-			obj.GetTaintEffect(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"nodes_taints"}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-	return err
-}
-
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	return pgutils.Retry2(func() (int, error) {

@@ -12,14 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-const (
-	// terminateConnectionStmt - terminates connections to the specified database
-	terminateConnectionStmt = "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
-		"FROM pg_stat_activity " +
-		"WHERE datname = $1 " +
-		"AND pid <> pg_backend_pid();"
-)
-
 // RenameDB - renames a database
 func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 	if pgconfig.IsExternalDatabase() {

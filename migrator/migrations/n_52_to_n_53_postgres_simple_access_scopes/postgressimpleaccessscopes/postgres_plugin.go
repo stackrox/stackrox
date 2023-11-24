@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	baseTable = "simple_access_scopes"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

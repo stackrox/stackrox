@@ -185,11 +185,3 @@ func checkIfPoliciesMatch(fieldsToCompare []FieldComparator, first *storage.Poli
 	}
 	return true
 }
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}

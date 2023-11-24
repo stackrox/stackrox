@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	baseTable = "permission_sets"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
