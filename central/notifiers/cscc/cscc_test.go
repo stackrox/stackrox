@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/gogo/protobuf/types"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +56,7 @@ func TestWithFakeCSCC(t *testing.T) {
 	scc, _ := newCSCC(s, cryptocodec.Singleton(), "stackrox")
 
 	alertID := "myAlertID"
-	severity := findings.High
+	severity := securitycenterpb.Finding_HIGH
 
 	testAlert := &storage.Alert{
 		Id: alertID,
@@ -75,7 +75,7 @@ func TestWithFakeCSCC(t *testing.T) {
 		Time: types.TimestampNow(),
 	}
 	findingID := ""
-	var finding *findings.Finding
+	var finding *securitycenterpb.Finding
 	var err error
 	findingID, finding, err = scc.initFinding(context.Background(), testAlert, clusterStore)
 	assert.NoError(t, err)
@@ -83,6 +83,5 @@ func TestWithFakeCSCC(t *testing.T) {
 	assert.NotEmpty(t, finding)
 	assert.Equal(t, severity, finding.Severity)
 	assert.Equal(t, sourceID, finding.Parent)
-	assert.Contains(t, finding.URL, alertID)
-
+	assert.Contains(t, finding.ExternalUri, alertID)
 }
