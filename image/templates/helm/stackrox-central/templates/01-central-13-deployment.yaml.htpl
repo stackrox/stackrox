@@ -126,9 +126,9 @@ spec:
         - name: ROX_INSTALL_METHOD
           value: {{ ._rox.env.installMethod | quote }}
         [<- if .FeatureFlags.ROX_SCANNER_V4 >]
-        {{- if not ._rox.scannerV4.disabled }}
+        {{- if not ._rox.scannerV4.disable }}
         - name: ROX_SCANNER_V4_ENABLED
-          value: "{{ not ._rox.scannerV4.disabled }}"
+          value: "{{ not ._rox.scannerV4.disable }}"
         {{- end }}
         [<- end >]
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
