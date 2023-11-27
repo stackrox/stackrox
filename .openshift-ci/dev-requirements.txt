@@ -1,3 +1,4 @@
+# These versions match those in stackrox-test-0.3.62
 pycodestyle==2.10.0
 autopep8
 pylint==2.13.9
