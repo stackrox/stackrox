@@ -24,5 +24,22 @@ central:
 monitoring:
   openshift:
     enabled: true
+scannerV4:
+  disable: false
+  indexer:
+    disable: false
+    serviceTLS:
+      cert: "scanner tls cert pem"
+      key: "scanner tls key pem"
+  matcher:
+    disable: false
+    serviceTLS:
+      cert: "scanner tls cert pem"
+      key: "scanner tls key pem"
+  db:
+    serviceTLS:
+      cert: "scanner tls cert pem"
+      key: "scanner tls key pem"
+    password:
 system:
   enablePodSecurityPolicies: true

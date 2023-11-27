@@ -1,0 +1,57 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.scannerV4._indexerEnabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-indexer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-v4-indexer") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: scanner-v4-indexer
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: central
+    ports:
+    - port: 8443
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: sensor
+    ports:
+    - port: 8443
+      protocol: TCP
+  policyTypes:
+  - Ingress
+
+{{- if ._rox.scannerV4.exposeMonitoring }}
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-indexer-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-v4-indexer-monitoring") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-v4-indexer-monitoring") | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: {{ ._rox.scannerV4.indexer.metricsPort }}
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: scanner-v4-indexer
+  policyTypes:
+  - Ingress
+{{- end }}
+{{- end }}

@@ -49,3 +49,16 @@ values:
     dbServiceTLS:
       cert: "ScannerDB cert"
       key: "ScannerDB key"
+  scannerV4:
+    indexer:
+      serviceTLS:
+        cert: "Indexer cert"
+        key: "Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "Matcher cert"
+        key: "Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerDB cert"
+        key: "ScannerDB key"

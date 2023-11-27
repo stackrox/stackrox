@@ -1,0 +1,138 @@
+{{/*
+  srox.scannerV4Init . $scannerV4Config
+
+  Initializes the Scanner v4 configuration. The scanner chart has two modes: Indexer and Matcher.
+  In Indexer mode, the Scanner pulls images and analyzes them to determine the base OS and installed packages
+  (i.e. it indexes the images).
+  In Matcher mode, the Scanner matches the found packages to known vulnerabilities to produce a Vulnerability Report.
+  Both modes require access to a PostgreSQL database.
+
+  StackRox's Central service has two Scanner deployments: a Scanner running in Indexer mode and another
+  running in Matcher mode. In this context, the Helm chart can create its own certificates.
+
+  StackRox's Secured Cluster services may deploy the Scanner in Indexer mode, only.
+  This would be done to access registries inaccessible to the Central cluster.
+  In this context, the Helm chart does not generate its own certificates.
+
+  $scannerV4Config contains all values which are configured by the user. The structures can be viewed in the respective
+  config-shape. See internal/scanner-v4-config-shape.yaml.
+   */}}
+
+{{ define "srox.scannerV4Init" }}
+
+{{ $ := index . 0 }}
+{{ $scannerV4Cfg := index . 1 }}
+{{ $_ := false }}
+
+{{ $componentsCentralChart := dict "indexer" true "matcher" true }}
+{{ $componentsSecuredClusterChart := dict "indexer" true "matcher" false }}
+
+
+{{/* These will be propagated up. */}}
+{{ $components := dict "indexer" false "matcher" false }}
+{{ $dbEnabled  := false }}
+
+{{/* Handle high-level defaulting logic. */}}
+{{- if not $scannerV4Cfg.disable }}
+
+{{/* Sanity check. */}}
+{{- if not (or (eq $.Chart.Name "stackrox-central-services") (eq $.Chart.Name "stackrox-secured-cluster-services")) -}}
+  {{- include "srox.fail" (printf "Unexpected Helm chart name %q." $.Chart.Name) -}}
+{{- end -}}
+
+{{- if and (kindIs "invalid" $scannerV4Cfg.indexer.disable) (kindIs "invalid" $scannerV4Cfg.matcher.disable) -}}
+
+  {{/* Both settings scannerV4.indexer.disable and scannerV4.matcher.disable are not set by the user
+       => Pick default configuration based on the chart. */}}
+  {{- if eq $.Chart.Name "stackrox-central-services" -}}
+    {{- $components = $componentsCentralChart -}}
+  {{- else -}}
+    {{- $components = $componentsSecuredClusterChart -}}
+  {{- end -}}
+
+{{- else -}}
+
+  {{/* The user has explicitly set either scannerV4.indexer.disable and/or scannerV4.matcher.disable.
+       Therefore, we use this explicitly set configuration. */}}
+  {{- if not (kindIs "invalid" $scannerV4Cfg.indexer.disable) -}}
+    {{- $_ = set $components "indexer" (not $scannerV4Cfg.indexer.disable) -}}
+  {{- end -}}
+  {{- if not (kindIs "invalid" $scannerV4Cfg.matcher.disable) -}}
+    {{- $_ = set $components "matcher" (not $scannerV4Cfg.matcher.disable) -}}
+  {{- end -}}
+
+  {{/* This is potentially an unsupported configuration. Hence we generate a warning. */}}
+  {{- $msg := printf "indexer is %s and matcher is %s." (ternary "enabled" "disabled" (get $components "indexer")) (ternary "enabled" "disabled" (get $components "matcher")) -}}
+  {{- if eq $.Chart.Name "stackrox-central-services" -}}
+    {{- if or (ne (get $components "indexer") (get $componentsCentralChart "indexer")) (ne (get $components "matcher") (get $componentsCentralChart "matcher")) -}}
+      {{- include "srox.warn" (list $ (printf "Unsupported Scanner V4 configuration detected: %s" $msg)) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- if or (ne (get $components "indexer") (get $componentsSecuredClusterChart "indexer")) (ne (get $components "matcher") (get $componentsSecuredClusterChart "matcher")) -}}
+      {{- include "srox.warn" (list $ (printf "Unsupported Scanner V4 configuration detected: %s" $msg)) -}}
+    {{- end -}}
+  {{- end -}}
+
+{{- end -}}
+
+{{/* Configure images, certificates and passwords as required. */}}
+{{/* Note that for secured-cluster-services we don't configure certificates here, instead they will be distributed at runtime by Sensor and Central. */}}
+{{ if get $components "indexer" }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
+  {{- if eq $.Chart.Name "stackrox-central-services" -}}
+    {{/* Only generate certificate when installing central-services. */}}
+    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $cryptoSpec) }}
+  {{- end -}}
+{{ end }}
+
+{{ if get $components "matcher" }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
+  {{- if eq $.Chart.Name "stackrox-central-services" -}}
+    {{/* Only generate certificate when installing central-services. */}}
+    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
+  {{- end -}}
+{{ end }}
+
+{{ if or (get $components "indexer") (get $components "matcher") }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+  {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
+  {{- if eq $.Chart.Name "stackrox-central-services" -}}
+    {{/* Only generate certificate when installing central-services. */}}
+    {{ $cryptoSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $cryptoSpec) }}
+  {{- end -}}
+{{ end }}
+
+{{- else -}}
+
+  {{/* High-level scannerV4.disable is true. */}}
+  {{- if and (not (kindIs "invalid" $scannerV4Cfg.indexer.disable)) (not $scannerV4Cfg.indexer.disable) -}}
+    {{- include "srox.fail" (printf "scannerV4.disable=false required to deploy Scanner V4 indexer.") -}}
+  {{- end -}}
+  {{- if and (not (kindIs "invalid" $scannerV4Cfg.matcher.disable)) (not $scannerV4Cfg.matcher.disable) -}}
+    {{- include "srox.fail" (printf "scannerV4.disable=false required to deploy Scanner V4 matcher.") -}}
+  {{- end -}}
+
+{{- end -}}
+
+{{/* Propagate information about Scanner V4 setup. */}}
+{{- $_ := set $._rox.scannerV4 "_indexerEnabled" (get $components "indexer") -}}
+{{- $_ := set $._rox.scannerV4 "_matcherEnabled" (get $components "matcher") -}}
+{{- if or (get $components "indexer") (get $components "matcher") -}}
+  {{- $_ := set $._rox.scannerV4 "_dbEnabled" true -}}
+{{- end -}}
+
+{{/* Provide some human-readable feedback regarding the Scanner V4 configuration to the user installing the Helm chart. */}}
+{{- if and (get $components "indexer") (not (get $components "matcher")) -}}
+  {{- $_ = set $._rox.scannerV4 "_installMode" "indexer-only" -}}
+{{- else if and (not (get $components "indexer")) (get $components "matcher") -}}
+  {{- $_ = set $._rox.scannerV4 "_installMode" "matcher-only" -}}
+{{- else if and (get $components "indexer") (get $components "matcher") -}}
+  {{- $_ = set $._rox.scannerV4 "_installMode" "indexer-and-matcher" -}}
+{{- else -}}
+  {{- $_ = set $._rox.scannerV4 "_installMode" "none" -}}
+{{- end -}}
+
+{{- end -}}

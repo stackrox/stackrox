@@ -37,3 +37,17 @@ values:
     dbServiceTLS:
       cert: "ScannerDB cert"
       key: "ScannerDB key"
+  scannerV4:
+    # Setting certificate and key to dummy values, otherwise an attempt is made to generate the certificates, which would fail.
+    indexer:
+      serviceTLS:
+        cert: "ScannerV4 Indexer cert"
+        key: "ScannerV4 Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "ScannerV4 Matcher cert"
+        key: "ScannerV4 Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerV4 DB cert"
+        key: "ScannerV4 DB key"
