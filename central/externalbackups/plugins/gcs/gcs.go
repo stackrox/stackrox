@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"path"
 	"sort"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
@@ -85,7 +83,6 @@ func createClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
 		return googleStorage.NewClient(
 			context.Background(),
 			option.WithCredentialsJSON([]byte(conf.GetServiceAccount())),
-			option.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
 		)
 	}
 	if features.CloudCredentials.Enabled() {
