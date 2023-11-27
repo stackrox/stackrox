@@ -107,7 +107,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
-    @Ignore("ROX-15348")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -121,12 +120,40 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         "Search for violations in Splunk"
         // Splunk search for violations is volatile for some reason.
         // We added retries to make this test less flaky.
+        // Check for violations first
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 15; i++) {
-            log.info "Attempt ${i} to get violations from Splunk"
+            log.info "Attempt ${i} to get raw violations from Splunk"
+            def searchId = SplunkUtil.createSearch(port, "sourcetype=stackrox-violations")
+            TimeUnit.SECONDS.sleep(15)
+            Response response = SplunkUtil.getSearchResults(port, searchId)
+            // We should have at least one violation in the response
+            if (response != null) {
+                results = response.getBody().jsonPath().getList("results")
+                if (!results.isEmpty()) {
+                    for (result in results) {
+                        hasNetworkViolation |= isNetworkViolation(result)
+                        hasProcessViolation |= isProcessViolation(result)
+                    }
+                    log.info "Found violations in Splunk: \n${results}"
+                    if (hasNetworkViolation && hasProcessViolation) {
+                        log.info "Success!"
+                        break
+                    }
+                }
+            }
+        }
+
+        // Check for Alerts
+        List<Map<String, String>> results = Collections.emptyList()
+        boolean hasNetworkViolation = false
+        boolean hasProcessViolation = false
+        def port = splunkDeployment.splunkPortForward.getLocalPort()
+        for (int i = 0; i < 41; i++) { // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes. Try calling the search manually.
+            log.info "Attempt ${i} to get Alerts from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
@@ -138,6 +165,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasNetworkViolation |= isNetworkViolation(result)
                         hasProcessViolation |= isProcessViolation(result)
                     }
+                    log.info "Found Alerts in Splunk: \n${results}"
                     if (hasNetworkViolation && hasProcessViolation) {
                         log.info "Success!"
                         break
