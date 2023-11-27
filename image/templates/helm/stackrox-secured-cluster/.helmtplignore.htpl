@@ -16,21 +16,25 @@ scripts/
 templates/*
 [<- end >]
 [<- end >]
-[< if .ReleaseBuild >]
+[<- if .ReleaseBuild >]
 feature-flag-values.yaml
-[< end >]
+[<- end >]
 *.swp
-[< if .KubectlOutput >]
+[<- if .KubectlOutput >]
 templates/*scanner*
 internal/scanner-config-shape.yaml
-internal/scanner-v4-config-shape.yaml
 config-templates/scanner/
-config-templates/scanner-v4*
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
-[< end >]
-[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
-templates/02-scanner-03-tls-secret.yaml
-[</* Disable Scanner V4 in secured-cluster chart for now. */>]
+[<- end >]
+[<- if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4) >]
 templates/*scanner-v4*
 internal/*scanner-v4*
+internal/defaults/*scanner-v4*
+config-templates/*scanner-v4*
+values-scanner-v4-indexer.yaml.example
+templates/00-storage-class.yaml
+[<- end >]
+[</* Ignore tls secrets unconditionally in secured cluster */>]
+templates/02-scanner-03-tls-secret.yaml
+templates/02-scanner-v4-03-tls-secret.yaml

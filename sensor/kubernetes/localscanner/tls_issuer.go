@@ -90,7 +90,7 @@ type certificateRefresherGetter func(requestCertificates requestCertificatesFunc
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo
 
-// Start starts the sensor component and launches a certificate refreshes that immediately checks the certificates, and
+// Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
@@ -100,7 +100,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 	defer cancel()
 
 	if i.certRefresher != nil {
-		return i.abortStart(errors.New("already started."))
+		return i.abortStart(errors.New("already started"))
 	}
 
 	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx, fetchSensorDeploymentOwnerRefBackoff)

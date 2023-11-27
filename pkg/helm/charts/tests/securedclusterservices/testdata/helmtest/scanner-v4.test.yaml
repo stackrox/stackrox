@@ -1,0 +1,117 @@
+values:
+  monitoring:
+    openshift:
+      enabled: false
+server:
+  visibleSchemas:
+  - openshift-4.1.0
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: "scanner v4 with default settings with indexer enabled"
+  set:
+    scannerV4.disable: false
+  expect: |
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
+    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner-v4", "stackrox-sensor"])
+    envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+  tests:
+  - name: "on openshift 4"
+  - name: "on openshift 3"
+    set:
+      env.openshift: 3
+
+- name: "scanner V4 is disabled should not be installed by default"
+  expect: |
+    .deployments["scanner-v4"] | assertThat(. == null)
+    .deployments["scanner-v4-db"] | assertThat(. == null)
+
+- name: "scanner can override image config"
+  set:
+    scannerV4.disable: false
+  expect: |
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
+    container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == "custom.io/custom-scanner-db:1.2.3")
+  tests:
+  - name: "with fullref"
+    values:
+      image:
+        scannerV4:
+          fullRef: "custom.io/custom-scanner:1.2.3"
+        scannerV4DB:
+          fullRef: "custom.io/custom-scanner-db:1.2.3"
+  - name: "with separate parts"
+    values:
+      image:
+        scannerV4:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner
+        scannerV4DB:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner-db
+
+- name: "scanner V4 service account can access image pull secrets"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .serviceaccounts["scanner-v4"] | assertThat(. != null)
+    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
+    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox")
+    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox-scanner-v4")
+  tests:
+  - name: "when authenticating in image registry with user and password"
+    set:
+      imagePullSecrets.username: "imagePullUser"
+      imagePullSecrets.password: "imagePullPassword"
+    expect: |
+      .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 3)
+      .secrets["secured-cluster-services-main"] | assertThat(. != null)
+  - name: "no secret is created"
+    expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
+    tests:
+    - name: "when allowNone is true"
+      set:
+        imagePullSecrets.allowNone: true
+      expect: .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 3)
+    - name: "when using existing secrets"
+      set:
+        imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
+      expect: |
+        .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 5)
+        .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "existing-secret1")
+        .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "existing-secret2")
+
+- name: "sensor only connects to local scanner V4 when it is enabled"
+  tests:
+  - name: "local scanner enabled"
+    set:
+      scannerV4.disable: false
+    expect: |
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+  - name: "local scanner disabled"
+    set:
+      scannerV4.disable: true
+    expect: |
+      envVars(.deployments.sensor; "sensor")| assertThat(has("ROX_LOCAL_IMAGE_SCANNING_ENABLED") == false)
+
+- name: "sensor connects to local scanner using the correct GRPC endpoint"
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+    scannerV4.disable: false
+  expect: |
+    .deployments["sensor"].spec.template.spec.containers[0].env[] |
+      select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
+
+- name: "Test customize for local scanner"
+  values:
+    scannerV4:
+      disable: false
+    customize:
+      envVars:
+        FOO: bar
+    expect: |
+      envVars(.deployments.scanner; "scanner-v4")["FOO"] | assertThat(. == "bar")

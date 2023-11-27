@@ -1,0 +1,34 @@
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+scannerV4:
+  disable: true
+  indexer:
+    replicas: 3
+    logLevel: INFO
+    autoscaling:
+      disable: false
+      minReplicas: 2
+      maxReplicas: 5
+    resources:
+      requests:
+        memory: "1500Mi"
+        cpu: "1000m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+  db:
+    postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
+    hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+    source:
+      statementTimeoutMs: 60000
+    resources:
+      limits:
+        cpu: "2000m"
+        memory: "4Gi"
+      requests:
+        cpu: "200m"
+        memory: "200Mi"
+
+scannerV4DBPVCDefaults:
+  claimName: "scanner-v4-db"
+  size: "10Gi"
+[<- end >]

@@ -25,7 +25,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(imageIntegrations imageIntegrationStore.DataStore) Service {
-	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
+	scannerTLSConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
@@ -35,8 +35,19 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 		// scanner must have patched their deployment to not hit this.
 		// At the same time, we don't want to make this a fatal error, so just log a warning.
 		log.Warnf("Failed to initialize scanner TLS config: %v", err)
-		tlsConfig = nil
+		scannerTLSConfig = nil
+	}
+	scannerV4IndexerTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4IndexerSubject, clientconn.TLSConfigOptions{
+		UseClientCert: clientconn.MustUseClientCert,
+	})
+	if err != nil {
+		log.Warnf("Failed to initialize scanner V4 Indexer TLS config: %v", err)
+		scannerV4IndexerTLSConfig = nil
 	}
 
-	return &serviceImpl{imageIntegrations: imageIntegrations, scannerConfig: tlsConfig}
+	return &serviceImpl{
+		imageIntegrations:      imageIntegrations,
+		scannerConfig:          scannerTLSConfig,
+		scannerV4IndexerConfig: scannerV4IndexerTLSConfig,
+	}
 }

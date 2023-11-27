@@ -37,7 +37,7 @@ func NewRemoteIndexer(ctx context.Context, address string) (*remoteIndexer, erro
 	}
 	// TODO: [ROX-19050] Set the Scanner V4 TLS validation and the correct subject
 	//       when certificates are ready.
-	conn, err := clientconn.GRPCConnection(ctx, mtls.ScannerSubject, address, connOpt)
+	conn, err := clientconn.GRPCConnection(ctx, mtls.ScannerV4IndexerSubject, address, connOpt)
 	if err != nil {
 		return nil, err
 	}
