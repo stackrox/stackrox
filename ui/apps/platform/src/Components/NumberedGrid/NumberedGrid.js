@@ -35,7 +35,6 @@ const NumberedGrid = ({ data, history }) => {
         );
 
         return (
-            // eslint-disable-next-line
             <li key={text} className={className} onClick={onClick(url)}>
                 {content}
             </li>

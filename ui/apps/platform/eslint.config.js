@@ -67,7 +67,10 @@ module.exports = [
             // Forbid use of console in favor of raven-js for error capturing.
             'no-console': 'error',
 
-            // ...pluginESLintComments.configs.recommended.rules, // TODO fix errors
+            ...pluginESLintComments.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
 
             ...pluginImport.configs.errors.rules, // depends on parsers and resolver in settings
 

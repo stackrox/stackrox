@@ -121,7 +121,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             // disable because unused label might be specified for rest spread idiom.
             /* eslint-disable @typescript-eslint/no-unused-vars */
             const { label, ...rest } = scope || {};
-            /* eslint-disable @typescript-eslint/no-unused-vars */
+            /* eslint-enable @typescript-eslint/no-unused-vars */
             setFieldValue(
                 `excludedDeploymentScopes[${idx}]`,
                 {

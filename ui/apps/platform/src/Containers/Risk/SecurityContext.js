@@ -14,7 +14,7 @@ const getSecurityContext = (container) => {
     if (!container.securityContext) {
         return null;
     }
-    const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
+    const { privileged, add_capabilities, drop_capabilities } = container.securityContext;
     return { privileged, add_capabilities, drop_capabilities };
 };
 
