@@ -114,6 +114,40 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only 10.3.0.1 should exist
 			},
 		},
+		"Old IPs should be gone for selected pods only": {
+			numTicksToRemember: 2,
+			entityUpdates: []eUpdate{
+				{
+					containerID: "pod1",
+					ipAddr:      "10.0.0.1",
+					port:        80,
+					incremental: true,
+				},
+				{
+					containerID: "pod1",
+					ipAddr:      "10.3.0.1",
+					port:        80,
+					incremental: false,
+				},
+				{
+					containerID: "pod2",
+					ipAddr:      "20.0.0.1",
+					port:        80,
+					incremental: true,
+				},
+				{
+					containerID: "pod2",
+					ipAddr:      "20.3.0.1",
+					port:        80,
+					incremental: true,
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": true, "10.3.0.1": true, "20.0.0.1": true, "20.3.0.1": true},
+				{"10.0.0.1": true, "10.3.0.1": true, "20.0.0.1": true, "20.3.0.1": true},
+				{"10.0.0.1": false, "10.3.0.1": true, "20.0.0.1": true, "20.3.0.1": true},
+			},
+		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
@@ -192,24 +226,6 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 			},
 			expectedEndpoints: []string{"10.3.0.1", "10.0.0.2"},
 		},
-		// TODO(ROX-20716): Enable this test after fixing the issue of External Entities appearing for past IPs
-		// "The store shall remember past IP of a container": {
-		//	entityUpdates: []eUpdate{
-		//		{
-		//			containerID: "pod1",
-		//			ipAddr:      "10.0.0.1",
-		//			port:        80,
-		//			incremental: true,
-		//		},
-		//		{
-		//			containerID: "pod1",
-		//			ipAddr:      "10.3.0.1",
-		//			port:        80,
-		//			incremental: false,
-		//		},
-		// 	},
-		// 	expectedEndpoints: []string{"10.3.0.1", "10.0.0.1"},
-		// },
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
