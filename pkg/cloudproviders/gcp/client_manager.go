@@ -1,8 +1,6 @@
 package gcp
 
 import (
-	"context"
-
 	"cloud.google.com/go/storage"
 )
 
@@ -11,5 +9,5 @@ type STSClientManager interface {
 	Start()
 	Stop()
 
-	StorageClient(ctx context.Context) (*storage.Client, func())
+	StorageClient() (*storage.Client, func())
 }

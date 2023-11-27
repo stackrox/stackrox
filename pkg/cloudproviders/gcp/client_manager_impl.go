@@ -13,10 +13,11 @@ import (
 )
 
 type stsClientManagerImpl struct {
-	credManager   credentialsManager
-	storageClient *storage.Client
-	mutex         sync.Mutex
-	waitGroup     sync.WaitGroup
+	credManager          CredentialsManager
+	storageClientFactory StorageClientFactory
+	storageClient        *storage.Client
+	mutex                sync.Mutex
+	waitGroup            sync.WaitGroup
 }
 
 var _ STSClientManager = &stsClientManagerImpl{}
@@ -26,18 +27,24 @@ func NewSTSClientManager(namespace string, secretName string) STSClientManager {
 	restCfg, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
-		mgr := &stsClientManagerImpl{credManager: &defaultCredentialsManager{}}
+		mgr := &stsClientManagerImpl{
+			credManager:          &defaultCredentialsManager{},
+			storageClientFactory: &gcpStorageClientFactory{},
+		}
 		mgr.updateClients()
 		return mgr
 	}
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	if err != nil {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
-		mgr := &stsClientManagerImpl{credManager: &defaultCredentialsManager{}}
+		mgr := &stsClientManagerImpl{
+			credManager:          &defaultCredentialsManager{},
+			storageClientFactory: &gcpStorageClientFactory{},
+		}
 		mgr.updateClients()
 		return mgr
 	}
-	mgr := &stsClientManagerImpl{}
+	mgr := &stsClientManagerImpl{storageClientFactory: &gcpStorageClientFactory{}}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.updateClients)
 	mgr.updateClients()
 	return mgr
@@ -52,27 +59,29 @@ func (c *stsClientManagerImpl) Stop() {
 }
 
 func (c *stsClientManagerImpl) updateClients() {
-	ctx := context.Background()
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.waitGroup.Wait()
 
+	ctx := context.Background()
 	creds, err := c.credManager.GetCredentials(ctx)
 	if err != nil {
 		log.Error("failed to get GCP credentials: ", err)
 		return
 	}
 
-	c.storageClient, err = storage.NewClient(ctx,
+	client, err := c.storageClientFactory.NewClient(ctx,
 		option.WithCredentials(creds),
 		option.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
 	)
 	if err != nil {
 		log.Error("failed to create GCP storage client: ", err)
+		return
 	}
+	c.storageClient = client
 }
 
-func (c *stsClientManagerImpl) StorageClient(ctx context.Context) (*storage.Client, func()) {
+func (c *stsClientManagerImpl) StorageClient() (*storage.Client, func()) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.waitGroup.Add(1)
