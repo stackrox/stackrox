@@ -7,6 +7,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+// StorageClientFactory creates a GCP storage client.
+//
 //go:generate mockgen-wrapper
 type StorageClientFactory interface {
 	NewClient(ctx context.Context, opts ...option.ClientOption) (*storage.Client, error)
