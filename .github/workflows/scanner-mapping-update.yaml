@@ -1,4 +1,4 @@
-name: Download and Upload Repository Mappings
+name: Scanner mappings update
 
 on:
   schedule:
