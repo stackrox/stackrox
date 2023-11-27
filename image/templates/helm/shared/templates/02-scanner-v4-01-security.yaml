@@ -1,42 +1,13 @@
 {{- include "srox.init" . -}}
 
 {{- if or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled }}
-{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
-kind: SecurityContextConstraints
-apiVersion: security.openshift.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-v4") }}
-  labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-scanner-v4") | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-scanner-v4") | nindent 4 }}
-    kubernetes.io/description: stackrox-scanner-v4 is the security constraint for the Scanner v4 containers
-priority: 0
-runAsUser:
-  type: RunAsAny
-seLinuxContext:
-  type: RunAsAny
-seccompProfiles:
-- '*'
-users:
-- system:serviceaccount:{{ .Release.Namespace }}:scanner-v4
-volumes:
-- '*'
-allowHostDirVolumePlugin: false
-allowedCapabilities: []
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-defaultAddCapabilities: []
-fsGroup:
-  type: RunAsAny
-readOnlyRootFilesystem: false
-requiredDropCapabilities: []
-
-{{- else if eq ._rox.env.openshift 4 }}
+  {{- if ._rox.env.openshift }}
+    {{- if eq ._rox.env.openshift 3 }}
+      {{ include "srox.warn" (list . "On OpenShift 3.x no SecurityContextConstraint will be configured for Scanner V4.") }}
+    {{- else }}
+      {{/* Use a default SCC that ships with OpenShift 4.x.
+           We only need to create a Role and a RoleBinding for
+           associating the SCC with the Scanner V4 deployment. */}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -52,7 +23,7 @@ rules:
   resources:
   - securitycontextconstraints
   resourceNames:
-  - anyuid
+  - nonroot-v2
   verbs:
   - use
 
@@ -75,5 +46,6 @@ subjects:
 - kind: ServiceAccount
   name: scanner-v4
   namespace: {{ .Release.Namespace }}
-{{- end }}
+    {{- end }}
+  {{- end }}
 {{- end }}
