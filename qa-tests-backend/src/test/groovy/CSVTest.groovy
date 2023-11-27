@@ -17,6 +17,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Unroll
+@Tag("PZDebug")
 @Tag("BAT")
 @Tag("PZ")
 class CSVTest extends BaseSpecification {
