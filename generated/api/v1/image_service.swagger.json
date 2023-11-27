@@ -1820,6 +1820,9 @@
         "normalizedVersion": {
           "$ref": "#/definitions/v4NormalizedVersion"
         },
+        "fixedInVersion": {
+          "type": "string"
+        },
         "kind": {
           "type": "string"
         },
