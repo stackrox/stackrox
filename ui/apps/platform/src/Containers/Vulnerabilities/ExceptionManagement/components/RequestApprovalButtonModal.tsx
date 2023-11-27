@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Alert, AlertVariant, Button, Form, Modal, TextArea, pluralize } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertVariant,
+    Button,
+    Form,
+    Modal,
+    TextArea,
+    pluralize,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';
@@ -30,7 +38,7 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
     const approveRequestMutation = useRestMutation(approveVulnerabilityException);
 
     const { isModalOpen, openModal, closeModal } = useModal();
-    const [errorMessage, setErrorMessage] = useState<string | null>(null); 
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const formik = useFormik({
         initialValues,
