@@ -420,10 +420,14 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
 
 function postFormatNestedPolicyFields(policy: ClientPolicy): Policy {
     if (!policy.policySections) {
-        return policy;
+        // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+        // If this was intentional, convert the expression to 'unknown' first.
+        return policy as unknown as Policy;
     }
 
-    const serverPolicy = cloneDeep(policy) as Policy;
+    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const serverPolicy = cloneDeep(policy) as unknown as Policy;
     if (policy.criteriaLocked) {
         serverPolicy.policySections = policy.serverPolicySections;
     } else {
@@ -456,7 +460,9 @@ function postFormatNestedPolicyFields(policy: ClientPolicy): Policy {
  */
 function preFormatExclusionField(policy: Policy): ClientPolicy {
     const { exclusions } = policy;
-    const clientPolicy = { ...policy } as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = { ...policy } as unknown as ClientPolicy;
 
     clientPolicy.excludedImageNames = [];
 
@@ -476,7 +482,9 @@ function preFormatExclusionField(policy: Policy): ClientPolicy {
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
 export function postFormatExclusionField(policy: ClientPolicy): Policy {
-    const serverPolicy = { ...policy } as Policy;
+    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const serverPolicy = { ...policy } as unknown as Policy;
     serverPolicy.exclusions = [];
 
     const { excludedDeploymentScopes } = policy;
@@ -500,10 +508,14 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
 
 export function preFormatImageSigningPolicyGroup(policy: Policy): ClientPolicy {
     if (!policy.policySections) {
-        return policy as ClientPolicy;
+        // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+        // If this was intentional, convert the expression to 'unknown' first.
+        return policy as unknown as ClientPolicy;
     }
 
-    const clientPolicy = cloneDeep(policy) as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
         policyGroups.forEach((policyGroup, groupIdx) => {
