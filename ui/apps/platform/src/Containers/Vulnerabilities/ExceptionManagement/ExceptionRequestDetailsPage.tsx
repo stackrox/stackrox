@@ -94,9 +94,9 @@ function ExceptionRequestDetailsPage() {
         setSelectedContext(value);
     }
 
-    function onApprovalSuccess(exception: VulnerabilityException) {
+    function onApprovalSuccess() {
         refetch();
-        setSuccessMessage(`Vulnerability request ${exception.name} was successfully approved`);
+        setSuccessMessage(`The vulnerability request was successfully approved`);
     }
 
     if (loading && !vulnerabilityException) {

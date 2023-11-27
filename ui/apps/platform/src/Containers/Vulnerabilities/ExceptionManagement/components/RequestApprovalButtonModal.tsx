@@ -64,7 +64,7 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
 
     const isFormModified = !isEqual(formik.values, formik.initialValues);
     const hasErrors = Object.keys(formik.errors).length > 0;
-    const isDisabled = !isFormModified || hasErrors;
+    const isSubmitDisabled = !isFormModified || hasErrors || formik.isSubmitting;
 
     return (
         <>
@@ -81,7 +81,7 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
                         key="approve"
                         variant="primary"
                         isLoading={formik.isSubmitting}
-                        isDisabled={isDisabled}
+                        isDisabled={isSubmitDisabled}
                         onClick={() => formik.handleSubmit()}
                     >
                         Approve
@@ -90,13 +90,10 @@ function RequestApprovalButtonModal({ exception, onSuccess }: RequestApprovalBut
                         Cancel
                     </Button>,
                 ]}
+                showClose={false}
             >
                 {errorMessage && (
-                    <Alert
-                        isInline
-                        variant={AlertVariant.danger}
-                        title={errorMessage}
-                    />
+                    <Alert isInline variant={AlertVariant.danger} title={errorMessage} />
                 )}
                 <Form>
                     <FormLabelGroup
