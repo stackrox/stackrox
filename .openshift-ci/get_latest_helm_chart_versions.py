@@ -53,7 +53,8 @@ def main(argv):
     helm_versions = get_latest_helm_chart_versions(
         "stackrox-secured-cluster-services", num_releases
     )
-    logging.info(f"Helm chart versions for the latest {num_releases} releases:")
+    logging.info(
+        f"Helm chart versions for the latest {num_releases} releases:")
     print("\n".join(helm_versions))
     helm_version_specific = get_latest_helm_chart_version_for_specific_release(
         "stackrox-secured-cluster-services", sample_support_exception
