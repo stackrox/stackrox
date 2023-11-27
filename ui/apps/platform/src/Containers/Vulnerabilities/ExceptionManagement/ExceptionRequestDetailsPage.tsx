@@ -37,7 +37,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
-import { RequestContext } from './components/ExceptionRequestTableCells';
 import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
