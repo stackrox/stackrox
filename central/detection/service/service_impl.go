@@ -240,7 +240,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 	}
 
 	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
-	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
 	// between different generated deployments.
 	deployment.Id = uuid.NewV4().String()
 
