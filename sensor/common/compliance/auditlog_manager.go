@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
-//go:generate mockgen-wrapper AuditLogCollectionManager
+//go:generate mockgen-wrapper
 
 // AuditLogCollectionManager manages all aspects of the audit log collection states. Given the stream of audit events via the AuditMessages channel, it saves, keeps track and updates Central
 // of the latest read audit log event per compliance node. It also provides an API for sensor to use to use to add eligible nodes, enable/disable/restart collection.

@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
 
-//go:generate mockgen-wrapper Service
+//go:generate mockgen-wrapper
 
 // Service is an interface to receiving ComplianceReturns from launched daemons.
 type Service interface {

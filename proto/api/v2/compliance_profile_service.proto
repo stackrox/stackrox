@@ -23,7 +23,7 @@ message ComplianceRule {
     string              fixes        = 10;
 }
 
-// Next Tag: 10
+// Next Tag: 11
 message ComplianceProfile {
     string                        id                = 1;
     string                        name              = 2;
@@ -34,6 +34,7 @@ message ComplianceProfile {
     repeated ComplianceRule       rules             = 7;
     string                        product           = 8;
     string                        title             = 9;
+    repeated string               values            = 10;
 }
 
 message ListComplianceProfilesResponse {

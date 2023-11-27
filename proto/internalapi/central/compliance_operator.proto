@@ -155,7 +155,7 @@ message ComplianceOperatorCheckResultV2 {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 10.
+// Next tag: 11.
 message ComplianceOperatorProfileV2 {
     string              id              = 1;
     string              profile_id      = 2;
@@ -169,6 +169,7 @@ message ComplianceOperatorProfileV2 {
     }
     repeated Rule       rules       = 8;
     string              title       = 9;
+    repeated string     values      = 10;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.

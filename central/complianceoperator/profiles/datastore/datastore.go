@@ -15,6 +15,8 @@ var (
 )
 
 // DataStore defines the possible interactions with compliance operator profiles
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorProfile) error) error
 	Upsert(ctx context.Context, result *storage.ComplianceOperatorProfile) error
