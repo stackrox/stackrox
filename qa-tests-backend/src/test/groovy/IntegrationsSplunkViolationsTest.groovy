@@ -106,7 +106,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Tag("Integration")
+    @Tag("BAT")  // Potential FIXME: Turn back to only integration tests.
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
