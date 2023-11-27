@@ -57,6 +57,7 @@ image:
     name: null # string
     tag: null # string
     fullRef: null # string
+  scannerV4: null # [dict]
 env:
   openshift: null # bool | int
   istio: null # bool
@@ -136,6 +137,24 @@ customize:
     podAnnotations: {} # dict
     envVars: {} # dict
   collector:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-indexer:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-matcher:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-db:
     labels: {} # dict
     annotations: {} # dict
     podLabels: {} # dict

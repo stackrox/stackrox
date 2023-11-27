@@ -34,19 +34,22 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
-
+{{ $_ := set $ "_rox" $rox }}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-
-{{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
-[< if (not .KubectlOutput) ->]
+{{/* Only merge scanner config shapes if kubectl output is disabled */}}
+[<- if not .KubectlOutput >]
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
-  {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
-[< else >]
-  {{ $_ := include "srox.mergeInto" (list $rox $configShape) }}
-[< end >]
+  {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
+  {{/* Only merge scanner-v4 config shapes if kubectl output is disabled and feature flag is enabled */}}
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+  {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
+  {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
+[<- end >]
+[<- end >]
 
-{{ $_ = set $ "_rox" $rox }}
+{{ $_ = include "srox.mergeInto" (list $rox $configShape) }}
+{{ $_ = set $._rox "_configShape" $configShape }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
@@ -210,8 +213,11 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
-[< if (not .KubectlOutput) ->]
+[<- if not .KubectlOutput >]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+{{ include "srox.configureImage" (list $ ._rox.image.scannerV4) }}
+[<- end >]
 [<- end >]
 
 {{ include "srox.initGlobalPrefix" (list $) }}
@@ -249,6 +255,44 @@
        set of all referenced images first. */}}
   {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
+
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+{{/*
+   Local scanner-v4-indexer setup.
+  */}}
+{{ $scannerV4Cfg := $._rox.scannerV4 }}
+{{/* Disable scanner always in kubectl outputs */}}
+
+{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+{{ if ._rox.scannerV4._dbEnabled }}
+  {{ include "srox.scannerV4Volume" $ }}
+{{ end }}
+
+{{ if ._rox.scannerV4._indexerEnabled }}
+  {{/* Disable scanner V4 indexer in case a central deployment exists. */}}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.scannerV4 "_indexerEnabled" false }}
+  {{ end }}
+{{ end }}
+
+{{ if ._rox.scannerV4._indexerEnabled }}
+  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+[</* Due to historical reasons the image specifications for the secured-cluster-services chart
+     Are not found under <component-name>.image, but instead under image.<image identifier>.
+     Since the image setup code in srox.scannerV4Init configures scannerV4.<scanner V4 component name>m
+     we overwrite this here with the properly configured image specification under image.<image identifier>
+     for consistency reasons within the secured-cluster-services chart. */>]
+  {{ $_ := set $._rox.scannerV4.indexer "image" ._rox.image.scannerV4 }}
+  {{ $_ := set $._rox.scannerV4.matcher "image" ._rox.image.scannerV4 }}
+  {{ $_ := set $._rox.scannerV4.db "image" ._rox.image.scannerV4DB }}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner-v4") $.Release.Namespace) }}
+{{ end }}
+
+[<- end >]
 [<- end >]
 
 {{/* Setup Image Pull Secrets.

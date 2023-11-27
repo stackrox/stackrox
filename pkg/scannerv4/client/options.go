@@ -5,17 +5,20 @@ import (
 )
 
 var (
-	defaultConnOptions = connOptions{
-		mTLSSubject: mtls.ScannerSubject,
-		address:     ":8443",
-		serverName:  "scanner-v4.stackrox",
-		skipTLS:     false,
-	}
-
 	defaultOptions = options{
-		indexerOpts: defaultConnOptions,
-		matcherOpts: defaultConnOptions,
-		comboMode:   true,
+		indexerOpts: connOptions{
+			mTLSSubject: mtls.ScannerV4IndexerSubject,
+			address:     ":8443",
+			serverName:  "scanner-v4-indexer.stackrox", // TODO: allow custom namespaces
+			skipTLS:     false,
+		},
+		matcherOpts: connOptions{
+			mTLSSubject: mtls.ScannerV4MatcherSubject,
+			address:     ":8443",
+			serverName:  "scanner-v4-matcher.stackrox",
+			skipTLS:     false,
+		},
+		comboMode: false,
 	}
 )
 

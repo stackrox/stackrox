@@ -36,8 +36,15 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
-	imageIntegrations imageIntegrationStore.DataStore
-	scannerConfig     *tls.Config
+	imageIntegrations      imageIntegrationStore.DataStore
+	scannerConfig          *tls.Config
+	scannerV4IndexerConfig *tls.Config
+}
+
+type endpointWithConfig struct {
+	endpoint  string
+	tlsConfig *tls.Config
+	subject   mtls.Subject
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -85,23 +92,23 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint string) (*types.Timestamp, error) {
-	addr, err := ensureTLSAndReturnAddr(endpoint)
+func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, epWithCfg endpointWithConfig) (*types.Timestamp, error) {
+	addr, err := ensureTLSAndReturnAddr(epWithCfg.endpoint)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := tlsutils.DialContext(ctx, "tcp", addr, s.scannerConfig)
+	conn, err := tlsutils.DialContext(ctx, "tcp", addr, epWithCfg.tlsConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
+		return nil, errors.Wrapf(err, "failed to contact scanner at %s", epWithCfg.endpoint)
 	}
 	defer utils.IgnoreError(conn.Close)
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, errors.Errorf("scanner at %s returned no peer certs", endpoint)
+		return nil, errors.Errorf("scanner at %s returned no peer certs", epWithCfg.endpoint)
 	}
 	leafCert := certs[0]
-	if cn := leafCert.Subject.CommonName; cn != mtls.ScannerSubject.CN() {
-		return nil, errors.Errorf("common name of scanner at %s (%s) is not as expected", endpoint, cn)
+	if cn := leafCert.Subject.CommonName; cn != epWithCfg.subject.CN() {
+		return nil, errors.Errorf("common name of scanner at %s (%s) is not as expected", epWithCfg.endpoint, cn)
 	}
 	expiry, err := types.TimestampProto(leafCert.NotAfter)
 	if err != nil {
@@ -119,22 +126,34 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		return nil, errors.Errorf("failed to retrieve image integrations: %v", err)
 	}
 
-	var clairifyEndpoints []string
+	var endpoints []endpointWithConfig
+
+	// Here we collect the endpoints for scanner V2 and for scanner V4 integrations.
 	for _, integration := range integrations {
 		if clairify := integration.GetClairify(); clairify != nil {
-			clairifyEndpoints = append(clairifyEndpoints, clairify.GetEndpoint())
+			endpoints = append(endpoints, endpointWithConfig{
+				endpoint:  clairify.GetEndpoint(),
+				tlsConfig: s.scannerConfig,
+				subject:   mtls.ScannerSubject,
+			})
+		} else if clairV4 := integration.GetClairV4(); clairV4 != nil {
+			endpoints = append(endpoints, endpointWithConfig{
+				endpoint:  clairV4.GetEndpoint(),
+				tlsConfig: s.scannerV4IndexerConfig,
+				subject:   mtls.ScannerV4IndexerSubject,
+			})
 		}
 	}
-	if len(clairifyEndpoints) == 0 {
+	if len(endpoints) == 0 {
 		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
 	}
-	errC := make(chan error, len(clairifyEndpoints))
-	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))
+	errC := make(chan error, len(endpoints))
+	expiryC := make(chan *types.Timestamp, len(endpoints))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	for _, endpoint := range clairifyEndpoints {
-		go func(endpoint string) {
+	for _, endpoint := range endpoints {
+		go func(endpoint endpointWithConfig) {
 			expiry, err := s.maybeGetExpiryFomScannerAt(ctx, endpoint)
 			if err != nil {
 				errC <- err
@@ -152,7 +171,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		case err := <-errC:
 			errorList.AddError(err)
 			// All the endpoints have failed.
-			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
+			if len(errorList.ErrorStrings()) == len(endpoints) {
 				return nil, errors.New(errorList.String())
 			}
 		case expiry := <-expiryC:

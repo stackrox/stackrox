@@ -112,6 +112,14 @@ spec:
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         [<- end >]
+        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
+        {{- if ._rox.scannerV4._indexerEnabled }}
+        - name: ROX_SCANNER_V4_GRPC_ENDPOINT
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_SCANNER_V4_ENABLED
+          value: "true"
+        {{- end }}
+        [<- end >]
         {{- if ._rox.monitoring.openshift.enabled }}
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"

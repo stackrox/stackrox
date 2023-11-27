@@ -5,7 +5,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"golang.org/x/exp/slices"
 )
 
 // secretDataMap represents data stored as part of a secret.
@@ -26,16 +28,39 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	if err != nil {
 		certIssueError = multierror.Append(certIssueError, err)
 	}
+
+	certificates := []*storage.TypedServiceCertificate{
+		scannerCertificate,
+		scannerDBCertificate,
+	}
+
+	// TODO: Under what circumstances exactly do we issue certs for Scanner V4 here?
+	// * Central could have support for Scanner V4 enabled in one way or another.
+	// * Sensor could have support or Scanner V4 enabled in one way or another.
+	// * Sensor could inform Central when requesting localscanner certs for which services new certs are required.
+	if features.ScannerV4.Enabled() {
+		_, scannerV4IndexerCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, namespace, clusterID)
+		if err != nil {
+			certIssueError = multierror.Append(certIssueError, err)
+		}
+		_, scannerV4MatcherCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE, namespace, clusterID)
+		if err != nil {
+			certIssueError = multierror.Append(certIssueError, err)
+		}
+		_, scannerV4DBCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_V4_DB_SERVICE, namespace, clusterID)
+		if err != nil {
+			certIssueError = multierror.Append(certIssueError, err)
+		}
+		certificates = append(certificates, scannerV4IndexerCertificate, scannerV4MatcherCertificate, scannerV4DBCertificate)
+	}
+
 	if certIssueError != nil {
 		return nil, certIssueError
 	}
 
 	return &storage.TypedServiceCertificateSet{
-		CaPem: caPem,
-		ServiceCerts: []*storage.TypedServiceCertificate{
-			scannerCertificate,
-			scannerDBCertificate,
-		},
+		CaPem:        caPem,
+		ServiceCerts: certificates,
 	}, nil
 }
 
@@ -56,7 +81,19 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	if serviceType != storage.ServiceType_SCANNER_SERVICE && serviceType != storage.ServiceType_SCANNER_DB_SERVICE {
+	var err error
+	supportedServices := []storage.ServiceType{
+		storage.ServiceType_SCANNER_SERVICE,
+		storage.ServiceType_SCANNER_DB_SERVICE,
+	}
+	if features.ScannerV4.Enabled() {
+		supportedServices = append(supportedServices,
+			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
+			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
+			storage.ServiceType_SCANNER_V4_DB_SERVICE)
+	}
+
+	if !slices.Contains(supportedServices, serviceType) {
 		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
 			serviceType)
 	}

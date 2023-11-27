@@ -7,7 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -217,6 +219,51 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	s.Error(err)
 }
 
+func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMultipleScannerSecrets() {
+	if !features.ScannerV4.Enabled() {
+		s.T().Skip("this test depends on the ScannerV4 feature flag being enabled")
+	}
+	clientSet := fake.NewSimpleClientset()
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
+	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	serviceCertificate = &storage.TypedServiceCertificate{
+		ServiceType: storage.ServiceType_SCANNER_SERVICE,
+		Cert: &storage.ServiceCertificate{
+			CertPem: []byte("some certificate for SCANNER_SERVICE"),
+			KeyPem:  []byte("some key for SCANNER_SERVICE"),
+		},
+	}
+	certificates = &storage.TypedServiceCertificateSet{
+		CaPem: []byte("some CA"),
+		ServiceCerts: []*storage.TypedServiceCertificate{
+			serviceCertificate,
+		},
+	}
+	expectedSecretNames := set.NewStringSet(
+		"scanner-tls",
+		"scanner-v4-indexer-tls",
+		"scanner-v4-matcher-tls",
+	)
+
+	s.NoError(repo.ensureServiceCertificates(context.Background(), certificates))
+
+	secretList, err := secretsClient.List(context.Background(), metav1.ListOptions{})
+	s.NoError(err)
+
+	// Verify the names are as expected.
+	secretNames := set.NewStringSet()
+	for _, secret := range secretList.Items {
+		secretNames.Add(secret.GetObjectMeta().GetName())
+	}
+	s.Equal(expectedSecretNames, secretNames)
+
+	// Verify that they all contain the same data.
+	firstSecret := secretList.Items[0]
+	for _, secret := range secretList.Items[1:] {
+		s.Equal(firstSecret.Data, secret.Data)
+	}
+}
+
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceTypeSuccess() {
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
@@ -345,9 +392,9 @@ func sensorOwnerReference() []metav1.OwnerReference {
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
-	secretsSpec := make(map[storage.ServiceType]serviceCertSecretSpec)
+	secretsSpecs := make(map[storage.ServiceType]serviceCertSecretSpec)
 	for serviceType, secret := range secrets {
-		secretsSpec[serviceType] = serviceCertSecretSpec{
+		secretsSpecs[serviceType] = serviceCertSecretSpec{
 			secretName:          secret.Name,
 			caCertFileName:      mtls.CACertFileName,
 			serviceCertFileName: mtls.ServiceCertFileName,
@@ -356,7 +403,7 @@ func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	}
 
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:        secretsSpec,
+		secrets:        secretsSpecs,
 		ownerReference: sensorOwnerReference()[0],
 		namespace:      namespace,
 		secretsClient:  secretsClient,

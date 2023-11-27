@@ -12,6 +12,12 @@ Secured Cluster Configuration Summary:
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
   Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+  Scanner V4 Installation Method:              {{ ._rox.scannerV4._installMode }}
+{{- if ._rox._scannerV4Volume }}
+  Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+{{- end }}
+[<- end >]
 
 {{ if ._rox._state.notes -}}
 Please take note of the following:

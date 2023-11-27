@@ -86,6 +86,9 @@ func TestCreateCentralTLS(t *testing.T) {
 	scannerFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerSubject, ""))
+	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4IndexerSubject, ""))
+	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4MatcherSubject, ""))
+	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4DBSubject, ""))
 
 	existingScanner := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -590,6 +593,9 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 		mtls.ScannerSubject,
 		mtls.ScannerDBSubject,
 		mtls.CentralDBSubject,
+		mtls.ScannerV4IndexerSubject,
+		mtls.ScannerV4MatcherSubject,
+		mtls.ScannerV4DBSubject,
 	}
 
 	ca1, err := certgen.GenerateCA()
@@ -743,6 +749,12 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 						tt.assert(t, r.validateScannerDBTLSData(tt.fileMap, true))
 					case mtls.CentralDBSubject:
 						tt.assert(t, r.validateCentralDBTLSData(tt.fileMap, true))
+					case mtls.ScannerV4IndexerSubject:
+						tt.assert(t, r.validateScannerV4IndexerTLSData(tt.fileMap, true))
+					case mtls.ScannerV4MatcherSubject:
+						tt.assert(t, r.validateScannerV4MatcherTLSData(tt.fileMap, true))
+					case mtls.ScannerV4DBSubject:
+						tt.assert(t, r.validateScannerV4DBTLSData(tt.fileMap, true))
 					}
 				})
 			}

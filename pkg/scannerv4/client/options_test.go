@@ -8,6 +8,7 @@ import (
 )
 
 func TestOptions(t *testing.T) {
+
 	t.Run("When no setters then options should be default", func(t *testing.T) {
 		o := makeOptions()
 		assert.Equal(t, defaultOptions, o)
@@ -40,7 +41,6 @@ func TestOptions(t *testing.T) {
 		o := makeOptions(SkipTLSVerification)
 		assert.True(t, o.indexerOpts.skipTLS)
 		assert.True(t, o.matcherOpts.skipTLS)
-		assert.True(t, o.comboMode)
 	})
 
 	t.Run("When different options are set for indexer and matcher, then comboMode should be false", func(t *testing.T) {
@@ -53,8 +53,10 @@ func TestOptions(t *testing.T) {
 
 	t.Run("When the same options are set for indexer and matcher, then comboMode should be true", func(t *testing.T) {
 		o := makeOptions(
+			WithSubject(mtls.ScannerV4IndexerSubject), // Doesn't matter.
 			WithIndexerAddress("localhost:9001"),
 			WithMatcherAddress("localhost:9001"),
+			WithServerName("scanner-v4-combo"),
 		)
 		assert.True(t, o.comboMode)
 	})
