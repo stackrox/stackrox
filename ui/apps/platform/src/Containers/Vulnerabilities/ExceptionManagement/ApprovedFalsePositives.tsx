@@ -164,7 +164,7 @@ function ApprovedFalsePositives() {
                         return (
                             <Tr key={id}>
                                 <Td>
-                                    <RequestIDLink id={id} name={name} />
+                                    <RequestIDLink id={id} name={name} context="CURRENT" />
                                 </Td>
                                 <Td>
                                     <Requester requester={requester} />
