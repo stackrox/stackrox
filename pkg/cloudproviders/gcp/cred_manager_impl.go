@@ -24,7 +24,7 @@ type gcpCredentialsManagerImpl struct {
 	mutex      sync.RWMutex
 }
 
-var _ credentialsManager = &gcpCredentialsManagerImpl{}
+var _ CredentialsManager = &gcpCredentialsManagerImpl{}
 
 func newCredentialsManagerImpl(
 	k8sClient kubernetes.Interface,
