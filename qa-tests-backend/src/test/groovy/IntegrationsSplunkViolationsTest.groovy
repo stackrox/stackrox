@@ -147,6 +147,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             }
         }
 
+        // FIXME: After we know that violations are there, POST to manually run the conversion cronjob
+        // OR: Edit the conversion cronjob to run every 20 seconds in setup()
+
         // Check for Alerts
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
