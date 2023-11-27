@@ -80,8 +80,7 @@ spec:
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
         command:
-        - /bin/sh # Workaround, because init-entrypoint.sh is missing the executable flag.
-        - /usr/local/bin/init-entrypoint.sh
+        - init-entrypoint.sh
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
