@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"path"
 	"sort"
 	"strings"
@@ -17,10 +18,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	googleHTTP "google.golang.org/api/transport/http"
 )
 
 const (
@@ -80,9 +83,18 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 
 func createClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
 	if !conf.GetUseWorkloadId() {
-		return googleStorage.NewClient(
-			context.Background(),
+		ctx := context.Background()
+		transport, err := googleHTTP.NewTransport(
+			ctx,
+			proxy.RoundTripper(),
 			option.WithCredentialsJSON([]byte(conf.GetServiceAccount())),
+		)
+		if err != nil {
+			return nil, err
+		}
+		return googleStorage.NewClient(
+			ctx,
+			option.WithHTTPClient(&http.Client{Transport: transport}),
 		)
 	}
 	if features.CloudCredentials.Enabled() {
