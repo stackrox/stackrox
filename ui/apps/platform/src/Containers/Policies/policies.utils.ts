@@ -381,7 +381,9 @@ function preFormatNestedPolicyFields(policy: Policy): ClientPolicy {
         return policy as unknown as ClientPolicy;
     }
 
-    const clientPolicy = cloneDeep(policy) as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
     clientPolicy.serverPolicySections = policy.policySections;
     // itreating through each value in a policy group in a policy section to parse value string
     policy.policySections.forEach((policySection, sectionIdx) => {
