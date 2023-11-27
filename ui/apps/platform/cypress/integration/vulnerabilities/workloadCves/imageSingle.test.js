@@ -86,6 +86,11 @@ describe('Workload CVE Image Single page', () => {
     it('should correctly apply severity filters', () => {
         visitWorkloadCveOverview();
 
+        // Clear default filters if enabled, to prevent inconsistencies when navigating to the image page
+        if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            cy.get(selectors.clearFiltersButton).click();
+        }
+
         selectEntityTab('Image');
 
         // Find any image with at least one CVE
