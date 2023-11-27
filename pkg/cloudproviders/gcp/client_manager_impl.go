@@ -2,10 +2,8 @@ package gcp
 
 import (
 	"context"
-	"net/http"
 
 	"cloud.google.com/go/storage"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/api/option"
@@ -70,10 +68,7 @@ func (c *stsClientManagerImpl) updateClients() {
 		return
 	}
 
-	client, err := c.storageClientFactory.NewClient(ctx,
-		option.WithCredentials(creds),
-		option.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
-	)
+	client, err := c.storageClientFactory.NewClient(ctx, option.WithCredentials(creds))
 	if err != nil {
 		log.Error("failed to create GCP storage client: ", err)
 		return
