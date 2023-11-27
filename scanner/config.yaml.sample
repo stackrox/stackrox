@@ -6,11 +6,13 @@ indexer:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
   get_layer_timeout: 1m
+  repository_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=repo2cpe
+  name_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=name2cpe
 matcher:
   enable: true
   database:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
 mtls:
-  certs_dir: ""
+  certs_dir: certs/scanner-v4
 log_level: info

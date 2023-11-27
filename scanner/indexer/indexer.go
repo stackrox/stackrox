@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"crypto/sha512"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
@@ -30,6 +32,11 @@ import (
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
+}
+
+type RhelConfig struct {
+	ConfigKey string
+	CfgURL    string
 }
 
 // Indexer represents an image indexer.
@@ -62,31 +69,9 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
 
-	// TODO: Update the HTTP client.
-	c := http.DefaultClient
-	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
-	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	indexer, err := createLibIndex(ctx, cfg, store, locker)
 	if err != nil {
-		return nil, fmt.Errorf("creating indexer root directory: %w", err)
-	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(faRoot)
-		}
-		return nil
-	})
-	// TODO: Consider making layer scan concurrency configurable?
-	opts := libindex.Options{
-		Store:                store,
-		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
-		ScanLockRetry:        libindex.DefaultScanLockRetry,
-		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
-	}
-
-	indexer, err := libindex.New(ctx, &opts, c)
-	if err != nil {
-		return nil, fmt.Errorf("creating libindex: %w", err)
+		return nil, err
 	}
 
 	return &localIndexer{
@@ -311,4 +296,62 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
+}
+
+// createLibIndex handles the creation of libIndex.
+func createLibIndex(ctx context.Context, cfg config.IndexerConfig, store indexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	c := http.DefaultClient
+	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating indexer root directory: %w", err)
+	}
+	defer utils.IgnoreError(func() error {
+		if err != nil {
+			return os.RemoveAll(faRoot)
+		}
+		return nil
+	})
+
+	opts := libindex.Options{
+		Store:                store,
+		Locker:               locker,
+		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		ScanLockRetry:        libindex.DefaultScanLockRetry,
+		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
+	}
+
+	// Setup scanner configurations.
+	setupScannerConfig(&opts, cfg)
+
+	indexer, err := libindex.New(ctx, &opts, c)
+	if err != nil {
+		return nil, fmt.Errorf("creating libindex: %w", err)
+	}
+
+	return indexer, nil
+}
+
+// setupScannerConfig sets up the scanner configuration.
+func setupScannerConfig(opts *libindex.Options, cfg config.IndexerConfig) {
+	rhelConfigs := map[string]RhelConfig{
+		"rhel-repository-scanner": {
+			ConfigKey: "repo2cpe",
+			// If CfgURL is empty, Claircore will use default URL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
+			CfgURL: cfg.RepositoryToCPEURL,
+		},
+		"rhel_containerscanner": {
+			ConfigKey: "name2repos",
+			// If CfgURL is empty, Claircore will use default URL: "https://access.redhat.com/security/data/metrics/container-name-repos-map.json",
+			CfgURL: cfg.NameToCPEURL,
+		},
+	}
+
+	opts.ScannerConfig.Repo = make(map[string]func(interface{}) error, len(rhelConfigs))
+	for scannerName, rcfg := range rhelConfigs {
+		finalURL := rcfg.CfgURL
+		opts.ScannerConfig.Repo[scannerName] = func(v interface{}) error {
+			jsonData := []byte(`{"` + rcfg.ConfigKey + `_mapping_url": "` + finalURL + `"}`)
+			return json.Unmarshal(jsonData, v)
+		}
+	}
 }
