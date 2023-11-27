@@ -2,11 +2,14 @@ package gcp
 
 import (
 	"context"
+	"net/http"
 
 	"cloud.google.com/go/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/api/option"
+	googleHTTP "google.golang.org/api/transport/http"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -68,7 +71,12 @@ func (c *stsClientManagerImpl) updateClients() {
 		return
 	}
 
-	client, err := c.storageClientFactory.NewClient(ctx, option.WithCredentials(creds))
+	transport, err := googleHTTP.NewTransport(ctx, proxy.RoundTripper(), option.WithCredentials(creds))
+	if err != nil {
+		log.Error("failed to create GCP transport: ", err)
+		return
+	}
+	client, err := c.storageClientFactory.NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: transport}))
 	if err != nil {
 		log.Error("failed to create GCP storage client: ", err)
 		return
