@@ -35,6 +35,7 @@ import {
 } from 'Containers/Vulnerabilities/WorkloadCves/sortUtils';
 import { VulnerabilityExceptionScope } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getImageScope } from 'Containers/Vulnerabilities/ExceptionManagement/utils';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 // @TODO: Move these files up to a common directory and move the types used in these files as well
@@ -48,20 +49,6 @@ type RequestCVEsTableProps = {
     scope: VulnerabilityExceptionScope;
     expandedRowSet: SetResult<string>;
 };
-
-function getImageScope(scope: VulnerabilityExceptionScope): string {
-    if (
-        scope.imageScope.registry === '.*' &&
-        scope.imageScope.remote === '.*' &&
-        scope.imageScope.tag === '.*'
-    ) {
-        return '';
-    }
-    if (scope.imageScope.tag === '.*') {
-        return `${scope.imageScope.registry}/${scope.imageScope.remote}`;
-    }
-    return `${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`;
-}
 
 function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps) {
     const { page, perPage, setPage } = useURLPagination(20);
