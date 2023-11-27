@@ -30,13 +30,26 @@
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}
-{{ $state := dict "customCertGen" false "generated" dict "generatedName" $generatedName "notes" list "warnings" list "referencedImages" dict }}
+{{ $state := dict }}
+{{ $_ = set $state "customCertGen" false }}
+{{ $_ = set $state "generated" dict }}
+{{ $_ = set $state "generatedName" $generatedName }}
+{{ $_ = set $state "notes" list }}
+{{ $_ = set $state "warnings" list }}
+{{ $_ = set $state "referencedImages" dict }}
+{{ $_ = set $state "referencedStorageClasses" list }}
 {{ $_ = set $._rox "_state" $state }}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml}}
+{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+{{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
+{{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
+[<- end >]
 
 {{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
+
 {{ $_ = set $._rox "_configShape" $configShape }}
 
 {{/*
@@ -163,6 +176,9 @@
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
+{{/* Add environment information which should not be modifiable by the user. */}}
+{{ $_ := set $env "centralServices" true }}
+
 {{/* Initial image pull secret setup.
 
      Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
@@ -272,6 +288,21 @@
   {{ end }}
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
+
+[< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 ->]
+
+{{/*
+   ScannerV4 setup.
+  */}}
+
+{{ $scannerV4Cfg := $._rox.scannerV4 }}
+{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+
+{{ if $._rox.scannerV4._dbEnabled }}
+  {{ include "srox.scannerV4Volume" $ }}
+{{ end }}
+
+[<- end >]
 
 
 {{/*

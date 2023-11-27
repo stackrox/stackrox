@@ -23,9 +23,14 @@ feature-flag-values.yaml
 [< if .KubectlOutput >]
 templates/*scanner*
 internal/scanner-config-shape.yaml
+internal/scanner-v4-config-shape.yaml
 config-templates/scanner/
+config-templates/scanner-v4*
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
 [< end >]
 [</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
 templates/02-scanner-03-tls-secret.yaml
+[</* Disable Scanner V4 in secured-cluster chart for now. */>]
+templates/*scanner-v4*
+internal/*scanner-v4*
