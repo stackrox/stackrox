@@ -32,4 +32,4 @@ fix-style: $(VENV)/bin/activate
 
 .PHONY: lint
 lint: $(VENV)/bin/activate
-	$(PYLINT) --rcfile .pylintrc --ignore=$(VENV) *.py **/*.py
+	$(PYLINT) --rcfile .pylintrc --ignore=$(VENV) *.py **/*.py ../scripts/ci/jobs/*.py

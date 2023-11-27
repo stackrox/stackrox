@@ -10,7 +10,7 @@ from common import popen_graceful_kill
 
 
 class BaseTest:
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.test_outputs = []
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
@@ -22,7 +22,8 @@ class BaseTest:
                 if exitstatus != 0:
                     raise RuntimeError(f"Test failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
-                # Kill child processes as we cannot rely on bash scripts to handle signals and stop tests
+                # Kill child processes as we cannot rely on bash scripts to
+                # handle signals and stop tests
                 subprocess.run(
                     ["/usr/bin/pkill", "-P", str(cmd.pid)], check=True, timeout=5
                 )
@@ -82,11 +83,9 @@ class OperatorE2eTest(BaseTest):
     TEST_TIMEOUT_SEC = 60 * 60 * 2
     OPERATOR_CLUSTER_TYPE_OPENSHIFT4 = "openshift4"
 
-    def __init__(self, *args, **kwargs):
-        super(OperatorE2eTest, self).__init__(*args, **kwargs)
-        self._operator_cluster_type = kwargs.get(
-            "operator_cluster_type", OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
-        )
+    def __init__(self, operator_cluster_type=OPERATOR_CLUSTER_TYPE_OPENSHIFT4):
+        super().__init__()
+        self._operator_cluster_type = operator_cluster_type
 
     def run(self):
         if (
@@ -94,8 +93,7 @@ class OperatorE2eTest(BaseTest):
             != OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4
         ):
             print(
-                "Running on cluster type %s, installing OLM"
-                % self._operator_cluster_type
+                f"Running on cluster type {self._operator_cluster_type}, installing OLM"
             )
             self.run_with_graceful_kill(
                 ["make", "-C", "operator", "olm-install"],

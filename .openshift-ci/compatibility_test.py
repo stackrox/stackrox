@@ -6,7 +6,7 @@ Run compatibility tests against a given cluster.
 
 from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestCompatibility
-from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
+from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 
 
