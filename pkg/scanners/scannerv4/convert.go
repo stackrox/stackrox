@@ -49,11 +49,10 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:    pkg.GetName(),
-			Version: pkg.GetVersion(),
-			Vulns:   vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			// TODO(ROX-14100): Fill in package-level fixed-by.
-			FixedBy:       "",
+			Name:          pkg.GetName(),
+			Version:       pkg.GetVersion(),
+			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			FixedBy:       pkg.GetFixedInVersion(),
 			Source:        source,
 			Location:      location,
 			HasLayerIndex: layerIdx,

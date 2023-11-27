@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
@@ -109,10 +110,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:                    store,
-		Locker:                   locker,
-		MatcherNames:             matcherNames(),
-		Enrichers:                []driver.Enricher{&nvd.Enricher{}},
+		Store:        store,
+		Locker:       locker,
+		MatcherNames: matcherNames(),
+		Enrichers: []driver.Enricher{
+			&nvd.Enricher{},
+			&fixedby.Enricher{},
+		},
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
