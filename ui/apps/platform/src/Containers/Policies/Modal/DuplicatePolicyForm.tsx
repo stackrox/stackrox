@@ -17,7 +17,8 @@ function DuplicatePolicyForm({
     // this creates a partially applied function to update the radio button value,
     //   and then notified the parent
     const changeRadio = useCallback(
-        (handler: any, name: any, value: any) => () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (handler: any, name: string, value: string) => () => {
             handler(name)(value);
             updateResolution(name, value);
         },
@@ -27,7 +28,8 @@ function DuplicatePolicyForm({
     // this creates a partially applied function to update a text value,
     //   and then notified the parent
     const changeText = useCallback(
-        (handler: any, name: any) => (value) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (handler: any, name: string) => (value: string) => {
             handler(name)(value);
             updateResolution(name, value);
         },

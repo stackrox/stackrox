@@ -309,7 +309,6 @@ module.exports = [
             '@typescript-eslint/no-unsafe-member-access': 'off',
 
             // Turn off new rules until after we fix errors in follow-up contributions.
-            '@typescript-eslint/no-explicit-any': 'off', // fix 7 errors
             '@typescript-eslint/no-floating-promises': 'off', // fix 7 errors
             '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
             '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
