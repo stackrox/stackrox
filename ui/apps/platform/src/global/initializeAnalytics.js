@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable no-console */
 
 // the code below is generated from segment api with the exception of the writeKey/userId parameters as well as the analyticsIdentity call
 // segment intends for the write key to be hardcoded but we are pulling it from the telemetry config service call and adding it using a parameter

@@ -22,12 +22,10 @@ function highlightPathData(data, highlightedNames) {
     if (data.children) {
         data.children.map((child) => highlightPathData(child, highlightedNames));
     }
-    /* eslint-disable */
     data.style = {
         ...data.style,
-        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
+        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1,
     };
-    /* eslint-enable */
     return data;
 }
 

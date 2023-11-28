@@ -101,7 +101,7 @@ describe('Workload CVE overview page tests', () => {
                         return cy.get('table tbody tr:nth-of-type(1)');
                     })
                     .each(($row) => cy.wrap($row).find(cveSeverityCountSelector));
-                /* eslint-disable cypress/unsafe-to-chain-command */
+                /* eslint-enable cypress/unsafe-to-chain-command */
             });
     });
 });
