@@ -19,22 +19,22 @@ message ServiceIdentity {
 
 // Next available tag: 13
 enum ServiceType {
-    UNKNOWN_SERVICE           = 0;
-    SENSOR_SERVICE            = 1;
-    CENTRAL_SERVICE           = 2;
-    CENTRAL_DB_SERVICE        = 12;
-    REMOTE_SERVICE            = 3;
-    COLLECTOR_SERVICE         = 4;
-    MONITORING_UI_SERVICE     = 5;
-    MONITORING_DB_SERVICE     = 6;
-    MONITORING_CLIENT_SERVICE = 7;
-    BENCHMARK_SERVICE         = 8;
-    SCANNER_SERVICE           = 9;
-    SCANNER_DB_SERVICE        = 10;
+    UNKNOWN_SERVICE            = 0;
+    SENSOR_SERVICE             = 1;
+    CENTRAL_SERVICE            = 2;
+    CENTRAL_DB_SERVICE         = 12;
+    REMOTE_SERVICE             = 3;
+    COLLECTOR_SERVICE          = 4;
+    MONITORING_UI_SERVICE      = 5;
+    MONITORING_DB_SERVICE      = 6;
+    MONITORING_CLIENT_SERVICE  = 7;
+    BENCHMARK_SERVICE          = 8;
+    SCANNER_SERVICE            = 9;
+    SCANNER_DB_SERVICE         = 10;
+    ADMISSION_CONTROL_SERVICE  = 11;
     SCANNER_V4_INDEXER_SERVICE = 13;
     SCANNER_V4_MATCHER_SERVICE = 14;
     SCANNER_V4_DB_SERVICE      = 15;
-    ADMISSION_CONTROL_SERVICE = 11;
 }
 
 message ServiceCertificate {
