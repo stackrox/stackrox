@@ -1,9 +1,10 @@
-package gcp
+package auth
 
 import (
 	"context"
 
 	"golang.org/x/oauth2/google"
+	storagev1 "google.golang.org/api/storage/v1"
 )
 
 // CredentialsManager manages GCP credentials based on the environment.
@@ -28,5 +29,5 @@ func (c *defaultCredentialsManager) Stop() {}
 
 // GetCredentials returns the default GCP credential chain.
 func (c *defaultCredentialsManager) GetCredentials(ctx context.Context) (*google.Credentials, error) {
-	return google.FindDefaultCredentials(ctx)
+	return google.FindDefaultCredentials(ctx, storagev1.CloudPlatformScope)
 }

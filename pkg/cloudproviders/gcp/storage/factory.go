@@ -1,4 +1,4 @@
-package gcp
+package storage
 
 import (
 	"context"
@@ -12,19 +12,23 @@ import (
 	googleHTTP "google.golang.org/api/transport/http"
 )
 
-// StorageClientFactory creates a GCP storage client.
+// ClientFactory creates a GCP storage client.
 //
 //go:generate mockgen-wrapper
-type StorageClientFactory interface {
+type ClientFactory interface {
 	NewClient(ctx context.Context, creds *google.Credentials) (*storage.Client, error)
 }
 
-type gcpStorageClientFactory struct{}
+var _ ClientFactory = &clientFactoryImpl{}
 
-var _ StorageClientFactory = &gcpStorageClientFactory{}
+type clientFactoryImpl struct{}
 
-func (g *gcpStorageClientFactory) NewClient(ctx context.Context, creds *google.Credentials) (*storage.Client, error) {
-	transport, err := googleHTTP.NewTransport(ctx, proxy.RoundTripper(), option.WithCredentials(creds))
+func (s *clientFactoryImpl) NewClient(ctx context.Context, creds *google.Credentials) (*storage.Client, error) {
+	transport, err := googleHTTP.NewTransport(
+		ctx,
+		proxy.RoundTripper(),
+		option.WithCredentials(creds),
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create transport")
 	}
