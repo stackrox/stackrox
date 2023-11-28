@@ -151,10 +151,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // OR: Edit the conversion cronjob to run every 20 seconds in setup()
 
         // Check for Alerts
-        List<Map<String, String>> results = Collections.emptyList()
-        boolean hasNetworkViolation = false
-        boolean hasProcessViolation = false
-        def port = splunkDeployment.splunkPortForward.getLocalPort()
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
         for (int i = 0; i < 41; i++) { // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes. Try calling the search manually.
             log.info "Attempt ${i} to get Alerts from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
@@ -162,14 +161,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             if (response != null) {
-                results = response.getBody().jsonPath().getList("results")
-                if (!results.isEmpty()) {
-                    for (result in results) {
-                        hasNetworkViolation |= isNetworkViolation(result)
-                        hasProcessViolation |= isProcessViolation(result)
+                alerts = response.getBody().jsonPath().getList("alerts")
+                if (!alerts.isEmpty()) {
+                    for (result in alerts) {
+                        hasNetworkAlert |= isNetworkViolation(result)
+                        hasProcessAlert |= isProcessViolation(result)
                     }
-                    log.info "Found Alerts in Splunk: \n${results}"
-                    if (hasNetworkViolation && hasProcessViolation) {
+                    log.info "Found Alerts in Splunk: \n${alerts}"
+                    if (hasNetworkAlert && hasProcessAlert) {
                         log.info "Success!"
                         break
                     }
@@ -179,10 +178,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         then:
         "StackRox violations are in Splunk"
-        assert !results.isEmpty()
-        assert hasNetworkViolation
-        assert hasProcessViolation
-        for (result in results) {
+        assert !alerts.isEmpty()
+        assert hasNetworkAlert
+        assert hasProcessAlert
+        for (result in alerts) {
             validateCimMappings(result)
         }
     }
