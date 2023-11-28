@@ -106,7 +106,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
 		if features.SensorReconciliationOnReconnect.Enabled() {
-			capabilities = append(capabilities, centralsensor.SensorReconciliationOnReconnect)
+			capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
 		}
 
 		preferences := s.manager.GetConnectionPreference(cluster.GetId())

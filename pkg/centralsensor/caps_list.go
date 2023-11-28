@@ -37,6 +37,6 @@ const (
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
 
-	// SensorReconciliationOnReconnect identifies the capability to receive resource hashes from Central when reconnecting.
-	SensorReconciliationOnReconnect = "SensorReconciliationOnReconnect"
+	// SendDeduperStateOnReconnect identifies the capability to receive resource hashes from Central when reconnecting.
+	SendDeduperStateOnReconnect = "SendDeduperStateOnReconnect"
 )
