@@ -145,12 +145,11 @@ spec:
           effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: 'NOTE: Connecting to an external database is in Technology Preview.
-          Specify a connection string that corresponds to an external database. If
-          set, the operator will not manage Central DB. When using this option, you
-          must explicitly set a password secret; automatically generating a password
-          will not be supported.'
-        displayName: Connection String (Technology Preview)
+      - description: Specify a connection string that corresponds to an external database.
+          If set, the operator will not manage Central DB. When using this option,
+          you must explicitly set a password secret; automatically generating a password
+          will not be supported.
+        displayName: Connection String
         path: central.db.connectionString
       - description: The size of the persistent volume when created through the claim.
           If a claim was automatically created, this can be used after the initial

@@ -73,12 +73,11 @@ spec:
                         - name
                         type: object
                       connectionString:
-                        description: 'NOTE: Connecting to an external database is
-                          in Technology Preview. Specify a connection string that
-                          corresponds to an external database. If set, the operator
-                          will not manage Central DB. When using this option, you
-                          must explicitly set a password secret; automatically generating
-                          a password will not be supported.'
+                        description: Specify a connection string that corresponds
+                          to an external database. If set, the operator will not manage
+                          Central DB. When using this option, you must explicitly
+                          set a password secret; automatically generating a password
+                          will not be supported.
                         type: string
                       isEnabled:
                         default: Default
