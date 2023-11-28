@@ -2,6 +2,7 @@ package compliancemanager
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
@@ -244,11 +245,41 @@ func (m *managerImpl) ProcessRescanRequest(_ context.Context, _ interface{}) err
 }
 
 // DeleteScan processes a request to delete an existing compliance scan configuration.
-// TODO(ROX-19540)
-func (m *managerImpl) DeleteScan(_ context.Context, _ interface{}) error {
-	// TODO:
-	// 1. Validate config exists in database
-	// 2. Lock config so it cannot be edited/updated
-	// 3. Push request to Sensor
-	panic("implement me")
+func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
+	// Remove the scan configuration from the database
+	scanConfigName, clustersDeleted, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
+	if err != nil {
+		log.Error(err)
+		return errors.Wrapf(err, "Unable to delete scan configuration ID %q.", scanID)
+	}
+
+	if scanConfigName == "" {
+		errorsMsg := fmt.Sprintf("Unable to find scan configuration Name for ID %q.", scanID)
+		log.Error(errorsMsg)
+		return errors.New(errorsMsg)
+	}
+
+	// send delete request to sensor
+	for _, clusterID := range clustersDeleted {
+		// id for the request message to sensor
+		sensorRequestID := uuid.NewV4().String()
+		sensorMessage := &central.MsgToSensor{
+			Msg: &central.MsgToSensor_ComplianceRequest{
+				ComplianceRequest: &central.ComplianceRequest{
+					Request: &central.ComplianceRequest_DeleteScanConfig{
+						DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
+							Id:   sensorRequestID,
+							Name: scanConfigName,
+						},
+					},
+				},
+			},
+		}
+
+		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
+		if err != nil {
+			log.Errorf("unable to remove scan config %q from cluster %q: %v", scanConfigName, clusterID, err)
+		}
+	}
+	return err
 }

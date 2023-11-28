@@ -21,6 +21,7 @@ import (
 
 const (
 	mockScanName = "mockScan"
+	mockScanID   = "mockScanID"
 )
 
 type pipelineTestCase struct {
@@ -223,8 +224,71 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 	}
 }
 
+func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
+	cases := []processScanConfigTestCase{
+		{
+			desc: "Successful delection of scan configuration",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					[]string{fixtureconsts.Cluster1}, nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Error from delection of scan configuration",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					[]string{fixtureconsts.Cluster1}, errors.New("Unable to delete scan configuration")).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.New("Unable to delete scan configuration"),
+		},
+		{
+			desc: "Empty cluster list",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					[]string{}, nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Empty scan configuration name",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return("",
+					[]string{fixtureconsts.Cluster1}, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.Errorf("Unable to find scan configuration Name for ID %q", mockScanID),
+		},
+		{
+			// we should not return error if we are unable to send message to sensor
+			desc: "Error from sensor",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					[]string{fixtureconsts.Cluster1}, nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
+			},
+			isErrorTest: false,
+		},
+	}
+	for _, tc := range cases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			err := suite.manager.DeleteScan(suite.hasWriteCtx, getTestRec().Id)
+			if tc.isErrorTest {
+				suite.Require().NotNil(err)
+			} else {
+				suite.Require().NoError(err)
+			}
+		})
+	}
+}
+
 func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:                     mockScanID,
 		ScanName:               mockScanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,

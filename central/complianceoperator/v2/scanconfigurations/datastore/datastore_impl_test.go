@@ -213,8 +213,20 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	s.Require().True(found)
 	s.Require().Equal(scanConfig, foundConfig)
 
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
+
+	// Add Scan config status
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, fixtureconsts.Cluster1, "testing status"))
+
+	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID)
+	s.Require().NoError(err)
+	s.Require().Equal(1, len(clusterStatuses))
+	scanConfigName, clusterDeleted, err := s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, configID)
 	// Now delete it
-	s.Require().NoError(s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, configID))
+	s.Require().NoError(err)
+	s.Require().Equal(mockScanName, scanConfigName)
+	s.Require().Equal(1, len(clusterDeleted))
 
 	// Verify it no longer exists
 	foundConfig, found, err = s.dataStore.GetScanConfiguration(s.hasReadCtx, configID)
@@ -222,9 +234,16 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	s.Require().False(found)
 	s.Require().Nil(foundConfig)
 
-	// Delete a non-existing one
-	err = s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, uuid.NewV4().String())
+	// cluster status should also be deleted
+	clusterStatuses, err = s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID)
 	s.Require().NoError(err)
+	s.Require().Equal(0, len(clusterStatuses))
+
+	// Delete a non-existing one
+	scanConfigName, clusterDeleted, err = s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, uuid.NewV4().String())
+	s.Require().Error(err)
+	s.Require().Equal("", scanConfigName)
+	s.Require().Equal(0, len(clusterDeleted))
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {

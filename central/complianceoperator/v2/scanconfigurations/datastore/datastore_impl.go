@@ -87,17 +87,49 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 }
 
 // DeleteScanConfiguration deletes the scan configuration specified by id
-func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string) error {
+func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string) (string, []string, error) {
+	clustersDeleted := []string{}
+	scanConfigName := ""
 	if ok, err := scanConfigurationsSAC.WriteAllowed(ctx); err != nil {
-		return err
+		return "", nil, err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return "", nil, sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
-	return ds.storage.Delete(ctx, id)
+	// first check if the scan configuration exists
+	scanConfig, found, err := ds.GetScanConfiguration(ctx, id)
+	if err != nil || !found {
+		return "", nil, errors.Errorf("Unable to find scan configuration id %q", id)
+	}
+	scanConfigName = scanConfig.GetScanName()
+
+	// get scan status for the scan configuration
+	scanStatuses, err := ds.GetScanConfigClusterStatus(ctx, id)
+	if err != nil {
+		return "", nil, errors.Errorf("Unable to find scan status for scan configuration id %q", id)
+	}
+
+	// retrieve the clusters using this scan configuration
+	for _, scanStatus := range scanStatuses {
+		clustersDeleted = append(clustersDeleted, scanStatus.ClusterId)
+	}
+
+	// remove scan data from scan status table first
+	err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, id).ProtoQuery())
+	if err != nil {
+		return "", nil, errors.Errorf("Unable to delete scan status for scan configuration id %q", id)
+	}
+
+	err = ds.storage.Delete(ctx, id)
+	if err != nil {
+		return "", nil, errors.Errorf("Unable to delete scan configuration id %q", id)
+	}
+
+	return scanConfigName, clustersDeleted, nil
 }
 
 // UpdateClusterStatus updates the scan configuration with the cluster status

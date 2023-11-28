@@ -90,6 +90,19 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
 }
 
+func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")
+	}
+
+	err := s.manager.DeleteScan(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
+	}
+
+	return &v2.Empty{}, nil
+}
+
 func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())

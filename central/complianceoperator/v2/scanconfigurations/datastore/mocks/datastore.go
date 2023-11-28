@@ -56,11 +56,13 @@ func (mr *MockDataStoreMockRecorder) CountScanConfigurations(ctx, q any) *gomock
 }
 
 // DeleteScanConfiguration mocks base method.
-func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) error {
+func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) (string, []string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteScanConfiguration", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].([]string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // DeleteScanConfiguration indicates an expected call of DeleteScanConfiguration.

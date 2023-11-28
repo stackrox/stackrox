@@ -28,6 +28,5 @@ type Manager interface {
 	// ProcessRescanRequest processes a request to rerun an existing compliance scan configuration.
 	ProcessRescanRequest(ctx context.Context, rescanRequest interface{}) error
 	// DeleteScan processes a request to delete an existing compliance scan configuration.
-	// TODO(ROX-19540)
-	DeleteScan(ctx context.Context, deleteScanRequest interface{}) error
+	DeleteScan(ctx context.Context, scanID string) error
 }
