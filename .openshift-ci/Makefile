@@ -1,3 +1,4 @@
+PY_SRCS := *.py **/*.py ../scripts/ci/jobs/*.py
 VENV := .dev-venv
 
 ifdef CI
@@ -24,12 +25,12 @@ endif
 
 .PHONY: style
 style: $(VENV)/bin/activate
-	$(PYCODESTYLE) --max-line-length=120 --exclude=$(VENV) .
+	$(PYCODESTYLE) --max-line-length=90 --exclude=$(VENV) $(PY_SRCS)
 
 .PHONY: fix-style
 fix-style: $(VENV)/bin/activate
-	$(AUTOPEP8) --in-place --exclude=$(VENV) *.py **/*.py
+	$(AUTOPEP8) --in-place --exclude=$(VENV) $(PY_SRCS)
 
 .PHONY: lint
 lint: $(VENV)/bin/activate
-	$(PYLINT) --rcfile .pylintrc --ignore=$(VENV) *.py **/*.py ../scripts/ci/jobs/*.py
+	$(PYLINT) --rcfile .pylintrc --ignore=$(VENV) $(PY_SRCS)

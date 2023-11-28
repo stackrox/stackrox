@@ -27,7 +27,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 
-central_chart_versions = get_latest_helm_chart_versions("stackrox-central-services", 2)
+central_chart_versions = get_latest_helm_chart_versions(
+    "stackrox-central-services", 2)
 sensor_chart_versions = get_latest_helm_chart_versions(
     "stackrox-secured-cluster-services", 3
 )
@@ -43,17 +44,20 @@ if len(central_chart_versions) == 0:
 if len(sensor_chart_versions) == 0:
     raise RuntimeError("Could not find sensor chart versions.")
 
-ChartVersions = namedtuple("Chart_versions", ["central_version", "sensor_version"])
+ChartVersions = namedtuple(
+    "Chart_versions", ["central_version", "sensor_version"])
 
 # Latest central vs sensor versions in sensor_chart_versions
 test_tuples = [
-    ChartVersions(central_version=latest_tag, sensor_version=sensor_chart_version)
+    ChartVersions(central_version=latest_tag,
+                  sensor_version=sensor_chart_version)
     for sensor_chart_version in sensor_chart_versions
 ]
 # Latest sensor vs central versions in central_chart_versions
 test_tuples.extend(
     [
-        ChartVersions(central_version=central_chart_version, sensor_version=latest_tag)
+        ChartVersions(central_version=central_chart_version,
+                      sensor_version=latest_tag)
         for central_chart_version in central_chart_versions
     ]
 )
@@ -75,7 +79,8 @@ test_tuples.extend(
     if support_exception not in test_tuples
 )
 
-gkecluster = GKECluster("compat-test", machine_type="e2-standard-8", num_nodes=2)
+gkecluster = GKECluster(
+    "compat-test", machine_type="e2-standard-8", num_nodes=2)
 
 failing_tuples = []
 for test_tuple in test_tuples:
