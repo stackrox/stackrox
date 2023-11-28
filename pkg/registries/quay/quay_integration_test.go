@@ -12,7 +12,7 @@ import (
 
 const (
 	// This is a robot token that can only pull from quay.io/integration/nginx
-	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8"
+	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8" //#nosec G101
 )
 
 func TestQuay(t *testing.T) {

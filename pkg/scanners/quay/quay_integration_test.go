@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8"
+	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8" //#nosec G101
 )
 
 func TestQuayIntegrationSuite(t *testing.T) {
