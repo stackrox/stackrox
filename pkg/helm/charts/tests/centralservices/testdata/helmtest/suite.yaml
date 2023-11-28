@@ -1,4 +1,7 @@
 defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
   def verifyNodeAffinities(obj):
     [
       (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
