@@ -236,9 +236,7 @@
     {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
     {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
-{{ end }}
 
-{{ if eq ._rox.scanner.disable false }}
   {{ if ne ._rox.scanner.mode "slim" }}
     {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
   {{ end }}
