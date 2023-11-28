@@ -76,6 +76,20 @@ func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
 }
 
+// EnhanceDeploymentNoWrap mocks base method.
+func (m *MockDeploymentStore) EnhanceDeploymentNoWrap(d *storage.Deployment, dependencies store.Dependencies) *storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnhanceDeploymentNoWrap", d, dependencies)
+	ret0, _ := ret[0].(*storage.Deployment)
+	return ret0
+}
+
+// EnhanceDeploymentNoWrap indicates an expected call of EnhanceDeploymentNoWrap.
+func (mr *MockDeploymentStoreMockRecorder) EnhanceDeploymentNoWrap(d, dependencies any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnhanceDeploymentNoWrap", reflect.TypeOf((*MockDeploymentStore)(nil).EnhanceDeploymentNoWrap), d, dependencies)
+}
+
 // FindDeploymentIDsByImages mocks base method.
 func (m *MockDeploymentStore) FindDeploymentIDsByImages(arg0 []*storage.Image) []string {
 	m.ctrl.T.Helper()

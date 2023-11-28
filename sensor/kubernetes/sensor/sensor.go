@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
+	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -134,6 +135,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
+	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -151,6 +153,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessorHandler,
 		delegatedRegistryHandler,
 		imageService,
+		enhancer,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)

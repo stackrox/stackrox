@@ -251,6 +251,22 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 	return wrap.GetDeployment().Clone(), wrap.isBuilt
 }
 
+// EnhanceDeploymentNoWrap takes a deployment storage object and a store.Dependencies and enhances the deployment
+// without changing the internal stores.
+func (ds *DeploymentStore) EnhanceDeploymentNoWrap(d *storage.Deployment, dependencies store.Dependencies) *storage.Deployment {
+	wrap := deploymentWrap{
+		Deployment: d,
+	}
+
+	// Note: There is no need to check any pod information because there are no pods created for this deployment
+
+	wrap.populatePorts()
+	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
+	wrap.updatePortExposureSlice(dependencies.Exposures)
+
+	return wrap.GetDeployment()
+}
+
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, bool, error) {
 	ds.lock.Lock()

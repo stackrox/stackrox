@@ -23,6 +23,7 @@ type DeploymentStore interface {
 	FindDeploymentIDsByImages([]*storage.Image) []string
 	BuildDeploymentWithDependencies(id string, dependencies Dependencies) (*storage.Deployment, bool, error)
 	CountDeploymentsForNamespace(namespaceName string) int
+	EnhanceDeploymentNoWrap(d *storage.Deployment, dependencies Dependencies) *storage.Deployment
 }
 
 // PodStore provides functionality to fetch all pods from underlying store.

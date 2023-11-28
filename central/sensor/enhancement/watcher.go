@@ -8,15 +8,18 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// Watcher .
 type Watcher struct {
 	signals map[string]chan *central.DeploymentEnhancementResponse
 	lock    sync.Mutex
 }
 
+// NewWatcher .
 func NewWatcher() *Watcher {
 	return &Watcher{}
 }
 
+// WaitForEnhancedDeployment .
 func (w *Watcher) WaitForEnhancedDeployment(_, messageID string, timeout time.Duration) (*central.DeploymentEnhancementResponse, error) {
 	ch := make(chan *central.DeploymentEnhancementResponse, 1)
 	w.lock.Lock()
@@ -40,6 +43,7 @@ func (w *Watcher) WaitForEnhancedDeployment(_, messageID string, timeout time.Du
 	}
 }
 
+// NotifyEnhancementReceived .
 func (w *Watcher) NotifyEnhancementReceived(_ string, msg *central.DeploymentEnhancementResponse) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
