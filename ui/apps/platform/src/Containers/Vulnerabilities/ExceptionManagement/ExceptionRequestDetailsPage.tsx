@@ -1,5 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
+    Alert,
+    AlertActionCloseButton,
+    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
@@ -19,6 +22,8 @@ import { useParams } from 'react-router-dom';
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
+import usePermissions from 'hooks/usePermissions';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
     VulnerabilityException,
@@ -32,7 +37,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
-import useURLStringUnion from 'hooks/useURLStringUnion';
+import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -65,9 +70,13 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 }
 
 function ExceptionRequestDetailsPage() {
+    const { requestId } = useParams();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
+
     const [selectedContext, setSelectedContext] = useURLStringUnion('context', contextValues);
     const expandedRowSet = useSet<string>();
-    const { requestId } = useParams();
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const vulnerabilityExceptionByIdFn = useCallback(
         () => fetchVulnerabilityExceptionById(requestId),
@@ -77,10 +86,16 @@ function ExceptionRequestDetailsPage() {
         data: vulnerabilityException,
         loading,
         error,
+        refetch,
     } = useRestQuery(vulnerabilityExceptionByIdFn);
 
     function handleTabClick(event, value) {
         setSelectedContext(value);
+    }
+
+    function onApprovalSuccess() {
+        refetch();
+        setSuccessMessage(`The vulnerability request was successfully approved`);
     }
 
     if (loading && !vulnerabilityException) {
@@ -112,12 +127,25 @@ function ExceptionRequestDetailsPage() {
     }
 
     const { status, cves, scope } = vulnerabilityException;
+
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
+    const showApprovalButton =
+        hasWriteAccessForApproving &&
+        (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
+
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
 
     return (
         <>
+            {successMessage && (
+                <Alert
+                    variant={AlertVariant.success}
+                    isInline
+                    title={successMessage}
+                    actionClose={<AlertActionCloseButton onClose={() => setSuccessMessage(null)} />}
+                />
+            )}
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
@@ -128,9 +156,17 @@ function ExceptionRequestDetailsPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <Flex direction={{ default: 'column' }}>
-                    <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
-                    <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
+                <Flex>
+                    <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
+                        <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
+                        <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
+                    </Flex>
+                    {showApprovalButton && (
+                        <RequestApprovalButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onApprovalSuccess}
+                        />
+                    )}
                 </Flex>
             </PageSection>
             <PageSection className="pf-u-p-0">
