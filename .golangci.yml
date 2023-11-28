@@ -3,6 +3,7 @@ run:
   skip-dirs:
   - pkg/complianceoperator/api
   build-tags:
+  - integration
   - sql_integration
   modules-download-mode: readonly
 
