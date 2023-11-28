@@ -1,11 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
-import {
-    generateNameWithDate,
-    getHelperElementByLabel,
-    getInputByLabel,
-} from '../../helpers/formHelpers';
+import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
 import {
     visitComplianceEnhancedScanConfigsFromLeftNav,
@@ -61,8 +57,11 @@ describe('Compliance Dashboard', () => {
         // Step 1, check empty fields
         getInputByLabel('Name').click().blur();
         getInputByLabel('Frequency').click().click(); // blur with no selection
-        cy.get('input[aria-label="Time picker"]').click().blur(); // PF Datepicker doesn't follow pattern used by helper function
-        getInputByLabel('Description').click().type('Mare eats oats, and does eat oats, and little lambs eat ivy.').blur();
+        cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
+        getInputByLabel('Description')
+            .click()
+            .type('Mare eats oats, and does eat oats, and little lambs eat ivy.')
+            .blur();
 
         getHelperElementByLabel('Name').contains('Scan name is required');
         getHelperElementByLabel('Frequency').contains('Frequency is required');
