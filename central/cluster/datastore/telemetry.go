@@ -14,7 +14,7 @@ import (
 
 const securedClusterClient = "Secured Cluster"
 
-func trackClusterRegistered(ctx context.Context, cluster *storage.Cluster) {
+func trackClusterRegistered(cluster *storage.Cluster) {
 	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
 		props := map[string]any{
 			"Cluster Type": cluster.GetType().String(),
