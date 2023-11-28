@@ -228,11 +228,10 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// NOTE: Connecting to an external database is in Technology Preview.
 	// Specify a connection string that corresponds to an external database. If set, the operator will not manage Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String (Technology Preview)"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String"
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
