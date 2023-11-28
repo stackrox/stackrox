@@ -5,7 +5,6 @@ go 1.19
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.11.3
-	cloud.google.com/go/secretmanager v1.11.2
 	cloud.google.com/go/securitycenter v1.23.1
 	cloud.google.com/go/storage v1.35.1
 	github.com/BurntSushi/toml v1.3.2
@@ -48,6 +47,7 @@ require (
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.16.1
+	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorilla/schema v1.2.1
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -150,8 +150,6 @@ require (
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require github.com/googleapis/gax-go/v2 v2.12.0
 
 require (
 	cloud.google.com/go v0.110.9 // indirect

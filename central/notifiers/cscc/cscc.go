@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/googleapis/gax-go/v2"
@@ -25,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
+	securitycenterv1 "google.golang.org/api/securitycenter/v1"
 	"google.golang.org/grpc"
 )
 
@@ -87,7 +87,7 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		}
 	}
 
-	cfg, err := google.CredentialsFromJSON(context.Background(), []byte(decCreds), secretmanager.DefaultAuthScopes()...)
+	cfg, err := google.CredentialsFromJSON(context.Background(), []byte(decCreds), securitycenterv1.CloudPlatformScope)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating JWT config for client")
 	}
