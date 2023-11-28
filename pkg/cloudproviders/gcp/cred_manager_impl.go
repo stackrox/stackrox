@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/secretinformer"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2/google"
+	storagev1 "google.golang.org/api/storage/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -101,8 +102,7 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 		// Use a scope to request access to the GCP API. See
 		// https://developers.google.com/identity/protocols/oauth2/scopes
 		// for a list of GCP scopes.
-		scope := "https://www.googleapis.com/auth/cloud-platform"
-		return google.CredentialsFromJSON(ctx, c.stsConfig, scope)
+		return google.CredentialsFromJSON(ctx, c.stsConfig, storagev1.CloudPlatformScope)
 	}
 	return google.FindDefaultCredentials(ctx)
 }
