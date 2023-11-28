@@ -8,7 +8,6 @@ import (
 )
 
 func TestOptions(t *testing.T) {
-
 	t.Run("When no setters then options should be default", func(t *testing.T) {
 		o := makeOptions()
 		assert.Equal(t, defaultOptions, o)

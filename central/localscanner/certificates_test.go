@@ -8,6 +8,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stretchr/testify/suite"
@@ -108,6 +109,22 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 }
 
+var (
+	scannerServices = func() []storage.ServiceType {
+		svcs := []storage.ServiceType{
+			storage.ServiceType_SCANNER_SERVICE,
+			storage.ServiceType_SCANNER_DB_SERVICE,
+		}
+		if features.ScannerV4.Enabled() {
+			svcs = append(svcs,
+				storage.ServiceType_SCANNER_V4_DB_SERVICE,
+				storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
+			)
+		}
+		return svcs
+	}()
+)
+
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 	testCases := map[string]struct {
 		namespace  string
@@ -129,8 +146,7 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 			s.Require().NotNil(certs.GetCaPem())
 			s.Require().NotEmpty(certs.GetServiceCerts())
 			for _, cert := range certs.ServiceCerts {
-				s.Contains([]storage.ServiceType{storage.ServiceType_SCANNER_SERVICE,
-					storage.ServiceType_SCANNER_DB_SERVICE}, cert.GetServiceType())
+				s.Contains(scannerServices, cert.GetServiceType())
 				s.NotEmpty(cert.GetCert().GetCertPem())
 				s.NotEmpty(cert.GetCert().GetKeyPem())
 			}
