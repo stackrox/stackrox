@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dexidp/dex/connector"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/connector"
 	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/dexconnector"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/env"
@@ -151,7 +151,7 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 	// OpenShift doesn't provide emails in their users API response, see
 	// https://docs.openshift.com/container-platform/4.9/rest_api/user_and_group_apis/user-user-openshift-io-v1.html
 	attributes := map[string][]string{
-		authproviders.UseridAttribute: {id.UserID},
+		authproviders.UseridAttribute: {string(id.UserID)},
 		authproviders.NameAttribute:   {id.Username},
 		authproviders.GroupsAttribute: id.Groups,
 	}

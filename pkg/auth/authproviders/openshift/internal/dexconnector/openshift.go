@@ -14,15 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dexidp/dex/connector"
-	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/connector"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
+	k8sapi "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
