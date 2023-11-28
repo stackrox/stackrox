@@ -37,33 +37,38 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
+	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
+	// images.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner Component Settings"
+	ScannerV4 *ScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+
 	// Settings related to outgoing network traffic.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Egress *Egress `json:"egress,omitempty"`
 
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
 
 	// Monitoring configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 }
 
@@ -505,6 +510,33 @@ type ScannerComponentSpec struct {
 	// allows other services to collect metrics from Scanner, provided in
 	// Prometheus compatible format.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+}
+
+// ScannerV4ComponentSpec defines settings for the central "scannerV4" component.
+type ScannerV4ComponentSpec struct {
+	// If you want to deploy the Red Hat Advanced Cluster Security ScannerV4, you can enable it here
+	// By default, the ScannerV4 is disabled.
+	//+kubebuilder:default=Disabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 Component"
+	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the indexer deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Indexer *ScannerV4Component `json:"indexer,omitempty"`
+
+	// Settings pertaining to the matcher deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Matcher *ScannerV4Component `json:"matcher,omitempty"`
+
+	// Settings pertaining to the DB deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	DB *ScannerV4DB `json:"db,omitempty"`
+
+	// Configures monitoring endpoint for Scanner. The monitoring endpoint
+	// allows other services to collect metrics from Scanner, provided in
+	// Prometheus compatible format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 

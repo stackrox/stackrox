@@ -103,6 +103,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
 	}
 
+	if c.Spec.ScannerV4 != nil {
+		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(c.Spec.ScannerV4))
+	}
+
 	v.AddChild("customize", &customize)
 
 	return v.Build()
@@ -353,20 +357,22 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	if s.ScannerComponent != nil {
-		switch *s.ScannerComponent {
-		case platform.ScannerComponentDisabled:
-			sv.SetBoolValue("disable", true)
-		case platform.ScannerComponentEnabled:
-			sv.SetBoolValue("disable", false)
-		default:
-			return sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *s.ScannerComponent))
-		}
-	}
-
+	translation.SetScannerComponentDisabledValue(&sv, s.ScannerComponent)
 	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer())
 	translation.SetScannerDBValues(&sv, s.DB)
+
 	sv.SetBoolValue("exposeMonitoring", s.Monitoring.IsEnabled())
+
+	return &sv
+}
+
+func getCentralScannerV4ComponentValues(s *platform.ScannerV4ComponentSpec) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+
+	translation.SetScannerComponentDisabledValue(&sv, s.ScannerComponent)
+	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
+	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
+	translation.SetScannerV4DBValues(&sv, s.DB)
 
 	return &sv
 }

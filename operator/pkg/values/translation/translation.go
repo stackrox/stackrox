@@ -123,40 +123,88 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	return &globalMonitoring
 }
 
-// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
-func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
-	if analyzer.GetScaling() != nil {
-		scaling := analyzer.GetScaling()
-		sv.SetInt32("replicas", scaling.Replicas)
-
-		autoscaling := NewValuesBuilder()
-		if scaling.AutoScaling != nil {
-			switch *scaling.AutoScaling {
-			case platform.ScannerAutoScalingDisabled:
-				autoscaling.SetBoolValue("disable", true)
-			case platform.ScannerAutoScalingEnabled:
-				autoscaling.SetBoolValue("disable", false)
-			default:
-				autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
-			}
+// SetScannerComponentDisabled sets the disabled values for scanner configurations
+func SetScannerComponentDisabledValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
+	if scannerComponent != nil {
+		switch *scannerComponent {
+		case platform.ScannerComponentDisabled:
+			sv.SetBoolValue("disable", true)
+		case platform.ScannerComponentEnabled:
+			sv.SetBoolValue("disable", false)
+		default:
+			sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *scannerComponent))
 		}
-		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
-		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
-		sv.AddChild("autoscaling", &autoscaling)
-	}
-
-	if analyzer != nil {
-		sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
-		sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
-		sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
 	}
 }
 
-// SetScannerDBValues sets values in "sb" based on "db".
+// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+	if analyzer == nil {
+		return
+	}
+	setScannerComponentScaling(sv, analyzer.GetScaling())
+	sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
+	sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+}
+
+// SetScannerDBValues sets values in "sv" based on "db".
 func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 	if db != nil {
 		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
 		sv.AddChild("dbResources", GetResources(db.Resources))
 		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
 	}
+}
+
+// SetScannerV4DBValues sets values in "sv" based on "db"
+func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
+	if db == nil {
+		return
+	}
+
+	dbVB := NewValuesBuilder()
+	dbVB.SetStringMap("nodeSelector", db.NodeSelector)
+	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
+	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
+	// TODO(ROX-19051): translate persistence values
+	sv.AddChild("db", &dbVB)
+	return
+}
+
+// SetScannerV4ComponentValues sets values in "sv" based on "component"
+func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component) {
+	if component == nil {
+		return
+	}
+
+	componentVB := NewValuesBuilder()
+	setScannerComponentScaling(sv, component.Scaling)
+	sv.SetStringMap("nodeSelector", component.NodeSelector)
+	sv.AddChild(ResourcesKey, GetResources(component.Resources))
+	sv.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+	sv.AddChild(componentKey, &componentVB)
+}
+
+func setScannerComponentScaling(sv *ValuesBuilder, scaling *platform.ScannerComponentScaling) {
+	if scaling == nil {
+		return
+	}
+
+	sv.SetInt32("replicas", scaling.Replicas)
+	autoscalingVB := NewValuesBuilder()
+	if scaling.AutoScaling != nil {
+		switch *scaling.AutoScaling {
+		case platform.ScannerAutoScalingDisabled:
+			autoscalingVB.SetBoolValue("disable", true)
+		case platform.ScannerAutoScalingEnabled:
+			autoscalingVB.SetBoolValue("disable", false)
+		default:
+			autoscalingVB.SetError(fmt.Errorf("invalid scanner autoscaling %q", *scaling.AutoScaling))
+		}
+	}
+
+	sv.SetInt32("maxReplicas", scaling.MaxReplicas)
+	sv.SetInt32("minReplicas", scaling.MinReplicas)
+	sv.AddChild("autoscaling", &autoscalingVB)
 }
