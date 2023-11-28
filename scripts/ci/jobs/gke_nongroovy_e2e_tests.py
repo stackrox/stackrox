@@ -21,7 +21,7 @@ ClusterTestRunner(
     pre_test=PreSystemTests(),
     test=NonGroovyE2e(),
     post_test=PostClusterTest(
-        check_stackrox_logs=False,
+        check_stackrox_logs=True,
     ),
     final_post=FinalPost(
         store_qa_tests_data=False,
