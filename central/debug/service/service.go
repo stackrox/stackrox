@@ -95,7 +95,7 @@ var (
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.DebugService/SetLogLevel",
-			"/v1.DebugService/ResetPGStatStatements",
+			"/v1.DebugService/ResetDBStats",
 		},
 	})
 
@@ -149,10 +149,10 @@ type serviceImpl struct {
 	notifierDataStore    notifierDS.DataStore
 }
 
-// ResetPGStatStatements resets pg_stat_statements in order to allow new metrics to be accumulated.
-func (s *serviceImpl) ResetPGStatStatements(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
+// ResetDBStats resets pg_stat_statements in order to allow new metrics to be accumulated.
+func (s *serviceImpl) ResetDBStats(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
 	if pgconfig.IsExternalDatabase() {
-		return nil, status.Error(codes.InvalidArgument, "cannot reset pg_stat_statements on an external database")
+		return nil, status.Error(codes.InvalidArgument, "cannot reset DB stats on an external database")
 	}
 	err := stats.ResetPGStatStatements(ctx, globaldb.GetPostgres())
 	if err != nil {

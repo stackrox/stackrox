@@ -109,7 +109,7 @@ service DebugService {
     }
 
     // Reset database debugging statistics.
-    rpc ResetPGStatStatements(v1.Empty) returns (v1.Empty) {
+    rpc ResetDBStats(v1.Empty) returns (v1.Empty) {
         option (google.api.http) = {
             post: "/v1/debug/db/stats/reset"
         };

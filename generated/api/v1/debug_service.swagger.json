@@ -45,8 +45,8 @@
     },
     "/v1/debug/db/stats/reset": {
       "post": {
-        "summary": "Stream authorization traces for all incoming requests.",
-        "operationId": "DebugService_ResetPGStatStatements",
+        "summary": "Reset database debugging statistics.",
+        "operationId": "DebugService_ResetDBStats",
         "responses": {
           "200": {
             "description": "A successful response.",
