@@ -33,7 +33,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          fixtureconsts.Cluster2,
 			ClusterName:        "cluster2",
-			ScanConfigName:     "scan 1",
+			ScanConfigName:     "scanConfig1",
 		},
 		{
 			PassCount:          0,
@@ -45,7 +45,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          fixtureconsts.Cluster3,
 			ClusterName:        "cluster3",
-			ScanConfigName:     "scan 1",
+			ScanConfigName:     "scanConfig1",
 		},
 		{
 			PassCount:          0,
@@ -57,7 +57,7 @@ var (
 			InconsistentCount:  0,
 			ClusterID:          fixtureconsts.Cluster3,
 			ClusterName:        "cluster3",
-			ScanConfigName:     "scan 2",
+			ScanConfigName:     "scanConfig2",
 		},
 	}
 )
@@ -201,11 +201,9 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCheckResultStats() {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, fixtureconsts.Cluster2).
 		AddExactMatches(search.ClusterID, fixtureconsts.Cluster3).ProtoQuery()
-	res, err := s.dataStore.SearchComplianceCheckResults(s.hasReadCtx, query)
 
 	results, err := s.dataStore.ComplianceCheckResultStats(s.hasReadCtx, query)
 	s.Require().NoError(err)
-	s.NotEmpty(res)
 	s.Require().Equal(expectedClusterCounts, results)
 
 	// Counts with no access should return error

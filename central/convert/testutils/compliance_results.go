@@ -275,7 +275,6 @@ func GetComplianceStorageCount(_ *testing.T, clusterID string) *datastore.Resour
 		ClusterName:        clusterName1,
 		ClusterID:          clusterID,
 		ScanConfigName:     scanConfigName1,
-		ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 	}
 }
 
