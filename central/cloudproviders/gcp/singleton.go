@@ -1,7 +1,7 @@
 package gcp
 
 import (
-	"github.com/stackrox/rox/pkg/cloudproviders/gcp"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -9,15 +9,15 @@ import (
 
 var (
 	once    sync.Once
-	manager gcp.STSClientManager
+	manager auth.STSClientManager
 
 	log = logging.LoggerForModule()
 )
 
 // Singleton returns an instance of the GCP cloud credentials manager.
-func Singleton() gcp.STSClientManager {
+func Singleton() auth.STSClientManager {
 	once.Do(func() {
-		manager = gcp.NewSTSClientManager(
+		manager = auth.NewSTSClientManager(
 			env.Namespace.Setting(),
 			env.GCPCloudCredentialsSecret.Setting(),
 		)

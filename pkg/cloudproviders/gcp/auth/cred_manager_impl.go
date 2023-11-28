@@ -1,9 +1,10 @@
-package gcp
+package auth
 
 import (
 	"bytes"
 	"context"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/secretinformer"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2/google"
@@ -15,6 +16,8 @@ import (
 const (
 	cloudCredentialsKey = "credentials"
 )
+
+var log = logging.LoggerForModule()
 
 type gcpCredentialsManagerImpl struct {
 	namespace  string
@@ -104,5 +107,5 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 		// for a list of GCP scopes.
 		return google.CredentialsFromJSON(ctx, c.stsConfig, storagev1.CloudPlatformScope)
 	}
-	return google.FindDefaultCredentials(ctx)
+	return google.FindDefaultCredentials(ctx, storagev1.CloudPlatformScope)
 }
