@@ -21,7 +21,6 @@ function* fetchVersionAndSendTo(action) {
 function* pollVersion() {
     let action = actions.initialFetchMetadata;
     while (true) {
-        // eslint-disable-next-line
         const metadata = yield call(fetchVersionAndSendTo, action);
         if (metadata && metadata.version) {
             action = actions.pollMetadata;

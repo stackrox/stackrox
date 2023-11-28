@@ -118,7 +118,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             Header: `Active`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 return original.activeState?.state || 'Undetermined';
             },
