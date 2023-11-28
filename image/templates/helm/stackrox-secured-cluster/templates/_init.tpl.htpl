@@ -225,16 +225,10 @@
 {{- end }}
 
 [< if (not .KubectlOutput) ->]
+{{ if eq ._rox.scanner.disable false }}
 {{/*
    Local scanner setup.
   */}}
-
-{{/* Disable scanner always in kubectl outputs */}}
-[< if .KubectlOutput ->]
-  {{ $_ := set $._rox.scanner "disable" true }}
-[< end >]
-
-{{ if eq ._rox.scanner.disable false }}
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
