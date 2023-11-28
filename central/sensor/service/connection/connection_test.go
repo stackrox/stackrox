@@ -88,28 +88,28 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 		expectDeduperStateContents  map[string]uint64
 	}{
 		"Sensor reconciles: sensor has capability and status is reconnect": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
 			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: sensor has capability and status is startup": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_STARTUP,
 			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: sensor has capability and status is unknown": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_UNKNOWN,
 			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
 			expectDeduperStateContents:  map[string]uint64{"deployment:1": 0},
 		},
 		"Sensor reconciles: state is sent even if there is no deduper state": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
 			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 1,
@@ -131,7 +131,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			expectDeduperStateSent:  false,
 		},
 		"Central reconciles: failed to send message": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
 			givenSendError:              errors.New("gRPC error"),
 			expectError:                 true,
@@ -139,7 +139,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			expectNumberOfDeduperStates: 1,
 		},
 		"Sensor reconciles: multiple chunks are sent": {
-			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorCapabilities:     []centralsensor.SensorCapability{centralsensor.SendDeduperStateOnReconnect},
 			givenSensorState:            central.SensorHello_RECONNECT,
 			expectDeduperStateSent:      true,
 			expectNumberOfDeduperStates: 2,
