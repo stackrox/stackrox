@@ -127,7 +127,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 15; i++) {
             log.info "Attempt ${i} to get raw violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "sourcetype=stackrox-violations")
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
@@ -138,7 +138,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasNetworkViolation |= isNetworkViolation(result)
                         hasProcessViolation |= isProcessViolation(result)
                     }
-                    log.info "Found violations in Splunk: \n${results}"
+                    log.info "Found violations in Splunk: \n${results}" // TODO: Remove debug log
                     if (hasNetworkViolation && hasProcessViolation) {
                         log.info "Success!"
                         break
@@ -158,14 +158,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             log.info "Attempt ${i} to get Alerts from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(15)
-            Response response = SplunkUtil.getSearchResults(port, searchId)
+            Response v_response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
-            if (response != null) {
-                alerts = response.getBody().jsonPath().getList("alerts")
+            if (v_response != null) {
+                alerts = v_response.getBody().jsonPath().getList("results")
                 if (!alerts.isEmpty()) {
-                    for (result in alerts) {
-                        hasNetworkAlert |= isNetworkViolation(result)
-                        hasProcessAlert |= isProcessViolation(result)
+                    for (alert in alerts) {
+                        hasNetworkAlert |= isNetworkViolation(alert)
+                        hasProcessAlert |= isProcessViolation(alert)
                     }
                     log.info "Found Alerts in Splunk: \n${alerts}"
                     if (hasNetworkAlert && hasProcessAlert) {
@@ -181,8 +181,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         assert !alerts.isEmpty()
         assert hasNetworkAlert
         assert hasProcessAlert
-        for (result in alerts) {
-            validateCimMappings(result)
+        for (alert in alerts) {
+            validateCimMappings(alert)
         }
     }
 
