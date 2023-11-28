@@ -13,6 +13,23 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
+var (
+	supportedServices = func() []storage.ServiceType {
+		svcs := []storage.ServiceType{
+			storage.ServiceType_SCANNER_SERVICE,
+			storage.ServiceType_SCANNER_DB_SERVICE,
+		}
+		if features.ScannerV4.Enabled() {
+			svcs = append(svcs,
+				storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
+				storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
+				storage.ServiceType_SCANNER_V4_DB_SERVICE,
+			)
+		}
+		return svcs
+	}()
+)
+
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	if namespace == "" {
@@ -43,15 +60,11 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
 		}
-		_, scannerV4MatcherCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE, namespace, clusterID)
-		if err != nil {
-			certIssueError = multierror.Append(certIssueError, err)
-		}
 		_, scannerV4DBCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_V4_DB_SERVICE, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
 		}
-		certificates = append(certificates, scannerV4IndexerCertificate, scannerV4MatcherCertificate, scannerV4DBCertificate)
+		certificates = append(certificates, scannerV4IndexerCertificate, scannerV4DBCertificate)
 	}
 
 	if certIssueError != nil {
@@ -82,17 +95,6 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
 	var err error
-	supportedServices := []storage.ServiceType{
-		storage.ServiceType_SCANNER_SERVICE,
-		storage.ServiceType_SCANNER_DB_SERVICE,
-	}
-	if features.ScannerV4.Enabled() {
-		supportedServices = append(supportedServices,
-			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
-			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
-			storage.ServiceType_SCANNER_V4_DB_SERVICE)
-	}
-
 	if !slices.Contains(supportedServices, serviceType) {
 		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
 			serviceType)
