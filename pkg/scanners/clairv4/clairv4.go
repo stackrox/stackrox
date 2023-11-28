@@ -70,17 +70,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	if err := validate(cfg); err != nil {
 		return nil, err
 	}
-	// TODO: Probably something along these lines is required here? // MC
-	//
-	// func getTLSConfig() (*tls.Config, error) {
-	// 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-	// 		UseClientCert: clientconn.MustUseClientCert,
-	// 	})
-	// 	if err != nil {
-	// 		return nil, errors.Wrap(err, "failed to initialize TLS config")
-	// 	}
-	// 	return tlsConfig, nil
-	// }
 
 	endpoint := urlfmt.FormatURL(cfg.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	client := &http.Client{
