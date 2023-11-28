@@ -14,7 +14,7 @@ import (
 
 	storage "cloud.google.com/go/storage"
 	gomock "go.uber.org/mock/gomock"
-	option "google.golang.org/api/option"
+	google "golang.org/x/oauth2/google"
 )
 
 // MockStorageClientFactory is a mock of StorageClientFactory interface.
@@ -41,21 +41,16 @@ func (m *MockStorageClientFactory) EXPECT() *MockStorageClientFactoryMockRecorde
 }
 
 // NewClient mocks base method.
-func (m *MockStorageClientFactory) NewClient(ctx context.Context, opts ...option.ClientOption) (*storage.Client, error) {
+func (m *MockStorageClientFactory) NewClient(ctx context.Context, creds *google.Credentials) (*storage.Client, error) {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "NewClient", varargs...)
+	ret := m.ctrl.Call(m, "NewClient", ctx, creds)
 	ret0, _ := ret[0].(*storage.Client)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewClient indicates an expected call of NewClient.
-func (mr *MockStorageClientFactoryMockRecorder) NewClient(ctx any, opts ...any) *gomock.Call {
+func (mr *MockStorageClientFactoryMockRecorder) NewClient(ctx, creds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockStorageClientFactory)(nil).NewClient), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockStorageClientFactory)(nil).NewClient), ctx, creds)
 }
