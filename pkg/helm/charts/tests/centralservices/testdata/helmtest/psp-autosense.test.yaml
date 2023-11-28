@@ -2,6 +2,8 @@ values:
   central:
     persistence:
       none: true
+  imagePullSecrets:
+    allowNone: true
 tests:
   - name: "Detect support for PodSecurityPolicies"
     values:

@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: monitoring should not be exposed by default
   expect: |

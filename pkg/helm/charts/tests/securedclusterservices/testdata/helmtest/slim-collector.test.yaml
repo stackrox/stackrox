@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: default settings (should infer slim collector due to default registry)
   tests:

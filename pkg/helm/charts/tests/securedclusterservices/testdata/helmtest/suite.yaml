@@ -44,8 +44,6 @@ server:
   - kubernetes-1.20.2
 values:
   clusterName: "testcluster"
-  imagePullSecrets:
-    allowNone: true
   createSecrets: false
   ca:
     cert: "DUMMY CA CERTIFICATE"
