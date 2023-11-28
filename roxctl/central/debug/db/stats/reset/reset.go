@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+        "github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
