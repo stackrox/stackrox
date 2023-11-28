@@ -258,7 +258,7 @@
 
 [<- if .FeatureFlags.ROX_SCANNER_V4 >]
 {{/*
-   Local scanner-v4-indexer setup.
+   Local Scanner v4 Indexer setup.
   */}}
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
 {{/* Disable scanner always in kubectl outputs */}}
