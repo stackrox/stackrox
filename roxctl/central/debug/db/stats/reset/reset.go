@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -15,7 +14,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "reset",
-		Short: "Resets pg_stat_statements in the database",
+		Short: "Resets DB query statistics in the database",
 		RunE: func(c *cobra.Command, args []string) error {
 			conn, err := cliEnvironment.GRPCConnection()
 			if err != nil {
@@ -27,7 +26,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			defer cancel()
 
 			svc := v1.NewDebugServiceClient(conn)
-			_, err = svc.ResetPGStatStatements(ctx, &v1.Empty{})
+			_, err = svc.ResetDBStats(ctx, &v1.Empty{})
 			if err != nil {
 				return errors.Wrap(err, "could not reset pg_stat_statements")
 			}
