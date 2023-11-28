@@ -21,8 +21,8 @@ repo_root = this_script_dir.parent
 
 HELM_REPO_NAME = "temp-stackrox-oss-repo-should-not-see-me"
 
-add_repo_cmd = f"""helm repo add {HELM_REPO_NAME}
- https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"""
+add_repo_cmd = f"""helm repo add {HELM_REPO_NAME} \
+https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"""
 UPDATE_REPO_CMD = "helm repo update"
 search_cmd = f"helm search repo {HELM_REPO_NAME} --versions --output json"
 remove_repo_cmd = f"helm repo remove {HELM_REPO_NAME}"
