@@ -37,9 +37,8 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
-	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
-	// images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner Component Settings"
+	// Settings for the Scanner V4 component, which can run in addition to the existing Scanner service
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
 	ScannerV4 *ScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 
 	// Settings related to outgoing network traffic.

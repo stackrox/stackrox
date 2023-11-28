@@ -123,7 +123,7 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	return &globalMonitoring
 }
 
-// SetScannerComponentDisabled sets the disabled values for scanner configurations
+// SetScannerComponentDisabledValue sets the disabled values for scanner configurations
 func SetScannerComponentDisabledValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
 	if scannerComponent != nil {
 		switch *scannerComponent {
@@ -132,7 +132,7 @@ func SetScannerComponentDisabledValue(sv *ValuesBuilder, scannerComponent *platf
 		case platform.ScannerComponentEnabled:
 			sv.SetBoolValue("disable", false)
 		default:
-			sv.SetError(fmt.Errorf("invalid spec.scanner.scannerComponent %q", *scannerComponent))
+			sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *scannerComponent))
 		}
 	}
 }
@@ -169,7 +169,6 @@ func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
 	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
 	// TODO(ROX-19051): translate persistence values
 	sv.AddChild("db", &dbVB)
-	return
 }
 
 // SetScannerV4ComponentValues sets values in "sv" based on "component"
@@ -179,10 +178,10 @@ func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, compone
 	}
 
 	componentVB := NewValuesBuilder()
-	setScannerComponentScaling(sv, component.Scaling)
-	sv.SetStringMap("nodeSelector", component.NodeSelector)
-	sv.AddChild(ResourcesKey, GetResources(component.Resources))
-	sv.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+	setScannerComponentScaling(&componentVB, component.Scaling)
+	componentVB.SetStringMap("nodeSelector", component.NodeSelector)
+	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
+	componentVB.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
 	sv.AddChild(componentKey, &componentVB)
 }
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -175,6 +176,196 @@ func TestGetTLSConfigValues(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			values, err := GetTLSConfigValues(tt.tls).Build()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, values)
+		})
+	}
+}
+
+func TestSetScannerComponentDisabled(t *testing.T) {
+	tests := map[string]struct {
+		scannerComponent platform.ScannerComponentPolicy
+		want             chartutil.Values
+		wantErr          bool
+	}{
+		"Disabled": {
+			scannerComponent: platform.ScannerComponentDisabled,
+			want: chartutil.Values{
+				"disable": true,
+			},
+		},
+		"Enabled": {
+			scannerComponent: platform.ScannerComponentEnabled,
+			want: chartutil.Values{
+				"disable": false,
+			},
+		},
+		"Invalid": {
+			scannerComponent: "invalid",
+			want:             chartutil.Values{},
+			wantErr:          true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vb := NewValuesBuilder()
+			SetScannerComponentDisabledValue(&vb, &tt.scannerComponent)
+			values, err := vb.Build()
+			if tt.wantErr {
+				require.NotNil(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, values)
+		})
+	}
+}
+
+func TestSetScannerV4ComponentValues(t *testing.T) {
+	// using local copies to be able to create references to those constants
+	autoscalingEnabled := platform.ScannerAutoScalingEnabled
+	autoscalingDisabled := platform.ScannerAutoScalingDisabled
+	var autoscalingInvalid platform.AutoScalingPolicy = "invalid"
+
+	tests := map[string]struct {
+		component    *platform.ScannerV4Component
+		componentKey string
+		want         chartutil.Values
+		wantErr      bool
+	}{
+		"empty for default component": {
+			component:    &platform.ScannerV4Component{},
+			componentKey: "indexer",
+			want:         chartutil.Values{},
+		},
+		"sets resources": {
+			component: &platform.ScannerV4Component{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("200M"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("150m"),
+							corev1.ResourceMemory: resource.MustParse("250M"),
+						},
+					},
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"resources": map[string]interface{}{
+						"requests": map[string]interface{}{
+							"cpu":    "100m",
+							"memory": "200M",
+						},
+						"limits": map[string]interface{}{
+							"cpu":    "150m",
+							"memory": "250M",
+						},
+					},
+				},
+			},
+		},
+		"uses componentKey as toplevel key": {
+			component: &platform.ScannerV4Component{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU: resource.MustParse("100m"),
+						},
+					},
+				},
+			},
+			componentKey: "matcher",
+			want: chartutil.Values{
+				"matcher": map[string]interface{}{
+					"resources": map[string]interface{}{
+						"requests": map[string]interface{}{
+							"cpu": "100m",
+						},
+					},
+				},
+			},
+		},
+		"sets autoscaling if enabled": {
+			component: &platform.ScannerV4Component{
+				Scaling: &platform.ScannerComponentScaling{
+					// using a local copy of platform.ScannerAutoScalingEnabled in order to pass it as a reference
+					// since references to const strings are not allowed in Go
+					AutoScaling: &autoscalingEnabled,
+					MinReplicas: pointers.Int32(1),
+					MaxReplicas: pointers.Int32(3),
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"autoscaling": map[string]interface{}{
+						"disable": false,
+						// using floats here because the underlying chartutil.ReadValues library
+						// used for parsing doesn't recognize the int types propperly
+						"minReplicas": 1.0,
+						"maxReplicas": 3.0,
+					},
+				},
+			},
+		},
+		"disables autoscaling if disabled": {
+			component: &platform.ScannerV4Component{
+				Scaling: &platform.ScannerComponentScaling{
+					AutoScaling: &autoscalingDisabled,
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"autoscaling": map[string]interface{}{
+						"disable": true,
+					},
+				},
+			},
+		},
+		"err for invalid AutoscalingPolicy": {
+			component: &platform.ScannerV4Component{
+				Scaling: &platform.ScannerComponentScaling{
+					AutoScaling: &autoscalingInvalid,
+				},
+			},
+			wantErr: true,
+		},
+		"set replicas if available": {
+			component: &platform.ScannerV4Component{
+				Scaling: &platform.ScannerComponentScaling{
+					Replicas: pointers.Int32(2),
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					// using floats here because the underlying chartutil.ReadValues library
+					// used for parsing doesn't recognize the int types propperly
+					"replicas": 2.0,
+				},
+			},
+		},
+		"set tolerations": {},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vb := NewValuesBuilder()
+			SetScannerV4ComponentValues(&vb, tt.componentKey, tt.component)
+			values, err := vb.Build()
+			if tt.wantErr {
+				require.NotNil(t, err)
+				return
+			}
+			// t.Fatal(values)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, values)
 		})
