@@ -22,6 +22,17 @@ type DeploymentStore struct {
 
 	// deploymentSnapshots
 	deploymentSnapshots map[string]snapshotEntry
+
+	// onDeleteFunctions functions to be called whenever a deployment is deleted from the store
+	onDeleteFunctions []onDeleteFn
+}
+
+type onDeleteFn func(string, string)
+
+func (f onDeleteFn) onDelete(id, namespace string) {
+	if f != nil {
+		f(id, namespace)
+	}
 }
 
 type snapshotEntry struct {
@@ -86,6 +97,9 @@ func (ds *DeploymentStore) removeDeploymentNoLock(wrap *deploymentWrap) {
 		}
 		delete(ids, wrap.GetId())
 		delete(ds.deployments, wrap.GetId())
+		for _, fn := range ds.onDeleteFunctions {
+			fn.onDelete(wrap.GetId(), wrap.GetNamespace())
+		}
 	}
 }
 
@@ -366,5 +380,15 @@ func (ds *DeploymentStore) removeReferenceNoLock(id string) {
 		if len(ds.deploymentIDs[wrap.GetNamespace()]) == 0 {
 			delete(ds.deploymentIDs, wrap.GetNamespace())
 		}
+		for _, fn := range ds.onDeleteFunctions {
+			fn.onDelete(wrap.GetId(), wrap.GetNamespace())
+		}
 	}
+}
+
+// addOnDeleteFunctions appends functions to be called whenever a deployment is deleted from the store.
+func (ds *DeploymentStore) addOnDeleteFunctions(callback ...onDeleteFn) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+	ds.onDeleteFunctions = append(ds.onDeleteFunctions, callback...)
 }

@@ -101,7 +101,7 @@ func newDeploymentHandler(
 	registryStore *registry.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 ) *deploymentHandler {
-	return &deploymentHandler{
+	ret := &deploymentHandler{
 		podLister:              podLister,
 		serviceStore:           serviceStore,
 		deploymentStore:        deploymentStore,
@@ -117,6 +117,28 @@ func newDeploymentHandler(
 		clusterID:              clusterID,
 		credentialsManager:     credentialsManager,
 	}
+	onDeleteFunctions := []onDeleteFn{
+		func(id, _ string) {
+			ret.endpointManager.OnDeploymentRemove(&deploymentWrap{
+				Deployment: &storage.Deployment{
+					Id: id,
+				},
+			})
+		},
+		func(id, namespace string) {
+			ret.podStore.onDeploymentRemove(&deploymentWrap{
+				Deployment: &storage.Deployment{
+					Id:        id,
+					Namespace: namespace,
+				},
+			})
+		},
+		func(id, _ string) {
+			ret.processFilter.Delete(id)
+		},
+	}
+	ret.deploymentStore.addOnDeleteFunctions(onDeleteFunctions...)
+	return ret
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *component.ResourceEvent {
@@ -187,7 +209,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			// TODO(ROX-14309): move this logic to the resolver
 			// We need to do this here since the resolver relies on the deploymentStore to have the wrap
-			d.endpointManager.OnDeploymentRemove(deploymentWrap)
 			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
 			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
 			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
@@ -229,8 +250,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
 	} else {
 		d.deploymentStore.removeDeployment(deploymentWrap)
-		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 
 	return events

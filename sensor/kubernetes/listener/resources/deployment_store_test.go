@@ -8,12 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	mocksFilter "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -675,11 +677,24 @@ func (s *deploymentStoreSuite) Test_DeleteDeploymentsWithReferences() {
 		s.T().Skipf("Skip tests when %s is disabled", features.SensorCapturesIntermediateEvents.EnvVar())
 		s.T().SkipNow()
 	}
+	mockCtrl := gomock.NewController(s.T())
 	for name, tc := range deleteWithReferenceCases {
 		s.Run(name, func() {
 			s.namespaceStore = newNamespaceStore()
 			s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: namespaceName, Id: "1"})
 			s.deploymentStore = newDeploymentStore()
+			mockFilter := mocksFilter.NewMockFilter(mockCtrl)
+			s.deploymentStore.addOnDeleteFunctions(func(id string, ns string) {
+				mockFilter.Delete(id)
+			})
+			mockFilter.EXPECT().Delete(gomock.Any()).Times(len(tc.expectedDeletedDeployments)).Do(func(id string) {
+				for _, expectedID := range tc.expectedDeletedDeployments {
+					if id == expectedID {
+						return
+					}
+				}
+				s.Fail("Shouldn't have called the onDelete Function with id %s", id)
+			})
 
 			for _, deploymentToAdd := range tc.deploymentsToAdd {
 				s.deploymentStore.addOrUpdateDeployment(s.createDeploymentWrap(deploymentToAdd))
