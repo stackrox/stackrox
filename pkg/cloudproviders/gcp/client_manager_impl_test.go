@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/mocks"
 	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/mock/gomock"
-	"google.golang.org/api/option"
+	"golang.org/x/oauth2/google"
 )
 
 // TestClientManager asserts that on the happy path all mutexes are released as expected
@@ -23,7 +23,7 @@ func TestClientManager(t *testing.T) {
 	mockClientFactory.EXPECT().NewClient(gomock.Any(), gomock.Any()).
 		Return(nil, nil).
 		Times(2).
-		Do(func(context.Context, ...option.ClientOption) { wg.Done() })
+		Do(func(context.Context, *google.Credentials) { wg.Done() })
 
 	manager := &stsClientManagerImpl{credManager: mockCredManager, storageClientFactory: mockClientFactory}
 	manager.updateClients()
