@@ -150,7 +150,7 @@ type ScannerV4DB struct {
 	DeploymentSpec `json:",inline"`
 }
 
-// ScannerComponentScaling defines replication settings of the analyzer.
+// ScannerComponentScaling defines replication settings of scanner components.
 type ScannerComponentScaling struct {
 	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
 	// specified below.

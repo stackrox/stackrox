@@ -353,7 +353,8 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				},
 			},
 		},
-		"set tolerations": {},
+		// "set tolerations": {},
+		// "set nodeSelector": {},
 	}
 
 	for name, tt := range tests {
