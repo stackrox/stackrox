@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 23
+// Next Tag: 24
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -20,14 +20,15 @@ message ImageIntegration {
     repeated ImageIntegrationCategory categories = 6;
 
     oneof IntegrationConfig {
-        ClairifyConfig    clairify  = 8;
-        DockerConfig      docker    = 9;
-        QuayConfig        quay      = 10;
-        ECRConfig         ecr       = 11;
-        GoogleConfig      google    = 13;
-        ClairConfig       clair     = 14;
-        ClairV4Config     clair_v4  = 22;
-        IBMRegistryConfig ibm       = 20;
+        ClairifyConfig    clairify   = 8;
+        DockerConfig      docker     = 9;
+        QuayConfig        quay       = 10;
+        ECRConfig         ecr        = 11;
+        GoogleConfig      google     = 13;
+        ClairConfig       clair      = 14;
+        ClairV4Config     clair_v4   = 22;
+        IBMRegistryConfig ibm        = 20;
+        ScannerV4Config   scanner_v4 = 23;
     }
     reserved 7, 12, 17; // Previously Docker Trusted Registry, Tenable, and Anchore respectively
 
@@ -121,6 +122,16 @@ message GoogleConfig {
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
     string service_account = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     string project         = 3;
+}
+
+message ScannerV4Config {
+    // The presense of a ScannerV4 integration is not enough to accurately
+    // determine if ScannerV4 should be used.
+    // TODO: fix comments here
+    bool   disabled             = 1;
+    int32  num_concurrent_scans = 2;
+    string indexer_endpoint     = 3;
+    string matcher_endpoint     = 4;
 }
 
 enum ImageIntegrationCategory {
