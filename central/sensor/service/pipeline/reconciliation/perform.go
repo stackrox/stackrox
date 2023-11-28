@@ -15,7 +15,6 @@ var (
 // Perform factors out some of the common reconciliation logic to avoid duplication.
 // It does the reconciliation logic, and closes the passed store at the end.
 func Perform(store Store, existingIDs set.StringSet, resourceType string, removeFunc func(id string) error) error {
-	log.Info("SHREWS -- in perform")
 	idsToDelete := existingIDs.Difference(store.GetSet())
 	defer store.Close(idsToDelete.Cardinality())
 	if len(idsToDelete) == 0 {
@@ -28,6 +27,5 @@ func Perform(store Store, existingIDs set.StringSet, resourceType string, remove
 	for id := range idsToDelete {
 		errList.AddError(removeFunc(id))
 	}
-	log.Info("SHREWS -- done perform")
 	return errList.ToError()
 }

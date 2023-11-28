@@ -56,27 +56,22 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	log.Info("SHREWS -- about to walk V1")
 	existingIDs := set.NewStringSet()
 	walkFn := func() error {
 		existingIDs.Clear()
 		return s.datastore.Walk(ctx, func(profile *storage.ComplianceOperatorProfile) error {
 			if profile.GetClusterId() == clusterID {
-				log.Infof("SHREWS -- adding V1 to existingIDs %v", profile.GetId())
 				existingIDs.Add(profile.GetId())
 			}
 			return nil
 		})
 	}
-	log.Info("SHREWS -- about to walk V1  2")
 	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 
-	log.Info("SHREWS -- about to walk V1  3")
 	// For now if nextgen compliance is enabled, we have to reconcile both versions of compliance.
 	if features.ComplianceEnhancements.Enabled() {
-		log.Info("SHREWS -- about to walk V1  4")
 		// For nextgen compliance, reconciliation means disassociating a profile with a cluster.
 		// The profile itself will still remain.
 		profileEdges, err := s.v2ProfileDatastore.GetProfileEdgesByCluster(ctx, clusterID)
@@ -98,7 +93,6 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 			}
 		}
 
-		log.Infof("SHREWS -- in V1 Peform -- %v, %v, %s", store, existingIDs, id)
 		return s.datastore.Delete(ctx, id)
 	})
 }

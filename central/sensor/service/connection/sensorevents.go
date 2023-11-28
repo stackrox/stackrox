@@ -127,7 +127,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 	case *central.SensorEvent_ComplianceOperatorResultV2:
 		if !features.ComplianceEnhancements.Enabled() {
-			log.Errorf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
 			return
 		}
 		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
@@ -140,7 +140,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		}
 	case *central.SensorEvent_ComplianceOperatorProfileV2:
 		if !features.ComplianceEnhancements.Enabled() {
-			log.Errorf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
 			return
 		}
 		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
