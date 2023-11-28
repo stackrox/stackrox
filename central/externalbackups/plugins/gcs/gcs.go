@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"path"
 	"sort"
 	"strings"
@@ -16,15 +15,12 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
+	roxStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	googleStoragev1 "google.golang.org/api/storage/v1"
-	googleHTTP "google.golang.org/api/transport/http"
 )
 
 const (
@@ -38,8 +34,8 @@ const (
 var log = logging.LoggerForModule()
 
 type gcs struct {
-	integration *storage.ExternalBackup
-	client      *googleStorage.Client
+	integration   *storage.ExternalBackup
+	clientHandler roxStorage.ClientHandler
 
 	backupsToKeep int
 	bucket        string
@@ -69,53 +65,17 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 		return nil, err
 	}
 
-	client, err := createClient(conf)
+	handler, err := utils.CreateHandlerFromConfig(context.Background(), gcp.Singleton(), conf)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create GCS client")
+		return nil, errors.Wrap(err, "could not create GCS client handler")
 	}
 	return &gcs{
 		integration:   integration,
-		client:        client,
+		clientHandler: handler,
 		bucket:        conf.GetBucket(),
 		backupsToKeep: int(integration.GetBackupsToKeep()),
 		objectPrefix:  conf.GetObjectPrefix(),
 	}, nil
-}
-
-func gcsClientWithTransport(ctx context.Context, opts ...option.ClientOption) (*googleStorage.Client, error) {
-	transport, err := googleHTTP.NewTransport(
-		ctx,
-		proxy.RoundTripper(),
-		opts...,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create transport")
-	}
-	return googleStorage.NewClient(
-		ctx,
-		option.WithHTTPClient(&http.Client{Transport: transport}),
-	)
-}
-
-func createClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
-	if !conf.GetUseWorkloadId() {
-		return gcsClientWithTransport(
-			context.Background(),
-			option.WithCredentialsJSON([]byte(conf.GetServiceAccount())),
-			option.WithScopes(googleStoragev1.CloudPlatformScope),
-		)
-	}
-	if features.CloudCredentials.Enabled() {
-		return nil, nil
-	}
-	return gcsClientWithTransport(context.Background())
-}
-
-func (s *gcs) getClient() (*googleStorage.Client, func()) {
-	if s.integration.GetGcs().GetUseWorkloadId() && features.CloudCredentials.Enabled() {
-		return gcp.Singleton().StorageClient()
-	}
-	return s.client, func() {}
 }
 
 func (s *gcs) send(client *googleStorage.Client, duration time.Duration, objectPath string, reader io.Reader) error {
@@ -201,7 +161,7 @@ func formattedTime() string {
 }
 
 func (s *gcs) Backup(reader io.ReadCloser) error {
-	client, done := s.getClient()
+	client, done := s.clientHandler.GetClient()
 	defer done()
 	if client == nil {
 		return errors.New("failed to get GCS client")
@@ -226,7 +186,7 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 }
 
 func (s *gcs) Test() error {
-	client, done := s.getClient()
+	client, done := s.clientHandler.GetClient()
 	defer done()
 	if client == nil {
 		return errors.New("failed to get GCS client")
