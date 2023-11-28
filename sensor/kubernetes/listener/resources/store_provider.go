@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"strconv"
+
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -35,11 +37,16 @@ type CleanableStore interface {
 
 // InitializeStore creates the store instances
 func InitializeStore() *StoreProvider {
+	memSizeSetting := pastEndpointsMemorySize.Setting()
+	memSize, err := strconv.ParseUint(memSizeSetting, 10, 0)
+	if err != nil {
+		memSize = 0
+	}
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStore()
+	entityStore := clusterentities.NewStoreWithMemory(uint16(memSize))
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
 	p := &StoreProvider{
 		deploymentStore:        deployStore,
