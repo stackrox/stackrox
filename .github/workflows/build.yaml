@@ -486,7 +486,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       env:
-        GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+        GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
         source ./scripts/ci/lib.sh
         add_build_comment_to_pr
