@@ -107,4 +107,11 @@ service DebugService {
             get: "/v1/debug/authz/trace"
         };
     }
+
+    // Reset database debugging statistics.
+    rpc ResetDBStats(v1.Empty) returns (v1.Empty) {
+        option (google.api.http) = {
+            post: "/v1/debug/db/stats/reset"
+        };
+    }
 }

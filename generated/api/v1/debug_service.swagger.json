@@ -43,6 +43,29 @@
         ]
       }
     },
+    "/v1/debug/db/stats/reset": {
+      "post": {
+        "summary": "Reset database debugging statistics.",
+        "operationId": "DebugService_ResetDBStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "DebugService"
+        ]
+      }
+    },
     "/v1/debug/loglevel": {
       "get": {
         "summary": "Get the current logging level for StackRox services.",
@@ -406,6 +429,9 @@
           }
         }
       }
+    },
+    "v1Empty": {
+      "type": "object"
     },
     "v1LogLevelRequest": {
       "type": "object",
