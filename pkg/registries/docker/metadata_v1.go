@@ -130,7 +130,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
 		layers = append(layers, &storage.ImageLayer{
 			Created:     protoconv.ConvertTimeToTimestampOrNow(h.Created),
-			Author:      h.CreatedBy,
+			Author:      h.Author,
 			Instruction: instruction,
 			Value:       value,
 			Empty:       h.EmptyLayer,
