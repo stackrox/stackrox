@@ -204,7 +204,7 @@ func setScannerComponentScaling(sv *ValuesBuilder, scaling *platform.ScannerComp
 		}
 	}
 
-	sv.SetInt32("maxReplicas", scaling.MaxReplicas)
-	sv.SetInt32("minReplicas", scaling.MinReplicas)
+	autoscalingVB.SetInt32("maxReplicas", scaling.MaxReplicas)
+	autoscalingVB.SetInt32("minReplicas", scaling.MinReplicas)
 	sv.AddChild("autoscaling", &autoscalingVB)
 }
