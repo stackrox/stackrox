@@ -107,6 +107,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
+	c.Flags().StringSliceVarP(&deploymentCheckCmd.files, "files", "f", []string{}, "yaml file to send to Central to evaluate policies against")
 	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
@@ -128,6 +129,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
+	files              []string
 	file               string
 	json               bool
 	retryDelay         int
@@ -162,6 +164,12 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
+	for _, file := range d.files {
+		if _, err := os.Open(file); err != nil {
+			return common.ErrInvalidCommandOption.CausedBy(err)
+		}
+	}
+
 	if _, err := os.Open(d.file); err != nil {
 		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
@@ -187,9 +195,24 @@ func (d *deploymentCheckCommand) Check() error {
 }
 
 func (d *deploymentCheckCommand) checkDeployment() error {
-	deploymentFileContents, err := os.ReadFile(d.file)
-	if err != nil {
-		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
+	var deploymentFileContents []byte
+	if d.file != "" {
+		var err error
+		deploymentFileContents, err = os.ReadFile(d.file)
+		if err != nil {
+			return errors.Wrapf(err, "could not read deployment file: %q", d.file)
+		}
+	} else {
+		for _, file := range d.files {
+			fileContents, err := os.ReadFile(file)
+			if err != nil {
+				return errors.Wrapf(err, "could not read deployment file: %q", file)
+			}
+			if len(deploymentFileContents) > 0 {
+				deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
+			}
+			deploymentFileContents = append(deploymentFileContents, fileContents...)
+		}
 	}
 
 	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
