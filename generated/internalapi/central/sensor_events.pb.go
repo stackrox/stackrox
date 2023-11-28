@@ -1097,7 +1097,6 @@ func (m *SensorEvent_ResourcesSynced) Clone() *SensorEvent_ResourcesSynced {
 type SensorEnforcement struct {
 	Enforcement storage.EnforcementAction `protobuf:"varint,1,opt,name=enforcement,proto3,enum=storage.EnforcementAction" json:"enforcement,omitempty"`
 	// Types that are valid to be assigned to Resource:
-	//
 	//	*SensorEnforcement_Deployment
 	//	*SensorEnforcement_ContainerInstance
 	Resource             isSensorEnforcement_Resource `protobuf_oneof:"resource"`

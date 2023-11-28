@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/deployment.proto";
+import "storage/network_policy.proto";
+
+message DeploymentEnhancementRequest {
+    string id = 1;
+    storage.Deployment deployment = 2;
+}
+
+message DeploymentEnhancementResponse {
+    message networkPoliciesApplied {
+        bool hasEgressPolicy = 1;
+        bool hasIngressPolicy = 2;
+        map<string,storage.NetworkPolicy> appliedPolicies = 3;
+    }
+    string id = 1;
+    storage.Deployment deployment = 2;
+    networkPoliciesApplied network_policies_applied = 3;
+}

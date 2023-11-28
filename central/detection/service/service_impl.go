@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -18,10 +19,13 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errox"
@@ -77,6 +81,10 @@ func init() {
 	pkgUtils.Must(errors.Wrap(k8sutil.AddOpenShiftSchemes(workloadScheme), "failed to load openshift schemes"))
 }
 
+type deploymentEnhancementWatcher interface {
+	WaitForEnhancedDeployment(_, messageID string, timeout time.Duration) (*central.DeploymentEnhancementResponse, error)
+}
+
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
 	apiV1.UnimplementedDetectionServiceServer
@@ -94,6 +102,10 @@ type serviceImpl struct {
 	detector deploytime.Detector
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	connManager connection.Manager
+
+	enhancementWatcher deploymentEnhancementWatcher
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -210,11 +222,61 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	// Enhance deployment with sensor data
+	// generate random ID for the request:
+	id := uuid.NewV4()
+
+	responseCh := make(chan *central.DeploymentEnhancementResponse, 1)
+	go func() {
+		e, err := s.enhancementWatcher.WaitForEnhancedDeployment(enrichmentContext.ClusterID, id.String(), 5*time.Minute)
+		if err != nil {
+			log.Warnf("Sensor enhancement of deployment objects failed: %s", err)
+			close(responseCh)
+			return
+		}
+		responseCh <- e
+		close(responseCh)
+	}()
+
+	conn := s.connManager.GetConnection(enrichmentContext.ClusterID)
+
+	err = conn.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
+			DeploymentEnhancementRequest: &central.DeploymentEnhancementRequest{
+				Id:         id.String(),
+				Deployment: deployment,
+			},
+		},
+	})
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to inject message to cluster %s", enrichmentContext.ClusterID)
+	}
+
+	// Wait for sensor enhancing of deployments
+	var enhancedDeployment booleanpolicy.EnhancedDeployment
+	d, more := <-responseCh
+	if !more {
+		// Channel was closed, so we should move on with old processing
+		enhancedDeployment = booleanpolicy.EnhancedDeployment{
+			Deployment: deployment,
+			Images:     images,
+		}
+	} else {
+		// We were able to get an enhancement from sensor, use that instead
+		enhancedDeployment = booleanpolicy.EnhancedDeployment{
+			Deployment: d.GetDeployment(),
+			NetworkPoliciesApplied: &augmentedobjs.NetworkPoliciesApplied{
+				HasIngressNetworkPolicy: d.NetworkPoliciesApplied.GetHasIngressPolicy(),
+				HasEgressNetworkPolicy:  d.NetworkPoliciesApplied.GetHasEgressPolicy(),
+				Policies:                d.NetworkPoliciesApplied.GetAppliedPolicies(),
+			},
+			Images: images,
+		}
+	}
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
-	}, filter)
+	alerts, err := s.detector.Detect(detectionCtx, enhancedDeployment, filter)
 	if err != nil {
 		return nil, err
 	}
