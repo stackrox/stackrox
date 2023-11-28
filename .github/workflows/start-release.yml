@@ -204,14 +204,14 @@ jobs:
       - name: Synchronize fork from openshift/release
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         env:
-          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
         run: |
           gh repo sync stackrox/openshift-release --source openshift/release
       - name: Check out stackrox/openshift-release
         uses: actions/checkout@v4
         with:
           repository: stackrox/openshift-release
-          token: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+          token: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       - name: Initialize git config and create new branch
         if: steps.check-existing.outputs.branch-exists == 'false'
         run: |
@@ -238,7 +238,7 @@ jobs:
       - name: Push and create PR
         if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
         env:
-          GH_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
         run: |
           git push --set-upstream origin "$BRANCH"
 
@@ -270,7 +270,7 @@ jobs:
           git config user.email noreply@github.com
       - name: Patch CHANGELOG.md on ${{ needs.start-sha.outputs.start-sha }}
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
