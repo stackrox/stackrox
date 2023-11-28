@@ -19,6 +19,7 @@ func initialize() {
 	dataStore = New(
 		pgStore.New(db),
 		edge.New(db),
+		db,
 	)
 }
 

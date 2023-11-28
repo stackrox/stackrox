@@ -30,19 +30,21 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store) DataStore {
+func New(complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store, pool postgres.DB) DataStore {
 	ds := &datastoreImpl{
 		store:            complianceProfileStorage,
 		profileEdgeStore: profileEdgeStore,
+		db:               pool,
 	}
 	return ds
 }
 
 // NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store) DataStore {
+func NewForTestOnly(_ *testing.T, complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store, pool postgres.DB) DataStore {
 	ds := &datastoreImpl{
 		store:            complianceProfileStorage,
 		profileEdgeStore: profileEdgeStore,
+		db:               pool,
 	}
 	return ds
 }
@@ -51,5 +53,5 @@ func NewForTestOnly(_ *testing.T, complianceProfileStorage pgStore.Store, profil
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
 	edgeStore := edge.New(pool)
-	return New(store, edgeStore), nil
+	return New(store, edgeStore, pool), nil
 }

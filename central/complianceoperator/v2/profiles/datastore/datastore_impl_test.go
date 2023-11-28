@@ -64,7 +64,7 @@ func (s *complianceProfileDataStoreTestSuite) SetupTest() {
 
 	s.storage = profileStorage.New(s.db)
 	s.edgeStorage = profileEdgeStorage.New(s.db)
-	s.dataStore = New(s.storage, s.edgeStorage)
+	s.dataStore = New(s.storage, s.edgeStorage, s.db)
 }
 
 func (s *complianceProfileDataStoreTestSuite) TearDownTest() {

@@ -3,9 +3,11 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	edge "github.com/stackrox/rox/central/complianceoperator/v2/profiles/profileclusteredge/store/postgres"
-	"github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
+	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -17,7 +19,8 @@ var (
 )
 
 type datastoreImpl struct {
-	store            postgres.Store
+	db               pgPkg.DB
+	store            pgStore.Store
 	profileEdgeStore edge.Store
 }
 
@@ -29,8 +32,14 @@ func (d *datastoreImpl) UpsertProfile(ctx context.Context, profile *storage.Comp
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.store.Upsert(ctx, profile); err != nil {
+	tx, err := d.db.Begin(ctx)
+	if err != nil {
 		return err
+	}
+	ctx = pgPkg.ContextWithTx(ctx, tx)
+
+	if err := d.store.Upsert(ctx, profile); err != nil {
+		return wrapRollback(ctx, tx, errors.Wrapf(err, "error adding profile %s", profile.GetProfileId()))
 	}
 
 	profileEdge := &storage.ComplianceOperatorProfileClusterEdge{
@@ -39,7 +48,17 @@ func (d *datastoreImpl) UpsertProfile(ctx context.Context, profile *storage.Comp
 		ProfileUid: profileUID,
 		ClusterId:  clusterID,
 	}
-	return d.profileEdgeStore.Upsert(ctx, profileEdge)
+
+	err = d.profileEdgeStore.Upsert(ctx, profileEdge)
+	if err != nil {
+		return wrapRollback(ctx, tx, errors.Wrapf(err, "error adding profile for cluster %s", clusterID))
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return wrapRollback(ctx, tx, errors.Wrapf(err, "error adding profile for cluster %s", clusterID))
+	}
+	return nil
 }
 
 // DeleteProfileForCluster removes a profile from the database
@@ -65,4 +84,12 @@ func (d *datastoreImpl) GetProfileEdgesByCluster(ctx context.Context, clusterID 
 
 	return d.profileEdgeStore.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+}
+
+func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+	return err
 }
