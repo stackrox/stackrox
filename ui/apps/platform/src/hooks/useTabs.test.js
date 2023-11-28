@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { renderHook, act } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 
 import useTabs from './useTabs';
 import Tab from '../Components/Tab';

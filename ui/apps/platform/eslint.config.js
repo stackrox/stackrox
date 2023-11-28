@@ -59,6 +59,7 @@ module.exports = [
             prettier: pluginPrettier,
         },
         rules: {
+            // https://github.com/eslint/eslint/blob/main/packages/js/src/configs/eslint-recommended.js
             ...pluginESLint.configs.recommended.rules,
 
             // Require braces even when block has one statement.
@@ -67,11 +68,13 @@ module.exports = [
             // Forbid use of console in favor of raven-js for error capturing.
             'no-console': 'error',
 
+            // https://github.com/mysticatea/eslint-plugin-eslint-comments/blob/master/lib/configs/recommended.js
             ...pluginESLintComments.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
             'eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
 
+            // https://github.com/import-js/eslint-plugin-import/blob/main/config/errors.js
             ...pluginImport.configs.errors.rules, // depends on parsers and resolver in settings
 
             // Turn off rules from import errors configuration.
@@ -87,6 +90,27 @@ module.exports = [
                     tsx: 'never',
                 },
             ],
+
+            // Turn on rules from airbnb import config that are not in import errors config.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/imports.js
+            'import/first': 'error',
+            'import/newline-after-import': 'error',
+            'import/no-absolute-path': 'error',
+            'import/no-cycle': ['error', { maxDepth: '∞' }],
+            'import/no-duplicates': 'error',
+            'import/no-dynamic-require': 'error',
+            // 'import/no-extraneous-dependencies' is specified in a more specific configuration
+            'import/no-import-module-exports': ['error', { exceptions: [] }],
+            'import/no-mutable-exports': 'error',
+            // 'import/no-named-as-default' is intentional omission
+            // 'import/no-named-as-default-member' is intentional omission
+            'import/no-named-default': 'error',
+            'import/no-relative-packages': 'error',
+            'import/no-self-import': 'error',
+            'import/no-useless-path-segments': ['error', { commonjs: true }],
+            'import/no-webpack-loader-syntax': 'error',
+            'import/order': ['error', { groups: [['builtin', 'external', 'internal']] }],
+            // 'import/prefer-default-export' is intentional omission
 
             'prettier/prettier': 'error',
         },
@@ -113,6 +137,7 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
                 ...pluginCypress.environments.globals.globals,
                 ...nodeGlobals, // mocha.config.js
             },
@@ -124,6 +149,7 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
                 ...pluginCypress.environments.globals.globals,
             },
         },
@@ -142,6 +168,7 @@ module.exports = [
             // Allow chai-style expect(x).to.be.true chain.
             'no-unused-expressions': 'off',
 
+            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/config/recommended.js
             ...pluginCypress.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
@@ -212,6 +239,7 @@ module.exports = [
                 },
             ],
 
+            // https://github.com/jsx-eslint/eslint-plugin-react/blob/master/configs/recommended.js
             ...pluginReact.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
@@ -251,6 +279,7 @@ module.exports = [
 
             'react/static-property-placement': ['error', 'static public field'],
 
+            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
             // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error? or generic warnings as errors?
@@ -266,8 +295,11 @@ module.exports = [
             '@typescript-eslint': pluginTypeScriptESLint,
         },
         rules: {
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
             ...pluginTypeScriptESLint.configs['eslint-recommended'].overrides[0].rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
             ...pluginTypeScriptESLint.configs.recommended.rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/recommended-type-checked.ts
             ...pluginTypeScriptESLint.configs['recommended-type-checked'].rules,
 
             // Turn off rules from recommended-type-checked configuration because of
@@ -350,6 +382,7 @@ module.exports = [
 
             ...pluginJestDOM.configs.recommended.rules,
 
+            // https://github.com/testing-library/eslint-plugin-testing-library/blob/main/lib/configs/react.ts
             ...pluginTestingLibrary.configs.react.rules,
 
             // TODO remove data-testid attributes from unit tests
