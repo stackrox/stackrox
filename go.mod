@@ -5,6 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.11.3
+	cloud.google.com/go/securitycenter v1.23.1
 	cloud.google.com/go/storage v1.35.1
 	github.com/BurntSushi/toml v1.3.2
 	github.com/ComplianceAsCode/compliance-operator v1.3.1
@@ -46,6 +47,7 @@ require (
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.16.1
+	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorilla/schema v1.2.1
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
@@ -126,6 +128,7 @@ require (
 	google.golang.org/genproto v0.0.0-20231016165738-49dd2c1f3d0b
 	google.golang.org/grpc v1.59.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
+	google.golang.org/protobuf v1.31.0
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -152,6 +155,7 @@ require (
 	cloud.google.com/go v0.110.9 // indirect
 	cloud.google.com/go/compute v1.23.2 // indirect
 	cloud.google.com/go/iam v1.1.4 // indirect
+	cloud.google.com/go/longrunning v0.5.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
@@ -246,7 +250,6 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
@@ -387,7 +390,6 @@ require (
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

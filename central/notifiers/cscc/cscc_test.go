@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/gogo/protobuf/types"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -53,10 +52,15 @@ func TestWithFakeCSCC(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
 	clusterStore.EXPECT().GetCluster(gomock.Any(), "test_id").Return(cluster, true, nil)
-	scc, _ := newCSCC(s, cryptocodec.Singleton(), "stackrox")
+	testCscc := &cscc{
+		config: &config{
+			SourceID: sourceID,
+		},
+		Notifier: s,
+	}
 
 	alertID := "myAlertID"
-	severity := findings.High
+	severity := securitycenterpb.Finding_HIGH
 
 	testAlert := &storage.Alert{
 		Id: alertID,
@@ -75,14 +79,13 @@ func TestWithFakeCSCC(t *testing.T) {
 		Time: types.TimestampNow(),
 	}
 	findingID := ""
-	var finding *findings.Finding
+	var finding *securitycenterpb.Finding
 	var err error
-	findingID, finding, err = scc.initFinding(context.Background(), testAlert, clusterStore)
+	findingID, finding, err = testCscc.initFinding(context.Background(), testAlert, clusterStore)
 	assert.NoError(t, err)
 	assert.Equal(t, "myAlertID", findingID)
 	assert.NotEmpty(t, finding)
 	assert.Equal(t, severity, finding.Severity)
 	assert.Equal(t, sourceID, finding.Parent)
-	assert.Contains(t, finding.URL, alertID)
-
+	assert.Contains(t, finding.ExternalUri, alertID)
 }
