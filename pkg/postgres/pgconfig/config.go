@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -24,8 +25,22 @@ const (
 	connectTimeout = 15 * time.Second
 )
 
+var (
+	pgConfigMap  map[string]string
+	pgConfig     *postgres.Config
+	pgConfigErr  error
+	pgConfigOnce sync.Once
+)
+
 // GetPostgresConfig - gets the configuration used to connect to Postgres
 func GetPostgresConfig() (map[string]string, *postgres.Config, error) {
+	pgConfigOnce.Do(func() {
+		pgConfigMap, pgConfig, pgConfigErr = getPostgresConfig()
+	})
+	return pgConfigMap, pgConfig, pgConfigErr
+}
+
+func getPostgresConfig() (map[string]string, *postgres.Config, error) {
 	centralConfig := config.GetConfig()
 	password, err := os.ReadFile(DBPasswordFile)
 	if err != nil {
