@@ -23,6 +23,7 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	googleStoragev1 "google.golang.org/api/storage/v1"
 	googleHTTP "google.golang.org/api/transport/http"
 )
 
@@ -101,7 +102,7 @@ func createClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
 		return gcsClientWithTransport(
 			context.Background(),
 			option.WithCredentialsJSON([]byte(conf.GetServiceAccount())),
-			option.WithScopes("https://www.googleapis.com/auth/cloud-platform"),
+			option.WithScopes(googleStoragev1.CloudPlatformScope),
 		)
 	}
 	if features.CloudCredentials.Enabled() {
