@@ -12,6 +12,7 @@ import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import { clustersDelegatedScanningPath } from 'routePaths';
+import { Cluster } from 'services/ClustersService';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
@@ -32,8 +33,8 @@ function ClustersPage(): ReactElement {
 
     // Handle changes to the currently selected deployment.
     const setSelectedClusterId = useCallback(
-        (newCluster: string) => {
-            const newClusterId = newCluster || '';
+        (newCluster: string | Cluster) => {
+            const newClusterId = typeof newCluster === 'string' ? newCluster : newCluster?.id ?? '';
             const newWorkflowState = newClusterId
                 ? workflowState.pushRelatedEntity(entityTypes.CLUSTER, newClusterId)
                 : workflowState.pop();
