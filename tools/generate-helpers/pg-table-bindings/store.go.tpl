@@ -108,6 +108,11 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
+    {{ if .CachedStore -}}
+    // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
+    // and be the source of memory pressure. Think twice about the need for in-memory caching
+    // of the whole store.
+    {{- end -}}
     return {{ template "storeCreator" . }}[storeType, *storeType](
             db,
             schema,

@@ -48,10 +48,8 @@ func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
 
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
-	store.cacheLock.Lock()
-	defer store.cacheLock.Unlock()
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	store.repopulateCacheNoLock()
+	store.repopulateCache()
 	return store
 }
 
@@ -87,10 +85,8 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT unmarshaler[T]](
 
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
-	store.cacheLock.Lock()
-	defer store.cacheLock.Unlock()
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	store.repopulateCacheNoLock()
+	store.repopulateCache()
 	return store
 }
 
@@ -109,12 +105,12 @@ type cachedStore[T any, PT unmarshaler[T]] struct {
 // Upsert saves the current state of an object in storage.
 func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	dbErr := c.underlyingStore.Upsert(ctx, obj)
-	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
 	c.addToCacheNoLock(obj)
 	return nil
 }
@@ -122,12 +118,12 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 // UpsertMany saves the state of multiple objects in the storage.
 func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	dbErr := c.underlyingStore.UpsertMany(ctx, objs)
-	defer c.setCacheOperationDurationTime(time.Now(), ops.UpdateMany)
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.UpdateMany)
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
 	for _, obj := range objs {
 		c.addToCacheNoLock(obj)
 	}
@@ -147,12 +143,12 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 		return nil
 	}
 	dbErr := c.underlyingStore.Delete(ctx, id)
-	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
 	delete(c.cache, id)
 	return nil
 }
@@ -171,12 +167,12 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 		filteredIDs = append(filteredIDs, c.pkGetter(obj))
 	}
 	dbErr := c.underlyingStore.DeleteMany(ctx, filteredIDs)
-	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
 	if dbErr != nil {
 		return dbErr
 	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
 	for _, id := range filteredIDs {
 		delete(c.cache, id)
 	}
@@ -260,7 +256,6 @@ func (c *cachedStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) er
 
 // GetByQuery returns the objects from the store matching the query.
 func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
-	// defer c.setCacheOperationDurationTime(time.Now(), ops.GetByQuery)
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
@@ -359,23 +354,18 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 		}
 		return allowed
 	}
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeChecker = scopeChecker.AccessMode(action)
-	scopeChecker = scopeChecker.Resource(c.targetResource)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(action).Resource(c.targetResource)
+	var interfaceObj interface{}
+	interfaceObj = obj
 	switch c.targetResource.GetScope() {
 	case permissions.NamespaceScope:
-		var interfaceObj interface{}
-		interfaceObj = obj
 		switch data := interfaceObj.(type) {
 		case *storage.NamespaceMetadata:
-			scopeChecker = scopeChecker.ClusterID(data.GetClusterId())
-			scopeChecker = scopeChecker.Namespace(data.GetName())
+			scopeChecker = scopeChecker.ClusterID(data.GetClusterId()).Namespace(data.GetName())
 		case sac.NamespaceScopedObject:
 			scopeChecker = scopeChecker.ForNamespaceScopedObject(data)
 		}
 	case permissions.ClusterScope:
-		var interfaceObj interface{}
-		interfaceObj = obj
 		switch data := interfaceObj.(type) {
 		case *storage.Cluster:
 			scopeChecker = scopeChecker.ClusterID(data.GetId())
@@ -390,10 +380,12 @@ func (c *cachedStore[T, PT]) hasPermissionsChecker() bool {
 	return c.permissionChecker != nil
 }
 
-func (c *cachedStore[T, PT]) repopulateCacheNoLock() {
+func (c *cachedStore[T, PT]) repopulateCache() {
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
 	c.cache = make(map[string]PT)
 	_ = c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
-		c.cache[c.pkGetter(obj)] = obj
+		c.addToCacheNoLock(obj)
 		return nil
 	})
 }
