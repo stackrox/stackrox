@@ -25,7 +25,8 @@ endif
 
 .PHONY: style
 style: $(VENV)/bin/activate
-	$(PYCODESTYLE) --max-line-length=90 --exclude=$(VENV) $(PY_SRCS)
+	@# (--max-line-length must be kept in sync with max-line-length in .pylintrc)
+	$(PYCODESTYLE) --max-line-length=120 --exclude=$(VENV) $(PY_SRCS)
 
 .PHONY: fix-style
 fix-style: $(VENV)/bin/activate
