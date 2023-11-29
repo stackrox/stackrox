@@ -18,10 +18,12 @@ type stsClientManagerImpl struct {
 var _ STSClientManager = &stsClientManagerImpl{}
 
 func fallbackSTSClientManager() STSClientManager {
-	return &stsClientManagerImpl{
+	mgr := &stsClientManagerImpl{
 		credManager:          &defaultCredentialsManager{},
 		storageClientHandler: storage.NewClientHandlerNoInit(),
 	}
+	mgr.updateClients()
+	return mgr
 }
 
 // NewSTSClientManager creates a new GCP client manager.
