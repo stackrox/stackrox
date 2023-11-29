@@ -33,12 +33,30 @@ ci_export() {
     fi
 }
 
+# set_ci_shared_export() - for openshift-ci this is state shared between steps.
+set_ci_shared_export() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: set_ci_shared_export <env-name> <env-value>"
+    fi
+
+    ci_export "$@"
+
+    local env_name="$1"
+    local env_value="$2"
+
+    echo "export ${env_name}=${env_value}" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
+}
+
 ci_exit_trap() {
     local exit_code="$?"
     info "Executing a general purpose exit trap for CI"
     echo "Exit code is: ${exit_code}"
 
-    finalize_job_record "${exit_code}" "false"
+    if [[ "${exit_code}" == "0" ]]; then
+        set_job_record_outcome_if_missing "${OUTCOME_PASSED}"
+    else
+        set_job_record_outcome_if_missing "${OUTCOME_FAILED}"
+    fi
 
     # `post_process_test_results` will generate the Slack attachment first, then
     # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
