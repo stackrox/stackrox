@@ -8,7 +8,7 @@ import { policiesBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import { ClientPolicy } from 'types/policy.proto';
+import { ClientPolicy, Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
@@ -38,7 +38,7 @@ type WizardPolicyState = {
 
 const wizardPolicyState = createStructuredSelector<
     WizardPolicyState,
-    { wizardPolicy: ClientPolicy }
+    { wizardPolicy: ClientPolicy } // TODO is this ClientPolicy or Policy?
 >({
     wizardPolicy: selectors.getWizardPolicy,
 });
@@ -56,9 +56,12 @@ function PolicyPage({
 }: PolicyPageProps): ReactElement {
     const { wizardPolicy } = useSelector(wizardPolicyState);
 
+    // If wizardPolicy: ClientPolicy is correct above, then getClientWizardPolicy is unneeded below.
+    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
     const [policy, setPolicy] = useState<ClientPolicy>(
         pageAction === 'generate' && wizardPolicy
-            ? getClientWizardPolicy(wizardPolicy)
+            ? getClientWizardPolicy(wizardPolicy as unknown as Policy)
             : initialPolicy
     );
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
@@ -122,7 +125,7 @@ function PolicyPage({
                     <PolicyDetail
                         handleUpdateDisabledState={handleUpdateDisabledState}
                         hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                        policy={policy}
+                        policy={policy as unknown as Policy}
                     />
                 ))
             )}

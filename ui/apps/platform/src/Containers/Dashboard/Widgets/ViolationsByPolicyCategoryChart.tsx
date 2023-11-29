@@ -197,7 +197,9 @@ function ViolationsByPolicyCategoryChart({
                 data={data}
                 labelComponent={<ChartTooltip constrainToVisibleArea />}
                 events={[
-                    navigateOnClickEvent(history, (targetProps) => {
+                    // TS2339: Property 'xName' does not exist on type '{}'.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    navigateOnClickEvent(history, (targetProps: any) => {
                         const category = targetProps?.datum?.xName;
                         return linkForViolationsCategory(
                             category,

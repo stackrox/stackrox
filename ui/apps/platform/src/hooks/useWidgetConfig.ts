@@ -99,7 +99,7 @@ function useWidgetConfig<ConfigT extends WidgetConfig, ActionT = Partial<ConfigT
     });
 
     const configUpdateFn = useCallback(
-        (config: any) => {
+        (config: ActionT) => {
             const nextValue = reducer
                 ? reducer(widgetRouteConfig, config)
                 : { ...widgetRouteConfig, ...config };

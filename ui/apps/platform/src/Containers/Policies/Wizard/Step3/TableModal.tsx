@@ -14,15 +14,18 @@ import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
-import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
+import { IntegrationTableColumnDescriptor } from 'Containers/Integrations/utils/tableColumnDescriptor';
+import useTableSelection from 'hooks/useTableSelection';
+import { ClientPolicyValue } from 'types/policy.proto';
+import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 type TableModalProps = {
-    setValue: (value: unknown) => void;
-    value: any;
+    setValue: (value: ClientPolicyValue) => void;
+    value: ClientPolicyValue;
     readOnly?: boolean;
     rows: { id: string; link: string }[];
-    columns: any;
+    columns: IntegrationTableColumnDescriptor<SignatureIntegration>[];
     typeText: string;
 };
 
@@ -37,7 +40,8 @@ function TableModal({
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const isPreSelected = useCallback(
-        (row: any) => (value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false),
+        (row: { id: string }) =>
+            Array.isArray(value.arrayValue) ? value.arrayValue.includes(row.id) : false,
         [value]
     );
 
@@ -60,8 +64,8 @@ function TableModal({
                 data-testid="table-modal-text-input"
                 isDisabled
                 value={
-                    value.arrayValue?.length > 0
-                        ? `Selected ${value.arrayValue?.length as string} ${pluralize(
+                    Array.isArray(value.arrayValue) && value.arrayValue.length !== 0
+                        ? `Selected ${value.arrayValue.length} ${pluralize(
                               typeText,
                               value.arrayValue?.length
                           )}`
