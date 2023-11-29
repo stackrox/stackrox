@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
-	roxGCPStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
+	gcpStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"golang.org/x/oauth2/google"
 	googleStoragev1 "google.golang.org/api/storage/v1"
@@ -15,7 +15,7 @@ import (
 // CreateHandlerFromConfig creates a handler based on the GCS integration configuration.
 func CreateHandlerFromConfig(ctx context.Context,
 	manager auth.STSClientManager, conf *storage.GCSConfig,
-) (roxGCPStorage.ClientHandler, error) {
+) (gcpStorage.ClientHandler, error) {
 	if !conf.GetUseWorkloadId() {
 		creds, err := google.CredentialsFromJSON(
 			ctx,
@@ -25,7 +25,7 @@ func CreateHandlerFromConfig(ctx context.Context,
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create credentials")
 		}
-		return roxGCPStorage.NewClientHandler(ctx, creds)
+		return gcpStorage.NewClientHandler(ctx, creds)
 	}
 
 	if features.CloudCredentials.Enabled() {
@@ -36,5 +36,5 @@ func CreateHandlerFromConfig(ctx context.Context,
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create credentials")
 	}
-	return roxGCPStorage.NewClientHandler(ctx, creds)
+	return gcpStorage.NewClientHandler(ctx, creds)
 }
