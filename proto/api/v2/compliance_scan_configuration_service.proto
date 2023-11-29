@@ -47,6 +47,10 @@ message ComplianceScanConfigurationStatus {
     SlimUser                                   modified_by           = 7;
 }
 
+message ComplianceScanConfigurationsCount{
+    int32  count = 1;
+}
+
 // Next available tag: 2
 message ListComplianceScanConfigurationsResponse {
     repeated ComplianceScanConfigurationStatus configurations = 1;
@@ -94,6 +98,12 @@ service ComplianceScanConfigurationService {
     rpc RunComplianceScanConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/configurations/execute/{id}"
+        };
+    }
+
+    rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount){
+        option (google.api.http) = {
+          get: "/v2/compliance/scan/count/configurations"
         };
     }
 }

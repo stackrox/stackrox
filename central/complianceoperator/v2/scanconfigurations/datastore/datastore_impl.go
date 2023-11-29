@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	scanConfigSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -25,8 +26,8 @@ type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
 	clusterDS     clusterDatastore.DataStore
-
-	keyedMutex *concurrency.KeyedMutex
+	searcher      scanConfigSearch.Searcher
+	keyedMutex    *concurrency.KeyedMutex
 }
 
 // GetScanConfiguration retrieves the scan configuration specified by id
@@ -144,4 +145,13 @@ func (ds *datastoreImpl) GetScanConfigClusterStatus(ctx context.Context, scanID 
 
 	return ds.statusStorage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanID).ProtoQuery())
+}
+
+func (ds *datastoreImpl) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := scanConfigurationsSAC.ReadAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, nil
+	}
+	return ds.searcher.Count(ctx, q)
 }

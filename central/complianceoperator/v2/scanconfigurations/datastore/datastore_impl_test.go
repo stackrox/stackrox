@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	configSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,6 +44,7 @@ type complianceScanConfigDataStoreTestSuite struct {
 	storage          configStore.Store
 	statusStorage    scanStatusStore.Store
 	clusterDatastore *clusterMocks.MockDataStore
+	search           configSearch.Searcher
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
@@ -72,8 +74,11 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
 	s.Require().NoError(err)
+	indexer := configStore.NewIndexer(s.db)
+	configStorage := configStore.New(s.db)
+	s.search = configSearch.New(configStorage, indexer)
 
-	s.dataStore = New(s.storage, s.statusStorage, s.clusterDatastore)
+	s.dataStore = New(s.storage, s.statusStorage, s.clusterDatastore, s.search)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
@@ -126,6 +131,21 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 		AddExactMatches(search.ComplianceOperatorScanName, "DOESNOTEXIST").ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(0, len(scanConfigs))
+}
+
+func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount() {
+	configID := uuid.NewV4().String()
+
+	scanConfig := getTestRec()
+	scanConfig.Id = configID
+
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanName, mockScanName).ProtoQuery()
+	count, err := s.dataStore.CountScanConfigurations(s.hasReadCtx, q)
+	s.Require().NoError(err)
+	s.Require().Equal(1, count)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
