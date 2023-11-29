@@ -71,7 +71,10 @@ func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*com
 	}
 
 	log.Info("CreateDataRepository finish")
-	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain, scrapeResult)
+	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain)
+	if err == nil {
+		p.result.AddHostScrapedData(scrapeResult)
+	}
 	p.finishedSig.SignalWithError(err)
 }
 
