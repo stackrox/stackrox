@@ -626,6 +626,8 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			state.expectDetector.runIfSet()
 			m.Notify(state.notify)
 			fakeTicker <- time.Now()
+			// We do not test ticking here, but without this line, the test would deadlock.
+			mockEntity.EXPECT().Tick().AnyTimes()
 			if state.expectedSensorMessage != nil {
 				select {
 				case <-time.After(10 * time.Second):
