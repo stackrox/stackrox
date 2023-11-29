@@ -4,10 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -26,9 +30,12 @@ var (
 
 	log = logging.LoggerForModule()
 
-	defaultIndexerEndpoint    = fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting())
-	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting())
+	defaultIndexerEndpoint    = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
+	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
 	defaultMaxConcurrentScans = int64(30)
+
+	// TODO: make configurable
+	scanTimeout = 2 * time.Minute
 )
 
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
@@ -56,14 +63,14 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		return nil, errors.New("ScannerV4 configuration required")
 	}
 
-	indexerAddress := urlfmt.FormatURL(defaultIndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	indexerEndpoint := urlfmt.FormatURL(defaultIndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if conf.IndexerEndpoint != "" {
-		indexerAddress = urlfmt.FormatURL(conf.IndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		indexerEndpoint = urlfmt.FormatURL(conf.IndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	}
 
-	matcherAddress := urlfmt.FormatURL(defaultMatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	matcherEndpoint := urlfmt.FormatURL(defaultMatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if conf.IndexerEndpoint != "" {
-		matcherAddress = urlfmt.FormatURL(conf.MatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		matcherEndpoint = urlfmt.FormatURL(conf.MatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
@@ -71,11 +78,11 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		numConcurrentScans = int64(conf.GetNumConcurrentScans())
 	}
 
-	log.Debugf("Creating ScannerV4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerAddress, matcherAddress, numConcurrentScans)
+	log.Debugf("Creating ScannerV4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
 	ctx := context.Background()
 	c, err := client.NewGRPCScanner(ctx,
-		client.WithIndexerAddress(indexerAddress),
-		client.WithMatcherAddress(matcherAddress),
+		client.WithIndexerAddress(indexerEndpoint),
+		client.WithMatcherAddress(matcherEndpoint),
 		// TODO(ROX-19050): Set the Scanner V4 TLS validation when certificates are ready.
 		// client.SkipTLSVerification,
 	)
@@ -98,6 +105,48 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	log.Info("ScannerV4 - GetScan")
+	// If we haven't retrieved any metadata then we won't be able to scan with ScannerV4
+	// TODO: Confirm if this is still true?
+	if image.GetMetadata() == nil {
+		return nil, nil
+	}
+
+	rc := s.activeRegistries.GetRegistryMetadataByImage(image)
+	if rc == nil {
+		log.Debugf("No registry matched during scan of %q", image.GetName().GetFullName())
+		return nil, nil
+	}
+
+	var opts []name.Option
+	if rc.Insecure {
+		opts = append(opts, name.Insecure)
+	}
+
+	auth := authn.Basic{
+		Username: rc.Username,
+		Password: rc.Password,
+	}
+
+	// TODO: Create util method so that central/sensor do not duplicate
+	// Beg: copy from sensor's grpc_client
+	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
+	ref, err := name.NewDigest(n, opts...)
+	if err != nil {
+		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
+		return nil, fmt.Errorf("creating digest reference: %w", err)
+	}
+	// End
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, ref, &auth)
+	if err != nil {
+		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", ref.Name(), err)
+	}
+
+	// TODO: convert vr to *storage.ImageScan (take a look at clairv4)
+	_ = vr
+
 	// TODO: Implement
 	return nil, errors.New("ScannerV4 NOT Implemented")
 }
@@ -111,7 +160,7 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 func (s *scannerv4) Match(image *storage.ImageName) bool {
 	r := s.activeRegistries.Match(image)
 	// TODO: remove this log entry and return s.activeRegistries.Match(image) once done building
-	log.Info("ScannerV4 - Match for %q == %t", image.GetFullName(), r)
+	log.Infof("ScannerV4 - Match for %q == %t", image.GetFullName(), r)
 	return r
 }
 
