@@ -39,6 +39,14 @@ func newDatastoreImpl(
 	}
 }
 
+func checkIfShouldUpdate(
+	existingPLOP *storage.ProcessListeningOnPortStorage,
+	newPLOP *storage.ProcessListeningOnPortFromSensor) bool {
+
+	return existingPLOP.CloseTimestamp != newPLOP.CloseTimestamp ||
+		(existingPLOP.PodUid == "" && newPLOP.PodUid != "")
+}
+
 func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
 	if plop == nil {
 		log.Warn("Plop is nil. Unable to set process indicator id. Plop will not appear in the API")
@@ -154,16 +162,17 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		// There are three options:
-		// * We found an existing PLOP object with different close timestamp.
+		// * We found an existing PLOP object with different close timestamp or non-null PodUid
 		//   It has to be updated.
 		// * We found an existing PLOP object with the same close timestamp.
 		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
 		//   the upsert later on).
 		// * No existing PLOP object, create a new one with whatever close
 		//   timestamp we have received and fetched indicator ID.
-		if prevExists && (existingPLOP.CloseTimestamp != val.CloseTimestamp || (existingPLOP.PodUid == "" && val.PodUid != "")) {
+		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
+			// Update the timestamp and PodUid
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
 			existingPLOP.PodUid = val.PodUid
@@ -193,7 +202,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
 
-		// Best efforst to not duplicate data. If no process indicator with
+		// Best effort to not duplicate data. If no process indicator with
 		// such an id exists, we deal with a potentially orphaned PLOP, and
 		// need to store the process information. Otherwise processInfo is nil
 		// and will not be stored.
@@ -203,20 +212,15 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			processInfo = val.GetProcess()
 		}
 
-		if prevExists {
-			log.Debugf("Got existing PLOP to update timestamp: %s", plopStorageToNoSecretsString(existingPLOP))
+		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
+			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
-			if existingPLOP.CloseTimestamp != nil &&
-				(existingPLOP.CloseTimestamp != val.CloseTimestamp || (existingPLOP.PodUid == "" && existingPLOP.PodUid != val.PodUid)) {
-
-				// Update the timestamp and PodUid
+			// Update the timestamp and PodUid
+			if existingPLOP.Closed == true {
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
-				existingPLOP.PodUid = val.PodUid
-
-				plopObjects = append(plopObjects, existingPLOP)
 			}
-
-			// Add nothing if the PLOP is active, i.e. CloseTimestamp == nil
+			existingPLOP.PodUid = val.PodUid
+			plopObjects = append(plopObjects, existingPLOP)
 		}
 
 		if !prevExists {
