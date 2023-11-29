@@ -71,6 +71,7 @@ func NewDefaultFactory() RepositoryFactory {
 }
 
 func (f *factory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
+	log.Info("---- CreateDataRepository ----")
 	return newRepository(ctx, domain, scrapeResults, f)
 }
 
