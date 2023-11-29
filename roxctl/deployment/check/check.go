@@ -116,7 +116,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
-	//utils.Must(c.MarkFlagRequired("file"))
+	c.MarkFlagsOneRequired("file", "files")
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 
 	// mark legacy output format specific flags as deprecated
