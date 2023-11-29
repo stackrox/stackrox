@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -107,7 +108,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringSliceVarP(&deploymentCheckCmd.files, "files", "f", []string{}, "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringSliceVar(&deploymentCheckCmd.files, "files", nil, "yaml file to send to Central to evaluate policies against")
 	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
@@ -115,7 +116,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
-	utils.Must(c.MarkFlagRequired("file"))
+	//utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 
 	// mark legacy output format specific flags as deprecated
@@ -164,14 +165,16 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	for _, file := range d.files {
-		if _, err := os.Open(file); err != nil {
+	if d.file != "" {
+		if _, err := os.Open(d.file); err != nil {
 			return common.ErrInvalidCommandOption.CausedBy(err)
 		}
-	}
-
-	if _, err := os.Open(d.file); err != nil {
-		return common.ErrInvalidCommandOption.CausedBy(err)
+	} else {
+		for _, file := range d.files {
+			if _, err := os.Open(file); err != nil {
+				return common.ErrInvalidCommandOption.CausedBy(err)
+			}
+		}
 	}
 
 	return nil
@@ -209,7 +212,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 				return errors.Wrapf(err, "could not read deployment file: %q", file)
 			}
 			if len(deploymentFileContents) > 0 {
-				deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
+				deploymentFileContents = append(deploymentFileContents, "---\n"...)
 			}
 			deploymentFileContents = append(deploymentFileContents, fileContents...)
 		}
@@ -246,6 +249,18 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	var alerts []*storage.Alert
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
+	}
+
+	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
+	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// between different generated deployments.
+	for _, alert := range alerts {
+		switch entity := alert.Entity.(type) {
+		case *storage.Alert_Deployment_:
+			if entity.Deployment.GetId() == "" {
+				entity.Deployment.Id = uuid.NewV4().String()
+			}
+		}
 	}
 	return alerts, response.GetIgnoredObjectRefs(), nil
 }
