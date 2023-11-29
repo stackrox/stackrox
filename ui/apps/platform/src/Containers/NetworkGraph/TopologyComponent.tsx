@@ -138,7 +138,7 @@ const TopologyComponent = ({
     }, [controller]);
 
     const panNodeIntoView = useCallback(
-        (node) => {
+        (node: CustomNodeModel) => {
             const selectedNodeElement = controller.getNodeById(node.id);
             if (selectedNodeElement) {
                 // the offset is to make sure the label also makes it inside the viewport
