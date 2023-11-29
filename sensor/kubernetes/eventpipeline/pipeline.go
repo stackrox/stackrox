@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -25,12 +24,8 @@ func New(client client.Interface, configHandler config.Handler, detector detecto
 	outputQueue := output.New(detector, queueSize)
 	var depResolver component.Resolver
 	var resourceListener component.ContextListener
-	if env.ResyncDisabled.BooleanSetting() {
-		depResolver = resolver.New(outputQueue, storeProvider, queueSize)
-		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
-	} else {
-		resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, outputQueue, storeProvider)
-	}
+	depResolver = resolver.New(outputQueue, storeProvider, queueSize)
+	resourceListener = listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)

@@ -93,8 +93,6 @@ func (s *eventPipelineSuite) readExpired() {
 }
 
 func (s *eventPipelineSuite) Test_OfflineModeCases() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
-
 	outputC := make(chan *message.ExpiringMessage, 10)
 	s.outputQueue.EXPECT().ResponsesC().
 		AnyTimes().Return(outputC)
@@ -128,8 +126,6 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 }
 
 func (s *eventPipelineSuite) Test_OfflineMode() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
-
 	outputC := make(chan *message.ExpiringMessage, 10)
 	s.outputQueue.EXPECT().ResponsesC().
 		AnyTimes().Return(outputC)
@@ -162,7 +158,6 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 }
 
 func (s *eventPipelineSuite) Test_ReprocessDeployments() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
@@ -194,7 +189,6 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 }
 
 func (s *eventPipelineSuite) Test_PolicySync() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
@@ -216,7 +210,6 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 }
 
 func (s *eventPipelineSuite) Test_ReassessPolicies() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
@@ -248,7 +241,6 @@ func (s *eventPipelineSuite) Test_ReassessPolicies() {
 }
 
 func (s *eventPipelineSuite) Test_UpdatedImage() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
@@ -278,7 +270,6 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 }
 
 func (s *eventPipelineSuite) Test_ReprocessDeployment() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
@@ -308,7 +299,6 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 }
 
 func (s *eventPipelineSuite) Test_InvalidateImageCache() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 

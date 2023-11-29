@@ -53,25 +53,17 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
-	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
-	var resyncingSif informers.SharedInformerFactory
-
-	resyncPeriod := k.resyncPeriod
-	if env.ResyncDisabled.BooleanSetting() {
-		resyncPeriod = noResyncPeriod
-	}
-	resyncingSif = informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncPeriod)
+		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), noResyncPeriod)
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
 	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), resyncPeriod)
+		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), noResyncPeriod)
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
@@ -100,7 +92,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
-	podInformer := resyncingSif.Core().V1().Pods()
+	podInformer := sif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
 		clusterID,
 		podInformer.Lister(),
@@ -186,7 +178,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, resyncingSif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -194,13 +186,13 @@ func (k *listenerImpl) handleAllEvents() {
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}
 
-	roleBindingInformer := resyncingSif.Rbac().V1().RoleBindings().Informer()
-	clusterRoleBindingInformer := resyncingSif.Rbac().V1().ClusterRoleBindings().Informer()
+	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
+	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
 
 	handle(k.context, roleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 	handle(k.context, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
 
-	if !startAndWait(stopSignal, prePodWaitGroup, resyncingSif) {
+	if !startAndWait(stopSignal, prePodWaitGroup, sif) {
 		return
 	}
 
@@ -228,9 +220,9 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
-	handle(k.context, resyncingSif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, resyncingSif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, resyncingSif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(k.context, sif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(k.context, sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(k.context, sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 	if complianceProfileInformer != nil {
@@ -240,7 +232,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, resyncingSif, crdSharedInformerFactory, osRouteFactory) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, sif, crdSharedInformerFactory, osRouteFactory) {
 		return
 	}
 
@@ -249,23 +241,23 @@ func (k *listenerImpl) handleAllEvents() {
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
-	handle(k.context, resyncingSif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(k.context, resyncingSif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(k.context, resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(k.context, sif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(k.context, sif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(k.context, sif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 
 	if ok, err := sensorUtils.HasAPI(k.client.Kubernetes(), "batch/v1", kubernetesPkg.CronJob); err != nil {
 		log.Errorf("error determining API version to use for CronJobs: %v", err)
 	} else if ok {
-		handle(k.context, resyncingSif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(k.context, sif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	} else {
-		handle(k.context, resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(k.context, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	}
 	if osAppsFactory != nil {
 		handle(k.context, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, sif, resyncingSif, osAppsFactory) {
+	if !startAndWait(stopSignal, wg, sif, sif, osAppsFactory) {
 		return
 	}
 
@@ -274,7 +266,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
 	handle(k.context, podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
-	if !startAndWait(stopSignal, podWaitGroup, resyncingSif) {
+	if !startAndWait(stopSignal, podWaitGroup, sif) {
 		return
 	}
 

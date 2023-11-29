@@ -60,11 +60,7 @@ var (
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
-	if env.ResyncDisabled.BooleanSetting() {
-		log.Info("Running sensor with Kubernetes re-sync disabled")
-	} else {
-		log.Infof("Running sensor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
-	}
+	log.Info("Running sensor with Kubernetes re-sync disabled")
 
 	storeProvider := resources.InitializeStore()
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())

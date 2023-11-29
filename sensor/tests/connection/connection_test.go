@@ -67,7 +67,6 @@ func Test_SensorHello2(t *testing.T) {
 
 func Test_SensorReconnects(t *testing.T) {
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
-	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 

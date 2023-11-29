@@ -25,7 +25,6 @@ func Test_AlertsAreSentAfterConnectionRestart(t *testing.T) {
 		t.SkipNow()
 	}
 
-	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
 

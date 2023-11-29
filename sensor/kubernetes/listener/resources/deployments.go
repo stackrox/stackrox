@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -183,45 +182,23 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
-	if env.ResyncDisabled.BooleanSetting() {
-		if action == central.ResourceAction_REMOVE_RESOURCE {
-			// TODO(ROX-14309): move this logic to the resolver
-			// We need to do this here since the resolver relies on the deploymentStore to have the wrap
-			d.endpointManager.OnDeploymentRemove(deploymentWrap)
-			// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
-			// Moving forward, there might be a different way to solve this, for example by changing the compatibility
-			// module to accept only deployment IDs rather than the entire deployment object. For more info on this
-			// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
-			events.AddDeploymentForDetection(component.DetectorMessage{
-				Object: deploymentWrap.GetDeployment(),
-				Action: action,
-			}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
-		} else {
-			// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
-			// references up the chain, which will be used to trigger the actual deployment event and detection.
-			events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
-				component.WithParentResourceAction(action))
-		}
-	} else {
-		exposureInfos := d.serviceStore.GetExposureInfos(deploymentWrap.GetNamespace(), deploymentWrap.PodLabels)
-		deploymentWrap.updatePortExposureSlice(exposureInfos)
-		if action != central.ResourceAction_REMOVE_RESOURCE {
-			// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
-			// right after deploymentWrap object creation.
-			deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
-			d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
-		} else {
-			d.endpointManager.OnDeploymentRemove(deploymentWrap)
-		}
-
-		if err := deploymentWrap.updateHash(); err != nil {
-			log.Errorf("UNEXPECTED: could not calculate hash of deployment %s: %v", deploymentWrap.GetId(), err)
-		}
-		events.AddSensorEvent(deploymentWrap.toEvent(action))
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		// TODO(ROX-14309): move this logic to the resolver
+		// We need to do this here since the resolver relies on the deploymentStore to have the wrap
+		d.endpointManager.OnDeploymentRemove(deploymentWrap)
+		// At the moment we need to also send this deployment to the compatibility module when it's being deleted.
+		// Moving forward, there might be a different way to solve this, for example by changing the compatibility
+		// module to accept only deployment IDs rather than the entire deployment object. For more info on this
+		// check the PR comment here: https://github.com/stackrox/stackrox/pull/3695#discussion_r1030214615
 		events.AddDeploymentForDetection(component.DetectorMessage{
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
-		})
+		}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+	} else {
+		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
+		// references up the chain, which will be used to trigger the actual deployment event and detection.
+		events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
+			component.WithParentResourceAction(action))
 	}
 
 	// Upsert/Delete at the end to avoid data race with other dispatchers

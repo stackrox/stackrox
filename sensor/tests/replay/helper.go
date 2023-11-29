@@ -64,7 +64,6 @@ func SetupTest(suite Suite) {
 
 // StartTest starts a sensor instance for the test
 func StartTest(suite Suite) *TraceWriterWithChannel {
-	suite.GetT().Setenv("ROX_RESYNC_DISABLED", "true")
 	conn, spyCentral, _ := createConnectionAndStartServer(suite.GetFakeCentral())
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
