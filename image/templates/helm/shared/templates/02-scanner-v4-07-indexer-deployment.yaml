@@ -127,7 +127,7 @@ spec:
           {{- if ._rox.env.centralServices }}
           secretName: additional-ca
           {{- else }}
-          {{- include "srox.fail" "Internal error: failed to setup additional-ca-volume for Scanner V4 Indexer due to undefined StackRox environment" }}
+          secretName: additional-ca-sensor
           {{- end }}
       - name: etc-ssl-volume
         emptyDir: {}
