@@ -2,32 +2,29 @@ package authproviders
 
 import (
 	"context"
+	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	schemaPkg "github.com/stackrox/rox/migrator/migrations/m_197_to_m_198_add_oidc_claim_mappings/schema"
 	"github.com/stackrox/rox/pkg/logging"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize       = 10000
-	batchAfter      = 100
-	deleteBatchSize = 5000
+	batchSize = 10000
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = schemaPkg.AuthProvidersSchema
+	log            = logging.LoggerForModule()
+	schema         = schemaPkg.AuthProvidersSchema
+	targetResource = resources.Access
 )
 
 type storeType = storage.AuthProvider
@@ -38,147 +35,29 @@ type Store interface {
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
-type storeImpl struct {
-	mutex sync.RWMutex
-	db    postgres.DB
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return &storeImpl{
-		db: db,
-	}
+	return pgSearch.NewGenericStore[storeType, *storeType](
+		db,
+		schema,
+		pkGetter,
+		insertIntoAuthProviders,
+		copyFromAuthProviders,
+		metricsSetAcquireDBConnDuration,
+		metricsSetPostgresOperationDurationTime,
+		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		targetResource,
+	)
 }
 
-// Walk iterates over all the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storeType) error) error {
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.AuthProvider, *storage.AuthProvider](ctx, schema, search.EmptyQuery(), s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(batchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != batchSize {
-			break
-		}
-	}
-	return nil
+func metricsSetPostgresOperationDurationTime(_ time.Time, _ ops.Op) {
 }
 
-// UpsertMany saves the state of multiple objects in the storage.
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storeType) error {
-	return pgutils.Retry(func() error {
-		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
-		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
-		// violations
-		if len(objs) < batchAfter {
-			s.mutex.RLock()
-			defer s.mutex.RUnlock()
-
-			return s.upsert(ctx, objs...)
-		}
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
-
-		return s.copyFrom(ctx, objs...)
-	})
+func metricsSetAcquireDBConnDuration(_ time.Time, _ ops.Op) {
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.AuthProvider) error {
-	conn, err := s.acquireConn(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "could not begin transaction")
-	}
-
-	if err := copyFromAuthProviders(ctx, s, tx, objs...); err != nil {
-		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-			return errors.Wrap(rollbackErr, "could not rollback transaction")
-		}
-		return errors.Wrap(err, "copy from objects failed")
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return errors.Wrap(err, "could not commit transaction")
-	}
-	return nil
-}
-
-// DeleteMany removes the objects associated to the specified IDs from the store.
-func (s *storeImpl) DeleteMany(ctx context.Context, identifiers []string) error {
-	// Batch the deletes
-	localBatchSize := deleteBatchSize
-	numRecordsToDelete := len(identifiers)
-	for {
-		if len(identifiers) == 0 {
-			break
-		}
-
-		if len(identifiers) < localBatchSize {
-			localBatchSize = len(identifiers)
-		}
-
-		identifierBatch := identifiers[:localBatchSize]
-		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
-
-		if err := pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db); err != nil {
-			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)
-		}
-
-		// Move the slice forward to start the next batch
-		identifiers = identifiers[localBatchSize:]
-	}
-
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.AuthProvider) error {
-	conn, err := s.acquireConn(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	for _, obj := range objs {
-		batch := &pgx.Batch{}
-		if err := insertIntoAuthProviders(batch, obj); err != nil {
-			return err
-		}
-		batchResults := conn.SendBatch(ctx, batch)
-		var result *multierror.Error
-		for i := 0; i < batch.Len(); i++ {
-			_, err := batchResults.Exec()
-			result = multierror.Append(result, err)
-		}
-		if err := batchResults.Close(); err != nil {
-			return err
-		}
-		if err := result.ErrorOrNil(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context) (*postgres.Conn, error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not acquire connection")
-	}
-	return conn, nil
+func pkGetter(obj *storeType) string {
+	return obj.GetId()
 }
 
 func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error {

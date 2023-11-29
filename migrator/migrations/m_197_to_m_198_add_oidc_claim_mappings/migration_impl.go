@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	log       = logging.LoggerForModule()
-	batchSize = 500
+	log = logging.LoggerForModule()
 )
 
 const (
@@ -32,17 +31,11 @@ func migrate(database *types.Databases) error {
 	ctx := sac.WithAllAccess(context.Background())
 	groupStore := groups.New(database.PostgresDB)
 	authProviderStore := authproviders.New(database.PostgresDB)
-	oidcAuthProviders := make([]*storage.AuthProvider, 0, batchSize)
+	oidcAuthProviders := make([]*storage.AuthProvider, 0)
 
 	err := authProviderStore.Walk(ctx, func(obj *storage.AuthProvider) error {
 		if obj.GetType() == oidc.TypeName {
 			oidcAuthProviders = append(oidcAuthProviders, obj)
-			if len(oidcAuthProviders) == batchSize {
-				if err := migrateAuthProviderClaims(ctx, groupStore, authProviderStore, oidcAuthProviders); err != nil {
-					return err
-				}
-				oidcAuthProviders = oidcAuthProviders[:0]
-			}
 		}
 		return nil
 	})
@@ -100,8 +93,6 @@ func migrateAuthProviderClaims(ctx context.Context, groupStore groups.Store, pro
 			if provider.GetTraits().GetOrigin() != storage.Traits_IMPERATIVE {
 				log.Errorf(declarativeProviderLogMessage, provider.GetId(), provider.GetName())
 			} else {
-				log.Warnf("Auth provider with id %s and name %s uses claims org_id, org_admin that were removed from the list of default claims. "+
-					"Claims were automatically added to claim mappings, groups were modified accordingly.", provider.GetId(), provider.GetName())
 				migratedProviders = append(migratedProviders, provider)
 				if groupToMigrate != nil {
 					migratedGroups = append(migratedGroups, groupToMigrate)
