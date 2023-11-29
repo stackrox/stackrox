@@ -112,7 +112,7 @@ func New(db postgres.DB) Store {
     // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
     // and be the source of memory pressure. Think twice about the need for in-memory caching
     // of the whole store.
-    {{- end -}}
+    {{ end -}}
     return {{ template "storeCreator" . }}[storeType, *storeType](
             db,
             schema,
