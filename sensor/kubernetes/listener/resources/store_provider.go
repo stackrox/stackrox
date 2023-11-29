@@ -40,8 +40,9 @@ func InitializeStore() *StoreProvider {
 	memSizeSetting := pastEndpointsMemorySize.Setting()
 	memSize, err := strconv.ParseUint(memSizeSetting, 10, 0)
 	if err != nil {
-		memSize = 0
+		memSize = 2
 	}
+	log.Infof("Initializing cluster entities store with memory of size %d", memSize)
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
 	svcStore := newServiceStore()
