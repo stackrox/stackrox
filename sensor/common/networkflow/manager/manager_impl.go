@@ -440,6 +440,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
+	log.Debugf("LookupByEndpoint for %v: %+v", conn.remote, lookupResults)
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
@@ -452,6 +453,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if extSrc != nil {
 			isFresh = false
 		}
+		log.Debugf("LookupByNetwork for %s (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork.String(), isFresh, extSrc)
 
 		if isFresh {
 			return
