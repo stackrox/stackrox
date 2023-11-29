@@ -17,6 +17,8 @@ values:
     dbServiceTLS:
       cert: ""
       key: ""
+  imagePullSecrets:
+    allowNone: true
   monitoring:
     openshift:
       enabled: false

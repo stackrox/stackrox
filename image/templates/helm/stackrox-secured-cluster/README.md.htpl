@@ -242,7 +242,6 @@ chart and their default values:
 |`imagePullSecrets.password`| Specify password for accessing image registry. |`null`|
 |`imagePullSecrets.useExisting`| Specify existing Kubernetes image pull secrets that should be used for trying to pull StackRox images. |`[]`|
 |`imagePullSecrets.useFromDefaultServiceAccount`| This setting controls whether image pull secrets from a default service account in the target namespace should be used for image pulls. |`true`|
-|`imagePullSecrets.useExisting`| Specify existing Kubernetes image pull secrets that should be used for trying to pull StackRox images. |`[]`|
 |`imagePullSecrets.allowNone`| Enabling this setting indicates that no image pull secrets are required to be configured upon initial deployment. Use this setting if you are using a cluster-private registry that does not require authentication. |`false`|
 |`image.main.name`|Repository from which to download the main image. |`main` |
 |`image.collector.name`|Repository from which to download the collector image.  |`collector` |
