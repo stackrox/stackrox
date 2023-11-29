@@ -307,6 +307,8 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" != "true" ]]; then
         helm_args+=(--set scanner.disable=true)
+      else
+        helm_args+=(--set scannerV4.disable=false)
       fi
 
       if [[ "${is_local_dev}" == "true" ]]; then
