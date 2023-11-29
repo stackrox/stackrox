@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/containeranalysis v0.11.3
-	cloud.google.com/go/securitycenter v1.24.2
+	cloud.google.com/go/securitycenter v1.24.3
 	cloud.google.com/go/storage v1.35.1
 	github.com/BurntSushi/toml v1.3.2
 	github.com/ComplianceAsCode/compliance-operator v1.3.1
