@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
+	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -79,6 +80,7 @@ type complianceCheckResultDataStoreTestSuite struct {
 	dataStore DataStore
 	storage   checkResultsStorage.Store
 	db        *pgtest.TestPostgres
+	searcher  checkresultsSearch.Searcher
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) SetupSuite() {
@@ -105,7 +107,10 @@ func (s *complianceCheckResultDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = checkResultsStorage.New(s.db)
-	s.dataStore = New(s.storage, s.db)
+	indexer := checkResultsStorage.NewIndexer(s.db)
+	configStorage := checkResultsStorage.New(s.db)
+	s.searcher = checkresultsSearch.New(configStorage, indexer)
+	s.dataStore = New(s.storage, s.db, s.searcher)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
@@ -208,6 +213,14 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCheckResultStats() {
 	results, err = s.dataStore.ComplianceCheckResultStats(s.noAccessCtx, query)
 	s.Require().Error(err)
 	s.Require().Equal(0, len(results))
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestCountScanResults() {
+	s.setupTestData()
+	q := search.NewQueryBuilder().ProtoQuery()
+	count, err := s.dataStore.CountCheckResults(s.hasReadCtx, q)
+	s.NoError(err)
+	s.Equal(6, count)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {

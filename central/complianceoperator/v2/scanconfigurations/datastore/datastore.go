@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -43,15 +44,19 @@ type DataStore interface {
 
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
 	GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
+
+	// Count scan config based on a query
+	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.
-func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
+func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore, searcher search.Searcher) DataStore {
 	ds := &datastoreImpl{
 		storage:       scanConfigStore,
 		statusStorage: scanConfigStatusStore,
 		clusterDS:     clusterDS,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		searcher:      searcher,
 	}
 	return ds
 }
@@ -68,8 +73,8 @@ func NewForTestOnly(_ *testing.T, scanConfigStore pgStore.Store, scanConfigStatu
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore, searcher search.Searcher) (DataStore, error) {
 	store := pgStore.New(pool)
 	statusStore := statusStore.New(pool)
-	return New(store, statusStore, clusterDS), nil
+	return New(store, statusStore, clusterDS, searcher), nil
 }
