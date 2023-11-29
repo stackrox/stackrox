@@ -22,7 +22,7 @@ type fixedDataPromise struct {
 }
 
 func newFixedDataPromise(ctx context.Context, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
-	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain, nil)
+	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain)
 
 	return &fixedDataPromise{
 		dataRepo: dataRepo,
