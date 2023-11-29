@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	storage "cloud.google.com/go/storage"
+	types "github.com/stackrox/rox/pkg/cloudproviders/gcp/types"
 	gomock "go.uber.org/mock/gomock"
 	google "golang.org/x/oauth2/google"
 )
@@ -41,11 +42,11 @@ func (m *MockClientHandler) EXPECT() *MockClientHandlerMockRecorder {
 }
 
 // GetClient mocks base method.
-func (m *MockClientHandler) GetClient() (*storage.Client, func()) {
+func (m *MockClientHandler) GetClient() (*storage.Client, types.DoneFunc) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClient")
 	ret0, _ := ret[0].(*storage.Client)
-	ret1, _ := ret[1].(func())
+	ret1, _ := ret[1].(types.DoneFunc)
 	return ret0, ret1
 }
 

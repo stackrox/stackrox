@@ -5,6 +5,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2/google"
 )
@@ -14,7 +15,7 @@ import (
 //go:generate mockgen-wrapper
 type ClientHandler interface {
 	UpdateClient(ctx context.Context, creds *google.Credentials) error
-	GetClient() (*storage.Client, func())
+	GetClient() (*storage.Client, types.DoneFunc)
 }
 
 type clientHandlerImpl struct {
@@ -57,7 +58,11 @@ func (s *clientHandlerImpl) UpdateClient(ctx context.Context, creds *google.Cred
 	return nil
 }
 
-func (s *clientHandlerImpl) GetClient() (*storage.Client, func()) {
+// GetClient returns the client and a done function.
+//
+// The client must be nil checked. The done func must be called after
+// the client is no longer in use.
+func (s *clientHandlerImpl) GetClient() (*storage.Client, types.DoneFunc) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.wg.Add(1)
