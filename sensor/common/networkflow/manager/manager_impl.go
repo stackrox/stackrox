@@ -453,7 +453,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if extSrc != nil {
 			isFresh = false
 		}
-		log.Debugf("LookupByNetwork for %s (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork.String(), isFresh, extSrc)
+		log.Debugf("LookupByNetwork for %v (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork, isFresh, extSrc)
 
 		if isFresh {
 			return
