@@ -161,10 +161,10 @@
         "BENCHMARK_SERVICE",
         "SCANNER_SERVICE",
         "SCANNER_DB_SERVICE",
+        "ADMISSION_CONTROL_SERVICE",
         "SCANNER_V4_INDEXER_SERVICE",
         "SCANNER_V4_MATCHER_SERVICE",
-        "SCANNER_V4_DB_SERVICE",
-        "ADMISSION_CONTROL_SERVICE"
+        "SCANNER_V4_DB_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
       "title": "Next available tag: 13"
