@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v1
+      uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
