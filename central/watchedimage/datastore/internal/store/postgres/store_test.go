@@ -35,6 +35,7 @@ func (s *WatchedImagesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE watched_images CASCADE")
 	s.T().Log("watched_images", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

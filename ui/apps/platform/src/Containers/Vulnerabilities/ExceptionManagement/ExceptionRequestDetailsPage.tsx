@@ -1,5 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
+    Alert,
+    AlertActionCloseButton,
+    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
@@ -19,6 +22,8 @@ import { useParams } from 'react-router-dom';
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
+import usePermissions from 'hooks/usePermissions';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
     VulnerabilityException,
@@ -32,11 +37,11 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
+import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
-import { RequestContext } from './components/ExceptionRequestTableCells';
 
-type RequestDetailsTab = 'REQUESTED_UPDATE' | 'LATEST_APPROVED';
+export const contextValues = ['CURRENT', 'PENDING_UPDATE'] as const;
 
 function getSubtitleText(exception: VulnerabilityException) {
     const numCVEs = `${pluralize(exception.cves.length, 'CVE')}`;
@@ -65,10 +70,13 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 }
 
 function ExceptionRequestDetailsPage() {
-    // @TODO: Incorporate this section into the URL, enabling direct linking based on the user's context upon arrival
-    const [selectedTab, setSelectedTab] = useState<RequestDetailsTab>('REQUESTED_UPDATE');
-    const expandedRowSet = useSet<string>();
     const { requestId } = useParams();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
+
+    const [selectedContext, setSelectedContext] = useURLStringUnion('context', contextValues);
+    const expandedRowSet = useSet<string>();
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const vulnerabilityExceptionByIdFn = useCallback(
         () => fetchVulnerabilityExceptionById(requestId),
@@ -78,10 +86,16 @@ function ExceptionRequestDetailsPage() {
         data: vulnerabilityException,
         loading,
         error,
+        refetch,
     } = useRestQuery(vulnerabilityExceptionByIdFn);
 
     function handleTabClick(event, value) {
-        setSelectedTab(value);
+        setSelectedContext(value);
+    }
+
+    function onApprovalSuccess() {
+        refetch();
+        setSuccessMessage(`The vulnerability request was successfully approved`);
     }
 
     if (loading && !vulnerabilityException) {
@@ -113,18 +127,25 @@ function ExceptionRequestDetailsPage() {
     }
 
     const { status, cves, scope } = vulnerabilityException;
+
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
-    const context: RequestContext =
-        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
-            ? 'CURRENT'
-            : 'PENDING_UPDATE';
+    const showApprovalButton =
+        hasWriteAccessForApproving &&
+        (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
+
     const relevantCVEs =
-        selectedTab === 'LATEST_APPROVED' || !isApprovedPendingUpdate
-            ? cves
-            : getCVEsForUpdatedRequest(vulnerabilityException);
+        selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
 
     return (
         <>
+            {successMessage && (
+                <Alert
+                    variant={AlertVariant.success}
+                    isInline
+                    title={successMessage}
+                    actionClose={<AlertActionCloseButton onClose={() => setSuccessMessage(null)} />}
+                />
+            )}
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
@@ -135,32 +156,40 @@ function ExceptionRequestDetailsPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light">
-                <Flex direction={{ default: 'column' }}>
-                    <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
-                    <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
+                <Flex>
+                    <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
+                        <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
+                        <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
+                    </Flex>
+                    {showApprovalButton && (
+                        <RequestApprovalButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onApprovalSuccess}
+                        />
+                    )}
                 </Flex>
             </PageSection>
             <PageSection className="pf-u-p-0">
                 {isApprovedPendingUpdate && (
                     <Tabs
-                        activeKey={selectedTab}
+                        activeKey={selectedContext}
                         onSelect={handleTabClick}
                         component="nav"
                         className="pf-u-pl-lg pf-u-background-color-100"
                     >
                         <Tab
-                            eventKey="REQUESTED_UPDATE"
+                            eventKey="PENDING_UPDATE"
                             title={<TabTitleText>Requested update</TabTitleText>}
                         />
                         <Tab
-                            eventKey="LATEST_APPROVED"
+                            eventKey="CURRENT"
                             title={<TabTitleText>Latest approved</TabTitleText>}
                         />
                     </Tabs>
                 )}
 
                 <PageSection>
-                    <RequestOverview exception={vulnerabilityException} context={context} />
+                    <RequestOverview exception={vulnerabilityException} context={selectedContext} />
                 </PageSection>
                 <PageSection>
                     <RequestCVEsTable

@@ -93,7 +93,6 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
-
 	s.service = New(s.scanConfigDatastore, s.manager)
 }
 
@@ -211,6 +210,40 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 			s.Require().Equal(expectedResp, configs)
 		})
 	}
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurations() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	testCases := []struct {
+		desc      string
+		query     *apiV2.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+		},
+		{
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+
+			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
+				Return(1, nil).Times(1)
+
+			configs, err := s.service.GetComplianceScanConfigurationsCount(allAccessContext, tc.query)
+			s.Require().NoError(err)
+			s.Require().Equal(int32(1), configs.Count)
+		})
+	}
+
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {

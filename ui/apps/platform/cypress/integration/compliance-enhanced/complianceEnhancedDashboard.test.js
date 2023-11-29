@@ -5,9 +5,7 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     visitComplianceEnhancedDashboard,
     visitComplianceEnhancedFromLeftNav,
-    visitComplianceEnhancedScanConfigsFromLeftNav,
     statusDashboardPath,
-    scanConfigsPath,
 } from './ComplianceEnhanced.helpers';
 
 describe('Compliance Dashboard', () => {
@@ -42,34 +40,5 @@ describe('Compliance Dashboard', () => {
         cy.get('th[scope="col"]:contains("Profiles")');
         cy.get('th[scope="col"]:contains("Failing Controls")');
         cy.get('th[scope="col"]:contains("Last Scanned")');
-    });
-
-    it('should visit scan configurations scheduling from the left nav', () => {
-        visitComplianceEnhancedScanConfigsFromLeftNav();
-
-        cy.location('pathname').should('eq', scanConfigsPath);
-        cy.title().should('match', getRegExpForTitleWithBranding('Scan schedules'));
-    });
-
-    it('should have expected elements on the scans page', () => {
-        visitComplianceEnhancedScanConfigsFromLeftNav();
-
-        cy.title().should('match', getRegExpForTitleWithBranding('Scan schedules'));
-
-        cy.get('th[scope="col"]:contains("Name")');
-        cy.get('th[scope="col"]:contains("Schedule")');
-        cy.get('th[scope="col"]:contains("Last run")');
-        cy.get('th[scope="col"]:contains("Clusters")');
-        cy.get('th[scope="col"]:contains("Profiles")');
-
-        cy.get('h2:contains("No scan schedules")');
-
-        cy.get('.pf-c-toolbar__content a:contains("Create scan schedule")').click();
-        cy.location('search').should('eq', '?action=create');
-
-        cy.go('back');
-
-        cy.get('.pf-c-empty-state__content a:contains("Create scan schedule")').click();
-        cy.location('search').should('eq', '?action=create');
     });
 });

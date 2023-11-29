@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "Should not create PVC"
   expectError: true
@@ -25,3 +28,28 @@ tests:
   expect: |
     .persistentvolumeclaims["central-db-test"].spec.resources.requests | assertThat(.storage == "1000Gi")
     .persistentvolumeclaims["central-db-test"].spec | assertThat(.storageClassName == "testStorageClass")
+- name: "Should not create stackrox-gke-ssd StorageClass by default"
+  values:
+    central:
+      persistence:
+        none: true
+      db:
+        persistence:
+          persistentVolumeClaim:
+            claimName: "central-db-test"
+            size: "1000Gi"
+  expect: |
+    .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 0)
+- name: "Should create stackrox-gke-ssd StorageClass when it is referenced"
+  values:
+    central:
+      persistence:
+        none: true
+      db:
+        persistence:
+          persistentVolumeClaim:
+            claimName: "central-db-test"
+            size: "1000Gi"
+            storageClass: "stackrox-gke-ssd"
+  expect: |
+    .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 1)

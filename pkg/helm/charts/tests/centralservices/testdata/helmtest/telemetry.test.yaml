@@ -8,6 +8,8 @@ values:
   central:
     persistence:
       none: true
+  imagePullSecrets:
+    allowNone: true
 
 tests:
   - name: Central telemetry should not have a configured key by default

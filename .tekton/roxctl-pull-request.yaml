@@ -8,8 +8,8 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    pipelinesascode.tekton.dev/on-event: '[pull_request]'
-    pipelinesascode.tekton.dev/on-target-branch: '[*]'
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && source_branch.contains("rhtap")
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
@@ -255,7 +255,7 @@ spec:
         - name: name
           value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:73be62593d50285d8ec1c4e1ffcd72cd2615a544383baeb78b6b59bb37f912ae
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:93bb409637d51b37332b768ffa911f27f805229fdf4ba0841f745f83efceefa2
         - name: kind
           value: task
         resolver: bundles

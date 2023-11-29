@@ -35,6 +35,7 @@ func (s *AdministrationEventsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE administration_events CASCADE")
 	s.T().Log("administration_events", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

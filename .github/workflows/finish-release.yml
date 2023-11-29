@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.variables.outputs.branch }}
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           fetch-depth: 0
       - name: Initialize mandatory git config
         run: |
@@ -87,7 +87,7 @@ jobs:
       - name: Tag release branch with "${{ needs.variables.outputs.named-release-patch }}"
         id: tag
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
@@ -98,7 +98,7 @@ jobs:
         id: release
         if: env.DRY_RUN == 'false'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -154,7 +154,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: stackrox/infra
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           ref: master
       - name: Initialize git and check remote branch exists
         id: check-existing
@@ -198,7 +198,7 @@ jobs:
       - name: Push changes & open PR
         if: env.DRY_RUN == 'false' && steps.update-infra-demo-version.outputs.update-required == 'true'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           git push --force --set-upstream origin "$BRANCH"
           if ! gh pr ready; then

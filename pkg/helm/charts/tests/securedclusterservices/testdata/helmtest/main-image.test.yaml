@@ -5,6 +5,9 @@ defs: |
      (container(.deployments["admission-control"]; "admission-control"))][];
   def mainImageFromConfig:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig.mainImage;
+values:
+  imagePullSecrets:
+    allowNone: true
 
 expect: |
   # The image in the config should at least be a prefix (sans tag) of the sensor image

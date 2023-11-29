@@ -13,7 +13,7 @@ func SensorHello(clusterID string) *central.MsgToSensor {
 			Hello: &central.CentralHello{
 				ClusterId:        clusterID,
 				CertBundle:       map[string]string{},
-				Capabilities:     []string{centralsensor.SensorReconciliationOnReconnect},
+				Capabilities:     []string{centralsensor.SendDeduperStateOnReconnect},
 				SendDeduperState: true,
 			},
 		},

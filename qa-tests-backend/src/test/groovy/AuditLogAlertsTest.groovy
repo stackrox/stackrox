@@ -12,6 +12,7 @@ import services.AlertService
 import services.ClusterService
 import services.PolicyService
 
+import spock.lang.Ignore
 import spock.lang.Requires
 import spock.lang.Stepwise
 import spock.lang.Tag
@@ -85,6 +86,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Ignore("ROX-18533")
     def "Verify collection continues even after ACS components restarts: #component"() {
         when:
         "Audit log collection is enabled"

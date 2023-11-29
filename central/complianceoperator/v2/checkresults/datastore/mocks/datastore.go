@@ -56,6 +56,21 @@ func (mr *MockDataStoreMockRecorder) ComplianceCheckResultStats(ctx, query any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceCheckResultStats", reflect.TypeOf((*MockDataStore)(nil).ComplianceCheckResultStats), ctx, query)
 }
 
+// CountCheckResults mocks base method.
+func (m *MockDataStore) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountCheckResults", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountCheckResults indicates an expected call of CountCheckResults.
+func (mr *MockDataStoreMockRecorder) CountCheckResults(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountCheckResults", reflect.TypeOf((*MockDataStore)(nil).CountCheckResults), ctx, q)
+}
+
 // DeleteResult mocks base method.
 func (m *MockDataStore) DeleteResult(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

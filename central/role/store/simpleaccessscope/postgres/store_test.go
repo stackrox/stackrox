@@ -35,6 +35,7 @@ func (s *SimpleAccessScopesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE simple_access_scopes CASCADE")
 	s.T().Log("simple_access_scopes", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

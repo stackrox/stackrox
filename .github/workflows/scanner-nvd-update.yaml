@@ -1,4 +1,4 @@
-name: Fetch NVD Data Feeds
+name: Scanner NVD update
 
 on:
   schedule:

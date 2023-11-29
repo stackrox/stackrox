@@ -30,7 +30,7 @@ func RunHelmTestSuite(t *testing.T, testDir string, chartPrefix image.ChartPrefi
 
 	helmImage := image.GetDefaultImage()
 	tpl, err := helmImage.GetChartTemplate(chartPrefix)
-	require.NoError(t, err, "error retrieving chartPrefix template")
+	require.NoErrorf(t, err, "error retrieving template for chart %s", chartPrefix)
 
 	metaVals := charts.GetMetaValuesForFlavor(*opts.Flavor)
 	if opts.MetaValuesOverridesFunc != nil {
@@ -38,7 +38,7 @@ func RunHelmTestSuite(t *testing.T, testDir string, chartPrefix image.ChartPrefi
 	}
 
 	ch, err := tpl.InstantiateAndLoad(metaVals)
-	require.NoError(t, err, "error instantiating chartPrefix")
+	require.NoErrorf(t, err, "error instantiating chart %s", chartPrefix)
 
 	suite, err := helmTest.NewLoader(testDir, opts.HelmTestOpts...).LoadSuite()
 	require.NoError(t, err, "failed to load helmtest suite")

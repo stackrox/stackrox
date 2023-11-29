@@ -600,7 +600,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
+	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SendDeduperStateOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 

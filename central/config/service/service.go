@@ -29,6 +29,10 @@ var (
 	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
+			// The GetPublicConfig endpoint is used in code flows where
+			// the user is not authenticated yet. For instance the public
+			// config contains banners that are rendered on the login page.
+			// This endpoint should therefore remain public.
 			"/v1.ConfigService/GetPublicConfig",
 		},
 		user.With(permissions.View(resources.Administration)): {

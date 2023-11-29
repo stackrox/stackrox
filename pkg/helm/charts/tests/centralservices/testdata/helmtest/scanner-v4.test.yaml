@@ -1,0 +1,226 @@
+values:
+  central:
+    persistence:
+      none: true
+  ca:
+    cert: ""
+    key: ""
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    indexer:
+      serviceTLS:
+        cert: ""
+        key: ""
+    matcher:
+      serviceTLS:
+        cert: ""
+        key: ""
+    db:
+      serviceTLS:
+        cert: ""
+        key: ""
+  monitoring:
+    openshift:
+      enabled: false
+server:
+  visibleSchemas:
+  - openshift-4.1.0
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: "additional-ca-volume is backed by additional-ca secret"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec
+      | .volumes[] | select(.name == "additional-ca-volume")
+      | .secret.secretName
+      | assertThat(. == "additional-ca")
+- name: "rendering fails if scannerV4 is disabled but"
+  expectError: true
+  set:
+    scannerV4.disable: true
+  tests:
+    - name: "indexer is enabled"
+      set:
+        scannerV4.indexer.disable: false
+    - name: "matcher is enabled"
+      set:
+        scannerV4.matcher.disable: false
+- name: "StorageClass stackrox-gke-ssd is created when scannerV4 references this storage class in its PVC configuration"
+  values:
+    scannerV4:
+      disable: false
+      db:
+        persistence:
+          persistentVolumeClaim:
+            storageClass: "stackrox-gke-ssd"
+  expect: |
+    .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 1)
+
+- name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
+  set:
+    scannerV4.disable: false
+    meta.apiServer.version: "1.23.99"
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].readinessProbe.grpc | assertThat(. == null)
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].readinessProbe.grpc | assertThat(. == null)
+# TODO(ROX-20842): Add test which checks existence of gRPC health probes on Kubernetes >= 1.24.0.
+# Cannot be added right away because helmtest would need to be updated, as the validation of
+# the manifests it baked in bails out on grpc readinessProbes (probably outdated schemas).
+- name: "scanner V4 indexer and matcher can be enabled with built-in defaulting"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"] | assertThat(. != null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "Install mode is reported by Helm chart installation notes"
+  tests:
+  - name: "when installing neither indexer nor matcher"
+    scannerV4.disable: true
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +none"))
+  - name: "when installing indexer and matcher"
+    set:
+      scannerV4.disable: false
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-and-matcher"))
+  - name: "when installing only indexer"
+    set:
+      scannerV4.disable: false
+      scannerV4.indexer.disable: false
+      scannerV4.matcher.disable: true
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +indexer-only"))
+  - name: "when installing only matcher"
+    set:
+      scannerV4.disable: false
+      scannerV4.indexer.disable: true
+      scannerV4.matcher.disable: false
+    expect: |
+      .notes | assertThat(match("Scanner V4 Installation Method: +matcher-only"))
+# This test can be deleted once the scanner V2 is removed.
+- name: "enabling scanner V4 keeps scanner V2 enabled"
+  set:
+    scannerV4.disable: false
+  expect:
+    .deployments["scanner"] | assertThat(. != null)
+
+- name: "scanner with default settings"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .serviceaccounts["scanner-v4"] | assertThat(. != null)
+    .secrets["scanner-v4-db-password"].stringData.password | assertThat(length != 0)
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | assertThat(length != 0)
+    .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | assertThat(length != 0)
+    .configmaps["scanner-v4-db-config"] | assertThat(. != null)
+    #    .deployments["scanner-v4-indexer"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    .deployments["scanner-v4-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["scanner-v4-db"])
+    .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. != null)
+    .networkpolicys["scanner-v4-db"] | assertThat(. != null)
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+    .services["scanner-v4-indexer"] | assertThat(. != null)
+    .services["scanner-v4-matcher"] | assertThat(. != null)
+    .services["scanner-v4-db"] | assertThat(. != null)
+  tests:
+  - name: "receives newly generated TLS certificats with keys"
+    expect: |
+      .secrets["scanner-v4-indexer-tls"].stringData | assertThat(.["cert.pem"] | contains("BEGIN CERTIFICATE"))
+      .secrets["scanner-v4-matcher-tls"].stringData | assertThat(.["cert.pem"] | contains("BEGIN CERTIFICATE"))
+      .secrets["scanner-v4-db-tls"].stringData | assertThat(.["key.pem"] | contains("BEGIN RSA PRIVATE KEY"))
+    tests:
+    - name: "as default"
+    - name: "with explicit setting"
+      set:
+        scanner.mode: full
+    - name: "with empty setting"
+      set:
+        scanner.mode: ""
+
+- name: "scanner V4 with deprecated PodSecurityPolicies disabled"
+  values:
+    scannerV4:
+      disable: false
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. == null)
+    .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. == null)
+
+- name: "scanner with deprecated PodSecurityPolicies enabled"
+  values:
+    scannerV4:
+      disable: false
+    system:
+      enablePodSecurityPolicies: true
+  expect: |
+    .podsecuritypolicys["stackrox-scanner-v4"] | assertThat(. != null)
+    .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
+    .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
+
+- name: "Warning is emitted if"
+  tests:
+    - name: "indexer is enabled and matcher is disabled"
+      values:
+        scannerV4:
+          disable: false
+          indexer:
+            disable: false
+          matcher:
+            disable: true
+    - name: "indexer is disabled and matcher is enabled"
+      values:
+        scannerV4:
+          disable: false
+          indexer:
+            disable: true
+          matcher:
+            disable: false
+  expect:
+    .notes | assertThat(contains("Unsupported Scanner V4 configuration detected"))
+
+- name: "scanner v4 DB uses expected default configuration"
+  values:
+    scannerV4:
+      disable: false
+  expect: |
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.password_file | assertThat(. == "/run/secrets/stackrox.io/secrets/password")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("sslrootcert=/run/secrets/stackrox.io/certs/ca.pem"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("host=scanner-v4-db.stackrox.svc"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("min_conns=") | not)
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("max_conns=") | not)
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("statement_timeout=") | not)
+
+- name: "scanner v4 DB configuration can be fine-tuned"
+  values:
+    scannerV4:
+      disable: false
+      db:
+        source:
+          minConns: 2
+          maxConns: 42
+          statementTimeoutMs: 314159
+  expect: |
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.password_file | assertThat(. == "/run/secrets/stackrox.io/secrets/password")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("sslrootcert=/run/secrets/stackrox.io/certs/ca.pem"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("host=scanner-v4-db.stackrox.svc"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("min_conns=2"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("max_conns=42"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("statement_timeout=314159"))
+
+- name: "scanner V4 service account can access image pull secrets"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .serviceaccounts["scanner-v4"] | assertThat(. != null)
+    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox")
+    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")

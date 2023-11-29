@@ -35,6 +35,7 @@ func (s *LogImbuesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE log_imbues CASCADE")
 	s.T().Log("log_imbues", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

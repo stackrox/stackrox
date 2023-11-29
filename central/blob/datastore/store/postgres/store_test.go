@@ -35,6 +35,7 @@ func (s *BlobsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE blobs CASCADE")
 	s.T().Log("blobs", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

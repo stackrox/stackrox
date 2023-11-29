@@ -145,7 +145,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	capsSet.Add(centralsensor.SensorReconciliationOnReconnect)
+	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -244,12 +244,12 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
 	s.clientReconcile = s.clientReconcile &&
-		centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) &&
+		centralcaps.Has(centralsensor.SendDeduperStateOnReconnect) &&
 		centralHello.GetSendDeduperState()
 
 	log.Infof("Sensor client reconciliation state=%s (centralCapability=%s, centralHello.SendDeduperState=%s)",
 		strconv.FormatBool(s.clientReconcile),
-		strconv.FormatBool(centralcaps.Has(centralsensor.SensorReconciliationOnReconnect)),
+		strconv.FormatBool(centralcaps.Has(centralsensor.SendDeduperStateOnReconnect)),
 		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
 	if hello.HelmManagedConfigInit != nil {

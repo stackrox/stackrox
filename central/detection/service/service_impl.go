@@ -40,6 +40,7 @@ import (
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -237,6 +238,12 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 	if err != nil {
 		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
 	}
+
+	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
+	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// between different generated deployments.
+	deployment.Id = uuid.NewV4().String()
+
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 

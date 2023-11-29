@@ -38,6 +38,7 @@ func (s *ProcessBaselinesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE process_baselines CASCADE")
 	s.T().Log("process_baselines", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
@@ -136,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storage.ProcessBaseline, *storage.ProcessBaseline, map[string]testCase) {
+func (s *ProcessBaselinesStoreSuite) getTestData(access ...storage.Access) (*storage.ProcessBaseline, *storage.ProcessBaseline, map[string]testCase) {
 	objA := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -163,7 +164,7 @@ func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -176,7 +177,7 @@ func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetKey().GetClusterId()),
 					sac.NamespaceScopeKeys(objA.GetKey().GetNamespace()),
@@ -190,7 +191,7 @@ func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetKey().GetClusterId()),
 				)),
@@ -203,7 +204,7 @@ func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -216,7 +217,7 @@ func (s *ProcessBaselinesStoreSuite) getTestData(access storage.Access) (*storag
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetKey().GetClusterId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -293,7 +294,7 @@ func (s *ProcessBaselinesStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
@@ -338,7 +339,7 @@ func (s *ProcessBaselinesStoreSuite) TestSACGet() {
 }
 
 func (s *ProcessBaselinesStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -365,7 +366,7 @@ func (s *ProcessBaselinesStoreSuite) TestSACDelete() {
 }
 
 func (s *ProcessBaselinesStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()

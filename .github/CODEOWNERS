@@ -39,6 +39,8 @@ operator/**/* @stackrox/draco
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
+/.github/workflows/scanner*                           @stackrox/scanner
+/.github/workflows/update_scanner_periodic.yaml       @stackrox/scanner
 /central/scannerdefinitions/                          @stackrox/scanner
 /central/sensor/service/pipeline/imageintegrations/   @stackrox/scanner
 /pkg/images/enricher/                                 @stackrox/scanner

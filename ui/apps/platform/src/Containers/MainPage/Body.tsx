@@ -44,10 +44,9 @@ import { useTheme } from 'Containers/ThemeProvider';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
-import { HasReadAccess } from 'hooks/usePermissions';
+import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
-import usePermissions from 'hooks/usePermissions';
 
 import asyncComponent from './AsyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';

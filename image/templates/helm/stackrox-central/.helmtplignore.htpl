@@ -1,10 +1,16 @@
 [< if eq .RenderMode "scannerOnly" >]
 !templates/_*.tpl
-!templates/02-scanner-*.yaml
+!templates/02-scanner-[0-9]*.yaml
+[< if .FeatureFlags.ROX_SCANNER_V4 >]
+!templates/02-scanner-v4-*.yaml
+[< end >]
 templates/*
 [< else if eq .RenderMode "scannerTLSOnly" >]
 !templates/_*.tpl
 !templates/02-scanner-03-tls-secret.yaml
+[< if .FeatureFlags.ROX_SCANNER_V4 >]
+!templates/02-scanner-v4-03-tls-secret.yaml
+[< end >]
 templates/*
 [< else if eq .RenderMode "centralTLSOnly" >]
 !templates/_*.tpl
@@ -24,3 +30,9 @@ templates/*
 templates/*
 [< end >]
 templates/keep.yaml
+[< if not .FeatureFlags.ROX_SCANNER_V4 >]
+templates/02-scanner-v4-*.yaml
+templates/_scanner-v4*.tpl
+config-templates/scanner-v4*/*
+internal/scanner-v4-config-shape.yaml
+[< end >]

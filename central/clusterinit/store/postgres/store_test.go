@@ -35,6 +35,7 @@ func (s *ClusterInitBundlesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE cluster_init_bundles CASCADE")
 	s.T().Log("cluster_init_bundles", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

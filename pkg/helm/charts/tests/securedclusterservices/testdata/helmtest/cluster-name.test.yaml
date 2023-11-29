@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "cluster name secret is created on installation"
   values:

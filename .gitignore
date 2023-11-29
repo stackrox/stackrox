@@ -71,3 +71,6 @@ local/database-restore/*
 
 # shellcheck output
 shellcheck-reports
+
+# Direnv
+.direnv/

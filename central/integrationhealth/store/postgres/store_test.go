@@ -35,6 +35,7 @@ func (s *IntegrationHealthsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE integration_healths CASCADE")
 	s.T().Log("integration_healths", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

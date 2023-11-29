@@ -1,19 +1,26 @@
 {{/*
-  srox.configureImagePullSecrets $ $cfgName $imagePullSecrets $secretResourceName $defaultSecretNames $namespace
+  srox.configureImagePullSecretsNames $ $cfgName $imagePullSecrets $secretResourceName $defaultSecretNames $namespace
 
-  Configures image pull secrets.
+  Configures image pull secrets names.
 
   This function enriches $imagePullSecrets based on the exposed configuration parameters to contain
-  a list of Kubernetes secret names as `_names` to be used as image pull secrets within the chart
-  templates. This list contains the following secrets:
+  a list of Kubernetes secret names as field `_names`. The chart templates then use this field
+  to populate imagePullSecrets lists in ServiceAccount objects.
+
+  This list contains the following secrets:
 
   - Secrets referenced via $imagePullSecrets.useExisting.
-  - Image pull secrets associated with the default service account (if
-    $imagePullSecrets.useFromDefaultServiceAccount is true).
-  - $secretResourceName, if $imagePullSecrets.username is set.
-  - $defaultSecretNames. */}}
+  - Image pull secrets associated with the default service account (unless
+    $imagePullSecrets.useFromDefaultServiceAccount was set to false by the user).
+  - $secretResourceName.
+  - $defaultSecretNames.
 
-{{ define "srox.configureImagePullSecrets" }}
+  Additionally, this function fails execution if the list resulting from first three bullet points
+  combined is empty.
+
+*/}}
+
+{{ define "srox.configureImagePullSecretsNames" }}
 {{ $ := index . 0 }}
 {{ $cfgName := index . 1 }}
 {{ $imagePullSecrets := index . 2 }}
@@ -36,9 +43,8 @@
     {{ end }}
   {{ end }}
 {{ end }}
-{{ $imagePullCreds := dict }}
 {{ if $imagePullSecrets._username }}
-  {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
+  {{/* When username is present, existence of $secretResourceName will be assured by the templates; add to the list. */}}
   {{ $imagePullSecretNames = append $imagePullSecretNames $secretResourceName }}
 {{ else if $imagePullSecrets._password }}
   {{ $msg := printf "Username missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}
@@ -51,17 +57,29 @@
 
 {{ $imagePullSecretNames = concat (append $imagePullSecretNames $secretResourceName) $defaultSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
-{{ $_ := set $imagePullSecrets "_creds" $imagePullCreds }}
 
 {{ end }}
 
-{{ define "srox.configureImagePullSecretsForDockerRegistry" }}
+
+{{/*
+  srox.configureImagePullSecretsCreds $ $imagePullSecrets
+
+  Configures credentials for an image pull Secret.
+
+  Note: This function must be called late in srox.init, as we rely on "srox.configureImage" to collect the
+  set of all referenced images first.
+
+  If username was not set on the passed $imagePullSecrets, this function does nothing.
+
+  Otherwise, it sets a "_dockerAuths" field on the passed $imagePullSecrets to be a
+  map from registry URLs to settings that contain login credentials. The map
+  contains registries for all images passed so far to srox.configureImage invocations.
+*/}}
+
+{{ define "srox.configureImagePullSecretsCreds" }}
 {{ $ := index . 0 }}
 {{ $imagePullSecrets := index . 1 }}
 
-{{/* Setup Image Pull Secrets for Docker Registry.
-     Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
-     set of all referenced images first. */}}
 {{ if $imagePullSecrets._username }}
   {{ $dockerAuths := dict }}
   {{ range $image := keys $._rox._state.referencedImages }}

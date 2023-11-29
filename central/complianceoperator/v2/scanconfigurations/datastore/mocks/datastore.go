@@ -40,6 +40,21 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// CountScanConfigurations mocks base method.
+func (m *MockDataStore) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountScanConfigurations", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountScanConfigurations indicates an expected call of CountScanConfigurations.
+func (mr *MockDataStoreMockRecorder) CountScanConfigurations(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountScanConfigurations", reflect.TypeOf((*MockDataStore)(nil).CountScanConfigurations), ctx, q)
+}
+
 // DeleteScanConfiguration mocks base method.
 func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()

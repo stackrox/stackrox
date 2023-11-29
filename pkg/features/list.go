@@ -65,13 +65,13 @@ var (
 	WorkloadCVEsFixabilityFilters = registerFeature("Enables Workload CVE fixability filters", "ROX_WORKLOAD_CVES_FIXABILITY_FILTERS", false)
 
 	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
-	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", false)
+	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", true)
 
 	// AuthMachineToMachine allows to exchange ID tokens for Central tokens without requiring user interaction.
 	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", false)
 
 	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
-	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL", false)
+	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL", true)
 
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", true)
@@ -87,4 +87,10 @@ var (
 
 	// SecretFileSearch enables search on the file fields of secrets
 	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", true)
+
+	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
+	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", false)
+
+	// ScannerV4 enables various capabilities associated with ACS + Clair consolidated scanner.
+	ScannerV4 = registerUnchangeableFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4", true)
 )
