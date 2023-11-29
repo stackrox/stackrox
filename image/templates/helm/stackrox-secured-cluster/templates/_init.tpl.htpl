@@ -162,9 +162,9 @@
 {{ end }}
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecretsNames" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.mergeInto" (list $._rox.collectorImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecretsNames" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
 {{/* Additional CAs. */}}
 {{ $additionalCAList := list }}
@@ -225,16 +225,10 @@
 {{- end }}
 
 [< if (not .KubectlOutput) ->]
+{{ if eq ._rox.scanner.disable false }}
 {{/*
    Local scanner setup.
   */}}
-
-{{/* Disable scanner always in kubectl outputs */}}
-[< if .KubectlOutput ->]
-  {{ $_ := set $._rox.scanner "disable" true }}
-[< end >]
-
-{{ if eq ._rox.scanner.disable false }}
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
@@ -242,9 +236,7 @@
     {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
     {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
-{{ end }}
 
-{{ if eq ._rox.scanner.disable false }}
   {{ if ne ._rox.scanner.mode "slim" }}
     {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
   {{ end }}
@@ -253,7 +245,7 @@
   {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
-  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+  {{ include "srox.configureImagePullSecretsNames" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
 [<- end >]
 
@@ -261,8 +253,8 @@
     Post-processing steps.
    */}}
 
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.mainImagePullSecrets) }}
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.collectorImagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.mainImagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.collectorImagePullSecrets) }}
 
 {{ end }}
 

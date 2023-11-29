@@ -185,7 +185,7 @@
      even if they weren't specified.
      This is required for updates anyway, so referencing it on first install will minimize a later
      diff. */}}
-{{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "stackrox" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+{{ include "srox.configureImagePullSecretsNames" (list $ "imagePullSecrets" $._rox.imagePullSecrets "stackrox" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 
 {{/* Global CA setup */}}
 {{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
@@ -317,7 +317,7 @@
 {{/* Setup Image Pull Secrets for Docker Registry.
      Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
      set of all referenced images first. */}}
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.imagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.imagePullSecrets) }}
 
 {{/* Final warnings based on state. */}}
 {{ if $._rox._state.customCertGen }}

@@ -1,8 +1,10 @@
+name: "Test default labels"
 defs: |
   def labels(resource):
     resource.metadata.labels;
-
-name: "Test default labels"
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: Admission Controller
   expect: |

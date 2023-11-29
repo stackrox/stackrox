@@ -8,8 +8,9 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
-- name: "scanner with default settings in slim mode"
+- name: "scanner with default settings is in slim mode"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
   expect: |
     container(.deployments["scanner"]; "scanner").image | contains("slim")
@@ -23,13 +24,17 @@ tests:
     set:
       env.openshift: 3
 
-- name: "scanner is disabled should not be installed by default"
+- name: "scanner is disabled by default, neither deployments nor SA should be created"
+  set:
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
+    .serviceaccounts["scanner"] | assertThat(. == null)
 
 - name: "scanner can override image config"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
   expect: |
     container(.deployments["scanner"]; "scanner") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
@@ -56,6 +61,7 @@ tests:
 
 - name: "scanner accepts connections from sensor when scanner slim is enabled"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
@@ -67,10 +73,10 @@ tests:
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
-    .serviceaccounts["scanner"] | assertThat(. != null)
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | assertThat(. != null)
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
   tests:
   - name: "when authenticating in image registry with user and password"
     set:
@@ -79,9 +85,13 @@ tests:
     expect: |
       .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
       .secrets["secured-cluster-services-main"] | assertThat(. != null)
-  - name: "no secret is created"
+  - name: "when username/password are not provided, no secret is created"
     expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
     tests:
+    - name: "by default (allowNone is false), chart fails"
+      expectError: true
+      expect: |
+        .error | assertThat(contains("You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred."))
     - name: "when allowNone is true"
       set:
         imagePullSecrets.allowNone: true
@@ -95,6 +105,8 @@ tests:
         .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret2")
 
 - name: "sensor only connects to local scanner when it is enabled"
+  set:
+    imagePullSecrets.allowNone: true
   tests:
   - name: "local scanner enabled"
     set:
@@ -111,6 +123,7 @@ tests:
   release:
     namespace: custom-ns
   set:
+    imagePullSecrets.allowNone: true
     allowNonstandardNamespace: true
     scanner.disable: false
   expect: |
@@ -119,6 +132,8 @@ tests:
 
 - name: "Test customize for local scanner"
   values:
+    imagePullSecrets:
+      allowNone: true
     scanner:
       disable: false
     customize:
@@ -129,6 +144,8 @@ tests:
 
 - name: "Installation fails in full mode"
   values:
+    imagePullSecrets:
+      allowNone: true
     scanner:
       disable: false
       mode: full

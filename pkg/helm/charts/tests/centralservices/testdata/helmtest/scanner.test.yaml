@@ -5,6 +5,8 @@ values:
   ca:
     cert: ""
     key: ""
+  imagePullSecrets:
+    allowNone: true
   scanner:
     serviceTLS:
       cert: ""
