@@ -51,7 +51,7 @@ func initialize() {
 		var err error
 		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
 		if err != nil {
-			utils.Should(errors.Wrapf(err, "Error reading encryption key, notifiers will be unable to send notifications"))
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifiers will be unable to send notifications"))
 		}
 	}
 
