@@ -353,8 +353,42 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				},
 			},
 		},
-		// "set tolerations": {},
-		// "set nodeSelector": {},
+		"set tolerations": {
+			component: &platform.ScannerV4Component{
+				DeploymentSpec: platform.DeploymentSpec{
+					Tolerations: []*corev1.Toleration{
+						{Key: "masternode", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule},
+					},
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"tolerations": []interface{}{
+						map[string]interface{}{
+							"effect": "NoSchedule", "key": "masternode", "operator": "Exists",
+						},
+					},
+				},
+			},
+		},
+		"set nodeSelector": {
+			component: &platform.ScannerV4Component{
+				DeploymentSpec: platform.DeploymentSpec{
+					NodeSelector: map[string]string{
+						"masternode": "true",
+					},
+				},
+			},
+			componentKey: "indexer",
+			want: chartutil.Values{
+				"indexer": map[string]interface{}{
+					"nodeSelector": map[string]interface{}{
+						"masternode": "true",
+					},
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -366,7 +400,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				require.NotNil(t, err)
 				return
 			}
-			// t.Fatal(values)
+
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, values)
 		})
