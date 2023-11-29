@@ -13,7 +13,6 @@ import (
 	reflect "reflect"
 
 	framework "github.com/stackrox/rox/central/compliance/framework"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,16 +40,16 @@ func (m *MockRepositoryFactory) EXPECT() *MockRepositoryFactoryMockRecorder {
 }
 
 // CreateDataRepository mocks base method.
-func (m *MockRepositoryFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
+func (m *MockRepositoryFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateDataRepository", ctx, domain, scrapeResults)
+	ret := m.ctrl.Call(m, "CreateDataRepository", ctx, domain)
 	ret0, _ := ret[0].(framework.ComplianceDataRepository)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateDataRepository indicates an expected call of CreateDataRepository.
-func (mr *MockRepositoryFactoryMockRecorder) CreateDataRepository(ctx, domain, scrapeResults any) *gomock.Call {
+func (mr *MockRepositoryFactoryMockRecorder) CreateDataRepository(ctx, domain any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDataRepository", reflect.TypeOf((*MockRepositoryFactory)(nil).CreateDataRepository), ctx, domain, scrapeResults)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDataRepository", reflect.TypeOf((*MockRepositoryFactory)(nil).CreateDataRepository), ctx, domain)
 }
