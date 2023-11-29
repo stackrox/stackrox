@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -28,9 +30,7 @@ const (
 	testMaxTimeout   = 5 * time.Second
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 type s3 struct {
 	integration *storage.ExternalBackup
@@ -70,7 +70,8 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	}
 
 	awsConfig := &aws.Config{
-		Region: aws.String(conf.GetRegion()),
+		Region:     aws.String(conf.GetRegion()),
+		HTTPClient: &http.Client{Transport: proxy.RoundTripper()},
 	}
 
 	endpoint := conf.GetEndpoint()
@@ -164,7 +165,6 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 	if err := s.send(backupMaxTimeout, ui); err != nil {
 		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q",
 			s.integration.GetS3().GetBucket(), formattedKey), err)
-
 	}
 	log.Info("Successfully backed up to S3")
 	return s.pruneBackupsIfNecessary()
@@ -180,7 +180,6 @@ func (s *s3) Test() error {
 	if err := s.send(testMaxTimeout, ui); err != nil {
 		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q",
 			formattedKey, s.integration.GetS3().GetBucket()), err)
-
 	}
 	_, err := s.svc.DeleteObject(&awsS3.DeleteObjectInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
