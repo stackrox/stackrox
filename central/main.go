@@ -29,6 +29,7 @@ import (
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
@@ -351,6 +352,10 @@ func startServices() {
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
+	}
+
+	if features.CloudCredentials.Enabled() {
+		gcp.Singleton().Start()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -892,6 +897,10 @@ func waitForTerminationSignal() {
 
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
+	}
+
+	if features.CloudCredentials.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
 	}
 
 	var wg sync.WaitGroup
