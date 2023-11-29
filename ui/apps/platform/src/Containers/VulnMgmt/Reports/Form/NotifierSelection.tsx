@@ -20,10 +20,10 @@ import EmailNotifierFormModal from './EmailNotifierFormModal';
 type NotifierSelectionProps = {
     notifierId: string;
     mailingLists: string[];
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
-    handleBlur: (e: React.FocusEvent<any, Element>) => void;
-    errors: FormikErrors<any>;
-    touched: FormikTouched<any>;
+    setFieldValue: (field: string, value: unknown, shouldValidate?: boolean | undefined) => void;
+    handleBlur: (e: React.FocusEvent<unknown, Element>) => void;
+    errors: FormikErrors<unknown>;
+    touched: FormikTouched<unknown>;
     allowCreate: boolean;
 };
 
