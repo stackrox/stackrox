@@ -86,9 +86,6 @@ func TestCreateCentralTLS(t *testing.T) {
 	scannerFileMap := make(types.SecretDataMap)
 	certgen.AddCACertToFileMap(scannerFileMap, testCA)
 	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerSubject, ""))
-	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4IndexerSubject, ""))
-	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4MatcherSubject, ""))
-	require.NoError(t, certgen.IssueServiceCert(scannerFileMap, testCA, mtls.ScannerV4DBSubject, ""))
 
 	existingScanner := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
