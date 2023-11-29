@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
-	roxStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
+	gcpStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -35,7 +35,7 @@ var log = logging.LoggerForModule()
 
 type gcs struct {
 	integration   *storage.ExternalBackup
-	clientHandler roxStorage.ClientHandler
+	clientHandler gcpStorage.ClientHandler
 
 	backupsToKeep int
 	bucket        string
