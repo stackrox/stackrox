@@ -51,7 +51,7 @@ func initialize() {
 		var err error
 		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
 		if err != nil {
-			utils.CrashOnError(err)
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifiers will be unable to send notifications"))
 		}
 	}
 
@@ -66,7 +66,8 @@ func initialize() {
 		encCredsModified, err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
-			utils.CrashOnError(fmt.Errorf("Error securing notifier %s", protoNotifier.GetId()))
+			utils.Should(fmt.Errorf("Error securing notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
+			continue
 		}
 		if encCredsModified {
 			_, err = datastore.Singleton().UpsertNotifier(ctx, protoNotifier)
