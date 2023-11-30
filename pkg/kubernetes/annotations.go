@@ -2,7 +2,6 @@ package kubernetes
 
 import (
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,14 +26,14 @@ var (
 // This is required since Kubernetes reuses the actual object when resyncing, hence this function might be invoked
 // while the annotations are being read concurrently.
 func TrimAnnotations(object v1.Object) {
-	annotations := object.GetAnnotations()
-	for k, v := range annotations {
-		if annotationKeys.Contains(k) {
-			delete(annotations, k)
-			continue
-		}
-		if len(v) > maxValueLen {
-			annotations[k] = stringutils.Truncate(v, maxValueLen, stringutils.WordOriented{})
-		}
-	}
+	//annotations := object.GetAnnotations()
+	//for k, v := range annotations {
+	//	if annotationKeys.Contains(k) {
+	//		delete(annotations, k)
+	//		continue
+	//	}
+	//	if len(v) > maxValueLen {
+	//		annotations[k] = stringutils.Truncate(v, maxValueLen, stringutils.WordOriented{})
+	//	}
+	//}
 }

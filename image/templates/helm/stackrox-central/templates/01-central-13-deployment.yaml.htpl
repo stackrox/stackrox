@@ -73,6 +73,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: KUBE_CACHE_MUTATION_DETECTOR
+          value: "true"
         {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
         {{- /* If telemetry.enabled is true or null, configure the endpoint and
                the key, if provided. */}}

@@ -321,7 +321,7 @@ func handle(
 	_, err := informer.AddEventHandler(handlerImpl)
 	should(err, stopSignal)
 	if !informer.HasSynced() {
-		err := informer.SetTransform(managedFieldsTransformer)
+		//err := informer.SetTransform(managedFieldsTransformer)
 		should(err, stopSignal)
 	}
 	wg.Add(1)

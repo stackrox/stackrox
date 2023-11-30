@@ -322,12 +322,12 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
-		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
-			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
-		})
-		sort.SliceStable(p.Spec.Containers, func(i, j int) bool {
-			return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
-		})
+		//sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
+		//	return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
+		//})
+		//sort.SliceStable(p.Spec.Containers, func(i, j int) bool {
+		//	return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
+		//})
 		for i, c := range p.Status.ContainerStatuses {
 			if i >= len(w.Deployment.Containers) || i >= len(p.Spec.Containers) {
 				// This should not happen, but could happen if w.Deployment.Containers and container status are out of sync
