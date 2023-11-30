@@ -185,11 +185,16 @@ class K8sRbacTest extends BaseSpecification {
                 for (int i = 0; i < role.rules.size(); i++) {
                     K8sPolicyRule oRule = role.rules[i]
                     Rbac.PolicyRule sRule = stackroxRole.rulesList[i]
-                    assert oRule.verbs == sRule.verbsList
-                    assert oRule.apiGroups == sRule.apiGroupsList
-                    assert oRule.resources == sRule.resourcesList
-                    assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
-                    assert oRule.resourceNames == sRule.resourceNamesList
+                    try{
+                        assert oRule.verbs == sRule.verbsList
+                        assert oRule.apiGroups == sRule.apiGroupsList
+                        assert oRule.resources == sRule.resourcesList
+                        assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
+                        assert oRule.resourceNames == sRule.resourceNamesList
+                    } catch (Exception ex) {
+                        log.info "${role.rules} ${stackroxRole.rulesList}"
+                        throw ex
+                    }
                 }
                 assert RbacService.getRole(stackroxRole.id) == stackroxRole
             }
