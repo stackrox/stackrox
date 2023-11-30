@@ -76,7 +76,7 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 	if ok, err := podsSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(pod)...); err != nil || !ok {
 		return nil, false, err
 	}
-	return pod, true, nil
+	return pod.Clone(), true, nil
 }
 
 // UpsertPod inserts a pod into podStore
@@ -100,7 +100,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 			mergeContainerInstances(pod, oldPod)
 		}
 
-		if err := ds.podStore.Upsert(ctx, pod); err != nil {
+		if err := ds.podStore.Upsert(ctx, pod.Clone()); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
 		return nil
