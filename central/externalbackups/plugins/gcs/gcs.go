@@ -11,14 +11,16 @@ import (
 
 	googleStorage "cloud.google.com/go/storage"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
+	gcpStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 const (
@@ -29,13 +31,11 @@ const (
 	timeFormat   = "2006-01-02-15-04-05"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 type gcs struct {
-	integration  *storage.ExternalBackup
-	bucketHandle *googleStorage.BucketHandle
+	integration   *storage.ExternalBackup
+	clientHandler gcpStorage.ClientHandler
 
 	backupsToKeep int
 	bucket        string
@@ -56,13 +56,6 @@ func validate(conf *storage.GCSConfig) error {
 	return errorList.ToError()
 }
 
-func getClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
-	if conf.GetUseWorkloadId() {
-		return googleStorage.NewClient(context.Background())
-	}
-	return googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(conf.GetServiceAccount())))
-}
-
 func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 	conf := integration.GetGcs()
 	if conf == nil {
@@ -72,24 +65,25 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 		return nil, err
 	}
 
-	client, err := getClient(conf)
+	handler, err := utils.CreateHandlerFromConfig(context.Background(), gcp.Singleton(), conf)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create GCS client")
+		return nil, errors.Wrap(err, "could not create GCS client handler")
 	}
 	return &gcs{
 		integration:   integration,
-		bucketHandle:  client.Bucket(conf.GetBucket()),
+		clientHandler: handler,
 		bucket:        conf.GetBucket(),
 		backupsToKeep: int(integration.GetBackupsToKeep()),
 		objectPrefix:  conf.GetObjectPrefix(),
 	}, nil
 }
 
-func (s *gcs) send(duration time.Duration, objectPath string, reader io.Reader) error {
+func (s *gcs) send(client *googleStorage.Client, duration time.Duration, objectPath string, reader io.Reader) error {
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
-	wc := s.bucketHandle.Object(objectPath).NewWriter(ctx)
+	bucketHandle := client.Bucket(s.bucket)
+	wc := bucketHandle.Object(objectPath).NewWriter(ctx)
 	if _, err := io.Copy(wc, reader); err != nil {
 		if err := wc.Close(); err != nil {
 			log.Errorf("closing GCS writer: %v", err)
@@ -102,21 +96,23 @@ func (s *gcs) send(duration time.Duration, objectPath string, reader io.Reader) 
 	return nil
 }
 
-func (s *gcs) delete(objectPath string) error {
+func (s *gcs) delete(client *googleStorage.Client, objectPath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	err := s.bucketHandle.Object(objectPath).Delete(ctx)
+	bucketHandle := client.Bucket(s.bucket)
+	err := bucketHandle.Object(objectPath).Delete(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "deleting object: %s", objectPath)
 	}
 	return nil
 }
 
-func (s *gcs) pruneBackupsIfNecessary() {
+func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	objectIterator := s.bucketHandle.Objects(ctx, &googleStorage.Query{
+	bucketHandle := client.Bucket(s.bucket)
+	objectIterator := bucketHandle.Objects(ctx, &googleStorage.Query{
 		Prefix: s.objectPrefix,
 	})
 
@@ -149,7 +145,7 @@ func (s *gcs) pruneBackupsIfNecessary() {
 	numBackupsToRemove := len(currentBackups) - s.backupsToKeep
 	for _, attrToRemove := range currentBackups[:numBackupsToRemove] {
 		log.Infof("Pruning old backup %s", attrToRemove.Name)
-		if err := s.delete(attrToRemove.Name); err != nil {
+		if err := s.delete(client, attrToRemove.Name); err != nil {
 			log.Errorf("deleting element %s: %v", attrToRemove.Name, err)
 			return
 		}
@@ -165,6 +161,12 @@ func formattedTime() string {
 }
 
 func (s *gcs) Backup(reader io.ReadCloser) error {
+	client, done := s.clientHandler.GetClient()
+	defer done()
+	if client == nil {
+		return errors.New("failed to get GCS client")
+	}
+
 	defer func() {
 		if err := reader.Close(); err != nil {
 			log.Errorf("Error closing reader: %v", err)
@@ -175,22 +177,28 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 	formattedKey := s.prefixKey(key)
 
 	log.Infof("Starting GCS Backup for file %v", formattedKey)
-	if err := s.send(backupMaxTimeout, formattedKey, reader); err != nil {
+	if err := s.send(client, backupMaxTimeout, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to GCS")
-	go s.pruneBackupsIfNecessary()
+	go s.pruneBackupsIfNecessary(client)
 	return nil
 }
 
 func (s *gcs) Test() error {
+	client, done := s.clientHandler.GetClient()
+	defer done()
+	if client == nil {
+		return errors.New("failed to get GCS client")
+	}
+
 	formattedKey := s.prefixKey(fmt.Sprintf("%s-test-%s", backupPrefix, formattedTime()))
 	reader := strings.NewReader("This is a test of the StackRox integration with this bucket")
-	if err := s.send(timeout, formattedKey, reader); err != nil {
+	if err := s.send(client, timeout, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q", formattedKey, s.bucket), err)
 	}
 
-	if err := s.delete(formattedKey); err != nil {
+	if err := s.delete(client, formattedKey); err != nil {
 		return s.createError("deleting test object", err)
 	}
 	return nil
