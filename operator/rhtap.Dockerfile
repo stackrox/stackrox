@@ -6,15 +6,13 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN git status && scripts/rhtap/fail-build-if-git-is-dirty.sh
-
-RUN mkdir -p image/bin
+RUN scripts/rhtap/fail-build-if-git-is-dirty.sh
 
 # Build the operator binary.
 # TODO(ROX-20240): enable non-release development builds.
-ENV CI=1 GOFLAGS="" GOTAGS="release"
+ENV CI=1 GOFLAGS="" GOTAGS="release" CGO_ENABLED=1
 
-RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./operator && \
+RUN GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh operator && \
     cp bin/linux_$(go env GOARCH)/operator image/bin/operator
 
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
@@ -46,6 +44,9 @@ RUN microdnf upgrade -y --nobest && \
 
 ENV ROX_IMAGE_FLAVOR="rhacs"
 
+# The following are numeric uid and gid of `nobody` user in UBI.
+# We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
+# Error: container has runAsNonRoot and image has non-numeric user (nobody), cannot verify user is non-root.
 USER 65534:65534
 
 ENTRYPOINT ["/usr/local/bin/rhacs-operator"]
