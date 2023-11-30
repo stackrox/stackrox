@@ -74,6 +74,8 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
+        - name: KUBE_CACHE_MUTATION_DETECTOR
+          value: "true"
         - name: GOMEMLIMIT
           valueFrom:
             resourceFieldRef:
