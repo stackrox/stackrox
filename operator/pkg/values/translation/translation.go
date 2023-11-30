@@ -167,8 +167,44 @@ func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
 	dbVB.SetStringMap("nodeSelector", db.NodeSelector)
 	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
 	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
-	// TODO(ROX-19051): translate persistence values
+	setScannerV4DBPersistence(&dbVB, db.Persistence)
+
 	sv.AddChild("db", &dbVB)
+}
+
+func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.Persistence) {
+	if persistence == nil {
+		return
+	}
+
+	hostPath := persistence.GetHostPath()
+	pvc := persistence.GetPersistentVolumeClaim()
+
+	if hostPath != "" && pvc != nil {
+		sv.SetError(errors.New("invalid persistence configuration, either hostPath or persistentVolumeClaim must be set, not both"))
+		return
+	}
+
+	persistenceVB := NewValuesBuilder()
+	if hostPath != "" {
+		persistenceVB.SetStringValue("hostPath", hostPath)
+	}
+
+	if pvc != nil {
+		// Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
+		// The operator creates this PVC through the helm chart. The difference is
+		// that the extension prevents central DB's PVC deletion on deletion of the CR.
+		// Since scanner V4's DB contains data which recovers by itself
+		// in case of a new CR creation, it is safe to remove the PVC.
+		pvcBuilder := NewValuesBuilder()
+		pvcBuilder.SetString("claimName", pvc.ClaimName)
+		pvcBuilder.SetBool("createClaim", pointer.Bool(true))
+		pvcBuilder.SetString("storageClass", pvc.StorageClassName)
+		pvcBuilder.SetString("size", pvc.Size)
+		persistenceVB.AddChild("persistentVolumeClaim", &pvcBuilder)
+	}
+
+	sv.AddChild("persistence", &persistenceVB)
 }
 
 // SetScannerV4ComponentValues sets values in "sv" based on "component"

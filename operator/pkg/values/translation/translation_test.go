@@ -306,11 +306,9 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			want: chartutil.Values{
 				"indexer": map[string]interface{}{
 					"autoscaling": map[string]interface{}{
-						"disable": false,
-						// using floats here because the underlying chartutil.ReadValues library
-						// used for parsing doesn't recognize the int types propperly
-						"minReplicas": 1.0,
-						"maxReplicas": 3.0,
+						"disable":     false,
+						"minReplicas": int32(1),
+						"maxReplicas": int32(3),
 					},
 				},
 			},
@@ -347,9 +345,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 			componentKey: "indexer",
 			want: chartutil.Values{
 				"indexer": map[string]interface{}{
-					// using floats here because the underlying chartutil.ReadValues library
-					// used for parsing doesn't recognize the int types propperly
-					"replicas": 2.0,
+					"replicas": int32(2),
 				},
 			},
 		},
@@ -400,9 +396,167 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				require.NotNil(t, err)
 				return
 			}
+			assert.NoError(t, err)
+
+			// This is done in order to prevent mismatch of number types
+			// in values in case the helm dependency does not parse correctly
+			// specifically int32's were parsed as float64's
+			wantAsValues, err := ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			assert.Equal(t, wantAsValues, values)
+		})
+	}
+}
+
+func TestSetScannerV4DBValues(t *testing.T) {
+
+	tests := map[string]struct {
+		db      *platform.ScannerV4DB
+		want    chartutil.Values
+		wantErr bool
+	}{
+		"empty for default component": {
+			db:   &platform.ScannerV4DB{},
+			want: chartutil.Values{},
+		},
+		"sets resources": {
+			db: &platform.ScannerV4DB{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: &corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("200M"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("150m"),
+							corev1.ResourceMemory: resource.MustParse("250M"),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"resources": map[string]interface{}{
+						"requests": map[string]interface{}{
+							"cpu":    "100m",
+							"memory": "200M",
+						},
+						"limits": map[string]interface{}{
+							"cpu":    "150m",
+							"memory": "250M",
+						},
+					},
+				},
+			},
+		},
+		"set tolerations": {
+			db: &platform.ScannerV4DB{
+				DeploymentSpec: platform.DeploymentSpec{
+					Tolerations: []*corev1.Toleration{
+						{Key: "masternode", Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoSchedule},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"tolerations": []interface{}{
+						map[string]interface{}{
+							"effect": "NoSchedule", "key": "masternode", "operator": "Exists",
+						},
+					},
+				},
+			},
+		},
+		"set nodeSelector": {
+			db: &platform.ScannerV4DB{
+				DeploymentSpec: platform.DeploymentSpec{
+					NodeSelector: map[string]string{
+						"masternode": "true",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"nodeSelector": map[string]interface{}{
+						"masternode": "true",
+					},
+				},
+			},
+		},
+		"set persistence.PersistentVolumeClaim": {
+			db: &platform.ScannerV4DB{
+				Persistence: &platform.Persistence{
+					PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+						ClaimName:        pointers.String("test"),
+						Size:             pointers.String("100GB"),
+						StorageClassName: pointers.String("testSC"),
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"claimName":    "test",
+							"createClaim":  true,
+							"size":         "100GB",
+							"storageClass": "testSC",
+						},
+					},
+				},
+			},
+		},
+		"set persistence.HostPath": {
+			db: &platform.ScannerV4DB{
+				Persistence: &platform.Persistence{
+					HostPath: &platform.HostPathSpec{
+						Path: pointers.String("/test/path"),
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"hostPath": "/test/path",
+					},
+				},
+			},
+		},
+		"err for invalid persistence": {
+			db: &platform.ScannerV4DB{
+				Persistence: &platform.Persistence{
+					PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+						ClaimName: pointers.String("test"),
+					},
+					HostPath: &platform.HostPathSpec{
+						Path: pointers.String("/test/path"),
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			vb := NewValuesBuilder()
+			SetScannerV4DBValues(&vb, tt.db)
+			values, err := vb.Build()
+			if tt.wantErr {
+				require.NotNil(t, err)
+				return
+			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want, values)
+
+			// This is done in order to prevent mismatch of number types
+			// in values in case the helm dependency does not parse correctly
+			// specifically int32's were parsed as float64's
+			wantAsValues, err := ToHelmValues(tt.want)
+			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+
+			assert.Equal(t, wantAsValues, values)
 		})
 	}
 }

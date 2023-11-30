@@ -378,6 +378,11 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 							DB: &platform.ScannerV4DB{
+								Persistence: &platform.Persistence{
+									PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+										ClaimName: pointer.String("scanner-v4-db-pvc"),
+									},
+								},
 								DeploymentSpec: platform.DeploymentSpec{
 									Resources: &corev1.ResourceRequirements{
 										Limits: corev1.ResourceList{
@@ -675,6 +680,12 @@ func TestTranslate(t *testing.T) {
 						},
 						"tolerations": []map[string]interface{}{
 							{"key": "scanner-v4-db-toleration", "operator": "Exists"},
+						},
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"claimName":   "scanner-v4-db-pvc",
+								"createClaim": true,
+							},
 						},
 					},
 				},
