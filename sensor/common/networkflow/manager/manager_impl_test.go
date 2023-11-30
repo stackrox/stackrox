@@ -684,6 +684,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
 	m.Notify(common.SensorComponentEventCentralReachable)
 	fakeTicker <- time.Now()
+	mockEntity.EXPECT().Tick().AnyTimes()
 	select {
 	case <-time.After(10 * time.Second):
 		s.Fail("timeout waiting for sensor message")
