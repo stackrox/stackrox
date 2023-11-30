@@ -48,6 +48,12 @@ var (
 	tickerTime       = time.Second * 30
 )
 
+func focusedDebugf(namespace, template string, args ...interface{}) {
+	if namespace == "aaa" || namespace == "stackrox" {
+		log.Debugf(template, args)
+	}
+}
+
 type hostConnections struct {
 	hostname           string
 	connections        map[connection]*connStatus
@@ -440,7 +446,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
-	log.Debugf("LookupByEndpoint for %v: %+v", conn.remote, lookupResults)
+
+	focusedDebugf(container.Namespace, "LookupByEndpoint for %v: %+v", conn.remote, lookupResults)
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
@@ -453,7 +460,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if extSrc != nil {
 			isFresh = false
 		}
-		log.Debugf("LookupByNetwork for %v (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork, isFresh, extSrc)
+		focusedDebugf(container.Namespace, "LookupByNetwork for %v (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork, isFresh, extSrc)
 
 		if isFresh {
 			return
