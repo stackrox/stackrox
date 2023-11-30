@@ -37,7 +37,6 @@ import (
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
@@ -238,12 +237,7 @@ func CreateTestClusterCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres
 
 // CreateTestNamespaceDatastore creates namespace datastore for testing
 func CreateTestNamespaceDatastore(t testing.TB, testDB *pgtest.TestPostgres) namespaceDataStore.DataStore {
-	ctx := context.Background()
-	namespacePostgres.Destroy(ctx, testDB.DB)
-
-	storage := namespacePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	indexer := namespacePostgres.NewIndexer(testDB.DB)
-	datastore := namespaceDataStore.New(storage, indexer, nil, ranking.NamespaceRanker())
+	datastore := namespaceDataStore.NewTestDataStore(t, testDB, nil, ranking.NamespaceRanker())
 	return datastore
 }
 

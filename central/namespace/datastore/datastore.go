@@ -3,17 +3,14 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/store"
-	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -51,18 +48,6 @@ func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploym
 	}
 }
 
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
-	dbstore := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	namespaceRanker := ranking.NamespaceRanker()
-	return New(dbstore, indexer, deploymentStore, namespaceRanker), nil
-}
-
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
 
@@ -93,7 +78,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		return nil, false, nil
 	}
 	b.updateNamespacePriority(namespace)
-	return namespace, true, err
+	return namespace.Clone(), true, err
 }
 
 // GetAllNamespaces retrieves namespaces matching the request
@@ -107,7 +92,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 				IsAllowed() {
 				return nil
 			}
-			allowedNamespaces = append(allowedNamespaces, namespace)
+			allowedNamespaces = append(allowedNamespaces, namespace.Clone())
 			return nil
 		})
 	}
@@ -119,7 +104,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
-	var namespaces []*storage.NamespaceMetadata
+	var fetchedNamespaces []*storage.NamespaceMetadata
 	var err error
 	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -127,10 +112,14 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
 		return b.SearchNamespaces(ctx, query)
 	}
-	namespaces, _, err = b.store.GetMany(ctx, ids)
-	b.updateNamespacePriority(namespaces...)
+	fetchedNamespaces, _, err = b.store.GetMany(ctx, ids)
+	b.updateNamespacePriority(fetchedNamespaces...)
 	if err != nil {
 		return nil, err
+	}
+	namespaces := make([]*storage.NamespaceMetadata, 0, len(fetchedNamespaces))
+	for _, ns := range fetchedNamespaces {
+		namespaces = append(namespaces, ns.Clone())
 	}
 	return namespaces, nil
 }
@@ -143,7 +132,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.Clone())
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -154,7 +143,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.Clone())
 }
 
 // RemoveNamespace removes a namespace.
