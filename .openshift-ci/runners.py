@@ -126,7 +126,8 @@ class ClusterTestSetsRunner:
         print(marker)
 
     def set_provisioned_state(self):
-        subprocess.check_call("tests/e2e/lib.sh set_provisioned_state", shell=True)
+        subprocess.check_call(
+            "tests/e2e/lib.sh set_provisioned_state", shell=True)
 
 
 # pylint: disable=too-many-arguments

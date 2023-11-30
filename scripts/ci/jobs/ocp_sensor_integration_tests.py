@@ -19,6 +19,7 @@ os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(run_poll_for_system_test_images=False),
-    # TODO(ROX-17875): Run the regular SensorIntegration() here after the tests are tuned to work on OCP
+    # TODO(ROX-17875): Run the regular SensorIntegration() here after the tests
+    # are tuned to work on OCP
     test=SensorIntegrationOCP(),
 ).run()
