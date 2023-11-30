@@ -146,7 +146,7 @@ function ScanConfigsTablePage({
 
     const renderLoadingContent = () => (
         <Tr>
-            <Td colSpan={8}>
+            <Td>
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
@@ -156,7 +156,7 @@ function ScanConfigsTablePage({
 
     const renderEmptyContent = () => (
         <Tr>
-            <Td colSpan={6}>
+            <Td>
                 <Bullseye>
                     <EmptyStateTemplate
                         title="No scan schedules"

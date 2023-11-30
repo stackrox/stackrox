@@ -81,7 +81,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderLoadingContent() {
         return (
             <Tr>
-                <Td colSpan={8}>
+                <Td>
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -93,7 +93,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderEmptyContent() {
         return (
             <Tr>
-                <Td colSpan={6}>
+                <Td>
                     <Bullseye>
                         <EmptyStateTemplate
                             title="No clusters found"
