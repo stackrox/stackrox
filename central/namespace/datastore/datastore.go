@@ -79,7 +79,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		return nil, false, nil
 	}
 	b.updateNamespacePriority(namespace)
-	return namespace, true, err
+	return namespace.Clone(), true, err
 }
 
 // GetAllNamespaces retrieves namespaces matching the request
@@ -132,7 +132,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.Nam
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
-	var namespaces []*storage.NamespaceMetadata
+	var fetchedNamespaces []*storage.NamespaceMetadata
 	var err error
 	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -140,10 +140,14 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
 		return b.SearchNamespaces(ctx, query)
 	}
-	namespaces, _, err = b.store.GetMany(ctx, ids)
-	b.updateNamespacePriority(namespaces...)
+	fetchedNamespaces, _, err = b.store.GetMany(ctx, ids)
+	b.updateNamespacePriority(fetchedNamespaces...)
 	if err != nil {
 		return nil, err
+	}
+	namespaces := make([]*storage.NamespaceMetadata, 0, len(fetchedNamespaces))
+	for _, ns := range fetchedNamespaces {
+		namespaces = append(namespaces, ns.Clone())
 	}
 	return namespaces, nil
 }
@@ -156,7 +160,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.Clone())
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -167,7 +171,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace)
+	return b.store.Upsert(ctx, namespace.Clone())
 }
 
 // RemoveNamespace removes a namespace.
