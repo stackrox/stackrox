@@ -45,7 +45,7 @@ type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
 };
 
-const CreateReportsButton = () => {
+const CreateScanConfigButton = () => {
     return (
         <Link to={`${complianceEnhancedScanConfigsBasePath}?action=create`}>
             <Button variant="primary">Create scan schedule</Button>
@@ -169,7 +169,7 @@ function ScanConfigsTablePage({
                                     <Text>Create one to get started</Text>
                                 </FlexItem>
                                 <FlexItem>
-                                    <CreateReportsButton />
+                                    <CreateScanConfigButton />
                                 </FlexItem>
                             </Flex>
                         )}
@@ -195,7 +195,7 @@ function ScanConfigsTablePage({
     return (
         <>
             <ScanConfigsHeader
-                actions={hasWriteAccessForCompliance ? <CreateReportsButton /> : <></>}
+                actions={hasWriteAccessForCompliance ? <CreateScanConfigButton /> : <></>}
                 description="Configure scan schedules bound to clusters and policies."
             />
             <Divider component="div" />

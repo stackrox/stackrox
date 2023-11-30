@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { FormikProps } from 'formik';
+import { FormikContextType, useFormikContext } from 'formik';
 import {
     Divider,
     Flex,
@@ -21,11 +21,8 @@ import { getTimeHoursMinutes } from 'utils/dateUtils';
 
 import { ScanConfigFormValues } from './useFormikScanConfig';
 
-export type ScanConfigOptionsProps = {
-    formik: FormikProps<ScanConfigFormValues>;
-};
-
-function ScanConfigOptions({ formik }: ScanConfigOptionsProps): ReactElement {
+function ScanConfigOptions(): ReactElement {
+    const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();
     function handleSelectChange(id: string, value: string): void {
         formik.setFieldValue('parameters.daysOfWeek', []);
         formik.setFieldValue('parameters.daysOfMonth', []);
