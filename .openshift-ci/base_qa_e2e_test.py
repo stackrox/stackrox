@@ -4,7 +4,12 @@
 Run QA e2e tests against a given cluster.
 """
 from pre_tests import PreSystemTests
-from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest, CustomSetTest
+from ci_tests import (
+    QaE2eTestPart1,
+    QaE2eTestPart2,
+    QaE2eDBBackupRestoreTest,
+    CustomSetTest,
+)
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner
 
@@ -45,6 +50,7 @@ def make_qa_e2e_test_runner(cluster):
             store_qa_tests_data=True,
         ),
     )
+
 
 def make_qa_e2e_test_runner_custom(cluster):
     return ClusterTestSetsRunner(

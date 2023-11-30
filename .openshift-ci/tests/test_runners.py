@@ -76,7 +76,8 @@ class TestClusterTestRunner(unittest.TestCase):
         post_test = Mock()
         test.run.side_effect = Exception("oops")
         with self.assertRaisesRegex(Exception, "oops"):
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
         test.run.assert_called_once()  # skips test
         post_test.run.assert_called_once()  # still post tests
         cluster.teardown.assert_called_once()  # still tearsdown
@@ -87,7 +88,8 @@ class TestClusterTestRunner(unittest.TestCase):
         post_test = Mock()
         post_test.run.side_effect = Exception("oops")
         with self.assertRaisesRegex(Exception, "oops"):
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
         cluster.teardown.assert_called_once()  # still tearsdown
 
     def test_run_and_post_test_failure(self):
@@ -97,7 +99,8 @@ class TestClusterTestRunner(unittest.TestCase):
         test.run.side_effect = Exception("run oops")
         post_test.run.side_effect = Exception("post test oops")
         with self.assertRaisesRegex(Exception, "run oops"):  # the run error is #1
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
         cluster.teardown.assert_called_once()  # still tearsdown
 
     def test_run_and_post_test_and_teardown_failure(self):
@@ -108,7 +111,8 @@ class TestClusterTestRunner(unittest.TestCase):
         post_test.run.side_effect = Exception("post test oops")
         cluster.teardown.side_effect = Exception("teardown oops")
         with self.assertRaisesRegex(Exception, "run oops"):  # the run error is #1
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
 
     def test_post_test_and_teardown_failure(self):
         cluster = Mock()
@@ -119,7 +123,8 @@ class TestClusterTestRunner(unittest.TestCase):
         with self.assertRaisesRegex(
             Exception, "post test oops"
         ):  # the post_test error is #1
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
 
     def test_provision_and_teardown_failure(self):
         cluster = Mock()
@@ -130,7 +135,8 @@ class TestClusterTestRunner(unittest.TestCase):
         with self.assertRaisesRegex(
             Exception, "provision oops"
         ):  # the provision error is #1
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(cluster=cluster, test=test,
+                              post_test=post_test).run()
 
     def test_pre_test_and_teardown_failure(self):
         cluster = Mock()
@@ -205,7 +211,8 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         test1.run.side_effect = Exception("test1 oops")
         test2 = Mock()
         with self.assertRaisesRegex(Exception, "test1 oops"):
-            ClusterTestSetsRunner(sets=[{"test": test1}, {"test": test2}]).run()
+            ClusterTestSetsRunner(
+                sets=[{"test": test1}, {"test": test2}]).run()
         test2.run.assert_called_once()
 
     def test_first_failure_is_reported(self):
@@ -214,7 +221,8 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         test2 = Mock()
         test2.run.side_effect = Exception("test2 oops")
         with self.assertRaisesRegex(Exception, "test1 oops"):
-            ClusterTestSetsRunner(sets=[{"test": test1}, {"test": test2}]).run()
+            ClusterTestSetsRunner(
+                sets=[{"test": test1}, {"test": test2}]).run()
 
     def test_can_always_run(self):
         test1 = Mock()
