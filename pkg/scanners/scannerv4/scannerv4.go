@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/scanner/pkg/client"
 )
 
@@ -63,14 +62,14 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		return nil, errors.New("ScannerV4 configuration required")
 	}
 
-	indexerEndpoint := urlfmt.FormatURL(defaultIndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	indexerEndpoint := defaultIndexerEndpoint
 	if conf.IndexerEndpoint != "" {
-		indexerEndpoint = urlfmt.FormatURL(conf.IndexerEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		indexerEndpoint = conf.IndexerEndpoint
 	}
 
-	matcherEndpoint := urlfmt.FormatURL(defaultMatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	matcherEndpoint := defaultMatcherEndpoint
 	if conf.IndexerEndpoint != "" {
-		matcherEndpoint = urlfmt.FormatURL(conf.MatcherEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		matcherEndpoint = conf.MatcherEndpoint
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
@@ -105,8 +104,9 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	log.Info("ScannerV4 - GetScan")
-	// If we haven't retrieved any metadata then we won't be able to scan with ScannerV4
-	// TODO: Confirm if this is still true?
+	// If we haven't retrieved any metadata, then we won't be able to scan with ScannerV4
+	// DELME: In scenarios where only a tag (no digest) is available, current ScannerV4 will break
+	// per comments
 	if image.GetMetadata() == nil {
 		return nil, nil
 	}
