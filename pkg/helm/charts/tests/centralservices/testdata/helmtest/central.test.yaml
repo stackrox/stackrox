@@ -75,7 +75,7 @@ tests:
     env:
       openshift: 4
   expect: |
-    .roles["use-central-scc"] | .rules[0].resourceNames[0] | assertThat(contains("nonroot-v2")) 
+    .roles["use-central-scc"] | .rules[0].resourceNames[0] | assertThat(contains("nonroot-v2"))
     .rolebindings["central-use-scc"] | assertThat(. != null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
