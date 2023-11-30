@@ -1,6 +1,21 @@
 [<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4:
   disable: true
+  matcher:
+    metricsPort: 9090
+    autoscaling:
+      minReplicas: 2
+      maxReplicas: 5
+    resources:
+      requests:
+        memory: "1500Mi"
+        cpu: "1000m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+    image:
+      name: [< required "" .ScannerV4ImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
   indexer:
     replicas: 3
     logLevel: INFO
