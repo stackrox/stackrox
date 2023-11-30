@@ -127,7 +127,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
 	case *central.SensorEvent_ComplianceOperatorResultV2:
 		if !features.ComplianceEnhancements.Enabled() {
-			log.Errorf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
 			return
 		}
 		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
@@ -137,6 +137,19 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorResult{})
 		if !s.reconciliationMap.IsClosed() {
 			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorResult{}, event.Id)
+		}
+	case *central.SensorEvent_ComplianceOperatorProfileV2:
+		if !features.ComplianceEnhancements.Enabled() {
+			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			return
+		}
+		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
+		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
+		// have been avoided by sending both messages from sensor during the transition, but
+		// that seemed like a lot of extra traffic.
+		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorProfile{})
+		if !s.reconciliationMap.IsClosed() {
+			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorProfile{}, event.Id)
 		}
 	default:
 		if event.GetResource() == nil {
