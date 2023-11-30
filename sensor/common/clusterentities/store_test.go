@@ -28,11 +28,12 @@ func buildEndpoint(ip string) net.NumericEndpoint {
 
 func entityUpdate(ip string, port uint16) *EntityData {
 	ed := &EntityData{}
-	ed.AddEndpoint(buildEndpoint(ip),
-		EndpointTargetInfo{
-			ContainerPort: port,
-			PortName:      "ehlo",
-		})
+	ep := buildEndpoint(ip)
+	ed.AddEndpoint(ep, EndpointTargetInfo{
+		ContainerPort: port,
+		PortName:      "ehlo",
+	})
+	ed.AddIP(ep.IPAndPort.Address)
 	return ed
 }
 
@@ -160,12 +161,14 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 			}
 
 			for tickNo, expectation := range tCase.endpointsAfterTick {
+				s.T().Logf("Historical IPs (tick %d): %v", tickNo, entityStore.historicalIPs)
+				s.T().Logf("All IPs (tick %d): %v", tickNo, entityStore.ipMap)
 				for endpoint, shallExist := range expectation {
 					result := entityStore.LookupByEndpoint(buildEndpoint(endpoint))
 					if shallExist {
-						s.True(len(result) > 0, "Should find endpoint %q in tick %d", endpoint, tickNo)
+						s.True(len(result) > 0, "Should find endpoint %q in tick %d. Result: %v", endpoint, tickNo, result)
 					} else {
-						s.True(len(result) == 0, "Should not find endpoint %q in tick %d", endpoint, tickNo)
+						s.True(len(result) == 0, "Should not find endpoint %q in tick %d.  Result: %v", endpoint, tickNo, result)
 					}
 				}
 				entityStore.Tick()

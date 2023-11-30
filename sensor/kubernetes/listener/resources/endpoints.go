@@ -203,11 +203,18 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
+func focusedDebugf(namespace, template string, args ...interface{}) {
+	if namespace == "aaa" || namespace == "stackrox" {
+		log.Debugf(template, args...)
+	}
+}
+
 func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector.Selector) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
+	focusedDebugf(namespace, "OnServiceUpdateOrRemove updates: %v", updates)
 
 	m.entityStore.Apply(updates, false)
 }
@@ -265,6 +272,7 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentW
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): m.endpointDataForDeployment(deployment),
 	}
+	focusedDebugf(deployment.GetNamespace(), "OnDeploymentCreateOrUpdate updates: %v", updates)
 	m.entityStore.Apply(updates, false)
 }
 
@@ -272,6 +280,7 @@ func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): nil,
 	}
+	focusedDebugf(deployment.GetNamespace(), "OnDeploymentRemove updates: %v", updates)
 	m.entityStore.Apply(updates, false)
 }
 

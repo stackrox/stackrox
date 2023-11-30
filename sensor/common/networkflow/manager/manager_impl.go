@@ -50,7 +50,7 @@ var (
 
 func focusedDebugf(namespace, template string, args ...interface{}) {
 	if namespace == "aaa" || namespace == "stackrox" {
-		log.Debugf(template, args)
+		log.Debugf(template, args...)
 	}
 }
 
