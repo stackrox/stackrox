@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/central/debug/db"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -43,6 +44,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(dumpCommand(cliEnvironment))
 	c.AddCommand(downloadDiagnosticsCommand(cliEnvironment))
 	c.AddCommand(authzTraceCommand(cliEnvironment))
+	c.AddCommand(db.Command(cliEnvironment))
 	return c
 }
 
