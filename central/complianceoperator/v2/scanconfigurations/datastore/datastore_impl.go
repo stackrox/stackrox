@@ -127,11 +127,11 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanID string,
 	}
 
 	// Need to build a deterministic ID from clusterID and scanID to ensure we always have the latest status
-	scanUUID, err := uuid.FromString(scanID)
+	clusterUUID, err := uuid.FromString(clusterID)
 	if err != nil {
-		return errors.Errorf("Unable to build scan configuration status id based off %q", scanID)
+		return errors.Wrapf(err, "Unable to build scan configuration status id based off %q", scanID)
 	}
-	statusKey := uuid.NewV5(scanUUID, clusterID).String()
+	statusKey := uuid.NewV5(clusterUUID, scanID).String()
 
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
 		Id:          statusKey,
