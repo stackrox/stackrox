@@ -69,13 +69,6 @@ func (cfg *CreateOptions) WithLocalSensor(flag bool) *CreateOptions {
 	return cfg
 }
 
-// WithResyncPeriod sets the resync period.
-// Default: 1 minute
-func (cfg *CreateOptions) WithResyncPeriod(duration time.Duration) *CreateOptions {
-	cfg.resyncPeriod = duration
-	return cfg
-}
-
 // WithEventPipelineQueueSize sets the size of the eventPipeline's queue.
 // Default: 1000
 func (cfg *CreateOptions) WithEventPipelineQueueSize(size int) *CreateOptions {

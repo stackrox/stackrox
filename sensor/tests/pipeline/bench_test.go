@@ -302,7 +302,6 @@ func setupSensor(fakeCentral *centralDebug.FakeService, fakeClient *k8s.ClientSe
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
 		WithLocalSensor(true).
-		WithResyncPeriod(resyncTime).
 		WithCentralConnectionFactory(fakeConnectionFactory))
 
 	if err != nil {
