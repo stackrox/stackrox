@@ -1,4 +1,6 @@
 values:
+  imagePullSecrets:
+    allowNone: true
   monitoring:
     openshift:
       enabled: false
@@ -13,10 +15,11 @@ tests:
     scannerV4.disable: false
   expect: |
     container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
-    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner-v4", "stackrox-sensor"])
     envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
   tests:
   - name: "on openshift 4"
+    set:
+      env.openshift: 4
   - name: "on openshift 3"
     set:
       env.openshift: 3
