@@ -78,7 +78,8 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=raw-checker-failed,
+disable=bad-continuation,
+        raw-checker-failed,
         bad-inline-option,
         locally-disabled,
         file-ignored,
@@ -277,7 +278,8 @@ indent-after-paren=4
 indent-string='    '
 
 # Maximum number of characters on a single line.
-max-line-length=100
+# Note: Must be kept in sync with --max-line-length for pycodestyle in Makefile
+max-line-length=120
 
 # Maximum number of lines in a module.
 max-module-lines=1000
@@ -322,13 +324,13 @@ ignore-comments=yes
 ignore-docstrings=yes
 
 # Imports are removed from the similarity computation
-ignore-imports=no
+ignore-imports=yes
 
 # Signatures are removed from the similarity computation
 ignore-signatures=no
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=8
 
 
 [SPELLING]

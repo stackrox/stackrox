@@ -24,3 +24,5 @@ indexer:
 matcher:
   enable: false
 log_level: info
+grpc_listen_addr: 0.0.0.0:8443
+http_listen_addr: 0.0.0.0:9443

@@ -91,7 +91,8 @@ class StoreArtifacts(RunWithBestEffortMixin):
             if self.artifact_destination_prefix:
                 args.append(
                     os.path.join(
-                        self.artifact_destination_prefix, os.path.basename(source)
+                        self.artifact_destination_prefix, os.path.basename(
+                            source)
                     )
                 )
             self.run_with_best_effort(
@@ -245,7 +246,8 @@ class PostClusterTest(StoreArtifacts):
 
     def check_stackrox_logs(self):
         self.run_with_best_effort(
-            ["tests/e2e/lib.sh", "check_stackrox_logs", PostTestsConstants.K8S_LOG_DIR],
+            ["tests/e2e/lib.sh", "check_stackrox_logs",
+                PostTestsConstants.K8S_LOG_DIR],
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
 
@@ -332,7 +334,8 @@ class FinalPost(StoreArtifacts):
                 PostTestsConstants.QA_GRADLE_RESULTS
             )
             # Spock test specification logs.
-            self.dirs_to_store_to_osci_artifacts.append(PostTestsConstants.QA_SPEC_LOGS)
+            self.dirs_to_store_to_osci_artifacts.append(
+                PostTestsConstants.QA_SPEC_LOGS)
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
     def run(self, test_outputs=None):

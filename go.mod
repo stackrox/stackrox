@@ -46,7 +46,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.7
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.16.1
+	github.com/google/go-containerregistry v0.17.0
 	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorilla/schema v1.2.1
 	github.com/graph-gophers/graphql-go v1.5.0

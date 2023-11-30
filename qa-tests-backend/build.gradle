@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.28.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.29.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
