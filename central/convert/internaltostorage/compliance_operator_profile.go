@@ -47,7 +47,7 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 	}
 }
 
-// ComplianceOperatorProfileV1 converts V2 storage profiles to V1 storage profiles
+// ComplianceOperatorProfileV1 converts V2 internal api profiles to V1 storage profiles
 func ComplianceOperatorProfileV1(internalMsg *central.ComplianceOperatorProfileV2, clusterID string) *storage.ComplianceOperatorProfile {
 	var rules []*storage.ComplianceOperatorProfile_Rule
 	for _, r := range internalMsg.GetRules() {

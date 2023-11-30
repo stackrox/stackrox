@@ -39,16 +39,6 @@ func New(complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store, po
 	return ds
 }
 
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store, pool postgres.DB) DataStore {
-	ds := &datastoreImpl{
-		store:            complianceProfileStorage,
-		profileEdgeStore: profileEdgeStore,
-		db:               pool,
-	}
-	return ds
-}
-
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
