@@ -178,7 +178,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
@@ -232,7 +232,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 
-	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, sif, crdSharedInformerFactory, osRouteFactory) {
+	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, osRouteFactory) {
 		return
 	}
 
@@ -257,7 +257,7 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
-	if !startAndWait(stopSignal, wg, sif, sif, osAppsFactory) {
+	if !startAndWait(stopSignal, wg, sif, osAppsFactory) {
 		return
 	}
 
