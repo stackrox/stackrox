@@ -1,15 +1,12 @@
 import { VulnerabilityExceptionScope } from 'services/VulnerabilityExceptionService';
 
-export function getImageScope(scope: VulnerabilityExceptionScope): string {
-    if (
-        scope.imageScope.registry === '.*' &&
-        scope.imageScope.remote === '.*' &&
-        scope.imageScope.tag === '.*'
-    ) {
+export function getImageScopeSearchValue({ imageScope }: VulnerabilityExceptionScope): string {
+    const { registry, remote, tag } = imageScope;
+    if (registry === '.*' && remote === '.*' && tag === '.*') {
         return '';
     }
-    if (scope.imageScope.tag === '.*') {
-        return `${scope.imageScope.registry}/${scope.imageScope.remote}`;
+    if (tag === '.*') {
+        return `${registry}/${remote}`;
     }
-    return `${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`;
+    return `${registry}/${remote}:${tag}`;
 }

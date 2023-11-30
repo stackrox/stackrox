@@ -35,7 +35,7 @@ import {
 } from 'Containers/Vulnerabilities/WorkloadCves/sortUtils';
 import { VulnerabilityExceptionScope } from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getImageScope } from 'Containers/Vulnerabilities/ExceptionManagement/utils';
+import { getImageScopeSearchValue } from 'Containers/Vulnerabilities/ExceptionManagement/utils';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 // @TODO: Move these files up to a common directory and move the types used in these files as well
@@ -60,7 +60,7 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
 
     const queryObject = {
         CVE: cves.join(','),
-        Image: getImageScope(scope),
+        Image: getImageScopeSearchValue(scope),
     };
 
     const query = getRequestQueryStringForSearchFilter(queryObject);
