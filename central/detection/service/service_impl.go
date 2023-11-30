@@ -357,7 +357,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	// Enhance the enhanced deployments, then range over them
-	//(deployments []*storage.Deployment, string clusterID) ([]*storage.Deployment, error)
+	// (deployments []*storage.Deployment, string clusterID) ([]*storage.Deployment, error)
 	enhancedDeployments, err := s.sDeploymentEnricher.Enrich(deployments, eCtx.ClusterID)
 	if err != nil {
 		return nil, err // FIXME: Handle errors better
