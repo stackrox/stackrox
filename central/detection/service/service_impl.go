@@ -78,19 +78,24 @@ func init() {
 type serviceImpl struct {
 	apiV1.UnimplementedDetectionServiceServer
 
-	policySet          detection.PolicySet
-	imageEnricher      enricher.ImageEnricher
-	imageDatastore     imageDatastore.DataStore
-	riskManager        manager.Manager
-	deploymentEnricher enrichment.Enricher
-	buildTimeDetector  buildtime.Detector
-	clusters           clusterDatastore.DataStore
+	policySet           detection.PolicySet
+	imageEnricher       enricher.ImageEnricher
+	imageDatastore      imageDatastore.DataStore
+	riskManager         manager.Manager
+	deploymentEnricher  enrichment.Enricher
+	buildTimeDetector   buildtime.Detector
+	clusters            clusterDatastore.DataStore
+	sDeploymentEnricher sensorDeploymentEnricher
 
 	notifications notifier.Processor
 
 	detector deploytime.Detector
 
 	clusterSACHelper sachelper.ClusterSacHelper
+}
+
+type sensorDeploymentEnricher interface {
+	Enrich(deployments []*storage.Deployment, clusterID string) ([]*storage.Deployment, error)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -226,16 +231,15 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
-	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
-	if err != nil {
-		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
-	}
+	return resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
+}
 
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
 	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
 	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
 	// between different generated deployments.
@@ -340,9 +344,28 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.ClusterID = clusterID
 	}
 
+	var deployments []*storage.Deployment // Whatever we write in central will send to Sensor
+
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
+		d, err := s.convertK8sResource(r)
+		if err != nil {
+			log.Warnf("could not convert to deployment from resource: %v", err)
+			continue
+		}
+		deployments = append(deployments, d)
+	}
+
+	// Enhance the enhanced deployments, then range over them
+	//(deployments []*storage.Deployment, string clusterID) ([]*storage.Deployment, error)
+	enhancedDeployments, err := s.sDeploymentEnricher.Enrich(deployments, eCtx.ClusterID)
+	if err != nil {
+		return nil, err // FIXME: Handle errors better
+	}
+
+	for _, d := range enhancedDeployments {
+		run, err := s.runDeployTimeDetect(ctx, eCtx, d, req.GetPolicyCategories())
+
 		if err != nil {
 			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
 		}
