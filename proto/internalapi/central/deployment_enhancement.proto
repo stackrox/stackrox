@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/deployment.proto";
+
+package central;
+
+message DeploymentEnhancementRequest{
+    string id = 1;
+    string namespace = 2;
+    storage.Deployment deployment = 3;
+}
+
+message DeploymentEnhancementResponse{
+    string id = 1;
+    string namespace = 2;
+    storage.Deployment deployment = 3;
+}
