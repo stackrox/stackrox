@@ -138,6 +138,23 @@ type EntityData struct {
 	containerIDs map[string]ContainerMetadata
 }
 
+func (ed *EntityData) String() string {
+	repr := "ips:["
+	for addr := range ed.ips {
+		repr += addr.String() + ", "
+	}
+	repr += "], endpoints: ["
+	for endpoint := range ed.endpoints {
+		repr += endpoint.String() + ", "
+	}
+	repr += "], containerIDs: ["
+	for cid := range ed.containerIDs {
+		repr += cid + ", "
+	}
+	repr += "]"
+	return repr
+}
+
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
 func (ed *EntityData) AddIP(ip net.IPAddress) {
 	if ed.ips == nil {

@@ -212,9 +212,10 @@ func focusedDebugf(namespace, template string, args ...interface{}) {
 func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector.Selector) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
-		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
+		data := m.endpointDataForDeployment(deployment)
+		updates[deployment.GetId()] = data
+		focusedDebugf(namespace, "OnServiceUpdateOrRemove updates[%s]: %s", deployment.GetId(), data.String())
 	}
-	focusedDebugf(namespace, "OnServiceUpdateOrRemove updates: %v", updates)
 
 	m.entityStore.Apply(updates, false)
 }
@@ -272,7 +273,7 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdate(deployment *deploymentW
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): m.endpointDataForDeployment(deployment),
 	}
-	focusedDebugf(deployment.GetNamespace(), "OnDeploymentCreateOrUpdate updates: %v", updates)
+	focusedDebugf(deployment.GetNamespace(), "OnDeploymentCreateOrUpdate updates[%s]: %s", deployment.GetId(), m.endpointDataForDeployment(deployment).String())
 	m.entityStore.Apply(updates, false)
 }
 
@@ -280,7 +281,7 @@ func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): nil,
 	}
-	focusedDebugf(deployment.GetNamespace(), "OnDeploymentRemove updates: %v", updates)
+	focusedDebugf(deployment.GetNamespace(), "OnDeploymentRemove updates[%s]: nil", deployment.GetId())
 	m.entityStore.Apply(updates, false)
 }
 
