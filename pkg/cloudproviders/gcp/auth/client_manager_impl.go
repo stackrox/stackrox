@@ -2,11 +2,14 @@ package auth
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"k8s.io/client-go/kubernetes"
 )
+
+const updateTimeout = 1 * time.Hour
 
 type stsClientManagerImpl struct {
 	credManager          CredentialsManager
@@ -20,7 +23,7 @@ func fallbackSTSClientManager() STSClientManager {
 		credManager:          &defaultCredentialsManager{},
 		storageClientHandler: storage.NewClientHandlerNoInit(),
 	}
-	mgr.updateClients()
+	go mgr.updateClients()
 	return mgr
 }
 
@@ -38,7 +41,7 @@ func NewSTSClientManager(namespace string, secretName string) STSClientManager {
 	}
 	mgr := &stsClientManagerImpl{storageClientHandler: storage.NewClientHandlerNoInit()}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.updateClients)
-	mgr.updateClients()
+	go mgr.updateClients()
 	return mgr
 }
 
@@ -51,7 +54,8 @@ func (c *stsClientManagerImpl) Stop() {
 }
 
 func (c *stsClientManagerImpl) updateClients() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), updateTimeout)
+	defer cancel()
 	creds, err := c.credManager.GetCredentials(ctx)
 	if err != nil {
 		log.Error("Failed to get GCP credentials: ", err)

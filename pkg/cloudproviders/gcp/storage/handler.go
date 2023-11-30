@@ -48,7 +48,18 @@ func NewClientHandler(ctx context.Context, creds *google.Credentials) (ClientHan
 func (s *clientHandlerImpl) UpdateClient(ctx context.Context, creds *google.Credentials) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	s.wg.Wait()
+	waitCh := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(waitCh)
+	}()
+
+	select {
+	case <-ctx.Done():
+		close(waitCh)
+		return ctx.Err()
+	case <-waitCh:
+	}
 
 	client, err := s.factory.NewClient(ctx, creds)
 	if err != nil {
