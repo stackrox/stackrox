@@ -76,11 +76,10 @@
 {{- end -}}
 
 {{/* Configure images, certificates and passwords as required. */}}
-{{/* Note that for secured-cluster-services we don't configure certificates here, instead they will be distributed at runtime by Sensor and Central. */}}
+{{/* Note that for secured-cluster-services we usually don't configure certificates here, instead they will be distributed at runtime by Sensor and Central. */}}
 {{ if get $components "indexer" }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
-  {{- if eq $.Chart.Name "stackrox-central-services" -}}
-    {{/* Only generate certificate when installing central-services. */}}
+  {{- if $._rox.scannerV4.indexer.serviceTLS -}}
     {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $cryptoSpec) }}
   {{- end -}}
@@ -88,8 +87,7 @@
 
 {{ if get $components "matcher" }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
-  {{- if eq $.Chart.Name "stackrox-central-services" -}}
-    {{/* Only generate certificate when installing central-services. */}}
+  {{- if $._rox.scannerV4.matcher.serviceTLS -}}
     {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
   {{- end -}}
@@ -98,8 +96,7 @@
 {{ if or (get $components "indexer") (get $components "matcher") }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
   {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
-  {{- if eq $.Chart.Name "stackrox-central-services" -}}
-    {{/* Only generate certificate when installing central-services. */}}
+  {{- if $._rox.scannerV4.db.serviceTLS -}}
     {{ $cryptoSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $cryptoSpec) }}
   {{- end -}}

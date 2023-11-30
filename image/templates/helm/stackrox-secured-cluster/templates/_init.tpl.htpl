@@ -56,7 +56,12 @@
 {{ $_ = set $._rox "_configFP" $configFP }}
 
 {{/* Global state (accessed from sub-templates) */}}
-{{ $state := dict "notes" list "warnings" list "referencedImages" dict "generated" dict }}
+{{ $state := dict }}
+{{ $_ = set $state "generated" dict }}
+{{ $_ = set $state "notes" list }}
+{{ $_ = set $state "warnings" list }}
+{{ $_ = set $state "referencedImages" dict }}
+{{ $_ = set $state "referencedStorageClasses" list }}
 {{ $_ = set $._rox "_state" $state }}
 
 {{/*

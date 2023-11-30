@@ -1,8 +1,10 @@
 
 cluster:
   name: foo
-  type: OPENSHIFT4_CLUSTER
 
+env:
+  platform: gke
+  openshift: 4
 ca:
   cert: "DUMMY CA CERTIFICATE"
   key: "ca key pem"
@@ -84,6 +86,12 @@ scannerV4:
       key: "scanner tls key pem"
     password:
       value: "db password"
+    persistence:
+      persistentVolumeClaim:
+        claimName: "scanner-v4-db"
+        size: "10Gi"
+        createClaim: true
+        storageClass: "stackrox-gke-ssd"
 
 system:
   enablePodSecurityPolicies: true

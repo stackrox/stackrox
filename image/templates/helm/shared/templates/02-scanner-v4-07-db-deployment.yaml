@@ -102,6 +102,7 @@ spec:
           value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "scram-sha-256"
+        {{- include "srox.envVars" (list . "deployment" "scanner-v4-db" "scanner-v4-db") | nindent 8 }}
         ports:
         - name: tcp-postgresql
           containerPort: 5432
