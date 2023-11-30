@@ -6,14 +6,16 @@ import "storage/deployment.proto";
 
 package central;
 
-message DeploymentEnhancementRequest{
+message DeploymentEnhancementMessage{
     string id = 1;
     string namespace = 2;
     storage.Deployment deployment = 3;
 }
 
+message DeploymentEnhancementRequest{
+    DeploymentEnhancementMessage deployment = 1;
+}
+
 message DeploymentEnhancementResponse{
-    string id = 1;
-    string namespace = 2;
-    storage.Deployment deployment = 3;
+    DeploymentEnhancementMessage deployment = 1;
 }
