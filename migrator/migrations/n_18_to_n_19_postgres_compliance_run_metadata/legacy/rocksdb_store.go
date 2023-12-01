@@ -61,10 +61,6 @@ func unmarshalMetadata(iterator *gorocksdb.Iterator) (*storage.ComplianceRunMeta
 	return &domain, nil
 }
 
-func (k *keyMaker) getMetadataIterationPrefix() []byte {
-	return k.partialMetadataPrefix
-}
-
 func (k *keyMaker) getKeysForMetadata(metadata *storage.ComplianceRunMetadata) ([]byte, error) {
 	runID := metadata.GetRunId()
 	if runID == "" {

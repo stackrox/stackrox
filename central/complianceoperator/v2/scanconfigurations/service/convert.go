@@ -64,24 +64,6 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}, nil
 }
 
-func convertStorageProtos(ctx context.Context, scanConfigs []*storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) ([]*v2.ComplianceScanConfiguration, error) {
-	if scanConfigs == nil {
-		return nil, nil
-	}
-
-	scanSettings := make([]*v2.ComplianceScanConfiguration, 0, len(scanConfigs))
-	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2(ctx, scanConfig, configDS)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration with name %s to response", scanConfig.GetScanName())
-		}
-
-		scanSettings = append(scanSettings, converted)
-	}
-
-	return scanSettings, nil
-}
-
 func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.ComplianceScanConfiguration) *storage.ComplianceOperatorScanConfigurationV2 {
 	if scanConfig == nil {
 		return nil

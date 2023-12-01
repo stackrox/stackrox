@@ -48,7 +48,6 @@ type testCaseType struct {
 	containsFlags     []string
 	errContains       string
 	checkUsage        bool
-	enablePodSecurity bool
 	expectedImage     string
 	expectedOutputDir string
 	expectedPVC       *renderer.ExternalPersistenceInstance

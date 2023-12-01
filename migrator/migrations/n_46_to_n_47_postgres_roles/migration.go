@@ -8,8 +8,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/postgres"
-	"gorm.io/gorm"
 )
 
 var (
@@ -26,10 +24,6 @@ var (
 		},
 	}
 )
-
-func move(_ *gorm.DB, _ postgres.DB) error {
-	return nil
-}
 
 func init() {
 	migrations.MustRegisterMigration(migration)

@@ -8,13 +8,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	migrationSchema "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health/integrationhealth/schema"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -22,7 +20,6 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
 	schema = migrationSchema.IntegrationHealthsSchema
 )
 
@@ -35,8 +32,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    postgres.DB
-	mutex sync.RWMutex
+	db postgres.DB
 }
 
 // New returns a new Store instance using the provided sql instance.

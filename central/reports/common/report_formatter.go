@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -35,7 +34,6 @@ var (
 		"Discovered At",
 		"Reference",
 	}
-	log = logging.LoggerForModule()
 )
 
 // ImageVulnerability contains image CVE data for vuln report

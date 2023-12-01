@@ -7,12 +7,7 @@ import (
 	edge "github.com/stackrox/rox/central/complianceoperator/v2/profiles/profileclusteredge/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator profiles.

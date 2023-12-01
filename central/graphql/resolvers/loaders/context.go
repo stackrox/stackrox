@@ -5,11 +5,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
-
-var log = logging.LoggerForModule()
 
 type dataLoaderContextKey struct{}
 

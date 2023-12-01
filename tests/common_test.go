@@ -256,14 +256,6 @@ func teardownDeployment(t *testing.T, deploymentName string) {
 	waitForTermination(t, deploymentName)
 }
 
-func scaleDeployment(t testutils.T, deploymentName, replicas string) {
-	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, deploymentName)
-}
-
 func teardownNginxLatestTagDeployment(t *testing.T) {
 	teardownDeployment(t, nginxDeploymentName)
 }

@@ -276,17 +276,6 @@ func (resolver *imageCVEResolver) getImageCVEQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
 
-func (resolver *imageCVEResolver) getImageCVERawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
-}
-
-// withImageCveTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
-// this is needed to support pre postgres requests
-func withImageCveTypeFiltering(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
-}
-
 /*
 Sub Resolver Functions
 */

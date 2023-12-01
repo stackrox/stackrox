@@ -25,8 +25,6 @@ import (
 // Furthermore, this store can only be instantiated in tests
 
 const (
-	baseTable = "policies"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

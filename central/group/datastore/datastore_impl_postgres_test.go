@@ -30,7 +30,6 @@ type groupsWithPostgresTestSuite struct {
 
 	ctx          context.Context
 	testPostgres *pgtest.TestPostgres
-	store        postgresGroupStore.Store
 
 	groupsDatastore   DataStore
 	mockCtrl          *gomock.Controller

@@ -125,7 +125,6 @@ type TestContext struct {
 	r                *resources.Resources
 	env              *envconf.Config
 	fakeCentral      *centralDebug.FakeService
-	centralReceived  chan *central.MsgFromSensor
 	stopFn           func()
 	sensorStopped    concurrency.ReadOnlyErrorSignal
 	centralStopped   atomic.Bool

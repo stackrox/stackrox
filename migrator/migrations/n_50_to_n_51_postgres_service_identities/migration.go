@@ -34,9 +34,7 @@ var (
 			return nil
 		},
 	}
-	batchSize = 10000
-	schema    = frozenSchema.ServiceIdentitiesSchema
-	log       = loghelper.LogWrapper{}
+	log = loghelper.LogWrapper{}
 )
 
 func move(ctx context.Context, gormDB *gorm.DB, postgresDB postgres.DB, legacyStore legacy.Store) error {

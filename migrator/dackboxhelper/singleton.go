@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -19,8 +18,7 @@ var (
 	// ReindexIfMissingBucket is a bucket for all of the child buckets that do not need reindexing.
 	ReindexIfMissingBucket = []byte("dackbox_reindex")
 
-	toIndex  queue.WaitableQueue
-	registry indexer.WrapperRegistry
+	toIndex queue.WaitableQueue
 
 	globalKeyLock concurrency.KeyFence
 
@@ -50,7 +48,6 @@ func GetMigrationKeyFence() concurrency.KeyFence {
 func initialize() {
 	initialized.Do(func() {
 		toIndex = queue.NewWaitableQueue()
-		registry = indexer.NewWrapperRegistry()
 		globalKeyLock = concurrency.NewKeyFence()
 
 		var err error

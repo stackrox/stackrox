@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -29,10 +28,6 @@ import (
 
 const (
 	maxArgSize = 16
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
