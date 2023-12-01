@@ -78,9 +78,11 @@ func doTestBackup(t *testing.T, includeCerts bool, certsOnly bool) {
 	if !certsOnly {
 		checkZipForPostgres(t, zipFile)
 		checkZipForPassword(t, zipFile, includeCerts)
+		checkZipForCerts(t, zipFile, includeCerts)
 		checkZipForVersion(t, zipFile)
+	} else {
+		checkZipForOnlyCerts(t, zipFile)
 	}
-	checkZipForCerts(t, zipFile, includeCerts || certsOnly)
 }
 
 func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
@@ -135,6 +137,19 @@ func checkZipForPassword(t *testing.T, zipFile *zip.ReadCloser, includeCerts boo
 		require.NotZero(t, info.Size())
 		require.Equal(t, f.FileInfo().Name(), backup.DatabasePassword)
 	}
+}
+
+func checkZipForOnlyCerts(t *testing.T, zipFile *zip.ReadCloser) {
+	checkZipForCerts(t, zipFile, true)
+
+	dbFiles := getFilesInDir(zipFile, backup.DatabaseBaseFolder)
+	require.Empty(t, dbFiles)
+
+	versionFileEntry := getFileWithName(zipFile, backup.MigrationVersion)
+	require.Nil(t, versionFileEntry)
+
+	postgresFileEntry := getFileWithName(zipFile, "postgres.dump")
+	require.Nil(t, postgresFileEntry)
 }
 
 func getFileWithName(zipFile *zip.ReadCloser, name string) *zip.File {
