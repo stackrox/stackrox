@@ -226,7 +226,7 @@ function CVEsTable({
                                         summary={summary}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
+                                <Td dataLabel="CVE" modifier="nowrap">
                                     <PendingExceptionLabelLayout
                                         hasPendingException={pendingExceptionCount > 0}
                                         cve={cve}
@@ -280,7 +280,7 @@ function CVEsTable({
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={colSpan}>
+                                <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
                                         {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
                                     </ExpandableRowContent>
