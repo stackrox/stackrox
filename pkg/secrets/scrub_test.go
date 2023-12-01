@@ -364,7 +364,7 @@ func TestValidateScrubTagTypes(t *testing.T) {
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.QuayConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ECRConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GoogleConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairConfig{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairV4Config{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
 
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))

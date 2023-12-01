@@ -59,34 +59,6 @@ class StackroxScannerIntegration implements ImageIntegration {
     }
 }
 
-class ClairScannerIntegration implements ImageIntegration {
-
-    static String name() { "Clair Scanner" }
-
-    static Boolean isTestable() {
-        return Env.get("CLAIR_ENDPOINT") != null
-    }
-
-    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
-        Map defaultArgs = [
-                name: "clair",
-                endpoint: Env.get("CLAIR_ENDPOINT", ""),
-        ]
-        Map args = defaultArgs + customArgs
-
-        ImageIntegrationOuterClass.ClairConfig.Builder config =
-                ImageIntegrationOuterClass.ClairConfig.newBuilder()
-                        .setEndpoint(args.endpoint as String)
-
-        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                .setName(args.name as String)
-                .setType("clair")
-                .clearCategories()
-                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
-                .setClair(config)
-    }
-}
-
 class ClairV4ScannerIntegration implements ImageIntegration {
 
     static String name() { "Clair v4 Scanner" }

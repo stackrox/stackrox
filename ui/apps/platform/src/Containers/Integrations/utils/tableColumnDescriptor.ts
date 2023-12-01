@@ -192,10 +192,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     getCategoriesTextForRegistryScanner(integration.categories),
             },
         ],
-        clair: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'clair.endpoint', Header: 'Endpoint' },
-        ],
         clairV4: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'clairV4.endpoint', Header: 'Endpoint' },

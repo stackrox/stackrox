@@ -28,7 +28,6 @@ export type ImageIntegrationType =
     | 'artifactory'
     | 'artifactregistry'
     | 'azure'
-    | 'clair'
     | 'clairV4'
     | 'clairify'
     | 'docker'
