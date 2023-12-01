@@ -80,7 +80,7 @@
 {{ if get $components "indexer" }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
   {{- if $._rox.scannerV4.indexer.serviceTLS -}}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -88,7 +88,7 @@
 {{ if get $components "matcher" }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
   {{- if $._rox.scannerV4.matcher.serviceTLS -}}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -97,7 +97,7 @@
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
   {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
   {{- if $._rox.scannerV4.db.serviceTLS -}}
-    {{ $cryptoSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
