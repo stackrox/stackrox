@@ -38,8 +38,8 @@ spec:
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
-  - name: prefetch-input
-    value: '{"type": "gomod", "path": "."}'
+  # - name: prefetch-input
+  #   value: '{"type": "gomod", "path": "."}'
 
   workspaces:
   - name: workspace
@@ -188,10 +188,10 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      - name: depth
-        value: "0"
-      - name: fetchTags
-        value: "true"
+      # - name: depth
+      #   value: "0"
+      # - name: fetchTags
+      #   value: "true"
       runAfter:
       - init
       taskRef:
