@@ -58,7 +58,7 @@ func (s *ComplianceOperatorClusterScanConfigStatusesStoreSuite) TestStore() {
 	complianceOperatorClusterScanConfigStatus := &storage.ComplianceOperatorClusterScanConfigStatus{}
 	s.NoError(testutils.FullInit(complianceOperatorClusterScanConfigStatus, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorClusterScanConfigStatus, exists, err := store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId())
+	foundComplianceOperatorClusterScanConfigStatus, exists, err := store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorClusterScanConfigStatus)
@@ -66,7 +66,7 @@ func (s *ComplianceOperatorClusterScanConfigStatusesStoreSuite) TestStore() {
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, complianceOperatorClusterScanConfigStatus))
-	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId())
+	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceOperatorClusterScanConfigStatus, foundComplianceOperatorClusterScanConfigStatus)
@@ -78,23 +78,23 @@ func (s *ComplianceOperatorClusterScanConfigStatusesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Zero(complianceOperatorClusterScanConfigStatusCount)
 
-	complianceOperatorClusterScanConfigStatusExists, err := store.Exists(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId())
+	complianceOperatorClusterScanConfigStatusExists, err := store.Exists(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)
 	s.True(complianceOperatorClusterScanConfigStatusExists)
 	s.NoError(store.Upsert(ctx, complianceOperatorClusterScanConfigStatus))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorClusterScanConfigStatus), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId())
+	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(complianceOperatorClusterScanConfigStatus, foundComplianceOperatorClusterScanConfigStatus)
 
-	s.NoError(store.Delete(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId()))
-	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetClusterId())
+	s.NoError(store.Delete(ctx, complianceOperatorClusterScanConfigStatus.GetId()))
+	foundComplianceOperatorClusterScanConfigStatus, exists, err = store.Get(ctx, complianceOperatorClusterScanConfigStatus.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorClusterScanConfigStatus)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorClusterScanConfigStatus.GetClusterId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorClusterScanConfigStatus.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorClusterScanConfigStatuss []*storage.ComplianceOperatorClusterScanConfigStatus
 	var complianceOperatorClusterScanConfigStatusIDs []string
@@ -102,13 +102,10 @@ func (s *ComplianceOperatorClusterScanConfigStatusesStoreSuite) TestStore() {
 		complianceOperatorClusterScanConfigStatus := &storage.ComplianceOperatorClusterScanConfigStatus{}
 		s.NoError(testutils.FullInit(complianceOperatorClusterScanConfigStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorClusterScanConfigStatuss = append(complianceOperatorClusterScanConfigStatuss, complianceOperatorClusterScanConfigStatus)
-		complianceOperatorClusterScanConfigStatusIDs = append(complianceOperatorClusterScanConfigStatusIDs, complianceOperatorClusterScanConfigStatus.GetClusterId())
+		complianceOperatorClusterScanConfigStatusIDs = append(complianceOperatorClusterScanConfigStatusIDs, complianceOperatorClusterScanConfigStatus.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorClusterScanConfigStatuss))
-	allComplianceOperatorClusterScanConfigStatus, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.ElementsMatch(complianceOperatorClusterScanConfigStatuss, allComplianceOperatorClusterScanConfigStatus)
 
 	complianceOperatorClusterScanConfigStatusCount, err = store.Count(ctx)
 	s.NoError(err)
