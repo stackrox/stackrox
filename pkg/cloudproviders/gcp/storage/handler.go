@@ -40,7 +40,8 @@ func NewClientHandlerNoInit() ClientHandler {
 
 // NewClientHandler creates a new storage client handler.
 func NewClientHandler(ctx context.Context, creds *google.Credentials) (ClientHandler, error) {
-	handler := &clientHandlerImpl{factory: &clientFactoryImpl{}}
+	wg := concurrency.NewWaitGroup(0)
+	handler := &clientHandlerImpl{factory: &clientFactoryImpl{}, wg: &wg}
 	if err := handler.UpdateClient(ctx, creds); err != nil {
 		return nil, errors.Wrap(err, "updating client")
 	}
