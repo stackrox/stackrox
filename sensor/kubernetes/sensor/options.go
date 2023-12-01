@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"io"
-	"time"
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -16,7 +15,6 @@ type CreateOptions struct {
 	workloadManager        *fake.WorkloadManager
 	centralConnFactory     centralclient.CentralConnectionFactory
 	localSensor            bool
-	resyncPeriod           time.Duration
 	k8sClient              client.Interface
 	traceWriter            io.Writer
 	eventPipelineQueueSize int
@@ -34,7 +32,6 @@ func ConfigWithDefaults() *CreateOptions {
 		centralConnFactory:     nil,
 		k8sClient:              nil,
 		localSensor:            false,
-		resyncPeriod:           1 * time.Minute,
 		traceWriter:            nil,
 		eventPipelineQueueSize: env.EventPipelineQueueSize.IntegerSetting(),
 	}

@@ -3,7 +3,6 @@ package eventpipeline
 import (
 	"io"
 	"sync/atomic"
-	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
@@ -19,10 +18,10 @@ import (
 )
 
 // New instantiates the eventPipeline component
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	depResolver := resolver.New(outputQueue, storeProvider, queueSize)
-	resourceListener := listener.New(client, configHandler, nodeName, resyncPeriod, traceWriter, depResolver, storeProvider)
+	resourceListener := listener.New(client, configHandler, nodeName, traceWriter, depResolver, storeProvider)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)

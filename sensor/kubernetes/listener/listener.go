@@ -3,7 +3,6 @@ package listener
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,13 +19,12 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, nodeName string, resyncPeriod time.Duration, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider) component.ContextListener {
+func New(client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider) component.ContextListener {
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
 		configHandler:      configHandler,
 		credentialsManager: createCredentialsManager(client, nodeName),
-		resyncPeriod:       resyncPeriod,
 		traceWriter:        traceWriter,
 		outputQueue:        queue,
 		storeProvider:      storeProvider,
