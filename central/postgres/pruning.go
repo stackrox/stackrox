@@ -32,7 +32,7 @@ const (
 		(SELECT 1 FROM clusters WHERE nodes.clusterid = clusters.Id)`
 
 	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
-	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
+	deleteOrphanedPLOPDeploymentsAndPI = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
 		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
 
@@ -44,7 +44,7 @@ const (
 	// This leads to a possible race condition where a listening endpoint reaches the database before the deployment,
 	// and the pruning job happens to run before the deployment information arrives in the database.
 	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
-	deleteOrphanedPLOPDeploymentsWithPodUID = `DELETE FROM listening_endpoints WHERE poduid IS NOT NULL AND NOT EXISTS
+	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id)`
 
 	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
@@ -180,7 +180,7 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing deployments
-	query := fmt.Sprintf(deleteOrphanedPLOPDeployments, int(orphanWindow.Minutes()))
+	query := fmt.Sprintf(deleteOrphanedPLOPDeploymentsAndPI, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
 	}
@@ -232,7 +232,7 @@ func PruneOrphanedPLOPs(ctx context.Context, pool postgres.DB, orphanWindow time
 	}
 
 	// Delete processes listening on ports orphaned due to missing deployments
-	if _, err := pool.Exec(ctx, deleteOrphanedPLOPDeploymentsWithPodUID); err != nil {
+	if _, err := pool.Exec(ctx, deleteOrphanedPLOPDeployments); err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
 	}
 
