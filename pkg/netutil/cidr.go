@@ -3,12 +3,7 @@ package netutil
 import (
 	"net"
 
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // MustParseCIDR parses the given CIDR string and returns the corresponding IPNet. If the string is invalid, this

@@ -74,7 +74,6 @@ var (
 
 type datastoreImpl struct {
 	store             store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 

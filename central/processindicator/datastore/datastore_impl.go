@@ -120,10 +120,6 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 	return ds.removeIndicators(ctx, ids)
 }
 
-func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results []pkgSearch.Result) error {
-	return ds.removeIndicators(ctx, pkgSearch.ResultsToIDs(results))
-}
-
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil

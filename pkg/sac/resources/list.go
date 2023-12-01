@@ -99,17 +99,6 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 	return md
 }
 
-func newDeprecatedResourceMetadata(name permissions.Resource, scope permissions.ResourceScope,
-	replacingResourceMD permissions.ResourceMetadata) permissions.ResourceMetadata {
-	md := permissions.ResourceMetadata{
-		Resource:          name,
-		Scope:             scope,
-		ReplacingResource: &replacingResourceMD,
-	}
-	resourceToMetadata[name] = md
-	return md
-}
-
 /*
 Commented for now, uncomment in case you need to register a resource guarded behind a feature flag.
 func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope,

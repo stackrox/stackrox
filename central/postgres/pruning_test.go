@@ -474,7 +474,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
 		expectedPlopDeletions []string
 	}{
 		{
-			name: "no deployments nor pods - remove plops with PodUid since there are no pods",
+			name: "no deployments nor pods - remove plops since there are no pods",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				fixtures.GetPlopStorage1(),
 				fixtures.GetPlopStorage2(),
@@ -485,7 +485,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
 			},
 			deployments:           set.NewFrozenStringSet(),
 			pods:                  set.NewFrozenStringSet(),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID4, fixtureconsts.PlopUID5, fixtureconsts.PlopUID6},
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3, fixtureconsts.PlopUID4, fixtureconsts.PlopUID5, fixtureconsts.PlopUID6},
 		},
 		{
 			name: "deployments one missing pod - remove plops with PodUid with no matching pod even though there are deployments",
@@ -502,7 +502,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
 			expectedPlopDeletions: []string{fixtureconsts.PlopUID6},
 		},
 		{
-			name: "one missing deployments no missing pods - remove plops with PodUid with no matching deployments even though there are matching pods",
+			name: "one missing deployments no missing pods - remove plops with no matching deployments even though there are matching pods",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				fixtures.GetPlopStorage1(),
 				fixtures.GetPlopStorage2(),
@@ -513,7 +513,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
 			},
 			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment5, fixtureconsts.Deployment3),
 			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedPlopDeletions: []string{fixtureconsts.PlopUID4},
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID4},
 		},
 		{
 			name: "no missing deployments or pods but plops are expired - remove all expired plops",

@@ -21,14 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/random"
 	"google.golang.org/grpc"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	x509Err = x509.UnknownAuthorityError{}.Error()
 )
 

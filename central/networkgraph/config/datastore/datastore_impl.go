@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,7 +20,6 @@ const (
 
 var (
 	administrationSAC = sac.ForResource(resources.Administration)
-	log               = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {

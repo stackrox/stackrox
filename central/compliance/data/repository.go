@@ -45,7 +45,6 @@ type repository struct {
 	notifiers                    []*storage.Notifier
 	roles                        []*storage.K8SRole
 	bindings                     []*storage.K8SRoleBinding
-	cisDockerRunCheck            bool
 	cisKubernetesRunCheck        bool
 	categoryToPolicies           map[string]set.StringSet // maps categories to policy set
 

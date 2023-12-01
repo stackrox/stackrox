@@ -304,14 +304,6 @@ func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) e
 	return jsonEnc.Encode(jsonObj)
 }
 
-func zipPGStatStatements(zipWriter *zip.Writer, name string) error {
-	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
-	if err != nil {
-		return err
-	}
-
-	return prometheusutil.ExportText(metricsWriter)
-}
 func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
 	if err != nil {

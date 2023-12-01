@@ -233,23 +233,6 @@ func NodeCVEToNodeVulnerability(protoCVE *storage.NodeCVE) *storage.NodeVulnerab
 	return embeddedCVE
 }
 
-func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedVulnerability_VulnerabilityType {
-	switch protoCVEType {
-	case storage.CVE_IMAGE_CVE:
-		return storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
-	case storage.CVE_K8S_CVE:
-		return storage.EmbeddedVulnerability_K8S_VULNERABILITY
-	case storage.CVE_ISTIO_CVE:
-		return storage.EmbeddedVulnerability_ISTIO_VULNERABILITY
-	case storage.CVE_NODE_CVE:
-		return storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	case storage.CVE_OPENSHIFT_CVE:
-		return storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY
-	default:
-		return storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
-	}
-}
-
 // EmbeddedCVEToProtoCVE converts *storage.EmbeddedVulnerability object to *storage.CVE object
 func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *storage.CVE {
 	ret := &storage.CVE{

@@ -116,19 +116,6 @@ func (p *EndpointPool) clearEndpointsToBeClosed() {
 	p.EndpointsToBeClosed = []*sensor.NetworkEndpoint{}
 }
 
-func (p *EndpointPool) getRandomEndpoint(containerID string) *sensor.NetworkEndpoint {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	size := len(p.Endpoints[containerID])
-	if size > 0 {
-		randIdx := rand.Intn(size)
-		return p.Endpoints[containerID][randIdx]
-	}
-
-	return nil
-}
-
 func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }

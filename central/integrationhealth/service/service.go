@@ -6,12 +6,7 @@ import (
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Service provides the interface to the microservice that serves integration health data.

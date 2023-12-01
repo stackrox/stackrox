@@ -22,8 +22,7 @@ const (
 )
 
 var (
-	authorizer             = user.WithRole(accesscontrol.Admin)
-	capacityMarginFraction = migrations.CapacityMarginFraction + 0.05
+	authorizer = user.WithRole(accesscontrol.Admin)
 )
 
 type serviceImpl struct {

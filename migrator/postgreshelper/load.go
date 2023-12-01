@@ -14,9 +14,6 @@ var (
 	postgresDB postgres.DB
 	gormDB     *gorm.DB
 
-	err error
-
-	once      sync.Once
 	closeOnce sync.Once
 )
 

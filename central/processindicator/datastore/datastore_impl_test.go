@@ -471,7 +471,6 @@ type ProcessIndicatorReindexSuite struct {
 	suite.Suite
 
 	storage  *storeMocks.MockStore
-	indexer  *indexMocks.MockIndexer
 	searcher *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller

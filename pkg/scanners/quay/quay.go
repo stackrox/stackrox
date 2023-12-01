@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
 	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -26,10 +25,6 @@ const (
 	requestTimeout = 60 * time.Second
 
 	typeString = "quay"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.

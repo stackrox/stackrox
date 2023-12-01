@@ -158,7 +158,7 @@ function ImageVulnerabilitiesTable({
                                         summary={summary}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
+                                <Td dataLabel="CVE" modifier="nowrap">
                                     <PendingExceptionLabelLayout
                                         hasPendingException={pendingExceptionCount > 0}
                                         cve={cve}

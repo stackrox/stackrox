@@ -5,14 +5,12 @@ import (
 
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/client-go/kubernetes"
 )
 
 type stsClientManagerImpl struct {
 	credManager          CredentialsManager
 	storageClientHandler storage.ClientHandler
-	mutex                sync.Mutex
 }
 
 var _ STSClientManager = &stsClientManagerImpl{}

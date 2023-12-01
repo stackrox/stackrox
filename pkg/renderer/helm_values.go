@@ -13,9 +13,6 @@ import (
 //go:embed templates/public_values.yaml.tpl
 var publicValuesTemplateStr string
 
-//go:embed templates/private_values.yaml.tpl
-var privateValuesYamlTemplateStr string
-
 //go:embed templates/private_values_postgres.yaml.tpl
 var privateValuesYamlPostgresTemplateStr string
 

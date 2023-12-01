@@ -144,15 +144,6 @@ func (tc *TestCase) mapFillReport(vr *v4.VulnerabilityReport) *TestWant {
 	}
 }
 
-func getDefault[K comparable, V any](m map[K]V, k K, defaultFunc func() V) V {
-	v, ok := m[k]
-	if !ok {
-		v = defaultFunc()
-		m[k] = v
-	}
-	return v
-}
-
 // mapFillFeatures creates a features slice by converting values found in the
 // vulnerability report or using empty entries when not found.
 func (tc *TestCase) mapFillFeatures(vr *v4.VulnerabilityReport) []Feature {
