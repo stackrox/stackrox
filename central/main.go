@@ -370,7 +370,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
-		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -428,6 +427,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+	}
+
+	// The scheduled backup service is not applicable when using an external database
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
