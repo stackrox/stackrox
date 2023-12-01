@@ -67,20 +67,3 @@ func ComplianceOperatorProfileV1(internalMsg *central.ComplianceOperatorProfileV
 		Rules:       rules,
 	}
 }
-
-func convertSeverity(severity central.ComplianceOperatorRuleSeverity) storage.RuleSeverity {
-	switch severity {
-	case central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY:
-		return storage.RuleSeverity_HIGH_RULE_SEVERITY
-	case central.ComplianceOperatorRuleSeverity_MEDIUM_RULE_SEVERITY:
-		return storage.RuleSeverity_MEDIUM_RULE_SEVERITY
-	case central.ComplianceOperatorRuleSeverity_LOW_RULE_SEVERITY:
-		return storage.RuleSeverity_LOW_RULE_SEVERITY
-	case central.ComplianceOperatorRuleSeverity_INFO_RULE_SEVERITY:
-		return storage.RuleSeverity_INFO_RULE_SEVERITY
-	case central.ComplianceOperatorRuleSeverity_UNKNOWN_RULE_SEVERITY:
-		return storage.RuleSeverity_UNKNOWN_RULE_SEVERITY
-	default:
-		return storage.RuleSeverity_UNSET_RULE_SEVERITY
-	}
-}
