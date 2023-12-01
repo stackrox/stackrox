@@ -307,7 +307,14 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" != "true" ]]; then
         helm_args+=(--set scanner.disable=true)
+      else
+        helm_args+=(--set scannerV4.disable=false)
+        echo "Deploying Central with Scanner v4..."
+        exit 110
       fi
+
+      echo "Deploying Central with Helm..."
+      exit 111
 
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
@@ -406,6 +413,8 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
+          exit 121
+
           if [[ -n "${REGISTRY_USERNAME}" ]]; then
             $unzip_dir/scanner/scripts/setup.sh
           fi
