@@ -6,12 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type extractor struct {

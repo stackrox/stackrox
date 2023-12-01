@@ -26,7 +26,6 @@ require (
 	github.com/coreos/go-oidc/v3 v3.8.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.0
-	github.com/dexidp/dex v0.0.0-20230320125501-2bb4896d120e
 	github.com/docker/distribution v2.8.3+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -123,7 +122,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.16.0
-	golang.stackrox.io/grpc-http1 v0.3.3
+	golang.stackrox.io/grpc-http1 v0.3.4
 	google.golang.org/api v0.152.0
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17
 	google.golang.org/grpc v1.59.0
@@ -238,7 +237,7 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/glog v1.1.2 // indirect
+	github.com/golang/glog v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect

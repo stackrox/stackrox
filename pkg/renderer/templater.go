@@ -90,12 +90,6 @@ type PersistenceType string
 // StringToPersistentTypes is a map from the persistenttype string value to its object
 var StringToPersistentTypes = make(map[string]PersistenceType)
 
-func newPersistentType(t string) PersistenceType {
-	pt := PersistenceType(t)
-	StringToPersistentTypes[t] = pt
-	return pt
-}
-
 // String returns the string form of the enum
 func (m PersistenceType) String() string {
 	return string(m)

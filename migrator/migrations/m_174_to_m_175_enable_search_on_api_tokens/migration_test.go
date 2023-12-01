@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 const (
@@ -103,7 +102,6 @@ type apiTokenMigrationTestSuite struct {
 	suite.Suite
 
 	db            *pghelper.TestPostgres
-	gorm          *gorm.DB
 	oldTokenStore oldAPITokenStore.Store
 	newTokenStore newAPITokenStore.Store
 }

@@ -454,16 +454,6 @@ func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) str
 	)
 }
 
-func getProcessUniqueKey(process *storage.ProcessIndicator) string {
-	return getProcessUniqueKeyFromParts(
-		process.GetContainerName(),
-		process.GetPodId(),
-		process.GetSignal().GetName(),
-		process.GetSignal().GetArgs(),
-		process.GetSignal().GetExecFilePath(),
-	)
-}
-
 func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID string) string {
 	return fmt.Sprintf("%d_%d_%s",
 		protocol,

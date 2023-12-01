@@ -12,7 +12,6 @@ type ChannelMultiplexer[T any] struct {
 	inputChannels  []<-chan T
 	outputCommands chan T
 
-	wg      sync.WaitGroup
 	started concurrency.Signal
 }
 

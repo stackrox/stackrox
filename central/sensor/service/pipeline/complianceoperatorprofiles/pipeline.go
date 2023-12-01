@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,8 +23,6 @@ import (
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
-
-	log = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline

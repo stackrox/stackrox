@@ -1314,7 +1314,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 		expectedDeletions []string
 	}{
 		{
-			name: "Plop is active so it should not be removed",
+			name: "Plop is active but does not have a matching deployment so it should be removed",
 			initialPlops: []*storage.ProcessListeningOnPortStorage{
 				{
 					Id:                 plopID1,
@@ -1332,7 +1332,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					},
 				},
 			},
-			expectedDeletions: []string{},
+			expectedDeletions: []string{plopID1},
 		},
 		{
 			name: "Plop is closed but not expired so it is not removed",
@@ -1351,8 +1351,10 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			expectedDeletions: []string{},
 		},
 		{

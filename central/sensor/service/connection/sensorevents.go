@@ -78,10 +78,6 @@ func stripTypePrefix(s string) string {
 	return s
 }
 
-func (s *sensorEventHandler) disableReconciliation() {
-	s.reconciliationMap.Close()
-}
-
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	event := msg.GetEvent()
 	if event == nil {

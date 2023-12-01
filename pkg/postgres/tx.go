@@ -6,7 +6,12 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type txMode int

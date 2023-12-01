@@ -6,7 +6,8 @@ import (
 	"context"
 	"testing"
 
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	clusterPG "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	configSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
@@ -35,16 +36,16 @@ type complianceScanConfigDataStoreTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
-	noAccessCtx context.Context
+	hasReadCtx           context.Context
+	hasWriteCtx          context.Context
+	noAccessCtx          context.Context
+	hasWriteNoClusterCtx context.Context
 
-	dataStore        DataStore
-	db               *pgtest.TestPostgres
-	storage          configStore.Store
-	statusStorage    scanStatusStore.Store
-	clusterDatastore *clusterMocks.MockDataStore
-	search           configSearch.Searcher
+	dataStore     DataStore
+	db            *pgtest.TestPostgres
+	storage       configStore.Store
+	statusStorage scanStatusStore.Store
+	search        configSearch.Searcher
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
@@ -59,26 +60,40 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ComplianceOperator)))
+			sac.ResourceScopeKeys(resources.ComplianceOperator, resources.Cluster)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ComplianceOperator, resources.Cluster)))
+	s.hasWriteNoClusterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ComplianceOperator)))
 	s.noAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
 	s.mockCtrl = gomock.NewController(s.T())
-	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
-
 	s.db = pgtest.ForT(s.T())
-	var err error
+
+	clusterDatastore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.db)
+	s.Require().NoError(err)
+
+	clusterStore := clusterPG.New(s.db)
+	s.Require().NoError(clusterStore.Upsert(sac.WithAllAccess(context.Background()), &storage.Cluster{
+		Id:   fixtureconsts.Cluster1,
+		Name: mockClusterName,
+	}))
+	s.Require().NoError(clusterStore.Upsert(sac.WithAllAccess(context.Background()), &storage.Cluster{
+		Id:   fixtureconsts.Cluster2,
+		Name: "mock-cluster-2",
+	}))
+
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
-	s.Require().NoError(err)
 	indexer := configStore.NewIndexer(s.db)
 	configStorage := configStore.New(s.db)
 	s.search = configSearch.New(configStorage, indexer)
 
-	s.dataStore = New(s.storage, s.statusStorage, s.clusterDatastore, s.search)
+	s.dataStore = New(s.storage, s.statusStorage, clusterDatastore, s.search)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
@@ -88,7 +103,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	// Add a record so we have something to find
@@ -115,7 +130,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	// Add a record so we have something to find
@@ -136,7 +151,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	// Add a record so we have something to find
@@ -151,7 +166,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount(
 func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	// Add a record so we have something to find
@@ -170,7 +185,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	err := s.dataStore.UpsertScanConfiguration(s.hasWriteCtx, scanConfig)
@@ -186,7 +201,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	configID := uuid.NewV4().String()
 
-	scanConfig := getTestRec()
+	scanConfig := getTestRec(mockScanName)
 	scanConfig.Id = configID
 
 	err := s.dataStore.UpsertScanConfiguration(s.hasWriteCtx, scanConfig)
@@ -213,25 +228,26 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
-	configID := uuid.NewV4().String()
+	configID1 := uuid.NewV4().String()
+	scanConfig1 := getTestRec(mockScanName)
+	scanConfig1.Id = configID1
 
-	scanConfig := getTestRec()
-	scanConfig.Id = configID
-
-	s.clusterDatastore.EXPECT().GetCluster(gomock.Any(), fixtureconsts.Cluster1).Return(&storage.Cluster{
-		Id:   fixtureconsts.Cluster1,
-		Name: mockClusterName,
-	}, true, nil).Times(2)
+	configID2 := uuid.NewV4().String()
+	scanConfig2 := getTestRec("mockScan2")
+	scanConfig2.Id = configID2
 
 	// Add a record so we have something to find
-	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig1))
+	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig2))
 
 	// Add Scan config status
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, fixtureconsts.Cluster1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, fixtureconsts.Cluster1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, fixtureconsts.Cluster2, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID2, fixtureconsts.Cluster1, "testing status"))
 
-	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID)
+	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID1)
 	s.Require().NoError(err)
-	s.Require().Equal(1, len(clusterStatuses))
+	s.Require().Equal(2, len(clusterStatuses))
 
 	// Try to add one with no existing scan config
 	s.Require().NotNil(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, uuid.NewDummy().String(), fixtureconsts.Cluster1, "testing status"))
@@ -239,11 +255,13 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 	s.Require().NoError(err)
 	s.Require().Equal(0, len(clusterStatuses))
 
+	// No access to read clusters so should return an error
+	s.Require().Error(s.dataStore.UpdateClusterStatus(s.hasWriteNoClusterCtx, configID1, fixtureconsts.Cluster1, "testing status"))
 }
 
-func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
+func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
-		ScanName:               mockScanName,
+		ScanName:               scanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,

@@ -31,12 +31,10 @@ type pipelineTestCase struct {
 }
 
 type processScanConfigTestCase struct {
-	desc              string
-	setMocks          func()
-	processRequestGen func() *storage.ComplianceOperatorScanConfigurationV2
-	clusters          []string
-	isErrorTest       bool
-	expectedErr       error
+	desc        string
+	setMocks    func()
+	isErrorTest bool
+	expectedErr error
 }
 
 func TestComplianceManager(t *testing.T) {

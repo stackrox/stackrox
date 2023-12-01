@@ -18,17 +18,6 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integration *storage.ImageIntegration, exists bool, err error) {
-	integration = new(storage.ImageIntegration)
-	val := bucket.Get([]byte(id))
-	if val == nil {
-		return
-	}
-	exists = true
-	err = proto.Unmarshal(val, integration)
-	return
-}
-
 // GetAll retrieves integrations from bolt
 func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ImageIntegration, error) {
 	var integrations []*storage.ImageIntegration

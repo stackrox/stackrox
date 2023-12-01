@@ -22,10 +22,9 @@ func TestVersionStore(t *testing.T) {
 type VersionStoreTestSuite struct {
 	suite.Suite
 
-	pgStore pgStore.Store
-	pool    postgres.DB
-	ctx     context.Context
-	store   Store
+	pool  postgres.DB
+	ctx   context.Context
+	store Store
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {

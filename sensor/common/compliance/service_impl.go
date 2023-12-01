@@ -31,7 +31,6 @@ type serviceImpl struct {
 
 	orchestrator orchestrator.Orchestrator
 
-	multiplexer       *Multiplexer
 	connectionManager *connectionManager
 }
 

@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -423,12 +424,19 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		}
 	}
 
-	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
+	initialMessages := []*central.MsgToSensor{
 		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
-		message.NetworkBaselineSync([]*storage.NetworkBaseline{}))
+		message.NetworkBaselineSync([]*storage.NetworkBaseline{}),
+	}
+
+	if features.SensorReconciliationOnReconnect.Enabled() {
+		initialMessages = append(initialMessages, message.DeduperState(nil, 1, 1))
+	}
+
+	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(initialMessages...)
 
 	if localConfig.Verbose {
 		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {

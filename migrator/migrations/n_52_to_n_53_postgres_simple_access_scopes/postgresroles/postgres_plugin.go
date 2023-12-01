@@ -19,8 +19,6 @@ import (
 )
 
 const (
-	baseTable = "roles"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

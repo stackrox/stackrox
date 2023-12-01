@@ -38,6 +38,7 @@ import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
 import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
+import RequestDenialButtonModal from './components/RequestDenialButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -95,7 +96,12 @@ function ExceptionRequestDetailsPage() {
 
     function onApprovalSuccess() {
         refetch();
-        setSuccessMessage(`The vulnerability request was successfully approved`);
+        setSuccessMessage(`The vulnerability request was successfully approved.`);
+    }
+
+    function onDenialSuccess() {
+        refetch();
+        setSuccessMessage(`The vulnerability request was successfully denied.`);
     }
 
     if (loading && !vulnerabilityException) {
@@ -129,7 +135,7 @@ function ExceptionRequestDetailsPage() {
     const { status, cves, scope } = vulnerabilityException;
 
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
-    const showApprovalButton =
+    const showApproveDenyButtons =
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
 
@@ -161,7 +167,13 @@ function ExceptionRequestDetailsPage() {
                         <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
                         <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
                     </Flex>
-                    {showApprovalButton && (
+                    {showApproveDenyButtons && (
+                        <RequestDenialButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onDenialSuccess}
+                        />
+                    )}
+                    {showApproveDenyButtons && (
                         <RequestApprovalButtonModal
                             exception={vulnerabilityException}
                             onSuccess={onApprovalSuccess}

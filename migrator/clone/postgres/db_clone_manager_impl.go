@@ -26,7 +26,6 @@ type dbCloneManagerImpl struct {
 	forceRollbackVersion string
 	adminConfig          *postgres.Config
 	sourceMap            map[string]string
-	gc                   migGorm.Config
 	supportPrevious      bool
 }
 
