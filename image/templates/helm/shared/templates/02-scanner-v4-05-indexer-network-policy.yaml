@@ -24,6 +24,13 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app: scanner-v4-matcher
+    ports:
+    - port: 8443
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
           app: sensor
     ports:
     - port: 8443
