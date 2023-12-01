@@ -368,13 +368,11 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 					for _, standard := range standardImpls {
 						standardIDs = append(standardIDs, standard.ID)
 					}
-					log.Info("scrapBasedPromise")
 					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, perClusterDataRepoOnce, domain, scrapeTimeout, standardIDs)
 				}
 				dataPromise = scrapeBasedPromise
 			} else {
 				if scrapeLessPromise == nil {
-					log.Info("newFixedDataPromise")
 					scrapeLessPromise = newFixedDataPromise(elevatedCtx, perClusterDataRepoOnce, domain)
 				}
 				dataPromise = scrapeLessPromise
