@@ -125,13 +125,9 @@ message GoogleConfig {
 }
 
 message ScannerV4Config {
-    // The presense of a ScannerV4 integration is not enough to accurately
-    // determine if ScannerV4 should be used.
-    // TODO: fix comments here
-    bool   disabled             = 1;
-    int32  num_concurrent_scans = 2;
-    string indexer_endpoint     = 3;
-    string matcher_endpoint     = 4;
+    int32  num_concurrent_scans = 1;
+    string indexer_endpoint     = 2;
+    string matcher_endpoint     = 3;
 }
 
 enum ImageIntegrationCategory {

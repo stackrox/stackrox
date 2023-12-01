@@ -573,10 +573,6 @@
     "storageScannerV4Config": {
       "type": "object",
       "properties": {
-        "disabled": {
-          "type": "boolean",
-          "title": "The presense of a ScannerV4 integration is not enough to accurately\ndetermine if ScannerV4 should be used.\nTODO: fix comments here"
-        },
         "numConcurrentScans": {
           "type": "integer",
           "format": "int32"
