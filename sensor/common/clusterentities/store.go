@@ -121,6 +121,7 @@ func (e *Store) updateMetrics() {
 func (e *Store) Cleanup() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
+	defer e.updateMetrics()
 	e.initMaps()
 }
 
