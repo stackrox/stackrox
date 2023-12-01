@@ -64,7 +64,7 @@ tests:
     .clusterroles["stackrox-central-psp"] | assertThat(. == null)
 
 
-# FIXME: Add test case for OS4 with stock SCCs and set hostPath, to check for hostmount-anyuid
+# TODO(ROX-21206): Add test case for OS4 with stock SCCs and set hostPath, to check for hostmount-anyuid
 - name: "central with OpenShift 4 and stock SCCs"
   server:
     visibleSchemas:
