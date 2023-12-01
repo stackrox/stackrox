@@ -19,9 +19,7 @@ import (
 )
 
 const (
-	// TypeString is the name of the ScannerV4 scanner.
-	// TODO: does this need to stay exported?
-	TypeString = "scannerv4"
+	typeString = "scannerv4"
 )
 
 var (
@@ -38,7 +36,7 @@ var (
 )
 
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return TypeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -53,10 +51,6 @@ type scannerv4 struct {
 }
 
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
-	log.Info("ScannerV4 - newScanner: %+v", integration)
-	// TODO: Can the new scanner client / connection be created lazily? in the event that scannerv4 is not ready
-	// 'right now', don't want to fail the creation of the integration so that it isn't skipped going forward.
-
 	conf := integration.GetScannerV4()
 	if conf == nil {
 		return nil, errors.New("ScannerV4 configuration required")
@@ -87,8 +81,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	)
 
 	if err != nil {
-		// TODO: Should we error here? if scanner not yet ready to receive traffic, we'd still want the integration created
-		// does this error out if cannot establish connectivity? check
 		return nil, err
 	}
 
@@ -103,10 +95,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
-	log.Info("ScannerV4 - GetScan")
-	// If we haven't retrieved any metadata, then we won't be able to scan with ScannerV4
-	// DELME: In scenarios where only a tag (no digest) is available, current ScannerV4 will break
-	// per comments
 	if image.GetMetadata() == nil {
 		return nil, nil
 	}
@@ -144,11 +132,18 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", ref.Name(), err)
 	}
 
-	// TODO: convert vr to *storage.ImageScan (take a look at clairv4)
-	_ = vr
+	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+		image.GetName().GetFullName(),
+		vr.GetHashId(),
+		len(vr.GetContents().GetDistributions()),
+		len(vr.GetContents().GetEnvironments()),
+		len(vr.GetContents().GetPackages()),
+		len(vr.GetContents().GetRepositories()),
+		len(vr.GetPackageVulnerabilities()),
+		len(vr.GetVulnerabilities()),
+	)
 
-	// TODO: Implement
-	return nil, errors.New("ScannerV4 NOT Implemented")
+	return imageScan(vr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -158,27 +153,19 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 }
 
 func (s *scannerv4) Match(image *storage.ImageName) bool {
-	r := s.activeRegistries.Match(image)
-	// TODO: remove this log entry and return s.activeRegistries.Match(image) once done building
-	log.Infof("ScannerV4 - Match for %q == %t", image.GetFullName(), r)
-	return r
+	return s.activeRegistries.Match(image)
 }
 
 func (s *scannerv4) Name() string {
-	log.Info("ScannerV4 - Name")
-
 	return s.name
 }
 
 func (s *scannerv4) Test() error {
-	log.Info("ScannerV4 - Test")
-	// TODO: Implement
-	// TODO: gRPC API to test ScannerV4 indexer/matcher health does not yet exist.
-	log.Warnf("ScannerV4 - Returning FAKE 'success' to Test")
+	// TODO(ROX-20624): Dependant on the matcher/indexer test endpoints being avail
+	log.Warn("ScannerV4 - Returning FAKE 'success' to Test")
 	return nil
 }
 
 func (s *scannerv4) Type() string {
-	log.Info("ScannerV4 - Type")
-	return TypeString
+	return typeString
 }
