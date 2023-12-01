@@ -192,12 +192,20 @@ spec:
         workspace: workspace
       - name: basic-auth
         workspace: git-auth
+    - name: download-external-content
+      runAfter:
+      - clone-repository
+      workspaces:
+      - name: source
+        workspace: workspace
+      taskSpec:
+        steps:
     - name: prefetch-dependencies
       params:
       - name: input
         value: $(params.prefetch-input)
       runAfter:
-      - clone-repository
+      - download-external-content
       taskRef:
         params:
         - name: name
