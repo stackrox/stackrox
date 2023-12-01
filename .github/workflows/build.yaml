@@ -353,14 +353,14 @@ jobs:
 
       - name: Build main images
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 5 true make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-main-image
 
       - name: Check debugger presence in the main image
         run: make check-debugger
 
       - name: Build roxctl image
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 5 true make docker-build-roxctl-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
@@ -540,7 +540,7 @@ jobs:
 
       - name: Build Operator image
         run: |
-          scripts/lib.sh retry 5 true make -C operator/ build docker-build
+          scripts/lib.sh retry 3 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
