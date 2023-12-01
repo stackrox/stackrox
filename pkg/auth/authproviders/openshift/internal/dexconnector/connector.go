@@ -1,4 +1,4 @@
-package connector
+package dexconnector
 
 // The code here is based on the Dex IdP library, specifically this file:
 // https://github.com/dexidp/dex/blob/v2.37.0/connector/connector.go

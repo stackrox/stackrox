@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/connector"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -67,8 +66,8 @@ type openshiftConnector struct {
 	oauth2Config *oauth2.Config
 }
 
-var _ connector.CallbackConnector = (*openshiftConnector)(nil)
-var _ connector.RefreshConnector = (*openshiftConnector)(nil)
+var _ CallbackConnector = (*openshiftConnector)(nil)
+var _ RefreshConnector = (*openshiftConnector)(nil)
 
 type user struct {
 	k8sapi.TypeMeta   `json:",inline"`
@@ -205,7 +204,7 @@ func validateEndpoint(endpoint string, tlsConfig *tls.Config) error {
 }
 
 // LoginURL returns the URL to redirect the user to login with.
-func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, state string) (string, error) {
+func (c *openshiftConnector) LoginURL(_ Scopes, callbackURL string, state string) (string, error) {
 	return c.oauth2Config.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
 }
 
@@ -226,7 +225,7 @@ func MakeRedirectURI(ri *requestinfo.RequestInfo, path string) *url.URL {
 }
 
 // HandleCallback parses the request and returns the user's identity.
-func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request) (identity connector.Identity, err error) {
+func (c *openshiftConnector) HandleCallback(s Scopes, r *http.Request) (identity Identity, err error) {
 	q := r.URL.Query()
 	if errType := q.Get("error"); errType != "" {
 		return identity, &oauth2Error{errType, q.Get("error_description")}
@@ -261,11 +260,11 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 // fetch fresh user info and build Identity from it. We expect the oauth token
 // to only contain the access token, hence once it expires, no user info can
 // be fetched and this function returns an error.
-func (c *openshiftConnector) Refresh(ctx context.Context, s connector.Scopes, oldID connector.Identity) (connector.Identity, error) {
+func (c *openshiftConnector) Refresh(ctx context.Context, s Scopes, oldID Identity) (Identity, error) {
 	var token oauth2.Token
 	err := json.Unmarshal(oldID.ConnectorData, &token)
 	if err != nil {
-		return connector.Identity{}, errors.Wrap(err, "parsing token")
+		return Identity{}, errors.Wrap(err, "parsing token")
 	}
 	if c.httpClient != nil {
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
@@ -273,14 +272,14 @@ func (c *openshiftConnector) Refresh(ctx context.Context, s connector.Scopes, ol
 	return c.identity(ctx, s, &token)
 }
 
-func (c *openshiftConnector) identity(ctx context.Context, s connector.Scopes, token *oauth2.Token) (identity connector.Identity, err error) {
+func (c *openshiftConnector) identity(ctx context.Context, s Scopes, token *oauth2.Token) (identity Identity, err error) {
 	client := c.oauth2Config.Client(ctx, token)
 	user, err := c.user(ctx, client)
 	if err != nil {
 		return identity, errors.Wrap(err, "openshift: get user")
 	}
 
-	identity = connector.Identity{
+	identity = Identity{
 		UserID:            user.UID,
 		Username:          user.Name,
 		PreferredUsername: user.Name,
