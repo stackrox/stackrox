@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -112,6 +113,10 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 	ed.containerIDs[containerID] = container
 }
 
+func (e *Store) updateMetrics() {
+	metrics.UpdateNumberContainersInEntityStored(len(e.containerIDMap))
+}
+
 // Cleanup deletes all entries from store
 func (e *Store) Cleanup() {
 	e.mutex.Lock()
@@ -124,6 +129,7 @@ func (e *Store) Cleanup() {
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
+	defer e.updateMetrics()
 	e.applyNoLock(updates, incremental)
 }
 
