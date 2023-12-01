@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/cache/objectarraycache"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -25,8 +24,6 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
-
-	clusterCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
 )
 
 const (
@@ -38,7 +35,7 @@ const (
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	clusters, err := fetchClusters(adminCtx)
+	clusters, err := clusterStore.Singleton().GetClusters(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
@@ -368,12 +365,4 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 	namespaceNode, ok := clusterNode.Namespaces[namespaceName]
 
 	return ok && namespaceNode.State == effectiveaccessscope.Included
-}
-
-func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
-	return clusterCache.GetObjects(ctx)
-}
-
-func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
-	return clusterStore.Singleton().GetClusters(ctx)
 }
