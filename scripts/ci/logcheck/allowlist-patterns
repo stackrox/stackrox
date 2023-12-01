@@ -30,3 +30,5 @@ Error: error enriching image
 # Network flakiness can lead to this error occurring in Sensor k8s libraries. All tests pass and it is not
 # an indication of a Sensor issue
 request.go:1116] Unexpected error when reading response body: context deadline exceeded
+# Collector downloading a probe while Sensor is Offline (http.StatusServiceUnavailable -- ROX-19018)
+Unexpected HTTP request failure (HTTP 503)
