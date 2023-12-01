@@ -13,7 +13,7 @@ WORKDIR /
 COPY download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} as stackrox_data
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} as stackrox_data
 
 RUN mkdir /stackrox-data
 RUN dnf upgrade --nobest -y  && dnf install -y openssl zip
@@ -22,7 +22,7 @@ WORKDIR /
 COPY fetch-stackrox-data.sh .
 RUN /fetch-stackrox-data.sh
 
-FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} as builder
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} as builder
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY static-bin /stackrox/
