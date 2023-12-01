@@ -4,27 +4,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/registry"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	localIPNet = registry.NetIPNet(*netutil.MustParseCIDR("127.0.0.0/16"))
-
-	nonLocalIPNet = registry.NetIPNet(*netutil.MustParseCIDR("0.0.0.0/24"))
+const (
+	localIPNet = "127.0.0.0/16"
 )
 
 func TestDockerInfoBasedChecks(t *testing.T) {
 	cases := []struct {
 		name   string
-		info   types.Info
 		cri    *compliance.ContainerRuntimeInfo
 		status storage.ComplianceState
 	}{
@@ -35,25 +28,15 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		},
 		{
 			name: standards.NIST800190CheckName("4_2_1"),
-			info: types.Info{
-				RegistryConfig: &registry.ServiceConfig{
-					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet},
-				},
-			},
 			cri: &compliance.ContainerRuntimeInfo{
 				InsecureRegistries: &compliance.InsecureRegistriesConfig{
-					InsecureCidrs: []string{localIPNet.String()},
+					InsecureCidrs: []string{localIPNet},
 				},
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		},
 		{
-			name: standards.NIST800190CheckName("4_2_1"),
-			info: types.Info{
-				RegistryConfig: &registry.ServiceConfig{
-					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet, &nonLocalIPNet},
-				},
-			},
+			name:   standards.NIST800190CheckName("4_2_1"),
 			status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		},
 	}
@@ -69,9 +52,6 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			require.NotNil(t, check)
 
 			mockNodeData := &standards.ComplianceData{
-				DockerData: &internalTypes.Data{
-					Info: c.info,
-				},
 				ContainerRuntimeInfo: c.cri,
 			}
 

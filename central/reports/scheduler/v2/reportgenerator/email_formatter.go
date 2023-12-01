@@ -2,15 +2,16 @@ package reportgenerator
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -103,8 +104,8 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	// Severities
 	// create a copy because severities will be sorted in descending order (critical, important, moderate, low)
 	severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
-	slices.SortFunc(severities, func(s1, s2 storage.VulnerabilitySeverity) bool {
-		return s1 > s2
+	sort.Slice(severities, func(i, j int) bool {
+		return severities[i] > severities[j]
 	})
 	formatSingleDetail(&writer, "CVE severity", severities...)
 
@@ -118,7 +119,8 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	// Image types
 	// create a copy because image types will be sorted in ascending order (deployed, watched)
 	imageTypes := append([]storage.VulnerabilityReportFilters_ImageType{}, reportFilters.GetImageTypes()...)
-	slices.Sort(imageTypes)
+	sliceutils.NaturalSort(imageTypes)
+
 	formatSingleDetail(&writer, "Image type", imageTypes...)
 
 	// CVEs discovered since
