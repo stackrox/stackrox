@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -31,8 +30,7 @@ var (
 	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
 	defaultMaxConcurrentScans = int64(30)
 
-	// TODO: make configurable
-	scanTimeout = 2 * time.Minute
+	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
@@ -115,10 +113,10 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		Password: rc.Password,
 	}
 
-	// TODO: Create util method so that central/sensor do not duplicate
-	// Beg: copy from sensor's grpc_client
+	// TODO: Consider creating util method so that central/sensor do not duplicate this logic
+	// Beg: copy from sensor's grpc_client.
 	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
-	ref, err := name.NewDigest(n, opts...)
+	digest, err := name.NewDigest(n, opts...)
 	if err != nil {
 		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
 		return nil, fmt.Errorf("creating digest reference: %w", err)
@@ -127,9 +125,9 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, ref, &auth)
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth)
 	if err != nil {
-		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", ref.Name(), err)
+		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}
 
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -147,7 +145,6 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	log.Info("ScannerV4 - GetVulnDefinitionsInfo")
 	// TODO(ROX-21040): Implementation dependant on the API existing.
 	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
 }
@@ -161,7 +158,7 @@ func (s *scannerv4) Name() string {
 }
 
 func (s *scannerv4) Test() error {
-	// TODO(ROX-20624): Dependant on the matcher/indexer test endpoints being avail
+	// TODO(ROX-20624): Dependant on the matcher/indexer test endpoints being avail.
 	log.Warn("ScannerV4 - Returning FAKE 'success' to Test")
 	return nil
 }
