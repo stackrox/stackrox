@@ -238,7 +238,18 @@ func (e *Store) removeHistoricalExpiredDeploymentEndpoints(deploymentID string, 
 	}
 }
 
-func (e *Store) markHistorical(deploymentID string, ep net.NumericEndpoint) {
+// unmarkEndpointHistorical marks previously marked historical endpoint as no longer historical
+func (e *Store) unmarkEndpointHistorical(deploymentID string, ep net.NumericEndpoint) {
+	if _, ok := e.historicalEndpoints[deploymentID]; !ok {
+		return
+	}
+	delete(e.historicalEndpoints[deploymentID], ep)
+	if len(e.historicalEndpoints[deploymentID]) == 0 {
+		delete(e.historicalEndpoints, deploymentID)
+	}
+}
+
+func (e *Store) markEndpointHistorical(deploymentID string, ep net.NumericEndpoint) {
 	if _, ok := e.historicalEndpoints[deploymentID]; !ok {
 		e.historicalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
 	}
@@ -272,6 +283,17 @@ func (e *Store) removeHistoricalExpiredIPs(deploymentID string, ip net.IPAddress
 	}
 }
 
+// unmarkHistoricalIP marks previously marked historical IP as no longer historical
+func (e *Store) unmarkHistoricalIP(deploymentID string, ip net.IPAddress) {
+	if _, ok := e.historicalIPs[ip]; !ok {
+		return
+	}
+	delete(e.historicalIPs[ip], deploymentID)
+	if len(e.historicalIPs[ip]) == 0 {
+		delete(e.historicalIPs, ip)
+	}
+}
+
 func (e *Store) markHistoricalIP(deploymentID string, ip net.IPAddress) {
 	if _, ok := e.historicalIPs[ip]; !ok {
 		e.historicalIPs[ip] = make(map[string]*entityStatus)
@@ -302,7 +324,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 	for ep := range e.reverseEndpointMap[deploymentID] {
 		set := e.endpointMap[ep]
 
-		e.markHistorical(deploymentID, ep)
+		e.markEndpointHistorical(deploymentID, ep)
 		// Deletion of historical expired entries happens after a tick.
 		// If memory is disabled, we should not wait for a tick and delete immediately
 		if e.entitiesMemorySize == 0 {
@@ -368,6 +390,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		for _, tgtInfo := range targetInfos {
 			targetSet[tgtInfo] = struct{}{}
 		}
+		e.unmarkEndpointHistorical(deploymentID, ep)
 	}
 
 	for ip := range data.ips {
@@ -386,6 +409,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 			}
 		}
 		ipMap[deploymentID] = struct{}{}
+		e.unmarkHistoricalIP(deploymentID, ip)
 	}
 
 	mdsForCallback := make([]ContainerMetadata, 0, len(data.containerIDs))

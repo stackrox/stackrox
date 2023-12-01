@@ -46,23 +46,25 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 	}
 	cases := map[string]struct {
 		numTicksToRemember uint16
-		entityUpdates      []eUpdate
+		entityUpdates      map[int][]eUpdate // tick -> updates
 		endpointsAfterTick []map[string]bool
 	}{
 		"Memory disabled should forget 10.0.0.1 immediately": {
 			numTicksToRemember: 0,
-			entityUpdates: []eUpdate{
-				{
-					containerID: "pod1",
-					ipAddr:      "10.0.0.1",
-					port:        80,
-					incremental: true, // append
-				},
-				{
-					containerID: "pod1",
-					ipAddr:      "10.3.0.1",
-					port:        80,
-					incremental: false, // replace
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						containerID: "pod1",
+						ipAddr:      "10.0.0.1",
+						port:        80,
+						incremental: true, // append
+					},
+					{
+						containerID: "pod1",
+						ipAddr:      "10.3.0.1",
+						port:        80,
+						incremental: false, // replace
+					},
 				},
 			},
 			endpointsAfterTick: []map[string]bool{
@@ -73,18 +75,20 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 		},
 		"Old IPs should be gone on the first tick": {
 			numTicksToRemember: 1,
-			entityUpdates: []eUpdate{
-				{
-					containerID: "pod1",
-					ipAddr:      "10.0.0.1",
-					port:        80,
-					incremental: true,
-				},
-				{
-					containerID: "pod1",
-					ipAddr:      "10.3.0.1",
-					port:        80,
-					incremental: false,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						containerID: "pod1",
+						ipAddr:      "10.0.0.1",
+						port:        80,
+						incremental: true,
+					},
+					{
+						containerID: "pod1",
+						ipAddr:      "10.3.0.1",
+						port:        80,
+						incremental: false,
+					},
 				},
 			},
 			endpointsAfterTick: []map[string]bool{
@@ -93,20 +97,50 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 				{"10.0.0.1": false, "10.3.0.1": true}, // after-tick 2: only 10.3.0.1 should exist
 			},
 		},
+		"Updates of the same IP should not expire": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						containerID: "pod1",
+						ipAddr:      "10.0.0.1",
+						port:        80,
+						incremental: false,
+					},
+				},
+				2: {
+					{
+						containerID: "pod1",
+						ipAddr:      "10.0.0.1",
+						port:        80,
+						incremental: false,
+					},
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": true}, // tick 0: update0
+				{"10.0.0.1": true}, // tick 1: mark update0 as historical
+				{"10.0.0.1": true}, // tick 2: historical update0 exists; add again in update2
+				{"10.0.0.1": true}, // tick 3: historical update0 would be deleted, but update2 shall exist
+				{"10.0.0.1": true}, // tick 4: update2 must exist
+				{"10.0.0.1": true}, // tick 5: update2 must exist
+			},
+		},
 		"Old IPs should be gone on the 2nd tick": {
 			numTicksToRemember: 2,
-			entityUpdates: []eUpdate{
-				{
+			entityUpdates: map[int][]eUpdate{
+				0: {{
 					containerID: "pod1",
 					ipAddr:      "10.0.0.1",
 					port:        80,
 					incremental: true,
 				},
-				{
-					containerID: "pod1",
-					ipAddr:      "10.3.0.1",
-					port:        80,
-					incremental: false,
+					{
+						containerID: "pod1",
+						ipAddr:      "10.3.0.1",
+						port:        80,
+						incremental: false,
+					},
 				},
 			},
 			endpointsAfterTick: []map[string]bool{
@@ -117,30 +151,32 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 		},
 		"Old IPs should be gone for selected pods only": {
 			numTicksToRemember: 2,
-			entityUpdates: []eUpdate{
-				{
-					containerID: "pod1",
-					ipAddr:      "10.0.0.1",
-					port:        80,
-					incremental: true,
-				},
-				{
-					containerID: "pod1",
-					ipAddr:      "10.3.0.1",
-					port:        80,
-					incremental: false,
-				},
-				{
-					containerID: "pod2",
-					ipAddr:      "20.0.0.1",
-					port:        80,
-					incremental: true,
-				},
-				{
-					containerID: "pod2",
-					ipAddr:      "20.3.0.1",
-					port:        80,
-					incremental: true,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						containerID: "pod1",
+						ipAddr:      "10.0.0.1",
+						port:        80,
+						incremental: true,
+					},
+					{
+						containerID: "pod1",
+						ipAddr:      "10.3.0.1",
+						port:        80,
+						incremental: false,
+					},
+					{
+						containerID: "pod2",
+						ipAddr:      "20.0.0.1",
+						port:        80,
+						incremental: true,
+					},
+					{
+						containerID: "pod2",
+						ipAddr:      "20.3.0.1",
+						port:        80,
+						incremental: true,
+					},
 				},
 			},
 			endpointsAfterTick: []map[string]bool{
@@ -153,14 +189,16 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			entityStore := NewStoreWithMemory(tCase.numTicksToRemember)
-			// Entities are updated based on the data from K8s
-			for _, update := range tCase.entityUpdates {
-				entityStore.Apply(map[string]*EntityData{
-					update.containerID: entityUpdate(update.ipAddr, update.port),
-				}, update.incremental)
-			}
 
 			for tickNo, expectation := range tCase.endpointsAfterTick {
+				// Entities are updated based on the data from K8s
+				if updatesForTick, ok := tCase.entityUpdates[tickNo]; ok {
+					for _, update := range updatesForTick {
+						entityStore.Apply(map[string]*EntityData{
+							update.containerID: entityUpdate(update.ipAddr, update.port),
+						}, update.incremental)
+					}
+				}
 				s.T().Logf("Historical IPs (tick %d): %v", tickNo, entityStore.historicalIPs)
 				s.T().Logf("All IPs (tick %d): %v", tickNo, entityStore.ipMap)
 				for endpoint, shallExist := range expectation {
