@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/manager/mocks"
 	v1ProfileMocks "github.com/stackrox/rox/central/complianceoperator/profiles/datastore/mocks"
 	v2ProfileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
@@ -17,13 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
-)
-
-var (
-	createdTime = types.TimestampNow()
-	id          = uuid.NewV4().String()
-	profileID   = uuid.NewV4().String()
-	checkID     = uuid.NewV4().String()
 )
 
 func TestPipeline(t *testing.T) {

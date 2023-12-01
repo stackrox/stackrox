@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	apiTokenStore "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/apitokenstore"
 	groupStore "github.com/stackrox/rox/migrator/migrations/m_182_to_m_183_remove_default_scope_manager_role/groupstore"
@@ -30,14 +29,10 @@ const (
 	access    = "Access"
 	cluster   = "Cluster"
 	namespace = "Namespace"
-
-	batchSize = 500
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	errNotFound = errors.New("not found")
 
 	imperativeObjectTraits = &storage.Traits{
 		// Keep default MutabilityMode : Traits_ALLOW_MUTATE

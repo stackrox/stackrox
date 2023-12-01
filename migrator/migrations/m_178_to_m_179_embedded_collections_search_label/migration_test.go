@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 var (
@@ -51,7 +50,6 @@ type reportConfigMigrationTestSuite struct {
 	suite.Suite
 
 	db             *pghelper.TestPostgres
-	gorm           *gorm.DB
 	oldReportStore oldStore.Store
 	newReportStore newStore.Store
 }

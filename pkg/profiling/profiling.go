@@ -26,7 +26,6 @@ type HeapProfiler struct {
 	thresholdFraction float64
 	limitBytes        uint64
 	directory         *fifoDir
-	ticker            *time.Ticker
 	lastDump          time.Time
 }
 

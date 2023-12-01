@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	baseTable = "cluster_cves"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -424,13 +422,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterCVE) e
 		}
 	}
 	return nil
-}
-
-//// Used for testing
-
-func dropTableClusterCves(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_cves CASCADE")
-
 }
 
 //// Stubs for satisfying legacy interfaces

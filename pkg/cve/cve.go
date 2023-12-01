@@ -3,13 +3,8 @@ package cve
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{

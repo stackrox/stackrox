@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -26,7 +25,6 @@ func TestNamespaceDataStoreSAC(t *testing.T) {
 type namespaceDatastoreSACSuite struct {
 	suite.Suite
 
-	keyFence concurrency.KeyFence
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
 	datastore  DataStore

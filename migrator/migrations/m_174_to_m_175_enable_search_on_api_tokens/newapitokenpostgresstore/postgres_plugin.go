@@ -25,8 +25,6 @@ import (
 // The kept functions are stripped from the scoped access control checks.
 
 const (
-	baseTable = "api_tokens"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

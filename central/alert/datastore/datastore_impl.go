@@ -252,18 +252,6 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
 }
 
-func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
-	alerts, missingIndices, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, nil, err
-	}
-	listAlerts := make([]*storage.ListAlert, 0, len(ids))
-	for _, alert := range alerts {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-	}
-	return listAlerts, missingIndices, nil
-}
-
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert) error) error {
 	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
 		return err

@@ -2,7 +2,6 @@ package previous
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -12,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -82,8 +80,6 @@ const (
 
 var (
 	log = logging.LoggerForModule()
-
-	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), networkFlowsTable)
 
 	// We begin to process in batches after this number of records
 	batchAfter = 100

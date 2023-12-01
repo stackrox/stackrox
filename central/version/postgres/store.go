@@ -5,14 +5,11 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -21,11 +18,6 @@ const (
 	// the older database.  In that case we will need to process the serialized data.
 	getPreviousStmt = "SELECT serialized FROM versions LIMIT 1"
 	deleteStmt      = "DELETE FROM versions"
-)
-
-var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.VersionsSchema
 )
 
 // Store access versions in database
@@ -39,8 +31,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    postgres.DB
-	mutex sync.Mutex
+	db postgres.DB
 }
 
 // New returns a new Store instance using the provided sql instance.

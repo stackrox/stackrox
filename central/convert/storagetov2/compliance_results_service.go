@@ -4,11 +4,6 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type checkResultKey struct {

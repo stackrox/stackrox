@@ -658,15 +658,6 @@ func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Contex
 	return image
 }
 
-func (s *GraphQLImageVulnerabilityTestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
-	compID := graphql.ID(id)
-
-	comp, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &compID})
-	s.NoError(err)
-	s.Equal(compID, comp.Id(ctx))
-	return comp
-}
-
 func (s *GraphQLImageVulnerabilityTestSuite) getImageVulnerabilityResolver(ctx context.Context, id string) ImageVulnerabilityResolver {
 	vulnID := graphql.ID(id)
 

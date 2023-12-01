@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/logging"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,10 +33,6 @@ const (
 	maxLogLines        = 5000
 	maxFirstLineCutOff = 1024    // only cut off first (partial line) if less than that many characters
 	maxLogFileSize     = 1 << 20 // 1MB
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type collector struct {

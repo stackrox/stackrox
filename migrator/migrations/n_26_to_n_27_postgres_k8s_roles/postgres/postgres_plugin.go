@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	baseTable = "k8s_roles"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

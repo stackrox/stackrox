@@ -12,12 +12,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	undopostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // UndoDataStore provides storage functionality for the undo records resulting from policy application.

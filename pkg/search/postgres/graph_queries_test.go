@@ -9,7 +9,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
@@ -65,7 +64,6 @@ type GraphQueriesTestSuite struct {
 	suite.Suite
 
 	testDB *pgtest.TestPostgres
-	pool   postgres.DB
 
 	testGrandparentStore   testGrandparent.Store
 	testChild1Store        testChild1.Store
