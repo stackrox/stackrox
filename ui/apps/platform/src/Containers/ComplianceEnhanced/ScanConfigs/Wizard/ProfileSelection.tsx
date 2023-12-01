@@ -1,6 +1,5 @@
-import React, { ReactElement, useCallback, useEffect } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
-import isEqual from 'lodash/isEqual';
 import {
     Bullseye,
     Divider,
@@ -39,13 +38,29 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
         profileIsPreSelected
     );
 
-    useEffect(() => {
-        const profileIds = profiles.map((profile) => profile.id);
-        const selectedProfileIds = profileIds.filter((_, index) => selected[index]);
-        if (!isEqual(selectedProfileIds, formikValues.profiles)) {
-            setFieldValue('profiles', selectedProfileIds);
-        }
-    }, [selected, formikValues.profiles, setFieldValue, profiles]);
+    const handleSelect = (
+        event: React.FormEvent<HTMLInputElement>,
+        isSelected: boolean,
+        rowId: number
+    ) => {
+        onSelect(event, isSelected, rowId);
+
+        const newSelectedIds = profiles
+            .filter((_, index) => {
+                return index === rowId ? isSelected : selected[index];
+            })
+            .map((profile) => profile.id);
+
+        setFieldValue('profiles', newSelectedIds);
+    };
+
+    const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
+        onSelectAll(event, isSelected);
+
+        const newSelectedIds = isSelected ? profiles.map((profile) => profile.id) : [];
+
+        setFieldValue('profiles', newSelectedIds);
+    };
 
     function renderTableContent() {
         return profiles?.map(({ id, name, description }, rowIndex) => (
@@ -54,7 +69,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
                     key={id}
                     select={{
                         rowIndex,
-                        onSelect,
+                        onSelect: (event, isSelected) => handleSelect(event, isSelected, rowIndex),
                         isSelected: selected[rowIndex],
                     }}
                 />
@@ -67,7 +82,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
     function renderLoadingContent() {
         return (
             <Tr>
-                <Td>
+                <Td colSpan={3}>
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -79,7 +94,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
     function renderEmptyContent() {
         return (
             <Tr>
-                <Td>
+                <Td colSpan={3}>
                     <Bullseye>
                         <EmptyStateTemplate
                             title="No profiles found"
@@ -122,7 +137,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
                         <Tr>
                             <Th
                                 select={{
-                                    onSelect: onSelectAll,
+                                    onSelect: handleSelectAll,
                                     isSelected: allRowsSelected,
                                 }}
                             />
