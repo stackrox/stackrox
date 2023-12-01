@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -68,6 +70,10 @@ var (
 	delegateScanPermissions = []string{"Image"}
 )
 
+type AugmentationRequestWatcher interface {
+	SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
+}
+
 func init() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
 	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
@@ -85,17 +91,14 @@ type serviceImpl struct {
 	deploymentEnricher  enrichment.Enricher
 	buildTimeDetector   buildtime.Detector
 	clusters            clusterDatastore.DataStore
-	sDeploymentEnricher sensorDeploymentEnricher
+	connManager         connection.Manager
+	augmentationWatcher AugmentationRequestWatcher
 
 	notifications notifier.Processor
 
 	detector deploytime.Detector
 
 	clusterSACHelper sachelper.ClusterSacHelper
-}
-
-type sensorDeploymentEnricher interface {
-	Enrich(deployments []*storage.Deployment, clusterID string) ([]*storage.Deployment, error)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -344,7 +347,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.ClusterID = clusterID
 	}
 
-	var deployments []*storage.Deployment // Whatever we write in central will send to Sensor
+	var deployments []*storage.Deployment
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
@@ -357,8 +360,8 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	// Enhance the enhanced deployments, then range over them
-	// (deployments []*storage.Deployment, string clusterID) ([]*storage.Deployment, error)
-	enhancedDeployments, err := s.sDeploymentEnricher.Enrich(deployments, eCtx.ClusterID)
+	conn := s.connManager.GetConnection(eCtx.ClusterID)
+	enhancedDeployments, err := s.augmentationWatcher.SendAndWaitForAugmentedDeployments(ctx, conn, deployments, time.Second*30)
 	if err != nil {
 		return nil, err // FIXME: Handle errors better
 	}

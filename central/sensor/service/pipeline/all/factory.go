@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/augment"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
@@ -78,6 +79,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorrules.GetPipeline(),
 		complianceoperatorscans.GetPipeline(),
 		nodeinventory.GetPipeline(),
+		augment.GetPipeline(),
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
