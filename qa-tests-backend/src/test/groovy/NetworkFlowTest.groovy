@@ -41,6 +41,7 @@ import spock.lang.Unroll
 
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step
 @Stepwise
+@Tag("PZDebug")
 @Tag("PZ")
 class NetworkFlowTest extends BaseSpecification {
 
