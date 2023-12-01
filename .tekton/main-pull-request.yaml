@@ -198,8 +198,14 @@ spec:
       workspaces:
       - name: source
         workspace: workspace
+      - name: subscription-manager-activation-key
+        workspace: subscription-manager-activation-key
       taskSpec:
         steps:
+        # TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available.
+        - name: smuggle-activation-key
+          image: registry.access.redhat.com/ubi8/ubi:latest
+          script: exec /workspace/source/source/.rhtap/scripts/subscription-manager-bro.sh smuggle
     - name: prefetch-dependencies
       params:
       - name: input
@@ -392,6 +398,7 @@ spec:
     - name: workspace
     - name: git-auth
       optional: true
+    - name: subscription-manager-activation-key
   taskRunTemplate: {}
   workspaces:
   - name: workspace
@@ -408,4 +415,7 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: subscription-manager-activation-key
+    secret:
+      secretName: subscription-manager-activation-key
 status: {}
