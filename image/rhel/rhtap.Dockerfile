@@ -22,16 +22,28 @@ ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/image/rhel/rhtap-bootstrap-y
 #RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi:latest AS rpm-implanter
 
-# find and ca-certificates are used in /stackrox/import-additional-cas
-# snappy provides libsnappy.so.1, which is needed by most stackrox binaries
-RUN microdnf upgrade -y --nobest && \
-    microdnf module enable -y postgresql:13 && \
-    microdnf install -y ca-certificates findutils snappy zstd postgresql && \
-    microdnf clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+COPY --from=ubi-minimal / /mnt
+COPY ./.rhtap /tmp/.rhtap
+
+RUN /tmp/.rhtap/scripts/subscription-manager-bro.sh register && \
+    dnf -y --installroot=/mnt upgrade --nobest && \
+    dnf -y --installroot=/mnt module enable postgresql:13 && \
+    # find is used in /stackrox/import-additional-cas \
+    # snappy provides libsnappy.so.1, which is needed by most stackrox binaries \
+    dnf -y --installroot=/mnt install findutils snappy zstd postgresql && \
+    /tmp/.rhtap/scripts/subscription-manager-bro.sh cleanup && \
+    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
+    dnf -y --installroot=/mnt clean all && \
+    rpm --root=/mnt --verbose -e --nodeps $(rpm --root=/mnt -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /mnt/var/cache/dnf /mnt/var/cache/yum
+
+
+FROM scratch
+
+COPY --from=rpm-implanter /mnt /
 
 #COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
