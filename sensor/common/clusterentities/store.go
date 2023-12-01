@@ -1,14 +1,19 @@
 package clusterentities
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
+
+var log = logging.LoggerForModule()
 
 // ContainerMetadata is the container metadata that is stored per instance
 type ContainerMetadata struct {
@@ -202,6 +207,8 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // Tick informs the store that unit of time has passed
 func (e *Store) Tick() {
+	e.dbgPrintEndpoints()
+	e.dbgPrintHistorical() // TODO: remove debug
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
@@ -214,6 +221,42 @@ func (e *Store) Tick() {
 			e.removeHistoricalExpiredIPs(deploymentID, ip)
 		}
 	}
+}
+
+func (e *Store) dbgPrintEndpoints() {
+	repr := "endpoints:["
+	for ep, m := range e.endpointMap {
+		repr += fmt.Sprintf("{ep: %s: [%v]}", ep.String(), m)
+	}
+	repr += "]"
+	repr += "IPs:["
+	for ip, m := range e.ipMap {
+		repr += fmt.Sprintf("{ip: %s: [%v]}", ip.String(), m)
+	}
+	repr += "]"
+	log.Debugf(repr)
+}
+
+func (e *Store) dbgPrintHistorical() {
+	repr := "histEndpoints:["
+	for deplID, m := range e.historicalEndpoints {
+		repr += "deployID:{" + deplID + ": ["
+		for ep, status := range m {
+			repr += fmt.Sprintf("ep=%s,ticksLeft=%d; ", ep.String(), status.ticksLeft)
+		}
+		repr += "]}"
+	}
+	repr += "], "
+	repr += "histIPs:["
+	for ip, m := range e.historicalIPs {
+		repr += "IP:{" + ip.String() + ": ["
+		for deplID, status := range m {
+			repr += fmt.Sprintf("deplID=%s,ticksLeft=%d; ", deplID, status.ticksLeft)
+		}
+		repr += "]"
+	}
+	repr += "]"
+	log.Debugf(repr)
 }
 
 func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
