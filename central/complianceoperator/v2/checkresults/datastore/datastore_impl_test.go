@@ -33,8 +33,7 @@ var (
 			InconsistentCount:  3,
 			ClusterID:          fixtureconsts.Cluster2,
 			ClusterName:        "cluster2",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
-			ScanConfigName:     "scan 1",
+			ScanConfigName:     "scanConfig1",
 		},
 		{
 			PassCount:          0,
@@ -46,8 +45,7 @@ var (
 			InconsistentCount:  1,
 			ClusterID:          fixtureconsts.Cluster3,
 			ClusterName:        "cluster3",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
-			ScanConfigName:     "scan 1",
+			ScanConfigName:     "scanConfig1",
 		},
 		{
 			PassCount:          0,
@@ -59,8 +57,7 @@ var (
 			InconsistentCount:  0,
 			ClusterID:          fixtureconsts.Cluster3,
 			ClusterName:        "cluster3",
-			ScanConfigID:       fixtureconsts.ComplianceScanConfigID2,
-			ScanConfigName:     "scan 2",
+			ScanConfigName:     "scanConfig2",
 		},
 	}
 )
@@ -270,7 +267,6 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Annotations:    nil,
 		CreatedTime:    types.TimestampNow(),
 		ScanId:         uuid.NewV4().String(),
-		ScanConfigId:   fixtureconsts.ComplianceScanConfigID1,
 		ScanConfigName: "scanConfig1",
 	}
 }
@@ -289,7 +285,6 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Annotations:    nil,
 		CreatedTime:    types.TimestampNow(),
 		ScanId:         uuid.NewV4().String(),
-		ScanConfigId:   fixtureconsts.ComplianceScanConfigID2,
 		ScanConfigName: "scanConfig2",
 	}
 }
