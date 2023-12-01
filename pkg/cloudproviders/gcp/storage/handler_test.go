@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/mocks"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -20,7 +21,8 @@ func TestClientHandler(t *testing.T) {
 
 	controller := gomock.NewController(t)
 	mockClientFactory := mocks.NewMockClientFactory(controller)
-	handler := &clientHandlerImpl{factory: mockClientFactory}
+	wgHandler := concurrency.NewWaitGroup(0)
+	handler := &clientHandlerImpl{factory: mockClientFactory, wg: &wgHandler}
 	ctx := context.Background()
 	mockClientFactory.EXPECT().NewClient(ctx, nil).
 		Return(nil, nil).

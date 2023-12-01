@@ -6,6 +6,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/types"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2/google"
 )
@@ -22,7 +23,7 @@ type clientHandlerImpl struct {
 	factory ClientFactory
 	client  *storage.Client
 	mutex   sync.Mutex
-	wg      sync.WaitGroup
+	wg      *concurrency.WaitGroup
 }
 
 var _ ClientHandler = &clientHandlerImpl{}
@@ -33,7 +34,8 @@ var _ ClientHandler = &clientHandlerImpl{}
 // environments where no valid GCP credential can be constructed. In these cases, we must
 // leave the client nil until a cloud credential secret is added.
 func NewClientHandlerNoInit() ClientHandler {
-	return &clientHandlerImpl{factory: &clientFactoryImpl{}}
+	wg := concurrency.NewWaitGroup(0)
+	return &clientHandlerImpl{factory: &clientFactoryImpl{}, wg: &wg}
 }
 
 // NewClientHandler creates a new storage client handler.
@@ -48,17 +50,8 @@ func NewClientHandler(ctx context.Context, creds *google.Credentials) (ClientHan
 func (s *clientHandlerImpl) UpdateClient(ctx context.Context, creds *google.Credentials) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	waitCh := make(chan struct{})
-	go func() {
-		s.wg.Wait()
-		close(waitCh)
-	}()
-
-	select {
-	case <-ctx.Done():
-		close(waitCh)
+	if !concurrency.WaitInContext(s.wg, ctx) {
 		return ctx.Err()
-	case <-waitCh:
 	}
 
 	client, err := s.factory.NewClient(ctx, creds)
@@ -77,5 +70,5 @@ func (s *clientHandlerImpl) GetClient() (*storage.Client, types.DoneFunc) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.wg.Add(1)
-	return s.client, func() { s.wg.Done() }
+	return s.client, func() { s.wg.Add(-1) }
 }

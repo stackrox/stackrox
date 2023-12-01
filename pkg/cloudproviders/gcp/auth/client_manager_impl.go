@@ -23,7 +23,7 @@ func fallbackSTSClientManager() STSClientManager {
 		credManager:          &defaultCredentialsManager{},
 		storageClientHandler: storage.NewClientHandlerNoInit(),
 	}
-	go mgr.updateClients()
+	mgr.updateClients()
 	return mgr
 }
 
@@ -41,7 +41,7 @@ func NewSTSClientManager(namespace string, secretName string) STSClientManager {
 	}
 	mgr := &stsClientManagerImpl{storageClientHandler: storage.NewClientHandlerNoInit()}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.updateClients)
-	go mgr.updateClients()
+	mgr.updateClients()
 	return mgr
 }
 
