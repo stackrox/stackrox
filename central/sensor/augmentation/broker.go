@@ -5,18 +5,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/detection/service"
 	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/augment"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-)
-
-var (
-	_ augment.AugmentationBroker         = (*Broker)(nil)
-	_ service.AugmentationRequestWatcher = (*Broker)(nil)
 )
 
 type Broker struct {
