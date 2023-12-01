@@ -69,7 +69,7 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.15')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.16')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
