@@ -22,5 +22,5 @@ matcher:
       {{ if not (kindIs "invalid" ._rox.scannerV4.db.source.maxConns) -}} pool_max_conns={{._rox.scannerV4.db.source.maxConns}} {{- end }}
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
-  indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc.cluster.local:8443
+  indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc:8443
 log_level: info
