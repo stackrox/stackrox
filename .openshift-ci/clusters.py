@@ -16,6 +16,7 @@ OUTCOME_FAILED = "failed"
 CREATE_CLUSTER_OUTCOME_VAR = "CREATE_CLUSTER_OUTCOME"
 DESTROY_CLUSTER_OUTCOME_VAR = "DESTROY_CLUSTER_OUTCOME"
 
+
 class NullCluster:
     def provision(self):
         pass
@@ -50,6 +51,8 @@ class GKECluster:
         except Exception as err:
             set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
             raise err
+
+        return self
 
     def _provision(self):
         if self.num_nodes is not None:
@@ -99,6 +102,8 @@ class GKECluster:
         except Exception as err:
             set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
             raise err
+
+        return self
 
     def _teardown(self, canceled):
         while os.path.exists("/tmp/hold-cluster"):

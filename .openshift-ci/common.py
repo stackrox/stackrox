@@ -18,5 +18,5 @@ def popen_graceful_kill(cmd):
 
 
 def set_ci_shared_export(name, value):
-    with open(os.path.join(os.environ("SHARED_DIR"), "shared_env"), "a") as f:
-        f.write(f"export {name}={value}\n")
+    with open(os.path.join(os.environ("SHARED_DIR"), "shared_env"), "a", encoding="utf-8") as shared_env:
+        shared_env.write(f"export {name}={value}\n")
