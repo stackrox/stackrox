@@ -59,6 +59,9 @@ func (s *clientHandlerImpl) UpdateClient(ctx context.Context, creds *google.Cred
 	if err != nil {
 		return errors.Wrap(err, "failed to create GCP storage client")
 	}
+	if s.client != nil {
+		s.client.Close()
+	}
 	s.client = client
 	return nil
 }
