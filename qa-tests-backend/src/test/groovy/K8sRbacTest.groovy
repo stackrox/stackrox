@@ -192,7 +192,7 @@ class K8sRbacTest extends BaseSpecification {
                         assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
                         assert oRule.resourceNames == sRule.resourceNamesList
                     } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                        log.info "${role.rules} ${stackroxRole.rulesList}"
+                        log.info "${oRule} ${sRule}"
                         throw t
                     }
                 }
