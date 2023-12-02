@@ -4,6 +4,7 @@ package awssh
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -216,7 +218,7 @@ func newNotifier(configuration configuration) (*notifier, error) {
 			"",
 		))
 	}
-
+	awsConfig = awsConfig.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()})
 	awss, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create AWS session")
