@@ -340,6 +340,56 @@ func (mr *MockSecurityHubAPIMockRecorder) BatchGetAutomationRulesWithContext(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetAutomationRulesWithContext), varargs...)
 }
 
+// BatchGetConfigurationPolicyAssociations mocks base method.
+func (m *MockSecurityHubAPI) BatchGetConfigurationPolicyAssociations(arg0 *securityhub.BatchGetConfigurationPolicyAssociationsInput) (*securityhub.BatchGetConfigurationPolicyAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetConfigurationPolicyAssociations", arg0)
+	ret0, _ := ret[0].(*securityhub.BatchGetConfigurationPolicyAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetConfigurationPolicyAssociations indicates an expected call of BatchGetConfigurationPolicyAssociations.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetConfigurationPolicyAssociations(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetConfigurationPolicyAssociations", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetConfigurationPolicyAssociations), arg0)
+}
+
+// BatchGetConfigurationPolicyAssociationsRequest mocks base method.
+func (m *MockSecurityHubAPI) BatchGetConfigurationPolicyAssociationsRequest(arg0 *securityhub.BatchGetConfigurationPolicyAssociationsInput) (*request.Request, *securityhub.BatchGetConfigurationPolicyAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetConfigurationPolicyAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.BatchGetConfigurationPolicyAssociationsOutput)
+	return ret0, ret1
+}
+
+// BatchGetConfigurationPolicyAssociationsRequest indicates an expected call of BatchGetConfigurationPolicyAssociationsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetConfigurationPolicyAssociationsRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetConfigurationPolicyAssociationsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetConfigurationPolicyAssociationsRequest), arg0)
+}
+
+// BatchGetConfigurationPolicyAssociationsWithContext mocks base method.
+func (m *MockSecurityHubAPI) BatchGetConfigurationPolicyAssociationsWithContext(arg0 context.Context, arg1 *securityhub.BatchGetConfigurationPolicyAssociationsInput, arg2 ...request.Option) (*securityhub.BatchGetConfigurationPolicyAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetConfigurationPolicyAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.BatchGetConfigurationPolicyAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetConfigurationPolicyAssociationsWithContext indicates an expected call of BatchGetConfigurationPolicyAssociationsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) BatchGetConfigurationPolicyAssociationsWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetConfigurationPolicyAssociationsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).BatchGetConfigurationPolicyAssociationsWithContext), varargs...)
+}
+
 // BatchGetSecurityControls mocks base method.
 func (m *MockSecurityHubAPI) BatchGetSecurityControls(arg0 *securityhub.BatchGetSecurityControlsInput) (*securityhub.BatchGetSecurityControlsOutput, error) {
 	m.ctrl.T.Helper()
@@ -740,6 +790,56 @@ func (mr *MockSecurityHubAPIMockRecorder) CreateAutomationRuleWithContext(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAutomationRuleWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateAutomationRuleWithContext), varargs...)
 }
 
+// CreateConfigurationPolicy mocks base method.
+func (m *MockSecurityHubAPI) CreateConfigurationPolicy(arg0 *securityhub.CreateConfigurationPolicyInput) (*securityhub.CreateConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateConfigurationPolicy", arg0)
+	ret0, _ := ret[0].(*securityhub.CreateConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateConfigurationPolicy indicates an expected call of CreateConfigurationPolicy.
+func (mr *MockSecurityHubAPIMockRecorder) CreateConfigurationPolicy(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateConfigurationPolicy", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateConfigurationPolicy), arg0)
+}
+
+// CreateConfigurationPolicyRequest mocks base method.
+func (m *MockSecurityHubAPI) CreateConfigurationPolicyRequest(arg0 *securityhub.CreateConfigurationPolicyInput) (*request.Request, *securityhub.CreateConfigurationPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateConfigurationPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.CreateConfigurationPolicyOutput)
+	return ret0, ret1
+}
+
+// CreateConfigurationPolicyRequest indicates an expected call of CreateConfigurationPolicyRequest.
+func (mr *MockSecurityHubAPIMockRecorder) CreateConfigurationPolicyRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateConfigurationPolicyRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateConfigurationPolicyRequest), arg0)
+}
+
+// CreateConfigurationPolicyWithContext mocks base method.
+func (m *MockSecurityHubAPI) CreateConfigurationPolicyWithContext(arg0 context.Context, arg1 *securityhub.CreateConfigurationPolicyInput, arg2 ...request.Option) (*securityhub.CreateConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateConfigurationPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.CreateConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateConfigurationPolicyWithContext indicates an expected call of CreateConfigurationPolicyWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) CreateConfigurationPolicyWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateConfigurationPolicyWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateConfigurationPolicyWithContext), varargs...)
+}
+
 // CreateFindingAggregator mocks base method.
 func (m *MockSecurityHubAPI) CreateFindingAggregator(arg0 *securityhub.CreateFindingAggregatorInput) (*securityhub.CreateFindingAggregatorOutput, error) {
 	m.ctrl.T.Helper()
@@ -988,6 +1088,56 @@ func (mr *MockSecurityHubAPIMockRecorder) DeleteActionTargetWithContext(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteActionTargetWithContext), varargs...)
+}
+
+// DeleteConfigurationPolicy mocks base method.
+func (m *MockSecurityHubAPI) DeleteConfigurationPolicy(arg0 *securityhub.DeleteConfigurationPolicyInput) (*securityhub.DeleteConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteConfigurationPolicy", arg0)
+	ret0, _ := ret[0].(*securityhub.DeleteConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteConfigurationPolicy indicates an expected call of DeleteConfigurationPolicy.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteConfigurationPolicy(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConfigurationPolicy", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteConfigurationPolicy), arg0)
+}
+
+// DeleteConfigurationPolicyRequest mocks base method.
+func (m *MockSecurityHubAPI) DeleteConfigurationPolicyRequest(arg0 *securityhub.DeleteConfigurationPolicyInput) (*request.Request, *securityhub.DeleteConfigurationPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteConfigurationPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.DeleteConfigurationPolicyOutput)
+	return ret0, ret1
+}
+
+// DeleteConfigurationPolicyRequest indicates an expected call of DeleteConfigurationPolicyRequest.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteConfigurationPolicyRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConfigurationPolicyRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteConfigurationPolicyRequest), arg0)
+}
+
+// DeleteConfigurationPolicyWithContext mocks base method.
+func (m *MockSecurityHubAPI) DeleteConfigurationPolicyWithContext(arg0 context.Context, arg1 *securityhub.DeleteConfigurationPolicyInput, arg2 ...request.Option) (*securityhub.DeleteConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteConfigurationPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.DeleteConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteConfigurationPolicyWithContext indicates an expected call of DeleteConfigurationPolicyWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteConfigurationPolicyWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConfigurationPolicyWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteConfigurationPolicyWithContext), varargs...)
 }
 
 // DeleteFindingAggregator mocks base method.
@@ -2122,6 +2272,106 @@ func (mr *MockSecurityHubAPIMockRecorder) GetAdministratorAccountWithContext(arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdministratorAccountWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetAdministratorAccountWithContext), varargs...)
 }
 
+// GetConfigurationPolicy mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicy(arg0 *securityhub.GetConfigurationPolicyInput) (*securityhub.GetConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfigurationPolicy", arg0)
+	ret0, _ := ret[0].(*securityhub.GetConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicy indicates an expected call of GetConfigurationPolicy.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicy(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicy", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicy), arg0)
+}
+
+// GetConfigurationPolicyAssociation mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicyAssociation(arg0 *securityhub.GetConfigurationPolicyAssociationInput) (*securityhub.GetConfigurationPolicyAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfigurationPolicyAssociation", arg0)
+	ret0, _ := ret[0].(*securityhub.GetConfigurationPolicyAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicyAssociation indicates an expected call of GetConfigurationPolicyAssociation.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicyAssociation(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicyAssociation", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicyAssociation), arg0)
+}
+
+// GetConfigurationPolicyAssociationRequest mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicyAssociationRequest(arg0 *securityhub.GetConfigurationPolicyAssociationInput) (*request.Request, *securityhub.GetConfigurationPolicyAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfigurationPolicyAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.GetConfigurationPolicyAssociationOutput)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicyAssociationRequest indicates an expected call of GetConfigurationPolicyAssociationRequest.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicyAssociationRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicyAssociationRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicyAssociationRequest), arg0)
+}
+
+// GetConfigurationPolicyAssociationWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicyAssociationWithContext(arg0 context.Context, arg1 *securityhub.GetConfigurationPolicyAssociationInput, arg2 ...request.Option) (*securityhub.GetConfigurationPolicyAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetConfigurationPolicyAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.GetConfigurationPolicyAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicyAssociationWithContext indicates an expected call of GetConfigurationPolicyAssociationWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicyAssociationWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicyAssociationWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicyAssociationWithContext), varargs...)
+}
+
+// GetConfigurationPolicyRequest mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicyRequest(arg0 *securityhub.GetConfigurationPolicyInput) (*request.Request, *securityhub.GetConfigurationPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfigurationPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.GetConfigurationPolicyOutput)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicyRequest indicates an expected call of GetConfigurationPolicyRequest.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicyRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicyRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicyRequest), arg0)
+}
+
+// GetConfigurationPolicyWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetConfigurationPolicyWithContext(arg0 context.Context, arg1 *securityhub.GetConfigurationPolicyInput, arg2 ...request.Option) (*securityhub.GetConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetConfigurationPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.GetConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfigurationPolicyWithContext indicates an expected call of GetConfigurationPolicyWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetConfigurationPolicyWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigurationPolicyWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetConfigurationPolicyWithContext), varargs...)
+}
+
 // GetEnabledStandards mocks base method.
 func (m *MockSecurityHubAPI) GetEnabledStandards(arg0 *securityhub.GetEnabledStandardsInput) (*securityhub.GetEnabledStandardsOutput, error) {
 	m.ctrl.T.Helper()
@@ -2704,6 +2954,56 @@ func (mr *MockSecurityHubAPIMockRecorder) GetMembersWithContext(arg0, arg1 any, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMembersWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetMembersWithContext), varargs...)
 }
 
+// GetSecurityControlDefinition mocks base method.
+func (m *MockSecurityHubAPI) GetSecurityControlDefinition(arg0 *securityhub.GetSecurityControlDefinitionInput) (*securityhub.GetSecurityControlDefinitionOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSecurityControlDefinition", arg0)
+	ret0, _ := ret[0].(*securityhub.GetSecurityControlDefinitionOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSecurityControlDefinition indicates an expected call of GetSecurityControlDefinition.
+func (mr *MockSecurityHubAPIMockRecorder) GetSecurityControlDefinition(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityControlDefinition", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetSecurityControlDefinition), arg0)
+}
+
+// GetSecurityControlDefinitionRequest mocks base method.
+func (m *MockSecurityHubAPI) GetSecurityControlDefinitionRequest(arg0 *securityhub.GetSecurityControlDefinitionInput) (*request.Request, *securityhub.GetSecurityControlDefinitionOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSecurityControlDefinitionRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.GetSecurityControlDefinitionOutput)
+	return ret0, ret1
+}
+
+// GetSecurityControlDefinitionRequest indicates an expected call of GetSecurityControlDefinitionRequest.
+func (mr *MockSecurityHubAPIMockRecorder) GetSecurityControlDefinitionRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityControlDefinitionRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetSecurityControlDefinitionRequest), arg0)
+}
+
+// GetSecurityControlDefinitionWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetSecurityControlDefinitionWithContext(arg0 context.Context, arg1 *securityhub.GetSecurityControlDefinitionInput, arg2 ...request.Option) (*securityhub.GetSecurityControlDefinitionOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetSecurityControlDefinitionWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.GetSecurityControlDefinitionOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSecurityControlDefinitionWithContext indicates an expected call of GetSecurityControlDefinitionWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetSecurityControlDefinitionWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecurityControlDefinitionWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetSecurityControlDefinitionWithContext), varargs...)
+}
+
 // InviteMembers mocks base method.
 func (m *MockSecurityHubAPI) InviteMembers(arg0 *securityhub.InviteMembersInput) (*securityhub.InviteMembersOutput, error) {
 	m.ctrl.T.Helper()
@@ -2802,6 +3102,172 @@ func (mr *MockSecurityHubAPIMockRecorder) ListAutomationRulesWithContext(arg0, a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAutomationRulesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListAutomationRulesWithContext), varargs...)
+}
+
+// ListConfigurationPolicies mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicies(arg0 *securityhub.ListConfigurationPoliciesInput) (*securityhub.ListConfigurationPoliciesOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPolicies", arg0)
+	ret0, _ := ret[0].(*securityhub.ListConfigurationPoliciesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConfigurationPolicies indicates an expected call of ListConfigurationPolicies.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicies(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicies", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicies), arg0)
+}
+
+// ListConfigurationPoliciesPages mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPoliciesPages(arg0 *securityhub.ListConfigurationPoliciesInput, arg1 func(*securityhub.ListConfigurationPoliciesOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPoliciesPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListConfigurationPoliciesPages indicates an expected call of ListConfigurationPoliciesPages.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPoliciesPages(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPoliciesPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPoliciesPages), arg0, arg1)
+}
+
+// ListConfigurationPoliciesPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPoliciesPagesWithContext(arg0 context.Context, arg1 *securityhub.ListConfigurationPoliciesInput, arg2 func(*securityhub.ListConfigurationPoliciesOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListConfigurationPoliciesPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListConfigurationPoliciesPagesWithContext indicates an expected call of ListConfigurationPoliciesPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPoliciesPagesWithContext(arg0, arg1, arg2 any, arg3 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPoliciesPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPoliciesPagesWithContext), varargs...)
+}
+
+// ListConfigurationPoliciesRequest mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPoliciesRequest(arg0 *securityhub.ListConfigurationPoliciesInput) (*request.Request, *securityhub.ListConfigurationPoliciesOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPoliciesRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListConfigurationPoliciesOutput)
+	return ret0, ret1
+}
+
+// ListConfigurationPoliciesRequest indicates an expected call of ListConfigurationPoliciesRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPoliciesRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPoliciesRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPoliciesRequest), arg0)
+}
+
+// ListConfigurationPoliciesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPoliciesWithContext(arg0 context.Context, arg1 *securityhub.ListConfigurationPoliciesInput, arg2 ...request.Option) (*securityhub.ListConfigurationPoliciesOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListConfigurationPoliciesWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListConfigurationPoliciesOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConfigurationPoliciesWithContext indicates an expected call of ListConfigurationPoliciesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPoliciesWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPoliciesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPoliciesWithContext), varargs...)
+}
+
+// ListConfigurationPolicyAssociations mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicyAssociations(arg0 *securityhub.ListConfigurationPolicyAssociationsInput) (*securityhub.ListConfigurationPolicyAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPolicyAssociations", arg0)
+	ret0, _ := ret[0].(*securityhub.ListConfigurationPolicyAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConfigurationPolicyAssociations indicates an expected call of ListConfigurationPolicyAssociations.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicyAssociations(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicyAssociations", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicyAssociations), arg0)
+}
+
+// ListConfigurationPolicyAssociationsPages mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicyAssociationsPages(arg0 *securityhub.ListConfigurationPolicyAssociationsInput, arg1 func(*securityhub.ListConfigurationPolicyAssociationsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPolicyAssociationsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListConfigurationPolicyAssociationsPages indicates an expected call of ListConfigurationPolicyAssociationsPages.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicyAssociationsPages(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicyAssociationsPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicyAssociationsPages), arg0, arg1)
+}
+
+// ListConfigurationPolicyAssociationsPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicyAssociationsPagesWithContext(arg0 context.Context, arg1 *securityhub.ListConfigurationPolicyAssociationsInput, arg2 func(*securityhub.ListConfigurationPolicyAssociationsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListConfigurationPolicyAssociationsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListConfigurationPolicyAssociationsPagesWithContext indicates an expected call of ListConfigurationPolicyAssociationsPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicyAssociationsPagesWithContext(arg0, arg1, arg2 any, arg3 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicyAssociationsPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicyAssociationsPagesWithContext), varargs...)
+}
+
+// ListConfigurationPolicyAssociationsRequest mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicyAssociationsRequest(arg0 *securityhub.ListConfigurationPolicyAssociationsInput) (*request.Request, *securityhub.ListConfigurationPolicyAssociationsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConfigurationPolicyAssociationsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListConfigurationPolicyAssociationsOutput)
+	return ret0, ret1
+}
+
+// ListConfigurationPolicyAssociationsRequest indicates an expected call of ListConfigurationPolicyAssociationsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicyAssociationsRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicyAssociationsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicyAssociationsRequest), arg0)
+}
+
+// ListConfigurationPolicyAssociationsWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListConfigurationPolicyAssociationsWithContext(arg0 context.Context, arg1 *securityhub.ListConfigurationPolicyAssociationsInput, arg2 ...request.Option) (*securityhub.ListConfigurationPolicyAssociationsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListConfigurationPolicyAssociationsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListConfigurationPolicyAssociationsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConfigurationPolicyAssociationsWithContext indicates an expected call of ListConfigurationPolicyAssociationsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListConfigurationPolicyAssociationsWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurationPolicyAssociationsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListConfigurationPolicyAssociationsWithContext), varargs...)
 }
 
 // ListEnabledProductsForImport mocks base method.
@@ -3435,6 +3901,106 @@ func (mr *MockSecurityHubAPIMockRecorder) ListTagsForResourceWithContext(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTagsForResourceWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListTagsForResourceWithContext), varargs...)
 }
 
+// StartConfigurationPolicyAssociation mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyAssociation(arg0 *securityhub.StartConfigurationPolicyAssociationInput) (*securityhub.StartConfigurationPolicyAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyAssociation", arg0)
+	ret0, _ := ret[0].(*securityhub.StartConfigurationPolicyAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyAssociation indicates an expected call of StartConfigurationPolicyAssociation.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyAssociation(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyAssociation", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyAssociation), arg0)
+}
+
+// StartConfigurationPolicyAssociationRequest mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyAssociationRequest(arg0 *securityhub.StartConfigurationPolicyAssociationInput) (*request.Request, *securityhub.StartConfigurationPolicyAssociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyAssociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.StartConfigurationPolicyAssociationOutput)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyAssociationRequest indicates an expected call of StartConfigurationPolicyAssociationRequest.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyAssociationRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyAssociationRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyAssociationRequest), arg0)
+}
+
+// StartConfigurationPolicyAssociationWithContext mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyAssociationWithContext(arg0 context.Context, arg1 *securityhub.StartConfigurationPolicyAssociationInput, arg2 ...request.Option) (*securityhub.StartConfigurationPolicyAssociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyAssociationWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.StartConfigurationPolicyAssociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyAssociationWithContext indicates an expected call of StartConfigurationPolicyAssociationWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyAssociationWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyAssociationWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyAssociationWithContext), varargs...)
+}
+
+// StartConfigurationPolicyDisassociation mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyDisassociation(arg0 *securityhub.StartConfigurationPolicyDisassociationInput) (*securityhub.StartConfigurationPolicyDisassociationOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyDisassociation", arg0)
+	ret0, _ := ret[0].(*securityhub.StartConfigurationPolicyDisassociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyDisassociation indicates an expected call of StartConfigurationPolicyDisassociation.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyDisassociation(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyDisassociation", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyDisassociation), arg0)
+}
+
+// StartConfigurationPolicyDisassociationRequest mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyDisassociationRequest(arg0 *securityhub.StartConfigurationPolicyDisassociationInput) (*request.Request, *securityhub.StartConfigurationPolicyDisassociationOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyDisassociationRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.StartConfigurationPolicyDisassociationOutput)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyDisassociationRequest indicates an expected call of StartConfigurationPolicyDisassociationRequest.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyDisassociationRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyDisassociationRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyDisassociationRequest), arg0)
+}
+
+// StartConfigurationPolicyDisassociationWithContext mocks base method.
+func (m *MockSecurityHubAPI) StartConfigurationPolicyDisassociationWithContext(arg0 context.Context, arg1 *securityhub.StartConfigurationPolicyDisassociationInput, arg2 ...request.Option) (*securityhub.StartConfigurationPolicyDisassociationOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StartConfigurationPolicyDisassociationWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.StartConfigurationPolicyDisassociationOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartConfigurationPolicyDisassociationWithContext indicates an expected call of StartConfigurationPolicyDisassociationWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) StartConfigurationPolicyDisassociationWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartConfigurationPolicyDisassociationWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).StartConfigurationPolicyDisassociationWithContext), varargs...)
+}
+
 // TagResource mocks base method.
 func (m *MockSecurityHubAPI) TagResource(arg0 *securityhub.TagResourceInput) (*securityhub.TagResourceOutput, error) {
 	m.ctrl.T.Helper()
@@ -3583,6 +4149,56 @@ func (mr *MockSecurityHubAPIMockRecorder) UpdateActionTargetWithContext(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateActionTargetWithContext), varargs...)
+}
+
+// UpdateConfigurationPolicy mocks base method.
+func (m *MockSecurityHubAPI) UpdateConfigurationPolicy(arg0 *securityhub.UpdateConfigurationPolicyInput) (*securityhub.UpdateConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConfigurationPolicy", arg0)
+	ret0, _ := ret[0].(*securityhub.UpdateConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConfigurationPolicy indicates an expected call of UpdateConfigurationPolicy.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateConfigurationPolicy(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigurationPolicy", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateConfigurationPolicy), arg0)
+}
+
+// UpdateConfigurationPolicyRequest mocks base method.
+func (m *MockSecurityHubAPI) UpdateConfigurationPolicyRequest(arg0 *securityhub.UpdateConfigurationPolicyInput) (*request.Request, *securityhub.UpdateConfigurationPolicyOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConfigurationPolicyRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.UpdateConfigurationPolicyOutput)
+	return ret0, ret1
+}
+
+// UpdateConfigurationPolicyRequest indicates an expected call of UpdateConfigurationPolicyRequest.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateConfigurationPolicyRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigurationPolicyRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateConfigurationPolicyRequest), arg0)
+}
+
+// UpdateConfigurationPolicyWithContext mocks base method.
+func (m *MockSecurityHubAPI) UpdateConfigurationPolicyWithContext(arg0 context.Context, arg1 *securityhub.UpdateConfigurationPolicyInput, arg2 ...request.Option) (*securityhub.UpdateConfigurationPolicyOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateConfigurationPolicyWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.UpdateConfigurationPolicyOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateConfigurationPolicyWithContext indicates an expected call of UpdateConfigurationPolicyWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateConfigurationPolicyWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigurationPolicyWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateConfigurationPolicyWithContext), varargs...)
 }
 
 // UpdateFindingAggregator mocks base method.
@@ -3783,6 +4399,56 @@ func (mr *MockSecurityHubAPIMockRecorder) UpdateOrganizationConfigurationWithCon
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrganizationConfigurationWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateOrganizationConfigurationWithContext), varargs...)
+}
+
+// UpdateSecurityControl mocks base method.
+func (m *MockSecurityHubAPI) UpdateSecurityControl(arg0 *securityhub.UpdateSecurityControlInput) (*securityhub.UpdateSecurityControlOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSecurityControl", arg0)
+	ret0, _ := ret[0].(*securityhub.UpdateSecurityControlOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSecurityControl indicates an expected call of UpdateSecurityControl.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateSecurityControl(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecurityControl", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateSecurityControl), arg0)
+}
+
+// UpdateSecurityControlRequest mocks base method.
+func (m *MockSecurityHubAPI) UpdateSecurityControlRequest(arg0 *securityhub.UpdateSecurityControlInput) (*request.Request, *securityhub.UpdateSecurityControlOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSecurityControlRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.UpdateSecurityControlOutput)
+	return ret0, ret1
+}
+
+// UpdateSecurityControlRequest indicates an expected call of UpdateSecurityControlRequest.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateSecurityControlRequest(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecurityControlRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateSecurityControlRequest), arg0)
+}
+
+// UpdateSecurityControlWithContext mocks base method.
+func (m *MockSecurityHubAPI) UpdateSecurityControlWithContext(arg0 context.Context, arg1 *securityhub.UpdateSecurityControlInput, arg2 ...request.Option) (*securityhub.UpdateSecurityControlOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateSecurityControlWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.UpdateSecurityControlOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSecurityControlWithContext indicates an expected call of UpdateSecurityControlWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateSecurityControlWithContext(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecurityControlWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateSecurityControlWithContext), varargs...)
 }
 
 // UpdateSecurityHubConfiguration mocks base method.
