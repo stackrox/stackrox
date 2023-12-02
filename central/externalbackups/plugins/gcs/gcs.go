@@ -15,8 +15,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
-	gcpStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
-	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/utils"
+	gcpHandler "github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -36,7 +35,7 @@ var log = logging.LoggerForModule()
 
 type gcs struct {
 	integration   *storage.ExternalBackup
-	clientHandler gcpStorage.ClientHandler
+	clientHandler gcpHandler.Handler[*googleStorage.Client]
 
 	backupsToKeep int
 	bucket        string
@@ -66,13 +65,14 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 		return nil, err
 	}
 
-	var handler gcpStorage.ClientHandler
+	var handler gcpHandler.Handler[*googleStorage.Client]
 	var err error
 	if features.CloudCredentials.Enabled() {
-		handler, err = utils.CreateHandlerFromConfigWithManager(context.Background(), conf, gcp.Singleton())
+		handler, err = gcpHandler.CreateStorageHandlerFromConfigWithManager(context.Background(), conf, gcp.Singleton())
 	} else {
-		handler, err = utils.CreateHandlerFromConfig(context.Background(), conf)
+		handler, err = gcpHandler.CreateStorageHandlerFromConfig(context.Background(), conf)
 	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create GCS client handler")
 	}

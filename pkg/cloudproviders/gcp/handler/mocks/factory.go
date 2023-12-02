@@ -12,45 +12,45 @@ import (
 	context "context"
 	reflect "reflect"
 
-	storage "cloud.google.com/go/storage"
+	types "github.com/stackrox/rox/pkg/cloudproviders/gcp/types"
 	gomock "go.uber.org/mock/gomock"
 	google "golang.org/x/oauth2/google"
 )
 
 // MockClientFactory is a mock of ClientFactory interface.
-type MockClientFactory struct {
+type MockClientFactory[T types.GcpSDKClients] struct {
 	ctrl     *gomock.Controller
-	recorder *MockClientFactoryMockRecorder
+	recorder *MockClientFactoryMockRecorder[T]
 }
 
 // MockClientFactoryMockRecorder is the mock recorder for MockClientFactory.
-type MockClientFactoryMockRecorder struct {
-	mock *MockClientFactory
+type MockClientFactoryMockRecorder[T types.GcpSDKClients] struct {
+	mock *MockClientFactory[T]
 }
 
 // NewMockClientFactory creates a new mock instance.
-func NewMockClientFactory(ctrl *gomock.Controller) *MockClientFactory {
-	mock := &MockClientFactory{ctrl: ctrl}
-	mock.recorder = &MockClientFactoryMockRecorder{mock}
+func NewMockClientFactory[T types.GcpSDKClients](ctrl *gomock.Controller) *MockClientFactory[T] {
+	mock := &MockClientFactory[T]{ctrl: ctrl}
+	mock.recorder = &MockClientFactoryMockRecorder[T]{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockClientFactory) EXPECT() *MockClientFactoryMockRecorder {
+func (m *MockClientFactory[T]) EXPECT() *MockClientFactoryMockRecorder[T] {
 	return m.recorder
 }
 
 // NewClient mocks base method.
-func (m *MockClientFactory) NewClient(ctx context.Context, creds *google.Credentials) (*storage.Client, error) {
+func (m *MockClientFactory[T]) NewClient(ctx context.Context, creds *google.Credentials) (T, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewClient", ctx, creds)
-	ret0, _ := ret[0].(*storage.Client)
+	ret0, _ := ret[0].(T)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NewClient indicates an expected call of NewClient.
-func (mr *MockClientFactoryMockRecorder) NewClient(ctx, creds any) *gomock.Call {
+func (mr *MockClientFactoryMockRecorder[T]) NewClient(ctx, creds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockClientFactory)(nil).NewClient), ctx, creds)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewClient", reflect.TypeOf((*MockClientFactory[T])(nil).NewClient), ctx, creds)
 }
