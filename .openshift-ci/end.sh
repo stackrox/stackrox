@@ -25,9 +25,20 @@ openshift_ci_import_creds
 combined="${CREATE_CLUSTER_OUTCOME:-undefined}-${JOB_DISPATCH_OUTCOME:-undefined}-${DESTROY_CLUSTER_OUTCOME:-undefined}"
 
 case "${combined}" in
-    undefined-*-*)
+    undefined-"${OUTCOME_FAILED}"-*)
+        # The job was considered a failure before cluster creation was
+        # attempted. This can happen with GKE for example where the cluster
+        # create starts after image poll.
+        outcome="${OUTCOME_FAILED}"
+        ;;
+    undefined-"${OUTCOME_PASSED}"-*)
+        info "ERROR: unexpected state in end.sh: ${combined}"
+        outcome="${OUTCOME_FAILED}"
+        ;;
+    undefined-undefined-*)
         # The job was interrupted before cluster create could complete. or
-        # openshift-ci had a meltdown. 
+        # openshift-ci had a meltdown. cluster destroy might still pass, fail or
+        # be canceled.
         outcome="${OUTCOME_CANCELED}"
         ;;
     "${OUTCOME_FAILED}"-*-*)
