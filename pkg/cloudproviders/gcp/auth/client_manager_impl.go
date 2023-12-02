@@ -43,7 +43,10 @@ func NewSTSClientManager(namespace string, secretName string) STSClientManager {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 		return fallbackSTSClientManager()
 	}
-	mgr := &stsClientManagerImpl{storageClientHandler: handler.NewHandlerNoInit[*storage.Client]()}
+	mgr := &stsClientManagerImpl{
+		storageClientHandler:        handler.NewHandlerNoInit[*storage.Client](),
+		securityCenterClientHandler: handler.NewHandlerNoInit[*securitycenter.Client](),
+	}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.updateClients)
 	mgr.updateClients()
 	return mgr
@@ -68,6 +71,9 @@ func (c *stsClientManagerImpl) updateClients() {
 
 	if err := c.storageClientHandler.UpdateClient(ctx, creds); err != nil {
 		log.Error("Failed to update GCP storage client: ", err)
+	}
+	if err := c.securityCenterClientHandler.UpdateClient(ctx, creds); err != nil {
+		log.Error("Failed to update GCP security center client: ", err)
 	}
 }
 

@@ -72,7 +72,6 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 	} else {
 		handler, err = gcpHandler.CreateStorageHandlerFromConfig(context.Background(), conf)
 	}
-
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create GCS client handler")
 	}

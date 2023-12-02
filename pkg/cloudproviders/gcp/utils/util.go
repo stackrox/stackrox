@@ -1,4 +1,4 @@
-package handler
+package utils
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/types"
 	"golang.org/x/oauth2/google"
 	securitycenterv1 "google.golang.org/api/securitycenter/v1"
@@ -15,7 +16,7 @@ import (
 )
 
 // CreateStorageHandlerFromConfig creates a handler based on the GCS integration configuration.
-func CreateStorageHandlerFromConfig(ctx context.Context, conf *storage.GCSConfig) (Handler[*googleStorage.Client], error) {
+func CreateStorageHandlerFromConfig(ctx context.Context, conf *storage.GCSConfig) (handler.Handler[*googleStorage.Client], error) {
 	if conf.GetUseWorkloadId() {
 		return createDefaultCredsHandler[*googleStorage.Client](ctx, googleStoragev1.CloudPlatformScope)
 	}
@@ -26,7 +27,7 @@ func CreateStorageHandlerFromConfig(ctx context.Context, conf *storage.GCSConfig
 
 // CreateStorageHandlerFromConfigWithManager creates a handler based on the GCS integration configuration.
 func CreateStorageHandlerFromConfigWithManager(ctx context.Context, conf *storage.GCSConfig,
-	manager auth.STSClientManager) (Handler[*googleStorage.Client], error) {
+	manager auth.STSClientManager) (handler.Handler[*googleStorage.Client], error) {
 	if conf.GetUseWorkloadId() {
 		return manager.StorageClientHandler(), nil
 	}
@@ -37,7 +38,7 @@ func CreateStorageHandlerFromConfigWithManager(ctx context.Context, conf *storag
 
 // CreateSecurityCenterHandlerFromConfig creates a handler based on the security center config.
 func CreateSecurityCenterHandlerFromConfig(ctx context.Context, decCreds []byte,
-	wifEnabled bool) (Handler[*securitycenter.Client], error) {
+	wifEnabled bool) (handler.Handler[*securitycenter.Client], error) {
 	if wifEnabled {
 		return createDefaultCredsHandler[*securitycenter.Client](ctx, securitycenterv1.CloudPlatformScope)
 	}
@@ -47,7 +48,7 @@ func CreateSecurityCenterHandlerFromConfig(ctx context.Context, decCreds []byte,
 
 // CreateSecurityCenterHandlerFromConfigWithManager creates a handler based on the security center config.
 func CreateSecurityCenterHandlerFromConfigWithManager(ctx context.Context, manager auth.STSClientManager, decCreds []byte,
-	wifEnabled bool) (Handler[*securitycenter.Client], error) {
+	wifEnabled bool) (handler.Handler[*securitycenter.Client], error) {
 	if wifEnabled {
 		return manager.SecurityCenterClientHandler(), nil
 	}
@@ -55,18 +56,18 @@ func CreateSecurityCenterHandlerFromConfigWithManager(ctx context.Context, manag
 	return createStaticHandler[*securitycenter.Client](ctx, decCreds, securitycenterv1.CloudPlatformScope)
 }
 
-func createStaticHandler[T types.GcpSDKClients](ctx context.Context, credentialBytes []byte, scope string) (Handler[T], error) {
+func createStaticHandler[T types.GcpSDKClients](ctx context.Context, credentialBytes []byte, scope string) (handler.Handler[T], error) {
 	creds, err := google.CredentialsFromJSON(ctx, credentialBytes, scope)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create credentials")
 	}
-	return NewHandler[T](ctx, creds)
+	return handler.NewHandler[T](ctx, creds)
 }
 
-func createDefaultCredsHandler[T types.GcpSDKClients](ctx context.Context, scope string) (Handler[T], error) {
+func createDefaultCredsHandler[T types.GcpSDKClients](ctx context.Context, scope string) (handler.Handler[T], error) {
 	creds, err := google.FindDefaultCredentials(ctx, scope)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create credentials")
 	}
-	return NewHandler[T](ctx, creds)
+	return handler.NewHandler[T](ctx, creds)
 }

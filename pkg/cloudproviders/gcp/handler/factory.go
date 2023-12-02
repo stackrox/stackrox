@@ -19,6 +19,7 @@ type ClientFactory[T types.GcpSDKClients] interface {
 	NewClient(ctx context.Context, creds *google.Credentials) (T, error)
 }
 
+// GetClientFactory retrieves the ClientFactory for the given type.
 func GetClientFactory[T types.GcpSDKClients](client T) ClientFactory[T] {
 	switch any(client).(type) {
 	case *storage.Client:

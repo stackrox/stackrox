@@ -10,6 +10,9 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// Handler provides an abstraction for handling GCP SDK clients.
+//
+//go:generate mockgen-wrapper
 type Handler[T types.GcpSDKClients] interface {
 	UpdateClient(ctx context.Context, creds *google.Credentials) error
 	GetClient() (T, types.DoneFunc)
