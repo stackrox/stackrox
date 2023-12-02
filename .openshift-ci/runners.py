@@ -16,7 +16,7 @@ class ClusterTestSetsRunner:
     """A cluster test runner that runs multiple sets of pre, test & post steps
     wrapped by a cluster provision and with similar semantics to
     ClusterTestRunner. Each test set will attempt to run regardless of the outcome of
-    prior sets. This can be overriden on a set by set basis with 'always_run'"""
+    prior sets. This can be overridden on a set by set basis with 'always_run'"""
 
     def __init__(
         self,

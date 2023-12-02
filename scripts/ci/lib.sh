@@ -53,9 +53,9 @@ ci_exit_trap() {
     echo "Exit code is: ${exit_code}"
 
     if [[ "${exit_code}" == "0" ]]; then
-        set_job_record_outcome_if_missing "${OUTCOME_PASSED}"
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_PASSED}"
     else
-        set_job_record_outcome_if_missing "${OUTCOME_FAILED}"
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
     # `post_process_test_results` will generate the Slack attachment first, then

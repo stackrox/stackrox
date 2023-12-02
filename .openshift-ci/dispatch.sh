@@ -65,8 +65,6 @@ job_pid="$!"
 # An Openshift CI job is canceled and sent a SIGINT when for example a new
 # commit is pushed to a PR.
 forward_sigint() {
-    set_job_record_outcome_if_missing "${OUTCOME_CANCELED}"
-
     echo "Dispatch is forwarding SIGINT to job"
     kill -SIGINT "${job_pid}"
     # Delay the default exit trap execution and process completion to allow job

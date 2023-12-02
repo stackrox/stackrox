@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 
@@ -14,3 +15,8 @@ def popen_graceful_kill(cmd):
         cmd.kill()
         cmd.wait(5)
         print("Terminated")
+
+
+def set_ci_shared_export(name, value):
+    with open(os.path.join(os.environ("SHARED_DIR"), "shared_env"), "a") as f:
+        f.write(f"export {name}={value}\n")
