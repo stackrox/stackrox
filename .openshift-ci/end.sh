@@ -20,7 +20,8 @@ openshift_ci_import_creds
 
 # Determin a useful overall job outcome based on state shared from prior steps.
 # 'undefined' states mean the step did not run or openshift-ci canceled it.
-# Note: is states are set after cancelation they do not propagate.
+# Note: in openshift-ci, if SHARED_DIR files are created or changed after
+# cancelation that does not propagate.
 
 combined="${CREATE_CLUSTER_OUTCOME:-undefined}-${JOB_DISPATCH_OUTCOME:-undefined}-${DESTROY_CLUSTER_OUTCOME:-undefined}"
 
@@ -47,7 +48,7 @@ case "${combined}" in
         ;;
     "${OUTCOME_PASSED}"-undefined-*)
         # The job was interrupted before the test could complete. or somewhat
-        # less likely openshift-ci had a meltdown. 
+        # less likely openshift-ci had a meltdown.
         outcome="${OUTCOME_CANCELED}"
         ;;
     "${OUTCOME_PASSED}-${OUTCOME_FAILED}"-*)
