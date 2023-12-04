@@ -21,6 +21,8 @@ import util.Env
 import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import spock.lang.Tag
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
+import org.spockframework.runtime.SpockAssertionError
 
 @Stepwise
 @Tag("PZ")
