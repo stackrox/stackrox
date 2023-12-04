@@ -78,6 +78,18 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
+// AddHostScrapedData mocks base method.
+func (m *MockComplianceDataRepository) AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddHostScrapedData", scrapeResults)
+}
+
+// AddHostScrapedData indicates an expected call of AddHostScrapedData.
+func (mr *MockComplianceDataRepositoryMockRecorder) AddHostScrapedData(scrapeResults any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddHostScrapedData", reflect.TypeOf((*MockComplianceDataRepository)(nil).AddHostScrapedData), scrapeResults)
+}
+
 // CISKubernetesTriggered mocks base method.
 func (m *MockComplianceDataRepository) CISKubernetesTriggered() bool {
 	m.ctrl.T.Helper()

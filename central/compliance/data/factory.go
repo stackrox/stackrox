@@ -20,13 +20,12 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8sBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/images/integration"
 )
 
 // RepositoryFactory allows creating `ComplianceDataRepository`s to be used in compliance runs.
 type RepositoryFactory interface {
-	CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error)
+	CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error)
 }
 
 type factory struct {
@@ -70,8 +69,8 @@ func NewDefaultFactory() RepositoryFactory {
 	}
 }
 
-func (f *factory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
-	return newRepository(ctx, domain, scrapeResults, f)
+func (f *factory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
+	return newRepository(ctx, domain, f)
 }
 
 //go:generate mockgen-wrapper
