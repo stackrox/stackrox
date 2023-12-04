@@ -49,13 +49,31 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		pkgNotifiers.TeamsType:          0,
 	}
 
+	cloudCredentialsEnabledNotifiersCount := map[string]int{
+		"WIF enabled": 0,
+		"STS enabled": 0,
+	}
+
 	for _, notifier := range notifiers {
 		notifierTypesCount[notifier.GetType()]++
+
+		if notifier.GetType() == pkgNotifiers.AWSSecurityHubType && notifier.GetAwsSecurityHub().GetCredentials().GetStsEnabled() {
+			cloudCredentialsEnabledNotifiersCount["STS enabled"]++
+		}
+
+		if notifier.GetType() == pkgNotifiers.CSCCType && notifier.GetCscc().GetWifEnabled() {
+			cloudCredentialsEnabledNotifiersCount["WIF enabled"]++
+		}
 	}
 
 	for notifierType, count := range notifierTypesCount {
 		props[fmt.Sprintf("Total %s Notifiers",
 			cases.Title(language.English, cases.Compact).String(notifierType))] = count
+	}
+
+	for cloudCredentialsType, count := range cloudCredentialsEnabledNotifiersCount {
+		props[fmt.Sprintf("Total %s Notifiers",
+			cases.Title(language.English, cases.Compact).String(cloudCredentialsType))] = count
 	}
 
 	return props, nil
