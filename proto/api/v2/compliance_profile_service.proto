@@ -28,7 +28,7 @@ message ComplianceProfile {
     string                        id                = 1;
     string                        name              = 2;
     string                        profile_version   = 3;
-    repeated string               product_type      = 4;
+    string                        product_type      = 4;
     string                        standard          = 5;
     string                        description       = 6;
     repeated ComplianceRule       rules             = 7;
@@ -39,6 +39,11 @@ message ComplianceProfile {
 
 message ListComplianceProfilesResponse {
     repeated ComplianceProfile profiles = 1;
+}
+
+// CountComplianceProfiles gives count of compliance profiles
+message CountComplianceProfiles{
+    int32 count = 1;
 }
 
 service ComplianceProfileService {
@@ -53,6 +58,13 @@ service ComplianceProfileService {
     rpc ListComplianceProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/profiles"
+        };
+    }
+
+    // GetComplianceProfileCount returns the number of profiles matching the given query
+    rpc GetComplianceProfileCount(RawQuery) returns (CountComplianceProfiles){
+        option (google.api.http) = {
+            get: "/v2/compliance/count/profiles"
         };
     }
 }
