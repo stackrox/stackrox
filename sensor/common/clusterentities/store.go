@@ -207,8 +207,8 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // Tick informs the store that unit of time has passed
 func (e *Store) Tick() {
-	e.dbgPrintEndpoints()
-	e.dbgPrintHistorical() // TODO: remove debug
+	log.Debug(e.dbgPrintEndpoints(e.endpointMap, e.ipMap))
+	log.Debug(e.dbgPrintHistorical(e.historicalEndpoints, e.historicalIPs)) // TODO: remove debug
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
@@ -223,40 +223,56 @@ func (e *Store) Tick() {
 	}
 }
 
-func (e *Store) dbgPrintEndpoints() {
-	repr := "endpoints:["
-	for ep, m := range e.endpointMap {
-		repr += fmt.Sprintf("{ep: %s: [%v]}", ep.String(), m)
+func (e *Store) dbgPrintEndpoints(
+	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{},
+	ipMap map[net.IPAddress]map[string]struct{},
+) string {
+	repr := "{\"Endpoints\": ["
+	for ep, m := range endpointMap {
+		repr += fmt.Sprintf("{%q: [", ep.String())
+		for deplID, eti := range m {
+			repr += fmt.Sprintf("{%q:%q}, ", deplID, eti)
+		}
+		repr += "]},"
+	}
+	repr += "],"
+	repr += "\"IPs\": ["
+	for ip, m := range ipMap {
+		repr += fmt.Sprintf("{%q: [", ip.String())
+		for deplID := range m {
+			repr += fmt.Sprintf("%q, ", deplID)
+		}
+		repr += "]},"
 	}
 	repr += "]"
-	repr += "IPs:["
-	for ip, m := range e.ipMap {
-		repr += fmt.Sprintf("{ip: %s: [%v]}", ip.String(), m)
-	}
-	repr += "]"
-	log.Debugf(repr)
+	repr += "}"
+	return repr
 }
 
-func (e *Store) dbgPrintHistorical() {
-	repr := "histEndpoints:["
-	for deplID, m := range e.historicalEndpoints {
-		repr += "deployID:{" + deplID + ": ["
+func (e *Store) dbgPrintHistorical(
+	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus,
+	historicalIPs map[net.IPAddress]map[string]*entityStatus,
+) string {
+	repr := "{\"histEndpoints\": ["
+	for deplID, m := range historicalEndpoints {
+		repr += fmt.Sprintf("{%q: [", deplID)
 		for ep, status := range m {
-			repr += fmt.Sprintf("ep=%s,ticksLeft=%d; ", ep.String(), status.ticksLeft)
+			repr += fmt.Sprintf("{\"ep\":%q, \"ticksLeft\": %d}, ", ep.String(), status.ticksLeft)
 		}
-		repr += "]}"
+		repr += "]},"
 	}
 	repr += "], "
-	repr += "histIPs:["
-	for ip, m := range e.historicalIPs {
-		repr += "IP:{" + ip.String() + ": ["
+	repr += "\"histIPs\": ["
+	for ip, m := range historicalIPs {
+		repr += fmt.Sprintf("{%q: [", ip.String())
 		for deplID, status := range m {
-			repr += fmt.Sprintf("deplID=%s,ticksLeft=%d; ", deplID, status.ticksLeft)
+			repr += fmt.Sprintf("{\"deplID\":%q, \"ticksLeft\": %d}, ", deplID, status.ticksLeft)
 		}
-		repr += "]"
+		repr += "]},"
 	}
 	repr += "]"
-	log.Debugf(repr)
+	repr += "}"
+	return repr
 }
 
 func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
