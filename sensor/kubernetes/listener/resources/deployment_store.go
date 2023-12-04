@@ -253,6 +253,20 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 	return wrap.GetDeployment().Clone(), wrap.isBuilt
 }
 
+// EnhanceDeploymentReadOnly takes a deployment.storage object and enhances it with available information
+// without changing the internal stores
+func (ds *DeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) *storage.Deployment {
+	wrap := deploymentWrap{
+		Deployment: d,
+	}
+	// Note: No need to check any pod info, as no new pods are created
+	wrap.populatePorts()
+	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
+	wrap.updatePortExposureSlice(dependencies.Exposures)
+
+	return wrap.GetDeployment()
+}
+
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.
 func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependencies store.Dependencies) (*storage.Deployment, bool, error) {
 	ds.lock.Lock()

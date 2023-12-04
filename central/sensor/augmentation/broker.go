@@ -8,8 +8,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Broker .
@@ -30,6 +35,7 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 	if r, ok := b.requests[msg.GetMsg().GetId()]; ok {
 		select {
 		case r <- msg:
+			log.Infof("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
 			// Write message to the right channel and close it
 			close(r)
 			break
@@ -48,6 +54,8 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 	id := uuid.NewV4().String()
 	b.requests[id] = ch
 	b.lock.Unlock()
+
+	log.Infof("Sending Deployment Augmentation request off to Sensor with requestID %v", id)
 
 	err := conn.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
