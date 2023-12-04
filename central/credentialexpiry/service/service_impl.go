@@ -39,12 +39,8 @@ type serviceImpl struct {
 	imageIntegrations      imageIntegrationStore.DataStore
 	scannerConfig          *tls.Config
 	scannerV4IndexerConfig *tls.Config
-}
-
-type endpointWithConfig struct {
-	endpoint  string
-	tlsConfig *tls.Config
-	subject   mtls.Subject
+	scannerV4MatcherConfig *tls.Config
+	scannerV4DBConfig      *tls.Config
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -53,6 +49,15 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getCentralCertExpiry()
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
+	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
+	case v1.GetCertExpiry_SCANNER_V4_INDEXER:
+		return nil, errors.New("Querying Scanner V4 Indexer for certificate expiration date is currently unsupported")
+	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
+	case v1.GetCertExpiry_SCANNER_V4_MATCHER:
+		return nil, errors.New("Querying Scanner V4 Matcher for certificate expiration date is currently unsupported")
+	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
+	case v1.GetCertExpiry_SCANNER_V4_DB:
+		return nil, errors.New("Querying Scanner V4 DB for certificate expiration date is currently unsupported")
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -92,23 +97,23 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, epWithCfg endpointWithConfig) (*types.Timestamp, error) {
-	addr, err := ensureTLSAndReturnAddr(epWithCfg.endpoint)
+func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint string) (*types.Timestamp, error) {
+	addr, err := ensureTLSAndReturnAddr(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := tlsutils.DialContext(ctx, "tcp", addr, epWithCfg.tlsConfig)
+	conn, err := tlsutils.DialContext(ctx, "tcp", addr, s.scannerConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to contact scanner at %s", epWithCfg.endpoint)
+		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
 	}
 	defer utils.IgnoreError(conn.Close)
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, errors.Errorf("scanner at %s returned no peer certs", epWithCfg.endpoint)
+		return nil, errors.Errorf("scanner at %s returned no peer certs", endpoint)
 	}
 	leafCert := certs[0]
-	if cn := leafCert.Subject.CommonName; cn != epWithCfg.subject.CN() {
-		return nil, errors.Errorf("common name of scanner at %s (%s) is not as expected", epWithCfg.endpoint, cn)
+	if cn := leafCert.Subject.CommonName; cn != mtls.ScannerSubject.CN() {
+		return nil, errors.Errorf("common name of scanner at %s (%s) is not as expected", endpoint, cn)
 	}
 	expiry, err := types.TimestampProto(leafCert.NotAfter)
 	if err != nil {
@@ -126,34 +131,22 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		return nil, errors.Errorf("failed to retrieve image integrations: %v", err)
 	}
 
-	var endpoints []endpointWithConfig
-
-	// Here we collect the endpoints for scanner V2 and for scanner V4 integrations.
+	var clairifyEndpoints []string
 	for _, integration := range integrations {
 		if clairify := integration.GetClairify(); clairify != nil {
-			endpoints = append(endpoints, endpointWithConfig{
-				endpoint:  clairify.GetEndpoint(),
-				tlsConfig: s.scannerConfig,
-				subject:   mtls.ScannerSubject,
-			})
-		} else if clairV4 := integration.GetClairV4(); clairV4 != nil {
-			endpoints = append(endpoints, endpointWithConfig{
-				endpoint:  clairV4.GetEndpoint(),
-				tlsConfig: s.scannerV4IndexerConfig,
-				subject:   mtls.ScannerV4IndexerSubject,
-			})
+			clairifyEndpoints = append(clairifyEndpoints, clairify.GetEndpoint())
 		}
 	}
-	if len(endpoints) == 0 {
+	if len(clairifyEndpoints) == 0 {
 		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
 	}
-	errC := make(chan error, len(endpoints))
-	expiryC := make(chan *types.Timestamp, len(endpoints))
+	errC := make(chan error, len(clairifyEndpoints))
+	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	for _, endpoint := range endpoints {
-		go func(endpoint endpointWithConfig) {
+	for _, endpoint := range clairifyEndpoints {
+		go func(endpoint string) {
 			expiry, err := s.maybeGetExpiryFomScannerAt(ctx, endpoint)
 			if err != nil {
 				errC <- err
@@ -171,7 +164,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		case err := <-errC:
 			errorList.AddError(err)
 			// All the endpoints have failed.
-			if len(errorList.ErrorStrings()) == len(endpoints) {
+			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
 				return nil, errors.New(errorList.String())
 			}
 		case expiry := <-expiryC:

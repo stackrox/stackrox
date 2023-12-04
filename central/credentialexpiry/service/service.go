@@ -41,13 +41,29 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
-		log.Warnf("Failed to initialize scanner V4 Indexer TLS config: %v", err)
+		log.Warnf("Failed to initialize Scanner V4 Indexer TLS config: %v", err)
 		scannerV4IndexerTLSConfig = nil
+	}
+	scannerV4MatcherTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4MatcherSubject, clientconn.TLSConfigOptions{
+		UseClientCert: clientconn.MustUseClientCert,
+	})
+	if err != nil {
+		log.Warnf("Failed to initialize Scanner V4 Matcher TLS config: %v", err)
+		scannerV4MatcherTLSConfig = nil
+	}
+	scannerV4DBTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4DBSubject, clientconn.TLSConfigOptions{
+		UseClientCert: clientconn.MustUseClientCert,
+	})
+	if err != nil {
+		log.Warnf("Failed to initialize Scanner V4 DB TLS config: %v", err)
+		scannerV4DBTLSConfig = nil
 	}
 
 	return &serviceImpl{
 		imageIntegrations:      imageIntegrations,
 		scannerConfig:          scannerTLSConfig,
 		scannerV4IndexerConfig: scannerV4IndexerTLSConfig,
+		scannerV4MatcherConfig: scannerV4MatcherTLSConfig,
+		scannerV4DBConfig:      scannerV4DBTLSConfig,
 	}
 }
