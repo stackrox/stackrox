@@ -8,13 +8,13 @@ package central;
 
 message DeploymentEnhancementMessage{
     string id = 1;
-    repeated storage.Deployment deployment = 2;
+    repeated storage.Deployment deployments = 2;
 }
 
 message DeploymentEnhancementRequest{
-     DeploymentEnhancementMessage deployment = 1;
+     DeploymentEnhancementMessage msg = 1;
 }
 
 message DeploymentEnhancementResponse{
-    DeploymentEnhancementMessage deployment = 1;
+    DeploymentEnhancementMessage msg = 1;
 }

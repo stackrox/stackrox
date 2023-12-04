@@ -25,7 +25,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type DeploymentEnhancementMessage struct {
 	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Deployment           []*storage.Deployment `protobuf:"bytes,2,rep,name=deployment,proto3" json:"deployment,omitempty"`
+	Deployments          []*storage.Deployment `protobuf:"bytes,2,rep,name=deployments,proto3" json:"deployments,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -71,9 +71,9 @@ func (m *DeploymentEnhancementMessage) GetId() string {
 	return ""
 }
 
-func (m *DeploymentEnhancementMessage) GetDeployment() []*storage.Deployment {
+func (m *DeploymentEnhancementMessage) GetDeployments() []*storage.Deployment {
 	if m != nil {
-		return m.Deployment
+		return m.Deployments
 	}
 	return nil
 }
@@ -88,17 +88,17 @@ func (m *DeploymentEnhancementMessage) Clone() *DeploymentEnhancementMessage {
 	cloned := new(DeploymentEnhancementMessage)
 	*cloned = *m
 
-	if m.Deployment != nil {
-		cloned.Deployment = make([]*storage.Deployment, len(m.Deployment))
-		for idx, v := range m.Deployment {
-			cloned.Deployment[idx] = v.Clone()
+	if m.Deployments != nil {
+		cloned.Deployments = make([]*storage.Deployment, len(m.Deployments))
+		for idx, v := range m.Deployments {
+			cloned.Deployments[idx] = v.Clone()
 		}
 	}
 	return cloned
 }
 
 type DeploymentEnhancementRequest struct {
-	Deployment           *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	Msg                  *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -137,9 +137,9 @@ func (m *DeploymentEnhancementRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeploymentEnhancementRequest proto.InternalMessageInfo
 
-func (m *DeploymentEnhancementRequest) GetDeployment() *DeploymentEnhancementMessage {
+func (m *DeploymentEnhancementRequest) GetMsg() *DeploymentEnhancementMessage {
 	if m != nil {
-		return m.Deployment
+		return m.Msg
 	}
 	return nil
 }
@@ -154,12 +154,12 @@ func (m *DeploymentEnhancementRequest) Clone() *DeploymentEnhancementRequest {
 	cloned := new(DeploymentEnhancementRequest)
 	*cloned = *m
 
-	cloned.Deployment = m.Deployment.Clone()
+	cloned.Msg = m.Msg.Clone()
 	return cloned
 }
 
 type DeploymentEnhancementResponse struct {
-	Deployment           *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	Msg                  *DeploymentEnhancementMessage `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -198,9 +198,9 @@ func (m *DeploymentEnhancementResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeploymentEnhancementResponse proto.InternalMessageInfo
 
-func (m *DeploymentEnhancementResponse) GetDeployment() *DeploymentEnhancementMessage {
+func (m *DeploymentEnhancementResponse) GetMsg() *DeploymentEnhancementMessage {
 	if m != nil {
-		return m.Deployment
+		return m.Msg
 	}
 	return nil
 }
@@ -215,7 +215,7 @@ func (m *DeploymentEnhancementResponse) Clone() *DeploymentEnhancementResponse {
 	cloned := new(DeploymentEnhancementResponse)
 	*cloned = *m
 
-	cloned.Deployment = m.Deployment.Clone()
+	cloned.Msg = m.Msg.Clone()
 	return cloned
 }
 
@@ -230,21 +230,21 @@ func init() {
 }
 
 var fileDescriptor_481d8d3bdf1f6bc6 = []byte{
-	// 217 bytes of a gzipped FileDescriptorProto
+	// 222 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0xc8, 0xcc, 0x2b, 0x49,
 	0x2d, 0xca, 0x4b, 0xcc, 0x49, 0x2c, 0xc8, 0xd4, 0x4f, 0x4e, 0xcd, 0x2b, 0x29, 0x4a, 0xcc, 0xd1,
 	0x4f, 0x49, 0x2d, 0xc8, 0xc9, 0xaf, 0xcc, 0x4d, 0xcd, 0x2b, 0x89, 0x4f, 0xcd, 0xcb, 0x48, 0xcc,
 	0x4b, 0x4e, 0x05, 0xb1, 0xf5, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0xd8, 0xa1, 0xaa, 0xa4, 0x24,
-	0x8a, 0x4b, 0xf2, 0x8b, 0x12, 0xd3, 0x53, 0x91, 0x94, 0x43, 0x94, 0x28, 0x25, 0x73, 0xc9, 0xb8,
+	0x8a, 0x4b, 0xf2, 0x8b, 0x12, 0xd3, 0x53, 0x91, 0x94, 0x43, 0x94, 0x28, 0xa5, 0x72, 0xc9, 0xb8,
 	0xc0, 0xc5, 0x5c, 0x11, 0x26, 0xf8, 0xa6, 0x16, 0x17, 0x27, 0xa6, 0xa7, 0x0a, 0xf1, 0x71, 0x31,
-	0x65, 0xa6, 0x48, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x31, 0x65, 0xa6, 0x08, 0x19, 0x73, 0x71,
-	0x21, 0xcc, 0x90, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x36, 0x12, 0xd6, 0x83, 0x1a, 0xaf, 0x87, 0x30,
-	0x2a, 0x08, 0x49, 0x99, 0x52, 0x2a, 0x0e, 0x4b, 0x82, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84,
-	0x5c, 0x51, 0x0c, 0x05, 0x59, 0xc6, 0x6d, 0xa4, 0xaa, 0x07, 0x75, 0xbc, 0x1e, 0x3e, 0xf7, 0xa1,
-	0x58, 0x93, 0xc6, 0x25, 0x8b, 0xc3, 0x9a, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x2a, 0xd9, 0xe3,
-	0x24, 0x79, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0xce, 0x78,
-	0x2c, 0xc7, 0x10, 0x05, 0x0b, 0xe8, 0x24, 0x36, 0x70, 0xa8, 0x1a, 0x03, 0x02, 0x00, 0x00, 0xff,
-	0xff, 0x13, 0xc0, 0xf4, 0x0b, 0xac, 0x01, 0x00, 0x00,
+	0x65, 0xa6, 0x48, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x31, 0x65, 0xa6, 0x08, 0x99, 0x72, 0x71,
+	0x23, 0xcc, 0x28, 0x96, 0x60, 0x52, 0x60, 0xd6, 0xe0, 0x36, 0x12, 0xd6, 0x83, 0x9a, 0xaf, 0x87,
+	0x30, 0x2b, 0x08, 0x59, 0x9d, 0x52, 0x38, 0x0e, 0x6b, 0x82, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b,
+	0x84, 0xcc, 0xb9, 0x98, 0x73, 0x8b, 0xd3, 0xc1, 0xf6, 0x70, 0x1b, 0xa9, 0xea, 0x41, 0xdd, 0xad,
+	0x87, 0xcf, 0x69, 0x41, 0x20, 0x1d, 0x4a, 0x11, 0x5c, 0xb2, 0x38, 0x0c, 0x2e, 0x2e, 0xc8, 0xcf,
+	0x2b, 0x4e, 0x25, 0xdb, 0x64, 0x27, 0xc9, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c,
+	0xf0, 0x48, 0x8e, 0x71, 0xc6, 0x63, 0x39, 0x86, 0x28, 0x58, 0x70, 0x26, 0xb1, 0x81, 0xc3, 0xce,
+	0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x21, 0x35, 0x1d, 0xf5, 0x92, 0x01, 0x00, 0x00,
 }
 
 func (m *DeploymentEnhancementMessage) Marshal() (dAtA []byte, err error) {
@@ -271,10 +271,10 @@ func (m *DeploymentEnhancementMessage) MarshalToSizedBuffer(dAtA []byte) (int, e
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.Deployment) > 0 {
-		for iNdEx := len(m.Deployment) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Deployments) > 0 {
+		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Deployment[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Deployments[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -319,9 +319,9 @@ func (m *DeploymentEnhancementRequest) MarshalToSizedBuffer(dAtA []byte) (int, e
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Deployment != nil {
+	if m.Msg != nil {
 		{
-			size, err := m.Deployment.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Msg.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -358,9 +358,9 @@ func (m *DeploymentEnhancementResponse) MarshalToSizedBuffer(dAtA []byte) (int, 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Deployment != nil {
+	if m.Msg != nil {
 		{
-			size, err := m.Deployment.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Msg.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -394,8 +394,8 @@ func (m *DeploymentEnhancementMessage) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovDeploymentEnhancement(uint64(l))
 	}
-	if len(m.Deployment) > 0 {
-		for _, e := range m.Deployment {
+	if len(m.Deployments) > 0 {
+		for _, e := range m.Deployments {
 			l = e.Size()
 			n += 1 + l + sovDeploymentEnhancement(uint64(l))
 		}
@@ -412,8 +412,8 @@ func (m *DeploymentEnhancementRequest) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Deployment != nil {
-		l = m.Deployment.Size()
+	if m.Msg != nil {
+		l = m.Msg.Size()
 		n += 1 + l + sovDeploymentEnhancement(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -428,8 +428,8 @@ func (m *DeploymentEnhancementResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Deployment != nil {
-		l = m.Deployment.Size()
+	if m.Msg != nil {
+		l = m.Msg.Size()
 		n += 1 + l + sovDeploymentEnhancement(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -507,7 +507,7 @@ func (m *DeploymentEnhancementMessage) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Deployment", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Deployments", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -534,8 +534,8 @@ func (m *DeploymentEnhancementMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Deployment = append(m.Deployment, &storage.Deployment{})
-			if err := m.Deployment[len(m.Deployment)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Deployments = append(m.Deployments, &storage.Deployment{})
+			if err := m.Deployments[len(m.Deployments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -592,7 +592,7 @@ func (m *DeploymentEnhancementRequest) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Deployment", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Msg", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -619,10 +619,10 @@ func (m *DeploymentEnhancementRequest) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Deployment == nil {
-				m.Deployment = &DeploymentEnhancementMessage{}
+			if m.Msg == nil {
+				m.Msg = &DeploymentEnhancementMessage{}
 			}
-			if err := m.Deployment.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Msg.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -679,7 +679,7 @@ func (m *DeploymentEnhancementResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Deployment", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Msg", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -706,10 +706,10 @@ func (m *DeploymentEnhancementResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Deployment == nil {
-				m.Deployment = &DeploymentEnhancementMessage{}
+			if m.Msg == nil {
+				m.Msg = &DeploymentEnhancementMessage{}
 			}
-			if err := m.Deployment.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Msg.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
