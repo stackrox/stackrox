@@ -97,8 +97,8 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
                 <Td colSpan={3}>
                     <Bullseye>
                         <EmptyStateTemplate
-                            title="No profiles found"
-                            headingLevel="h2"
+                            title="No profiles"
+                            headingLevel="h3"
                             icon={SearchIcon}
                         />
                     </Bullseye>
@@ -125,7 +125,7 @@ function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProp
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h1">Profiles</Title>
+                        <Title headingLevel="h2">Profiles</Title>
                     </FlexItem>
                     <FlexItem>Select profiles to be included in the scan</FlexItem>
                 </Flex>

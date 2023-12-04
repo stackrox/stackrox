@@ -109,7 +109,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             <Tr>
                 <Td colSpan={2}>
                     <Bullseye>
-                        <EmptyStateTemplate title="No clusters" headingLevel="h2" icon={SearchIcon}>
+                        <EmptyStateTemplate title="No clusters" headingLevel="h3" icon={SearchIcon}>
                             {hasWriteAccessForCluster && (
                                 <Flex direction={{ default: 'column' }}>
                                     <FlexItem>
@@ -131,10 +131,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
         if (clusters && clusters.length > 0) {
             return renderTableContent();
         }
-        if (clusters && clusters.length === 0) {
-            return renderEmptyContent();
-        }
-        return null;
+        return renderEmptyContent();
     }
 
     return (
@@ -142,7 +139,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h1">Clusters</Title>
+                        <Title headingLevel="h2">Clusters</Title>
                     </FlexItem>
                     <FlexItem>Select clusters to be included in the scan</FlexItem>
                 </Flex>

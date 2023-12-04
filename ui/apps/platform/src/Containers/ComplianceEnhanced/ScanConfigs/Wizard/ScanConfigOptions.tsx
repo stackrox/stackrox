@@ -56,7 +56,7 @@ function ScanConfigOptions(): ReactElement {
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h1">Configuration options</Title>
+                        <Title headingLevel="h2">Configuration options</Title>
                     </FlexItem>
                     <FlexItem>Set up name, schedule, and options</FlexItem>
                 </Flex>
