@@ -2,6 +2,7 @@ package clusterentities
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -101,6 +102,7 @@ type Store struct {
 	entitiesMemorySize  uint16
 	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 	historicalIPs       map[net.IPAddress]map[string]*entityStatus
+	debugServer         *http.Server
 }
 
 // NewStore creates and returns a new store instance.
@@ -114,7 +116,37 @@ func NewStore() *Store {
 func NewStoreWithMemory(numTicks uint16) *Store {
 	store := &Store{entitiesMemorySize: numTicks}
 	store.initMaps()
+	store.debugServer = store.startDebugServer()
 	return store
+}
+
+func (e *Store) startDebugServer() *http.Server {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/debug/endpoints", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/json")
+		_, err := w.Write([]byte(e.dbgPrintEndpoints(e.endpointMap, e.ipMap)))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	handler.HandleFunc("/debug/historical", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/json")
+		_, err := w.Write([]byte(e.dbgPrintHistorical(e.historicalEndpoints, e.historicalIPs)))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := &http.Server{Addr: "127.0.0.1:6066", Handler: handler}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Warnf("Closing debugging server: %v", err)
+		}
+	}()
+	return srv
 }
 
 func (e *Store) initMaps() {
