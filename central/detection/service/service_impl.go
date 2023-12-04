@@ -70,6 +70,7 @@ var (
 	delegateScanPermissions = []string{"Image"}
 )
 
+// AugmentationRequestWatcher is the interface to send deployments for augmentation to Sensor
 type AugmentationRequestWatcher interface {
 	SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
 }

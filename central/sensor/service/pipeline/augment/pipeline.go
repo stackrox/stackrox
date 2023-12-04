@@ -15,6 +15,7 @@ var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
+// AugmentationBroker is the interface that will be notified when an augmented deployment from Sensor arrives
 type AugmentationBroker interface {
 	NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse)
 }
@@ -28,12 +29,13 @@ func NewAugmentPipeline(broker AugmentationBroker) pipeline.Fragment {
 	return &pipelineImpl{broker: broker}
 }
 
+// GetPipeline returns a new pipeline
 func GetPipeline() pipeline.Fragment {
 	return NewAugmentPipeline(augmentation.BrokerSingleton())
 }
 
 // OnFinish .
-func (p pipelineImpl) OnFinish(clusterID string) {
+func (p pipelineImpl) OnFinish(_ string) {
 }
 
 // Capabilities .
@@ -46,11 +48,11 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetDeploymentEnhancementResponse() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (p pipelineImpl) Run(_ context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	p.broker.NotifyDeploymentReceived(msg.GetDeploymentEnhancementResponse())
 	return nil
 }
 
-func (p pipelineImpl) Reconcile(ctx context.Context, clusterID string, reconciliationStore *reconciliation.StoreMap) error {
+func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }

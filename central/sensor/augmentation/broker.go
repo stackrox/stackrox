@@ -12,11 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// Broker .
 type Broker struct {
 	requests map[string]chan<- *central.DeploymentEnhancementResponse
 	lock     sync.Mutex
 }
 
+// NewBroker returns a new broker
 func NewBroker() *Broker {
 	return &Broker{}
 }
@@ -40,7 +42,7 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 }
 
 // SendAndWaitForAugmentedDeployments .
-func (b Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
+func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
 	b.lock.Lock()
 	ch := make(chan *central.DeploymentEnhancementResponse, 1)
 	id := uuid.NewV4().String()
