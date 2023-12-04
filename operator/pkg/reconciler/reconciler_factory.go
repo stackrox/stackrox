@@ -1,6 +1,7 @@
 package reconciler
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -118,10 +119,10 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 // every (in our case typically one) resource of specified type, which resides in the same namespace as the
 // observed resource.
 func HandleSiblings(gvk schema.GroupVersionKind, manager ctrl.Manager) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(object ctrlClient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlClient.Object) []reconcile.Request {
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(gvk)
-		utils.ListSiblings(list, object, manager.GetClient())
+		utils.ListSiblings(ctx, list, object, manager.GetClient())
 		var ret []reconcile.Request
 		for _, c := range list.Items {
 			ret = append(ret, utils.RequestFor(&c)) // #nosec

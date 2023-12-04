@@ -1,11 +1,11 @@
 package common
 
 import (
-	openapi_v2 "github.com/google/gnostic/openapiv2"
+	openapi_v2 "github.com/google/gnostic-models/openapiv2"
 	"github.com/pkg/errors"
 	"k8s.io/kubectl/pkg/util/openapi"
-	openAPIValidation "k8s.io/kubectl/pkg/util/openapi/validation"
 	"k8s.io/kubectl/pkg/validation"
+	openAPIValidation "k8s.io/kubectl/pkg/validation"
 )
 
 // ValidatorFromOpenAPIDoc takes a given OpenAPI v2 Document and returns a schema validator for it.
