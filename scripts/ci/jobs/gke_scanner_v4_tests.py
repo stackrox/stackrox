@@ -7,7 +7,7 @@ import os
 from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import PreSystemTests
-from ci_tests import ScaleTest
+from ci_tests import ScannerV4Test
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
