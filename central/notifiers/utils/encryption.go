@@ -27,12 +27,11 @@ func GetActiveNotifierEncryptionKey() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
-	var chain KeyChain
-	err = yaml.Unmarshal(data, &chain)
+	keyChain, err := parseKeyChainBytes(data)
 	if err != nil {
-		return "", errors.Wrap(err, "Error parsing notifier encryption keychain")
+		return "", err
 	}
-	key, exists := chain.KeyMap[chain.ActiveKeyIndex]
+	key, exists := keyChain.KeyMap[keyChain.ActiveKeyIndex]
 	if !exists {
 		return "", errors.New("Invalid keychain. Encryption key at active index does not exist")
 	}
@@ -45,16 +44,24 @@ func GetNotifierEncryptionKeyAtIndex(idx int) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
-	var chain KeyChain
-	err = yaml.Unmarshal(data, &chain)
+	keyChain, err := parseKeyChainBytes(data)
 	if err != nil {
-		return "", errors.Wrap(err, "Error parsing notifier encryption keychain")
+		return "", err
 	}
-	key, exists := chain.KeyMap[idx]
+	key, exists := keyChain.KeyMap[idx]
 	if !exists {
-		return "", errors.Errorf("Encryption key index '%s' does not exist", idx)
+		return "", errors.Errorf("Encryption key index '%d' does not exist", idx)
 	}
 	return key, nil
+}
+
+func parseKeyChainBytes(data []byte) (*KeyChain, error) {
+	var chain KeyChain
+	err := yaml.Unmarshal(data, &chain)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error parsing notifier encryption keychain")
+	}
+	return &chain, nil
 }
 
 // SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified,
