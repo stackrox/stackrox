@@ -49,7 +49,9 @@ const (
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	cvssFile          = "nvd-bundle/nvd-data.tar.gz"
 	mappingUpdaterKey = "mapping"
+	cvssUpdaterKey    = "cvss"
 )
 
 var (
@@ -124,6 +126,9 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
 			h.getMappingFileHelper(w, r, v4FileName)
 			return
+		} else if fileType == "cvss" {
+			h.getCvssFileHelper(w, r)
+			return
 		}
 	}
 
@@ -190,10 +195,10 @@ func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
 
 // getV4Updater gets or creates the updater for RH repository mapping data
 func (h *httpHandler) getV4Updater(key string) *requestedUpdater {
-	if key != mappingUpdaterKey {
-		return nil
+	if key == mappingUpdaterKey || key == cvssUpdaterKey {
+		return h.getUpdaterHelper(key)
 	}
-	return h.getUpdaterHelper(key)
+	return nil
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -242,6 +247,7 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
 }
 
+// TODO(ROX-20520): support offline mode for scanner v4 vuln data
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
 	if err != nil {
@@ -370,6 +376,32 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
+func (h *httpHandler) openMostRecentCvssBundle() (file *vulDefFile, err error) {
+	// TODO(ROX-20520): enable fetching offline file
+	u := h.getV4Updater(cvssUpdaterKey)
+	if u == nil {
+		return nil, errors.New("Failed to initialize CVSS data updater")
+	}
+	u.Start()
+
+	toClose := func(f *vulDefFile) {
+		if file != f && f != nil {
+			utils.IgnoreError(f.Close)
+		}
+	}
+	var onlineFile *vulDefFile
+	dataBundle, onlineTime, err := u.OpenFile()
+	if err != nil || dataBundle == nil {
+		return nil, errors.New("Failed to get CVSS data bundle")
+	}
+	log.Infof("CVSS Bundle is available: %s", dataBundle.Name())
+	onlineFile = &vulDefFile{File: dataBundle, modTime: onlineTime}
+	defer toClose(onlineFile)
+
+	file = onlineFile
+	return file, nil
+}
+
 func (h *httpHandler) openMostRecentMappings(fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
 	u := h.getV4Updater(mappingUpdaterKey)
@@ -462,29 +494,23 @@ func (h *httpHandler) getUpdaterHelper(key string) *requestedUpdater {
 
 	u, exists := h.updaters[key]
 	if !exists {
+		var url string
+		var updater RequestedUpdater
 		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
-
-		if key == mappingUpdaterKey {
-			url := strings.Join([]string{v4StorageDomain, mappingFile}, "/")
-			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newMappingUpdater(
-					file.New(filePath),
-					client,
-					url,
-					h.interval,
-				),
-			}
-		} else {
-			url := strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
-			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newUpdater(
-					file.New(filePath),
-					client,
-					url,
-					h.interval,
-				),
-			}
+		switch key {
+		case mappingUpdaterKey:
+			url = strings.Join([]string{v4StorageDomain, mappingFile}, "/")
+			updater = newV4Updater(file.New(filePath), client, url, h.interval)
+		case cvssUpdaterKey:
+			filePath := filepath.Join(h.onlineVulnDir, key+".tar.gz")
+			url = strings.Join([]string{v4StorageDomain, cvssFile}, "/")
+			updater = newV4Updater(file.New(filePath), client, url, h.interval)
+		default:
+			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
+			updater = newUpdater(file.New(filePath), client, url, h.interval)
 		}
+
+		h.updaters[key] = &requestedUpdater{RequestedUpdater: updater}
 
 		u = h.updaters[key]
 	}
@@ -498,6 +524,16 @@ func (h *httpHandler) getMappingFileHelper(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		log.Errorf("Failed to find JSON file: %v", err)
 		http.Error(w, "JSON file not found", http.StatusNotFound)
+		return
+	}
+	http.ServeContent(w, r, file.Name(), file.modTime, file)
+}
+
+func (h *httpHandler) getCvssFileHelper(w http.ResponseWriter, r *http.Request) {
+	file, err := h.openMostRecentCvssBundle()
+	if err != nil {
+		log.Errorf("Failed to find CVSS data bundle: %v", err)
+		http.Error(w, "CVSS data bundle not found", http.StatusNotFound)
 		return
 	}
 	http.ServeContent(w, r, file.Name(), file.modTime, file)

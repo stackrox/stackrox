@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"compress/gzip"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,6 +21,8 @@ const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
 	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
+
+	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
 )
 
 var (
@@ -64,7 +69,7 @@ func mustSetModTime(t *testing.T, path string, modTime time.Time) {
 
 func TestMappingUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.zip")
-	u := newMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
+	u := newV4Updater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
@@ -77,8 +82,23 @@ func TestMappingUpdate(t *testing.T) {
 	assert.Equal(t, n, 2)
 }
 
+func TestCvssUpdate(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "test.tar.gz")
+	u := newV4Updater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, cvssURL, 1*time.Hour)
+
+	// Should fetch first time.
+	require.NoError(t, u.doUpdate())
+	assertOnFileExistence(t, filePath, true)
+
+	n, err := countFilesInTarGz(filePath)
+	if err != nil {
+		t.Fatalf("Failed to count files in zip: %v", err)
+	}
+	assert.Greater(t, n, 21, "Number of files should be greater than 21")
+}
+
 // countFilesInZip counts the number of files inside a zip archive.
-func countFilesInZip(zipFilePath string) (int, error) {
+func countFilesInZip(zipFilePath string) (int, error) { /**/
 	r, err := zip.OpenReader(zipFilePath)
 	if err != nil {
 		return 0, err
@@ -92,6 +112,38 @@ func countFilesInZip(zipFilePath string) (int, error) {
 	count := 0
 	for _, f := range r.File {
 		if !f.FileInfo().IsDir() {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+func countFilesInTarGz(tarGzFilePath string) (int, error) {
+	file, err := os.Open(tarGzFilePath)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	gzr, err := gzip.NewReader(file)
+	if err != nil {
+		return 0, err
+	}
+	defer gzr.Close()
+
+	tarr := tar.NewReader(gzr)
+
+	count := 0
+	for {
+		header, err := tarr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break // End of archive
+			}
+			return 0, err
+		}
+		if header.Typeflag != tar.TypeDir {
 			count++
 		}
 	}

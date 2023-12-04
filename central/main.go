@@ -830,6 +830,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		"application/json",
 		"application/yaml",
 		"text/plain",
+		"application/gzip",
 	}))
 	utils.CrashOnError(err)
 	customRoutes = append(customRoutes,

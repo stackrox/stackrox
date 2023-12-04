@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	_       RequestedUpdater = (*mappingUpdater)(nil)
+	_       RequestedUpdater = (*v4Updater)(nil)
 	randGen                  = rand.New(rand.NewSource(time.Now().UnixNano()))
 ) /**/
 
-type mappingUpdater struct {
+type v4Updater struct {
 	file *file.File
 
 	client      *http.Client
@@ -34,12 +34,12 @@ const (
 	baseURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
 )
 
-// newMappingUpdater creates a new updater for RH repository mapping data.
-func newMappingUpdater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *mappingUpdater {
+// newV4Updater creates a new updater for RH repository mapping data.
+func newV4Updater(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *v4Updater {
 	if downloadURL == "" {
 		downloadURL = baseURL
 	}
-	return &mappingUpdater{
+	return &v4Updater{
 		file:        file,
 		client:      client,
 		downloadURL: downloadURL,
@@ -49,13 +49,13 @@ func newMappingUpdater(file *file.File, client *http.Client, downloadURL string,
 }
 
 // Stop stops the updater.
-func (u *mappingUpdater) Stop() {
+func (u *v4Updater) Stop() {
 	u.stopSig.Signal()
 }
 
 // Start starts the updater.
 // The updater is only started once.
-func (u *mappingUpdater) Start() {
+func (u *v4Updater) Start() {
 	u.once.Do(func() {
 		// Run the first update in a blocking-manner.
 		err := u.update()
@@ -66,11 +66,11 @@ func (u *mappingUpdater) Start() {
 	})
 }
 
-func (u *mappingUpdater) OpenFile() (*os.File, time.Time, error) {
+func (u *v4Updater) OpenFile() (*os.File, time.Time, error) {
 	return u.file.Open()
 }
 
-func (u *mappingUpdater) runForever() {
+func (u *v4Updater) runForever() {
 	timer := time.NewTimer(u.interval)
 	defer timer.Stop()
 
@@ -89,7 +89,7 @@ func (u *mappingUpdater) runForever() {
 	}
 }
 
-func (u *mappingUpdater) update() error {
+func (u *v4Updater) update() error {
 	if err := u.doUpdate(); err != nil {
 		log.Errorf("Failed to update Scanner v4 repository mapping from endpoint %q: %v", u.downloadURL, err)
 		return err
@@ -97,7 +97,7 @@ func (u *mappingUpdater) update() error {
 	return nil
 }
 
-func (u *mappingUpdater) doUpdate() error {
+func (u *v4Updater) doUpdate() error {
 	err := u.downloadFromURL(u.downloadURL)
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (u *mappingUpdater) doUpdate() error {
 	return nil
 }
 
-func (u *mappingUpdater) downloadFromURL(url string) error {
+func (u *v4Updater) downloadFromURL(url string) error {
 	download := func() error {
 		resp, err := http.Get(url)
 		if err != nil {
