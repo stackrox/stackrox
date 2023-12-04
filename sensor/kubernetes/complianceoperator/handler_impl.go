@@ -10,9 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +46,7 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 }
 
 func (m *handlerImpl) Start() error {
-	if !features.ComplianceEnhancements.Enabled() {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		return nil
 	}
 	// TODO: create default scan setting for ad-hoc scan

@@ -11,11 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -53,7 +53,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() error {
-	if !features.ComplianceEnhancements.Enabled() {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		return nil
 	}
 	go u.run()
