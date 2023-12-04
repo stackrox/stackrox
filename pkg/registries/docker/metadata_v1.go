@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/docker/distribution/manifest/schema1"
+	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -41,10 +43,18 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	line := strings.Join(img.Config.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
+	var created time.Time
+	if img.Created != nil {
+		created = *img.Created
+	}
+	protoTS, err := types.TimestampProto(created)
+	if err != nil {
+		log.Error(err)
+	}
 	return &storage.ImageLayer{
 		Instruction: instruction,
 		Value:       value,
-		Created:     protoconv.ConvertTimeToTimestampOrNow(img.Created),
+		Created:     protoTS,
 		Author:      img.Author,
 	}
 }
