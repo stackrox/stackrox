@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # Runs Scanner V4 tests.
- Formerly CircleCI gke-api-scale-tests and gke-postgres-api-scale-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
@@ -21,7 +20,6 @@ scannerV4_test() {
     info "Starting ScannerV4 test"
 
     require_environment "ORCHESTRATOR_FLAVOR"
-    require_environment "KUBECONFIG"
     require_environment "ROX_SCANNER_V4_ENABLED"
 
     export_test_environment
@@ -31,9 +29,9 @@ scannerV4_test() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox_in_scale_mode
+    deploy_stackrox_in_scannerV4_mode
 
-    run_scannerV4_test "$pprof_zip_output"
+    run_scannerV4_test
 }
 
 deploy_stackrox_in_scannerV4_mode() {
@@ -42,8 +40,6 @@ deploy_stackrox_in_scannerV4_mode() {
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
     export_central_basic_auth_creds
 
-#    "$ROOT/scale/launch_workload.sh" scale-test
-
     wait_for_api
 
     touch "${STATE_DEPLOYED}"
@@ -51,7 +47,7 @@ deploy_stackrox_in_scannerV4_mode() {
 
 run_scannerV4_test() {
     info "Running scannerV4 test"
-
+    info "Nothing yet..."
 }
 
 scannerV4_test "$@"
