@@ -1,6 +1,6 @@
 /* This file is only used by ESLint, that derives TS project config from it */
 {
-    "extends": "./tsconfig.json",
+    "extends": "./tsconfig.base.json",
     "include": [
         ".prettierrc.js",
         "config-overrides.js",

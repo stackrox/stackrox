@@ -2,11 +2,11 @@ import React from 'react';
 import { Router } from 'react-router-dom';
 import { createBrowserHistory } from 'history';
 
-import FilterAutocomplete from './FilterAutocomplete';
-import { IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION } from '../searchOptions';
 import { ApolloProvider } from '@apollo/client';
 import configureApolloClient from 'configureApolloClient';
 import useURLSearch from 'hooks/useURLSearch';
+import { IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION } from '../searchOptions';
+import FilterAutocomplete from './FilterAutocomplete';
 
 const cveResponseMock = {
     data: {
@@ -68,7 +68,7 @@ describe(Cypress.spec.relative, () => {
         // A single request should be made after the user opens the dropdown
         cy.findByRole('textbox', { name: 'Filter by CVE' }).click();
         cy.get('@autocomplete.all').should('have.length', 1);
-        cy.get('@autocomplete').then(({ request }) => {
+        cy.get('@autocomplete').then((request) => {
             expect(request.body.variables.query).to.equal('CVE:');
         });
 
