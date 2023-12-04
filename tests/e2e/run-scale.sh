@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Runs Scanner V4 tests.
+# Runs scale tests. Formerly CircleCI gke-api-scale-tests and gke-postgres-api-scale-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
@@ -16,12 +16,14 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 
 set -euo pipefail
 
-scannerV4_test() {
-    info "Starting Scanner V4 test"
+scale_test() {
+    info "Starting scale test"
+
     local pprof_zip_output="$1"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
+    require_environment "COMPARISON_METRICS"
 
     export_test_environment
 
@@ -30,12 +32,12 @@ scannerV4_test() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox_in_scannerV4_mode
+    deploy_stackrox_in_scale_mode
 
-    run_scannerV4_test "$pprof_zip_output"
+    run_scale_test "$pprof_zip_output"
 }
 
-deploy_stackrox_in_scannerV4_mode() {
+deploy_stackrox_in_scale_mode() {
     "$ROOT/deploy/k8s/deploy.sh"
     
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
