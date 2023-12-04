@@ -13,19 +13,18 @@ import (
 
 // CreateHandlerFromConfig creates a handler based on the GCS integration configuration.
 func CreateHandlerFromConfig(ctx context.Context, conf *storage.GCSConfig) (gcpStorage.ClientHandler, error) {
-	if !conf.GetUseWorkloadId() {
-		creds, err := google.CredentialsFromJSON(
-			ctx,
-			[]byte(conf.GetServiceAccount()),
-			googleStoragev1.CloudPlatformScope,
-		)
+	if conf.GetUseWorkloadId() {
+		creds, err := google.FindDefaultCredentials(ctx, googleStoragev1.CloudPlatformScope)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create credentials")
 		}
 		return gcpStorage.NewClientHandler(ctx, creds)
 	}
 
-	creds, err := google.FindDefaultCredentials(ctx, googleStoragev1.CloudPlatformScope)
+	creds, err := google.CredentialsFromJSON(ctx,
+		[]byte(conf.GetServiceAccount()),
+		googleStoragev1.CloudPlatformScope,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create credentials")
 	}
@@ -37,16 +36,16 @@ func CreateHandlerFromConfig(ctx context.Context, conf *storage.GCSConfig) (gcpS
 func CreateHandlerFromConfigWithManager(ctx context.Context,
 	conf *storage.GCSConfig, manager auth.STSClientManager,
 ) (gcpStorage.ClientHandler, error) {
-	if !conf.GetUseWorkloadId() {
-		creds, err := google.CredentialsFromJSON(
-			ctx,
-			[]byte(conf.GetServiceAccount()),
-			googleStoragev1.CloudPlatformScope,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create credentials")
-		}
-		return gcpStorage.NewClientHandler(ctx, creds)
+	if conf.GetUseWorkloadId() {
+		return manager.StorageClientHandler(), nil
 	}
-	return manager.StorageClientHandler(), nil
+
+	creds, err := google.CredentialsFromJSON(ctx,
+		[]byte(conf.GetServiceAccount()),
+		googleStoragev1.CloudPlatformScope,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create credentials")
+	}
+	return gcpStorage.NewClientHandler(ctx, creds)
 }
