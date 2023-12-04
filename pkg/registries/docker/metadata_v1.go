@@ -43,7 +43,7 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	line := strings.Join(img.Config.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
-	created := time.Time{}
+	var created time.Time
 	if img.Created != nil {
 		created = *img.Created
 	}
