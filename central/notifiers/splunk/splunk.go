@@ -218,7 +218,7 @@ func init() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		cryptoKey, _ err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}

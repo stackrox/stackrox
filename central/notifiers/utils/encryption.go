@@ -21,26 +21,29 @@ type KeyChain struct {
 	ActiveKeyIndex int            `yaml:"activeKeyIndex"`
 }
 
-// GetActiveNotifierEncryptionKey returns the active key for encrypting/decrypting notifier secrets
-func GetActiveNotifierEncryptionKey() (string, error) {
-	data, err := os.ReadFile(encryptionKeyChainFile)
+var keyChainFileReader = os.ReadFile
+
+// GetActiveNotifierEncryptionKey returns the active key for encrypting/decrypting notifier secrets and the index of
+// the active key in the keychain
+func GetActiveNotifierEncryptionKey() (string, int, error) {
+	data, err := keyChainFileReader(encryptionKeyChainFile)
 	if err != nil {
-		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
+		return "", 0, errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
 	keyChain, err := parseKeyChainBytes(data)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	key, exists := keyChain.KeyMap[keyChain.ActiveKeyIndex]
 	if !exists {
-		return "", errors.New("Invalid keychain. Encryption key at active index does not exist")
+		return "", 0, errors.New("Invalid keychain. Encryption key at active index does not exist")
 	}
-	return key, nil
+	return key, keyChain.ActiveKeyIndex, nil
 }
 
 // GetNotifierEncryptionKeyAtIndex returns the key at the given index from the keychain
 func GetNotifierEncryptionKeyAtIndex(idx int) (string, error) {
-	data, err := os.ReadFile(encryptionKeyChainFile)
+	data, err := keyChainFileReader(encryptionKeyChainFile)
 	if err != nil {
 		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
