@@ -354,6 +354,12 @@ function launch_central {
         )
       fi
 
+      if [[ "$ROX_SCANNER_V4_ENABLED" == "true" ]]; then
+        helm_args+=(
+          --set scannerV4.disable=false
+        )
+      fi
+
       local helm_chart="$unzip_dir/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
