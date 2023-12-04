@@ -26,7 +26,7 @@ openshift_ci_import_creds
 combined="${CREATE_CLUSTER_OUTCOME:-undefined}-${JOB_DISPATCH_OUTCOME:-undefined}-${DESTROY_CLUSTER_OUTCOME:-undefined}"
 
 info "Determining a job outcome from (cluster create-job-cluster destroy):"
-info "${combined}" 
+info "${combined}"
 
 case "${combined}" in
     undefined-undefined-*)
