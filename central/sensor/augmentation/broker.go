@@ -25,7 +25,9 @@ type Broker struct {
 
 // NewBroker returns a new broker
 func NewBroker() *Broker {
-	return &Broker{}
+	return &Broker{
+		requests: make(map[string]chan<- *central.DeploymentEnhancementResponse),
+	}
 }
 
 // NotifyDeploymentReceived .
