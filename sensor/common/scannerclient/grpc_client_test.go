@@ -7,7 +7,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/scanner/pkg/client/mocks"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4/client/mocks"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
