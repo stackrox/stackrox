@@ -249,6 +249,7 @@ class ScaleTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+
 class ScannerV4Test(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
@@ -259,6 +260,7 @@ class ScannerV4Test(BaseTest):
             ["tests/e2e/run-scanner-v4.sh"],
             ScannerV4Test.TEST_TIMEOUT,
         )
+
 
 class CustomSetTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
