@@ -1,7 +1,6 @@
 package clusterentities
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gogo/protobuf/types"
@@ -120,35 +119,6 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 	return store
 }
 
-func (e *Store) startDebugServer() *http.Server {
-	handler := http.NewServeMux()
-	handler.HandleFunc("/debug/endpoints", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
-		_, err := w.Write([]byte(e.dbgPrintEndpoints(e.endpointMap, e.ipMap)))
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
-	handler.HandleFunc("/debug/historical", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
-		_, err := w.Write([]byte(e.dbgPrintHistorical(e.historicalEndpoints, e.historicalIPs)))
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
-	srv := &http.Server{Addr: "127.0.0.1:6066", Handler: handler}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Warnf("Closing debugging server: %v", err)
-		}
-	}()
-	return srv
-}
-
 func (e *Store) initMaps() {
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
@@ -239,8 +209,6 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // Tick informs the store that unit of time has passed
 func (e *Store) Tick() {
-	log.Debug(e.dbgPrintEndpoints(e.endpointMap, e.ipMap))
-	log.Debug(e.dbgPrintHistorical(e.historicalEndpoints, e.historicalIPs)) // TODO: remove debug
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
@@ -253,58 +221,6 @@ func (e *Store) Tick() {
 			e.removeHistoricalExpiredIPs(deploymentID, ip)
 		}
 	}
-}
-
-func (e *Store) dbgPrintEndpoints(
-	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{},
-	ipMap map[net.IPAddress]map[string]struct{},
-) string {
-	repr := "{\"Endpoints\": ["
-	for ep, m := range endpointMap {
-		repr += fmt.Sprintf("{%q: [", ep.String())
-		for deplID, eti := range m {
-			repr += fmt.Sprintf("{%q:%q}, ", deplID, eti)
-		}
-		repr += "]},"
-	}
-	repr += "],"
-	repr += "\"IPs\": ["
-	for ip, m := range ipMap {
-		repr += fmt.Sprintf("{%q: [", ip.String())
-		for deplID := range m {
-			repr += fmt.Sprintf("%q, ", deplID)
-		}
-		repr += "]},"
-	}
-	repr += "]"
-	repr += "}"
-	return repr
-}
-
-func (e *Store) dbgPrintHistorical(
-	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus,
-	historicalIPs map[net.IPAddress]map[string]*entityStatus,
-) string {
-	repr := "{\"histEndpoints\": ["
-	for deplID, m := range historicalEndpoints {
-		repr += fmt.Sprintf("{%q: [", deplID)
-		for ep, status := range m {
-			repr += fmt.Sprintf("{\"ep\":%q, \"ticksLeft\": %d}, ", ep.String(), status.ticksLeft)
-		}
-		repr += "]},"
-	}
-	repr += "], "
-	repr += "\"histIPs\": ["
-	for ip, m := range historicalIPs {
-		repr += fmt.Sprintf("{%q: [", ip.String())
-		for deplID, status := range m {
-			repr += fmt.Sprintf("{\"deplID\":%q, \"ticksLeft\": %d}, ", deplID, status.ticksLeft)
-		}
-		repr += "]},"
-	}
-	repr += "]"
-	repr += "}"
-	return repr
 }
 
 func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
