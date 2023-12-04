@@ -10,6 +10,12 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
+- name: "scanner v4 indexer mounts additional-ca-sensor secret"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
+    container(.deployments["scanner-v4-indexer"]; "indexer") | .volumeMounts[] | select(.name == "additional-ca-volume") | assertThat(. != null)
 - name: "scanner v4 with default settings with indexer enabled"
   set:
     scannerV4.disable: false
