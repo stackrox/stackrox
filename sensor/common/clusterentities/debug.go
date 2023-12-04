@@ -70,7 +70,7 @@ func (e *Store) dbgPrintEndpoints(endpointMap map[net.NumericEndpoint]map[string
 		repr3 := fmt.Sprintf("{%q: [%s]}", ep.String(), strings.Join(arr1, ","))
 		arr0 = append(arr0, repr3)
 	}
-	return fmt.Sprintf("{\"Endpoints\": [%s]},", strings.Join(arr0, ","))
+	return fmt.Sprintf("{\"Endpoints\": [%s]}", strings.Join(arr0, ","))
 }
 
 func (e *Store) dbgPrintIPs(ipMap map[net.IPAddress]map[string]struct{}) string {
@@ -80,9 +80,9 @@ func (e *Store) dbgPrintIPs(ipMap map[net.IPAddress]map[string]struct{}) string 
 		for deplID := range m {
 			arr1 = append(arr1, fmt.Sprintf("%q", deplID))
 		}
-		arr0 = append(arr0, fmt.Sprintf("{%q: [%s]},", ip.String(), strings.Join(arr1, ",")))
+		arr0 = append(arr0, fmt.Sprintf("{%q: [%s]}", ip.String(), strings.Join(arr1, ",")))
 	}
-	return fmt.Sprintf("{\"IPs\": [%s]},", strings.Join(arr0, ","))
+	return fmt.Sprintf("{\"IPs\": [%s]}", strings.Join(arr0, ","))
 }
 
 func (e *Store) dbgPrintHistoricalEp(historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus) string {
@@ -94,7 +94,7 @@ func (e *Store) dbgPrintHistoricalEp(historicalEndpoints map[string]map[net.Nume
 		}
 		arr0 = append(arr0, fmt.Sprintf("{%q: [%s]}", deplID, strings.Join(arr1, ",")))
 	}
-	return fmt.Sprintf("{\"historicalEndpoints\": [%s]", strings.Join(arr0, ","))
+	return fmt.Sprintf("{\"historicalEndpoints\": [%s]}", strings.Join(arr0, ","))
 }
 
 func (e *Store) dbgPrintHistoricalIPs(historicalIPs map[net.IPAddress]map[string]*entityStatus) string {
@@ -106,5 +106,5 @@ func (e *Store) dbgPrintHistoricalIPs(historicalIPs map[net.IPAddress]map[string
 		}
 		arr0 = append(arr0, fmt.Sprintf("{%q: [%s]}", ip.String(), strings.Join(arr1, ",")))
 	}
-	return fmt.Sprintf("{\"historicalIPs\": [%s]", strings.Join(arr0, ","))
+	return fmt.Sprintf("{\"historicalIPs\": [%s]}", strings.Join(arr0, ","))
 }
