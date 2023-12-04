@@ -21,7 +21,7 @@ func initialize() {
 	cryptoKey := ""
 	if env.EncNotifierCreds.BooleanSetting() {
 		var err error
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		cryptoKey, err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
 			utils.CrashOnError(err)
 		}

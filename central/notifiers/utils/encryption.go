@@ -8,19 +8,53 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	encryptionKeyFile = "/run/secrets/stackrox.io/central-encryption-key/encryption-key"
+	encryptionKeyChainFile = "/run/secrets/stackrox.io/central-encryption-key-chain/key-chain.yaml"
 )
 
-// GetNotifierSecretEncryptionKey returns the key for encrypting/decrypting notifier secrets
-func GetNotifierSecretEncryptionKey() (string, error) {
-	key, err := os.ReadFile(encryptionKeyFile)
+// KeyChain contains the keychain for notifier crypto
+type KeyChain struct {
+	KeyMap         map[int]string `yaml:"keyMap"`
+	ActiveKeyIndex int            `yaml:"activeKeyIndex"`
+}
+
+// GetActiveNotifierEncryptionKey returns the active key for encrypting/decrypting notifier secrets
+func GetActiveNotifierEncryptionKey() (string, error) {
+	data, err := os.ReadFile(encryptionKeyChainFile)
 	if err != nil {
-		return "", errors.Wrap(err, "Could not load notifier encryption key")
+		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
 	}
-	return string(key), nil
+	var chain KeyChain
+	err = yaml.Unmarshal(data, &chain)
+	if err != nil {
+		return "", errors.Wrap(err, "Error parsing notifier encryption keychain")
+	}
+	key, exists := chain.KeyMap[chain.ActiveKeyIndex]
+	if !exists {
+		return "", errors.New("Invalid keychain. Encryption key at active index does not exist")
+	}
+	return key, nil
+}
+
+// GetNotifierEncryptionKeyAtIndex returns the key at the given index from the keychain
+func GetNotifierEncryptionKeyAtIndex(idx int) (string, error) {
+	data, err := os.ReadFile(encryptionKeyChainFile)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not load notifier encryption keychain")
+	}
+	var chain KeyChain
+	err = yaml.Unmarshal(data, &chain)
+	if err != nil {
+		return "", errors.Wrap(err, "Error parsing notifier encryption keychain")
+	}
+	key, exists := chain.KeyMap[idx]
+	if !exists {
+		return "", errors.Errorf("Encryption key index '%s' does not exist", idx)
+	}
+	return key, nil
 }
 
 // SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified,
