@@ -1,6 +1,8 @@
 package deploymentenhancer
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,6 +37,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 
 // ProcessMessage takes an incoming message and queues it for enhancement
 func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
+	fmt.Printf("Received message to process in DeploymentEnhancer: %v++", msg)
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
 		return errors.New("failed getting deployments from message")
