@@ -11,7 +11,7 @@ import (
 func (e *Store) startDebugServer() *http.Server {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/debug/endpoints", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
+		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte(e.dbgPrintEndpoints(e.endpointMap)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -20,7 +20,7 @@ func (e *Store) startDebugServer() *http.Server {
 		w.WriteHeader(http.StatusOK)
 	})
 	handler.HandleFunc("/debug/ips", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
+		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte(e.dbgPrintIPs(e.ipMap)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -29,7 +29,7 @@ func (e *Store) startDebugServer() *http.Server {
 		w.WriteHeader(http.StatusOK)
 	})
 	handler.HandleFunc("/debug/past/endpoints", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
+		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte(e.dbgPrintHistoricalEp(e.historicalEndpoints)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -38,7 +38,7 @@ func (e *Store) startDebugServer() *http.Server {
 		w.WriteHeader(http.StatusOK)
 	})
 	handler.HandleFunc("/debug/past/ips", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/json")
+		w.Header().Set("Content-Type", "application/json")
 		_, err := w.Write([]byte(e.dbgPrintHistoricalIPs(e.historicalIPs)))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
