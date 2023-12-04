@@ -107,8 +107,6 @@ tests:
   values:
     env:
       openshift: 4
-    system:
-      createSCCs: false
   expect: |
     .roles["use-scanner-scc"] | .rules[0].resourceNames[0] | assertThat(contains("nonroot-v2"))
     .rolebindings["scanner-use-scc"] | assertThat(. != null)
