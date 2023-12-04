@@ -173,8 +173,14 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	// ImageVulnerabilities resolver filters out snoozed CVEs when no explicit filter by CVESuppressed is provided.
+	// When ImageVulnerabilities resolver is called from here, it is to get the details of a single CVE which cannot be
+	// obtained via SQF. So, the auto removal of snoozed CVEs is unintentional here. Hence, we add explicit filter with
+	// CVESuppressed == true OR false
 	q := PaginatedQuery{
-		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).Query()),
+		Query: pointers.String(search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).
+			AddBools(search.CVESuppressed, true, false).
+			Query()),
 	}
 	return resolver.root.ImageVulnerabilities(ctx, q)
 }
