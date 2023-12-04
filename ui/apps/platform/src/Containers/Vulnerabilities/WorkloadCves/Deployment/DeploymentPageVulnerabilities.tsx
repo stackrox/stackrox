@@ -238,6 +238,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                             summaryData.deployment.imageCVECountBySeverity
                                         }
                                         hiddenStatuses={hiddenStatuses}
+                                        isBusy={summaryRequest.loading}
                                     />
                                 </GridItem>
                             </Grid>

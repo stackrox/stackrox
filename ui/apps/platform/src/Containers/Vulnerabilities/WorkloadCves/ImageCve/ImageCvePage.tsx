@@ -459,7 +459,7 @@ function ImageCvePage() {
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
                                                 filteredSeverities={
-                                                    searchFilter.Severity as VulnerabilitySeverityLabel[]
+                                                    searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
                                                 }
                                                 cve={cveId}
                                                 vulnerabilityState={currentVulnerabilityState}

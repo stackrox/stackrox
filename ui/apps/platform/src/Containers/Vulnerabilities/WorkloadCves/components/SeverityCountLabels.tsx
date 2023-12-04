@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, Label, Tooltip, pluralize, capitalize } from '@patternfly/react-core';
+import { Flex, Label, Tooltip, capitalize } from '@patternfly/react-core';
 import { EllipsisHIcon } from '@patternfly/react-icons';
 
 import SeverityIcons from 'Components/PatternFly/SeverityIcons';
@@ -21,9 +21,9 @@ function getTooltipContent(severity: string, severityCount?: number, entity?: st
         return `${capitalize(severity)} severity is hidden by the applied filter`;
     }
     if (entity) {
-        return `${pluralize(severityCount, `${severity} severity CVE`)} across this ${entity}`;
+        return `${severityCount} ${severity} severity cve count across this ${entity}`;
     }
-    return `${pluralize(severityCount, 'image')} with ${severity} severity`;
+    return `image count with ${severity} severity`;
 }
 
 function getClassNameForCount(count?: number) {
