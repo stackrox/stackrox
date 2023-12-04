@@ -119,7 +119,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
-	fileType := r.URL.Query().Get("file")
+	fileType := r.URL.Query().Get("type")
 	if fileType != "" {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
 			h.getMappingFileHelper(w, r, v4FileName)
