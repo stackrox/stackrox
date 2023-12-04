@@ -174,9 +174,9 @@ deploy_stackrox_operator() {
         # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
         OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
-        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
+        VERSION=v${ocp_version}
         #Exporting the above vars
-        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
+        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib-pub-pending"
         export OPERATOR_VERSION
         export VERSION
 
