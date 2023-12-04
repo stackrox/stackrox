@@ -1,4 +1,4 @@
-[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+[<- if and .FeatureFlags.ROX_SCANNER_V4 (not .KubectlOutput) >]
 scannerV4:
   disable: true
   matcher:
