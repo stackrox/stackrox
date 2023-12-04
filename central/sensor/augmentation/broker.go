@@ -25,7 +25,7 @@ func NewBroker() *Broker {
 func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if r, ok := b.requests[msg.GetDeployment().GetId()]; ok {
+	if r, ok := b.requests[msg.GetMsg().GetId()]; ok {
 		select {
 		case r <- msg:
 			// Write message to the right channel and close it
@@ -50,9 +50,9 @@ func (b Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn con
 	err := conn.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
 			DeploymentEnhancementRequest: &central.DeploymentEnhancementRequest{
-				Deployment: &central.DeploymentEnhancementMessage{
-					Id:         id,
-					Deployment: deployments,
+				Msg: &central.DeploymentEnhancementMessage{
+					Id:          id,
+					Deployments: deployments,
 				},
 			},
 		},
@@ -66,7 +66,7 @@ func (b Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn con
 		if !ok {
 			return nil, errors.New("augmented channel closed unexpectedly")
 		}
-		if deployments := m.GetDeployment().GetDeployment(); deployments == nil {
+		if deployments := m.GetMsg().GetDeployments(); deployments == nil {
 			return nil, errors.New("augmented deployments empty") // TODO: Is this really an error?
 		}
 		return deployments, nil
