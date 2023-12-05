@@ -20,7 +20,7 @@ The Vulnerability Report contains CVSS scores in the [Enrichments field][1].  [E
 
 Currently, there is only one enricher, "clair.cvss".  It offers maps from vulnerability ID to CVSS scores pulled from NVD.
 
-![](images/claircore-matching.svg)
+![Diagram depicting the vulnerability scanning process in the "Enriched Matching" phase. It includes "Vulnerability Matchers" for different operating systems, a central "Match()" process, and parallel "Vulnerability Collector" and "Enrichment Collector" processes. The output is an "Index Report".](images/claircore-matching.svg)
 
 The Enrichers and Vulnerability Matchers are distinct objects, but they perform similar functions in the scanning process. The workers involved in the matching steps work together to call both, passing on the results to collectors.  These collectors are responsible for populating the final results in the vulnerability report.  See [the enriched matching source code](https://github.com/quay/claircore/blob/9cca6fecc233483e0435978715173a151a8455e1/internal/matcher/match.go#L92) for details.
 
