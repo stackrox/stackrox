@@ -15,6 +15,7 @@ export type ScanConfigParameters = {
 export type ScanConfigFormValues = {
     parameters: ScanConfigParameters;
     clusters: string[];
+    profiles: string[];
 };
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
@@ -27,6 +28,7 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
         daysOfMonth: [],
     },
     clusters: [],
+    profiles: [],
 };
 
 const validationSchema = yup.object().shape({

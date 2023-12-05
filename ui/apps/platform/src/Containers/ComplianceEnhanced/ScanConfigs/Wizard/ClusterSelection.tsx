@@ -1,7 +1,6 @@
-import React, { ReactElement, useCallback, useEffect } from 'react';
+import React, { ReactElement, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
 import { Link } from 'react-router-dom';
-import isEqual from 'lodash/isEqual';
 import {
     Bullseye,
     Button,
@@ -11,7 +10,6 @@ import {
     Form,
     PageSection,
     Spinner,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -33,7 +31,7 @@ export type ClusterSelectionProps = {
 function InstallClustersButton() {
     return (
         <Link to={clustersBasePath}>
-            <Button variant="primary">Install cluster</Button>
+            <Button variant="link">Go to clusters</Button>
         </Link>
     );
 }
@@ -54,13 +52,29 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
         clusterIsPreSelected
     );
 
-    useEffect(() => {
-        const clusterIds = clusters.map((cluster) => cluster.id);
-        const selectedClusterIds = clusterIds.filter((_, index) => selected[index]);
-        if (!isEqual(selectedClusterIds, formikValues.clusters)) {
-            setFieldValue('clusters', selectedClusterIds);
-        }
-    }, [selected, formikValues.clusters, setFieldValue, clusters]);
+    const handleSelect = (
+        event: React.FormEvent<HTMLInputElement>,
+        isSelected: boolean,
+        rowId: number
+    ) => {
+        onSelect(event, isSelected, rowId);
+
+        const newSelectedIds = clusters
+            .filter((_, index) => {
+                return index === rowId ? isSelected : selected[index];
+            })
+            .map((cluster) => cluster.id);
+
+        setFieldValue('clusters', newSelectedIds);
+    };
+
+    const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
+        onSelectAll(event, isSelected);
+
+        const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.id) : [];
+
+        setFieldValue('clusters', newSelectedIds);
+    };
 
     function renderTableContent() {
         return clusters?.map(({ id, name }, rowIndex) => (
@@ -69,7 +83,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                     key={id}
                     select={{
                         rowIndex,
-                        onSelect,
+                        onSelect: (event, isSelected) => handleSelect(event, isSelected, rowIndex),
                         isSelected: selected[rowIndex],
                     }}
                 />
@@ -81,7 +95,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderLoadingContent() {
         return (
             <Tr>
-                <Td colSpan={8}>
+                <Td colSpan={2}>
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -93,18 +107,11 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderEmptyContent() {
         return (
             <Tr>
-                <Td colSpan={6}>
+                <Td colSpan={2}>
                     <Bullseye>
-                        <EmptyStateTemplate
-                            title="No clusters found"
-                            headingLevel="h2"
-                            icon={SearchIcon}
-                        >
+                        <EmptyStateTemplate title="No clusters" headingLevel="h3" icon={SearchIcon}>
                             {hasWriteAccessForCluster && (
                                 <Flex direction={{ default: 'column' }}>
-                                    <FlexItem>
-                                        <Text>Install a cluster to get started</Text>
-                                    </FlexItem>
                                     <FlexItem>
                                         <InstallClustersButton />
                                     </FlexItem>
@@ -124,10 +131,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
         if (clusters && clusters.length > 0) {
             return renderTableContent();
         }
-        if (clusters && clusters.length === 0) {
-            return renderEmptyContent();
-        }
-        return null;
+        return renderEmptyContent();
     }
 
     return (
@@ -135,7 +139,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h1">Clusters</Title>
+                        <Title headingLevel="h2">Clusters</Title>
                     </FlexItem>
                     <FlexItem>Select clusters to be included in the scan</FlexItem>
                 </Flex>
@@ -147,7 +151,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                         <Tr>
                             <Th
                                 select={{
-                                    onSelect: onSelectAll,
+                                    onSelect: handleSelectAll,
                                     isSelected: allRowsSelected,
                                 }}
                             />
