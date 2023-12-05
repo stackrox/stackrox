@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -1796,4 +1797,99 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+func makeRandomString(length int) string {
+	var charset = []byte("asdfqwert")
+	randomString := make([]byte, length)
+	for i := range randomString {
+		randomString[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(randomString)
+}
+
+func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*storage.ProcessListeningOnPortFromSensor {
+	count := 0
+
+	nplops := 2 * nprocess * npod * nport
+
+	plops := make([]*storage.ProcessListeningOnPortFromSensor, nplops)
+	for podIdx := 0; podIdx < npod; podIdx++ {
+		podID := makeRandomString(10)
+		//podUID := makeRandomString(10)
+		for processIdx := 0; processIdx < nprocess; processIdx++ {
+			execFilePath := makeRandomString(10)
+			for port := 0; port < nport; port++ {
+
+				plopTCP := &storage.ProcessListeningOnPortFromSensor{
+					Port:           uint32(port),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp: nil,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               podID,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: execFilePath,
+					},
+					DeploymentId: deployment,
+				}
+				plopUDP := &storage.ProcessListeningOnPortFromSensor{
+					Port:           uint32(port),
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_UDP,
+					CloseTimestamp: nil,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               podID,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: execFilePath,
+					},
+					DeploymentId: deployment,
+				}
+				plops[count] = plopTCP
+				count++
+				plops[count] = plopUDP
+				count++
+			}
+		}
+	}
+	return plops
+}
+
+func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
+	nport := 30
+	nprocess := 30
+	npod := 30
+
+	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+	// Add PLOPs
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	for _, plop := range plopObjects {
+		plop.PodUid = makeRandomString(10)
+		//func makeRandomString(length int) string {
+	}
+
+	startTime := time.Now()
+	// Add the same PLOPs but with PlopUids
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+	duration := time.Since(startTime)
+
+	log.Infof("Adding %d PLOPs with PodUids took %s", len(plopObjects), duration)
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, len(plopObjects))
+
+	for _, plop := range newPlops {
+		suite.Equal(plop.PodUid != "", true)
+	}
+
 }
