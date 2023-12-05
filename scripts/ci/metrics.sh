@@ -8,6 +8,11 @@ source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+# Possible outcome field values.
+export OUTCOME_PASSED="passed"
+export OUTCOME_FAILED="failed"
+export OUTCOME_CANCELED="canceled"
+
 _TABLE_NAME="acs-san-stackroxci.ci_metrics.stackrox_jobs"
 
 create_job_record() {
@@ -40,7 +45,7 @@ _create_job_record() {
     fi
 
     # exported to handle updates and finalization
-    export METRICS_JOB_ID="$id"
+    set_ci_shared_export "METRICS_JOB_ID" "$id"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -98,6 +103,8 @@ _update_job_record() {
 }
 
 bq_update_job_record() {
+    setup_gcp
+
     local update_set=""
     while [[ "$#" -ne 0 ]]; do
         local field="$1"
@@ -125,57 +132,4 @@ WHERE id='${METRICS_JOB_ID}'
 _EO_UPDATE_
 
     bq query --use_legacy_sql=false "$sql"
-}
-
-finalize_job_record() {
-    _finalize_job_record "$@" || {
-        # Failure to gather metrics is not a test failure
-        info "WARNING: Job record creation failed"
-    }
-}
-
-_finalize_job_record() {
-    info "Finalizing a job record for this test run"
-
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: finalize_job_record <exit code> <canceled (true|false)"
-    fi
-
-    if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
-        info "Skipping job record finalization for jobs without a BUILD_ID (bin, images)"
-        return
-    fi
-
-    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
-        info "WARNING: Skipping job record finalization as no initial record was created"
-        return
-    fi
-
-    local sql
-    read -r -d '' sql <<- _EO_CHECK_ || true
-SELECT outcome 
-FROM ${_TABLE_NAME}
-WHERE id='${METRICS_JOB_ID}'
-_EO_CHECK_
-
-    local outcome
-    outcome="$(bq --quiet --format=json query --use_legacy_sql=false "$sql" | jq -r '.[0].outcome')"
-
-    if [[ "$outcome" != "null" ]]; then
-        info "WARNING: This jobs record is already finalized ($outcome), will not overwrite"
-        return
-    fi
-
-    local exit_code="$1"
-    local canceled="$2"
-
-    if [[ "$canceled" == "true" ]]; then
-        outcome="canceled"
-    elif [[ "$exit_code" == "0" ]]; then
-        outcome="passed"
-    else
-        outcome="failed"
-    fi
-
-    update_job_record outcome "$outcome" stopped_at "CURRENT_TIMESTAMP()"
 }
