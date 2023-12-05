@@ -204,6 +204,9 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 			}
 
 			s.deploymentStore.Cleanup()
+			s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
+			s.Assert().Len(s.deploymentStore.deploymentIDs, 0)
+			s.Assert().Len(s.deploymentStore.deployments, 0)
 		})
 	}
 }
