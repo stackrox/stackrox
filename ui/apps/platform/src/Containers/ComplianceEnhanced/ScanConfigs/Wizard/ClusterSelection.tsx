@@ -16,8 +16,8 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useTableSelection from 'hooks/useTableSelection';
-import usePermissions from 'hooks/usePermissions';
 import { clustersBasePath } from 'routePaths';
 import { ClusterScopeObject } from 'services/RolesService';
 
@@ -37,8 +37,8 @@ function InstallClustersButton() {
 }
 
 function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProps): ReactElement {
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForClusters = isRouteEnabled('clusters');
     const { setFieldValue, values: formikValues }: FormikContextType<ScanConfigFormValues> =
         useFormikContext();
 
@@ -110,7 +110,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                 <Td colSpan={2}>
                     <Bullseye>
                         <EmptyStateTemplate title="No clusters" headingLevel="h3" icon={SearchIcon}>
-                            {hasWriteAccessForCluster && (
+                            {isRouteEnabledForClusters && (
                                 <Flex direction={{ default: 'column' }}>
                                     <FlexItem>
                                         <InstallClustersButton />
