@@ -216,7 +216,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
-			if existingPLOP.Closed == true {
+			if existingPLOP.Closed {
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
 			}
 			existingPLOP.PodUid = val.PodUid
