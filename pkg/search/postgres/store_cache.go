@@ -125,7 +125,7 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	c.addToCacheNoLock(obj)
+	c.addToCacheNoLock(obj.Clone())
 	return nil
 }
 
@@ -139,7 +139,7 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	for _, obj := range objs {
-		c.addToCacheNoLock(obj)
+		c.addToCacheNoLock(obj.Clone())
 	}
 	return nil
 }
