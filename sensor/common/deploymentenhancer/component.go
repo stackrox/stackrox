@@ -46,37 +46,42 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 // Start starts the component
 func (d *DeploymentEnhancer) Start() error {
 	go func() {
-		deploymentMsg, more := <-d.deploymentsQueue
-		if !more {
-			return
-		}
-
-		log.Info("Received deploymentEnhancement msg with %v deployments", len(deploymentMsg.GetMsg().GetDeployments()))
-
-		deployments := deploymentMsg.GetMsg().GetDeployments()
-		if deployments == nil {
-			log.Warnf("received deploymentEnhancement msg with no deployments")
-		}
-		requestID := deploymentMsg.GetMsg().GetId()
-		if requestID == "" {
-			log.Warnf("received deploymentEnhancement msg with empty request ID")
-		}
-
-		var ret []*storage.Deployment
-
-		for _, deployment := range deployments {
-			enriched, err := d.enrichDeployment(deployment)
-			if err != nil {
-				log.Warnf("Failed to enrich deployment: %v", deployment)
-				continue
+		for {
+			deploymentMsg, more := <-d.deploymentsQueue
+			if !more {
+				return
 			}
-			ret = append(ret, enriched)
+			requestID := deploymentMsg.GetMsg().GetId()
+			if requestID == "" {
+				log.Warnf("received deploymentEnhancement msg with empty request ID")
+			}
+			deployments := d.extractAndEnrichDeployments(deploymentMsg)
+			d.sendDeploymentsToCentral(requestID, deployments)
 		}
-
-		d.sendDeploymentsToCentral(requestID, ret)
-
 	}()
 	return nil
+}
+
+func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
+	log.Infof("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+
+	deployments := deploymentMsg.GetMsg().GetDeployments()
+	if deployments == nil {
+		log.Warnf("received deploymentEnhancement msg with no deployments")
+	}
+
+	var ret []*storage.Deployment
+
+	for _, deployment := range deployments {
+		enriched, err := d.enrichDeployment(deployment)
+		if err != nil {
+			log.Warnf("Failed to enrich deployment: %v", deployment)
+			continue
+		}
+		ret = append(ret, enriched)
+	}
+
+	return ret
 }
 
 func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*storage.Deployment) {
