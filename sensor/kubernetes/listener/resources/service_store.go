@@ -182,9 +182,3 @@ func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {
 
 	return ss.services[namespace][name]
 }
-
-func (ss *serviceStore) getRoutesForService(svcWrap *serviceWrap) []*routeV1.Route {
-	ss.lock.RLock()
-	defer ss.lock.RUnlock()
-	return ss.routesByServiceMetadata[svcWrap.Namespace][svcWrap.Name]
-}
