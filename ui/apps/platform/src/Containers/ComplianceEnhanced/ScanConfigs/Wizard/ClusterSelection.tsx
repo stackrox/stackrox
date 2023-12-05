@@ -19,12 +19,12 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useTableSelection from 'hooks/useTableSelection';
 import { clustersBasePath } from 'routePaths';
-import { ClusterScopeObject } from 'services/RolesService';
+import { ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from './useFormikScanConfig';
 
 export type ClusterSelectionProps = {
-    clusters: ClusterScopeObject[];
+    clusters: ComplianceIntegration[];
     isFetchingClusters: boolean;
 };
 
@@ -43,7 +43,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
         useFormikContext();
 
     const clusterIsPreSelected = useCallback(
-        (row) => formikValues.clusters.includes(row.id),
+        (row) => formikValues.clusters.includes(row.clusterId),
         [formikValues.clusters]
     );
 
@@ -63,7 +63,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             .filter((_, index) => {
                 return index === rowId ? isSelected : selected[index];
             })
-            .map((cluster) => cluster.id);
+            .map((cluster) => cluster.clusterId);
 
         setFieldValue('clusters', newSelectedIds);
     };
@@ -71,23 +71,23 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
         onSelectAll(event, isSelected);
 
-        const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.id) : [];
+        const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.clusterId) : [];
 
         setFieldValue('clusters', newSelectedIds);
     };
 
     function renderTableContent() {
-        return clusters?.map(({ id, name }, rowIndex) => (
-            <Tr key={id}>
+        return clusters?.map(({ clusterId, clusterName }, rowIndex) => (
+            <Tr key={clusterId}>
                 <Td
-                    key={id}
+                    key={clusterId}
                     select={{
                         rowIndex,
                         onSelect: (event, isSelected) => handleSelect(event, isSelected, rowIndex),
                         isSelected: selected[rowIndex],
                     }}
                 />
-                <Td>{name}</Td>
+                <Td>{clusterName}</Td>
             </Tr>
         ));
     }
