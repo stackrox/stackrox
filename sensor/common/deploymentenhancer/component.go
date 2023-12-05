@@ -1,8 +1,6 @@
 package deploymentenhancer
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -40,7 +38,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	if toEnhance == nil {
 		return nil
 	}
-	fmt.Printf("Received message to process in DeploymentEnhancer: %v++", msg)
+	log.Warnf("Received message to process in DeploymentEnhancer: %v++", msg)
 	d.deploymentsQueue <- toEnhance
 	return nil
 }
@@ -52,6 +50,8 @@ func (d *DeploymentEnhancer) Start() error {
 		if !more {
 			return
 		}
+
+		log.Info("Received deploymentEnhancement msg with %v deployments", len(deploymentMsg.GetMsg().GetDeployments()))
 
 		deployments := deploymentMsg.GetMsg().GetDeployments()
 		if deployments == nil {
@@ -80,7 +80,7 @@ func (d *DeploymentEnhancer) Start() error {
 }
 
 func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*storage.Deployment) {
-	log.Infof("Sending enhanced deployments with requestID %v", id)
+	log.Warnf("Sending enhanced deployments with requestID %v", id)
 	d.responsesC <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_DeploymentEnhancementResponse{
 			DeploymentEnhancementResponse: &central.DeploymentEnhancementResponse{
