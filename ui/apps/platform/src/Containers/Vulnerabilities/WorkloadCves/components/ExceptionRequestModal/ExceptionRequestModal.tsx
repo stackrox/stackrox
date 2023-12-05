@@ -3,9 +3,11 @@ import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
 import { FormikHelpers } from 'formik';
 
 import {
-    BaseVulnerabilityException,
+    UpdateVulnerabilityExceptionRequest,
+    VulnerabilityException,
     createDeferralVulnerabilityException,
     createFalsePositiveVulnerabilityException,
+    updateVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -28,35 +30,54 @@ export type ExceptionRequestModalOptions = {
 
 export type ExceptionRequestModalProps = {
     type: CveExceptionRequestType;
+    isUpdate?: boolean;
+    id?: string;
     cves: ExceptionRequestFormProps['cves'];
     scopeContext: ScopeContext;
-    onExceptionRequestSuccess: (vulnerabilityException: BaseVulnerabilityException) => void;
+    onExceptionRequestSuccess: (vulnerabilityException: VulnerabilityException) => void;
     onClose: () => void;
 };
 
 function ExceptionRequestModal({
     type,
+    isUpdate = false,
+    id = '',
     cves,
     scopeContext,
     onExceptionRequestSuccess,
     onClose,
 }: ExceptionRequestModalProps) {
     const cveCountText = pluralize(cves.length, 'workload CVE');
+    const titleAction = isUpdate ? 'Update' : 'Request';
     const title =
         type === 'DEFERRAL'
-            ? `Request deferral for ${cveCountText}`
-            : `Mark ${cveCountText} as false positive`;
+            ? `${titleAction} deferral for ${cveCountText}`
+            : `${titleAction} false positive for ${cveCountText}`;
 
     const createDeferralMutation = useRestMutation(createDeferralVulnerabilityException);
     const createFalsePositiveMutation = useRestMutation(createFalsePositiveVulnerabilityException);
+    const updateRequestMutation = useRestMutation(updateVulnerabilityException);
 
     function onDeferralSubmit(formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) {
         if (formValues.expiry) {
             const payload = formValuesToDeferralRequest(formValues, formValues.expiry);
-            createDeferralMutation.mutate(payload, {
+            const callbackOptions = {
                 onSuccess: onExceptionRequestSuccess,
                 onError: () => helpers.setSubmitting(false),
-            });
+            };
+            if (isUpdate) {
+                const updatedPayload: UpdateVulnerabilityExceptionRequest = {
+                    id,
+                    comment: payload.comment,
+                    deferralUpdate: {
+                        cves: payload.cves,
+                        expiry: payload.exceptionExpiry,
+                    },
+                };
+                updateRequestMutation.mutate(updatedPayload, callbackOptions);
+            } else {
+                createDeferralMutation.mutate(payload, callbackOptions);
+            }
         } else {
             helpers.setFieldError('expiry', 'An expiry is required');
         }
@@ -67,10 +88,22 @@ function ExceptionRequestModal({
         helpers: FormikHelpers<FalsePositiveValues>
     ) {
         const payload = formValuesToFalsePositiveRequest(formValues);
-        createFalsePositiveMutation.mutate(payload, {
+        const callbackOptions = {
             onSuccess: onExceptionRequestSuccess,
             onError: () => helpers.setSubmitting(false),
-        });
+        };
+        if (isUpdate) {
+            const updatedPayload: UpdateVulnerabilityExceptionRequest = {
+                id,
+                comment: payload.comment,
+                falsePositiveUpdate: {
+                    cves: payload.cves,
+                },
+            };
+            updateRequestMutation.mutate(updatedPayload, callbackOptions);
+        } else {
+            createFalsePositiveMutation.mutate(payload, callbackOptions);
+        }
     }
 
     const formProps =
@@ -113,6 +146,7 @@ function ExceptionRequestModal({
                 )}
                 <ExceptionRequestForm
                     cves={cves}
+                    isUpdate={isUpdate}
                     scopeContext={scopeContext}
                     onCancel={onClose}
                     {...formProps}

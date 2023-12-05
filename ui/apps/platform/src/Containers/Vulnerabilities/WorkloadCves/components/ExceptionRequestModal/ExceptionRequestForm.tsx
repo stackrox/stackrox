@@ -32,6 +32,7 @@ function getDefaultValues(cves: string[], scopeContext: ScopeContext): Exception
 }
 export type ExceptionRequestFormProps = {
     cves: CveSelectionsProps['cves'];
+    isUpdate?: boolean;
     scopeContext: ScopeContext;
     onSubmit: (formValues: ExceptionValues, helpers: FormikHelpers<ExceptionValues>) => void;
     onCancel: () => void;
@@ -43,6 +44,7 @@ export type ExceptionRequestFormProps = {
 
 function ExceptionRequestForm({
     cves,
+    isUpdate = false,
     scopeContext,
     onSubmit,
     onCancel,
@@ -99,12 +101,14 @@ function ExceptionRequestForm({
                     >
                         <Text>{formHeaderText}</Text>
                         {showExpiryField && <ExpiryField formik={formik} />}
-                        <ExceptionScopeField
-                            fieldId="scope"
-                            label="Scope"
-                            formik={formik}
-                            scopeContext={scopeContext}
-                        />
+                        {!isUpdate && (
+                            <ExceptionScopeField
+                                fieldId="scope"
+                                label="Scope"
+                                formik={formik}
+                                scopeContext={scopeContext}
+                            />
+                        )}
                         <FormGroup fieldId="comment" label={commentFieldLabel} isRequired>
                             <TextArea
                                 id="comment"
