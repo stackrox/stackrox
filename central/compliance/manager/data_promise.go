@@ -13,25 +13,23 @@ import (
 )
 
 type dataPromise interface {
-	WaitForResult(cancel concurrency.Waitable) (framework.ComplianceDataRepository, error)
+	WaitForResult(ctx context.Context) (framework.ComplianceDataRepository, error)
 }
 
 type fixedDataPromise struct {
-	dataRepo framework.ComplianceDataRepository
-	err      error
+	dataRepoFactory data.RepositoryFactory
+	domain          framework.ComplianceDomain
 }
 
-func newFixedDataPromise(ctx context.Context, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
-	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain)
-
+func newFixedDataPromise(dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
 	return &fixedDataPromise{
-		dataRepo: dataRepo,
-		err:      err,
+		dataRepoFactory: dataRepoFactory,
+		domain:          domain,
 	}
 }
 
-func (p *fixedDataPromise) WaitForResult(_ concurrency.Waitable) (framework.ComplianceDataRepository, error) {
-	return p.dataRepo, p.err
+func (p *fixedDataPromise) WaitForResult(ctx context.Context) (framework.ComplianceDataRepository, error) {
+	return p.dataRepoFactory.CreateDataRepository(ctx, p.domain)
 }
 
 // scrapePromise allows access to compliance data in an asynchronous way, allowing multiple runs to wait on the same
@@ -78,8 +76,8 @@ func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*com
 	p.finishedSig.SignalWithError(err)
 }
 
-func (p *scrapePromise) WaitForResult(cancel concurrency.Waitable) (framework.ComplianceDataRepository, error) {
-	err, done := p.finishedSig.WaitUntil(cancel)
+func (p *scrapePromise) WaitForResult(ctx context.Context) (framework.ComplianceDataRepository, error) {
+	err, done := p.finishedSig.WaitUntil(ctx)
 	if !done {
 		return nil, errors.New("cancelled while waiting for compliance results")
 	}

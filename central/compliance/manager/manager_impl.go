@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -281,6 +282,19 @@ type perClusterDataRepoFactory struct {
 	err      error
 }
 
+type clusterBasedSemaphore struct {
+	once sync.Once
+	*semaphore.Weighted
+	err error
+}
+
+func (c *clusterBasedSemaphore) Acquire(ctx context.Context, n int64) error {
+	c.once.Do(func() {
+		c.err = c.Weighted.Acquire(ctx, n)
+	})
+	return c.err
+}
+
 func (p *perClusterDataRepoFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
 	p.once.Do(func() {
 		p.dataRepo, p.err = p.dataRepoFactory.CreateDataRepository(ctx, domain)
@@ -338,6 +352,10 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 		perClusterDataRepoOnce := &perClusterDataRepoFactory{
 			dataRepoFactory: m.dataRepoFactory,
 		}
+		perClusterSemaphore := &clusterBasedSemaphore{
+			Weighted: semaphore.NewWeighted(1),
+		}
+
 		for _, standard := range standardImpls {
 			if !m.complianceOperatorManager.IsStandardActiveForCluster(standard.ID, clusterID) {
 				continue
@@ -355,12 +373,12 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 				dataPromise = scrapeBasedPromise
 			} else {
 				if scrapeLessPromise == nil {
-					scrapeLessPromise = newFixedDataPromise(elevatedCtx, perClusterDataRepoOnce, domain)
+					scrapeLessPromise = newFixedDataPromise(perClusterDataRepoOnce, domain)
 				}
 				dataPromise = scrapeLessPromise
 			}
 
-			run.Start(dataPromise, m.resultsStore)
+			run.Start(perClusterSemaphore, dataPromise, m.resultsStore)
 			runs = append(runs, run)
 		}
 	}
