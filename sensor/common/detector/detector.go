@@ -22,11 +22,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
+	queueItem "github.com/stackrox/rox/sensor/common/detector/queue"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -69,6 +71,9 @@ type Detector interface {
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
+	detectorStopper := concurrency.NewStopper()
+	netFlowQueue := queueItem.NewNetworkFlowQueue(detectorStopper, queue.NewPausableQueue[*queueItem.FlowQueueItem]())
+
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -89,12 +94,14 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		auditLogUpdater:    auditLogUpdater,
 
-		detectorStopper:   concurrency.NewStopper(),
+		detectorStopper:   detectorStopper,
 		auditStopper:      concurrency.NewStopper(),
 		serializerStopper: concurrency.NewStopper(),
 		alertStopSig:      concurrency.NewSignal(),
 
 		networkPolicyStore: networkPolicyStore,
+
+		networkFlowsQueue: netFlowQueue,
 	}
 }
 
@@ -132,12 +139,16 @@ type detectorImpl struct {
 	admissionCacheNeedsFlush bool
 
 	networkPolicyStore store.NetworkPolicyStore
+
+	networkFlowsQueue *queueItem.NetworkFlowsQueue
 }
 
 func (d *detectorImpl) Start() error {
 	go d.runDetector()
 	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
+	go d.processAlertsForFlowOnEntity()
+	d.networkFlowsQueue.Start()
 	return nil
 }
 
@@ -582,7 +593,7 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 	}
 }
 
-func (d *detectorImpl) processAlertsForFlowOnEntity(
+func (d *detectorImpl) pushFlowOnEntity(
 	ctx context.Context,
 	entity *storage.NetworkEntityInfo,
 	flowDetails *augmentedobjs.NetworkFlowDetails,
@@ -597,28 +608,53 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 		return
 	}
 
-	images := d.enricher.getImages(deployment)
-	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
-		Deployment:             deployment,
-		Images:                 images,
-		NetworkPoliciesApplied: d.getNetworkPoliciesApplied(deployment),
-	}, flowDetails)
-	if len(alerts) == 0 {
-		// No need to process runtime alerts that have no violations
-		return
-	}
-	alertResults := &central.AlertResults{
-		DeploymentId: deployment.GetId(),
-		Alerts:       alerts,
-		Stage:        storage.LifecycleStage_RUNTIME,
+	item := &queueItem.FlowQueueItem{
+		Ctx:        ctx,
+		Deployment: deployment,
+		Flow:       flowDetails,
+		Netpols:    d.getNetworkPoliciesApplied(deployment),
 	}
 
-	d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+	d.networkFlowsQueue.Push(item)
+}
 
-	select {
-	case <-d.alertStopSig.Done():
-		return
-	case d.output <- createAlertResultsMsg(ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+func (d *detectorImpl) processAlertsForFlowOnEntity() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		case item, ok := <-d.networkFlowsQueue.Pull():
+			if !ok {
+				return
+			}
+			if item == nil {
+				continue
+			}
+
+			images := d.enricher.getImages(item.Deployment)
+			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
+				Deployment:             item.Deployment,
+				Images:                 images,
+				NetworkPoliciesApplied: item.Netpols,
+			}, item.Flow)
+			if len(alerts) == 0 {
+				// No need to process runtime alerts that have no violations
+				continue
+			}
+			alertResults := &central.AlertResults{
+				DeploymentId: item.Deployment.GetId(),
+				Alerts:       alerts,
+				Stage:        storage.LifecycleStage_RUNTIME,
+			}
+
+			d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+
+			select {
+			case <-d.alertStopSig.Done():
+				continue
+			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+			}
+		}
 	}
 }
 
@@ -676,8 +712,8 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 		DstDeploymentType:      dstDetails.deploymentType,
 	}
 
-	d.processAlertsForFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
-	d.processAlertsForFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
+	d.pushFlowOnEntity(ctx, flow.GetProps().GetSrcEntity(), flowDetails)
+	d.pushFlowOnEntity(ctx, flow.GetProps().GetDstEntity(), flowDetails)
 }
 
 func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {
