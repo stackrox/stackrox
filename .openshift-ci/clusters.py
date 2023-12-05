@@ -9,7 +9,12 @@ import signal
 import subprocess
 import time
 
-from common import popen_graceful_kill
+from common import popen_graceful_kill, set_ci_shared_export
+
+OUTCOME_PASSED = "passed"
+OUTCOME_FAILED = "failed"
+CREATE_CLUSTER_OUTCOME_VAR = "CREATE_CLUSTER_OUTCOME"
+DESTROY_CLUSTER_OUTCOME_VAR = "DESTROY_CLUSTER_OUTCOME"
 
 
 class NullCluster:
@@ -40,6 +45,16 @@ class GKECluster:
         self.refresh_token_cmd = None
 
     def provision(self):
+        try:
+            self._provision()
+            set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)
+        except Exception as err:
+            set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
+            raise err
+
+        return self
+
+    def _provision(self):
         if self.num_nodes is not None:
             os.environ["NUM_NODES"] = str(self.num_nodes)
         if self.machine_type is not None:
@@ -81,6 +96,16 @@ class GKECluster:
         return self
 
     def teardown(self, canceled=False):
+        try:
+            self._teardown(canceled)
+            set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)
+        except Exception as err:
+            set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
+            raise err
+
+        return self
+
+    def _teardown(self, canceled):
         while os.path.exists("/tmp/hold-cluster"):
             print("Pausing teardown because /tmp/hold-cluster exists")
             time.sleep(60)
