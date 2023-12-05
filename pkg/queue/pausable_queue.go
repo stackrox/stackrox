@@ -1,10 +1,13 @@
 package queue
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// PausableQueue defines a queue that can be paused.
+// Given aggregate functions (AggregateFunc), pushed items can be aggregate with items already in the queue.
 type PausableQueue[T comparable] interface {
 	Push(T)
 	Pull() T
@@ -14,8 +17,11 @@ type PausableQueue[T comparable] interface {
 	Stop()
 	AddAggregator(AggregateFunc[T])
 	SetSize(int)
+	SetMetric(*prometheus.CounterVec)
 }
 
+// AggregateFunc aggregates two comparable variables.
+// Returns the aggregate and a boolean indicating whether the aggregation took place or not.
 type AggregateFunc[T comparable] func(x, y T) (T, bool)
 
 type pausableQueueImpl[T comparable] struct {
@@ -26,20 +32,31 @@ type pausableQueueImpl[T comparable] struct {
 	aggregators   []AggregateFunc[T]
 }
 
+// PausableQueueOption provides options for the queue.
 type PausableQueueOption[T comparable] func(PausableQueue[T])
 
+// WithAggregator provides an AggregateFunc for the queue.
 func WithAggregator[T comparable](aggregator AggregateFunc[T]) PausableQueueOption[T] {
 	return func(q PausableQueue[T]) {
 		q.AddAggregator(aggregator)
 	}
 }
 
+// WithPausableMaxSize provides a maximum size for the queue. By default, no size limit is set.
 func WithPausableMaxSize[T comparable](size int) PausableQueueOption[T] {
 	return func(q PausableQueue[T]) {
 		q.SetSize(size)
 	}
 }
 
+// WithPausableQueueMetric provides a counter vec which tracks added and removed items from the queue.
+func WithPausableQueueMetric[T comparable](metric *prometheus.CounterVec) PausableQueueOption[T] {
+	return func(q PausableQueue[T]) {
+		q.SetMetric(metric)
+	}
+}
+
+// NewPausableQueue creates a new PausableQueue.
 func NewPausableQueue[T comparable](opts ...PausableQueueOption[T]) PausableQueue[T] {
 	q := &pausableQueueImpl[T]{
 		internalQueue: NewQueue[T](),
@@ -52,18 +69,30 @@ func NewPausableQueue[T comparable](opts ...PausableQueueOption[T]) PausableQueu
 	return q
 }
 
+// SetSize sets the maximum size of the queue. Once we reach the maximum any call to Push will be ignored.
 func (q *pausableQueueImpl[T]) SetSize(size int) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.internalQueue.maxSize = size
 }
 
+// SetMetric sets the counter metric.
+func (q *pausableQueueImpl[T]) SetMetric(metric *prometheus.CounterVec) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.internalQueue.counterMetric = metric
+}
+
+// AddAggregator appends a new AggregatorFunc.
 func (q *pausableQueueImpl[T]) AddAggregator(aggregator AggregateFunc[T]) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.aggregators = append(q.aggregators, aggregator)
 }
 
+// Push adds an item to the queue.
+// If the queue has aggregator functions (AggregateFunc) the queue will try to aggregate with the items already in the queue.
+// Note that we only aggregate once.
 func (q *pausableQueueImpl[T]) Push(item T) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -97,6 +126,8 @@ func (q *pausableQueueImpl[T]) Push(item T) {
 	}
 }
 
+// Pull will pull an item from the queue. If the queue is empty or paused, the default value of T will be returned.
+// Note that his does not wait for items to be available in the queue, use PullBlocking instead.
 func (q *pausableQueueImpl[T]) Pull() T {
 	var ret T
 	if !q.isRunning.IsDone() {
@@ -106,6 +137,8 @@ func (q *pausableQueueImpl[T]) Pull() T {
 	return q.internalQueue.Pull()
 }
 
+// PullBlocking will pull an item from the queue, potentially waiting until one is available.
+// In case the queue is stopped, the default value of T will be returned.
 func (q *pausableQueueImpl[T]) PullBlocking() T {
 	var ret T
 	select {
@@ -116,14 +149,17 @@ func (q *pausableQueueImpl[T]) PullBlocking() T {
 	}
 }
 
+// Pause the queue.
 func (q *pausableQueueImpl[T]) Pause() {
 	q.isRunning.Reset()
 }
 
+// Resume the queue.
 func (q *pausableQueueImpl[T]) Resume() {
 	q.isRunning.Signal()
 }
 
+// Stop the queue permanently.
 func (q *pausableQueueImpl[T]) Stop() {
 	q.stop.Signal()
 }
