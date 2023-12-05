@@ -250,6 +250,18 @@ class ScaleTest(BaseTest):
         )
 
 
+class ScannerV4Test(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+
+    def run(self):
+        print("Executing the ScannerV4 Test")
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-scanner-v4.sh"],
+            ScannerV4Test.TEST_TIMEOUT,
+        )
+
+
 class CustomSetTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
 

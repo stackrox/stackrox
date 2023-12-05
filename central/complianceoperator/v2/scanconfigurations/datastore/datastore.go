@@ -56,17 +56,6 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store,
 	return ds
 }
 
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
-	ds := &datastoreImpl{
-		storage:       scanConfigStore,
-		statusStorage: scanConfigStatusStore,
-		clusterDS:     clusterDS,
-		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
-	}
-	return ds
-}
-
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore, searcher search.Searcher) (DataStore, error) {
 	store := pgStore.New(pool)

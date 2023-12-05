@@ -92,7 +92,7 @@ func Benchmark_Pipeline(b *testing.B) {
 			message.NetworkBaselineSync([]*storage.NetworkBaseline{}))
 
 		// No resync, we just want to test how long it takes for messages to go through the pipeline
-		setupSensor(fakeCentral, fakeClient, 0)
+		setupSensor(fakeCentral, fakeClient)
 	})
 
 	b.StartTimer()
@@ -295,14 +295,13 @@ func createService(fakeClient *k8s.ClientSet, namespace, name string) *core.Serv
 	return obj
 }
 
-func setupSensor(fakeCentral *centralDebug.FakeService, fakeClient *k8s.ClientSet, resyncTime time.Duration) {
+func setupSensor(fakeCentral *centralDebug.FakeService, fakeClient *k8s.ClientSet) {
 	conn, spyCentral, _ := createConnectionAndStartServer(fakeCentral)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
 		WithLocalSensor(true).
-		WithResyncPeriod(resyncTime).
 		WithCentralConnectionFactory(fakeConnectionFactory))
 
 	if err != nil {

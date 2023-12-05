@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -333,12 +332,7 @@ func configFromEnv() (*storage.AWSSecurityHub, error) {
 func TestNotifierCreationFromEnvAndTest(t *testing.T) {
 	config, err := configFromEnv()
 	if err != nil {
-		if testutils.IsRunningInCI() {
-			// TODO(tvoss): Fail with an error once we have credentials for CI runs.
-			t.Skip("failed to load config from env", err)
-		} else {
-			t.Skip("failed to load config from env", err)
-		}
+		t.Skip("failed to load config from env", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

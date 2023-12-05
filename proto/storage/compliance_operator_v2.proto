@@ -98,18 +98,19 @@ message ComplianceOperatorScanConfigurationV2 {
     SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
-// Next Tag: 6
+// Next Tag: 7
 // Cluster and an error if necessary to handle cases where the scan configuration is
 // unable to be applied to a cluster for whatever reason.
 message ComplianceOperatorClusterScanConfigStatus {
-    string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string                        id                  = 6 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     string                        scan_id             = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint"'];
     repeated string               errors              = 3;
     google.protobuf.Timestamp     last_updated_time   = 4 [(gogoproto.moretags) = 'search:"Compliance Scan Config Last Updated Time,hidden"'];
     string                        cluster_name        = 5;
 }
 
-// Next Tag: 18
+// Next Tag: 17
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -139,8 +140,7 @@ message ComplianceOperatorCheckResultV2 {
     string                    standard         = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
     string                    control          = 13;
     string                    scan_id          = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
-    string                    scan_config_id   = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"'];
-    string                    scan_config_name = 17;
+    string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Name,store" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint"'];
 }
 
 message ScanStatus {

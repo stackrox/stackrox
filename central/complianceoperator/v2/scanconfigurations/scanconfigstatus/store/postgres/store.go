@@ -37,18 +37,17 @@ type storeType = storage.ComplianceOperatorClusterScanConfigStatus
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, clusterID string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, clusterID string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, clusterID string) (*storeType, bool, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storeType, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
@@ -71,7 +70,7 @@ func New(db postgres.DB) Store {
 // region Helper functions
 
 func pkGetter(obj *storeType) string {
-	return obj.GetClusterId()
+	return obj.GetId()
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
@@ -91,13 +90,14 @@ func insertIntoComplianceOperatorClusterScanConfigStatuses(batch *pgx.Batch, obj
 
 	values := []interface{}{
 		// parent primary keys start
+		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetScanId(),
 		pgutils.NilOrTime(obj.GetLastUpdatedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (ClusterId, ScanId, LastUpdatedTime, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, ScanId = EXCLUDED.ScanId, LastUpdatedTime = EXCLUDED.LastUpdatedTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (Id, ClusterId, ScanId, LastUpdatedTime, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, ScanId = EXCLUDED.ScanId, LastUpdatedTime = EXCLUDED.LastUpdatedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -115,6 +115,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
+		"id",
 		"clusterid",
 		"scanid",
 		"lastupdatedtime",
@@ -133,6 +134,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		}
 
 		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetScanId(),
 			pgutils.NilOrTime(obj.GetLastUpdatedTime()),
@@ -140,7 +142,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		})
 
 		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetClusterId())
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {

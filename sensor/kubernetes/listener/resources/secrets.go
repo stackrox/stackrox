@@ -358,11 +358,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
 
-	if env.ResyncDisabled.BooleanSetting() {
-		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
-		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
-		events.AddDeploymentReference(resolver.ResolveAllDeployments())
-	}
+	// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+	// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+	events.AddDeploymentReference(resolver.ResolveAllDeployments())
 
 	return events
 }

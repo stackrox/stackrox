@@ -161,7 +161,17 @@ func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *stor
 }
 
 func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
-	process := processPool.getRandomProcess(containerID)
+	var process *storage.ProcessSignal
+	var percentMatchedProcess float32 = 0.5
+	p := rand.Float32()
+	if p < percentMatchedProcess {
+		// There is a chance that the process has been filtered out or hasn't gotten to
+		// the central-db for some other reason so this is not a guarantee that the
+		// process is in the central-db
+		process = processPool.getRandomProcess(containerID)
+	} else {
+		process = getGoodProcess(containerID)
+	}
 
 	return getNetworkProcessUniqueKeyFromProcess(process)
 }
@@ -230,8 +240,8 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		conns = append(conns, conn)
 		if endpointPool.Size < endpointPool.Capacity {
 			endpointPool.add(networkEndpoint)
-			networkEndpoints = append(networkEndpoints, networkEndpoint)
 		}
+		networkEndpoints = append(networkEndpoints, networkEndpoint)
 	}
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
