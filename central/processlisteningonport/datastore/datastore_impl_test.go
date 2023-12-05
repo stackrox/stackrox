@@ -1641,11 +1641,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	})
 }
 
-// TestPLOPUpdatePodUidFromBlankClosed Add a PLOP without a PodUid and then
+// TestPLOPUpdatePodUidFromBlankClosed Add a closed PLOP without a PodUid and then
 // the same PLOP is added with a PodUid
 func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
-	testNamespace := "test_namespace"
-
 	indicators := getIndicators()
 
 	time1 := time.Now()
@@ -1695,23 +1693,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
-	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
-		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodName1,
-		DeploymentId:  fixtureconsts.Deployment1,
-		ClusterId:     fixtureconsts.Cluster1,
-		Namespace:     testNamespace,
-		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-			Port:     1234,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		Signal: &storage.ProcessSignal{
-			Name:         "test_process1",
-			Args:         "test_arguments1",
-			ExecFilePath: "test_path1",
-		},
-	})
+	suite.Len(newPlops, 0)
 
 	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUid}
 
@@ -1724,22 +1706,94 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		suite.hasWriteCtx, fixtureconsts.Deployment1)
 	suite.NoError(err)
 
+	suite.Len(newPlops, 0)
+
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plopWithPodUid.Process)
+
+	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
+		{
+			Id:		    newPlopsFromDB[0].Id,
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+			ProcessIndicatorId: id1,
+			Closed:             true,
+			DeploymentId:       plopObjects[0].GetDeploymentId(),
+			PodUid:             plopObjects[0].GetPodUid(),
+		},
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB)
+	//suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddOpenThenCloseAndOpenSameBatchWithPodUid Sends an open PLOP with a matching indicator.
+// Then closes and opens the PLOP object in the same batch. The first PLOP does not have a PodUid
+// and then in the batch with two PLOP events they both have the same PodUid.
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWithPodUid() {
+
+	indicators := getIndicators()
+
+	openPlopObjectWithoutPodUid := storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: nil,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodName1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+	}
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObjectWithoutPodUid}
+
+	batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{
+		&closedPlopObject,
+		&openPlopObject,
+	}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Add the same PLOP in an open and closed state
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, batchPlopObjects...))
+
+	// Fetch inserted PLOP back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// The plop is opened. Then in the batch it is closed and opened, so it is in
+	// its original open state.
 	suite.Len(newPlops, 1)
-	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
-		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
-		DeploymentId:  fixtureconsts.Deployment1,
-		ClusterId:     fixtureconsts.Cluster1,
-		Namespace:     testNamespace,
-		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-			Port:     1234,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		Signal: &storage.ProcessSignal{
-			Name:         "test_process1",
-			Args:         "test_arguments1",
-			ExecFilePath: "test_path1",
-		},
-	})
+
+	// Verify the state of the table after the test
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               openPlopObject.GetPort(),
+		Protocol:           openPlopObject.GetProtocol(),
+		CloseTimestamp:     nil,
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
