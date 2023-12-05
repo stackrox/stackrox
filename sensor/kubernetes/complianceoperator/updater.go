@@ -109,7 +109,7 @@ func (u *updaterImpl) run() {
 
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		return false
+		return true
 	}
 
 	info := u.getComplianceOperatorInfo()
