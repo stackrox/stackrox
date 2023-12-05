@@ -1,7 +1,6 @@
 name: Scanner NVD update
 
 on:
-  push:
   schedule:
     - cron: '0 */4 * * *'  # this runs every 4 hours
   workflow_dispatch:
