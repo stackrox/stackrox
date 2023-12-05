@@ -109,7 +109,7 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
-	// TODO: [ROX-18096] Start collecting compliance profiles & rules
+
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
