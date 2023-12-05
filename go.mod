@@ -27,7 +27,7 @@ require (
 	github.com/dave/jennifer v1.7.0
 	github.com/docker/distribution v2.8.3+incompatible
 	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/docker v24.0.6+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/driftprogramming/pgxpoolmock v1.1.0
@@ -132,7 +132,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.5
-	helm.sh/helm/v3 v3.13.1
+	helm.sh/helm/v3 v3.13.2
 	k8s.io/api v0.28.2
 	k8s.io/apiextensions-apiserver v0.28.2
 	k8s.io/apimachinery v0.28.2
@@ -450,8 +450,8 @@ replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 
 	// The version of github.com/opencontainers/runc needs to be aligned with the version used in
-	// github.com/docker/docker. As of github.com/docker/docker v24.0.6+incompatible,
-	// the version of github.com/opencontainers/runc is v1.1.7 (https://github.com/moby/moby/blob/v24.0.6/vendor.mod#L74).
+	// github.com/docker/docker. As of github.com/docker/docker v24.0.7+incompatible,
+	// the version of github.com/opencontainers/runc is v1.1.7 (https://github.com/moby/moby/blob/v24.0.7/vendor.mod#L74).
 	// Any time github.com/docker/docker is updated, we should check if github.com/opencontainers/runc should be updated, too.
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.7
 
