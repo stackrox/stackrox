@@ -625,11 +625,14 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 			return
 		case item, ok := <-d.networkFlowsQueue.Pull():
 			if !ok {
+				log.Debugf("network flow queue channel closed")
 				return
 			}
 			if item == nil {
+				log.Debugf("pulled nil item from the queue")
 				continue
 			}
+			log.Debugf("processing network flow for deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
 
 			images := d.enricher.getImages(item.Deployment)
 			alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{

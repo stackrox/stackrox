@@ -6,7 +6,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/queue"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // FlowQueueItem defines a item for the NetworkFlowsQueue
@@ -35,6 +40,7 @@ func NewNetworkFlowQueue(stopper concurrency.Stopper, queue queue.PausableQueue[
 
 // Start the queue.
 func (n *NetworkFlowsQueue) Start() {
+	log.Debug("Start NetworkFlowsQueue")
 	// TODO(ROX-21052): Resuming, pausing, and stopping the internal queue should be done in the QueueManager
 	n.queue.Resume()
 	go n.run()
@@ -42,6 +48,7 @@ func (n *NetworkFlowsQueue) Start() {
 
 // Push an item to the queue
 func (n *NetworkFlowsQueue) Push(item *FlowQueueItem) {
+	log.Debugf("Push item with deployment %s with id %s", item.Deployment.GetName(), item.Deployment.GetId())
 	n.queue.Push(item)
 }
 
@@ -54,6 +61,7 @@ func (n *NetworkFlowsQueue) run() {
 		case <-n.stopper.Flow().StopRequested():
 			return
 		default:
+			log.Debug("Pull from queue")
 			n.outputC <- n.queue.PullBlocking()
 		}
 	}
