@@ -59,7 +59,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 	}
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
+		defer d.handler.hierarchy.Remove(string(metaObj.GetUID()))
 		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 	}
 	d.handler.hierarchy.Add(metaObj)
