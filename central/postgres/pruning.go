@@ -94,7 +94,7 @@ const (
 			AND NOT EXISTS
 			(
 				SELECT 1 FROM ` + schema.BlobsTableName + ` blobs
-				WHERE blobs.name not ilike '%%/snapshots.reportid'
+				WHERE blobs.name ilike CONCAT('%%/',snapshots.reportid)
 			)
 			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
 		)`
