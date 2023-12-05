@@ -41,11 +41,7 @@ scale/image/fixtures/scrape.json
 scanner/e2etests/testdata/image_tests.json
 scanner/e2etests/testdata/image_tests.orig.json
 scripts/ci/lib.sh
-sensor/tests/replay/data/policies.json
-sensor/tests/replay/data/safety-net-alerts-central-out.bin
-sensor/tests/replay/data/safety-net-alerts-k8s-trace.jsonl
-sensor/tests/replay/data/safety-net-resources-central-out.bin
-sensor/tests/replay/data/safety-net-resources-k8s-trace.jsonl
+sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/performance/load/package-lock.json
 ui/apps/platform/src/fonts/Open_Sans_Regular.json

@@ -3,7 +3,6 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -31,7 +30,6 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 
-	var reprocessingIds []string
 	events := component.ResourceEvent{}
 	var roxOldNetpol *storage.NetworkPolicy
 	if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
@@ -44,26 +42,16 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		h.netpolStore.Upsert(roxNetpol)
 	}
 
-	if env.ResyncDisabled.BooleanSetting() {
-		events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
-			component.WithForceDetection())
-		events.AddSensorEvent(&central.SensorEvent{
-			Id:     string(np.UID),
-			Action: action,
-			Resource: &central.SensorEvent_NetworkPolicy{
-				NetworkPolicy: roxNetpol,
-			},
-		})
-	} else {
-		reprocessingIds = h.updateDeploymentsFromStore(roxNetpol, sel)
-		events.AddSensorEvent(&central.SensorEvent{
-			Id:     string(np.UID),
-			Action: action,
-			Resource: &central.SensorEvent_NetworkPolicy{
-				NetworkPolicy: roxNetpol,
-			},
-		}).AddDeploymentForReprocessing(reprocessingIds...)
-	}
+	events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
+		component.WithForceDetection())
+	events.AddSensorEvent(&central.SensorEvent{
+		Id:     string(np.UID),
+		Action: action,
+		Resource: &central.SensorEvent_NetworkPolicy{
+			NetworkPolicy: roxNetpol,
+		},
+	})
+
 	return &events
 }
 

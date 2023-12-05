@@ -21,8 +21,6 @@ import (
 )
 
 func TestStore_DispatcherEvents(t *testing.T) {
-	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
-	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	// Namespace: n1
 	// Role: r1
 	// Bindings:
@@ -425,8 +423,6 @@ func TestStore_DispatcherEvents(t *testing.T) {
 }
 
 func TestStore_DeploymentRelationship(t *testing.T) {
-	// Run these tests only with feature flag enabled. Changes to the old path should be avoided whenever possible.
-	t.Setenv("ROX_RESYNC_DISABLED", "true")
 	roles := []*v1.Role{
 		{
 			ObjectMeta: metav1.ObjectMeta{

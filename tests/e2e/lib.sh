@@ -330,9 +330,6 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
-
-    # Every E2E test should have ROX_RESYNC_DISABLED="true"
-    kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
 
 export_central_basic_auth_creds() {
