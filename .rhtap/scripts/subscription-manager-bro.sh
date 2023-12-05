@@ -114,6 +114,9 @@ function register {
         exit 5
     fi
 
+    # Besides just installing packages and making the desired updates to rpmdb, the use of subscription-manager with
+    # the subsequent installation introduces some side-effects that seem undesired. Backup and restore is how I suggest
+    # maintaining the original state.
     echo "Backing up original artifacts in $TARGET_DIR"
     mkdir -p "${TARGET_DIR}"/tmp/restore
     tar --create -vf "${TARGET_DIR}"/tmp/restore/backup.tar --files-from /dev/null
@@ -128,6 +131,8 @@ function register {
 
     # It is suggested in the following articles that certain files can be linked to $TARGET_DIR/run/secrets,
     # but I was not able to make it work, therefore doing it differently.
+    # https://www.neteye-blog.com/2022/07/how-to-use-a-hosts-redhat-subscription-to-run-containers-using-docker-instead-of-podman/
+    # https://access.redhat.com/solutions/5870841
     echo "Enabling entitled rpm repos in $TARGET_DIR"
     mkdir -p "${TARGET_DIR}"/etc/pki/entitlement
     ln --verbose -s /etc/pki/entitlement/*.pem "${TARGET_DIR}"/etc/pki/entitlement
