@@ -28,7 +28,7 @@ type handlerImpl[T types.GcpSDKClients] struct {
 func (h *handlerImpl[T]) UpdateClient(ctx context.Context, creds *google.Credentials) error {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	if concurrency.WaitInContext(h.wg, ctx) {
+	if !concurrency.WaitInContext(h.wg, ctx) {
 		return ctx.Err()
 	}
 
