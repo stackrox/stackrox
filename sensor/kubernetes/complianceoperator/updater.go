@@ -53,9 +53,6 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() error {
-	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		return nil
-	}
 	go u.run()
 	return nil
 }
@@ -103,6 +100,10 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
+	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		return false
+	}
+
 	info := u.getComplianceOperatorInfo()
 	u.complianceOperatorNS = info.GetNamespace()
 
