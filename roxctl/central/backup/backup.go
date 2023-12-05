@@ -46,7 +46,7 @@ You can use it to restore central service and the database.`,
 If the provided path is a file path, the backup will be written to the file, overwriting it if it already exists. (The directory MUST exist.)
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
 If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
-	c.Flags().BoolVar(&centralBackupCmd.certsOnly, "certsOnly", false, `only backs up the certs.
+	c.Flags().BoolVar(&centralBackupCmd.certsOnly, "certs-only", false, `only backs up the certs.
 If using an external database this will be how a backup bundle with certs is generated.`)
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
