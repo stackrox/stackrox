@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -35,16 +36,22 @@ var (
 	errInvalidOperation = errors.New("invalid operation, function not set up")
 )
 
+type clonedUnmarshaler[T any] interface {
+	Clone() *T
+	proto.Unmarshaler
+	*T
+}
+
 // Deleter is an interface that allow deletions of multiple identifiers
 type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
 }
 
-type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
+type primaryKeyGetter[T any, PT clonedUnmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT unmarshaler[T]] func(batch *pgx.Batch, obj PT) error
-type copier[T any, PT unmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
-type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...PT) error
+type inserter[T any, PT clonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
+type copier[T any, PT clonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type upsertChecker[T any, PT clonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
@@ -66,7 +73,7 @@ type Store[T any, PT unmarshaler[T]] interface {
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
-type genericStore[T any, PT unmarshaler[T]] struct {
+type genericStore[T any, PT clonedUnmarshaler[T]] struct {
 	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
@@ -82,7 +89,7 @@ type genericStore[T any, PT unmarshaler[T]] struct {
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStore[T any, PT unmarshaler[T]](
+func NewGenericStore[T any, PT clonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -118,7 +125,7 @@ func NewGenericStore[T any, PT unmarshaler[T]](
 
 // NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
+func NewGenericStoreWithPermissionChecker[T any, PT clonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -495,7 +502,7 @@ func (s *genericStore[T, PT]) copyFrom(ctx context.Context, objs ...PT) error {
 }
 
 // GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT unmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+func GloballyScopedUpsertChecker[T any, PT clonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {

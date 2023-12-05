@@ -16,7 +16,7 @@ import (
 
 // NewGenericStoreWithCache returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
+func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -55,7 +55,7 @@ func NewGenericStoreWithCache[T any, PT unmarshaler[T]](
 
 // NewGenericStoreWithCacheAndPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCacheAndPermissionChecker[T any, PT unmarshaler[T]](
+func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -91,7 +91,7 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT unmarshaler[T]](
 }
 
 // cachedStore implements subset of Store interface for resources with single ID.
-type cachedStore[T any, PT unmarshaler[T]] struct {
+type cachedStore[T any, PT clonedUnmarshaler[T]] struct {
 	schema                        *walker.Schema
 	pkGetter                      primaryKeyGetter[T, PT]
 	setCacheOperationDurationTime durationTimeSetter
@@ -111,7 +111,7 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	c.addToCacheNoLock(obj)
+	c.addToCacheNoLock(obj.Clone())
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	for _, obj := range objs {
-		c.addToCacheNoLock(obj)
+		c.addToCacheNoLock(obj.Clone())
 	}
 	return nil
 }
@@ -219,7 +219,7 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	if !c.isReadAllowed(ctx, obj) {
 		return nil, false, nil
 	}
-	return obj, true, nil
+	return obj.Clone(), true, nil
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
@@ -242,7 +242,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 			misses = append(misses, ix)
 			continue
 		}
-		results = append(results, obj)
+		results = append(results, obj.Clone())
 	}
 	return results, misses, nil
 }
