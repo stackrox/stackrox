@@ -38,7 +38,7 @@ function ScanConfigWizardFooter({
                     </Button>
                 ) : (
                     <Button variant="primary" type="submit" onClick={onSave} isLoading={isSaving}>
-                        Finish
+                        Create
                     </Button>
                 )}
                 <Button

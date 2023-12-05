@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
@@ -6,7 +6,7 @@ import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useRestQuery from 'hooks/useRestQuery';
-import { listComplianceProfiles } from 'services/ComplianceEnhancedService';
+import { createScanConfig, listComplianceProfiles } from 'services/ComplianceEnhancedService';
 
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
@@ -14,6 +14,7 @@ import ProfileSelection from './ProfileSelection';
 import ReviewConfig from './ReviewConfig';
 import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
+import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set Parameters';
 const PARAMETERS_ID = 'parameters';
@@ -30,12 +31,18 @@ function ScanConfigPage(): ReactElement {
     const { clusters, isLoading: isFetchingClusters } = useFetchClustersForPermissions([
         'Compliance',
     ]);
+    const [isCreating, setIsCreating] = useState(false);
 
     const listQuery = useCallback(() => listComplianceProfiles(), []);
     const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listQuery);
 
-    function onCreate() {
-        // TODO: create scan
+    async function onCreate() {
+        setIsCreating(true);
+        const complianceScanConfig = convertFormikToScanConfig(formik.values);
+
+        await createScanConfig(complianceScanConfig);
+        setIsCreating(false);
+        history.push(complianceEnhancedScanConfigsBasePath);
     }
 
     function onClose(): void {
@@ -87,7 +94,7 @@ function ScanConfigPage(): ReactElement {
         {
             name: REVIEW_CONFIG,
             id: REVIEW_CONFIG_ID,
-            component: <ReviewConfig />,
+            component: <ReviewConfig clusters={clusters} profiles={profiles || []} />,
             canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
         },
     ];
@@ -105,7 +112,7 @@ function ScanConfigPage(): ReactElement {
                         <ScanConfigWizardFooter
                             wizardSteps={wizardSteps}
                             onSave={onCreate}
-                            isSaving={false}
+                            isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
                         />
                     }
