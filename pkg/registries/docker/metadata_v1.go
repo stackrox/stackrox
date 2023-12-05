@@ -43,18 +43,10 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	line := strings.Join(img.Config.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
-	var created time.Time
-	if img.Created != nil {
-		created = *img.Created
-	}
-	protoTS, err := types.TimestampProto(created)
-	if err != nil {
-		log.Error(err)
-	}
 	return &storage.ImageLayer{
 		Instruction: instruction,
 		Value:       value,
-		Created:     protoTS,
+		Created:     timestampOrNil(img.Created),
 		Author:      img.Author,
 	}
 }
@@ -139,7 +131,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	for _, h := range img.History {
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
 		layers = append(layers, &storage.ImageLayer{
-			Created:     protoconv.ConvertTimeToTimestampOrNow(h.Created),
+			Created:     timestampOrNil(h.Created),
 			Author:      h.Author,
 			Instruction: instruction,
 			Value:       value,
@@ -149,7 +141,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 
 	var metadata = &storage.V1Metadata{
 		Digest:  ref.String(),
-		Created: protoconv.ConvertTimeToTimestampOrNow(img.Created),
+		Created: timestampOrNil(img.Created),
 		Labels:  img.Config.Labels,
 	}
 
@@ -171,4 +163,11 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	}
 	metadata.Layers = layers
 	return metadata, nil
+}
+
+func timestampOrNil(t *time.Time) *types.Timestamp {
+	if t == nil {
+		return nil
+	}
+	return protoconv.ConvertTimeToTimestampOrNil(*t)
 }
