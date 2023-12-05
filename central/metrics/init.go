@@ -30,5 +30,6 @@ func init() {
 		totalOrphanedPLOPCounter,
 		processQueueLengthGauge,
 		sensorEventsDeduperCounter,
+		sensorConnectedCounter,
 	)
 }
