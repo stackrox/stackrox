@@ -116,6 +116,9 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 	client, done := c.client.GetClient()
 	defer done()
+	if client == nil {
+		return errors.New("failed to get security center client")
+	}
 
 	_, err = client.CreateFinding(ctx, &securitycenterpb.CreateFindingRequest{
 		Parent:    finding.GetParent(),
@@ -139,6 +142,9 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 func (c *cscc) Close(_ context.Context) error {
 	client, done := c.client.GetClient()
 	defer done()
+	if client == nil {
+		return nil
+	}
 	return client.Close()
 }
 
