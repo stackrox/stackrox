@@ -1,32 +1,23 @@
 name: Scanner NVD update
 
 on:
+  push:
   schedule:
-  - cron: '0 0 * * *'  # this runs every day at midnight
+    - cron: '0 */4 * * *'  # this runs every 4 hours
+  workflow_dispatch:
 
 jobs:
-  setup:
+  fetch-cves:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-
     steps:
-    - name: Determine years for matrix
-      id: set-matrix
-      run: |
-        range=$(seq 2002 "$(date +%Y)" | tr '\n' ',')
-        echo "::set-output name=matrix::{\"year\":[${range%,}]}"
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-  fetch-data:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 5
-      matrix:
-        year: ${{fromJson(needs.setup.outputs.matrix).year}}
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
 
-    steps:
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
@@ -35,18 +26,25 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
 
-    - uses: actions/checkout@v4
-
-    - name: Fetch, Validate, and Store NVD Data
-      run: ./.github/workflows/scripts/scanner-fetch-update-nvd.sh ${{ matrix.year }}
-
+    - name: Fetch CVEs
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd.py "$dir"
+        mkdir nvd-bundle
+        tar -czf nvd-bundle/nvd-data.tar.gz -C "$dir" .
+        # TODO: ROX-20459 replace scanner v4 test bucket with product bucket
+        gsutil cp -r nvd-bundle gs://scanner-v4-test/
 
   send-notification:
     needs:
-    - fetch-data
+    - fetch-cves
     runs-on: ubuntu-latest
     if: failure()
     steps:
     - name: Send Slack notification on workflow failure
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to download and update NVD CVSS data"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
