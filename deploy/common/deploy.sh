@@ -36,9 +36,6 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
-export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
-echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
-
 function curl_central() {
 	cmd=(curl -k)
 	local admin_user="${ROX_ADMIN_USER:-admin}"
