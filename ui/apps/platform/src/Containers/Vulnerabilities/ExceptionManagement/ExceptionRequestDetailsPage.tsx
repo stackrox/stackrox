@@ -148,9 +148,7 @@ function ExceptionRequestDetailsPage() {
     const showApproveDenyButtons =
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
-    const showCancelButton =
-        currentUser.userId === requester.id &&
-        (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
+    const showCancelButton = currentUser.userId === requester.id;
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
