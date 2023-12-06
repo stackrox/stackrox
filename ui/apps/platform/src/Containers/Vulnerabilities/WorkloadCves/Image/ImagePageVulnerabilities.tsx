@@ -213,6 +213,7 @@ function ImagePageVulnerabilities({
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
+                                isBusy={loading}
                             />
                         </GridItem>
                     </Grid>

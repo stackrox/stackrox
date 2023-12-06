@@ -28,6 +28,7 @@ import (
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
+	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -68,6 +69,7 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
+	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -370,7 +372,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
-		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -428,6 +429,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+	}
+
+	// The scheduled backup service is not applicable when using an external database
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -601,6 +607,7 @@ func startGRPCServer() {
 				gs.AddGatherer(clusterDataStore.Gather)
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(externalbackupsDS.Gather)
 			}
 		}
 	}
@@ -804,6 +811,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/administration/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/extensions/certs/backup",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
 	}

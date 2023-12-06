@@ -2,7 +2,6 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
-    extractNonZeroSeverityFromCount,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -41,67 +40,46 @@ describe('Workload CVE overview page tests', () => {
         if (!hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
             this.skip();
         }
+
         visitWorkloadCveOverview();
 
         // We want to manually test filter application, so clear the default filters
         cy.get(selectors.clearFiltersButton).click();
-        cy.get(selectors.hiddenSeverityCount('Critical')).should('not.exist');
+        cy.get(selectors.isUpdatingTable).should('not.exist');
 
-        // Get the first CVE row from the table with a non-zero severity count for -any- severity
-        cy.get(selectors.nonZeroImageSeverityCounts)
-            .first()
-            .then(($severityCount) => {
-                const [nonZeroSeverity, unusedSeverities] = extractNonZeroSeverityFromCount(
-                    $severityCount.attr('aria-label')
+        const urlBase = '/api/graphql?opname=';
+
+        const entityOpnameMap = {
+            CVE: 'getImageCVEList',
+            Image: 'getImageList',
+            Deployment: 'getDeploymentList',
+        };
+
+        const { CVE, Image, Deployment } = entityOpnameMap;
+
+        // Intercept and mock responses as empty, since we don't care about the response
+        cy.intercept({ method: 'POST', url: urlBase + CVE }, { data: {} }).as(CVE);
+        cy.intercept({ method: 'POST', url: urlBase + Image }, { data: {} }).as(Image);
+        cy.intercept({ method: 'POST', url: urlBase + Deployment }, { data: {} }).as(Deployment);
+
+        applyLocalSeverityFilters('Critical');
+
+        // Test that the correct filters are applied for each entity tab, and that the correct
+        // search filter is sent in the request for each tab
+        Object.entries(entityOpnameMap).forEach(([entity, opname]) => {
+            // @ts-ignore
+            selectEntityTab(entity);
+
+            // Ensure that only the correct filter chip is present
+            cy.get(selectors.filterChipGroupItem('Severity', 'Critical'));
+            cy.get(selectors.filterChipGroupItems).should('have.lengthOf', 1);
+
+            // Ensure the correct search filter is present in the request
+            cy.wait('@' + opname).should((xhr) => {
+                expect(xhr.request.body.variables.query).to.contain(
+                    'SEVERITY:CRITICAL_VULNERABILITY_SEVERITY'
                 );
-
-                expect(unusedSeverities).to.have.lengthOf(3);
-
-                // Apply the severity filter for the first non-zero CVE severity count
-                // @ts-ignore
-                applyLocalSeverityFilters(nonZeroSeverity);
-
-                // Check that the filter chip for the severity exists
-                cy.get(selectors.filterChipGroupItem('Severity', nonZeroSeverity));
-
-                // Check that the table is no longer updating the data to reflect the new filter
-                cy.get(selectors.isUpdatingTable).should('not.exist');
-
-                // Check that all table rows have a non-zero severity count for the selected severity
-                // Check that all table rows have other severity counts hidden for all other severities
-                const hiddenSeveritySelectors = [
-                    selectors.hiddenSeverityCount(unusedSeverities[0]),
-                    selectors.hiddenSeverityCount(unusedSeverities[1]),
-                    selectors.hiddenSeverityCount(unusedSeverities[2]),
-                ];
-                const imageSeverityCountSelector = [
-                    selectors.nonZeroImageSeverityCount(nonZeroSeverity),
-                    ...hiddenSeveritySelectors,
-                ].join(',');
-
-                const cveSeverityCountSelector = [
-                    selectors.nonZeroCveSeverityCount(nonZeroSeverity),
-                    ...hiddenSeveritySelectors,
-                ].join(',');
-
-                // Check all rows for the CVE table
-                // TODO David can you rewrite with safe chain?
-                /* eslint-disable cypress/unsafe-to-chain-command */
-                cy.get('table tbody tr:nth-of-type(1)')
-                    .each(($row) => cy.wrap($row).find(imageSeverityCountSelector))
-                    // Check all rows for the Image table
-                    .then(() => {
-                        selectEntityTab('Image');
-                        return cy.get('table tbody tr:nth-of-type(1)');
-                    })
-                    .each(($row) => cy.wrap($row).find(cveSeverityCountSelector))
-                    // Check all rows for the Deployment table
-                    .then(() => {
-                        selectEntityTab('Deployment');
-                        return cy.get('table tbody tr:nth-of-type(1)');
-                    })
-                    .each(($row) => cy.wrap($row).find(cveSeverityCountSelector));
-                /* eslint-enable cypress/unsafe-to-chain-command */
             });
+        });
     });
 });
