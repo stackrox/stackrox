@@ -60,7 +60,7 @@ GOCACHE_VOLUME_NAME := stackrox-rox-gocache
 ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
 	DEBUG_BUILD ?= yes
 endif
-DEBUG_BUILD ?= no
+DEBUG_BUILD ?= yes
 
 # Figure out whether to use standalone Docker volume for GOPATH/Go build cache, or bind
 # mount one from the host filesystem.
