@@ -536,7 +536,7 @@ export function preFormatImageSigningPolicyGroup(policy: Policy): ClientPolicy {
 
 export function postFormatImageSigningPolicyGroup(policy: ClientPolicy): Policy {
     if (!policy.policySections) {
-        return policy;
+        return policy as unknown as Policy;
     }
 
     const serverPolicy = cloneDeep(policy) as Policy;
