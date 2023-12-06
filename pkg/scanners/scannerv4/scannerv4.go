@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	s4util "github.com/stackrox/rox/pkg/scannerv4"
-	"github.com/stackrox/rox/scanner/pkg/client"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
 const (
