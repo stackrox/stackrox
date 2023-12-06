@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/externalbackups"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -206,7 +205,7 @@ func (s *s3) createError(msg string, err error) error {
 }
 
 func init() {
-	plugins.Add(externalbackups.S3Type, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+	plugins.Add(types.S3Type, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return newS3(backup)
 	})
 }

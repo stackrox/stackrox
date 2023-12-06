@@ -18,7 +18,6 @@ import (
 	gcpStorage "github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/externalbackups"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
@@ -223,7 +222,7 @@ func (s *gcs) createError(msg string, err error) error {
 }
 
 func init() {
-	plugins.Add(externalbackups.GCSType, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+	plugins.Add(types.GCSType, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return newGCS(backup)
 	})
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/externalbackups"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -38,24 +38,24 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	})
 
 	backupTypesCount := map[string]int{
-		externalbackups.S3Type:  0,
-		externalbackups.GCSType: 0,
+		types.S3Type:  0,
+		types.GCSType: 0,
 	}
 
 	cloudCredentialsEnabledBackupsCount := map[string]int{
-		externalbackups.S3Type:  0,
-		externalbackups.GCSType: 0,
+		types.S3Type:  0,
+		types.GCSType: 0,
 	}
 
 	for _, backup := range backups {
 		backupTypesCount[backup.GetType()]++
 
-		if backup.GetType() == externalbackups.S3Type && backup.GetS3().GetUseIam() {
-			cloudCredentialsEnabledBackupsCount[externalbackups.S3Type]++
+		if backup.GetType() == types.S3Type && backup.GetS3().GetUseIam() {
+			cloudCredentialsEnabledBackupsCount[types.S3Type]++
 		}
 
-		if backup.GetType() == externalbackups.GCSType && backup.GetGcs().GetUseWorkloadId() {
-			cloudCredentialsEnabledBackupsCount[externalbackups.GCSType]++
+		if backup.GetType() == types.GCSType && backup.GetGcs().GetUseWorkloadId() {
+			cloudCredentialsEnabledBackupsCount[types.GCSType]++
 		}
 	}
 
