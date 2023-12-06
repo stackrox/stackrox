@@ -19,12 +19,12 @@ LABEL name="scanner-db" \
       description="This image supports static vulnerability scanning for the StackRox Security Platform."
 
 # If this is updated, be sure to update the version of the postgres server installed below.
-ENV PG_MAJOR=13
+ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
     PGDATA="/var/lib/postgresql/data/pgdata"
 ENV LANG=en_US.utf8
 
-COPY signatures/RPM-GPG-KEY-PGDG-13 /
+COPY signatures/RPM-GPG-KEY-PGDG-15 /
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
@@ -36,8 +36,8 @@ RUN microdnf upgrade -y --nobest && \
     microdnf install -y \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
-        perl-libs libxslt && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then microdnf install -y python3 uuid; fi && \
+        perl-libs libxslt python3 lz4 && \
+    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then microdnf install -y uuid; fi && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681

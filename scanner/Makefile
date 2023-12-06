@@ -135,7 +135,7 @@ scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
-db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
+db-image: copy-db-scripts
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
@@ -166,19 +166,9 @@ copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	$(SILENT)cp $^ image/scanner/scripts
 
 .PHONY: copy-db-scripts
-copy-db-scripts: ../image/postgres/download.sh
-	@echo "+ $@"
-	$(SILENT)cp $^ image/db
-
-.PHONY: copy-db-image-scripts
-copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
+copy-db-scripts: ../image/postgres/scripts/init-entrypoint.sh
 	@echo "+ $@"
 	$(SILENT)cp $^ image/db/scripts
-
-.PHONY: copy-db-sigs
-copy-db-sigs: ../image/postgres/signatures
-	@echo "+ $@"
-	$(SILENT)cp -R $^ image/db/signatures
 
 ##################
 ## Certificates ##
