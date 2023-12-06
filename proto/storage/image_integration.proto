@@ -121,6 +121,7 @@ message GoogleConfig {
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
     string service_account = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     string project         = 3;
+    bool wif_enabled       = 4;
 }
 
 enum ImageIntegrationCategory {
