@@ -18,7 +18,7 @@ LABEL name="scanner-db" \
       summary="Static vulnerability scanner database for the StackRox Security Platform" \
       description="This image supports static vulnerability scanning for the StackRox Security Platform."
 
-# If this is updated, be sure to update the version of the postgres server installed below.
+# If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
     PGDATA="/var/lib/postgresql/data/pgdata"
