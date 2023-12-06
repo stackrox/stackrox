@@ -74,7 +74,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 
 	// An integration may have a category removed, for example, if an integration went from being
 	// both a registry + scanner to just a registry. On update we need to remove the integration
-	// from the sets it's no longer a part of.
+	// from the sets it should no longer be a part of.
 	if !isRegistry {
 		e.registrySet.RemoveImageIntegration(integration.GetId())
 	}
