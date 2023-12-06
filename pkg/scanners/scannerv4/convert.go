@@ -26,6 +26,8 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 }
 
 func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
+	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
+
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.GetPackageVulnerabilities()))
 	for _, pkg := range report.GetContents().GetPackages() {
 		id := pkg.GetId()
@@ -35,7 +37,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
 			Location:      pkg.GetPackageDb(),
-			HasLayerIndex: layerIndex(metadata, report, id),
+			HasLayerIndex: layerIndex(layerSHAToIndex, report, id),
 		}
 
 		components = append(components, component)
@@ -44,8 +46,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	return components
 }
 
-func layerIndex(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
-	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
+func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
 
 	envList := report.GetContents().GetEnvironments()[pkgID]
 	if len(envList.GetEnvironments()) > 0 {
