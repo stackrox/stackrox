@@ -183,13 +183,18 @@ class K8sRbacTest extends BaseSpecification {
                 role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
                 assert role.annotations == stackroxRole.annotationsMap
                 for (int i = 0; i < role.rules.size(); i++) {
+                    def found = false
                     K8sPolicyRule oRule = role.rules[i]
-                    Rbac.PolicyRule sRule = stackroxRole.rulesList[i]
-                    assert oRule.verbs == sRule.verbsList
-                    assert oRule.apiGroups == sRule.apiGroupsList
-                    assert oRule.resources == sRule.resourcesList
-                    assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
-                    assert oRule.resourceNames == sRule.resourceNamesList
+                    for (int j = 0; j < stackroxRole.rulesList.size(); j++) {
+                        Rbac.PolicyRule sRule = stackroxRole.rulesList[i]
+                        if (oRule.verbs != sRule.verbsList) { continue }
+                        if (oRule.apiGroups != sRule.apiGroupsList) { continue }
+                        if (oRule.resources != sRule.resourcesList) { continue }
+                        if (oRule.nonResourceUrls != sRule.nonResourceUrlsList) { continue }
+                        if (oRule.resourceNames != sRule.resourceNamesList) { continue }
+                        found = true
+                    }
+                    assert found
                 }
                 assert RbacService.getRole(stackroxRole.id) == stackroxRole
             }
