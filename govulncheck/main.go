@@ -24,7 +24,7 @@ type ExceptionConfig struct {
 }
 
 func printlnAndExitf(s string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, s+"\n", args...)
+	_, _ = fmt.Fprintf(os.Stderr, s+"\n", args...)
 	os.Exit(1)
 }
 
@@ -79,7 +79,7 @@ func main() {
 		printlnAndExitf("error opening vulns file: %v", err)
 		os.Exit(1)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var output Output
 	decoder := json.NewDecoder(file)
@@ -105,5 +105,5 @@ func main() {
 	if err != nil {
 		printlnAndExitf("error marshaling output: %v", err)
 	}
-	fmt.Fprintln(os.Stdout, string(outputBytes))
+	_, _ = fmt.Fprintln(os.Stdout, string(outputBytes))
 }
