@@ -44,6 +44,7 @@ func TestCategoryRemove(t *testing.T) {
 	}
 
 	integration := &storage.ImageIntegration{
+		Id:   "fake-id",
 		Name: "fake-name",
 		Type: "fake-type",
 		Categories: []storage.ImageIntegrationCategory{
