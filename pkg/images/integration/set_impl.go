@@ -76,11 +76,11 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 	// both a registry + scanner to just a registry. On update we need to remove the integration
 	// from the sets it should no longer be a part of.
 	if !isRegistry {
-		e.registrySet.RemoveImageIntegration(integration.GetId())
+		_ = e.registrySet.RemoveImageIntegration(integration.GetId())
 	}
 
 	if !isScanner {
-		e.scannerSet.RemoveImageIntegration(integration.GetId())
+		_ = e.scannerSet.RemoveImageIntegration(integration.GetId())
 	}
 
 	rErr := e.reporter.Register(integration.GetId(), integration.GetName(), storage.IntegrationHealth_IMAGE_INTEGRATION)
