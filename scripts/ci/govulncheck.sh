@@ -8,6 +8,7 @@ do
     echo "Analyzing binary $file"
     $GOVULNCHECK_BIN -mode=binary --json "$file" > vulns.json
     go run govulncheck/main.go vulns.json > filtered_vulns.json
+    cat filtered_vulns.json
     jq '.data[] | select(.id) | [.id, .summary, .details] | @tsv' -r filtered_vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
     do
       id="${vulns[0]}"
