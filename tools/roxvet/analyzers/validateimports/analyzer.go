@@ -330,8 +330,6 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "sensor/common" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
-		// Need this to connect to Scanner V4.
-		allowedPackages = appendPackageWithChildren(allowedPackages, "scanner/pkg/client")
 	}
 
 	for _, imp := range imports {
