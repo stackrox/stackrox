@@ -46,7 +46,7 @@ func panicIfTooMuchTimeElapsed(action string, startTime time.Time, limit time.Du
 		return
 	}
 	_, _ = fmt.Fprintf(os.Stderr, "Action %s took more than %v to complete. Stack trace:\n%s", action, limit, debug.GetLazyStacktrace(skip+1))
-	kill()
+	// kill()
 }
 
 func panicOnTimeout(action string, do func(), timeout time.Duration) {
