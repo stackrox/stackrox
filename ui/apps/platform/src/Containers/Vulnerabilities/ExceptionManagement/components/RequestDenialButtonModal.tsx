@@ -106,7 +106,8 @@ function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonM
                         <Alert isInline variant={AlertVariant.danger} title={errorMessage} />
                     )}
                     <Alert
-                        variant="info"
+                        variant="warning"
+                        isInline
                         title="Denying the request will return the CVEs to the 'Observed' status."
                     >
                         <Text>CVE count: {exception.cves.length}</Text>

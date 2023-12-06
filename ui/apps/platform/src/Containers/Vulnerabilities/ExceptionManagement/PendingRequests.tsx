@@ -73,6 +73,7 @@ function PendingApprovals() {
                 {
                     ...searchFilter,
                     'Request Status': ['PENDING', 'APPROVED_PENDING_UPDATE'],
+                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,
