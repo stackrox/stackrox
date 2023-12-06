@@ -19,8 +19,7 @@ do
     done
 done
 
-if [[ $(jq '.data[] | length' -r filtered_vulns.json) != 0 ]]; then
-    jq '.data[] | length' -r filtered_vulns.json
+if [[ $(jq '.data | length' < filtered_vulns.json) != 0 ]]; then
     echo "Found vulnerabilities. If they are false positives, add them to govulncheck-allowlist.json" >&2
     cat filtered_vulns.json
     exit 1
