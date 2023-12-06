@@ -47,6 +47,7 @@ function FilterAutocompleteSelect({
         return searchOptions[0];
     });
     const [typeahead, setTypeahead] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const { isOpen, onToggle } = useSelectToggle();
 
     // TODO Autocomplete requests for "Cluster" never return results if there is a 'CVE ID' or 'Severity' search filter
@@ -66,7 +67,7 @@ function FilterAutocompleteSelect({
         categories: searchOption.category,
     };
 
-    const { data } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
+    const { data, loading } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
 
     function onSelect(newValue) {
         const oldValue = searchFilter[searchOption.value] as string[];
@@ -86,9 +87,15 @@ function FilterAutocompleteSelect({
 
     // Debounce the autocomplete requests to not overload the backend
     const updateTypeahead = useMemo(
-        () => debounce((value: string) => setTypeahead(value), 800),
+        () =>
+            debounce((value: string) => {
+                setTypeahead(value);
+                setIsTyping(false);
+            }, 800),
         []
     );
+
+    const autocompleteOptions = loading || isTyping ? [] : getOptions(data?.searchAutocomplete);
 
     return (
         <ToolbarGroup
@@ -102,6 +109,7 @@ function FilterAutocompleteSelect({
                         (option) => option.value === selection
                     );
                     if (newSearchOption) {
+                        setTypeahead('');
                         setSearchOption(newSearchOption);
                     }
                 }}
@@ -130,11 +138,12 @@ function FilterAutocompleteSelect({
                 // We set this as empty because we want to use SearchFilterChips to display the search values
                 selections={searchFilter[searchOption.value]}
                 onTypeaheadInputChanged={(val: string) => {
+                    setIsTyping(true);
                     updateTypeahead(val);
                 }}
                 className="pf-u-flex-grow-1"
             >
-                {getOptions(data?.searchAutocomplete)}
+                {autocompleteOptions}
             </Select>
         </ToolbarGroup>
     );
