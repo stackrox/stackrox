@@ -342,7 +342,7 @@ clean-e2e:
 
 # DB configuration files.
 #
-$(e2e-files-d)/db-%.conf: image/db/%.conf
+$(e2e-files-d)/db-%.conf: ../image/templates/helm/shared/config-templates/scanner-v4-db/%.conf.default
 	$(SILENT)mkdir -p $(@D)
 	$(SILENT)cp $^ $@
 
