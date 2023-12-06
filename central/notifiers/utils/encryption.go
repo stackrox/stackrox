@@ -8,11 +8,19 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	encryptionKeyFile = "/run/secrets/stackrox.io/central-encryption-key/encryption-key"
+	encryptionKeyFile      = "/run/secrets/stackrox.io/central-encryption-key/encryption-key"
+	encryptionKeyChainFile = "/run/secrets/stackrox.io/central-encryption-key-chain/key-chain.yaml"
 )
+
+// KeyChain contains the keychain for notifier crypto
+type KeyChain struct {
+	KeyMap      map[int]string `json:"keyMap"`
+	ActiveKeyId string         `json:"activeKeyId"`
+}
 
 // GetNotifierSecretEncryptionKey returns the key for encrypting/decrypting notifier secrets
 func GetNotifierSecretEncryptionKey() (string, error) {
@@ -21,6 +29,19 @@ func GetNotifierSecretEncryptionKey() (string, error) {
 		return "", errors.Wrap(err, "Could not load notifier encryption key")
 	}
 	return string(key), nil
+}
+
+func GetNotifierEncryptionKeyChain() (*KeyChain, error) {
+	data, err := os.ReadFile(encryptionKeyChainFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not load notifier encryption keychain")
+	}
+	var chain KeyChain
+	err = yaml.Unmarshal(data, &chain)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error parsing notifier encryption keychain")
+	}
+	return &chain, nil
 }
 
 // SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified,
