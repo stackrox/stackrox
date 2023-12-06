@@ -568,7 +568,6 @@ jobs:
           make -C operator/ docker-push-index | cat
 
   scan-go-binaries:
-    if: github.event_name == 'push'
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
