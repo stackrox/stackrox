@@ -261,6 +261,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
 	go m.publicIPs.Run(&m.done, m.clusterEntities)
+	m.startDebugServer()
 	return nil
 }
 
@@ -460,7 +461,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if extSrc != nil {
 			isFresh = false
 		}
-		focusedDebugf(container.Namespace, "LookupByNetwork for %v (fresh? %t): %+v", conn.remote.IPAndPort.IPNetwork, isFresh, extSrc)
 
 		if isFresh {
 			return
