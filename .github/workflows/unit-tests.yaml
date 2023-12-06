@@ -33,6 +33,11 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -94,6 +99,11 @@ jobs:
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
+    
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
 
     - name: Generate junit report
       if: always()
@@ -169,6 +179,11 @@ jobs:
 
     - name: UI Unit Tests
       run: make ui-test
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ui-unit-tests
 
     - name: Publish Test Report
       uses: test-summary/action@v2
