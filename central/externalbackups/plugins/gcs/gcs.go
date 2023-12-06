@@ -224,7 +224,7 @@ func (s *gcs) createError(msg string, err error) error {
 }
 
 func init() {
-	plugins.Add("gcs", func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+	plugins.Add(types.GCSType, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return newGCS(backup)
 	})
 }
