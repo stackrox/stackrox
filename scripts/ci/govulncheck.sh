@@ -19,7 +19,7 @@ do
       save_junit_failure "$id" "$summary" "$details"
     done
     if [[ $(jq '.data | length' < filtered_vulns.json) == 0 ]]; then
-        save_junit_success "$file" "go scan"
+      save_junit_success "$(basename "$file")" "go scan"
     fi
 done
 
