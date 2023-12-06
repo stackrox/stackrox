@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -30,6 +31,10 @@ func Validate(cscc *storage.CSCC, validateSecret bool) error {
 	}
 	if err := ValidateSourceID(cscc.SourceId); err != nil {
 		return err
+	}
+
+	if cscc.GetWifEnabled() && !features.CloudCredentials.Enabled() {
+		return errors.New("cannot use WIF without the feature flag being enabled")
 	}
 	return nil
 }
