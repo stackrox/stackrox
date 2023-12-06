@@ -452,6 +452,9 @@
         },
         "project": {
           "type": "string"
+        },
+        "wifEnabled": {
+          "type": "boolean"
         }
       }
     },
