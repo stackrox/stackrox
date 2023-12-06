@@ -1,8 +1,8 @@
 import { gql, useQuery } from '@apollo/client';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
-import { getImageScopeSearchValue } from '../utils';
 import { sortCveDistroList } from 'Containers/Vulnerabilities/WorkloadCves/sortUtils';
+import { getImageScopeSearchValue } from '../utils';
 
 type AffectedImagesCountQueryResult = {
     imageCVEs: {

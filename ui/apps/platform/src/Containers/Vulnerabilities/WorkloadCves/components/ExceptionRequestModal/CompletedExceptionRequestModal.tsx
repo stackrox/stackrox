@@ -67,7 +67,7 @@ function CompletedExceptionRequestModal({
     onClose,
 }: CompletedExceptionRequestModalProps) {
     let title = '';
-    let titleAction = isUpdate ? 'Update' : 'Request';
+    const titleAction = isUpdate ? 'Update' : 'Request';
     let requestedAction = '';
 
     if (isDeferralException(exceptionRequest)) {
