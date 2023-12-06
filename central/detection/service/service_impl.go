@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -62,6 +63,8 @@ var (
 			"/v1.DetectionService/DetectDeployTime",
 		},
 	})
+
+	log = logging.LoggerForModule()
 
 	workloadScheme = k8sRuntime.NewScheme()
 
