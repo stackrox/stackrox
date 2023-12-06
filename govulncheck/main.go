@@ -50,13 +50,13 @@ func parseData(config *ExceptionConfig, data map[string]interface{}) (map[string
 	keyMap, exists := data["finding"]
 	if exists {
 		keyMapI := keyMap.(map[string]interface{})
-		return keyMapI, hasException(config, keyMapI["osv"].(string))
+		return keyMapI, !hasException(config, keyMapI["osv"].(string))
 	}
 
 	keyMap, exists = data["osv"]
 	if exists {
 		keyMapI := keyMap.(map[string]interface{})
-		return keyMapI, hasException(config, keyMapI["id"].(string))
+		return keyMapI, !hasException(config, keyMapI["id"].(string))
 	}
 	return nil, false
 }
