@@ -1549,7 +1549,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	indicators := getIndicators()
 
-	plopWithoutPodUid := storage.ProcessListeningOnPortFromSensor{
+	plopWithoutPodUID := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -1563,7 +1563,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		DeploymentId: fixtureconsts.Deployment1,
 	}
 
-	plopWithPodUid := storage.ProcessListeningOnPortFromSensor{
+	plopWithPodUID := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -1578,7 +1578,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		PodUid:       fixtureconsts.PodUID1,
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUid}
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUID}
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1611,7 +1611,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		},
 	})
 
-	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUid}
+	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUID}
 
 	// Add PLOP with PodUid
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -1650,7 +1650,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	time1 := time.Now()
 	time2 := time.Now().Local().Add(time.Hour * time.Duration(1))
 
-	plopWithoutPodUid := storage.ProcessListeningOnPortFromSensor{
+	plopWithoutPodUID := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
@@ -1664,7 +1664,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		DeploymentId: fixtureconsts.Deployment1,
 	}
 
-	plopWithPodUid := storage.ProcessListeningOnPortFromSensor{
+	plopWithPodUID := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
@@ -1679,7 +1679,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		PodUid:       fixtureconsts.PodUID1,
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUid}
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUID}
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1696,7 +1696,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	suite.Len(newPlops, 0)
 
-	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUid}
+	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUID}
 
 	// Add PLOP with PodUid
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
@@ -1712,11 +1712,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
 
-	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plopWithPodUid.Process)
+	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plopWithPodUID.Process)
 
 	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
 		{
-			Id:		    newPlopsFromDB[0].Id,
+			Id:                 newPlopsFromDB[0].Id,
 			Port:               plopObjects[0].GetPort(),
 			Protocol:           plopObjects[0].GetProtocol(),
 			CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
@@ -1728,7 +1728,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB)
-	//suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 // TestPLOPAddOpenThenCloseAndOpenSameBatchWithPodUid Sends an open PLOP with a matching indicator.
@@ -1738,7 +1737,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 
 	indicators := getIndicators()
 
-	openPlopObjectWithoutPodUid := storage.ProcessListeningOnPortFromSensor{
+	openPlopObjectWithoutPodUID := storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -1752,7 +1751,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 		DeploymentId: fixtureconsts.Deployment1,
 	}
 
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObjectWithoutPodUid}
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObjectWithoutPodUID}
 
 	batchPlopObjects := []*storage.ProcessListeningOnPortFromSensor{
 		&closedPlopObject,
@@ -1816,7 +1815,6 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 	plops := make([]*storage.ProcessListeningOnPortFromSensor, nplops)
 	for podIdx := 0; podIdx < npod; podIdx++ {
 		podID := makeRandomString(10)
-		//podUID := makeRandomString(10)
 		for processIdx := 0; processIdx < nprocess; processIdx++ {
 			execFilePath := makeRandomString(10)
 			for port := 0; port < nport; port++ {
@@ -1870,7 +1868,6 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 
 	for _, plop := range plopObjects {
 		plop.PodUid = makeRandomString(10)
-		//func makeRandomString(length int) string {
 	}
 
 	startTime := time.Now()
