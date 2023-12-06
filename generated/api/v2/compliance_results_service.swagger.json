@@ -1,0 +1,712 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/compliance_results_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/compliance/scan/count/results": {
+      "get": {
+        "operationId": "ComplianceResultsService_GetComplianceScanResultsCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CountComplianceScanResults"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/overview": {
+      "get": {
+        "summary": "GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "operationId": "ComplianceResultsService_GetComplianceScanResultsOverview",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanResultsOverviewResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/results": {
+      "get": {
+        "summary": "GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "operationId": "ComplianceResultsService_GetComplianceScanResults",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanResultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/cluster": {
+      "get": {
+        "summary": "GetComplianceClusterScanStats lists current scan stats grouped by cluster\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "operationId": "ComplianceResultsService_GetComplianceClusterScanStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/profile": {
+      "get": {
+        "summary": "GetComplianceProfileScanStats lists current scan stats grouped by profile\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
+        "operationId": "ComplianceResultsService_GetComplianceProfileScanStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceProfileScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ComplianceCheckResultClusterCheckStatus": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        },
+        "createdTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "ClusterCheckStatus groups the result of the check by cluster"
+    },
+    "ComplianceScanStatsShimComplianceCheckStatusCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        }
+      },
+      "title": "Group the number of occurrences by status"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2ComplianceCheckResult": {
+      "type": "object",
+      "properties": {
+        "checkId": {
+          "type": "string"
+        },
+        "checkName": {
+          "type": "string"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComplianceCheckResultClusterCheckStatus"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "standard": {
+          "type": "string"
+        },
+        "control": {
+          "type": "string"
+        }
+      },
+      "title": "ComplianceCheckResult provides the results of a compliance check against a rule"
+    },
+    "v2ComplianceCheckStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET_CHECK_STATUS",
+        "PASS",
+        "FAIL",
+        "ERROR",
+        "INFO",
+        "MANUAL",
+        "NOT_APPLICABLE",
+        "INCONSISTENT"
+      ],
+      "default": "UNSET_CHECK_STATUS"
+    },
+    "v2ComplianceClusterScanStats": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        },
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
+        }
+      },
+      "title": "ComplianceClusterScanStats provides scan stats overview based on cluster"
+    },
+    "v2ComplianceProfileScanStats": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        },
+        "profileName": {
+          "type": "string"
+        }
+      },
+      "title": "ComplianceProfileScanStats provides scan stats overview based on profile"
+    },
+    "v2ComplianceScanCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ComplianceScanResult": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string"
+        },
+        "profileName": {
+          "type": "string"
+        },
+        "checkResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckResult"
+          }
+        }
+      },
+      "title": "ComplianceScanResult provides the results of a scan"
+    },
+    "v2ComplianceScanResultsOverview": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        },
+        "profileName": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cluster": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceScanCluster"
+          }
+        }
+      },
+      "title": "ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration"
+    },
+    "v2ComplianceScanStatsShim": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ComplianceScanStatsShimComplianceCheckStatusCount"
+          }
+        },
+        "lastScan": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
+    },
+    "v2CountComplianceScanResults": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ComplianceScanResultsCount gives count of scan results"
+    },
+    "v2ListComplianceClusterScanStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceClusterScanStats"
+          }
+        }
+      },
+      "title": "ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans"
+    },
+    "v2ListComplianceProfileScanStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceProfileScanStats"
+          }
+        }
+      },
+      "title": "ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans"
+    },
+    "v2ListComplianceScanResultsOverviewResponse": {
+      "type": "object",
+      "properties": {
+        "scanOverviews": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceScanResultsOverview"
+          }
+        }
+      },
+      "title": "ListComplianceScanResultsOverviewResponse provides overviews for scans"
+    },
+    "v2ListComplianceScanResultsResponse": {
+      "type": "object",
+      "properties": {
+        "scanResults": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceScanResult"
+          }
+        }
+      },
+      "title": "ListComplianceScanResultsResponse provides the complete scan results"
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    }
+  }
+}
