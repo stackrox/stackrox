@@ -408,6 +408,12 @@ func (m *manager) getRunStatuses(ids []string) []*v1.ComplianceRun {
 	defer m.mutex.RUnlock()
 
 	var result []*v1.ComplianceRun
+	if len(ids) == 0 {
+		for _, run := range m.runsByID {
+			result = append(result, run.ToProto())
+		}
+		return result
+	}
 	for _, id := range ids {
 		if run := m.runsByID[id]; run != nil {
 			result = append(result, run.ToProto())
