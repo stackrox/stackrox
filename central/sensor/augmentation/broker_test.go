@@ -58,7 +58,6 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
 			s.Fail("did not receive response in time")
 		case <-c:
 		}
-		return
 	}()
 
 	b.NotifyDeploymentReceived(msg)
