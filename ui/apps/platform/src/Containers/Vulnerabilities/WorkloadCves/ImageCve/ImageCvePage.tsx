@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Alert,
@@ -39,6 +39,7 @@ import {
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
 } from 'Containers/Vulnerabilities/searchOptions';
+import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
 import {
     getHiddenSeverities,
     getOverviewCvesPath,
@@ -67,7 +68,7 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { VulnerabilitySeverityLabel } from '../types';
+import { EntityTab, VulnerabilitySeverityLabel } from '../types';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
@@ -170,6 +171,7 @@ const searchOptions: SearchOption[] = [
 ];
 
 function ImageCvePage() {
+    const { analyticsTrack } = useAnalytics();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -296,6 +298,21 @@ function ImageCvePage() {
         tableLoading = deploymentDataRequest.loading;
     }
 
+    function trackEntityTabView(entityTab: EntityTab) {
+        analyticsTrack({
+            event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'CVE Detail',
+            },
+        });
+    }
+
+    // Track the initial entity tab view
+    useEffect(() => {
+        trackEntityTabView(entityTab);
+    }, []);
+
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
     if (metadataRequest.data && metadataRequest.data.imageCVE === null) {
         return (
@@ -409,6 +426,7 @@ function ImageCvePage() {
                                     entityTabs={imageCveEntities}
                                     setSortOption={setSortOption}
                                     setPage={setPage}
+                                    onChange={trackEntityTabView}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>

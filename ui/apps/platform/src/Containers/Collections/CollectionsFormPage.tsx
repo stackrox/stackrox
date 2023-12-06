@@ -32,6 +32,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 import { CollectionPageAction } from './collections.utils';
 import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import useCollection from './hooks/useCollection';
@@ -65,6 +66,8 @@ function CollectionsFormPage({
     const history = useHistory();
     const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
+
+    const { analyticsTrack } = useAnalytics();
 
     const { data, loading, error } = useCollection(collectionId);
 
@@ -206,6 +209,12 @@ function CollectionsFormPage({
                     onSubmit(collection)
                         .then(() => {
                             history.push({ pathname: `${collectionsBasePath}` });
+                            if (pageAction.type === 'create') {
+                                analyticsTrack({
+                                    event: COLLECTION_CREATED,
+                                    properties: { source: 'Collections' },
+                                });
+                            }
                         })
                         .catch((err) => {
                             scrollToTop();

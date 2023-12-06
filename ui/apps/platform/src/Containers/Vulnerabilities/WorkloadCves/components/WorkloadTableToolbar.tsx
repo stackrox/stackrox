@@ -8,6 +8,12 @@ import { Globe } from 'react-feather';
 import SearchFilterChips, { SearchFilterChipsProps } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchOption, SearchOptionValue } from 'Containers/Vulnerabilities/searchOptions';
+import useAnalytics, {
+    WORKLOAD_CVE_FILTER_APPLIED,
+    isSearchCategoryWithFilter,
+    isSearchCategoryWithoutFilter,
+} from 'hooks/useAnalytics';
+import { searchValueAsArray } from 'utils/searchUtils';
 import { DefaultFilters } from '../types';
 import FilterAutocomplete, {
     FilterAutocompleteSelectProps,
@@ -54,8 +60,23 @@ function WorkloadTableToolbar({
 }: WorkloadTableToolbarProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isFixabilityFiltersEnabled = isFeatureFlagEnabled('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS');
+    const { analyticsTrack } = useAnalytics();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
+
+    function trackAppliedFilter(category: SearchOptionValue, filter: string) {
+        if (isSearchCategoryWithFilter(category)) {
+            analyticsTrack({
+                event: WORKLOAD_CVE_FILTER_APPLIED,
+                properties: { category, filter },
+            });
+        } else if (isSearchCategoryWithoutFilter(category)) {
+            analyticsTrack({
+                event: WORKLOAD_CVE_FILTER_APPLIED,
+                properties: { category },
+            });
+        }
+    }
 
     function onChangeSearchFilter(newFilter: SearchFilter) {
         setSearchFilter(newFilter);
@@ -67,21 +88,16 @@ function WorkloadTableToolbar({
         checked: boolean,
         selection: string
     ) {
-        const selectedSearchFilter = searchFilter[type] as string[];
-        if (searchFilter[type]) {
-            onChangeSearchFilter({
-                ...searchFilter,
-                [type]: checked
-                    ? [...selectedSearchFilter, selection]
-                    : selectedSearchFilter.filter((value) => value !== selection),
-            });
-        } else {
-            onChangeSearchFilter({
-                ...searchFilter,
-                [type]: checked
-                    ? [selection]
-                    : selectedSearchFilter.filter((value) => value !== selection),
-            });
+        const selectedSearchFilter = searchValueAsArray(searchFilter[type]);
+        onChangeSearchFilter({
+            ...searchFilter,
+            [type]: checked
+                ? [...selectedSearchFilter, selection]
+                : selectedSearchFilter.filter((value) => value !== selection),
+        });
+
+        if (checked) {
+            trackAppliedFilter(type, selection);
         }
     }
 
@@ -146,7 +162,12 @@ function WorkloadTableToolbar({
             <ToolbarContent>
                 <FilterAutocomplete
                     searchFilter={searchFilter}
-                    setSearchFilter={setSearchFilter}
+                    onFilterChange={(newFilter, { action, category, value }) => {
+                        setSearchFilter(newFilter);
+                        if (action === 'ADD') {
+                            trackAppliedFilter(category, value);
+                        }
+                    }}
                     searchOptions={searchOptions}
                     autocompleteSearchContext={autocompleteSearchContext}
                 />

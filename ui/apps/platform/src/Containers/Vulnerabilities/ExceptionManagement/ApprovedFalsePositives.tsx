@@ -114,7 +114,7 @@ function ApprovedFalsePositives() {
                 <ToolbarContent>
                     <FilterAutocompleteSelect
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
+                        onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
                     />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>

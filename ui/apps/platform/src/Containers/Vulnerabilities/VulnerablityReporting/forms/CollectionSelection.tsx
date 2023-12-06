@@ -30,6 +30,7 @@ import CollectionsFormModal, {
     CollectionFormModalAction,
 } from 'Containers/Collections/CollectionFormModal';
 import useRestQuery from 'hooks/useRestQuery';
+import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 
 const COLLECTION_PAGE_SIZE = 10;
 
@@ -54,6 +55,8 @@ function CollectionSelection({
     const isRouteEnabledForCollections = isRouteEnabled('collections');
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCollections = hasReadWriteAccess('WorkflowAdministration');
+
+    const { analyticsTrack } = useAnalytics();
 
     const { isOpen, onToggle } = useSelectToggle();
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
@@ -235,6 +238,11 @@ function CollectionSelection({
                                 ...oldCollections,
                                 collectionResponse,
                             ]);
+
+                            analyticsTrack({
+                                event: COLLECTION_CREATED,
+                                properties: { source: 'Vulnerability Reporting' },
+                            });
                         })
                     }
                 />

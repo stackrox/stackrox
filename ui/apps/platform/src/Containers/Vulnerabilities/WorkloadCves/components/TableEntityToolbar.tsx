@@ -16,7 +16,7 @@ import {
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
 import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';
-import { DefaultFilters } from '../types';
+import { DefaultFilters, EntityTab } from '../types';
 
 type TableEntityToolbarProps = {
     defaultFilters: DefaultFilters;
@@ -25,6 +25,7 @@ type TableEntityToolbarProps = {
     pagination: UseURLPaginationResult;
     tableRowCount: number;
     isFiltered: boolean;
+    onEntityTabChange: (entityTab: EntityTab) => void;
     children?: React.ReactNode;
 };
 
@@ -45,6 +46,7 @@ function TableEntityToolbar({
     pagination,
     tableRowCount,
     isFiltered,
+    onEntityTabChange,
     children,
 }: TableEntityToolbarProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -65,6 +67,7 @@ function TableEntityToolbar({
                             deploymentCount={countsData.deploymentCount}
                             setSortOption={setSortOption}
                             setPage={setPage}
+                            onChange={onEntityTabChange}
                         />
                     </ToolbarItem>
                     {isFiltered && (

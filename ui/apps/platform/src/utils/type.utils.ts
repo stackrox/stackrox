@@ -38,3 +38,17 @@ export type JsonArray = JsonValue[];
  * A type that represents any value that can be serialized to JSON.
  */
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+/**
+ * Creates a type guard that checks if a value is one of a provided list of strings.
+ *
+ * @param values A const array of strings
+ * @returns A type guard that checks if a value is one of the provided strings
+ */
+export function tupleTypeGuard<const T extends readonly string[]>(
+    values: T
+): (value: unknown) => value is T[number] {
+    return (value: unknown): value is T[number] => values.some((arg) => arg === value);
+}
+
+export type UnionFrom<T extends readonly string[]> = T[number];
