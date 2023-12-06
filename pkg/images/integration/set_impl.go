@@ -50,25 +50,29 @@ func (e *setImpl) Clear() {
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
-func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) (err error) {
-	err = validateCommonFields(integration)
-	if err != nil {
-		return
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
+	if err := validateCommonFields(integration); err != nil {
+		return err
 	}
 
 	var isRegistry bool
 	var isScanner bool
+	errorList := errorhelpers.NewErrorList("updating integration")
 	for _, category := range integration.GetCategories() {
 		switch category {
 		case storage.ImageIntegrationCategory_REGISTRY:
 			isRegistry = true
-			err = e.registrySet.UpdateImageIntegration(integration)
+			if err := e.registrySet.UpdateImageIntegration(integration); err != nil {
+				errorList.AddError(err)
+			}
 		case storage.ImageIntegrationCategory_SCANNER:
 			isScanner = true
-			err = e.scannerSet.UpdateImageIntegration(integration)
+			if err := e.scannerSet.UpdateImageIntegration(integration); err != nil {
+				errorList.AddError(err)
+			}
 		case storage.ImageIntegrationCategory_NODE_SCANNER: // This is because node scanners are implemented into image integrations
 		default:
-			err = fmt.Errorf("source category %q has not been implemented", category)
+			errorList.AddError(fmt.Errorf("source category %q has not been implemented", category))
 		}
 	}
 
@@ -76,18 +80,23 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 	// both a registry + scanner to just a registry. On update we need to remove the integration
 	// from the sets it should no longer be a part of.
 	if !isRegistry {
-		_ = e.registrySet.RemoveImageIntegration(integration.GetId())
+		if err := e.registrySet.RemoveImageIntegration(integration.GetId()); err != nil {
+			log.Warnf("Unable to remove integration %q (%s) from registry set: %v", integration.GetName(), integration.GetId(), err)
+		}
 	}
 
 	if !isScanner {
-		_ = e.scannerSet.RemoveImageIntegration(integration.GetId())
+		if err := e.scannerSet.RemoveImageIntegration(integration.GetId()); err != nil {
+			log.Warnf("Unable to remove integration %q (%s) from scanner set: %v", integration.GetName(), integration.GetId(), err)
+		}
 	}
 
 	rErr := e.reporter.Register(integration.GetId(), integration.GetName(), storage.IntegrationHealth_IMAGE_INTEGRATION)
 	if rErr != nil {
 		log.Errorf("Error registering health for integration %s: %s", integration.GetId(), integration.GetName())
 	}
-	return
+
+	return errorList.ToError()
 }
 
 // RemoveImageIntegration removes the integration with a matching id if one exists.
