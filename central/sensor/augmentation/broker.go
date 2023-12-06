@@ -17,7 +17,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Broker .
+// The Broker coordinates and matches deployment enhancement requests to responses
 type Broker struct {
 	requests map[string]chan<- *central.DeploymentEnhancementResponse
 	lock     sync.Mutex
@@ -30,26 +30,26 @@ func NewBroker() *Broker {
 	}
 }
 
-// NotifyDeploymentReceived .
+// NotifyDeploymentReceived matches the ID of Sensors response to the request and notifies the waiting goroutine
 func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if r, ok := b.requests[msg.GetMsg().GetId()]; ok {
 		select {
 		case r <- msg:
-			log.Infof("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
+			log.Debugf("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
 			// Write message to the right channel and close it
 			close(r)
+			// Remove the key from the requests map to prevent writing to a closed channel if a msg dupe arrives
+			delete(b.requests, msg.GetMsg().GetId())
 			break
 		default:
-			// In case Sensor sends multiple messages, this could deadlock.
-			// Discard message to avoid locking central.
 		}
 
 	}
 }
 
-// SendAndWaitForAugmentedDeployments .
+// SendAndWaitForAugmentedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
 func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
 	b.lock.Lock()
 	ch := make(chan *central.DeploymentEnhancementResponse, 1)
@@ -57,7 +57,7 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 	b.requests[id] = ch
 	b.lock.Unlock()
 
-	log.Infof("Sending Deployment Augmentation request off to Sensor with requestID %v", id)
+	log.Debugf("Sending Deployment Augmentation request to Sensor with requestID %v", id)
 
 	err := conn.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{

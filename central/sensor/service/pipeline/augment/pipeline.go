@@ -48,11 +48,13 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetDeploymentEnhancementResponse() != nil
 }
 
+// Run .
 func (p pipelineImpl) Run(_ context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	p.broker.NotifyDeploymentReceived(msg.GetDeploymentEnhancementResponse())
 	return nil
 }
 
+// Reconcile .
 func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }

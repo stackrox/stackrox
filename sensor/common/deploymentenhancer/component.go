@@ -13,7 +13,7 @@ import (
 
 var (
 	log                 = logging.LoggerForModule()
-	deploymentQueueSize = 100
+	deploymentQueueSize = 50 // TODO(ROX-21291): Configurable via env var
 )
 
 // The DeploymentEnhancer takes a list of Deployments and enhances them with all available information
@@ -27,7 +27,7 @@ type DeploymentEnhancer struct {
 func CreateEnhancer(provider store.Provider) common.SensorComponent {
 	return &DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest),
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, deploymentQueueSize),
 		storeProvider:    provider,
 	}
 }
@@ -38,7 +38,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	if toEnhance == nil {
 		return nil
 	}
-	log.Warnf("Received message to process in DeploymentEnhancer: %v++", msg)
+	log.Debugf("Received message to process in DeploymentEnhancer: %v++", msg)
 	d.deploymentsQueue <- toEnhance
 	return nil
 }
@@ -53,7 +53,8 @@ func (d *DeploymentEnhancer) Start() error {
 			}
 			requestID := deploymentMsg.GetMsg().GetId()
 			if requestID == "" {
-				log.Warnf("received deploymentEnhancement msg with empty request ID")
+				log.Warnf("received deploymentEnhancement msg with empty request ID. Discarding request.")
+				continue
 			}
 			deployments := d.extractAndEnrichDeployments(deploymentMsg)
 			d.sendDeploymentsToCentral(requestID, deployments)
@@ -63,7 +64,7 @@ func (d *DeploymentEnhancer) Start() error {
 }
 
 func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
-	log.Infof("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	log.Debugf("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
 	if deployments == nil {
@@ -85,7 +86,6 @@ func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.
 }
 
 func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*storage.Deployment) {
-	log.Warnf("Sending enhanced deployments with requestID %v", id)
 	d.responsesC <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_DeploymentEnhancementResponse{
 			DeploymentEnhancementResponse: &central.DeploymentEnhancementResponse{
