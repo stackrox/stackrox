@@ -141,7 +141,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	// TODO(ROX-21040): Implementation dependant on the API existing.
+	// TODO(ROX-21040): Implementation dependent on the API existing.
 	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
 }
 
@@ -154,7 +154,7 @@ func (s *scannerv4) Name() string {
 }
 
 func (s *scannerv4) Test() error {
-	// TODO(ROX-20624): Dependant on the matcher/indexer test endpoints being avail.
+	// TODO(ROX-20624): Dependent on the matcher/indexer test endpoints being avail.
 	log.Warn("ScannerV4 - Returning FAKE 'success' to Test")
 	return nil
 }
