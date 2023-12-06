@@ -61,7 +61,6 @@ ci_exit_trap() {
     # `post_process_test_results` will generate the Slack attachment first, then
     # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
     post_process_test_results
-    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
@@ -1185,7 +1184,7 @@ post_process_test_results() {
     set -u
 }
 
-send_slack_notice_for_failures_on_merge() {
+send_slack_failure_summary() {
     local exitstatus="${1:-}"
 
     if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
@@ -1410,17 +1409,16 @@ get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
 
+_JUNIT_DISPOSITION_SUCCESS="SUCCESS"
+_JUNIT_DISPOSITION_FAILURE="FAILURE"
+_JUNIT_DISPOSITION_SKIPPED="SKIPPED"
+
 save_junit_success() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: save_junit_success <class> <description>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
-        return
-    fi
-
-    save_junit_record "$@"
+    _save_junit_record "${_JUNIT_DISPOSITION_SUCCESS}" "$@"
 }
 
 save_junit_failure() {
@@ -1428,12 +1426,15 @@ save_junit_failure() {
         die "missing args. usage: save_junit_failure <class> <description> <details>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "Warning: save_junit_failure() requires the \$ARTIFACT_DIR variable to be set"
-        return
+    _save_junit_record "${_JUNIT_DISPOSITION_FAILURE}" "$@"
+}
+
+save_junit_skipped() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: save_junit_skipped <class> <description>"
     fi
 
-    save_junit_record "$@"
+    _save_junit_record "${_JUNIT_DISPOSITION_SKIPPED}" "$@"
 }
 
 remove_junit_record() {
@@ -1444,10 +1445,16 @@ remove_junit_record() {
     rm -f "${junit_file}"
 }
 
-save_junit_record() {
-    local class="$1"
-    local description="$2"
-    local details="${3:-SUCCESS}"
+_save_junit_record() {
+    local disposition="$1"
+    local class="$2"
+    local description="$3"
+    local details="${4:-}"
+
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
+        return
+    fi
 
     local junit_dir
     junit_dir="$(get_junit_misc_dir)"
@@ -1460,41 +1467,49 @@ save_junit_record() {
 
     # record this instance
     local record="${junit_dir}/db/${class}.txt"
-    echo "${description}" >> "${record}"
-    echo "${details}" >> "${record}"
+    {
+        echo "${description}"
+        echo "${disposition}"
+        echo "${details}"
+     } >> "${record}"
 
     local tests
-    tests=$(( "$(wc -l < "${record}")" / 2 ))
+    tests=$(( "$(wc -l < "${record}")" / 3 ))
 
     local failures=0
+    local skipped=0
     local lines
     readarray -t lines < "${record}"
     while (( ${#lines[@]} ))
     do
-        local details="${lines[1]}"
-        if [[ "$details" != "SUCCESS" ]]; then
+        local disposition="${lines[1]}"
+        if [[ "${disposition}" == "${_JUNIT_DISPOSITION_FAILURE}" ]]; then
             failures=$(( failures+1 ))
         fi
-        lines=( "${lines[@]:2}" )
+        if [[ "${disposition}" == "${_JUNIT_DISPOSITION_SKIPPED}" ]]; then
+            skipped=$(( skipped+1 ))
+        fi
+        lines=( "${lines[@]:3}" )
     done
 
     local junit_file="${junit_dir}/junit-${class}.xml"
 
     cat << _EO_SUITE_HEADER_ > "${junit_file}"
-<testsuite name="${class}" tests="${tests}" skipped="0" failures="${failures}" errors="0">
+<testsuite name="${class}" tests="${tests}" skipped="${skipped}" failures="${failures}" errors="0">
 _EO_SUITE_HEADER_
 
     readarray -t lines < "${record}"
     while (( ${#lines[@]} ))
     do
         local description="${lines[0]}"
-        local details="${lines[1]}"
+        local disposition="${lines[1]}"
+        local details="${lines[2]}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">
 _EO_CASE_HEADER_
 
-        if [[ "$details" != "SUCCESS" ]]; then
+        if [[ "$disposition" == "${_JUNIT_DISPOSITION_FAILURE}" ]]; then
             details="$(base64 --decode <<< "$details")"
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
@@ -1503,7 +1518,7 @@ _EO_FAILURE_
 
         echo "        </testcase>" >> "${junit_file}"
 
-        lines=( "${lines[@]:2}" )
+        lines=( "${lines[@]:3}" )
     done
 
     echo "</testsuite>" >> "${junit_file}"
