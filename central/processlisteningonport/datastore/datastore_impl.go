@@ -162,7 +162,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		// There are three options:
-		// * We found an existing PLOP object with different close timestamp or non-null PodUid
+		// * We found an existing PLOP object with different close timestamp or non-empty PodUid
 		//   It has to be updated.
 		// * We found an existing PLOP object with the same close timestamp.
 		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
