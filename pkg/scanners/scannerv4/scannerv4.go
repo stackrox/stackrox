@@ -10,10 +10,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	s4util "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/scanner/pkg/client"
 )
 
@@ -33,6 +33,7 @@ var (
 	scanTimeout = env.ScanTimeout.DurationSetting()
 )
 
+// Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
 	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration, set)
@@ -113,15 +114,10 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		Password: rc.Password,
 	}
 
-	// TODO: Consider creating util method so that central/sensor do not duplicate this logic
-	// Beg: copy from sensor's grpc_client.
-	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
-	digest, err := name.NewDigest(n, opts...)
+	digest, err := s4util.DigestFromImage(image, opts...)
 	if err != nil {
-		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
-		return nil, fmt.Errorf("creating digest reference: %w", err)
+		return nil, err
 	}
-	// End
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
@@ -141,7 +137,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(vr), nil
+	return imageScan(image.GetMetadata(), vr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
