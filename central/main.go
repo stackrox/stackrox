@@ -69,6 +69,7 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
+	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -606,6 +607,7 @@ func startGRPCServer() {
 				gs.AddGatherer(clusterDataStore.Gather)
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(externalbackupsDS.Gather)
 			}
 		}
 	}

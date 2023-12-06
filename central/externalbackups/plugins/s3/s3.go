@@ -205,7 +205,7 @@ func (s *s3) createError(msg string, err error) error {
 }
 
 func init() {
-	plugins.Add("s3", func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+	plugins.Add(types.S3Type, func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
 		return newS3(backup)
 	})
 }
