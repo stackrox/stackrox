@@ -30,12 +30,15 @@ func TestBackup(t *testing.T) {
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {
-			doTestBackup(t, includeCerts)
+			doTestBackup(t, includeCerts, false)
 		})
 	}
+
+	// Make a run with certs only
+	doTestBackup(t, false, true)
 }
 
-func doTestBackup(t *testing.T, includeCerts bool) {
+func doTestBackup(t *testing.T, includeCerts bool, certsOnly bool) {
 	tmpZipDir := t.TempDir()
 	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")
 	out, err := os.Create(zipFilePath)
@@ -50,6 +53,9 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	endpoint := "/db/backup"
 	if includeCerts {
 		endpoint = "/api/extensions/backup"
+	}
+	if certsOnly {
+		endpoint = "/api/extensions/certs/backup"
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), backupTimeout)
@@ -69,10 +75,14 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	require.NoError(t, err)
 	defer utils.IgnoreError(zipFile.Close)
 
-	checkZipForPostgres(t, zipFile)
-	checkZipForPassword(t, zipFile, includeCerts)
-	checkZipForCerts(t, zipFile, includeCerts)
-	checkZipForVersion(t, zipFile)
+	if !certsOnly {
+		checkZipForPostgres(t, zipFile)
+		checkZipForPassword(t, zipFile, includeCerts)
+		checkZipForCerts(t, zipFile, includeCerts)
+		checkZipForVersion(t, zipFile)
+	} else {
+		checkZipForOnlyCerts(t, zipFile)
+	}
 }
 
 func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
@@ -127,6 +137,19 @@ func checkZipForPassword(t *testing.T, zipFile *zip.ReadCloser, includeCerts boo
 		require.NotZero(t, info.Size())
 		require.Equal(t, f.FileInfo().Name(), backup.DatabasePassword)
 	}
+}
+
+func checkZipForOnlyCerts(t *testing.T, zipFile *zip.ReadCloser) {
+	checkZipForCerts(t, zipFile, true)
+
+	dbFiles := getFilesInDir(zipFile, backup.DatabaseBaseFolder)
+	require.Empty(t, dbFiles)
+
+	versionFileEntry := getFileWithName(zipFile, backup.MigrationVersion)
+	require.Nil(t, versionFileEntry)
+
+	postgresFileEntry := getFileWithName(zipFile, "postgres.dump")
+	require.Nil(t, postgresFileEntry)
 }
 
 func getFileWithName(zipFile *zip.ReadCloser, name string) *zip.File {

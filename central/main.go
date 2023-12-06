@@ -28,6 +28,7 @@ import (
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
+	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -370,7 +371,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
-		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -428,6 +428,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+	}
+
+	// The scheduled backup service is not applicable when using an external database
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -804,6 +809,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/administration/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/extensions/certs/backup",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
 	}
