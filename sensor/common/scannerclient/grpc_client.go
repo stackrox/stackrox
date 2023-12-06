@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4/client"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

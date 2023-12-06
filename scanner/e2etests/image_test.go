@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4/client"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stretchr/testify/assert"
