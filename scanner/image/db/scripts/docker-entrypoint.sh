@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
+set -Eeo pipefail
+# TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
 ### STACKROX MODIFIED - This file was copied from [the PostgreSQL Docker
 ### Community][1]. Any StackRox modification or comments are tagged with this
 ### comment.
 ###
-### [1]: https://github.com/docker-library/postgres/blob/master/13/bullseye/docker-entrypoint.sh
-
-set -Eeo pipefail
-# TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
+### [1]: https://github.com/docker-library/postgres/blob/master/15/bullseye/docker-entrypoint.sh
 
 ### STACKROX MODIFIED - Fast shutdown to kill and rollback in-flight transactions.
 shutdown() {
