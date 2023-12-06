@@ -58,7 +58,7 @@ func parseData(config *ExceptionConfig, data map[string]interface{}) (map[string
 		keyMapI := keyMap.(map[string]interface{})
 		return keyMapI, hasException(config, keyMapI["id"].(string))
 	}
-	return data, false
+	return nil, false
 }
 
 func hasException(config *ExceptionConfig, id string) bool {
@@ -94,8 +94,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		findingMap, excepted := parseData(exceptionConfig, data)
-		if excepted {
+		findingMap, valid := parseData(exceptionConfig, data)
+		if !valid {
 			continue
 		}
 		output.Data = append(output.Data, findingMap)
