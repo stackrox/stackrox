@@ -41,8 +41,8 @@
   {{ end }}
   {{ $_ = set $scannerV4DBVolumeCfg "persistentVolumeClaim" (dict "claimName" $scannerV4DBPVCCfg.claimName) }}
 
-  {{ $pvcExists := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace, $scannerV4DBPVCCfg.claimName)}}
-  {{ if and($scannerV4DBPVCCfg.createClaim not($pvcExists)) }}
+  {{ $pvcExists := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace $scannerV4DBPVCCfg.claimName)}}
+  {{ if (and $scannerV4DBPVCCfg.createClaim (not $pvcExists)) }}
     {{ $_ = set $scannerV4DBCfg.persistence "_pvcCfg" $scannerV4DBPVCCfg }}
   {{ end }}
   {{ if $scannerV4DBPVCCfg.storageClass }}
