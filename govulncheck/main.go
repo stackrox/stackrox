@@ -81,7 +81,9 @@ func main() {
 	}
 	defer func() { _ = file.Close() }()
 
-	var output Output
+	output := &Output{
+		Data: make([]map[string]interface{}, 0),
+	}
 	decoder := json.NewDecoder(file)
 	for {
 		data := make(map[string]interface{})
@@ -101,7 +103,7 @@ func main() {
 		output.Data = append(output.Data, findingMap)
 	}
 
-	outputBytes, err := json.MarshalIndent(&output, "", "  ")
+	outputBytes, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
 		printlnAndExitf("error marshaling output: %v", err)
 	}
