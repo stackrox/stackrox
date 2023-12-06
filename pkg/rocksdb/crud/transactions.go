@@ -2,15 +2,12 @@ package generic
 
 import (
 	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 
 var (
 	transactionPrefix = []byte("transactions")
-
-	log = logging.LoggerForModule()
 )
 
 // newTxnHelper returns a db wrapper that will increment txn counts

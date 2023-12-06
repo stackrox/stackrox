@@ -11,14 +11,9 @@ import (
 	helmConfig "github.com/stackrox/rox/pkg/helm/config"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Handler returns a handler for the helm-config method.

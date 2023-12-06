@@ -168,13 +168,14 @@ ifdef CI
 	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
 	@echo "Running with no tags..."
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS)
+	@# We need to enable unused linter here as it will not work without tests or in release tag.
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --enable=unused
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
 

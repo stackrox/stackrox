@@ -45,7 +45,6 @@ type repository struct {
 	notifiers                    []*storage.Notifier
 	roles                        []*storage.K8SRole
 	bindings                     []*storage.K8SRoleBinding
-	cisDockerRunCheck            bool
 	cisKubernetesRunCheck        bool
 	categoryToPolicies           map[string]set.StringSet // maps categories to policy set
 
@@ -144,9 +143,9 @@ func (r *repository) ComplianceOperatorResults() map[string][]*storage.Complianc
 	return r.complianceOperatorResults
 }
 
-func newRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
+func newRepository(ctx context.Context, domain framework.ComplianceDomain, factory *factory) (*repository, error) {
 	r := &repository{}
-	if err := r.init(ctx, domain, scrapeResults, factory); err != nil {
+	if err := r.init(ctx, domain, factory); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -202,7 +201,7 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	return result
 }
 
-func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
+func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 
@@ -329,16 +328,6 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	// Flatten the files so we can do direct lookups on the nested values
-	for _, n := range scrapeResults {
-		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
-		n.Files = totalNodeFiles
-	}
-
-	r.hostScrape = scrapeResults
-
-	r.nodeResults = getNodeResults(scrapeResults)
-
 	cisKubernetesStandardID, err := f.standardsRepo.GetCISKubernetesStandardID()
 	if err != nil {
 		return err
@@ -350,6 +339,18 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	return nil
+}
+
+func (r *repository) AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn) {
+	// Flatten the files so we can do direct lookups on the nested values
+	for _, n := range scrapeResults {
+		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
+		n.Files = totalNodeFiles
+	}
+
+	r.hostScrape = scrapeResults
+
+	r.nodeResults = getNodeResults(scrapeResults)
 }
 
 func getNodeResults(scrapeResults map[string]*compliance.ComplianceReturn) map[string]map[string]*compliance.ComplianceStandardResult {

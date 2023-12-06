@@ -283,6 +283,9 @@
         },
         "secretAccessKey": {
           "type": "string"
+        },
+        "stsEnabled": {
+          "type": "boolean"
         }
       }
     },
@@ -434,6 +437,9 @@
         },
         "sourceId": {
           "type": "string"
+        },
+        "wifEnabled": {
+          "type": "boolean"
         }
       }
     },

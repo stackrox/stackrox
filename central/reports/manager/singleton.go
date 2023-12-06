@@ -10,15 +10,12 @@ import (
 	"github.com/stackrox/rox/central/reports/scheduler"
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once     sync.Once
 	instance Manager
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {

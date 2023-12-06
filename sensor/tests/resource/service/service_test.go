@@ -124,7 +124,6 @@ func (s *DeploymentExposureSuite) TearDownTest() {
 }
 
 func (s *DeploymentExposureSuite) SetupSuite() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	policies, err := testutils.GetPoliciesFromFile("data/policies.json")
 	if err != nil {
 		log.Fatalln(err)

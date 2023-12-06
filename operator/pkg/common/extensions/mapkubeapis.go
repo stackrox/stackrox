@@ -9,7 +9,6 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/config/mapkubeapis"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -56,7 +55,6 @@ func MapKubeAPIsExtension(config MapKubeAPIsExtensionConfig) extensions.Reconcil
 type mapKubeAPIsExtensionRun struct {
 	ctx           context.Context
 	obj           *unstructured.Unstructured
-	conditions    *[]platform.StackRoxCondition
 	statusUpdater func(statusFunc extensions.UpdateStatusFunc)
 	log           logr.Logger
 	config        MapKubeAPIsExtensionConfig

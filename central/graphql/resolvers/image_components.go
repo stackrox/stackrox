@@ -191,10 +191,6 @@ func (resolver *imageComponentResolver) componentQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 }
 
-func (resolver *imageComponentResolver) componentRawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).Query()
-}
-
 func getDeploymentIDFromQuery(q *v1.Query) string {
 	if q == nil {
 		return ""

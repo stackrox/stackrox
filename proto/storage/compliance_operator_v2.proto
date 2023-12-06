@@ -35,17 +35,20 @@ enum RuleSeverity {
 }
 
 message ProfileShim {
-    string profile_id     = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
-    string profile_name   = 2;
+    string profile_id      = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
+    string profile_name    = 2;
+    string profile_version = 3;
 }
 
 // Next Tag: 13
 message ComplianceOperatorProfileV2 {
+    // The primary key is name-profile_version as that is guaranteed unique in the operator and how
+    // the profile is referenced in scans and settings
     string              id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id       = 2;
     string              name             = 3 [(gogoproto.moretags) = 'search:"Compliance Profile Name,hidden,store" sql:"index=category:unique;name:profile_unique_indicator"'];
     string              profile_version  = 4 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden,store" sql:"index=category:unique;name:profile_unique_indicator"'];
-    repeated string     product_type     = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Product Type,hidden,store"'];
+    string              product_type     = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Product Type,hidden,store"'];
     string              standard         = 6 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
     map<string, string> labels           = 7;
     map<string, string> annotations      = 8;
@@ -56,6 +59,7 @@ message ComplianceOperatorProfileV2 {
     repeated Rule       rules       = 10;
     string              product     = 11;
     string              title       = 12;
+    repeated string     values      = 13;
 }
 
 // Next Tag: 12
@@ -94,18 +98,19 @@ message ComplianceOperatorScanConfigurationV2 {
     SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
-// Next Tag: 6
+// Next Tag: 7
 // Cluster and an error if necessary to handle cases where the scan configuration is
 // unable to be applied to a cluster for whatever reason.
 message ComplianceOperatorClusterScanConfigStatus {
-    string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string                        id                  = 6 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     string                        scan_id             = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint"'];
     repeated string               errors              = 3;
     google.protobuf.Timestamp     last_updated_time   = 4 [(gogoproto.moretags) = 'search:"Compliance Scan Config Last Updated Time,hidden"'];
     string                        cluster_name        = 5;
 }
 
-// Next Tag: 18
+// Next Tag: 17
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -135,8 +140,7 @@ message ComplianceOperatorCheckResultV2 {
     string                    standard         = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden,store"'];
     string                    control          = 13;
     string                    scan_id          = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
-    string                    scan_config_id   = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"'];
-    string                    scan_config_name = 17;
+    string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Name,store" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint"'];
 }
 
 message ScanStatus {
@@ -169,5 +173,6 @@ message ComplianceOperatorScanV2 {
 message ComplianceOperatorProfileClusterEdge {
     string        id          = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
     string        profile_id  = 2[(gogoproto.moretags) = 'search:"Compliance Profile ID,store,hidden" sql:"fk(ComplianceOperatorProfileV2:id)"'];
-    string        cluster_id  = 3[(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string        profile_uid = 3[(gogoproto.moretags) = 'search:"Compliance Profile UID,store,hidden"'];
+    string        cluster_id  = 4[(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 }

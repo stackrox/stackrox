@@ -37,7 +37,6 @@ type ResourceCountByResultByCluster struct {
 	InconsistentCount  int    `db:"inconsistent_count"`
 	ClusterID          string `db:"cluster_id"`
 	ClusterName        string `db:"cluster"`
-	ScanConfigID       string `db:"compliance_scan_config_id"`
 	ScanConfigName     string `db:"compliance_scan_name"`
 }
 
@@ -88,14 +87,12 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
-		search.NewQuerySelect(search.ComplianceOperatorScanConfig).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorScanName).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ClusterID.String(),
 			search.Cluster.String(),
-			search.ComplianceOperatorScanConfig.String(),
 			search.ComplianceOperatorScanName.String(),
 		},
 	}
@@ -108,9 +105,6 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 			},
 			{
 				Field: search.Cluster.String(),
-			},
-			{
-				Field: search.ComplianceOperatorScanConfig.String(),
 			},
 			{
 				Field: search.ComplianceOperatorScanName.String(),

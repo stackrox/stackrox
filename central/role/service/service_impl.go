@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
@@ -65,10 +64,6 @@ var (
 			"/v1.RoleService/GetResources",
 		},
 	})
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type serviceImpl struct {

@@ -2,25 +2,30 @@ package auth
 
 import (
 	"context"
+	"time"
 
-	"github.com/stackrox/rox/pkg/cloudproviders/gcp/storage"
+	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/client-go/kubernetes"
 )
 
+const updateTimeout = 1 * time.Hour
+
 type stsClientManagerImpl struct {
-	credManager          CredentialsManager
-	storageClientHandler storage.ClientHandler
-	mutex                sync.Mutex
+	credManager                 CredentialsManager
+	storageClientHandler        handler.Handler[*storage.Client]
+	securityCenterClientHandler handler.Handler[*securitycenter.Client]
 }
 
 var _ STSClientManager = &stsClientManagerImpl{}
 
 func fallbackSTSClientManager() STSClientManager {
 	mgr := &stsClientManagerImpl{
-		credManager:          &defaultCredentialsManager{},
-		storageClientHandler: storage.NewClientHandlerNoInit(),
+		credManager:                 &defaultCredentialsManager{},
+		storageClientHandler:        handler.NewHandlerNoInit[*storage.Client](),
+		securityCenterClientHandler: handler.NewHandlerNoInit[*securitycenter.Client](),
 	}
 	mgr.updateClients()
 	return mgr
@@ -38,7 +43,10 @@ func NewSTSClientManager(namespace string, secretName string) STSClientManager {
 		log.Error("Could not create GCP credentials manager. Continuing with default credentials chain: ", err)
 		return fallbackSTSClientManager()
 	}
-	mgr := &stsClientManagerImpl{storageClientHandler: storage.NewClientHandlerNoInit()}
+	mgr := &stsClientManagerImpl{
+		storageClientHandler:        handler.NewHandlerNoInit[*storage.Client](),
+		securityCenterClientHandler: handler.NewHandlerNoInit[*securitycenter.Client](),
+	}
 	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.updateClients)
 	mgr.updateClients()
 	return mgr
@@ -53,7 +61,8 @@ func (c *stsClientManagerImpl) Stop() {
 }
 
 func (c *stsClientManagerImpl) updateClients() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), updateTimeout)
+	defer cancel()
 	creds, err := c.credManager.GetCredentials(ctx)
 	if err != nil {
 		log.Error("Failed to get GCP credentials: ", err)
@@ -63,8 +72,15 @@ func (c *stsClientManagerImpl) updateClients() {
 	if err := c.storageClientHandler.UpdateClient(ctx, creds); err != nil {
 		log.Error("Failed to update GCP storage client: ", err)
 	}
+	if err := c.securityCenterClientHandler.UpdateClient(ctx, creds); err != nil {
+		log.Error("Failed to update GCP security center client: ", err)
+	}
 }
 
-func (c *stsClientManagerImpl) StorageClientHandler() storage.ClientHandler {
+func (c *stsClientManagerImpl) StorageClientHandler() handler.Handler[*storage.Client] {
 	return c.storageClientHandler
+}
+
+func (c *stsClientManagerImpl) SecurityCenterClientHandler() handler.Handler[*securitycenter.Client] {
+	return c.securityCenterClientHandler
 }

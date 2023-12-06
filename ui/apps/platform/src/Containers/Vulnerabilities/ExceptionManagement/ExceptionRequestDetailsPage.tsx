@@ -17,13 +17,14 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
 import usePermissions from 'hooks/usePermissions';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
     VulnerabilityException,
@@ -38,6 +39,8 @@ import RequestCVEsTable from './components/RequestCVEsTable';
 import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
 import RequestOverview from './components/RequestOverview';
 import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
+import RequestDenialButtonModal from './components/RequestDenialButtonModal';
+import RequestCancelButtonModal from './components/RequestCancelButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -71,7 +74,9 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 
 function ExceptionRequestDetailsPage() {
     const { requestId } = useParams();
+    const history = useHistory();
     const { hasReadWriteAccess } = usePermissions();
+    const { currentUser } = useAuthStatus();
     const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
 
     const [selectedContext, setSelectedContext] = useURLStringUnion('context', contextValues);
@@ -95,7 +100,18 @@ function ExceptionRequestDetailsPage() {
 
     function onApprovalSuccess() {
         refetch();
-        setSuccessMessage(`The vulnerability request was successfully approved`);
+        setSuccessMessage(`The vulnerability request was successfully approved.`);
+    }
+
+    function onDenialSuccess() {
+        refetch();
+        setSuccessMessage(`The vulnerability request was successfully denied.`);
+    }
+
+    function onCancelSuccess() {
+        refetch();
+        // @TODO: Awaiting UX decision on the best way to handle a successful cancel. See https://redhat-internal.slack.com/archives/C03JMGWJYMD/p1701372644906699
+        history.push(exceptionManagementPath);
     }
 
     if (loading && !vulnerabilityException) {
@@ -126,12 +142,13 @@ function ExceptionRequestDetailsPage() {
         );
     }
 
-    const { status, cves, scope } = vulnerabilityException;
+    const { status, cves, scope, requester } = vulnerabilityException;
 
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
-    const showApprovalButton =
+    const showApproveDenyButtons =
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
+    const showCancelButton = currentUser.userId === requester.id;
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
@@ -161,7 +178,19 @@ function ExceptionRequestDetailsPage() {
                         <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
                         <FlexItem>{getSubtitleText(vulnerabilityException)}</FlexItem>
                     </Flex>
-                    {showApprovalButton && (
+                    {showCancelButton && (
+                        <RequestCancelButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onCancelSuccess}
+                        />
+                    )}
+                    {showApproveDenyButtons && (
+                        <RequestDenialButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onDenialSuccess}
+                        />
+                    )}
+                    {showApproveDenyButtons && (
                         <RequestApprovalButtonModal
                             exception={vulnerabilityException}
                             onSuccess={onApprovalSuccess}

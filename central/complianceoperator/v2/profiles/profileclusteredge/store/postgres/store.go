@@ -92,11 +92,12 @@ func insertIntoComplianceOperatorProfileClusterEdges(batch *pgx.Batch, obj *stor
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetProfileId(),
+		obj.GetProfileUid(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_cluster_edges (Id, ProfileId, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_cluster_edges (Id, ProfileId, ProfileUid, ClusterId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, ProfileUid = EXCLUDED.ProfileUid, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,6 +117,7 @@ func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSear
 	copyCols := []string{
 		"id",
 		"profileid",
+		"profileuid",
 		"clusterid",
 		"serialized",
 	}
@@ -134,6 +136,7 @@ func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSear
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetProfileId(),
+			obj.GetProfileUid(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})

@@ -62,14 +62,6 @@ func expectEntityLookupEndpointHelper(mockEntityStore *mocksManager.MockEntitySt
 	}
 }
 
-func expectExternalLookupHelper(mockExternalStore *mocksExternalSrc.MockStore, times int, retVal *storage.NetworkEntityInfo) expectFn {
-	return func() {
-		mockExternalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(times).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
-			return retVal
-		})
-	}
-}
-
 func expectDetectorHelper(mockDetector *mocksDetector.MockDetector, times int) expectFn {
 	return func() {
 		mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any(), gomock.Any()).Times(times)

@@ -59,8 +59,6 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
-create_job_record "${JOB_NAME:-missing}"
-
 "${job_script}" "$@" &
 job_pid="$!"
 
@@ -69,8 +67,6 @@ job_pid="$!"
 forward_sigint() {
     echo "Dispatch is forwarding SIGINT to job"
     kill -SIGINT "${job_pid}"
-    # Finalize the job record here to differentiate canceled jobs.
-    finalize_job_record "0" "true"
     # Delay the default exit trap execution and process completion to allow job
     # SIGINT handlers to complete before ci-operator terminates.
     sleep 3

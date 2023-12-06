@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // TODO(ROX-19742):  Figure out SAC for the configurations
@@ -125,7 +126,15 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanID string,
 		return errors.Errorf("Unable to find scan configuration id %q", scanID)
 	}
 
+	// Need to build a deterministic ID from clusterID and scanID to ensure we always have the latest status
+	clusterUUID, err := uuid.FromString(clusterID)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to build scan configuration status id based off %q", scanID)
+	}
+	statusKey := uuid.NewV5(clusterUUID, scanID).String()
+
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
+		Id:          statusKey,
 		ClusterId:   clusterID,
 		ClusterName: cluster.GetName(),
 		ScanId:      scanID,

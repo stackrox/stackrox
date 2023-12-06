@@ -354,6 +354,12 @@ function launch_central {
         )
       fi
 
+      if [[ "$ROX_SCANNER_V4_ENABLED" == "true" ]]; then
+        helm_args+=(
+          --set scannerV4.disable=false
+        )
+      fi
+
       local helm_chart="$unzip_dir/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
@@ -601,14 +607,6 @@ function launch_sensor {
         )
       fi
 
-      # TODO(ROX-14310): Remove this patch when re-sync is disabled unconditionally
-      if [[ -n "$ROX_RESYNC_DISABLED" ]]; then
-        echo "Setting re-sync disabled to $ROX_RESYNC_DISABLED"
-        helm_args+=(
-          --set customize.envVars.ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED}"
-        )
-      fi
-
       local helm_chart="$k8s_dir/sensor-deploy/chart"
 
       if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
@@ -674,11 +672,6 @@ function launch_sensor {
         if [[ -z "${IS_RACE_BUILD}" ]]; then
             kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
-    fi
-
-    # If we deployed sensor with manifests then we need to set re-sync flag manually by patching the deployment.
-    if [[ "$ROX_RESYNC_DISABLED" == "true" && "$OUTPUT_FORMAT" == "kubectl" ]]; then
-        kubectl -n stackrox set env deploy/sensor ROX_RESYNC_DISABLED="true"
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then

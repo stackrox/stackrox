@@ -26,6 +26,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AWSSecurityHub_Credentials", []string{
 		"accessKeyId: String!",
 		"secretAccessKey: String!",
+		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("ActiveComponent_ActiveContext", []string{
@@ -145,6 +146,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
 		"sourceId: String!",
+		"wifEnabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
@@ -1604,6 +1606,11 @@ func (resolver *aWSSecurityHub_CredentialsResolver) SecretAccessKey(ctx context.
 	return value
 }
 
+func (resolver *aWSSecurityHub_CredentialsResolver) StsEnabled(ctx context.Context) bool {
+	value := resolver.data.GetStsEnabled()
+	return value
+}
+
 func toAccess(value *string) storage.Access {
 	if value != nil {
 		return storage.Access(storage.Access_value[*value])
@@ -2795,6 +2802,11 @@ func (resolver *cSCCResolver) ServiceAccount(ctx context.Context) string {
 
 func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
 	value := resolver.data.GetSourceId()
+	return value
+}
+
+func (resolver *cSCCResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
 	return value
 }
 

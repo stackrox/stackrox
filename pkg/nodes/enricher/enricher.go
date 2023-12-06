@@ -2,15 +2,10 @@ package enricher
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	"github.com/stackrox/rox/pkg/scanners/types"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // NodeEnricher provides functions for enriching nodes with vulnerability data.
