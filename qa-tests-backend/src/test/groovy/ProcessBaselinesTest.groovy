@@ -257,6 +257,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
 
