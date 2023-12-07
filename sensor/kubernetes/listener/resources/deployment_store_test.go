@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
@@ -109,6 +110,7 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
+	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
 	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
 			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
@@ -204,6 +206,9 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 			}
 
 			s.deploymentStore.Cleanup()
+			s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
+			s.Assert().Len(s.deploymentStore.deploymentIDs, 0)
+			s.Assert().Len(s.deploymentStore.deployments, 0)
 		})
 	}
 }
@@ -250,6 +255,31 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment
 	})
 
 	s.ErrorContains(err, "some-uuid doesn't exist")
+}
+
+func (s *deploymentStoreSuite) Test_DeleteSnapshot() {
+	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
+	uid := uuid.NewV4().String()
+	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
+	s.deploymentStore.addOrUpdateDeployment(wrap)
+
+	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().False(isBuilt, "deployment should not be fully built yet")
+
+	deployment, _, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+	})
+
+	s.NoError(err, "should not have error building dependencies")
+	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 1)
+
+	s.deploymentStore.removeDeployment(&deploymentWrap{
+		Deployment: &storage.Deployment{
+			Id:        deployment.GetId(),
+			Namespace: deployment.GetNamespace(),
+		},
+	})
+	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
 }
 
 func withLabels(deployment *v1.Deployment, labels map[string]string) *v1.Deployment {

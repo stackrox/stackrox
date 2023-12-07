@@ -63,6 +63,7 @@ func (ds *DeploymentStore) Cleanup() {
 
 	ds.deploymentIDs = make(map[string]map[string]struct{})
 	ds.deployments = make(map[string]*deploymentWrap)
+	ds.deploymentSnapshots = make(map[string]snapshotEntry)
 }
 
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
@@ -75,6 +76,7 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	}
 	delete(ids, wrap.GetId())
 	delete(ds.deployments, wrap.GetId())
+	delete(ds.deploymentSnapshots, wrap.GetId())
 }
 
 func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
