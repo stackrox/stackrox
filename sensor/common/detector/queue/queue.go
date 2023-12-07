@@ -22,32 +22,46 @@ func NewQueue[T comparable](stopper concurrency.Stopper) *Queue[T] {
 }
 
 // Start the queue.
-func (n *Queue[T]) Start() {
+func (q *Queue[T]) Start() {
 	// TODO(ROX-21052): Resuming, pausing, and stopping the internal queue should be done in the QueueManager
-	n.queue.Resume()
-	go n.run()
+	q.queue.Resume()
+	go q.run()
 }
 
 // Push an item to the queue
-func (n *Queue[T]) Push(item T) {
-	n.queue.Push(item)
+func (q *Queue[T]) Push(item T) {
+	q.queue.Push(item)
 }
 
-func (n *Queue[T]) run() {
-	defer close(n.outputC)
-	// TODO(ROX-21052): Resuming, pausing, and stopping the internal queue should be done in the QueueManager
-	defer n.queue.Stop()
+func (q *Queue[T]) run() {
+	defer close(q.outputC)
 	for {
 		select {
-		case <-n.stopper.Flow().StopRequested():
+		case <-q.stopper.Flow().StopRequested():
 			return
 		default:
-			n.outputC <- n.queue.PullBlocking()
+			q.outputC <- q.queue.PullBlocking()
 		}
 	}
 }
 
+// Pause the queue.
+func (q *Queue[T]) Pause() {
+	q.queue.Pause()
+}
+
+// Resume the queue.
+func (q *Queue[T]) Resume() {
+	q.queue.Resume()
+}
+
+// Stop the queue.
+func (q *Queue[T]) Stop() {
+	// TODO(ROX-21052): Resuming, pausing, and stopping the internal queue should be done in the QueueManager
+	q.queue.Stop()
+}
+
 // Pull returns the channel where run writes the front of the queue.
-func (n *Queue[T]) Pull() <-chan T {
-	return n.outputC
+func (q *Queue[T]) Pull() <-chan T {
+	return q.outputC
 }

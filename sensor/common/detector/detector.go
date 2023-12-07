@@ -220,6 +220,8 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 }
 
 func (d *detectorImpl) Stop(_ error) {
+	d.indicatorsQueue.Stop()
+	d.networkFlowsQueue.Stop()
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()
