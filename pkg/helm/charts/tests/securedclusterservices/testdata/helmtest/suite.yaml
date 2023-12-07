@@ -39,6 +39,24 @@ defs: |
       | select(.containerPort == 9090 and .name == "monitoring")]
         | (length == 1);
 
+  # Please keep the defs here in sync with the ones in the central image-pull-secrets test.
+
+  # Separate functions, to make error messages helpful.
+  def containsAll(needles):
+      . as $hay | all(needles[]; . as $needle | any($hay[]; . == $needle));
+  def containsNone(needles):
+      . as $hay | all(needles[]; . as $needle | all($hay[]; . != $needle));
+
+  def saRefersTo(pullSecretNames):
+      [.imagePullSecrets[] | .name] | assertThat(. | containsAll(pullSecretNames));
+
+  def saNotRefersTo(pullSecretNames):
+      [.imagePullSecrets[] | .name] | assertThat(. | containsNone(pullSecretNames));
+
+  # This treats the lists as multisets.
+  def saOnlyRefersTo(pullSecretNames):
+      [.imagePullSecrets[] | .name] | sort | assertThat(. == (pullSecretNames | sort));
+
 server:
   visibleSchemas:
   - kubernetes-1.20.2

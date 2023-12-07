@@ -73,17 +73,15 @@ tests:
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
-    assumeThat(.error == null) | .serviceaccounts["scanner"] | assertThat(. != null)
-    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
-    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
-    assumeThat(.error == null) | .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
   tests:
   - name: "when authenticating in image registry with user and password"
     set:
       imagePullSecrets.username: "imagePullUser"
       imagePullSecrets.password: "imagePullPassword"
     expect: |
-      .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
+      .serviceaccounts["scanner"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
       .secrets["secured-cluster-services-main"] | assertThat(. != null)
   - name: "when username/password are not provided, no secret is created"
     expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
@@ -95,14 +93,13 @@ tests:
     - name: "when allowNone is true"
       set:
         imagePullSecrets.allowNone: true
-      expect: .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
+      expect: .serviceaccounts["scanner"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
     - name: "when using existing secrets"
       set:
         imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
       expect: |
-        .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 5)
-        .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret1")
-        .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret2")
+        .serviceaccounts["scanner"] | saOnlyRefersTo([
+          "secured-cluster-services-main", "stackrox", "stackrox-scanner", "existing-secret1", "existing-secret2"])
 
 - name: "sensor only connects to local scanner when it is enabled"
   set:
