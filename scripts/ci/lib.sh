@@ -1306,17 +1306,22 @@ __EOM__
         return 1
     fi
 
-    local slack_mention
-    slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
-    if [[ -n "$slack_mention" ]]; then
-      slack_mention="<@${slack_mention}>"
-    else
-      slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
+    local slack_mention=""
+    if [[ "${author_login}" != "dependabot[bot]" ]]; then
+        slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
+        if [[ -n "$slack_mention" ]]; then
+            slack_mention=", <@${slack_mention}>"
+        else
+            slack_mention=", _unable to resolve Slack user for GitHub login ${author_login}_"
+        fi
     fi
 
     info "Converting junit failures to slack attachments"
 
-    local slack_attachments='
+    local slack_attachments=""
+
+    function _make_error_attachment() {
+        echo '
 [
   {
     "color": "#bb2124",
@@ -1325,19 +1330,33 @@ __EOM__
         "type": "section",
         "text": {
           "type": "plain_text",
-          "text": "Could not parse junit files. Check build logs for more information."
+          "text": "'"$1"'"
         }
       }
     ]
   }
 ]
 '
-    if [[ -f "$ARTIFACT_DIR/junit2jira-slack-attachments.json" ]]; then
-        local check_slack_attachments
-        check_slack_attachments=$(cat "$ARTIFACT_DIR/junit2jira-slack-attachments.json") || exitstatus="$?"
-        if [[ "$exitstatus" == "0" ]]; then
-            slack_attachments="$check_slack_attachments"
-        fi
+    }
+
+    if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        slack_attachments+="$(_make_error_attachment "Could not parse junit in main test step. Check build logs for more information.")"
+    else
+        slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+    if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        slack_attachments+="$(_make_error_attachment "Could not parse junit in final test step. Check build logs for more information.")"
+    else
+        slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+
+    slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
+
+    if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
+        msg='No junit records were found for this failure. Check build logs \
+and artifacts for more information. Consider adding an \
+issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label).'
+        slack_attachments+="$(_make_error_attachment "${msg}")"
     fi
 
     # shellcheck disable=SC2016
@@ -1356,7 +1375,7 @@ __EOM__
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name), \($slack_mention)\n*Log:* \($log_url)"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Log:* \($log_url)"
             }
         },
         {
