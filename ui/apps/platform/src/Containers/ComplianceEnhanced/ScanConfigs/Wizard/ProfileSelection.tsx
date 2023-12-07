@@ -1,9 +1,7 @@
 import React, { ReactElement, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
-import { Link } from 'react-router-dom';
 import {
     Bullseye,
-    Button,
     Divider,
     Flex,
     FlexItem,
@@ -16,40 +14,28 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import useTableSelection from 'hooks/useTableSelection';
-import { clustersBasePath } from 'routePaths';
-import { ClusterScopeObject } from 'services/RolesService';
+import { ComplianceProfile } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from './useFormikScanConfig';
 
-export type ClusterSelectionProps = {
-    clusters: ClusterScopeObject[];
-    isFetchingClusters: boolean;
+export type ProfileSelectionProps = {
+    profiles: ComplianceProfile[];
+    isFetchingProfiles: boolean;
 };
 
-function InstallClustersButton() {
-    return (
-        <Link to={clustersBasePath}>
-            <Button variant="link">Go to clusters</Button>
-        </Link>
-    );
-}
-
-function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProps): ReactElement {
-    const isRouteEnabled = useIsRouteEnabled();
-    const isRouteEnabledForClusters = isRouteEnabled('clusters');
+function ProfileSelection({ profiles, isFetchingProfiles }: ProfileSelectionProps): ReactElement {
     const { setFieldValue, values: formikValues }: FormikContextType<ScanConfigFormValues> =
         useFormikContext();
 
-    const clusterIsPreSelected = useCallback(
-        (row) => formikValues.clusters.includes(row.id),
-        [formikValues.clusters]
+    const profileIsPreSelected = useCallback(
+        (row) => formikValues.profiles.includes(row.id),
+        [formikValues.profiles]
     );
 
     const { allRowsSelected, selected, onSelect, onSelectAll } = useTableSelection(
-        clusters,
-        clusterIsPreSelected
+        profiles,
+        profileIsPreSelected
     );
 
     const handleSelect = (
@@ -59,25 +45,25 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     ) => {
         onSelect(event, isSelected, rowId);
 
-        const newSelectedIds = clusters
+        const newSelectedIds = profiles
             .filter((_, index) => {
                 return index === rowId ? isSelected : selected[index];
             })
-            .map((cluster) => cluster.id);
+            .map((profile) => profile.id);
 
-        setFieldValue('clusters', newSelectedIds);
+        setFieldValue('profiles', newSelectedIds);
     };
 
     const handleSelectAll = (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => {
         onSelectAll(event, isSelected);
 
-        const newSelectedIds = isSelected ? clusters.map((cluster) => cluster.id) : [];
+        const newSelectedIds = isSelected ? profiles.map((profile) => profile.id) : [];
 
-        setFieldValue('clusters', newSelectedIds);
+        setFieldValue('profiles', newSelectedIds);
     };
 
     function renderTableContent() {
-        return clusters?.map(({ id, name }, rowIndex) => (
+        return profiles?.map(({ id, name, description }, rowIndex) => (
             <Tr key={id}>
                 <Td
                     key={id}
@@ -88,6 +74,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                     }}
                 />
                 <Td>{name}</Td>
+                <Td>{description}</Td>
             </Tr>
         ));
     }
@@ -95,7 +82,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderLoadingContent() {
         return (
             <Tr>
-                <Td colSpan={2}>
+                <Td colSpan={3}>
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -107,17 +94,13 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     function renderEmptyContent() {
         return (
             <Tr>
-                <Td colSpan={2}>
+                <Td colSpan={3}>
                     <Bullseye>
-                        <EmptyStateTemplate title="No clusters" headingLevel="h3" icon={SearchIcon}>
-                            {isRouteEnabledForClusters && (
-                                <Flex direction={{ default: 'column' }}>
-                                    <FlexItem>
-                                        <InstallClustersButton />
-                                    </FlexItem>
-                                </Flex>
-                            )}
-                        </EmptyStateTemplate>
+                        <EmptyStateTemplate
+                            title="No profiles"
+                            headingLevel="h3"
+                            icon={SearchIcon}
+                        />
                     </Bullseye>
                 </Td>
             </Tr>
@@ -125,13 +108,16 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     }
 
     function renderTableBodyContent() {
-        if (isFetchingClusters) {
+        if (isFetchingProfiles) {
             return renderLoadingContent();
         }
-        if (clusters && clusters.length > 0) {
+        if (profiles && profiles.length > 0) {
             return renderTableContent();
         }
-        return renderEmptyContent();
+        if (profiles && profiles.length === 0) {
+            return renderEmptyContent();
+        }
+        return null;
     }
 
     return (
@@ -139,9 +125,9 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-px-lg">
                     <FlexItem>
-                        <Title headingLevel="h2">Clusters</Title>
+                        <Title headingLevel="h2">Profiles</Title>
                     </FlexItem>
-                    <FlexItem>Select clusters to be included in the scan</FlexItem>
+                    <FlexItem>Select profiles to be included in the scan</FlexItem>
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -156,6 +142,7 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
                                 }}
                             />
                             <Th>Name</Th>
+                            <Th>Description</Th>
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>
@@ -165,4 +152,4 @@ function ClusterSelection({ clusters, isFetchingClusters }: ClusterSelectionProp
     );
 }
 
-export default ClusterSelection;
+export default ProfileSelection;
