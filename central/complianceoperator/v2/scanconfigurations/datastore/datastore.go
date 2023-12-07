@@ -32,7 +32,7 @@ type DataStore interface {
 	UpsertScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error
 
 	// DeleteScanConfiguration deletes the scan configuration specified by id
-	DeleteScanConfiguration(ctx context.Context, id string) error
+	DeleteScanConfiguration(ctx context.Context, id string) (string, []string, error)
 
 	// UpdateClusterStatus updates the scan configuration with the cluster status
 	UpdateClusterStatus(ctx context.Context, scanID string, clusterID string, clusterStatus string) error
