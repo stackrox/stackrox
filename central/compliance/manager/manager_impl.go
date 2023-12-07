@@ -340,6 +340,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 		standardsByClusterID[clusterAndStandard.ClusterID] = append(standardsByClusterID[clusterAndStandard.ClusterID], standard)
 	}
 
+	maxParallelismSemaphore := semaphore.NewWeighted(1)
 	var runs []*runInstance
 	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
 	for clusterID, standardImpls := range standardsByClusterID {
@@ -367,7 +368,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			dataRepoFactory: m.dataRepoFactory,
 		}
 		perClusterSemaphore := &clusterBasedSemaphore{
-			Weighted: semaphore.NewWeighted(1),
+			Weighted: maxParallelismSemaphore,
 		}
 
 		for _, standard := range standardImpls {
