@@ -11,6 +11,7 @@ setup_file() {
   command -v grep || skip "Command 'grep' required."
   [[ -n "${API_ENDPOINT}" ]] || fail "Environment variable 'API_ENDPOINT' required"
   [[ -n "${ROX_PASSWORD}" ]] || fail "Environment variable 'ROX_PASSWORD' required"
+  bats_require_minimum_version 1.5.0
 }
 
 setup() {
@@ -38,8 +39,10 @@ assert_number_of_resources() {
     local -r cluster_type="$1"; shift
     local expected="$1"; shift
     local resources_count=$(cat "${output_dir}/central/"*.yaml | grep -c "^apiVersion") || true
+
+    # On OpenShift clusters, we add a Role+RoleBinding with SCCs to our deployments, hence add 2 resources
     if [ "${cluster_type}" = "openshift" ]; then
-        expected=$((${expected} + 1))
+        expected=$((${expected} + 2))
     fi
 
     [[ "${resources_count}" = "${expected}" ]] || fail "Unexpected number of resources, expected ${expected} actual ${resources_count}"
@@ -57,7 +60,6 @@ assert_essential_files() {
   assert_file_exist "${output_dir}/central/01-central-12-central-db.yaml"
   if [ "${cluster_type}" = "openshift" ]; then
     assert_file_exist "${output_dir}/central/01-central-02-db-security.yaml"
-    run -0 grep -q "kind: SecurityContextConstraints" "${output_dir}/central/01-central-02-db-security.yaml"
   fi
 }
 
