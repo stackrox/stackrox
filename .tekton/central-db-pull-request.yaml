@@ -244,7 +244,7 @@ spec:
     - name: build-container
       params:
       - name: IMAGE
-        value: $(params.output-image)
+        value: $(params.output-image)-x86
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
@@ -276,10 +276,10 @@ spec:
       - name: source
         workspace: workspace
 
-    - name: build-container-arm64
+    - name: build-container-s390x
       params:
       - name: IMAGE
-        value: $(params.output-image)
+        value: $(params.output-image)-s390x
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
@@ -293,7 +293,44 @@ spec:
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
       - name: PLATFORM
-        value: linux/arm64
+        value: linux/s390x
+      runAfter:
+      - prefetch-dependencies
+      taskRef:
+        params:
+        - name: name
+          value: buildah-remote
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote:0.1@sha256:a0ed8d0f575244757c598acb228039211ad0051a7b7879630838260022a7b771
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
+      workspaces:
+      - name: source
+        workspace: workspace
+
+    - name: build-container-ppc64le
+      params:
+      - name: IMAGE
+        value: $(params.output-image)-ppc64le
+      - name: DOCKERFILE
+        value: $(params.dockerfile)
+      - name: CONTEXT
+        value: $(params.path-context)
+      - name: HERMETIC
+        value: $(params.hermetic)
+      - name: PREFETCH_INPUT
+        value: $(params.prefetch-input)
+      - name: IMAGE_EXPIRES_AFTER
+        value: $(params.image-expires-after)
+      - name: COMMIT_SHA
+        value: $(tasks.clone-repository.results.commit)
+      - name: PLATFORM
+        value: linux/ppc64le
       runAfter:
       - prefetch-dependencies
       taskRef:
