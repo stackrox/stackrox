@@ -15,7 +15,7 @@ func init() {
 		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),
 		schema.AddQuery("complianceRun(id:ID!): ComplianceRun"),
 		schema.AddMutation("complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!"),
-		schema.AddQuery("complianceRunStatuses(ids: [ID!]!): GetComplianceRunStatusesResponse!"),
+		schema.AddQuery("complianceRunStatuses(ids: [ID!]!, latest Boolean): GetComplianceRunStatusesResponse!"),
 	)
 }
 

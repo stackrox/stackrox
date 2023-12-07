@@ -44,12 +44,17 @@ var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
+type latestRunKey struct {
+	clusterID, standardID string
+}
+
 type manager struct {
 	standardsRegistry         *standards.Registry
 	complianceOperatorManager complianceOperatorManager.Manager
 
-	mutex    sync.RWMutex
-	runsByID map[string]*runInstance
+	mutex      sync.RWMutex
+	runsByID   map[string]*runInstance
+	latestRuns map[latestRunKey]*runInstance
 
 	stopSig    concurrency.Signal
 	interruptC chan struct{}
@@ -73,7 +78,8 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 		complianceOperatorManager: complianceOperatorManager,
 		complianceOperatorResults: complianceOperatorResults,
 
-		runsByID: make(map[string]*runInstance),
+		runsByID:   make(map[string]*runInstance),
+		latestRuns: make(map[latestRunKey]*runInstance),
 
 		interruptC: make(chan struct{}),
 
@@ -128,6 +134,7 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard *standar
 	run := createRun(runID, domain, standard)
 	concurrency.WithLock(&m.mutex, func() {
 		m.runsByID[runID] = run
+		m.latestRuns[latestRunKey{clusterID: domain.Cluster().ID(), standardID: standard.ID}] = run
 	})
 	return run
 }
@@ -283,16 +290,23 @@ type perClusterDataRepoFactory struct {
 }
 
 type clusterBasedSemaphore struct {
-	once sync.Once
+	acquireOnce sync.Once
+	releaseOnce sync.Once
 	*semaphore.Weighted
 	err error
 }
 
 func (c *clusterBasedSemaphore) Acquire(ctx context.Context, n int64) error {
-	c.once.Do(func() {
+	c.acquireOnce.Do(func() {
 		c.err = c.Weighted.Acquire(ctx, n)
 	})
 	return c.err
+}
+
+func (c *clusterBasedSemaphore) Release(n int64) {
+	c.releaseOnce.Do(func() {
+		c.Weighted.Release(n)
+	})
 }
 
 func (p *perClusterDataRepoFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
@@ -403,17 +417,37 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	return runStatuses, nil
 }
 
+func (m *manager) GetLatestRunStatuses(ctx context.Context) ([]*v1.ComplianceRun, error) {
+	runStatuses := m.getLatestRunStatuses()
+
+	// Check read access to all of the runs
+	clusterScopes := newClusterScopeCollector()
+	for _, runStatus := range runStatuses {
+		clusterScopes.add(runStatus.GetClusterId())
+	}
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
+		return nil, errox.NotFound
+	}
+
+	return runStatuses, nil
+}
+
+func (m *manager) getLatestRunStatuses() []*v1.ComplianceRun {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	result := make([]*v1.ComplianceRun, 0, len(m.latestRuns))
+	for _, run := range m.latestRuns {
+		result = append(result, run.ToProto())
+	}
+	return result
+}
+
 func (m *manager) getRunStatuses(ids []string) []*v1.ComplianceRun {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
 	var result []*v1.ComplianceRun
-	if len(ids) == 0 {
-		for _, run := range m.runsByID {
-			result = append(result, run.ToProto())
-		}
-		return result
-	}
 	for _, id := range ids {
 		if run := m.runsByID[id]; run != nil {
 			result = append(result, run.ToProto())

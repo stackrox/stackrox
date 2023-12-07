@@ -113,6 +113,12 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "latest",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
