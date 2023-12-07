@@ -450,7 +450,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
 		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
-			s.informScanWaiter(request.GetRequestId(), existingImg.Clone(), nil)
+			s.informScanWaiter(request.GetRequestId(), existingImg, nil)
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
@@ -504,7 +504,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		err = errors.New(request.GetError())
 	}
 
-	s.informScanWaiter(request.GetRequestId(), img.Clone(), err)
+	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
 }
 
@@ -532,7 +532,12 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 		return
 	}
 
-	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
+	var image *storage.Image
+	if img != nil {
+		image = img.Clone()
+	}
+
+	if err := s.scanWaiterManager.Send(reqID, image, scanErr); err != nil {
 		log.Errorw("Failed to send results to scan waiter",
 			logging.String("request_id", reqID), logging.Err(err))
 	}
