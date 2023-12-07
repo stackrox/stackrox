@@ -450,7 +450,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
 		if imgExists && !forceScanUpdate && !forceSigVerificationUpdate {
-			s.informScanWaiter(request.GetRequestId(), existingImg, nil)
+			s.informScanWaiter(request.GetRequestId(), existingImg.Clone(), nil)
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
