@@ -114,6 +114,7 @@ function ExceptionRequestModal({
                   onSubmit: onDeferralSubmit,
                   validationSchema: deferralValidationSchema,
                   showExpiryField: true,
+                  showScopeField: !isUpdate,
               }
             : {
                   formHeaderText: `CVEs will be marked as false positive after approval`,
@@ -121,6 +122,7 @@ function ExceptionRequestModal({
                   onSubmit: onFalsePositiveSubmit,
                   validationSchema: falsePositiveValidationSchema,
                   showExpiryField: false,
+                  showScopeField: !isUpdate,
               };
 
     const submissionError = createDeferralMutation.error ?? createFalsePositiveMutation.error;
@@ -146,7 +148,6 @@ function ExceptionRequestModal({
                 )}
                 <ExceptionRequestForm
                     cves={cves}
-                    isUpdate={isUpdate}
                     scopeContext={scopeContext}
                     onCancel={onClose}
                     {...formProps}

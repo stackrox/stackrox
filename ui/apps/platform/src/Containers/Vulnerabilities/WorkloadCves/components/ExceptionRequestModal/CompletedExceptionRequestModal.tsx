@@ -67,15 +67,22 @@ function CompletedExceptionRequestModal({
     onClose,
 }: CompletedExceptionRequestModalProps) {
     let title = '';
-    const titleAction = isUpdate ? 'Update' : 'Request';
     let requestedAction = '';
 
     if (isDeferralException(exceptionRequest)) {
-        title = `${titleAction} for deferral has been submitted`;
+        if (isUpdate) {
+            title = 'Request for deferral update has been submitted';
+        } else {
+            title = 'Request for deferral has been submitted';
+        }
         requestedAction = 'Deferral';
     }
     if (isFalsePositiveException(exceptionRequest)) {
-        title = `${titleAction} for false positive has been submitted`;
+        if (isUpdate) {
+            title = 'Request for false positive update has been submitted';
+        } else {
+            title = 'Request for false positive has been submitted';
+        }
         requestedAction = 'False positive';
     }
 

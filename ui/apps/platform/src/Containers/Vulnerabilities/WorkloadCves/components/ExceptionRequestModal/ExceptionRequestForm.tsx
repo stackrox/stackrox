@@ -32,7 +32,6 @@ function getDefaultValues(cves: string[], scopeContext: ScopeContext): Exception
 }
 export type ExceptionRequestFormProps = {
     cves: CveSelectionsProps['cves'];
-    isUpdate?: boolean;
     scopeContext: ScopeContext;
     onSubmit: (formValues: ExceptionValues, helpers: FormikHelpers<ExceptionValues>) => void;
     onCancel: () => void;
@@ -40,11 +39,11 @@ export type ExceptionRequestFormProps = {
     commentFieldLabel: string;
     validationSchema: yup.ObjectSchema<ExceptionValues>;
     showExpiryField: boolean;
+    showScopeField: boolean;
 };
 
 function ExceptionRequestForm({
     cves,
-    isUpdate = false,
     scopeContext,
     onSubmit,
     onCancel,
@@ -52,6 +51,7 @@ function ExceptionRequestForm({
     commentFieldLabel,
     validationSchema,
     showExpiryField,
+    showScopeField,
 }: ExceptionRequestFormProps) {
     const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
 
@@ -101,7 +101,7 @@ function ExceptionRequestForm({
                     >
                         <Text>{formHeaderText}</Text>
                         {showExpiryField && <ExpiryField formik={formik} />}
-                        {!isUpdate && (
+                        {showScopeField && (
                             <ExceptionScopeField
                                 fieldId="scope"
                                 label="Scope"
