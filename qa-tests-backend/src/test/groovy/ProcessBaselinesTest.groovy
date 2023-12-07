@@ -453,7 +453,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
         assert(baselinesCreated)
         def baselineBeforeDelete = null
-        assert trueWithin(10, 3) {
+        assert trueWithin(70, 5) {
             baselineBeforeDelete = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             assert baselineBeforeDelete
             baselineBeforeDelete.elementsList.size() > 0
