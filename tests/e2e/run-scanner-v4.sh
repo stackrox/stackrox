@@ -29,7 +29,7 @@ scannerV4_test() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox
+    deploy_older_central_without_scanner
 
     run_scannerV4_test
 }
@@ -37,6 +37,15 @@ scannerV4_test() {
 run_scannerV4_test() {
     info "Running scannerV4 test"
     info "Nothing yet..."
+}
+
+deploy_older_central_without_scanner() {
+    helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+    helm repo update
+    helm install -n stackrox stackrox-central-services stackrox/stackrox-central-services \
+        --create-namespace \
+        --version 400.3.0 \
+        --set central.persistence.none=true
 }
 
 scannerV4_test "$@"
