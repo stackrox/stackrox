@@ -25,7 +25,11 @@ end() {
 
     update_job_record outcome "${OVERALL_JOB_OUTCOME}" stopped_at "CURRENT_TIMESTAMP()"
 
-    (send_slack_failure_summary "${}") || { echo "ERROR: Could not slack a test failure message"; }
+    post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}"
+
+    if [[ "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_FAILED}" ]]; then
+        (send_slack_failure_summary) || { echo "ERROR: Could not slack a test failure message"; }
+    fi
 }
 
 determine_an_overall_job_outcome() {
@@ -100,6 +104,8 @@ generate_cluster_junit() {
     local cluster_create_debug=""
     if [[ -f "${SHARED_DIR}/cluster_create_failure_debug.txt" ]]; then
         cluster_create_debug="$(summarize_cluster_debug "${SHARED_DIR}/cluster_create_failure_debug.txt")"
+    else
+        cluster_create_debug="See build.log and Artifacts for details"
     fi
 
     if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
@@ -112,6 +118,8 @@ generate_cluster_junit() {
     local cluster_destroy_debug=""
     if [[ -f "${SHARED_DIR}/cluster_destroy_failure_debug.txt" ]]; then
         cluster_destroy_debug="$(summarize_cluster_debug "${SHARED_DIR}/cluster_destroy_failure_debug.txt")"
+    else
+        cluster_destroy_debug="See build.log and Artifacts for details"
     fi
 
     if [[ "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then

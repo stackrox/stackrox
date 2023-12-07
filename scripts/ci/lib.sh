@@ -60,7 +60,7 @@ ci_exit_trap() {
 
     # `post_process_test_results` will generate the Slack attachment first, then
     # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
-    post_process_test_results
+    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}"
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
@@ -1130,6 +1130,10 @@ store_test_results() {
 }
 
 post_process_test_results() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: post_process_test_results <slack attachments file.json>"
+    fi
+
     if ! is_OPENSHIFT_CI; then
         return 0
     fi
@@ -1139,18 +1143,37 @@ post_process_test_results() {
         return 0
     fi
 
+    local slack_output_file="$1"
     local csv_output
     local extra_args=()
     local base_link
     local calculated_base_link
+    local create_jiras
+    local jira_project="ROX"
 
     set +u
     {
-        if is_in_PR_context || [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
-            info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
+        info "Post processing junit records to JIRA issues, BigQuery metrics and Slack attachments as appropriate"
+
+        if is_in_PR_context; then
+            if pr_has_label "ci-test-junit-processing"; then
+                create_jiras="true"
+                jira_project="RS"
+            else
+                create_jiras="false"
+            fi
+        else
+            if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
+                create_jiras="false"
+            else
+                create_jiras="true"
+            fi
+        fi
+
+        if [[ "${create_jiras}" == "false" ]]; then
             extra_args=(--dry-run)
         else
-            info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+            info "Will create JIRA issues for junit failures found in ${ARTIFACT_DIR}"
         fi
 
         csv_output="$(mktemp --suffix=.csv)"
@@ -1159,7 +1182,7 @@ post_process_test_results() {
         # TODO: Extract a function to obtain repo and org and use it here.
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.14/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.15/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1167,12 +1190,13 @@ post_process_test_results() {
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
+            -jira-project "${jira_project}" \
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
-            -slack-output "$ARTIFACT_DIR/junit2jira-slack-attachments.json" \
+            -slack-output "${slack_output_file}" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
@@ -1184,10 +1208,12 @@ post_process_test_results() {
     set -u
 }
 
-send_slack_failure_summary() {
-    local exitstatus="${1:-}"
+# There are currently two openshift-ci steps where junit failures are summarized for slack.
+JOB_SLACK_FAILURE_ATTACHMENTS="${SHARED_DIR:-/tmp}/job-slack-failure-attachments.json"
+END_SLACK_FAILURE_ATTACHMENTS="/tmp/end-slack-failure-attachments.json"
 
-    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+send_slack_failure_summary() {
+    if ! is_OPENSHIFT_CI || is_nightly_run; then
         return 0
     fi
 
@@ -1203,6 +1229,18 @@ send_slack_failure_summary() {
     fi
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    if is_in_PR_context; then
+        if pr_has_label "ci-test-junit-processing"; then
+            # Send to #acs-slack-ci-integration-testing when testing the
+            # JUNIT -> Jira, BigQuery, Slack pipeline.
+            webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+        else
+            info "Skipping slack message for PRs"
+            return 0
+        fi
+    fi
+
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
 
     function slack_error() {
