@@ -1143,7 +1143,7 @@ post_process_test_results() {
         return 0
     fi
 
-    local slack_output_file="$1"
+    local slack_attachments_file="$1"
     local csv_output
     local extra_args=()
     local base_link
@@ -1196,7 +1196,7 @@ post_process_test_results() {
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
-            -slack-output "${slack_output_file}" \
+            -slack-output "${slack_attachments_file}" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
