@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -61,6 +62,9 @@ func (k *listenerImpl) Start() error {
 		}
 		return errors.New("cannot start listener without a context")
 	}
+	// Remove this: Give some time for the runtime events to be processed before cleaning up
+	time.Sleep(5 * time.Second)
+	k.storeProvider.CleanupStores()
 
 	// This happens if the listener is restarting. Then the signal will already have been triggered
 	// when starting a new run of the listener.
@@ -84,7 +88,7 @@ func (k *listenerImpl) Stop(_ error) {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
-	k.storeProvider.CleanupStores()
+	// k.storeProvider.CleanupStores()
 }
 
 func serverResourcesForGroup(client client.Interface, group string) (*metav1.APIResourceList, error) {
