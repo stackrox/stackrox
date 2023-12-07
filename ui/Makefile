@@ -43,7 +43,7 @@ test: deps $(SOURCES)
 ifdef CI
 	cd apps/platform; yarn test-coverage
 else
-	yarn test
+	cd apps/platform; yarn test
 endif
 
 .PHONY: test-e2e
