@@ -279,7 +279,7 @@ spec:
     - name: build-container-arm64
       params:
       - name: IMAGE
-        value: $(params.output-image)-arm64
+        value: $(params.output-image)
       - name: DOCKERFILE
         value: $(params.dockerfile)
       - name: CONTEXT
