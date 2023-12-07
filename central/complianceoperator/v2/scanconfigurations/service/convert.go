@@ -35,17 +35,17 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 		return nil, nil
 	}
 
-	var clusters []string
 	scanClusters, err := configDS.GetScanConfigClusterStatus(ctx, scanConfig.GetId())
 	if err != nil {
 		return nil, err
 	}
 
+	clusters := make([]string, 0, len(scanClusters))
 	for _, cluster := range scanClusters {
 		clusters = append(clusters, cluster.GetClusterId())
 	}
 
-	var profiles []string
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
 	scanProfiles := scanConfig.GetProfiles()
 	for _, profile := range scanProfiles {
 		profiles = append(profiles, profile.GetProfileId())
@@ -67,7 +67,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		return nil
 	}
 
-	var profiles []*storage.ProfileShim
+	profiles := make([]*storage.ProfileShim, 0, len(scanConfig.GetScanConfig().GetProfiles()))
 	for _, profile := range scanConfig.GetScanConfig().GetProfiles() {
 		profiles = append(profiles, &storage.ProfileShim{
 			ProfileId: profile,
@@ -150,9 +150,8 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		return nil, err
 	}
 
-	var profiles []string
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
+	for _, profile := range scanConfig.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileId())
 	}
 

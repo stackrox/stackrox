@@ -72,7 +72,7 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 		return nil, errors.Wrapf(err, "failed to retrieve compliance profile with id %q.", req.GetId())
 	}
 	if !found {
-		return nil, errors.Errorf("failed to retrieve compliance profile with id %q.", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "compliance profile with id %q does not exist", req.GetId())
 	}
 
 	return storagetov2.ComplianceV2Profile(profile), nil
@@ -100,7 +100,7 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, query *v2.RawQ
 }
 
 // GetComplianceProfileCount returns counts of profiles matching query
-func (s *serviceImpl) GetComplianceProfileCount(ctx context.Context, request *v2.RawQuery) (*v2.CountComplianceProfiles, error) {
+func (s *serviceImpl) GetComplianceProfileCount(ctx context.Context, request *v2.RawQuery) (*v2.CountComplianceProfilesResponse, error) {
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -110,7 +110,7 @@ func (s *serviceImpl) GetComplianceProfileCount(ctx context.Context, request *v2
 	if err != nil {
 		return nil, errors.Wrap(errox.NotFound, err.Error())
 	}
-	return &v2.CountComplianceProfiles{
+	return &v2.CountComplianceProfilesResponse{
 		Count: int32(profileCount),
 	}, nil
 }

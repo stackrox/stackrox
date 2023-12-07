@@ -41,8 +41,8 @@ message ListComplianceProfilesResponse {
     repeated ComplianceProfile profiles = 1;
 }
 
-// CountComplianceProfiles gives count of compliance profiles
-message CountComplianceProfiles{
+// CountComplianceProfilesResponse gives count of compliance profiles
+message CountComplianceProfilesResponse {
     int32 count = 1;
 }
 
@@ -62,7 +62,7 @@ service ComplianceProfileService {
     }
 
     // GetComplianceProfileCount returns the number of profiles matching the given query
-    rpc GetComplianceProfileCount(RawQuery) returns (CountComplianceProfiles){
+    rpc GetComplianceProfileCount(RawQuery) returns (CountComplianceProfilesResponse){
         option (google.api.http) = {
             get: "/v2/compliance/count/profiles"
         };
