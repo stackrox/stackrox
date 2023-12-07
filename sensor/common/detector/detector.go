@@ -22,13 +22,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
-	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
-	queueItem "github.com/stackrox/rox/sensor/common/detector/queue"
+	"github.com/stackrox/rox/sensor/common/detector/queue"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -72,7 +71,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
-	netFlowQueue := queueItem.NewNetworkFlowQueue(detectorStopper, queue.NewPausableQueue[*queueItem.FlowQueueItem]())
+	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](detectorStopper)
+	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](detectorStopper)
 
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
@@ -102,6 +102,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		networkPolicyStore: networkPolicyStore,
 
 		networkFlowsQueue: netFlowQueue,
+		indicatorsQueue:   piQueue,
 	}
 }
 
@@ -140,7 +141,8 @@ type detectorImpl struct {
 
 	networkPolicyStore store.NetworkPolicyStore
 
-	networkFlowsQueue *queueItem.NetworkFlowsQueue
+	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
+	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
 }
 
 func (d *detectorImpl) Start() error {
@@ -148,7 +150,9 @@ func (d *detectorImpl) Start() error {
 	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
 	go d.processAlertsForFlowOnEntity()
+	go d.processIndicator()
 	d.networkFlowsQueue.Start()
+	d.indicatorsQueue.Start()
 	return nil
 }
 
@@ -496,7 +500,7 @@ func (d *detectorImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 }
 
 func (d *detectorImpl) ProcessIndicator(ctx context.Context, pi *storage.ProcessIndicator) {
-	go d.processIndicator(ctx, pi)
+	go d.pushIndicator(ctx, pi)
 }
 
 func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
@@ -519,37 +523,61 @@ func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, a
 	return message.NewExpiring(ctx, msgFromSensor)
 }
 
-func (d *detectorImpl) processIndicator(ctx context.Context, pi *storage.ProcessIndicator) {
-	deployment := d.deploymentStore.Get(pi.GetDeploymentId())
+func (d *detectorImpl) pushIndicator(ctx context.Context, pi *storage.ProcessIndicator) {
+	deployment := d.deploymentStore.GetSnapshot(pi.GetDeploymentId())
 	if deployment == nil {
 		log.Debugf("Deployment has already been removed: %+v", pi)
 		// Because the indicator was already enriched with a deployment, this means the deployment is gone
 		return
 	}
-	images := d.enricher.getImages(deployment)
-
-	// Run detection now
-	alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
-		Deployment:             deployment,
-		Images:                 images,
-		NetworkPoliciesApplied: d.getNetworkPoliciesApplied(deployment),
-	}, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
-	if len(alerts) == 0 {
-		// No need to process runtime alerts that have no violations
-		return
+	item := &queue.IndicatorQueueItem{
+		Ctx:          ctx,
+		Deployment:   deployment,
+		Netpols:      d.getNetworkPoliciesApplied(deployment),
+		IsInBaseline: d.baselineEval.IsOutsideLockedBaseline(pi),
+		Indicator:    pi,
 	}
-	alertResults := &central.AlertResults{
-		DeploymentId: pi.GetDeploymentId(),
-		Alerts:       alerts,
-		Stage:        storage.LifecycleStage_RUNTIME,
-	}
+	d.indicatorsQueue.Push(item)
+}
 
-	d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+func (d *detectorImpl) processIndicator() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		case item, ok := <-d.indicatorsQueue.Pull():
+			if !ok {
+				return
+			}
+			if item == nil {
+				continue
+			}
+			images := d.enricher.getImages(item.Deployment)
 
-	select {
-	case <-d.alertStopSig.Done():
-		return
-	case d.output <- createAlertResultsMsg(ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+			// Run detection now
+			alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
+				Deployment:             item.Deployment,
+				Images:                 images,
+				NetworkPoliciesApplied: item.Netpols,
+			}, item.Indicator, item.IsInBaseline)
+			if len(alerts) == 0 {
+				// No need to process runtime alerts that have no violations
+				continue
+			}
+			alertResults := &central.AlertResults{
+				DeploymentId: item.Indicator.GetDeploymentId(),
+				Alerts:       alerts,
+				Stage:        storage.LifecycleStage_RUNTIME,
+			}
+
+			d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+
+			select {
+			case <-d.alertStopSig.Done():
+				continue
+			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+			}
+		}
 	}
 }
 
@@ -608,7 +636,7 @@ func (d *detectorImpl) pushFlowOnEntity(
 		return
 	}
 
-	item := &queueItem.FlowQueueItem{
+	item := &queue.FlowQueueItem{
 		Ctx:        ctx,
 		Deployment: deployment,
 		Flow:       flowDetails,
