@@ -532,12 +532,7 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 		return
 	}
 
-	var image *storage.Image
-	if img != nil {
-		image = img.Clone()
-	}
-
-	if err := s.scanWaiterManager.Send(reqID, image, scanErr); err != nil {
+	if err := s.scanWaiterManager.Send(reqID, img.Clone(), scanErr); err != nil {
 		log.Errorw("Failed to send results to scan waiter",
 			logging.String("request_id", reqID), logging.Err(err))
 	}
