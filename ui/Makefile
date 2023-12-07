@@ -40,7 +40,11 @@ start: deps
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
+ifdef CI
+	cd apps/platform; yarn test-coverage
+else
 	yarn test
+endif
 
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
