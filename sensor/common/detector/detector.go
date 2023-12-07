@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -234,7 +235,19 @@ func (d *detectorImpl) Stop(_ error) {
 	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
-func (d *detectorImpl) Notify(common.SensorComponentEvent) {}
+func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
+	if !features.SensorCapturesIntermediateEvents.Enabled() {
+		return
+	}
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		d.indicatorsQueue.Resume()
+		d.networkFlowsQueue.Resume()
+	case common.SensorComponentEventOfflineMode:
+		d.indicatorsQueue.Pause()
+		d.networkFlowsQueue.Pause()
+	}
+}
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
