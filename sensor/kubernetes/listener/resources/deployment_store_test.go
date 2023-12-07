@@ -111,10 +111,6 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 
 func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
-	if !features.SensorDeploymentBuildOptimization.Enabled() {
-		s.T().Skipf("Skip tests when %s is disabled", features.SensorDeploymentBuildOptimization.EnvVar())
-		s.T().SkipNow()
-	}
 	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
 			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
@@ -263,10 +259,6 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment
 
 func (s *deploymentStoreSuite) Test_DeleteSnapshot() {
 	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
-	if !features.SensorDeploymentBuildOptimization.Enabled() {
-		s.T().Skipf("Skip tests when %s is disabled", features.SensorDeploymentBuildOptimization.EnvVar())
-		s.T().SkipNow()
-	}
 	uid := uuid.NewV4().String()
 	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
 	s.deploymentStore.addOrUpdateDeployment(wrap)
