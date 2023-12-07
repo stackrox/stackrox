@@ -33,7 +33,7 @@ sources:
     data:
       - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest
       - github.com/release-engineering/rhtap-ec-policy//data
-      - github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+      - github.com/stackrox/stackrox//.tekton/enterprise-contract?ref=rhtap-allow-quay-registry
     config:
       include:
         - '@redhat'

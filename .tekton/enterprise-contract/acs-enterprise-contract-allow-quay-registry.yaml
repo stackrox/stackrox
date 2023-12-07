@@ -11,7 +11,7 @@ spec:
     name: application
   params:
   - name: POLICY_CONFIGURATION
-    value: github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+    value: github.com/stackrox/stackrox//.tekton/enterprise-contract?ref=rhtap-allow-quay-registry
   resolverRef:
     params:
     - name: url
