@@ -101,8 +101,8 @@ func (r *runInstance) doRun(perClusterSemaphore *clusterBasedSemaphore, dataProm
 
 	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 
-	log.Infof("Sleeping for 3 minutes to emulate slowness")
-	time.Sleep(3 * time.Minute)
+	log.Infof("Sleeping for 1 minute to emulate slowness")
+	time.Sleep(1 * time.Minute)
 
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
 	data, err := dataPromise.WaitForResult(r.ctx)

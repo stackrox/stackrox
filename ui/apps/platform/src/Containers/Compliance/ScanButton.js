@@ -81,7 +81,7 @@ class ScanButton extends React.Component {
         return (
             <Mutation mutation={TRIGGER_SCAN}>
                 {(triggerScan, { client }) => {
-                    const variables = { ids: this.state.pendingRunIds };
+                    const variables = { latest: true};
                     const { startPolling, stopPolling, error } = useQuery(RUN_STATUSES, {
                         variables,
                         errorPolicy: 'all',

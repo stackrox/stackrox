@@ -15,7 +15,7 @@ func init() {
 		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),
 		schema.AddQuery("complianceRun(id:ID!): ComplianceRun"),
 		schema.AddMutation("complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!"),
-		schema.AddQuery("complianceRunStatuses(ids: [ID!]!, latest: Boolean): GetComplianceRunStatusesResponse!"),
+		schema.AddQuery("complianceRunStatuses(ids: [ID!], latest: Boolean): GetComplianceRunStatusesResponse!"),
 	)
 }
 
@@ -44,17 +44,26 @@ func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct
 }
 
 // ComplianceRunStatuses is a query to obtain the statuses of a list of compliance runs.
-func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct{ Ids []graphql.ID }) (*getComplianceRunStatusesResponseResolver, error) {
+func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct {
+	Ids    *[]graphql.ID
+	Latest *bool
+}) (*getComplianceRunStatusesResponseResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	idStrings := make([]string, len(args.Ids))
-	for i, id := range args.Ids {
-		idStrings[i] = string(id)
+	var request v1.GetComplianceRunStatusesRequest
+	if args.Ids != nil {
+		ids := *args.Ids
+		idStrings := make([]string, len(ids))
+		for i, id := range ids {
+			idStrings[i] = string(id)
+		}
+		request.RunIds = idStrings
 	}
-	resp, err := resolver.ComplianceManagementService.GetRunStatuses(ctx, &v1.GetComplianceRunStatusesRequest{
-		RunIds: idStrings,
-	})
+	if args.Latest != nil {
+		request.Latest = *args.Latest
+	}
+	resp, err := resolver.ComplianceManagementService.GetRunStatuses(ctx, &request)
 	return resolver.wrapGetComplianceRunStatusesResponse(resp, resp != nil, err)
 }
 

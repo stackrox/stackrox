@@ -154,8 +154,8 @@ export const TRIGGER_SCAN = gql`
 `;
 
 export const RUN_STATUSES = gql`
-    query runStatuses($ids: [ID!]!) {
-        complianceRunStatuses(ids: $ids) {
+    query runStatuses($ids: [ID!], $latest: Boolean) {
+        complianceRunStatuses(ids: $ids, latest: $latest) {
             invalidRunIds
             runs {
                 id
