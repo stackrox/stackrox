@@ -35,7 +35,7 @@ roxctl-development() {
    "$(roxctl-development-cmd)" "$@"
 }
 
-# roxctl-development-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
+# roxctl-release-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
 roxctl-release-cmd() {
   if [[ ! -x "${tmp_roxctl}/roxctl-release" ]]; then
     _uname="$(luname)"
