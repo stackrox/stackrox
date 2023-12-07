@@ -28,7 +28,7 @@ if [[ "$DEBUG_BUILD" == "yes" ]]; then
       GOBIN="${output_dir}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
     fi
   else
-    echo "WARNING: Architecture ${goarch} is not spported by delve. Rerun with DEBUG_BUILD=no"
+    echo "WARNING: Architecture ${goarch} is not supported by delve. Debugging won't be available"
   fi
 fi
 
