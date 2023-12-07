@@ -126,5 +126,6 @@ func (ds *datastoreImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.DeleteByQuery(ctx, q)
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
 }
