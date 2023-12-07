@@ -601,7 +601,7 @@ func (d *detectorImpl) pushFlowOnEntity(
 	if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
 		return
 	}
-	deployment := d.deploymentStore.Get(entity.GetId())
+	deployment := d.deploymentStore.GetSnapshot(entity.GetId())
 	if deployment == nil {
 		// Probably the deployment was deleted just before we had fetched entity names.
 		log.Warnf("Stop processing alerts for network flow on deployment %q. No deployment was found", entity.GetId())

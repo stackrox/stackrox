@@ -242,6 +242,21 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment().Clone()
 }
 
+// GetSnapshot returns the snapshot of the deployment for the supplied id.
+// If the snapshot is not found, this functions returns a clone of the deployment.
+func (ds *DeploymentStore) GetSnapshot(id string) *storage.Deployment {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	if features.SensorDeploymentBuildOptimization.Enabled() {
+		if d, ok := ds.deploymentSnapshots[id]; ok {
+			return d.builtDeployment
+		}
+	}
+	wrap := ds.getWrapNoLock(id)
+	return wrap.GetDeployment().Clone()
+}
+
 // GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.
 func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
 	ds.lock.Lock()
