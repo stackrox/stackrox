@@ -318,7 +318,7 @@ spec:
       - name: BINARY_IMAGE
         value: $(params.output-image)
       - name: BASE_IMAGES
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
       runAfter:
       - build-container-amd64
       - build-container-arm64
@@ -345,9 +345,9 @@ spec:
     - name: inspect-image
       params:
       - name: IMAGE_URL
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       - name: IMAGE_DIGEST
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       runAfter:
       - build-container-amd64
       taskRef:
@@ -370,7 +370,7 @@ spec:
     - name: deprecated-base-image-check
       params:
       - name: BASE_IMAGES_DIGESTS
-        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+        value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
       runAfter:
       - build-container-amd64
       taskRef:
@@ -390,9 +390,9 @@ spec:
     - name: clair-scan
       params:
       - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       runAfter:
       - build-container-amd64
       taskRef:
@@ -432,9 +432,9 @@ spec:
     - name: clamav-scan
       params:
       - name: image-digest
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       - name: image-url
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       runAfter:
       - build-container-amd64
       taskRef:
@@ -454,9 +454,9 @@ spec:
     - name: sbom-json-check
       params:
       - name: IMAGE_URL
-        value: $(tasks.build-container.results.IMAGE_URL)
+        value: $(tasks.build-container-amd64.results.IMAGE_URL)
       - name: IMAGE_DIGEST
-        value: $(tasks.build-container.results.IMAGE_DIGEST)
+        value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
       runAfter:
       - build-container-amd64
       taskRef:
