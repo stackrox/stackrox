@@ -144,7 +144,6 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
-		log.Infof("SHREWS -- capabilities %v", component.Capabilities())
 	}
 	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
@@ -242,7 +241,6 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	managedcentral.Set(centralHello.GetManagedCentral())
 	centralid.Set(centralHello.GetCentralId())
 	centralCaps := centralHello.GetCapabilities()
-	log.Infof("SHREWS -- central caps %v", centralCaps)
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
 
 	// Sensor should only communicate deduper states if central is able to do so and it has requested it.

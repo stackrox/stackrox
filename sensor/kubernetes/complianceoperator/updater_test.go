@@ -7,11 +7,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -53,7 +50,6 @@ func (s *UpdaterTestSuite) SetupSuite() {
 }
 
 func (s *UpdaterTestSuite) SetupTest() {
-	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralsensor.ComplianceV2Integrations))
 	s.client = fake.NewSimpleClientset()
 	_, err := s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(defaultNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)

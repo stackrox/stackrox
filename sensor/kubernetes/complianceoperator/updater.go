@@ -53,13 +53,11 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() error {
-	log.Infof("SHREWS -- starting updater -- compliance capable  %t", centralcaps.Has(centralsensor.ComplianceV2Integrations))
 	go u.run()
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
-	log.Info("SHREWS -- stopping updater")
 	u.stopSig.Signal()
 }
 
@@ -74,22 +72,18 @@ func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 }
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	log.Info("SHREWS -- return response channel")
 	return u.response
 }
 
 func (u *updaterImpl) GetNamespace() string {
-	log.Info("SHREWS -- GetNamespace")
 	return u.complianceOperatorNS
 }
 
 func (u *updaterImpl) run() {
-	log.Info("SHREWS -- run updater")
 	ticker := time.NewTicker(u.updateInterval)
 	defer ticker.Stop()
 
 	if responseSent := u.collectInfoAndSendResponse(); !responseSent {
-		log.Info("SHREWS -- run updater end")
 		return
 	}
 
@@ -97,11 +91,9 @@ func (u *updaterImpl) run() {
 		select {
 		case <-ticker.C:
 			if responseSent := u.collectInfoAndSendResponse(); !responseSent {
-				log.Info("SHREWS -- run updater end 2")
 				return
 			}
 		case <-u.stopSig.Done():
-			log.Info("SHREWS -- run updater done")
 			return
 		}
 	}
