@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Searcher is scan configuration searcher
+// Searcher is compliance profile searcher
 type Searcher interface {
 	Count(ctx context.Context, query *v1.Query) (int, error)
 }

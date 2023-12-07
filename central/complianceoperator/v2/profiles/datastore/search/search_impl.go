@@ -19,7 +19,7 @@ type searcherImpl struct {
 	searcher search.Searcher
 }
 
-// Count returns the number of search results from the query
+// Count returns the number of profiles from the query
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return 0, err

@@ -150,7 +150,7 @@ func (s *complianceProfileDataStoreTestSuite) TestDeleteProfileForCluster() {
 	s.Require().Equal(1, len(edgeRecs))
 	s.Require().Equal(profileUID2, edgeRecs[0].ProfileUid)
 
-	// Without access
+	// Without write access
 	s.Require().Error(s.dataStore.DeleteProfileForCluster(s.hasReadCtx, profileUID1, fixtureconsts.Cluster1))
 }
 
