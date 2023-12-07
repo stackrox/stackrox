@@ -4,7 +4,8 @@ import qs from 'qs';
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/Status/MockData/complianceScanResultsOverview';
+import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
+import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
@@ -65,7 +66,7 @@ export type ComplianceScanConfigurationStatus = {
     modifiedBy: SlimUser;
 };
 
-// API types for Scan Configs:
+// API types for Scan Results:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_results_service
 interface ComplianceScanStatsShim {
     id: string; // TODO: id should be included in api response/proto
@@ -84,6 +85,33 @@ export interface ComplianceScanResultsOverview {
 
 export interface ListComplianceScanResultsOverviewResponse {
     scanOverviews: ComplianceScanResultsOverview[];
+}
+
+// API types for Compliance Profiles:
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_profile_service
+interface ComplianceRule {
+    name: string;
+    rule_version: string;
+    rule_type: string;
+    severity: string;
+    standard: string;
+    control: string;
+    title: string;
+    description: string;
+    rationale: string;
+    fixes: string;
+}
+
+export interface ComplianceProfile {
+    id: string;
+    name: string;
+    profile_version: string;
+    product_type: string[];
+    standard: string;
+    description: string;
+    rules: ComplianceRule[];
+    product: string;
+    title: string;
 }
 
 export function complianceResultsOverview(
@@ -107,8 +135,9 @@ export function complianceResultsOverview(
         return new Promise((resolve, reject) => {
             if (!signal.aborted) {
                 setTimeout(() => {
-                    const mockData = mockComplianceScanResultsOverview();
-                    resolve(mockData.scanOverviews);
+                    resolve(
+                        mockGetComplianceScanResultsOverview() as ComplianceScanResultsOverview[]
+                    );
                 }, 2000);
             } else {
                 reject(new Error('Request was aborted'));
@@ -160,4 +189,20 @@ export function getScanConfigs(
         .then((response) => {
             return response?.data?.configurations ?? [];
         });
+}
+
+export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
+    // TODO: delete the below code once the actual API is ready
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(mockListComplianceProfiles() as ComplianceProfile[]);
+        }, 1000);
+    });
+
+    // TODO: Uncomment the below code once the actual API is ready
+    // return axios
+    //     .get<{ profiles: ComplianceProfile[] }>(complianceProfileServiceUrl)
+    //     .then((response) => {
+    //         return response?.data?.profiles ?? [];
+    //     });
 }
