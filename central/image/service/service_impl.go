@@ -504,7 +504,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		err = errors.New(request.GetError())
 	}
 
-	s.informScanWaiter(request.GetRequestId(), img, err)
+	s.informScanWaiter(request.GetRequestId(), img.Clone(), err)
 	return internalScanRespFromImage(img), nil
 }
 
