@@ -24,6 +24,7 @@ var (
 	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
+		"govulncheck",
 		"image",
 		"migrator",
 		"migrator/migrations",
