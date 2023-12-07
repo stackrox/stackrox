@@ -64,15 +64,15 @@ func (d *DeploymentEnhancer) Start() error {
 }
 
 func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
-	log.Debugf("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	var ret []*storage.Deployment
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
 	if deployments == nil {
 		log.Warnf("received deploymentEnhancement msg with no deployments")
+		return ret
 	}
 
-	var ret []*storage.Deployment
-
+	log.Debugf("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
 	for _, deployment := range deployments {
 		enriched, err := d.enrichDeployment(deployment)
 		if err != nil {
@@ -99,13 +99,7 @@ func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*
 }
 
 func (d *DeploymentEnhancer) enrichDeployment(deployment *storage.Deployment) (*storage.Deployment, error) {
-	localImages := set.NewStringSet()
-	for _, c := range deployment.GetContainers() {
-		imgName := c.GetImage().GetName()
-		if d.storeProvider.Registries().IsLocal(imgName) {
-			localImages.Add(imgName.GetFullName())
-		}
-	}
+	localImages := d.findLocalImages(deployment)
 
 	p := d.storeProvider.RBAC().GetPermissionLevelForDeployment(deployment)
 	e := d.storeProvider.Services().GetExposureInfos(deployment.GetNamespace(), deployment.GetPodLabels())
@@ -117,6 +111,17 @@ func (d *DeploymentEnhancer) enrichDeployment(deployment *storage.Deployment) (*
 	})
 
 	return deployment, nil
+}
+
+func (d *DeploymentEnhancer) findLocalImages(deployment *storage.Deployment) set.Set[string] {
+	localImages := set.NewStringSet()
+	for _, c := range deployment.GetContainers() {
+		imgName := c.GetImage().GetName()
+		if d.storeProvider.Registries().IsLocal(imgName) {
+			localImages.Add(imgName.GetFullName())
+		}
+	}
+	return localImages
 }
 
 // Capabilities return the capabilities of this component

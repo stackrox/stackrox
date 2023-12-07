@@ -76,5 +76,5 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
 
 	_, err := b.SendAndWaitForAugmentedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
 
-	s.ErrorContains(err, "timed out waiting for augmented deployment", "Expexted the function to time out, but it didn't")
+	s.ErrorContains(err, "timed out waiting for augmented deployment", "Expected the function to time out, but it didn't")
 }
