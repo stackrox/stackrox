@@ -54,7 +54,7 @@ func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) strin
 	}
 
 	if plop.Process == nil {
-		log.Warnf("Plop process is nil. Unable to set process indicator id. Plop will not appear in the API. plop: %s", plopToNoSecretsString(plop))
+		log.Infof("Plop process is nil. Unable to set process indicator id. Plop will not appear in the API. plop: %s", plopToNoSecretsString(plop))
 		return ""
 	}
 
@@ -140,11 +140,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
+		log.Infof("normalizedPLOP= %+v", val)
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
 		if indicatorID == "" {
-			log.Warnf("Unable to set indicatorID. Plop will not appear in the API. %s", plopToNoSecretsString(val))
+			log.Infof("Unable to set indicatorID. Plop will not appear in the API. %s", plopToNoSecretsString(val))
 			continue
 		}
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
@@ -157,7 +158,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Debugf("Found no matching indicators for %s", plopToNoSecretsString(val))
+			log.Infof("Found no matching indicators for %s", plopToNoSecretsString(val))
 			processInfo = val.GetProcess()
 		}
 
@@ -170,7 +171,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// * No existing PLOP object, create a new one with whatever close
 		//   timestamp we have received and fetched indicator ID.
 		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
-			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
+			log.Infof("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
@@ -191,11 +192,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
+		log.Info("completedInBatch %+v", val)
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
 		if indicatorID == "" {
-			log.Warnf("Unable to set indicatorID. Plop will not appear in the API. %s", plopToNoSecretsString(val))
+			log.Infof("Unable to set indicatorID. Plop will not appear in the API. %s", plopToNoSecretsString(val))
 			continue
 		}
 		plopKey := getPlopKeyFromParts(val.GetProtocol(), val.GetPort(), indicatorID)
@@ -208,12 +210,12 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		// and will not be stored.
 		if _, indicatorExists := indicatorsMap[indicatorID]; !indicatorExists {
 			countMetrics.IncrementOrphanedPLOPCounter(val.GetClusterId())
-			log.Debugf("Found no matching indicators for %s", plopToNoSecretsString(val))
+			log.Infof("Found no matching indicators for %s", plopToNoSecretsString(val))
 			processInfo = val.GetProcess()
 		}
 
 		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
-			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
+			log.Infof("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
 			if existingPLOP.Closed {
@@ -226,11 +228,15 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		if !prevExists {
 			if val.CloseTimestamp == nil {
 				// This events should always be closing by definition
-				log.Warnf("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
+				log.Infof("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
 			}
 
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
+	}
+
+	for _, plop := range plopObjects {
+		log.Infof("plop to be inserted= %+v", plop)
 	}
 
 	// Now save actual PLOP objects
@@ -252,12 +258,12 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 	processesListeningOnPorts, err = ds.storage.GetProcessListeningOnPort(ctx, deploymentID)
 
 	if err != nil {
-		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned err: %+v", deploymentID, err)
+		log.Infof("In GetProcessListeningOnPort. Query for deployment %s returned err: %+v", deploymentID, err)
 		return nil, err
 	}
 
 	if processesListeningOnPorts == nil {
-		log.Debugf("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
+		log.Infof("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
 	}
 
 	return processesListeningOnPorts, nil
@@ -326,7 +332,7 @@ func (ds *datastoreImpl) fetchExistingPLOPs(
 
 		// A bit of paranoia is always good
 		if old, ok := existingPLOPMap[key]; ok {
-			log.Warnf("A PLOP %s is already present, overwrite with %s",
+			log.Infof("A PLOP %s is already present, overwrite with %s",
 				old.GetId(), val.GetId())
 		}
 
@@ -485,7 +491,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
 
 	if value == nil || indicatorID == "" {
-		log.Warnf("Unable to insert plop object. Info from sensor= %s\nindicatorID= %s\nprocessInfo= %s", plopToNoSecretsString(value), indicatorID, processToNoSecretsString(processInfo))
+		log.Infof("Unable to insert plop object. Info from sensor= %s\nindicatorID= %s\nprocessInfo= %s", plopToNoSecretsString(value), indicatorID, processToNoSecretsString(processInfo))
 		return plopObjects
 	}
 
