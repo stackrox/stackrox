@@ -32,7 +32,6 @@ type repository struct {
 	deployments map[string]*storage.Deployment
 
 	unresolvedAlerts             []*storage.ListAlert
-	networkPolicies              map[string]*storage.NetworkPolicy
 	deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy
 	policies                     map[string]*storage.Policy
 	images                       []*storage.ListImage
@@ -65,10 +64,6 @@ func (r *repository) Nodes() map[string]*storage.Node {
 
 func (r *repository) Deployments() map[string]*storage.Deployment {
 	return r.deployments
-}
-
-func (r *repository) NetworkPolicies() map[string]*storage.NetworkPolicy {
-	return r.networkPolicies
 }
 
 func (r *repository) DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy {
@@ -220,7 +215,6 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	if err != nil {
 		return err
 	}
-	r.networkPolicies = networkPoliciesByID(networkPolicies)
 
 	networkTree := f.netTreeMgr.GetNetworkTree(ctx, clusterID)
 	if networkTree == nil {
