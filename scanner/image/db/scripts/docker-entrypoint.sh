@@ -10,7 +10,7 @@ set -Eeo pipefail
 
 ### STACKROX MODIFIED - Fast shutdown to kill and rollback in-flight transactions.
 shutdown() {
-  pg_ctl -D /var/lib/postgresql/data/pgdata stop -m fast
+  pg_ctl -D "$PGDATA" stop -m fast
 }
 trap shutdown SIGINT SIGTERM
 
@@ -361,7 +361,8 @@ _main() {
 	### STACKROX MODIFIED - Start Postgres as a child process and
 	### prevent multiple pods on the same node from using this instance.
 	### Note: this may not be needed with ReadWriteOncePod.
-	flock /var/lib/postgresql/data/pglock "$@" &
+	local ROX_PGLOCK_DIR="$PGDATA/.."
+	flock "$ROX_PGLOCK_DIR/pglock" "$@" &
 	child=$!
 	echo "Waiting for child process $child to exit"
 	wait "$child"

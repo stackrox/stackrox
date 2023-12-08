@@ -135,7 +135,7 @@ scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
-db-image: copy-db-scripts
+db-image:
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
@@ -164,11 +164,6 @@ SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
-
-.PHONY: copy-db-scripts
-copy-db-scripts: ../image/postgres/scripts/init-entrypoint.sh
-	@echo "+ $@"
-	$(SILENT)cp $^ image/db/scripts
 
 ##################
 ## Certificates ##
