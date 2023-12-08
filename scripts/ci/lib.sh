@@ -788,11 +788,13 @@ pr_has_label() {
 
     local expected_label="$1"
     local pr_details
-    local exitstatus=0
-    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
-    if [[ "$exitstatus" != "0" ]]; then
-        info "Warning: checking for a label in a non PR context [${pr_details}/${exitstatus}]"
-        return 1
+    if [[ -n "${2:-}" ]]; then
+        pr_details="$2"
+    else
+        if ! pr_details="$(get_pr_details)"; then
+            info "Warning: could not get PR details to check for label [${pr_details}/$?]"
+            return 1
+        fi
     fi
 
     if is_openshift_CI_rehearse_PR; then
