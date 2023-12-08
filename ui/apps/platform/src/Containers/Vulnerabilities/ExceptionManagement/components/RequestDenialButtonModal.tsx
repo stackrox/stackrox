@@ -21,7 +21,7 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useAffectedImagesCount from 'Containers/Vulnerabilities/ExceptionManagement/hooks/useAffectedImagesCount';
+import useRequestCVEsDetails from 'Containers/Vulnerabilities/ExceptionManagement/hooks/useRequestCVEsDetails';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 
@@ -40,7 +40,8 @@ const validationSchema = yup.object().shape({
 
 function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonModalProps) {
     const denyRequestMutation = useRestMutation(denyVulnerabilityException);
-    const { isAffectedImagesCountLoading, affectedImagesCount } = useAffectedImagesCount(exception);
+    const { isLoading: isRequestCVEsDetailsLoading, totalAffectedImageCount } =
+        useRequestCVEsDetails(exception);
 
     const { isModalOpen, openModal, closeModal } = useModal();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -113,14 +114,14 @@ function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonM
                         <Text>CVE count: {exception.cves.length}</Text>
                         <Text>
                             Affected images:{' '}
-                            {isAffectedImagesCountLoading ? (
+                            {isRequestCVEsDetailsLoading ? (
                                 <Spinner
                                     isSVG
                                     size="md"
                                     aria-label="Loading affected images count"
                                 />
                             ) : (
-                                affectedImagesCount
+                                totalAffectedImageCount
                             )}
                         </Text>
                     </Alert>

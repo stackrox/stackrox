@@ -8,7 +8,7 @@ import {
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useModal from 'hooks/useModal';
 import useRestMutation from 'hooks/useRestMutation';
-import useAffectedImagesCount from '../hooks/useAffectedImagesCount';
+import useRequestCVEsDetails from '../hooks/useRequestCVEsDetails';
 
 type RequestCancelButtonModalProps = {
     exception: VulnerabilityException;
@@ -17,7 +17,8 @@ type RequestCancelButtonModalProps = {
 
 function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonModalProps) {
     const cancelRequestMutation = useRestMutation(cancelVulnerabilityException);
-    const { isAffectedImagesCountLoading, affectedImagesCount } = useAffectedImagesCount(exception);
+    const { isLoading: isRequestCVEsDetailsLoading, totalAffectedImageCount } =
+        useRequestCVEsDetails(exception);
 
     const { isModalOpen, openModal, closeModal } = useModal();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -37,7 +38,7 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
         });
     }
 
-    const isCancelRequestDisabled = isAffectedImagesCountLoading || cancelRequestMutation.isLoading;
+    const isCancelRequestDisabled = isRequestCVEsDetailsLoading || cancelRequestMutation.isLoading;
 
     return (
         <>
@@ -77,14 +78,14 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
                         <Text>CVE count: {exception.cves.length}</Text>
                         <Text>
                             Affected images:{' '}
-                            {isAffectedImagesCountLoading ? (
+                            {isRequestCVEsDetailsLoading ? (
                                 <Spinner
                                     isSVG
                                     size="md"
                                     aria-label="Loading affected images count"
                                 />
                             ) : (
-                                affectedImagesCount
+                                totalAffectedImageCount
                             )}
                         </Text>
                     </Alert>
