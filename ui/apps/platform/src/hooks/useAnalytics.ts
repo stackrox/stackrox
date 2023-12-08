@@ -36,4 +36,9 @@ const useAnalytics = () => {
     return { analyticsPageVisit, analyticsTrack };
 };
 
+export function thisIsAnUnusedFunctionToTestCodeCoverage() {
+    const notCovered = 'this is not covered';
+    return notCovered + 'this is a string';
+}
+
 export default useAnalytics;
