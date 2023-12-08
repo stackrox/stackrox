@@ -3,10 +3,12 @@ package check
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -214,9 +216,11 @@ type mockDetectionServiceServer struct {
 
 	alerts         []*storage.Alert
 	ignoredObjRefs []string
+	request        *v1.DeployYAMLDetectionRequest
 }
 
-func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context, _ *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
+func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context, request *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
+	m.request = request
 	return &v1.DeployDetectionResponse{
 		Runs: []*v1.DeployDetectionResponse_Run{
 			{
@@ -239,13 +243,14 @@ type deployCheckTestSuite struct {
 
 func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.Alert,
 	ignoredObjRefs []string,
-) (*grpc.ClientConn, func()) {
+) (*grpc.ClientConn, func(), *mockDetectionServiceServer) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
+	mockDetectionServiceServer1 := mockDetectionServiceServer{alerts: alerts, ignoredObjRefs: ignoredObjRefs}
 	server := grpc.NewServer()
 	v1.RegisterDetectionServiceServer(server,
-		&mockDetectionServiceServer{alerts: alerts, ignoredObjRefs: ignoredObjRefs})
+		&mockDetectionServiceServer1)
 
 	go func() {
 		utils.IgnoreError(func() error { return server.Serve(listener) })
@@ -261,7 +266,7 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 		server.Stop()
 	}
 
-	return conn, closeFunction
+	return conn, closeFunction, &mockDetectionServiceServer1
 }
 
 func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
@@ -276,6 +281,33 @@ func (d *deployCheckTestSuite) SetupTest() {
 		timeout:            1 * time.Minute,
 		printAllViolations: true,
 	}
+}
+
+func (d *deployCheckTestSuite) TestMultipleFiles() {
+	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
+		files:              []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"},
+		retryDelay:         3,
+		retryCount:         3,
+		timeout:            1 * time.Minute,
+		printAllViolations: true,
+	}
+
+	conn, closeF, server := d.createGRPCMockDetectionService(testDeploymentAlertsWithoutFailure, []string{""})
+	defer closeF()
+	deployCheckCmd := d.defaultDeploymentCheckCommand
+	deployCheckCmd.env, _, _ = d.createMockEnvironmentWithConn(conn)
+
+	tablePrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression).CreatePrinter("table")
+	d.Assert().NoError(err)
+	deployCheckCmd.printer = tablePrinter
+	err = deployCheckCmd.Check()
+	d.Assert().NoError(err)
+	var expectedBinary []byte
+	expectedBinary, err = os.ReadFile("testdata/testMultipleFilesExpectedYaml.yaml")
+	d.Assert().NoError(err)
+	expectedString := fmt.Sprintf("yaml:%s ", strconv.Quote(string(expectedBinary)))
+	d.Assert().Equal(expectedString, server.request.String())
 }
 
 func (d *deployCheckTestSuite) TestConstruct() {
@@ -500,7 +532,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 	for name, c := range cases {
 		d.Run(name, func() {
 			var out *bytes.Buffer
-			conn, closeFunction := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
+			conn, closeFunction, _ := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
 			defer closeFunction()
 
 			deployCheckCmd := d.defaultDeploymentCheckCommand
@@ -567,7 +599,7 @@ func (d *deployCheckTestSuite) assertError(deployCheckCmd deploymentCheckCommand
 func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter,
 	standardizedFormat bool,
 ) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
-	conn, closeF := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
+	conn, closeF, _ := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
 
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.printer = printer

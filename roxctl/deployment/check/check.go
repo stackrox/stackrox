@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -212,7 +212,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 				return errors.Wrapf(err, "could not read deployment file: %q", file)
 			}
 			if len(deploymentFileContents) > 0 {
-				deploymentFileContents = append(deploymentFileContents, "---\n"...)
+				deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
 			}
 			deploymentFileContents = append(deploymentFileContents, fileContents...)
 		}
@@ -251,17 +251,13 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		alerts = append(alerts, r.GetAlerts()...)
 	}
 
-	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
-	// get a  Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
-	// between different generated deployments.
-	for _, alert := range alerts {
+	for i, alert := range alerts {
 		switch entity := alert.Entity.(type) {
 		case *storage.Alert_Deployment_:
-			if entity.Deployment.GetId() == "" {
-				entity.Deployment.Id = uuid.NewV4().String()
-			}
+			fmt.Printf("Alert %d has ID: %s\n", i, entity.Deployment.GetId())
 		}
 	}
+
 	return alerts, response.GetIgnoredObjectRefs(), nil
 }
 
