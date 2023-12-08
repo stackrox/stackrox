@@ -83,6 +83,7 @@ determine_an_overall_job_outcome() {
     esac
 
     export OVERALL_JOB_OUTCOME="${outcome}"
+    info "Overall job outcome: ${outcome}"
 }
 
 _JUNIT_CLUSTER_CLASS="CLuster"
