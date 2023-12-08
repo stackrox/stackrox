@@ -1148,11 +1148,13 @@ post_process_test_results() {
     local calculated_base_link
     local create_jiras
     local jira_project="ROX"
-    local build_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
+    local prow_job_link
 
     set +u
     {
         info "Post processing junit records to JIRA issues, BigQuery metrics and Slack attachments as appropriate"
+
+        make_prow_job_link
 
         if is_in_PR_context; then
             if pr_has_label "ci-test-junit-processing"; then
@@ -1161,19 +1163,17 @@ post_process_test_results() {
                 create_jiras="false"
             fi
             jira_project="RS"
-            build_link+="pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}/"
         else
             if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
                 create_jiras="false"
             else
                 create_jiras="true"
             fi
-            build_link+="logs/"
         fi
-        build_link+="$JOB_NAME/$BUILD_ID"
 
         if [[ "${create_jiras}" == "false" ]]; then
             extra_args=(--dry-run)
+            info "Will use junit2jira to create CSV for BigQuery input"
         else
             info "Will create JIRA issues for junit failures found in ${ARTIFACT_DIR}"
         fi
@@ -1181,7 +1181,6 @@ post_process_test_results() {
         csv_output="$(mktemp --suffix=.csv)"
         # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
         # we will fallback to short commit
-        # TODO: Extract a function to obtain repo and org and use it here.
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.0.2/junit2jira -o junit2jira && \
@@ -1189,7 +1188,7 @@ post_process_test_results() {
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
             -build-id "${BUILD_ID}" \
-            -build-link "${build_link}" \
+            -build-link "${prow_job_link}" \
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
             -jira-project "${jira_project}" \
@@ -1208,6 +1207,17 @@ post_process_test_results() {
             ci_metrics.stackrox_tests "${csv_output}"
     } || true
     set -u
+}
+
+make_prow_job_link() {
+    prow_job_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
+
+    if is_in_PR_context; then
+        prow_job_link+="pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}/"
+    else
+        prow_job_link+="logs/"
+    fi
+    prow_job_link+="$JOB_NAME/$BUILD_ID"
 }
 
 # There are currently two openshift-ci steps where junit failures are summarized for slack.
@@ -1230,6 +1240,11 @@ send_slack_failure_summary() {
         return 0
     fi
 
+    _slack_check_env "BUILD_ID"
+    _slack_check_env "JOB_NAME"
+    local prow_job_link
+    make_prow_job_link
+
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
     _slack_check_env "PULL_BASE_SHA"
@@ -1247,7 +1262,6 @@ send_slack_failure_summary() {
         fi
     fi
 
-    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
     local org repo
 
     if [[ -n "${JOB_SPEC:-}" ]]; then
@@ -1266,9 +1280,6 @@ send_slack_failure_summary() {
         return 1
     fi
 
-    _slack_check_env "JOB_NAME_SAFE"
-    _slack_check_env "BUILD_ID"
-
     local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${commit_sha}"
     local exitstatus=0
     local commit_details
@@ -1278,6 +1289,7 @@ send_slack_failure_summary() {
         return 1
     fi
 
+    _slack_check_env "JOB_NAME_SAFE"
     local job_name="${JOB_NAME_SAFE#merge-}"
 
     local commit_msg
@@ -1316,7 +1328,7 @@ send_slack_failure_summary() {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Log:* \($log_url)"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Log:* \($prow_job_link)"
             }
         },
         {
@@ -1343,7 +1355,7 @@ send_slack_failure_summary() {
       --arg repo "$repo" \
       --arg author_name "$author_name" \
       --arg slack_mention "$slack_mention" \
-      --arg log_url "$log_url" \
+      --arg prow_job_link "$prow_job_link" \
       --argjson slack_attachments "$slack_attachments" \
       "$body")"
     echo -e "About to post:\n$payload"
@@ -1411,7 +1423,7 @@ _make_slack_failure_block() {
 _send_slack_error() {
     echo "ERROR: $1"
     curl -XPOST -d @- -H 'Content-Type: application/json' "${webhook_url}" << __EOM__
-{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
+{ "text": "*An error occurred dealing with a job failure:*\n\t- Job: ${prow_job_link}.\n\t- $1." }
 __EOM__
 }
 
