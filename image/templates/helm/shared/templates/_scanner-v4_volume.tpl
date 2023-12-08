@@ -40,7 +40,6 @@
     {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $._rox.scannerV4DBPVCDefaults (dict "createClaim" .Release.IsInstall)) }}
   {{ end }}
   {{ $_ = set $scannerV4DBVolumeCfg "persistentVolumeClaim" (dict "claimName" $scannerV4DBPVCCfg.claimName) }}
-
   {{ if $scannerV4DBPVCCfg.createClaim }}
     {{ $_ = set $scannerV4DBCfg.persistence "_pvcCfg" $scannerV4DBPVCCfg }}
   {{ end }}
