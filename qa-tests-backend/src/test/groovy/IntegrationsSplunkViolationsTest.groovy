@@ -138,7 +138,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasNetworkViolation |= isNetworkViolation(result)
                         hasProcessViolation |= isProcessViolation(result)
                     }
-                    log.info "Found violations in Splunk: \n${results}" // TODO: Remove debug log
+                    // TODO: Remove debug log
+                    log.info "Found violations in Splunk: \n${results}"
+                    log.info "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
+                    // TODO: /Remove debug log
                     if (hasNetworkViolation && hasProcessViolation) {
                         log.info "Success!"
                         break
