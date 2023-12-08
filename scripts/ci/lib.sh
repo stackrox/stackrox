@@ -1243,23 +1243,6 @@ send_slack_failure_summary() {
 
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
 
-    function slack_error() {
-        echo "ERROR: $1"
-        curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
-{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
-__EOM__
-    }
-
-    function check_env() {
-        (
-            set +u
-            if [[ -z "$(eval echo "\$$1")" ]]; then
-                slack_error "An expected environment variable is unset/empty: $1"
-                return 1
-            fi
-        )
-    }
-
     if [[ -n "${JOB_SPEC:-}" ]]; then
         org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
         repo=$(jq -r <<<"$JOB_SPEC" '.refs.repo')
@@ -1267,26 +1250,26 @@ __EOM__
         org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
         repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
     else
-        slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        _send_slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
         return 1
     fi
 
     if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
-        slack_error "Could not determine org and/or repo"
+        _send_slack_error "Could not determine org and/or repo"
         return 1
     fi
 
-    check_env "PULL_BASE_SHA"
-    check_env "JOB_NAME_SAFE"
-    check_env "JOB_NAME"
-    check_env "BUILD_ID"
+    _slack_check_env "PULL_BASE_SHA"
+    _slack_check_env "JOB_NAME_SAFE"
+    _slack_check_env "JOB_NAME"
+    _slack_check_env "BUILD_ID"
 
     local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${PULL_BASE_SHA}"
     local exitstatus=0
     local commit_details
     commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        slack_error "Cannot get commit details: ${commit_details}"
+        _send_slack_error "Cannot get commit details: ${commit_details}"
         return 1
     fi
 
@@ -1302,62 +1285,15 @@ __EOM__
     local author_login
     author_login=$(jq -r <<<"$commit_details" '.author.login') || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        slack_error "Error parsing the commit details: ${commit_details}"
+        _send_slack_error "Error parsing the commit details: ${commit_details}"
         return 1
     fi
 
     local slack_mention=""
-    if [[ "${author_login}" != "dependabot[bot]" ]]; then
-        slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
-        if [[ -n "$slack_mention" ]]; then
-            slack_mention=", <@${slack_mention}>"
-        else
-            slack_mention=", _unable to resolve Slack user for GitHub login ${author_login}_"
-        fi
-    fi
-
-    info "Converting junit failures to slack attachments"
+    _make_slack_mention
 
     local slack_attachments=""
-
-    function _make_error_attachment() {
-        echo '
-[
-  {
-    "color": "#bb2124",
-    "blocks": [
-      {
-        "type": "section",
-        "text": {
-          "type": "plain_text",
-          "text": "'"$1"'"
-        }
-      }
-    ]
-  }
-]
-'
-    }
-
-    if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_error_attachment "Could not parse junit in main test step. Check build logs for more information.")"
-    else
-        slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
-    fi
-    if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_error_attachment "Could not parse junit in final test step. Check build logs for more information.")"
-    else
-        slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
-    fi
-
-    slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
-
-    if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
-        msg='No junit records were found for this failure. Check build logs \
-and artifacts for more information. Consider adding an \
-issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label).'
-        slack_attachments+="$(_make_error_attachment "${msg}")"
-    fi
+    _make_slack_failure_attachments
 
     # shellcheck disable=SC2016
     local body='
@@ -1408,9 +1344,80 @@ issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)
     echo -e "About to post:\n$payload"
 
     echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url" || {
-        slack_error "Error posting to Slack"
+        _send_slack_error "Error posting to Slack"
         return 1
     }
+}
+
+_make_slack_mention() {
+    if [[ "${author_login}" != "dependabot[bot]" ]]; then
+        slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
+        if [[ -n "$slack_mention" ]]; then
+            slack_mention=", <@${slack_mention}>"
+        else
+            slack_mention=", _unable to resolve Slack user for GitHub login ${author_login}_"
+        fi
+    fi
+}
+
+_make_slack_failure_attachments() {
+    info "Converting junit failures to slack attachments"
+
+    if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        slack_attachments+="$(_make_error_attachment "Could not parse junit in main test step. Check build logs for more information.")"
+    else
+        slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+    if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        slack_attachments+="$(_make_error_attachment "Could not parse junit in final test step. Check build logs for more information.")"
+    else
+        slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+
+    slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
+
+    if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
+        msg='No junit records were found for this failure. Check build logs \
+and artifacts for more information. Consider adding an \
+issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label).'
+        slack_attachments+="$(_make_error_attachment "${msg}")"
+    fi
+}
+
+_make_slack_error_attachment() {
+    echo '
+[
+  {
+    "color": "#bb2124",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "'"$1"'"
+        }
+      }
+    ]
+  }
+]
+'
+    }
+
+_send_slack_error() {
+    echo "ERROR: $1"
+    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
+{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
+__EOM__
+}
+
+_slack_check_env() {
+    (
+        set +u
+        if [[ -z "$(eval echo "\$$1")" ]]; then
+            _send_slack_error "An expected environment variable is unset/empty: $1"
+            return 1
+        fi
+    )
 }
 
 junit_wrap() {
