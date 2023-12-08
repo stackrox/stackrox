@@ -58,12 +58,21 @@ run_ui_e2e_tests() {
     make -C ui test-e2e || touch FAIL
 
     store_test_results "ui/test-results/reports" "reports"
+    collect_coverage
 
     if is_OPENSHIFT_CI; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
     fi
 
     [[ ! -f FAIL ]] || die "UI e2e tests failed"
+}
+
+collect_coverage() {
+    {
+        curl -Os https://uploader.codecov.io/latest/linux/codecov
+        chmod +x codecov
+        ./codecov --flags "ui-e2e-tests"
+    } || echo "Uploading coverage failed!"
 }
 
 test_ui_e2e

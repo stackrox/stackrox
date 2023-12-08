@@ -49,7 +49,11 @@ endif
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
+ifdef CI
+	yarn test-e2e:coverage
+else
 	yarn test-e2e
+endif
 
 .PHONY: clean
 clean:
