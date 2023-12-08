@@ -311,13 +311,7 @@ func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-	dbErr := RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
-	if dbErr != nil {
-		s.resetCache(ctx)
-		return dbErr
-	}
-	s.removeFromCache(id)
-	return nil
+	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
