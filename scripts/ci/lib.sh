@@ -1242,6 +1242,7 @@ send_slack_failure_summary() {
     fi
 
     local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
+    local org repo
 
     if [[ -n "${JOB_SPEC:-}" ]]; then
         org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
@@ -1364,12 +1365,12 @@ _make_slack_failure_attachments() {
     info "Converting junit failures to slack attachments"
 
     if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_error_attachment "Could not parse junit in main test step. Check build logs for more information.")"
+        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
     else
         slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
     fi
     if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_error_attachment "Could not parse junit in final test step. Check build logs for more information.")"
+        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in final test step. Check build logs for more information.")"
     else
         slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
     fi
@@ -1380,11 +1381,11 @@ _make_slack_failure_attachments() {
         msg='No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
 issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label).'
-        slack_attachments+="$(_make_error_attachment "${msg}")"
+        slack_attachments+="$(_make_slack_failure_block "${msg}")"
     fi
 }
 
-_make_slack_error_attachment() {
+_make_slack_failure_block() {
     echo '
 [
   {
@@ -1401,11 +1402,11 @@ _make_slack_error_attachment() {
   }
 ]
 '
-    }
+}
 
 _send_slack_error() {
     echo "ERROR: $1"
-    curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
+    curl -XPOST -d @- -H 'Content-Type: application/json' "${webhook_url}" << __EOM__
 { "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
 __EOM__
 }
