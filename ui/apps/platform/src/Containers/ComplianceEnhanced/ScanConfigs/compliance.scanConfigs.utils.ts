@@ -15,8 +15,8 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
 
     // Convert the time to hour and minute
     const [hourString, minuteString] = time.split(/[: ]+/);
-    let hour = parseInt(hourString);
-    const minute = parseInt(minuteString);
+    let hour = parseInt(hourString, 10);
+    const minute = parseInt(minuteString, 10);
 
     // Convert 12-hour format to 24-hour format
     if (time.includes('PM') && hour < 12) {

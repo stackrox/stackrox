@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
 import {
+    Alert,
     Divider,
     Flex,
     FlexItem,
@@ -26,9 +27,10 @@ import {
 export type ProfileSelectionProps = {
     clusters: ClusterScopeObject[];
     profiles: ComplianceProfile[];
+    errorMessage: string;
 };
 
-function ReviewConfig({ clusters, profiles }: ProfileSelectionProps) {
+function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProps) {
     const { values: formikValues }: FormikContextType<ScanConfigFormValues> = useFormikContext();
 
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
@@ -51,6 +53,15 @@ function ReviewConfig({ clusters, profiles }: ProfileSelectionProps) {
                         <Title headingLevel="h2">Review</Title>
                     </FlexItem>
                     <FlexItem>Review and create your scan configuration</FlexItem>
+                    {errorMessage && (
+                        <Alert
+                            title={'Scan configuration request failure'}
+                            variant="danger"
+                            isInline
+                        >
+                            {errorMessage}
+                        </Alert>
+                    )}
                 </Flex>
             </PageSection>
             <Divider component="div" />

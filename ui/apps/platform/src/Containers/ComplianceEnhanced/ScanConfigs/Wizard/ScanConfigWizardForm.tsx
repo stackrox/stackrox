@@ -8,6 +8,7 @@ import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions
 import useRestQuery from 'hooks/useRestQuery';
 import { createScanConfig, listComplianceProfiles } from 'services/ComplianceEnhancedService';
 
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';
@@ -32,17 +33,24 @@ function ScanConfigPage(): ReactElement {
         'Compliance',
     ]);
     const [isCreating, setIsCreating] = useState(false);
+    const [createScanConfigError, setCreateScanConfigError] = useState('');
 
     const listQuery = useCallback(() => listComplianceProfiles(), []);
     const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listQuery);
 
     async function onCreate() {
         setIsCreating(true);
+        setCreateScanConfigError('');
         const complianceScanConfig = convertFormikToScanConfig(formik.values);
 
-        await createScanConfig(complianceScanConfig);
-        setIsCreating(false);
-        history.push(complianceEnhancedScanConfigsBasePath);
+        try {
+            await createScanConfig(complianceScanConfig);
+            history.push(complianceEnhancedScanConfigsBasePath);
+        } catch (error) {
+            setCreateScanConfigError(getAxiosErrorMessage(error));
+        } finally {
+            setIsCreating(false);
+        }
     }
 
     function onClose(): void {
@@ -94,7 +102,13 @@ function ScanConfigPage(): ReactElement {
         {
             name: REVIEW_CONFIG,
             id: REVIEW_CONFIG_ID,
-            component: <ReviewConfig clusters={clusters} profiles={profiles || []} />,
+            component: (
+                <ReviewConfig
+                    clusters={clusters}
+                    profiles={profiles || []}
+                    errorMessage={createScanConfigError}
+                />
+            ),
             canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
         },
     ];

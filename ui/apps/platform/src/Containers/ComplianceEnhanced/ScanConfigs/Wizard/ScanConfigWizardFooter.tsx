@@ -37,7 +37,13 @@ function ScanConfigWizardFooter({
                         Next
                     </Button>
                 ) : (
-                    <Button variant="primary" type="submit" onClick={onSave} isLoading={isSaving}>
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        isDisabled={isSaving}
+                        onClick={onSave}
+                        isLoading={isSaving}
+                    >
                         Create
                     </Button>
                 )}
