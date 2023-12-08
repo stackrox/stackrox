@@ -24,7 +24,7 @@ func TestAuthz(t *testing.T) {
 	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }
 
-func TestComplianceScanConfigService(t *testing.T) {
+func TestComplianceResultsService(t *testing.T) {
 	suite.Run(t, new(ComplianceResultsServiceTestSuite))
 }
 

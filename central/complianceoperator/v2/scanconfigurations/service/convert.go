@@ -8,7 +8,6 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 /*
@@ -36,21 +35,19 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 		return nil, nil
 	}
 
-	var clusters []string
 	scanClusters, err := configDS.GetScanConfigClusterStatus(ctx, scanConfig.GetId())
 	if err != nil {
 		return nil, err
 	}
 
+	clusters := make([]string, 0, len(scanClusters))
 	for _, cluster := range scanClusters {
 		clusters = append(clusters, cluster.GetClusterId())
 	}
 
-	// TODO(ROX-18102):  See if we want to lookup profile name by id instead of storing it
-	var profiles []string
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
-		profiles = append(profiles, profile.GetProfileName())
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
+	for _, profile := range scanConfig.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileId())
 	}
 
 	return &v2.ComplianceScanConfiguration{
@@ -69,13 +66,10 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		return nil
 	}
 
-	var profiles []*storage.ProfileShim
+	profiles := make([]*storage.ProfileShim, 0, len(scanConfig.GetScanConfig().GetProfiles()))
 	for _, profile := range scanConfig.GetScanConfig().GetProfiles() {
 		profiles = append(profiles, &storage.ProfileShim{
-			// TODO(ROX-18102):  look up the profile.  Doing this now to use a single profile to demonstrate
-			// flow.
-			ProfileId:   uuid.NewV5FromNonUUIDs("", profile).String(),
-			ProfileName: profile,
+			ProfileId: profile,
 		})
 	}
 
@@ -155,11 +149,9 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		return nil, err
 	}
 
-	// TODO(ROX-18102):  Lookup profiles
-	var profiles []string
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
-		profiles = append(profiles, profile.GetProfileName())
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
+	for _, profile := range scanConfig.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileId())
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{

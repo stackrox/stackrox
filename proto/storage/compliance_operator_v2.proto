@@ -36,8 +36,6 @@ enum RuleSeverity {
 
 message ProfileShim {
     string profile_id      = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
-    string profile_name    = 2;
-    string profile_version = 3;
 }
 
 // Next Tag: 13

@@ -3,6 +3,7 @@ package testutils
 import (
 	"testing"
 
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -48,6 +49,18 @@ var (
 		},
 		{
 			RuleName: "rule-3",
+		},
+	}
+
+	v2ApiRules = []*v2.ComplianceRule{
+		{
+			Name: "rule-1",
+		},
+		{
+			Name: "rule-2",
+		},
+		{
+			Name: "rule-3",
 		},
 	}
 )
@@ -98,5 +111,87 @@ func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 		Standard:       "",
 		Product:        "",
 		Values:         values,
+	}
+}
+
+// GetProfilesV2Storage -- returns a V2 storage object
+func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
+	return []*storage.ComplianceOperatorProfileV2{
+		{
+			Id:             "ocp-cis-4.2",
+			ProfileId:      profileID,
+			Name:           "ocp-cis",
+			ProfileVersion: "4.2",
+			Description:    "this is a test",
+			Labels:         nil,
+			Annotations:    nil,
+			Rules:          v2StorageRules,
+			Title:          "Openshift CIS testing",
+			ProductType:    "",
+			Standard:       "",
+			Product:        "",
+			Values:         values,
+		},
+		{
+			Id:             "rhcos-moderate-4.1.2",
+			ProfileId:      profileID,
+			Name:           "rhcos-moderate",
+			ProfileVersion: "4.1.2",
+			Description:    "this is a test",
+			Labels:         nil,
+			Annotations:    nil,
+			Rules:          v2StorageRules,
+			Title:          "Openshift CIS testing",
+			ProductType:    "",
+			Standard:       "",
+			Product:        "",
+			Values:         values,
+		},
+	}
+}
+
+// GetProfileV2Api returns a V2 API profile that matches GetProfileV2Storage
+func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
+	return &v2.ComplianceProfile{
+		Id:             "ocp-cis-4.2",
+		Name:           "ocp-cis",
+		ProfileVersion: "4.2",
+		Description:    "this is a test",
+		Rules:          v2ApiRules,
+		Title:          "Openshift CIS testing",
+		ProductType:    "",
+		Standard:       "",
+		Product:        "",
+		Values:         values,
+	}
+}
+
+// GetProfilesV2Api returns a list of v2 APIs that match GetProfilesV2Storage
+func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
+	return []*v2.ComplianceProfile{
+		{
+			Id:             "ocp-cis-4.2",
+			Name:           "ocp-cis",
+			ProfileVersion: "4.2",
+			Description:    "this is a test",
+			Rules:          v2ApiRules,
+			Title:          "Openshift CIS testing",
+			ProductType:    "",
+			Standard:       "",
+			Product:        "",
+			Values:         values,
+		},
+		{
+			Id:             "rhcos-moderate-4.1.2",
+			Name:           "rhcos-moderate",
+			ProfileVersion: "4.1.2",
+			Description:    "this is a test",
+			Rules:          v2ApiRules,
+			Title:          "Openshift CIS testing",
+			ProductType:    "",
+			Standard:       "",
+			Product:        "",
+			Values:         values,
+		},
 	}
 }
