@@ -791,7 +791,7 @@ pr_has_label() {
     local exitstatus=0
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        info "Warning: checking for a label in a non PR context"
+        info "Warning: checking for a label in a non PR context [${pr_details}/${exitstatus}]"
         return 1
     fi
 
@@ -1232,11 +1232,15 @@ send_slack_failure_summary() {
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
+    _slack_check_env "PULL_BASE_SHA"
+    local commit_sha="${PULL_BASE_SHA}"
+
     if is_in_PR_context; then
         if pr_has_label "ci-test-junit-processing"; then
             # Send to #acs-slack-ci-integration-testing when testing the
             # JUNIT -> Jira, BigQuery, Slack pipeline.
             webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+            commit_sha="${PULL_PULL_SHA}"
         else
             info "Skipping slack message for PRs"
             return 0
@@ -1262,12 +1266,10 @@ send_slack_failure_summary() {
         return 1
     fi
 
-    _slack_check_env "PULL_BASE_SHA"
     _slack_check_env "JOB_NAME_SAFE"
-    _slack_check_env "JOB_NAME"
     _slack_check_env "BUILD_ID"
 
-    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${PULL_BASE_SHA}"
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${commit_sha}"
     local exitstatus=0
     local commit_details
     commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
