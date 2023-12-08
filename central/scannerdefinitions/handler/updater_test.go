@@ -64,7 +64,7 @@ func mustSetModTime(t *testing.T, path string, modTime time.Time) {
 
 func TestMappingUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.zip")
-	u := newMappingUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())

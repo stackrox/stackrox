@@ -122,7 +122,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	fileType := r.URL.Query().Get("type")
 	if fileType != "" {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
-			h.getMappingFileHelper(w, r, v4FileName)
+			h.getMappingFile(w, r, v4FileName)
 			return
 		}
 	}
@@ -185,7 +185,7 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 // identified by the given uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
 func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
-	return h.getUpdaterHelper(uuid)
+	return h.getUpdaterInternal(uuid)
 }
 
 // getV4Updater gets or creates the updater for RH repository mapping data
@@ -193,7 +193,7 @@ func (h *httpHandler) getV4Updater(key string) *requestedUpdater {
 	if key != mappingUpdaterKey {
 		return nil
 	}
-	return h.getUpdaterHelper(key)
+	return h.getUpdaterInternal(key)
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -456,44 +456,32 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getUpdaterHelper(key string) *requestedUpdater {
+func (h *httpHandler) getUpdaterInternal(key string) *requestedUpdater {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	u, exists := h.updaters[key]
+	updater, exists := h.updaters[key]
 	if !exists {
 		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
+		var url string
 
 		if key == mappingUpdaterKey {
-			url := strings.Join([]string{v4StorageDomain, mappingFile}, "/")
-			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newMappingUpdater(
-					file.New(filePath),
-					client,
-					url,
-					h.interval,
-				),
-			}
+			url = strings.Join([]string{v4StorageDomain, mappingFile}, "/")
 		} else {
-			url := strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
-			h.updaters[key] = &requestedUpdater{
-				RequestedUpdater: newUpdater(
-					file.New(filePath),
-					client,
-					url,
-					h.interval,
-				),
-			}
+			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
 		}
 
-		u = h.updaters[key]
+		h.updaters[key] = &requestedUpdater{
+			RequestedUpdater: newUpdater(file.New(filePath), client, url, h.interval),
+		}
+		updater = h.updaters[key]
 	}
 
-	u.lastRequestedTime = time.Now()
-	return u
+	updater.lastRequestedTime = time.Now()
+	return updater
 }
 
-func (h *httpHandler) getMappingFileHelper(w http.ResponseWriter, r *http.Request, fileName string) {
+func (h *httpHandler) getMappingFile(w http.ResponseWriter, r *http.Request, fileName string) {
 	file, err := h.openMostRecentMappings(fileName)
 	if err != nil {
 		log.Errorf("Failed to find JSON file: %v", err)

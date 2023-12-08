@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -17,7 +18,10 @@ const (
 	ifModifiedSinceHeader = "If-Modified-Since"
 )
 
-var _ RequestedUpdater = (*updater)(nil)
+var (
+	_       RequestedUpdater = (*updater)(nil)
+	randGen                  = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
 
 // updater periodically updates a file by downloading the contents from the downloadURL.
 type updater struct {
@@ -61,13 +65,14 @@ func (u *updater) OpenFile() (*os.File, time.Time, error) {
 }
 
 func (u *updater) runForever() {
-	t := time.NewTicker(u.interval)
-	defer t.Stop()
+	timer := time.NewTimer(u.interval)
+	defer timer.Stop()
 
 	for {
 		select {
-		case <-t.C:
+		case <-timer.C:
 			u.update()
+			timer.Reset(u.interval + nextInterval())
 		case <-u.stopSig.Done():
 			return
 		}
@@ -115,4 +120,10 @@ func (u *updater) doUpdate() error {
 	}
 
 	return u.file.Write(resp.Body, lastModified)
+}
+
+func nextInterval() time.Duration {
+	addMinutes := []int{10, 20, 30, 40}
+	randomMinutes := addMinutes[randGen.Intn(len(addMinutes))] // pick a random number from addMinutes
+	return time.Duration(randomMinutes) * time.Minute
 }
