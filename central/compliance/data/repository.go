@@ -162,14 +162,6 @@ func deploymentsByID(deployments []*storage.Deployment) map[string]*storage.Depl
 	return result
 }
 
-func networkPoliciesByID(policies []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	result := make(map[string]*storage.NetworkPolicy, len(policies))
-	for _, policy := range policies {
-		result[policy.GetId()] = policy
-	}
-	return result
-}
-
 func policiesByName(policies []*storage.Policy) map[string]*storage.Policy {
 	result := make(map[string]*storage.Policy, len(policies))
 	for _, policy := range policies {

@@ -296,11 +296,3 @@ func (s *suiteImpl) nodes() []*storage.Node {
 		},
 	}
 }
-
-func toMap(in []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	merp := make(map[string]*storage.NetworkPolicy, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
-}
