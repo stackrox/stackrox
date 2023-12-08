@@ -1357,20 +1357,27 @@ send_slack_failure_summary() {
 '
 
     local payload
-    payload="$(jq --null-input \
-      --arg job_name "$job_name" \
-      --arg commit_url "$commit_url" \
-      --arg commit_msg "$commit_msg" \
-      --arg repo "$repo" \
-      --arg author_name "$author_name" \
-      --arg slack_mention "$slack_mention" \
-      --arg prow_job_link "$prow_job_link" \
-      --argjson slack_attachments "$slack_attachments" \
-      "$body")"
+    if ! payload="$(jq --null-input \
+                       --arg job_name "$job_name" \
+                       --arg commit_url "$commit_url" \
+                       --arg commit_msg "$commit_msg" \
+                       --arg repo "$repo" \
+                       --arg author_name "$author_name" \
+                       --arg slack_mention "$slack_mention" \
+                       --arg prow_job_link "$prow_job_link" \
+                       --argjson slack_attachments "$slack_attachments" \
+                       "$body")"; then
+        _send_slack_error "Error formatting slack message: [${slack_attachments}/${payload}/$?]"
+        return 1
+    fi
+
     echo -e "About to post:\n$payload"
 
     local post_output
-    if ! post_output="$(echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url")"; then
+    if ! post_output="$(echo "$payload" | \
+                        curl --location --silent --show-error --fail \
+                             --data @- --header 'Content-Type: application/json' \
+                             "$webhook_url")"; then
         _send_slack_error "Error posting to Slack: [${post_output}/$?]"
         return 1
     fi
@@ -1390,6 +1397,7 @@ _make_slack_mention() {
 _make_slack_failure_attachments() {
     info "Converting junit failures to slack attachments"
 
+    slack_attachments=""
     if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
         slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
     else
@@ -1400,6 +1408,8 @@ _make_slack_failure_attachments() {
     else
         slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
     fi
+
+    echo -e "Slack attachments pre formatting:\n${slack_attachments}"
 
     slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
 
