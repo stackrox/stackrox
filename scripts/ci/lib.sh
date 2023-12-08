@@ -1356,6 +1356,7 @@ send_slack_failure_summary() {
 }
 '
 
+    local payload
     payload="$(jq --null-input \
       --arg job_name "$job_name" \
       --arg commit_url "$commit_url" \
@@ -1368,10 +1369,11 @@ send_slack_failure_summary() {
       "$body")"
     echo -e "About to post:\n$payload"
 
-    echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url" || {
-        _send_slack_error "Error posting to Slack"
+    local post_output
+    if ! post_output="$(echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url")"; then
+        _send_slack_error "Error posting to Slack: [${post_output}/$?]"
         return 1
-    }
+    fi
 }
 
 _make_slack_mention() {
