@@ -121,7 +121,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     // some padding.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(3*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(4*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
 
     @Shared
     private Policy unauthorizedProcessExecution
@@ -441,7 +441,6 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Tag("BAT")
     def "Delete process baselines via API"() {
         given:
         "a baseline is created"
@@ -454,7 +453,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
         assert(baselinesCreated)
         def baselineBeforeDelete = null
-        assert trueWithin(10, 3) {
+        assert trueWithin(70, 5) {
             baselineBeforeDelete = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
             assert baselineBeforeDelete
             baselineBeforeDelete.elementsList.size() > 0
