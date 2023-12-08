@@ -40,12 +40,36 @@ run_scannerV4_test() {
 }
 
 deploy_older_central_without_scanner() {
-    helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
-    helm repo update
-    helm install -n stackrox stackrox-central-services stackrox/stackrox-central-services \
-        --create-namespace \
-        --version 400.3.0 \
-        --set central.persistence.none=true
+    export EARLIER_TAG="4.3.0-0-g23e64bf342"
+    local host_os
+    if is_darwin; then
+        host_os="darwin"
+    elif is_linux; then
+        host_os="linux"
+    else
+        die "Only linux or darwin are supported for this test"
+    fi
+
+    case "$(uname -m)" in
+        x86_64) TEST_HOST_PLATFORM="${host_os}_amd64" ;;
+        aarch64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
+        arm64) TEST_HOST_PLATFORM="${host_os}_arm64" ;;
+        ppc64le) TEST_HOST_PLATFORM="${host_os}_ppc64le" ;;
+        s390x) TEST_HOST_PLATFORM="${host_os}_s390x" ;;
+        *) die "Unknown architecture" ;;
+    esac
+
+    gsutil cp "gs://stackrox-ci/roxctl-$EARLIER_TAG" "bin/$TEST_HOST_PLATFORM/roxctl"
+
+    chmod +x "bin/$TEST_HOST_PLATFORM/roxctl"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
+
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" \
+    MAIN_IMAGE_TAG="$EARLIER_TAG" \
+    ./deploy/k8s/central.sh
+
+    export_central_basic_auth_creds
 }
 
 scannerV4_test "$@"
