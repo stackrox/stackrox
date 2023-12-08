@@ -871,6 +871,7 @@ get_pr_details() {
     fi
 
     _not_a_PR() {
+        echo "This does not appear to be a PR context" >&2
         echo '{ "msg": "this is not a PR" }'
         exit 1
     }
@@ -885,7 +886,7 @@ get_pr_details() {
             org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
             repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
         else
-            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS" >&2
             exit 2
         fi
         [[ "${pull_request}" == "null" ]] && _not_a_PR
@@ -895,9 +896,11 @@ get_pr_details() {
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
-        echo "Unsupported CI"
+        echo "Unsupported CI" >&2
         exit 2
     fi
+
+    local headers url pr_details
 
     headers=()
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -905,10 +908,15 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-    pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}")
+
+    if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
+        echo "Github API error: $pr_details/$?" >&2
+        exit 2
+    fi
+
     if [[ "$(jq .id <<<"$pr_details")" == "null" ]]; then
         # A valid PR response is expected at this point
-        echo "Invalid response from GitHub: $pr_details"
+        echo "Invalid response from GitHub: $pr_details" >&2
         exit 2
     fi
     _PR_DETAILS="$pr_details"
