@@ -41,6 +41,7 @@ import RequestOverview from './components/RequestOverview';
 import RequestApprovalButtonModal from './components/RequestApprovalButtonModal';
 import RequestDenialButtonModal from './components/RequestDenialButtonModal';
 import RequestCancelButtonModal from './components/RequestCancelButtonModal';
+import RequestUpdateButtonModal from './components/RequestUpdateButtonModal';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -114,6 +115,11 @@ function ExceptionRequestDetailsPage() {
         history.push(exceptionManagementPath);
     }
 
+    function onUpdateSuccess() {
+        refetch();
+        setSuccessMessage(`The vulnerability request was successfully updated.`);
+    }
+
     if (loading && !vulnerabilityException) {
         return (
             <Bullseye>
@@ -149,6 +155,9 @@ function ExceptionRequestDetailsPage() {
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
     const showCancelButton = currentUser.userId === requester.id;
+    const showUpdateButton =
+        currentUser.userId === requester.id &&
+        (status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
@@ -194,6 +203,12 @@ function ExceptionRequestDetailsPage() {
                         <RequestApprovalButtonModal
                             exception={vulnerabilityException}
                             onSuccess={onApprovalSuccess}
+                        />
+                    )}
+                    {showUpdateButton && (
+                        <RequestUpdateButtonModal
+                            exception={vulnerabilityException}
+                            onSuccess={onUpdateSuccess}
                         />
                     )}
                 </Flex>

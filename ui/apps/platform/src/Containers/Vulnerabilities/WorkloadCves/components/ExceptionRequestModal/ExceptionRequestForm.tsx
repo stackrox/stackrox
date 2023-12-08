@@ -39,6 +39,7 @@ export type ExceptionRequestFormProps = {
     commentFieldLabel: string;
     validationSchema: yup.ObjectSchema<ExceptionValues>;
     showExpiryField: boolean;
+    showScopeField: boolean;
 };
 
 function ExceptionRequestForm({
@@ -50,6 +51,7 @@ function ExceptionRequestForm({
     commentFieldLabel,
     validationSchema,
     showExpiryField,
+    showScopeField,
 }: ExceptionRequestFormProps) {
     const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
 
@@ -99,12 +101,14 @@ function ExceptionRequestForm({
                     >
                         <Text>{formHeaderText}</Text>
                         {showExpiryField && <ExpiryField formik={formik} />}
-                        <ExceptionScopeField
-                            fieldId="scope"
-                            label="Scope"
-                            formik={formik}
-                            scopeContext={scopeContext}
-                        />
+                        {showScopeField && (
+                            <ExceptionScopeField
+                                fieldId="scope"
+                                label="Scope"
+                                formik={formik}
+                                scopeContext={scopeContext}
+                            />
+                        )}
                         <FormGroup fieldId="comment" label={commentFieldLabel} isRequired>
                             <TextArea
                                 id="comment"
