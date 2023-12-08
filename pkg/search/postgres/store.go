@@ -65,7 +65,7 @@ type Store[T any, PT unmarshaler[T]] interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
-	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	Upsert(ctx context.Context, obj PT) error
@@ -301,7 +301,7 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
@@ -311,13 +311,7 @@ func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query
 func (s *genericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-	dbErr := RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
-	if dbErr != nil {
-		s.resetCache(ctx)
-		return dbErr
-	}
-	s.removeFromCache(id)
-	return nil
+	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
