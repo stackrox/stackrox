@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -100,10 +99,6 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) collectInfoAndSendResponse() bool {
-	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		return true
-	}
-
 	info := u.getComplianceOperatorInfo()
 	u.complianceOperatorNS = info.GetNamespace()
 

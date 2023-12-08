@@ -105,7 +105,6 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
-
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
