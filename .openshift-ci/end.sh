@@ -86,7 +86,7 @@ determine_an_overall_job_outcome() {
     info "Overall job outcome: ${outcome}"
 }
 
-_JUNIT_CLUSTER_CLASS="CLuster"
+_JUNIT_CLUSTER_CLASS="Cluster"
 _JUNIT_CLUSTER_CREATE_DESCRIPTION="Create"
 _JUNIT_CLUSTER_DESTROY_DESCRIPTION="Destroy"
 

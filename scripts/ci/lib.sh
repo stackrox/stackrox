@@ -860,11 +860,15 @@ get_pr_details() {
     local org
     local repo
 
+    echo "get_pr_details()" >&2
+
     if [[ -n "${_PR_DETAILS}" ]]; then
+        echo "in context" >&2
         echo "${_PR_DETAILS}"
         return
     fi
     if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
+        echo "in cache" >&2
         _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
         echo "${_PR_DETAILS}"
         return
@@ -908,6 +912,8 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
+
+    echo "pulling from ${url}" >&2
 
     if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
         echo "Github API error: $pr_details/$?" >&2
