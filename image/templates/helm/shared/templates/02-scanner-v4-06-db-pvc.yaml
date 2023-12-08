@@ -24,7 +24,6 @@ metadata:
     {{- include "srox.labels" (list . "persistentvolume" $pvName) | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "persistentvolume" $pvName) | nindent 4 }}
-    "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
     "helm.sh/hook-delete-policy": never
 spec:
@@ -52,7 +51,6 @@ metadata:
     {{- include "srox.labels" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
   annotations:
     {{- include "srox.annotations" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
-    "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
     "helm.sh/hook-delete-policy": never
 spec:
