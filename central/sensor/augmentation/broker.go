@@ -21,6 +21,7 @@ var (
 type Broker struct {
 	requests map[string]chan<- *central.DeploymentEnhancementResponse
 	lock     sync.Mutex
+	once     sync.Once
 }
 
 // NewBroker returns a new broker
@@ -34,25 +35,24 @@ func NewBroker() *Broker {
 func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
+	if msg.GetMsg() == nil {
+		log.Warnf("Received empty message, skipping augmentation notify")
+		return
+	}
 	if r, ok := b.requests[msg.GetMsg().GetId()]; ok {
-		select {
-		case r <- msg:
+		// Once, to prevent writing to a closed channel if a msg dupe arrives
+		b.once.Do(func() {
 			log.Debugf("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
-			// Write message to the right channel and close it
+			r <- msg
 			close(r)
-			// Remove the key from the requests map to prevent writing to a closed channel if a msg dupe arrives
-			delete(b.requests, msg.GetMsg().GetId())
-			break
-		default:
-		}
-
+		})
 	}
 }
 
 // SendAndWaitForAugmentedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
 func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
 	b.lock.Lock()
-	ch := make(chan *central.DeploymentEnhancementResponse, 1)
+	ch := make(chan *central.DeploymentEnhancementResponse)
 	id := uuid.NewV4().String()
 	b.requests[id] = ch
 	b.lock.Unlock()
@@ -70,7 +70,7 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to send message to cluster %s", deployments[0].GetClusterId()) // TODO: This seems risky
+		return nil, errors.Wrapf(err, "failed to send message to cluster %s", conn.ClusterID())
 	}
 
 	select {

@@ -367,7 +367,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	conn := s.connManager.GetConnection(eCtx.ClusterID)
 	enhancedDeployments, err := s.augmentationWatcher.SendAndWaitForAugmentedDeployments(ctx, conn, deployments, time.Second*30)
 	if err != nil {
-		return nil, err // FIXME: Handle errors better
+		return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 	}
 
 	for _, d := range enhancedDeployments {
