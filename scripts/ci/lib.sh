@@ -1420,15 +1420,16 @@ _make_slack_failure_attachments() {
     slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
 
     if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
-        msg='No junit records were found for this failure. Check build logs \
+        msg="No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
-issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label).'
+issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
         slack_attachments+="$(_make_slack_failure_block "${msg}")"
     fi
 }
 
 _make_slack_failure_block() {
-    echo '
+    # shellcheck disable=SC2016
+    local body='
 [
   {
     "color": "#bb2124",
@@ -1437,13 +1438,16 @@ _make_slack_failure_block() {
         "type": "section",
         "text": {
           "type": "plain_text",
-          "text": "'"$1"'"
+          "text": "\($msg)"
         }
       }
     ]
   }
 ]
 '
+    jq --null-input \
+       --arg msg "$1" \
+       "$body"
 }
 
 _send_slack_error() {
