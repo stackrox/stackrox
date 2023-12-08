@@ -58,8 +58,6 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
-    # `post_process_test_results` will generate the Slack attachment first, then
-    # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
     post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}"
 
     while [[ -e /tmp/hold ]]; do
@@ -1150,6 +1148,7 @@ post_process_test_results() {
     local calculated_base_link
     local create_jiras
     local jira_project="ROX"
+    local build_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
 
     set +u
     {
@@ -1158,17 +1157,20 @@ post_process_test_results() {
         if is_in_PR_context; then
             if pr_has_label "ci-test-junit-processing"; then
                 create_jiras="true"
-                jira_project="RS"
             else
                 create_jiras="false"
             fi
+            jira_project="RS"
+            build_link+="pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}/"
         else
             if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
                 create_jiras="false"
             else
                 create_jiras="true"
             fi
+            build_link+="logs/"
         fi
+        build_link+="$JOB_NAME/$BUILD_ID"
 
         if [[ "${create_jiras}" == "false" ]]; then
             extra_args=(--dry-run)
@@ -1182,12 +1184,12 @@ post_process_test_results() {
         # TODO: Extract a function to obtain repo and org and use it here.
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.15/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.0.2/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
             -build-id "${BUILD_ID}" \
-            -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
+            -build-link "${build_link}" \
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
             -jira-project "${jira_project}" \
