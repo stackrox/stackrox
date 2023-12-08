@@ -59,9 +59,9 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
 		case <-c:
 		}
 	}()
+	wg.Wait()
 
 	b.NotifyDeploymentReceived(msg)
-	wg.Wait()
 }
 
 func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
