@@ -19,7 +19,7 @@ output_dir="/output"
 mkdir -p "${output_dir}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
   if [[ "$goarch" == "amd64" || "$goarch" == "arm64" ]]; then
-    dnf install -y golang
+    dnf install -y golang glibc
     if [[ "$OSTYPE" != "linux-gnu"* ]]; then
       GOBIN='' GOOS=linux GOARCH="${goarch}" GOPATH="${output_dir}/go" go install github.com/go-delve/delve/cmd/dlv@latest
       mv "${output_dir}/go/bin/linux_${goarch}/dlv" "${output_dir}/go/bin/dlv"
