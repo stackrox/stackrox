@@ -20,8 +20,7 @@ LABEL name="scanner-db" \
 
 # If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
-ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
-    PGDATA="/var/lib/postgresql/data/pgdata"
+ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
 COPY signatures/RPM-GPG-KEY-PGDG-15 /
