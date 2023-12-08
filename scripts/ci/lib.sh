@@ -865,13 +865,13 @@ get_pr_details() {
     if [[ -n "${_PR_DETAILS}" ]]; then
         echo "in context" >&2
         echo "${_PR_DETAILS}"
-        return
+        return 0
     fi
     if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
         echo "in cache" >&2
         _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
         echo "${_PR_DETAILS}"
-        return
+        return 0
     fi
 
     _not_a_PR() {
@@ -1423,7 +1423,7 @@ _make_slack_failure_attachments() {
         msg="No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
 issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
-        slack_attachments+="$(_make_slack_failure_block "${msg}")"
+        slack_attachments="$(_make_slack_failure_block "${msg}")"
     fi
 }
 
