@@ -46,8 +46,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}
 
 	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
+	for _, profile := range scanConfig.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileId())
 	}
 
