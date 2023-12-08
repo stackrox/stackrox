@@ -94,6 +94,10 @@ class NetworkGraphService extends BaseService {
                         GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
                 GetExternalNetworkEntitiesResponse response =
                         getNetworkGraphClient().getExternalNetworkEntities(request)
+
+                // Potential of causing io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
+                log.info "getExternalNetworkEntities response: ${response}"
+                log.info "getExternalNetworkEntities allEntities: ${response.getEntitiesList()}"
                 NetworkEntity matchingEntity =
                         response
                                 .getEntitiesList()
