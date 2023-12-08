@@ -41,7 +41,7 @@ type repository struct {
 	scanners                     []framework.ImageMatcher
 	sshProcessIndicators         []*storage.ProcessIndicator
 	hasProcessIndicators         bool
-	networkFlows                 []*storage.NetworkFlow
+	flowsWithDeploymentDst       []*storage.NetworkFlow
 	notifiers                    []*storage.Notifier
 	roles                        []*storage.K8SRole
 	bindings                     []*storage.K8SRoleBinding
@@ -99,8 +99,8 @@ func (r *repository) HasProcessIndicators() bool {
 	return r.hasProcessIndicators
 }
 
-func (r *repository) NetworkFlows() []*storage.NetworkFlow {
-	return r.networkFlows
+func (r *repository) NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow {
+	return r.flowsWithDeploymentDst
 }
 
 func (r *repository) Notifiers() []*storage.Notifier {
@@ -201,6 +201,10 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	return result
 }
 
+func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
+	return props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT
+}
+
 func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
@@ -278,7 +282,8 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	} else if flowStore == nil {
 		return errors.Errorf("no flows found for cluster %q", domain.Cluster().ID())
 	}
-	r.networkFlows, _, err = flowStore.GetAllFlows(ctx, nil)
+
+	r.flowsWithDeploymentDst, _, err = flowStore.GetMatchingFlows(ctx, deploymentIngressFlowsPredicate, nil)
 	if err != nil {
 		return err
 	}

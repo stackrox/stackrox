@@ -244,18 +244,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) K8sRoles() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "K8sRoles", reflect.TypeOf((*MockComplianceDataRepository)(nil).K8sRoles))
 }
 
-// NetworkFlows mocks base method.
-func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
+// NetworkFlowsWithDeploymentDst mocks base method.
+func (m *MockComplianceDataRepository) NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkFlows")
+	ret := m.ctrl.Call(m, "NetworkFlowsWithDeploymentDst")
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
 	return ret0
 }
 
-// NetworkFlows indicates an expected call of NetworkFlows.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call {
+// NetworkFlowsWithDeploymentDst indicates an expected call of NetworkFlowsWithDeploymentDst.
+func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlowsWithDeploymentDst() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlowsWithDeploymentDst", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlowsWithDeploymentDst))
 }
 
 // NetworkPolicies mocks base method.

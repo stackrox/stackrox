@@ -34,7 +34,7 @@ type ComplianceDataRepository interface {
 	ScannerIntegrations() []ImageMatcher
 	SSHProcessIndicators() []*storage.ProcessIndicator
 	HasProcessIndicators() bool
-	NetworkFlows() []*storage.NetworkFlow
+	NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
 	Notifiers() []*storage.Notifier
 	K8sRoles() []*storage.K8SRole

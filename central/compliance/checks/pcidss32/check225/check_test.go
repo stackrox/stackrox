@@ -72,7 +72,7 @@ func (s *suiteImpl) TestUnusedPorts() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkFlows().AnyTimes().Return(flows)
+	data.EXPECT().NetworkFlowsWithDeploymentDst().AnyTimes().Return(flows)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -145,7 +145,7 @@ func (s *suiteImpl) TestPass() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkFlows().AnyTimes().Return(flows)
+	data.EXPECT().NetworkFlowsWithDeploymentDst().AnyTimes().Return(flows)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -162,7 +162,7 @@ func (s *suiteImpl) TestPass() {
 		deploymentResults := checkResults.ForChild(deployment)
 		s.NoError(deploymentResults.Error())
 		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
+		s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
 	}
 }
 

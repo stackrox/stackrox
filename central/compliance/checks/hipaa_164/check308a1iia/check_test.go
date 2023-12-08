@@ -59,7 +59,7 @@ func (s *suiteImpl) TestFail() {
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
 	data.EXPECT().HasProcessIndicators().AnyTimes().Return(false)
-	data.EXPECT().NetworkFlows().AnyTimes().Return(nil)
+	data.EXPECT().NetworkFlowsWithDeploymentDst().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -119,7 +119,7 @@ func (s *suiteImpl) TestPass() {
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
 	data.EXPECT().HasProcessIndicators().AnyTimes().Return(true)
-	data.EXPECT().NetworkFlows().AnyTimes().Return(flows)
+	data.EXPECT().NetworkFlowsWithDeploymentDst().AnyTimes().Return(flows)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
