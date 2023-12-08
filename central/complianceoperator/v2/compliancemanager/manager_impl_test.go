@@ -231,8 +231,7 @@ func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 		OneTimeScan:            false,
 		Profiles: []*storage.ProfileShim{
 			{
-				ProfileId:   uuid.NewV4().String(),
-				ProfileName: "ocp4-cis",
+				ProfileId: "ocp4-cis",
 			},
 		},
 		StrictNodeScan: false,
