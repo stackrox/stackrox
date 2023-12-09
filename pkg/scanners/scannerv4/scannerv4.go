@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	s4util "github.com/stackrox/rox/pkg/scannerv4"
+	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
@@ -52,7 +52,7 @@ type scannerv4 struct {
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
-		return nil, errors.New("ScannerV4 configuration required")
+		return nil, errors.New("Scanner V4 configuration required")
 	}
 
 	indexerEndpoint := defaultIndexerEndpoint
@@ -61,16 +61,16 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	matcherEndpoint := defaultMatcherEndpoint
-	if conf.IndexerEndpoint != "" {
+	if conf.MatcherEndpoint != "" {
 		matcherEndpoint = conf.MatcherEndpoint
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
-	if conf.GetNumConcurrentScans() != 0 {
+	if conf.GetNumConcurrentScans() > 0 {
 		numConcurrentScans = int64(conf.GetNumConcurrentScans())
 	}
 
-	log.Debugf("Creating ScannerV4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
+	log.Debugf("Creating Scanner V4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
 	ctx := context.Background()
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithIndexerAddress(indexerEndpoint),
@@ -78,7 +78,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		// TODO(ROX-19050): Set the Scanner V4 TLS validation when certificates are ready.
 		// client.SkipTLSVerification,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		Password: rc.Password,
 	}
 
-	digest, err := s4util.DigestFromImage(image, opts...)
+	digest, err := pkgscanner.DigestFromImage(image, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
 	scan := &storage.ImageScan{
+		// TODO(ROX-21362): Get ScannerVersion from ScannerV4 matcher API
 		// ScannerVersion: ,
 		ScanTime:        gogotypes.TimestampNow(),
 		OperatingSystem: os(report),
@@ -47,7 +48,6 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 }
 
 func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
-
 	envList := report.GetContents().GetEnvironments()[pkgID]
 	if len(envList.GetEnvironments()) > 0 {
 		env := envList.GetEnvironments()[0]
@@ -70,7 +70,12 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
 	uniqueVulns := set.NewStringSet()
 	for _, id := range ids {
-		ccVuln := vulnerabilities[id]
+		ccVuln, ok := vulnerabilities[id]
+		if !ok {
+			log.Debugf("Bad Input: Vuln %q from PackageVulnerabilities not found in Vulnerabilities, skipping", id)
+			continue
+		}
+
 		if !uniqueVulns.Add(ccVuln.Name) {
 			// Already added this vulnerability, so ignore it.
 			continue
@@ -104,12 +109,8 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).
 // The ACS UI will fail to show a vulnerability's link if it is an invalid URL.
-func link(multipleLinks string) string {
-	link := multipleLinks
-	if links := strings.Split(link, " "); len(links) > 1 {
-		link = links[0]
-	}
-
+func link(links string) string {
+	link, _, _ := strings.Cut(links, " ")
 	return link
 }
 

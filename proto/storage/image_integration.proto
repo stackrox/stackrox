@@ -21,6 +21,7 @@ message ImageIntegration {
 
     oneof IntegrationConfig {
         ClairifyConfig    clairify   = 8;
+        ScannerV4Config   scanner_v4 = 23;
         DockerConfig      docker     = 9;
         QuayConfig        quay       = 10;
         ECRConfig         ecr        = 11;
@@ -28,7 +29,6 @@ message ImageIntegration {
         ClairConfig       clair      = 14;
         ClairV4Config     clair_v4   = 22;
         IBMRegistryConfig ibm        = 20;
-        ScannerV4Config   scanner_v4 = 23;
     }
     reserved 7, 12, 17; // Previously Docker Trusted Registry, Tenable, and Anchore respectively
 

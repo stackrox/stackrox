@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	s4util "github.com/stackrox/rox/pkg/scannerv4"
+	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
@@ -213,7 +213,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		opts = append(opts, name.Insecure)
 	}
 
-	ref, err := s4util.DigestFromImage(image, opts...)
+	ref, err := pkgscanner.DigestFromImage(image, opts...)
 	if err != nil {
 		return nil, err
 	}
