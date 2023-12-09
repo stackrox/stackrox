@@ -860,15 +860,11 @@ get_pr_details() {
     local org
     local repo
 
-    echo "get_pr_details()" >&2
-
     if [[ -n "${_PR_DETAILS}" ]]; then
-        echo "in context" >&2
         echo "${_PR_DETAILS}"
         return 0
     fi
     if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
-        echo "in cache" >&2
         _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
         echo "${_PR_DETAILS}"
         return 0
@@ -912,8 +908,6 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-
-    echo "pulling from ${url}" >&2
 
     if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
         echo "Github API error: $pr_details/$?" >&2
@@ -1168,7 +1162,7 @@ post_process_test_results() {
     {
         info "Post processing junit records to JIRA issues, BigQuery metrics and Slack attachments as appropriate"
 
-        make_prow_job_link
+        prow_job_link="$(make_prow_job_link)"
 
         if is_in_PR_context; then
             if pr_has_label "ci-test-junit-processing"; then
@@ -1224,14 +1218,14 @@ post_process_test_results() {
 }
 
 make_prow_job_link() {
-    prow_job_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
-
+    local prow_job_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
     if is_in_PR_context; then
         prow_job_link+="pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}/"
     else
         prow_job_link+="logs/"
     fi
     prow_job_link+="$JOB_NAME/$BUILD_ID"
+    echo "${prow_job_link}"
 }
 
 # There are currently two openshift-ci steps where junit failures are summarized for slack.
@@ -1254,10 +1248,12 @@ send_slack_failure_summary() {
         return 0
     fi
 
+    # Check env required for the job link and slack an error message when
+    # undefined.
     _slack_check_env "BUILD_ID"
     _slack_check_env "JOB_NAME"
     local prow_job_link
-    make_prow_job_link
+    prow_job_link="$(make_prow_job_link)"
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
@@ -1414,8 +1410,6 @@ _make_slack_failure_attachments() {
     else
         slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
     fi
-
-    echo -e "Slack attachments pre formatting:\n${slack_attachments}"
 
     slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
 
