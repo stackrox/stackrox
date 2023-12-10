@@ -67,7 +67,7 @@ var (
 )
 
 type requestedUpdater struct {
-	RequestedUpdater
+	*updater
 	lastRequestedTime time.Time
 }
 
@@ -346,7 +346,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 	// Open both the "online" and "offline", and save their modification times.
 	var onlineFile *vulDefFile
-	onlineOSFile, onlineTime, err := u.OpenFile()
+	onlineOSFile, onlineTime, err := u.file.Open()
 	if err != nil {
 		return
 	}
@@ -384,7 +384,7 @@ func (h *httpHandler) openMostRecentMappings(fileName string) (file *vulDefFile,
 		}
 	}
 	var onlineFile *vulDefFile
-	onlineZipFile, onlineTime, err := u.OpenFile()
+	onlineZipFile, onlineTime, err := u.file.Open()
 	if err != nil || onlineZipFile == nil {
 		return
 	}
@@ -472,7 +472,7 @@ func (h *httpHandler) getUpdaterInternal(key string) *requestedUpdater {
 		}
 
 		h.updaters[key] = &requestedUpdater{
-			RequestedUpdater: newUpdater(file.New(filePath), client, url, h.interval),
+			updater: newUpdater(file.New(filePath), client, url, h.interval),
 		}
 		updater = h.updaters[key]
 	}
