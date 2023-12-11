@@ -258,20 +258,6 @@ func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
 }
 
-// NetworkPolicies mocks base method.
-func (m *MockComplianceDataRepository) NetworkPolicies() map[string]*storage.NetworkPolicy {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkPolicies")
-	ret0, _ := ret[0].(map[string]*storage.NetworkPolicy)
-	return ret0
-}
-
-// NetworkPolicies indicates an expected call of NetworkPolicies.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkPolicies() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkPolicies", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkPolicies))
-}
-
 // NodeResults mocks base method.
 func (m *MockComplianceDataRepository) NodeResults() map[string]map[string]*compliance.ComplianceStandardResult {
 	m.ctrl.T.Helper()
