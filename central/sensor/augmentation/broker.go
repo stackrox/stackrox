@@ -21,7 +21,6 @@ var (
 type Broker struct {
 	requests map[string]chan<- *central.DeploymentEnhancementResponse
 	lock     sync.Mutex
-	once     sync.Once
 }
 
 // NewBroker returns a new broker
@@ -33,19 +32,18 @@ func NewBroker() *Broker {
 
 // NotifyDeploymentReceived matches the ID of Sensors response to the request and notifies the waiting goroutine
 func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse) {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	if msg.GetMsg() == nil {
+	if msg == nil || msg.GetMsg() == nil {
 		log.Warnf("Received empty message, skipping augmentation notify")
 		return
 	}
+
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if r, ok := b.requests[msg.GetMsg().GetId()]; ok {
 		// Once, to prevent writing to a closed channel if a msg dupe arrives
-		b.once.Do(func() {
-			log.Debugf("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
-			r <- msg
-			close(r)
-		})
+		log.Debugf("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
+		r <- msg
+		close(r)
 	}
 }
 
@@ -57,7 +55,7 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 	b.requests[id] = ch
 	b.lock.Unlock()
 
-	log.Debugf("Sending Deployment Augmentation request to Sensor with requestID %v", id)
+	log.Debugf("Sending Deployment Augmentation request to Sensor with requestID %s", id)
 
 	err := conn.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
@@ -85,4 +83,8 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 	case <-time.After(timeout):
 		return nil, errors.New("timed out waiting for augmented deployment")
 	}
+}
+
+func waitForDeployments(ctx context.Context, msgID string, msg *central.DeploymentEnhancementResponse) {
+
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -38,7 +37,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	if toEnhance == nil {
 		return nil
 	}
-	log.Debugf("Received message to process in DeploymentEnhancer: %v++", msg)
+	log.Debugf("Received message to process in DeploymentEnhancer: %+v", toEnhance)
 	d.deploymentsQueue <- toEnhance
 	return nil
 }
@@ -56,14 +55,14 @@ func (d *DeploymentEnhancer) Start() error {
 				log.Warnf("received deploymentEnhancement msg with empty request ID. Discarding request.")
 				continue
 			}
-			deployments := d.extractAndEnrichDeployments(deploymentMsg)
+			deployments := d.enrichDeployments(deploymentMsg)
 			d.sendDeploymentsToCentral(requestID, deployments)
 		}
 	}()
 	return nil
 }
 
-func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
+func (d *DeploymentEnhancer) enrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
 	var ret []*storage.Deployment
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
@@ -72,7 +71,7 @@ func (d *DeploymentEnhancer) extractAndEnrichDeployments(deploymentMsg *central.
 		return ret
 	}
 
-	log.Debugf("Received deploymentEnhancement msg with %v deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	log.Debugf("Received deploymentEnhancement msg with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
 	for _, deployment := range deployments {
 		enriched, err := d.enrichDeployment(deployment)
 		if err != nil {
@@ -99,29 +98,12 @@ func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*
 }
 
 func (d *DeploymentEnhancer) enrichDeployment(deployment *storage.Deployment) (*storage.Deployment, error) {
-	localImages := d.findLocalImages(deployment)
-
-	p := d.storeProvider.RBAC().GetPermissionLevelForDeployment(deployment)
-	e := d.storeProvider.Services().GetExposureInfos(deployment.GetNamespace(), deployment.GetPodLabels())
-
 	deployment = d.storeProvider.Deployments().EnhanceDeploymentReadOnly(deployment, store.Dependencies{
-		PermissionLevel: p,
-		Exposures:       e,
-		LocalImages:     localImages,
+		PermissionLevel: d.storeProvider.RBAC().GetPermissionLevelForDeployment(deployment),
+		Exposures:       d.storeProvider.Services().GetExposureInfos(deployment.GetNamespace(), deployment.GetPodLabels()),
 	})
 
 	return deployment, nil
-}
-
-func (d *DeploymentEnhancer) findLocalImages(deployment *storage.Deployment) set.Set[string] {
-	localImages := set.NewStringSet()
-	for _, c := range deployment.GetContainers() {
-		imgName := c.GetImage().GetName()
-		if d.storeProvider.Registries().IsLocal(imgName) {
-			localImages.Add(imgName.GetFullName())
-		}
-	}
-	return localImages
 }
 
 // Capabilities return the capabilities of this component

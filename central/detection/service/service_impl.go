@@ -323,7 +323,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error
 // DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errox.InvalidArgs.CausedBy("yaml field must be specified in detection request")
+		return nil, errox.InvalidArgs.New("yaml field must be specified in detection request")
 	}
 
 	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
@@ -362,8 +362,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 		deployments = append(deployments, d)
 	}
+	if len(deployments) == 0 {
+		return nil, errox.InvalidArgs.New("Every deployment YAML failed to parse - aborting")
+	}
 
-	// Enhance the enhanced deployments, then range over them
+	// Enhance the deployments, then range over them
 	conn := s.connManager.GetConnection(eCtx.ClusterID)
 	enhancedDeployments, err := s.augmentationWatcher.SendAndWaitForAugmentedDeployments(ctx, conn, deployments, time.Second*30)
 	if err != nil {
