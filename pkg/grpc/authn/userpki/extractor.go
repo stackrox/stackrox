@@ -73,7 +73,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			}
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
-				logging.GetRateLimitedLogger().WarnL(
+				logging.GetRateLimitedLogger().DebugL(
 					ri.Hostname,
 					"Token validation failed for hostname %v: %v",
 					ri.Hostname,
