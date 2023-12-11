@@ -58,9 +58,9 @@ spec:
           vulnerability scanning of container images.
         displayName: Scanner Component Settings
         path: scanner
-      - description: Settings for the Scanner component, which is responsible for
-          vulnerability scanning of container images.
-        displayName: Scanner Component Settings
+      - description: Settings for the Scanner V4 component, which can run in addition
+          to the existing Scanner service
+        displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Settings related to outgoing network traffic.
         displayName: Egress
@@ -79,6 +79,12 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -89,12 +95,6 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Deprecated field. This field will be removed in a future release.
-          Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Specify a secret that contains the administrator password in
           the "password" data item. If omitted, the operator will auto-generate a
           password and store it in the "password" item in the "central-htpasswd" secret.
@@ -510,7 +510,7 @@ spec:
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
       - description: If you want to deploy the Red Hat Advanced Cluster Security ScannerV4,
-          you can enable it here By default, the ScannerV4 is disabled.
+          you can enable it here By default, Scanner V4 is disabled.
         displayName: Scanner V4 Component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
@@ -584,7 +584,7 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - description: Controls the number of analyzer replicas and autoscaling.
+      - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
       - description: Allows overriding the default resource settings for this component.
@@ -620,7 +620,7 @@ spec:
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
-      - description: Controls the number of analyzer replicas and autoscaling.
+      - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.matcher.scaling
       - description: Allows overriding the default resource settings for this component.

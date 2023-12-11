@@ -1037,8 +1037,8 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                description: Settings for the Scanner component, which is responsible
-                  for vulnerability scanning of container images.
+                description: Settings for the Scanner V4 component, which can run
+                  in addition to the existing Scanner service
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1248,8 +1248,8 @@ spec:
                             type: object
                         type: object
                       scaling:
-                        description: Controls the number of analyzer replicas and
-                          autoscaling.
+                        description: Controls the number of replicas and autoscaling
+                          for this component.
                         properties:
                           autoScaling:
                             default: Enabled
@@ -1385,8 +1385,8 @@ spec:
                             type: object
                         type: object
                       scaling:
-                        description: Controls the number of analyzer replicas and
-                          autoscaling.
+                        description: Controls the number of replicas and autoscaling
+                          for this component.
                         properties:
                           autoScaling:
                             default: Enabled
@@ -1477,8 +1477,8 @@ spec:
                   scannerComponent:
                     default: Disabled
                     description: If you want to deploy the Red Hat Advanced Cluster
-                      Security ScannerV4, you can enable it here By default, the ScannerV4
-                      is disabled.
+                      Security ScannerV4, you can enable it here By default, Scanner
+                      V4 is disabled.
                     enum:
                     - Enabled
                     - Disabled

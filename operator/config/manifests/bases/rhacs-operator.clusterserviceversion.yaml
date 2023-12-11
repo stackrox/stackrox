@@ -164,14 +164,14 @@ spec:
           not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
-      - description: Controls the number of analyzer replicas and autoscaling.
+      - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
       - description: When enabled, the number of analyzer replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
-      - description: Controls the number of analyzer replicas and autoscaling.
+      - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.matcher.scaling
       - description: When enabled, the number of analyzer replicas is managed dynamically
@@ -184,15 +184,14 @@ spec:
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
       - description: If you want to deploy the Red Hat Advanced Cluster Security ScannerV4,
-          you can enable it here By default, the ScannerV4 is disabled.
+          you can enable it here By default, Scanner V4 is disabled.
         displayName: Scanner V4 Component
         path: scannerV4.scannerComponent
-      - description: 'NOTE: Connecting to an external database is in Technology Preview.
-          Specify a connection string that corresponds to an external database. If
-          set, the operator will not manage Central DB. When using this option, you
-          must explicitly set a password secret; automatically generating a password
-          will not be supported.'
-        displayName: Connection String (Technology Preview)
+      - description: Specify a connection string that corresponds to an external database.
+          If set, the operator will not manage Central DB. When using this option,
+          you must explicitly set a password secret; automatically generating a password
+          will not be supported.
+        displayName: Connection String
         path: central.db.connectionString
       - description: The size of the persistent volume when created through the claim.
           If a claim was automatically created, this can be used after the initial
@@ -338,9 +337,9 @@ spec:
         path: scanner.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: Settings for the Scanner component, which is responsible for
-          vulnerability scanning of container images.
-        displayName: Scanner Component Settings
+      - description: Settings for the Scanner V4 component, which can run in addition
+          to the existing Scanner service
+        displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: The name of the storage class to use for the PVC. If your cluster
           is not configured with a default storage class, you must select a value
@@ -433,11 +432,12 @@ spec:
         path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Miscellaneous settings.
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
         displayName: Miscellaneous
         path: misc
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Configures the encryption of notifier secrets stored in the Central
           DB.
         displayName: Notifier Secrets Encryption
@@ -454,12 +454,6 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configures the encryption of notifier secrets stored in the Central
-          DB.
-        displayName: Notifier Secrets Encryption
-        path: central.notifierSecretsEncryption
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Stores persistent data on a directory on the host. This is not
           recommended, and should only be used together with a node selector (only
           available in YAML view).
@@ -662,12 +656,6 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. This field will be removed in a future release.
-          Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
