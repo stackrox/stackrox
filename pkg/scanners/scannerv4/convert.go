@@ -48,6 +48,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 }
 
 func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
+	// TODO(ROX-21377): Confirm with Clair team how handle multiple environments
 	envList := report.GetContents().GetEnvironments()[pkgID]
 	if len(envList.GetEnvironments()) > 0 {
 		env := envList.GetEnvironments()[0]
