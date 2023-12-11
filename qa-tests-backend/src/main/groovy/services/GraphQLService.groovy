@@ -13,6 +13,8 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
 import util.Env
@@ -124,13 +126,8 @@ class GraphQLService {
             CloseableHttpClient client = buildClient()
             HttpPost httpPost = buildRequest(headers, content)
 
-            try {
-                HttpResponse response = client.execute(httpPost)
-                return parseResponse(response)
-            } catch (Exception e) {
-                log.error("failed to GQL post", e)
-            }
-            return new Response()
+            HttpResponse response = client.execute(httpPost)
+            return parseResponse(response)
         }
 
         private Response parseResponse(HttpResponse response)  {
@@ -153,6 +150,8 @@ class GraphQLService {
             CloseableHttpClient client = HttpClients
                     .custom()
                     .setSSLSocketFactory(connectionFactory)
+                    .setRetryHandler(new DefaultHttpRequestRetryHandler(3, true))
+                    .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy())
                     .build()
             return client
         }
