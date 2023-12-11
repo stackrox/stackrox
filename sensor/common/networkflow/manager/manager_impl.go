@@ -390,6 +390,7 @@ func (m *networkFlowManager) enrichAndSend() {
 }
 
 func (m *networkFlowManager) enrichAndSendProcesses() {
+	log.Info("In enrichAndSendProcesses")
 	ctx := m.getCurrentContext()
 	currentProcesses := m.currentEnrichedProcesses()
 
@@ -397,6 +398,12 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 
 	if len(updatedProcesses) == 0 {
 		return
+	}
+
+	for _, updatedProcess := range updatedProcesses {
+		log.Info("")
+		log.Infof("updatedProcess= %+v", updatedProcess)
+		log.Info("")
 	}
 
 	processesToSend := &central.ProcessListeningOnPortsUpdate{
@@ -412,6 +419,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		m.updateProcessesState(currentProcesses)
 		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	}
+	log.Info("Leaving enrichAndSendProcesses")
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
@@ -979,11 +987,15 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 }
 
 func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+	log.Info("In getUpdatedContainerEndpoints")
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
 
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
+		log.Info("")
+		log.Infof("endpoint= %+v", endpoint)
+		log.Info("")
 		normalize.NetworkEndpoint(endpoint)
 
 		flowMetrics.ContainerEndpointsPerNode.With(prometheus.Labels{"Hostname": hostname, "Protocol": endpoint.Protocol.String()}).Inc()
@@ -1004,6 +1016,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 		}
 		updatedEndpoints[ep] = ts
 	}
+	log.Info("Leaving getUpdatedContainerEndpoints")
 
 	return updatedEndpoints
 }

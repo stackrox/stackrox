@@ -76,11 +76,12 @@ func processToNoSecretsString(process *storage.ProcessIndicatorUniqueKey) string
 		return ""
 	}
 
-	return fmt.Sprintf("%s_%s_%s_%s",
+	return fmt.Sprintf("%s_%s_%s_%s_%s",
 		process.GetContainerName(),
 		process.GetPodId(),
 		process.GetProcessName(),
 		process.GetProcessExecFilePath(),
+		process.GetProcessArgs(),
 	)
 }
 
