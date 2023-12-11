@@ -109,7 +109,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringArrayVar(&deploymentCheckCmd.file, "file", nil, "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringArrayVar(&deploymentCheckCmd.files, "file", nil, "yaml files to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
@@ -128,7 +128,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// We need a string parameter with the filenames for the sarif printer factory
 	// If a report is based on a single yaml file it will work as previously, if multiple
 	// they will be concatenated as csv
-	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.file[:], ",")
+	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.files[:], ",")
 
 	return c
 }
@@ -136,7 +136,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
 	joinedFiles        string
-	file               []string
+	files              []string
 	json               bool
 	retryDelay         int
 	retryCount         int
@@ -171,7 +171,7 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 
 func (d *deploymentCheckCommand) Validate() error {
 	var errors errorhelpers.ErrorList
-	for _, file := range d.file {
+	for _, file := range d.files {
 		if _, err := os.Open(file); err != nil {
 			errors.AddError(err)
 		}
@@ -202,7 +202,7 @@ func (d *deploymentCheckCommand) Check() error {
 
 func (d *deploymentCheckCommand) checkDeployment() error {
 	var deploymentFileContents []byte
-	for _, file := range d.file {
+	for _, file := range d.files {
 		fileContents, err := os.ReadFile(file)
 		if err != nil {
 			return errors.Wrapf(err, "could not read deployment file: %q", file)

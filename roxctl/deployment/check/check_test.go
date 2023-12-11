@@ -275,7 +275,7 @@ func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientCo
 
 func (d *deployCheckTestSuite) SetupTest() {
 	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
-		file:               []string{"testdata/deployment.yaml"},
+		files:              []string{"testdata/deployment.yaml"},
 		retryDelay:         3,
 		retryCount:         3,
 		timeout:            1 * time.Minute,
@@ -285,7 +285,7 @@ func (d *deployCheckTestSuite) SetupTest() {
 
 func (d *deployCheckTestSuite) TestMultipleFiles() {
 	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
-		file:               []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"},
+		files:              []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"},
 		retryDelay:         3,
 		retryCount:         3,
 		timeout:            1 * time.Minute,
@@ -376,8 +376,8 @@ func (d *deployCheckTestSuite) TestValidate() {
 		shouldFail bool
 		error      error
 	}{
-		"should not fail with default file name": {
-			file: d.defaultDeploymentCheckCommand.file,
+		"should not fail with default files name": {
+			file: d.defaultDeploymentCheckCommand.files,
 		},
 		"should fail with non existing file name": {
 			file:       []string{"invalidfile"},
@@ -389,7 +389,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 	for name, c := range cases {
 		d.Run(name, func() {
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.file = c.file
+			deployCheckCmd.files = c.file
 
 			err := deployCheckCmd.Validate()
 			if c.shouldFail {
