@@ -1249,8 +1249,8 @@ github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T
 github.com/hashicorp/hcl v1.0.1-vault-5 h1:kI3hhbbyzr4dldA8UdTb7ZlVVlI2DACdCfz31RPDgJM=
 github.com/hashicorp/hcl v1.0.1-vault-5/go.mod h1:XYhtn6ijBSAj6n4YqAaf7RBPS4I06AItNorpy+MoQNM=
 github.com/hashicorp/vault/api v1.10.0 h1:/US7sIjWN6Imp4o/Rj1Ce2Nr5bki/AXi9vAW3p2tOJQ=
-github.com/heimdalr/dag v1.3.1 h1:EVFVwlQQF3BkG5KptfhY645enDUakmpOe9GmOYYtKB8=
-github.com/heimdalr/dag v1.3.1/go.mod h1:OCh6ghKmU0hPjtwMqWBoNxPmtRioKd1xSu7Zs4sbIqM=
+github.com/heimdalr/dag v1.4.0 h1:zG3JA4RDVLc55k3AXAgfwa+EgBNZ0TkfOO3C29Ucpmg=
+github.com/heimdalr/dag v1.4.0/go.mod h1:OCh6ghKmU0hPjtwMqWBoNxPmtRioKd1xSu7Zs4sbIqM=
 github.com/helm/helm-mapkubeapis v0.4.1 h1:Xu03dMzVv/zqp+Vw1+2ZHufnDQRqoGa8Ml4N/GBgqME=
 github.com/helm/helm-mapkubeapis v0.4.1/go.mod h1:o2qnBCfz2cbUod9QlbPjjXtsQI/X7QQjwU/rk7m1T2M=
 github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef h1:A9HsByNhogrvm9cWb28sjiS3i7tcKCkflWFEkHfuAgM=
