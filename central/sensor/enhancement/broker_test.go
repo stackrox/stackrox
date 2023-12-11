@@ -1,4 +1,4 @@
-package augmentation
+package enhancement
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
 		})
 	b := NewBroker()
 
-	_, err := b.SendAndWaitForAugmentedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
+	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
 
 	s.ErrorContains(err, "timed out waiting for augmented deployment", "Expected the function to time out, but it didn't")
 }

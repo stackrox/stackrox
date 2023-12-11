@@ -1,9 +1,9 @@
-package augment
+package enhancements
 
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/sensor/augmentation"
+	"github.com/stackrox/rox/central/sensor/enhancement"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -15,23 +15,23 @@ var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
-// AugmentationBroker is the interface that will be notified when an augmented deployment from Sensor arrives
-type AugmentationBroker interface {
+// EnhancementBroker is the interface that will be notified when an augmented deployment from Sensor arrives
+type EnhancementBroker interface {
 	NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse)
 }
 
 type pipelineImpl struct {
-	broker AugmentationBroker
+	broker EnhancementBroker
 }
 
 // NewAugmentPipeline returns a new instance of the Augmentation Pipeline
-func NewAugmentPipeline(broker AugmentationBroker) pipeline.Fragment {
+func NewAugmentPipeline(broker EnhancementBroker) pipeline.Fragment {
 	return &pipelineImpl{broker: broker}
 }
 
 // GetPipeline returns a new pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewAugmentPipeline(augmentation.BrokerSingleton())
+	return NewAugmentPipeline(enhancement.BrokerSingleton())
 }
 
 // OnFinish .

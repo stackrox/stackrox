@@ -73,9 +73,9 @@ var (
 	delegateScanPermissions = []string{"Image"}
 )
 
-// AugmentationRequestWatcher is the interface to send deployments for augmentation to Sensor
-type AugmentationRequestWatcher interface {
-	SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
+// EnhancementRequestWatcher is the interface to send deployments for enhancement to Sensor
+type EnhancementRequestWatcher interface {
+	SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
 }
 
 func init() {
@@ -88,15 +88,15 @@ func init() {
 type serviceImpl struct {
 	apiV1.UnimplementedDetectionServiceServer
 
-	policySet           detection.PolicySet
-	imageEnricher       enricher.ImageEnricher
-	imageDatastore      imageDatastore.DataStore
-	riskManager         manager.Manager
-	deploymentEnricher  enrichment.Enricher
-	buildTimeDetector   buildtime.Detector
-	clusters            clusterDatastore.DataStore
-	connManager         connection.Manager
-	augmentationWatcher AugmentationRequestWatcher
+	policySet          detection.PolicySet
+	imageEnricher      enricher.ImageEnricher
+	imageDatastore     imageDatastore.DataStore
+	riskManager        manager.Manager
+	deploymentEnricher enrichment.Enricher
+	buildTimeDetector  buildtime.Detector
+	clusters           clusterDatastore.DataStore
+	connManager        connection.Manager
+	enhancementWatcher EnhancementRequestWatcher
 
 	notifications notifier.Processor
 
@@ -368,7 +368,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	// Enhance the deployments, then range over them
 	conn := s.connManager.GetConnection(eCtx.ClusterID)
-	enhancedDeployments, err := s.augmentationWatcher.SendAndWaitForAugmentedDeployments(ctx, conn, deployments, time.Second*30)
+	enhancedDeployments, err := s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, time.Second*30)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 	}

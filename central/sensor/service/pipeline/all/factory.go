@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/augment"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscans"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscansettingbinding"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/enhancements"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
@@ -79,7 +79,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorrules.GetPipeline(),
 		complianceoperatorscans.GetPipeline(),
 		nodeinventory.GetPipeline(),
-		augment.GetPipeline(),
+		enhancements.GetPipeline(),
 	}
 
 	if features.ComplianceEnhancements.Enabled() {

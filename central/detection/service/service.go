@@ -11,7 +11,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
-	"github.com/stackrox/rox/central/sensor/augmentation"
+	"github.com/stackrox/rox/central/sensor/enhancement"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -41,20 +41,20 @@ func New(
 	policySet detection.PolicySet,
 	clusterSACHelper sachelper.ClusterSacHelper,
 	connManager connection.Manager,
-	broker *augmentation.Broker,
+	broker *enhancement.Broker,
 ) Service {
 	return &serviceImpl{
-		clusters:            clusters,
-		imageEnricher:       imageEnricher,
-		imageDatastore:      imageDatastore,
-		riskManager:         riskManager,
-		deploymentEnricher:  deploymentEnricher,
-		buildTimeDetector:   buildTimeDetector,
-		detector:            detector,
-		policySet:           policySet,
-		notifications:       notifications,
-		clusterSACHelper:    clusterSACHelper,
-		connManager:         connManager,
-		augmentationWatcher: broker,
+		clusters:           clusters,
+		imageEnricher:      imageEnricher,
+		imageDatastore:     imageDatastore,
+		riskManager:        riskManager,
+		deploymentEnricher: deploymentEnricher,
+		buildTimeDetector:  buildTimeDetector,
+		detector:           detector,
+		policySet:          policySet,
+		notifications:      notifications,
+		clusterSACHelper:   clusterSACHelper,
+		connManager:        connManager,
+		enhancementWatcher: broker,
 	}
 }

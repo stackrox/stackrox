@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
-	"github.com/stackrox/rox/central/sensor/augmentation"
+	"github.com/stackrox/rox/central/sensor/enhancement"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -35,7 +35,7 @@ func initialize() {
 		deploytime.SingletonPolicySet(),
 		sachelper.NewClusterSacHelper(clusterDS),
 		connection.ManagerSingleton(),
-		augmentation.BrokerSingleton(),
+		enhancement.BrokerSingleton(),
 	)
 }
 

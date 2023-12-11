@@ -1,4 +1,4 @@
-package augmentation
+package enhancement
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func NewBroker() *Broker {
 // NotifyDeploymentReceived matches the ID of Sensors response to the request and notifies the waiting goroutine
 func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResponse) {
 	if msg == nil || msg.GetMsg() == nil {
-		log.Warnf("Received empty message, skipping augmentation notify")
+		log.Warnf("Received empty message, skipping enhancement notify")
 		return
 	}
 
@@ -43,12 +43,11 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 		// Once, to prevent writing to a closed channel if a msg dupe arrives
 		log.Debugf("Received answer for Deployment enrichment requestID %v", msg.GetMsg().GetId())
 		r <- msg
-		close(r)
 	}
 }
 
-// SendAndWaitForAugmentedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
-func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
+// SendAndWaitForEnhancedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
+func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
 	b.lock.Lock()
 	ch := make(chan *central.DeploymentEnhancementResponse)
 	id := uuid.NewV4().String()
@@ -77,14 +76,17 @@ func (b *Broker) SendAndWaitForAugmentedDeployments(ctx context.Context, conn co
 			return nil, errors.New("augmented channel closed unexpectedly")
 		}
 		if deployments := m.GetMsg().GetDeployments(); deployments == nil {
-			return nil, errors.New("augmented deployments empty") // TODO: Is this really an error?
+			return nil, errors.New("augmented deployments empty")
 		}
+		b.lock.Lock()
+		if r, ok := b.requests[id]; ok {
+			close(r)
+			delete(b.requests, id)
+		}
+		defer b.lock.Unlock()
 		return deployments, nil
 	case <-time.After(timeout):
 		return nil, errors.New("timed out waiting for augmented deployment")
 	}
-}
-
-func waitForDeployments(ctx context.Context, msgID string, msg *central.DeploymentEnhancementResponse) {
 
 }
