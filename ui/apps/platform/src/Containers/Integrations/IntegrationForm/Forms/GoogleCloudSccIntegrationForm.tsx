@@ -19,6 +19,7 @@ export type GoogleCloudSccIntegration = {
     cscc: {
         serviceAccount: string;
         sourceId: string;
+        wifEnabled: boolean;
     };
     type: 'cscc';
 } & NotifierIntegrationBase;
@@ -32,35 +33,40 @@ const sourceIdRegex = /^organizations\/[0-9]+\/sources\/[0-9]+$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         cscc: yup.object().shape({
+            wifEnabled: yup.bool(),
             serviceAccount: yup
                 .string()
                 .trim()
-                .required('A service account is required')
-                .test(
-                    'isValidJson',
-                    'Service account must be valid JSON',
-                    (value, context: yup.TestContext) => {
-                        const isRequired =
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            context?.from[2]?.value?.updatePassword || false;
-
-                        if (!isRequired) {
-                            return true;
-                        }
-                        if (!value) {
-                            return false;
-                        }
-                        try {
-                            JSON.parse(value);
-                        } catch (e) {
-                            return false;
-                        }
-                        return true;
-                    }
-                ),
+                .when('wifEnabled', {
+                    is: false,
+                    then: (serviceAccountSchema) =>
+                        serviceAccountSchema
+                            .required('A service account is required')
+                            .test(
+                                'isValidJson',
+                                'Service account must be valid JSON',
+                                (value, context: yup.TestContext) => {
+                                    const isRequired =
+                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                        // @ts-ignore
+                                        context?.from[2]?.value?.updatePassword || false;
+                                    if (!isRequired) {
+                                        return true;
+                                    }
+                                    if (!value) {
+                                        return false;
+                                    }
+                                    try {
+                                        JSON.parse(value);
+                                    } catch (e) {
+                                        return false;
+                                    }
+                                    return true;
+                                }
+                            ),
+                }),
             sourceId: yup
                 .string()
                 .trim()
@@ -81,6 +87,7 @@ export const defaultValues: GoogleCloudSccIntegrationFormValues = {
         cscc: {
             serviceAccount: '',
             sourceId: '',
+            wifEnabled: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -195,28 +202,45 @@ function GoogleCloudSccIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Service Account Key (JSON)"
-                        isRequired={values.updatePassword}
-                        fieldId="notifier.cscc.serviceAccount"
+                        fieldId="notifier.cscc.wifEnabled"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextArea
-                            className="json-input"
-                            isRequired={values.updatePassword}
-                            type="text"
-                            id="notifier.cscc.serviceAccount"
-                            value={values.notifier.cscc.serviceAccount}
-                            placeholder={
-                                values.updatePassword
-                                    ? 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}'
-                                    : 'Currently-stored credentials will be used.'
-                            }
+                        <Checkbox
+                            label="Enable WIF"
+                            id="notifier.cscc.wifEnabled"
+                            aria-label="enable wif"
+                            isChecked={values.notifier.cscc.wifEnabled}
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
+                    {!values.notifier.cscc.wifEnabled && (
+                        <FormLabelGroup
+                            label="Service Account Key (JSON)"
+                            isRequired={values.updatePassword}
+                            fieldId="notifier.cscc.serviceAccount"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <TextArea
+                                className="json-input"
+                                isRequired={values.updatePassword}
+                                type="text"
+                                id="notifier.cscc.serviceAccount"
+                                value={values.notifier.cscc.serviceAccount}
+                                placeholder={
+                                    values.updatePassword
+                                        ? 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}'
+                                        : 'Currently-stored credentials will be used.'
+                                }
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable || !values.updatePassword}
+                            />
+                        </FormLabelGroup>
+                    )}
                 </Form>
             </PageSection>
             {isEditable && (
