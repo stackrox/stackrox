@@ -137,7 +137,7 @@ func (s *ScannerAnalyzerComponent) GetScaling() *ScannerComponentScaling {
 
 // ScannerV4Component defines common configuration for Scanner V4 indexer and matcher components.
 type ScannerV4Component struct {
-	// Controls the number of analyzer replicas and autoscaling.
+	// Controls the number of replicas and autoscaling for this component.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Scaling        *ScannerComponentScaling `json:"scaling,omitempty"`
 	DeploymentSpec `json:",inline"`

@@ -410,7 +410,6 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 }
 
 func TestSetScannerV4DBValues(t *testing.T) {
-
 	tests := map[string]struct {
 		db      *platform.ScannerV4DB
 		want    chartutil.Values

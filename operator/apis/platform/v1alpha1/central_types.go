@@ -512,10 +512,10 @@ type ScannerComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// ScannerV4ComponentSpec defines settings for the central "scannerV4" component.
+// ScannerV4ComponentSpec defines settings for the central "scanner V4" component.
 type ScannerV4ComponentSpec struct {
 	// If you want to deploy the Red Hat Advanced Cluster Security ScannerV4, you can enable it here
-	// By default, the ScannerV4 is disabled.
+	// By default, Scanner V4 is disabled.
 	//+kubebuilder:default=Disabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 Component"
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
