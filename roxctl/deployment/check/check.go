@@ -2,7 +2,6 @@ package check
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -84,7 +84,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file[0]))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
@@ -108,8 +108,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringSliceVar(&deploymentCheckCmd.files, "files", nil, "yaml file to send to Central to evaluate policies against")
-	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringArrayVar(&deploymentCheckCmd.file, "file", nil, "yaml file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
@@ -130,8 +129,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
-	files              []string
-	file               string
+	file               []string
 	json               bool
 	retryDelay         int
 	retryCount         int
@@ -165,16 +163,14 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	if d.file != "" {
-		if _, err := os.Open(d.file); err != nil {
-			return common.ErrInvalidCommandOption.CausedBy(err)
+	var errors errorhelpers.ErrorList
+	for _, file := range d.file {
+		if _, err := os.Open(file); err != nil {
+			errors.AddError(err)
 		}
-	} else {
-		for _, file := range d.files {
-			if _, err := os.Open(file); err != nil {
-				return common.ErrInvalidCommandOption.CausedBy(err)
-			}
-		}
+	}
+	if !errors.Empty() {
+		return common.ErrInvalidCommandOption.CausedBy(errors.ErrorStrings())
 	}
 
 	return nil
@@ -199,23 +195,15 @@ func (d *deploymentCheckCommand) Check() error {
 
 func (d *deploymentCheckCommand) checkDeployment() error {
 	var deploymentFileContents []byte
-	if d.file != "" {
-		var err error
-		deploymentFileContents, err = os.ReadFile(d.file)
+	for _, file := range d.file {
+		fileContents, err := os.ReadFile(file)
 		if err != nil {
-			return errors.Wrapf(err, "could not read deployment file: %q", d.file)
+			return errors.Wrapf(err, "could not read deployment file: %q", file)
 		}
-	} else {
-		for _, file := range d.files {
-			fileContents, err := os.ReadFile(file)
-			if err != nil {
-				return errors.Wrapf(err, "could not read deployment file: %q", file)
-			}
-			if len(deploymentFileContents) > 0 {
-				deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
-			}
-			deploymentFileContents = append(deploymentFileContents, fileContents...)
+		if len(deploymentFileContents) > 0 {
+			deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
 		}
+		deploymentFileContents = append(deploymentFileContents, fileContents...)
 	}
 
 	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
@@ -249,13 +237,6 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	var alerts []*storage.Alert
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
-	}
-
-	for i, alert := range alerts {
-		switch entity := alert.Entity.(type) {
-		case *storage.Alert_Deployment_:
-			fmt.Printf("Alert %d has ID: %s\n", i, entity.Deployment.GetId())
-		}
 	}
 
 	return alerts, response.GetIgnoredObjectRefs(), nil
