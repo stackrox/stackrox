@@ -3,6 +3,7 @@ package check
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -84,7 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file[0]))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.joinedFiles))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
@@ -115,7 +116,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
-	c.MarkFlagsOneRequired("file", "files")
+	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 
 	// mark legacy output format specific flags as deprecated
@@ -124,11 +125,17 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.Flags().MarkDeprecated("print-all-violations", "use the new output format where all "+
 		"violations are printed by default. This flag will only be relevant in combination with the --json flag"))
 
+	// We need a string parameter with the filenames for the sarif printer factory
+	// If a report is based on a single yaml file it will work as previously, if multiple
+	// they will be concatenated as csv
+	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.file[:], ",")
+
 	return c
 }
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
+	joinedFiles        string
 	file               []string
 	json               bool
 	retryDelay         int
