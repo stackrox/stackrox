@@ -59,7 +59,7 @@ export const selectors = {
 
     // Exception flow selectors
     deferCveModal: '*[role="dialog"]:contains("Request deferral for")',
-    markCveFalsePositiveModal: '*[role="dialog"]:contains("Mark"):contains("as false positive")',
+    markCveFalsePositiveModal: '*[role="dialog"]:contains("Request false positive for")',
     exceptionOptionsTab: 'button[role="tab"]:contains("Options")',
     cveSelectionTab: 'button[role="tab"]:contains("CVE selections")',
 
