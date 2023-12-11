@@ -17,8 +17,8 @@ import util.Timer
 class NetworkGraphService extends BaseService {
     static getNetworkGraphClient() {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
-            .withMaxInboundMessageSize(2*4209569)
-            .withMaxOutboundMessageSize(2*4209569)
+            .withMaxInboundMessageSize(2*4194304) // Twice the default size
+            .withMaxOutboundMessageSize(2*4194304)
     }
 
     static getNetworkGraph(Timestamp since = null, String query = null, String scopeQuery = null) {
