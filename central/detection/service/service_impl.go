@@ -240,7 +240,6 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
 	// between different generated deployments.
 	deployment.Id = uuid.NewV4().String()
-	fmt.Printf("Set deployment ID %s\n", deployment.GetId())
 
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
