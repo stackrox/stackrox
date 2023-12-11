@@ -17,8 +17,7 @@ if [[ -f /cachi2/cachi2.env ]]; then
     # We can safely restore dockerfiles because the modified version of dockerfile interpreted by docker/buildah stays
     # outside, and these are local copies inside of the build context.
     echo "Restoring files"
-    ls -lisa -- **/rhtap.Dockerfile
-    git restore -- **/rhtap.Dockerfile
+    git restore "**/rhtap.Dockerfile"
 fi
 
 # Next, make sure no other things that make it `-dirty` slipped through. If they did, fail the build.
