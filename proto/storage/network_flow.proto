@@ -75,7 +75,7 @@ message NetworkEntityInfo {
 
     // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
     message ExternalSource {
-       string     name     = 1;
+       string     name     = 1 [(gogoproto.moretags) = 'search:"External Source Name,hidden"'];
         oneof source {
             string cidr     = 2;
         }
