@@ -14,6 +14,7 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 export type GoogleCloudSccIntegration = {
     cscc: {
@@ -101,6 +102,8 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showWIFCheckbox = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -201,21 +204,23 @@ function GoogleCloudSccIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    <FormLabelGroup
-                        fieldId="notifier.cscc.wifEnabled"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <Checkbox
-                            label="Enable WIF"
-                            id="notifier.cscc.wifEnabled"
-                            aria-label="enable wif"
-                            isChecked={values.notifier.cscc.wifEnabled}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
+                    {showWIFCheckbox && (
+                        <FormLabelGroup
+                            fieldId="notifier.cscc.wifEnabled"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enable WIF"
+                                id="notifier.cscc.wifEnabled"
+                                aria-label="enable wif"
+                                isChecked={values.notifier.cscc.wifEnabled}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     {!values.notifier.cscc.wifEnabled && (
                         <FormLabelGroup
                             label="Service Account Key (JSON)"

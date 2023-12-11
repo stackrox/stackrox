@@ -15,6 +15,7 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import AwsRegionOptions from '../AwsRegionOptions';
+import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 export type AwsSecurityHubIntegration = {
     awsSecurityHub: {
@@ -120,6 +121,8 @@ function AwsSecurityHubIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showSTSCheckbox = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -234,21 +237,23 @@ function AwsSecurityHubIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    <FormLabelGroup
-                        fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <Checkbox
-                            label="Enable STS"
-                            id="notifier.awsSecurityHub.credentials.stsEnabled"
-                            aria-label="enable sts"
-                            isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
+                    {showSTSCheckbox && (
+                        <FormLabelGroup
+                            fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enable STS"
+                                id="notifier.awsSecurityHub.credentials.stsEnabled"
+                                aria-label="enable sts"
+                                isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     {!values.notifier.awsSecurityHub.credentials.stsEnabled && (
                         <>
                             <FormLabelGroup
