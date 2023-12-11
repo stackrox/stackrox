@@ -9,14 +9,13 @@
 #
 # The script MUST be executed only from within the Dockerfile (not outside of it) because binaries are built inside.
 
-set -exuo pipefail
+set -euo pipefail
 
 # When executing in RHTAP (as opposed to the script ran directly), we undo RHTAP changes to Dockerfiles.
 # I found no better way to detect RHTAP than by checking the presence of cachi2.env file.
 if [[ -f /cachi2/cachi2.env ]]; then
     # We can safely restore dockerfiles because the modified version of dockerfile interpreted by docker/buildah stays
     # outside, and these are local copies inside of the build context.
-    echo "Restoring files"
     git restore "**/rhtap.Dockerfile"
 fi
 
