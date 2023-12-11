@@ -235,6 +235,9 @@
 {{- end }}
 
 [< if (not .KubectlOutput) ->]
+
+{{ $imagePullSecretNames := list }}
+
 {{ if eq ._rox.scanner.disable false }}
 {{/*
    Local scanner setup.
@@ -256,9 +259,7 @@
   {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
 
-  {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
-       set of all referenced images first. */}}
-  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner" }}
 {{ end }}
 
 [<- if and .FeatureFlags.ROX_SCANNER_V4 (not .KubectlOutput) >]
@@ -287,17 +288,25 @@
 {{ if ._rox.scannerV4._indexerEnabled }}
   {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
 [</* Due to historical reasons the image specifications for the secured-cluster-services chart
-     Are not found under <component-name>.image, but instead under image.<image identifier>.
+     are not found under <component-name>.image, but instead under image.<image identifier>.
      Since the image setup code in srox.scannerV4Init configures scannerV4.<scanner V4 component name>m
      we overwrite this here with the properly configured image specification under image.<image identifier>
      for consistency reasons within the secured-cluster-services chart. */>]
   {{ $_ := set $._rox.scannerV4.indexer "image" ._rox.image.scannerV4 }}
   {{ $_ := set $._rox.scannerV4.matcher "image" ._rox.image.scannerV4 }}
   {{ $_ := set $._rox.scannerV4.db "image" ._rox.image.scannerV4DB }}
-  {{ include "srox.configureImagePullSecretsNames" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner-v4") $.Release.Namespace) }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner-v4" }}
 {{ end }}
 
 [<- end >]
+
+{{ if not (empty $imagePullSecretNames) }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
+  {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
+       set of all referenced images first. */}}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $.Release.Namespace) }}
+{{ end }}
+
 [<- end >]
 
 {{/* Setup Image Pull Secrets.
