@@ -37,7 +37,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		logging.GetRateLimitedLogger().WarnL(
+		logging.GetRateLimitedLogger().DebugL(
 			ri.Hostname,
 			"Token validation failed for hostname %v: %v",
 			ri.Hostname,

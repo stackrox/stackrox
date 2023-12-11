@@ -27,7 +27,7 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 		if errors.Is(err, jwt.ErrExpired) {
 			log.Debug("Cannot extract identity: token expired")
 		} else {
-			logging.GetRateLimitedLogger().WarnL(ri.Hostname, "Cannot extract identity: %v", err)
+			logging.GetRateLimitedLogger().DebugL(ri.Hostname, "Cannot extract identity: %v", err)
 		}
 		// Ignore id value if error is not nil.
 		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err)), nil
