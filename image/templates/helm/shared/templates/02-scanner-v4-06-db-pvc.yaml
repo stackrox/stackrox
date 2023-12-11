@@ -25,7 +25,6 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "persistentvolume" $pvName) | nindent 4 }}
     "helm.sh/resource-policy": keep
-    "helm.sh/hook-delete-policy": never
 spec:
   {{- if $storageClassName }}
   storageClassName: {{ $storageClassName }}
@@ -52,7 +51,6 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
     "helm.sh/resource-policy": keep
-    "helm.sh/hook-delete-policy": never
 spec:
   {{- if $storageClassName }}
   storageClassName: {{ $storageClassName }}
