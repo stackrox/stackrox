@@ -272,3 +272,65 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	s.Nil(err)
 	s.Equal(count, 2)
 }
+
+func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
+	return props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT
+}
+
+func (s *NetworkflowStoreSuite) TestGetMatching() {
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "TestInternetDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: nil,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "TestInternetSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: types.TimestampNow(),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentDst2",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: types.TimestampNow(),
+		},
+	}
+
+	err := s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	s.Nil(err)
+
+	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
+	s.Nil(err)
+
+	s.Equal([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
+}
