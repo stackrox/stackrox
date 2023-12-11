@@ -142,6 +142,24 @@ customize:
     podLabels: {} # dict
     podAnnotations: {} # dict
     envVars: {} # dict
+  scanner-v4-indexer:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-matcher:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-db:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
