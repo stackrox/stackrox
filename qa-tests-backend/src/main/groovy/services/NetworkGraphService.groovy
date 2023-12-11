@@ -95,9 +95,7 @@ class NetworkGraphService extends BaseService {
                 GetExternalNetworkEntitiesResponse response =
                         getNetworkGraphClient().getExternalNetworkEntities(request)
 
-                // Potential of causing io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
-                log.info "getExternalNetworkEntities response: ${response}"
-                log.info "getExternalNetworkEntities allEntities: ${response.getEntitiesList()}"
+                // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
                 NetworkEntity matchingEntity =
                         response
                                 .getEntitiesList()
