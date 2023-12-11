@@ -376,7 +376,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 		shouldFail bool
 		error      error
 	}{
-		"should not fail with default files name": {
+		"should not fail with default file name": {
 			file: d.defaultDeploymentCheckCommand.files,
 		},
 		"should fail with non existing file name": {
