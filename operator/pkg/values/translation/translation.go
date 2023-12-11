@@ -7,7 +7,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -63,20 +62,6 @@ func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 		envVarMap[envVar.Name] = unstructuredEnvVar
 	}
 	res.SetMap("envVars", envVarMap)
-	return &res
-}
-
-// GetMisc converts platform.MiscSpec to chart values builder.
-func GetMisc(miscSpec *platform.MiscSpec) *ValuesBuilder {
-	if miscSpec == nil {
-		return nil
-	}
-	if !pointer.BoolDeref(miscSpec.CreateSCCs, false) {
-		return nil
-	}
-
-	res := NewValuesBuilder()
-	res.SetMap("system", map[string]interface{}{"createSCCs": true})
 	return &res
 }
 

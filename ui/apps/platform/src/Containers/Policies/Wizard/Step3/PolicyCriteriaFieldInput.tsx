@@ -131,6 +131,7 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value}
                         placeholderText={descriptor.placeholder || 'Select an option'}
+                        menuAppendTo={() => document.body}
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption
@@ -161,6 +162,7 @@ function PolicyCriteriaFieldInput({
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
+                        menuAppendTo={() => document.body}
                     >
                         {descriptor.options?.map((option) => (
                             <SelectOption

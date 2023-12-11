@@ -77,6 +77,8 @@ spec:
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
         command:
@@ -96,10 +98,10 @@ spec:
       - name: db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
         env:
-        - name: POSTGRES_HOST_AUTH_METHOD
-          value: "scram-sha-256"
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
         ports:
         - name: tcp-postgresql
           containerPort: 5432

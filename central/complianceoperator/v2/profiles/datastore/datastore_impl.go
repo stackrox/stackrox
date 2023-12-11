@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	edge "github.com/stackrox/rox/central/complianceoperator/v2/profiles/profileclusteredge/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -22,6 +24,29 @@ type datastoreImpl struct {
 	db               pgPkg.DB
 	store            pgStore.Store
 	profileEdgeStore edge.Store
+	searcher         profileSearch.Searcher
+}
+
+// GetProfile returns the profile for the given profile ID
+func (d *datastoreImpl) GetProfile(ctx context.Context, profileID string) (*storage.ComplianceOperatorProfileV2, bool, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, sac.ErrResourceAccessDenied
+	}
+
+	return d.store.Get(ctx, profileID)
+}
+
+// SearchProfiles returns the profiles for the given query
+func (d *datastoreImpl) SearchProfiles(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorProfileV2, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	return d.store.GetByQuery(ctx, query)
 }
 
 // UpsertProfile adds the profile to the database
@@ -84,6 +109,16 @@ func (d *datastoreImpl) GetProfileEdgesByCluster(ctx context.Context, clusterID 
 
 	return d.profileEdgeStore.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+}
+
+// CountProfiles returns count of profiles matching query
+func (d *datastoreImpl) CountProfiles(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, nil
+	}
+	return d.searcher.Count(ctx, q)
 }
 
 func wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error) error {

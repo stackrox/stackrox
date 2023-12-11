@@ -2,38 +2,65 @@
 # More information on the supported syntax can be found here: https://github.com/actions/labeler
 
 area/ci:
-- .github/**/*
-- .openshift-ci/**/*
-- scripts/ci/**/
+- changed-files:
+  - any-glob-to-any-file:
+    - .github/**/*
+    - .openshift-ci/**/*
+    - scripts/ci/**/
 area/roxctl:
-- roxctl/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - roxctl/**/*
 area/auth:
-- pkg/auth/**/*
-- pkg/sac/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - pkg/auth/**/*
+    - pkg/sac/**/*
 area/ui:
-- ui/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - ui/**/*
 area/operator:
-- operator/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - operator/**/*
 area/helm:
-- image/**/*
-- central/helm/**/*
-- central/helmcharts/**/*
-- pkg/helm/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - image/**/*
+    - central/helm/**/*
+    - central/helmcharts/**/*
+    - pkg/helm/**/*
 area/sensor:
-- sensor/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - sensor/**/*
 area/central:
-- central/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - central/**/*
 area/scanner:
-- scanner/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - scanner/**/*
 area/admission-controller:
-- sensor/admission-control/**/*
+- changed-files:
+  - any-glob-to-any-file:
+    - sensor/admission-control/**/*
 area/postgres:
-- central/globaldb/postgres.go
-- image/postgres/**/*
-- pkg/postgres/**/*
-- pkg/search/postgres/**/*
-- tools/generate-helpers/pg-table-bindings/**/*
-- tools/generate-helpers/pg-table-bindings-wrapper
+- changed-files:
+  - any-glob-to-any-file:
+    - central/globaldb/postgres.go
+    - image/postgres/**/*
+    - pkg/postgres/**/*
+    - pkg/search/postgres/**/*
+    - tools/generate-helpers/pg-table-bindings/**/*
+    - tools/generate-helpers/pg-table-bindings-wrapper
 ci-all-qa-tests:
-- COLLECTOR_VERSION
-- SCANNER_VERSION
+- changed-files:
+  - any-glob-to-any-file:
+    - COLLECTOR_VERSION
+    - SCANNER_VERSION
+
+backport:
+- base-branch: 'release-*'

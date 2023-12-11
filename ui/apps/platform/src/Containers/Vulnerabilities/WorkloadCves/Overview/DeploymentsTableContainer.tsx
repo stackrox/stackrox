@@ -82,7 +82,7 @@ function DeploymentsTableContainer({
                         deployments={tableData.deployments}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                     />
                 </div>
             )}
