@@ -50,14 +50,8 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
 	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
-	case v1.GetCertExpiry_SCANNER_V4_INDEXER:
-		return nil, errors.New("Querying Scanner V4 Indexer for certificate expiration date is currently unsupported")
-	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
-	case v1.GetCertExpiry_SCANNER_V4_MATCHER:
-		return nil, errors.New("Querying Scanner V4 Matcher for certificate expiration date is currently unsupported")
-	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
-	case v1.GetCertExpiry_SCANNER_V4_DB:
-		return nil, errors.New("Querying Scanner V4 DB for certificate expiration date is currently unsupported")
+	case v1.GetCertExpiry_SCANNER_V4:
+		return nil, errors.New("Querying Scanner V4 components for certificate expiration date is not yet implemented")
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
