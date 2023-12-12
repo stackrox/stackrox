@@ -23,6 +23,8 @@ type Scanner interface {
 
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
+//
+//go:generate mockgen-wrapper
 type ImageScannerWithDataSource interface {
 	GetScanner() Scanner
 	DataSource() *storage.DataSource
