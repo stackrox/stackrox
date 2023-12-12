@@ -26,7 +26,7 @@ LABEL \
     io.k8s.display-name="operator" \
     io.openshift.tags="rhacs,operator,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="rhacs-operator-rhel8" \
+    name="rhacs-rhel8-operator" \
     source-location="https://github.com/stackrox/stackrox" \
     summary="Operator for RHACS" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
