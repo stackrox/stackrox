@@ -42,7 +42,7 @@ teardown() {
 @test "roxctl-development netpol connectivity diff non existing dirs" {
   run roxctl-development netpol connectivity diff --dir1="$out_dir" --dir2="$out_dir"
   assert_failure
-  assert_line --partial "no such file or directory"
+  assert_line --partial "the path \"${out_dir}\" does not exist"
 }
 
 @test "roxctl-development netpol connectivity diff stops on first error when run with --fail" {
@@ -53,9 +53,8 @@ teardown() {
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
   assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'No connections diff'
-  assert_line --index 2 --partial 'YAML document is malformed'  # expect only one line with this error
-  assert_line --index 3 --partial 'there were errors during execution'  # last line
+  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
+  assert_line --index 2 --partial 'there were errors during execution'  # last line
 }
 
 @test "roxctl-development netpol connectivity diff produces no output when all yamls are templated" {

@@ -71,6 +71,7 @@ func (cmd *diffNetpolCommand) construct() (diffAnalyzer, error) {
 	if cmd.outputFormat != "" {
 		opts = append(opts, npguard.WithOutputFormat(cmd.outputFormat))
 	}
+	opts = append(opts, npguard.WithArgNames("dir1", "dir2"))
 	if cmd.outputFilePath != "" {
 		cmd.outputToFile = true
 	}

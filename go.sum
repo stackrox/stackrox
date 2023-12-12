@@ -1633,8 +1633,8 @@ github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 h1:Up6+btDp321ZG5
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481/go.mod h1:yKZQO8QE2bHlgozqWDiRVqTFlLQSj30K/6SAK8EeYFw=
 github.com/np-guard/cluster-topology-analyzer v1.9.0 h1:mzWFXHq2iKCeQ9iLXOq2GXzynfcTgSn+qK7YaxkW3j0=
 github.com/np-guard/cluster-topology-analyzer v1.9.0/go.mod h1:PKFvqqtlLtEMJQ0ZaBdlgRD535IwVLLBmXprFnqFKFc=
-github.com/np-guard/netpol-analyzer v0.4.3 h1:D8ad4TfQv3QIGKc+wfKb3T+ES8YX6fIJfnKAD7He8a8=
-github.com/np-guard/netpol-analyzer v0.4.3/go.mod h1:2MUl7DNbq01PGJLi7PJbzlEIcI72jwchzTGzazoIio8=
+github.com/np-guard/netpol-analyzer v1.0.1 h1:LIRCNmEZXk2ZtM1mM7E2EHs4izlfdXIs0OvlTK0qEJo=
+github.com/np-guard/netpol-analyzer v1.0.1/go.mod h1:t/LmFgOT8bTGaqxm4KR8/nOZe9es7WVVs1iDlzueLhc=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
