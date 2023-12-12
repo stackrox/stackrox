@@ -689,9 +689,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				"system": map[string]interface{}{
-					"createSCCs": true,
-				},
 			},
 		},
 

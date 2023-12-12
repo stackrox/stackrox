@@ -7,6 +7,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 const (
