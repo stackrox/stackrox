@@ -58,6 +58,9 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
 
+    @Shared
+    private String componentCount = ""
+
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
             "Privileged Container(s) with Important and Critical CVE(s)",
@@ -163,6 +166,18 @@ class DefaultPoliciesTest extends BaseSpecification {
         Helpers.collectImageScanForDebug(
                 STRUTS_DEPLOYMENT.getImage(), 'default-policies-test-struts-app.json'
         )
+
+        switch (Env.REMOTE_CLUSTER_ARCH) {
+            case "s390x":
+                componentCount=92
+                break
+            case "ppc64le":
+                componentCount=91
+                break
+            default:
+                componentCount="1(6[6-9]|7[0-5])"
+                break
+        }
     }
 
     def cleanupSpec() {
@@ -446,7 +461,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 169 components" | []
+                " contains " + componentCount + " components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
         // TODO(ROX-9637)
