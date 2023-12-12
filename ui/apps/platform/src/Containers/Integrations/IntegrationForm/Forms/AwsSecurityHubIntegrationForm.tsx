@@ -244,7 +244,7 @@ function AwsSecurityHubIntegrationForm({
                             errors={errors}
                         >
                             <Checkbox
-                                label="Enable STS"
+                                label="Use container IAM role"
                                 id="notifier.awsSecurityHub.credentials.stsEnabled"
                                 aria-label="enable sts"
                                 isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
