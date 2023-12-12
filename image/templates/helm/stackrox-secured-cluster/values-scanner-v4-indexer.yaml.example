@@ -12,21 +12,25 @@
 # Image configuration for scanner v4:
 # # For a complete example, see the `values-public.yaml.example` file.
 # image:
-#  # Configuration for the `scanner-v4` image that is used by Scanner v4 Indexer.
-#  scanner-v4:
-#    indexer:
-#      registry: null
-#      name: scanner-slim
-#      tag: null
-#      fullRef: null
+#  # Configuration of the `scannerV4` image that is used by Scanner v4 Indexer.
+#  scannerV4:
+#    registry: null
+#    name: null
+#    tag: null
+#    fullRef: null
+#  # Configuration of the `scannerV4DB` image that is used by Scanner v4 DB.
+#  scannerV4DB:
+#    registry: null
+#    name: null
+#    tag: null
+#    fullRef: null
+
 #
-# scanner-v4:
+# scannerV4:
+#   # disable=false Deploys a StackRox Scanner v4 Indexer in the secured cluster to allow scanning images
+#   # from registries accessible within the secured cluster.
+#   disable: false
 #   indexer:
-#
-#     # disable=false Deploys a StackRox Scanner v4 Indexer in the secured cluster to allow scanning images
-#     # from registries accessible within the secured cluster.
-#     disable: false
-#
 #     # The number of replicas for the Scanner v4 Indexer deployment. If autoscaling is enabled (see below),
 #     # this determines the initial number of replicas.
 #     replicas: 3
