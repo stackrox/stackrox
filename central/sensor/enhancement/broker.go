@@ -25,7 +25,9 @@ type Broker struct {
 
 // NewBroker returns a new broker
 func NewBroker() *Broker {
-	return &Broker{}
+	return &Broker{
+		waiters: make(map[string]func(msg *central.DeploymentEnhancementResponse)),
+	}
 }
 
 // NotifyDeploymentReceived matches the ID of Sensors response to the request and calls the right callback for it

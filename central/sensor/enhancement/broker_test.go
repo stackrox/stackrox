@@ -23,8 +23,8 @@ type BrokerTestSuite struct {
 
 func (s *BrokerTestSuite) TestNotifyDeploymentReceivedDoubleMessage() {
 	b := Broker{
-		requests: map[string]chan<- *central.DeploymentEnhancementResponse{"1": make(chan<- *central.DeploymentEnhancementResponse, 2)},
-		lock:     sync.Mutex{},
+		waiters: map[string]func(msg *central.DeploymentEnhancementResponse){"1": func(msg *central.DeploymentEnhancementResponse) {}},
+		lock:    sync.Mutex{},
 	}
 	msg := &central.DeploymentEnhancementResponse{
 		Msg: &central.DeploymentEnhancementMessage{
@@ -39,6 +39,7 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedDoubleMessage() {
 }
 
 func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
+	callbackCalled := false
 	wg := sync.WaitGroup{}
 	b := NewBroker()
 	msg := &central.DeploymentEnhancementResponse{
@@ -50,7 +51,7 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
 	wg.Add(1)
 	go func() {
 		c := make(chan *central.DeploymentEnhancementResponse, 1)
-		b.requests["1"] = c
+		b.waiters["1"] = func(msg *central.DeploymentEnhancementResponse) { callbackCalled = true }
 		wg.Done()
 
 		select {
@@ -60,8 +61,9 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
 		}
 	}()
 	wg.Wait()
-
 	b.NotifyDeploymentReceived(msg)
+
+	s.True(callbackCalled)
 }
 
 func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
