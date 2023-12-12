@@ -2,7 +2,6 @@ package authorizer
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -24,10 +23,6 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
-)
-
-const (
-	cacheRefreshPeriod = 5 * time.Second
 )
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
