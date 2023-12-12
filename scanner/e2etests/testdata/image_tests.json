@@ -3251,7 +3251,7 @@
                 ],
                 "AddedBy": "sha256:36e8e9714b9a509fae9e515ff16237928c3d809f5ae228b14d2f7d7605c02623",
                 "Location": "jars/jackson-databind-2.9.10.4.jar",
-                "FixedBy": "2.12.7.1"
+                "FixedBy": "2.16.0"
             }
         ],
         "unexpected_features": [
