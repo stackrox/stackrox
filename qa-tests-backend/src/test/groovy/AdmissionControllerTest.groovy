@@ -495,12 +495,8 @@ class AdmissionControllerTest extends BaseSpecification {
         def timer = new Timer(30, 1)
         def deleted = false
         while (!deleted && timer.IsValid()) {
-            try {
-                orchestrator.deleteDeployment(deployment)
-                deleted = true
-            } catch (NullPointerException ignore) {
-                log.info "Caught NPE while deleting deployment, retrying in 1s..."
-            }
+            orchestrator.deleteDeployment(deployment)
+            deleted = true
         }
         if (!deleted) {
             log.warn "Failed to delete deployment. Subsequent tests may be affected ..."

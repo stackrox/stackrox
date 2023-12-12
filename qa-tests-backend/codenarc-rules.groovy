@@ -147,7 +147,7 @@ ruleset {
     // CatchException
     CatchIllegalMonitorStateException 
     CatchIndexOutOfBoundsException
-//    CatchNullPointerException
+    CatchNullPointerException
     CatchRuntimeException 
     CatchThrowable 
     ConfusingClassNamedException 
