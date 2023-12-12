@@ -134,7 +134,7 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            def status = response.getStatusLine()
+            StatusLine status = response.getStatusLine()
             log.debug "GraphQL response: $status: " + (
                 bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
             if (status.statusCode != 200) {
