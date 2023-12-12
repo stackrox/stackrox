@@ -377,7 +377,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		run, err := s.runDeployTimeDetect(ctx, eCtx, d, req.GetPolicyCategories())
 
 		if err != nil {
-			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
+			return nil, errox.InvalidArgs.New("unable to add additional information to deployment").CausedBy(err)
 		}
 		if run != nil {
 			runs = append(runs, run)
