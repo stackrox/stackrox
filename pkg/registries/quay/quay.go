@@ -23,20 +23,26 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "quay", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, false)
-		return reg, err
-	}
+func Creator() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "quay",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := newRegistry(integration, false)
+			return reg, err
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "quay", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, true)
-		return reg, err
-	}
+func CreatorWithoutRepoList() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "quay",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := newRegistry(integration, true)
+			return reg, err
+		}
 }
 
 var _ types.Registry = (*Quay)(nil)

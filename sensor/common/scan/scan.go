@@ -411,7 +411,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 		},
 	}
 
-	return regFactory.CreateRegistry(ii)
+	return regFactory.CreateRegistry(ii, &registryTypes.CreatorOptions{})
 }
 
 // validateSourceImage will return an error if an image is invalid per local

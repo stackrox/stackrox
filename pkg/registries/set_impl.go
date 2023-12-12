@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
+	gcpAuth "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -13,6 +14,7 @@ type setImpl struct {
 
 	factory      Factory
 	integrations map[string]types.ImageRegistry
+	gcpManager   gcpAuth.STSTokenManager
 }
 
 func sortIntegrations(integrations []types.ImageRegistry) {
@@ -120,7 +122,7 @@ func (e *setImpl) Clear() {
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
 // This does not update a pre-existing registry, instead it replaces it with a new one.
 func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
-	i, err := e.factory.CreateRegistry(integration)
+	i, err := e.factory.CreateRegistry(integration, &types.CreatorOptions{GCPTokenManager: e.gcpManager})
 	if err != nil {
 		return err
 	}

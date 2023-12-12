@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scanners"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -282,7 +284,7 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 }
 
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
-	registry, err := s.registryFactory.CreateRegistry(integration)
+	registry, err := s.registryFactory.CreateRegistry(integration, &types.CreatorOptions{GCPTokenManager: gcp.Singleton()})
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}

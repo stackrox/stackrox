@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 )
@@ -65,4 +67,36 @@ func CreateSecurityCenterClientFromConfigWithManager(ctx context.Context,
 		option.WithCredentialsJSON([]byte(decCreds)),
 		option.WithGRPCDialOption(grpc.WithContextDialer(proxy.AwareDialContext)),
 	)
+}
+
+// CreateTokenSourceFromConfig creates a token source based on the config.
+func CreateTokenSourceFromConfig(ctx context.Context,
+	credsJSON []byte, wifEnabled bool, scopes ...string,
+) (oauth2.TokenSource, error) {
+	if wifEnabled {
+		creds, err := google.FindDefaultCredentials(ctx, scopes...)
+		if err != nil {
+			return nil, err
+		}
+		return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
+	}
+	creds, err := google.CredentialsFromJSON(ctx, credsJSON, scopes...)
+	if err != nil {
+		return nil, err
+	}
+	return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
+}
+
+// CreateTokenSourceFromConfigWithManager creates a token source based on the config.
+func CreateTokenSourceFromConfigWithManager(ctx context.Context, manager auth.STSTokenManager,
+	credsJSON []byte, wifEnabled bool, scopes ...string,
+) (oauth2.TokenSource, error) {
+	if wifEnabled {
+		return manager.TokenSource(), nil
+	}
+	creds, err := google.CredentialsFromJSON(ctx, credsJSON, scopes...)
+	if err != nil {
+		return nil, err
+	}
+	return oauth2.ReuseTokenSource(nil, creds.TokenSource), nil
 }

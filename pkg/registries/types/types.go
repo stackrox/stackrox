@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/stackrox/rox/generated/storage"
+	gcpAuth "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 )
 
 // Config is the config of the registry, which can be utilized by 3rd party scanners
@@ -56,4 +57,18 @@ var DockerfileInstructionSet = map[string]struct{}{
 	"USER":        {},
 	"VOLUME":      {},
 	"WORKDIR":     {},
+}
+
+// CreatorOptions specifies optional configuration parameters for a registry creators.
+type CreatorOptions struct {
+	// GCPTokenManager manages GCP STS tokens.
+	GCPTokenManager gcpAuth.STSTokenManager
+}
+
+// GetGCPTokenManager is a nil-safe getter for GCPTokenManager.
+func (c *CreatorOptions) GetGCPTokenManager() gcpAuth.STSTokenManager {
+	if c == nil {
+		return nil
+	}
+	return c.GCPTokenManager
 }

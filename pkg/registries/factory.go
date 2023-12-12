@@ -17,17 +17,17 @@ import (
 )
 
 // Creator is the func stub that defines how to instantiate an image registry.
-type Creator func(scanner *storage.ImageIntegration) (types.Registry, error)
+type Creator func(scanner *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error)
 
 // Factory provides a centralized location for creating a Scanner from a v1.ImageIntegrations.
 //
 //go:generate mockgen-wrapper
 type Factory interface {
-	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
+	CreateRegistry(source *storage.ImageIntegration, options *types.CreatorOptions) (types.ImageRegistry, error)
 }
 
 // CreatorWrapper is a wrapper around a Creator which also returns the registry's name.
-type CreatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
+type CreatorWrapper func() (string, func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error))
 
 // AllCreatorFuncs defines all known registry creators.
 var AllCreatorFuncs = []CreatorWrapper{

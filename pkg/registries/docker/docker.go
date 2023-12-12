@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -31,25 +32,29 @@ const (
 	repoListInterval = 10 * time.Minute
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration, false)
-		return reg, err
-	}
+func Creator() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return GenericDockerRegistryType,
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, false)
+			return reg, err
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration, true)
-		return reg, err
-	}
+func CreatorWithoutRepoList() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return GenericDockerRegistryType,
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, true)
+			return reg, err
+		}
 }
 
 var _ types.Registry = (*Registry)(nil)
@@ -81,6 +86,8 @@ type Config struct {
 	Insecure bool
 	// DisableRepoList when true disables populating list of repos from remote registry.
 	DisableRepoList bool
+	// TokenSource defines a token source for generating access tokens.
+	TokenSource oauth2.TokenSource
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
@@ -104,6 +111,9 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 		})
 	} else {
 		transport = proxy.RoundTripper()
+	}
+	if cfg.TokenSource != nil {
+		transport = &oauth2.Transport{Base: transport, Source: cfg.TokenSource}
 	}
 
 	client, err := registry.NewFromTransport(

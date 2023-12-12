@@ -67,3 +67,52 @@ func TestGoogleMatch(t *testing.T) {
 		})
 	}
 }
+
+func TestGoogleValidate(t *testing.T) {
+	t.Parallel()
+	t.Setenv("ROX_CLOUD_CREDENTIALS", "true")
+	cases := []struct {
+		name    string
+		config  *storage.GoogleConfig
+		isValid bool
+	}{
+		{
+			name:    "static credentials - success",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: `{"type": "service_account"}`},
+			isValid: true,
+		},
+		{
+			name:    "static credentials - no endpoint",
+			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: `{"type": "service_account"}`},
+			isValid: false,
+		},
+		{
+			name:    "static credentials - no service account",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: ""},
+			isValid: false,
+		},
+		{
+			name:    "workload identity - success",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: "", WifEnabled: true},
+			isValid: true,
+		},
+		{
+			name:    "workload identity - no endpoint",
+			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: "", WifEnabled: true},
+			isValid: false,
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			err := validate(c.config)
+			if c.isValid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}

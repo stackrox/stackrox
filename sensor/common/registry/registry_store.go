@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 )
 
 const (
@@ -87,8 +88,8 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		factory:                     regFactory,
 		store:                       make(map[string]registries.Set),
 		checkTLSFunc:                tlscheck.CheckTLS,
-		globalRegistries:            registries.NewSet(regFactory),
-		centralRegistryIntegrations: registries.NewSet(regFactory),
+		globalRegistries:            registries.NewSet(regFactory, gcp.Singleton()),
+		centralRegistryIntegrations: registries.NewSet(regFactory, gcp.Singleton()),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
 		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
 		knownSecretIDs:              set.NewStringSet(),
@@ -143,7 +144,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 	regs := rs.store[namespace]
 	if regs == nil {
-		regs = registries.NewSet(rs.factory)
+		regs = registries.NewSet(rs.factory, gcp.Singleton())
 		rs.store[namespace] = regs
 	}
 

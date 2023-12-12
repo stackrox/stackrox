@@ -2,6 +2,7 @@ package integration
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	gcpAuth "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
@@ -23,12 +24,12 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet(reporter integrationhealth.Reporter) Set {
+func NewSet(reporter integrationhealth.Reporter, gcpManager gcpAuth.STSTokenManager) Set {
 	registryFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncsWithoutRepoList: registries.AllCreatorFuncsWithoutRepoList,
 	})
 
-	registrySet := registries.NewSet(registryFactory)
+	registrySet := registries.NewSet(registryFactory, gcpManager)
 
 	scannerFactory := scanners.NewFactory(registrySet)
 	scannerSet := scanners.NewSet(scannerFactory)

@@ -17,18 +17,24 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ibm", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		return newRegistry(integration, false)
-	}
+func Creator() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "ibm",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			return newRegistry(integration, false)
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ibm", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		return newRegistry(integration, true)
-	}
+func CreatorWithoutRepoList() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "ibm",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			return newRegistry(integration, true)
+		}
 }
 
 func validate(ibm *storage.IBMRegistryConfig) error {

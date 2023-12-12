@@ -22,9 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 var _ types.Registry = (*ecr)(nil)
 
@@ -153,20 +151,26 @@ func (e *ecr) Test() error {
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, false)
-		return reg, err
-	}
+func Creator() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "ecr",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := newRegistry(integration, false)
+			return reg, err
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, true)
-		return reg, err
-	}
+func CreatorWithoutRepoList() (string,
+	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
+) {
+	return "ecr",
+		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+			reg, err := newRegistry(integration, true)
+			return reg, err
+		}
 }
 
 func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*ecr, error) {
