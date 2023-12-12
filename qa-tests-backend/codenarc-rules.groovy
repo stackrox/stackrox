@@ -26,13 +26,13 @@ ruleset {
     DuplicateMapKey 
     DuplicateSetValue 
     EmptyCatchBlock 
-    // EmptyClass
+    EmptyClass
     EmptyElseBlock 
     EmptyFinallyBlock 
     EmptyForStatement 
     EmptyIfStatement 
     EmptyInstanceInitializer 
-    // EmptyMethod
+    EmptyMethod
     EmptyStaticInitializer 
     EmptySwitchStatement 
     EmptySynchronizedStatement 
