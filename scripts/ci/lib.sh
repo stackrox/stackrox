@@ -1401,7 +1401,9 @@ _make_slack_failure_attachments() {
 
     slack_attachments=""
     if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
+        if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
+            slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
+        fi
     else
         slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
     fi
