@@ -123,6 +123,7 @@ function PendingApprovals() {
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
+                        useRegexMatch={false}
                     />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination
