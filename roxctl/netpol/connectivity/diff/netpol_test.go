@@ -3,6 +3,7 @@ package diff
 import (
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -179,7 +180,8 @@ func (d *diffAnalyzeNetpolTestSuite) assertFileContentsMatch(expectedString, fil
 	d.FileExists(fileName)
 	fileContents, err := os.ReadFile(fileName)
 	d.NoError(err)
-	d.Equal(string(fileContents), expectedString)
+	// Ignore the last trailing newline
+	d.Equal(strings.TrimSuffix(expectedString, "\n"), strings.TrimSuffix(string(fileContents), "\n"))
 }
 
 func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {

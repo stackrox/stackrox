@@ -5,10 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
+	npgdiff "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/npg"
+	"k8s.io/cli-runtime/pkg/resource"
 )
 
 const (
@@ -16,14 +17,38 @@ const (
 	defaultOutputFormat         = "txt"
 )
 
+var (
+	ErrYAMLMalformed = errors.New("YAML document is malformed")
+	ErrYAMLIsNotK8s  = errors.New("YAML document does not represent a K8s resource")
+)
+
 type diffAnalyzer interface {
-	ConnDiffFromDirPaths(dirPath1, dirPath2 string) (npguard.ConnectivityDiff, error)
-	ConnectivityDiffToString(connectivityDiff npguard.ConnectivityDiff) (string, error)
-	Errors() []npguard.DiffError
+	ConnDiffFromResourceInfos(infos1, infos2 []*resource.Info) (npgdiff.ConnectivityDiff, error)
+	ConnectivityDiffToString(connectivityDiff npgdiff.ConnectivityDiff) (string, error)
+	Errors() []npgdiff.DiffError
+}
+
+func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
+	b := resource.NewLocalBuilder().
+		Unstructured().
+		FilenameParam(false,
+			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
+		Flatten()
+	if !failFast {
+		b.ContinueOnError()
+	}
+	return b.Do().Infos()
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	connsDiff, err := analyzer.ConnDiffFromDirPaths(cmd.inputFolderPath1, cmd.inputFolderPath2)
+	errHandler := NewErrHandler(cmd.treatWarningsAsErrors)
+	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError)
+	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError)
+	if err := errHandler.HandleErrors(err1, err2); err != nil {
+		return err
+	}
+
+	connsDiff, err := analyzer.ConnDiffFromResourceInfos(info1, info2)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return errox.NotFound.Newf(err.Error())
