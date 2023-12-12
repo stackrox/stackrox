@@ -30,6 +30,17 @@ type extractor struct {
 	validator tokens.Validator
 }
 
+func logErrorAndReturnNilIdentity(ri requestinfo.RequestInfo, err error) (authn.Identity, error) {
+	logging.GetRateLimitedLogger().WarnL(
+		ri.Hostname,
+		"Cannot extract identity from token for hostname %v: %v",
+		ri.Hostname,
+		err,
+	)
+
+	return nil, err
+}
+
 func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	rawToken := authn.ExtractToken(ri.Metadata, "Bearer")
 	if rawToken == "" {
@@ -48,14 +59,14 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	// All tokens should have a source.
 	if len(token.Sources) != 1 {
-		return nil, errors.New("tokens must originate from exactly one source")
+		return logErrorAndReturnNilIdentity(ri, errors.New("tokens must originate from exactly one source"))
 	}
 	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
 	if !ok {
-		return nil, errors.New("API tokens must originate from an authentication provider source")
+		return logErrorAndReturnNilIdentity(ri, errors.New("API tokens must originate from an authentication provider source"))
 	}
 	if !authProviderSrc.Enabled() {
-		return nil, fmt.Errorf("auth provider %q is not enabled", authProviderSrc.Name())
+		return logErrorAndReturnNilIdentity(ri, fmt.Errorf("auth provider %q is not enabled", authProviderSrc.Name()))
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -68,7 +79,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	roleNames := token.RoleNames
 	if token.RoleName != "" {
 		if len(roleNames) != 0 {
-			return nil, errors.New("malformed token: uses both 'roles' and deprecated 'role' claims")
+			return logErrorAndReturnNilIdentity(ri, errors.New("malformed token: uses both 'roles' and deprecated 'role' claims"))
 		}
 		roleNames = []string{token.RoleName}
 	}

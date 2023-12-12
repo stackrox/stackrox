@@ -14,14 +14,21 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 type extractor struct {
 	verifyOpts x509.VerifyOptions
 	maxLeeway  time.Duration
 	validator  authn.ValidateCertChain
+}
+
+func logErrorAndReturnNilIdentity(ri requestinfo.RequestInfo, err error) (authn.Identity, error) {
+	logging.GetRateLimitedLogger().WarnL(
+		ri.Hostname,
+		"Cannot extract identity from service token for hostname %v: %v",
+		ri.Hostname,
+		err,
+	)
+
+	return nil, err
 }
 
 func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
@@ -49,16 +56,15 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			ri.Hostname,
 			err,
 		)
-
 		return nil, errors.New("could not verify certificate")
 	}
 
 	if len(verifiedChains) != 1 {
-		return nil, errors.Errorf("UNEXPECTED: %d verified chains found", len(verifiedChains))
+		return logErrorAndReturnNilIdentity(ri, errors.Errorf("UNEXPECTED: %d verified chains found", len(verifiedChains)))
 	}
 
 	if len(verifiedChains[0]) == 0 {
-		return nil, errors.New("UNEXPECTED: verified chain is empty")
+		return logErrorAndReturnNilIdentity(ri, errors.New("UNEXPECTED: verified chain is empty"))
 	}
 
 	chain := requestinfo.ExtractCertInfoChains(verifiedChains)
@@ -74,7 +80,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 		}
 	}
 
-	log.Debugf("%q is authenticating with a service cert token", verifiedChains[0][0].Subject)
+	logging.GetRateLimitedLogger().DebugL(ri.Hostname, "%q is authenticating with a service cert token", verifiedChains[0][0].Subject)
 
 	return service.WrapMTLSIdentity(mtls.IdentityFromCert(chain[0][0])), nil
 }
