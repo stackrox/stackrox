@@ -5,9 +5,17 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 )
 
+// PausableQueue defines a queue that can be paused.
+type PausableQueue[T comparable] interface {
+	Push(T)
+	PullBlocking(concurrency.Waitable) T
+	Pause()
+	Resume()
+}
+
 // Queue wraps a PausableQueue to make it pullable with a channel.
 type Queue[T comparable] struct {
-	queue   queue.PausableQueue[T]
+	queue   PausableQueue[T]
 	outputC chan T
 	stopper concurrency.Stopper
 }

@@ -17,12 +17,10 @@ func TestPausableQueue(t *testing.T) {
 	suite.Run(t, new(pausableQueueSuite))
 }
 
-func (s *pausableQueueSuite) createAndStartPausableQueue(opts ...PausableQueueOption[*string]) *pausableQueueImpl[*string] {
+func (s *pausableQueueSuite) createAndStartPausableQueue(opts ...PausableQueueOption[*string]) *PausableQueue[*string] {
 	q := NewPausableQueue[*string](opts...)
 	q.Resume()
-	ret, ok := q.(*pausableQueueImpl[*string])
-	s.Require().True(ok)
-	return ret
+	return q
 }
 
 func (s *pausableQueueSuite) TestPush() {
@@ -69,7 +67,7 @@ func (s *pausableQueueSuite) TestPush() {
 }
 
 func (s *pausableQueueSuite) TestPauseAndResume() {
-	cases := map[string][]func(*pausableQueueImpl[*string], concurrency.Stopper){
+	cases := map[string][]func(*PausableQueue[*string], concurrency.Stopper){
 		"Pause":            {s.push, s.pause, s.noPull, s.pullBlockingCall},
 		"Pause, resume":    {s.push, s.pause, s.push, s.noPull, s.resume, s.pull, s.pullBlocking},
 		"Pause, stop":      {s.push, s.pause, s.noPull, s.stopPullBlocking},
@@ -93,23 +91,23 @@ func (s *pausableQueueSuite) TestPauseAndResume() {
 	}
 }
 
-func (s *pausableQueueSuite) push(q *pausableQueueImpl[*string], _ concurrency.Stopper) {
+func (s *pausableQueueSuite) push(q *PausableQueue[*string], _ concurrency.Stopper) {
 	old := q.internalQueue.queue.Len()
 	item := "item"
 	q.Push(&item)
 	s.Assert().Equal(old+1, q.internalQueue.queue.Len())
 }
 
-func (s *pausableQueueSuite) pause(q *pausableQueueImpl[*string], _ concurrency.Stopper) {
+func (s *pausableQueueSuite) pause(q *PausableQueue[*string], _ concurrency.Stopper) {
 	q.Pause()
 }
 
-func (s *pausableQueueSuite) noPull(q *pausableQueueImpl[*string], _ concurrency.Stopper) {
+func (s *pausableQueueSuite) noPull(q *PausableQueue[*string], _ concurrency.Stopper) {
 	item := q.Pull()
 	s.Assert().Nil(item)
 }
 
-func (s *pausableQueueSuite) pullBlockingCall(q *pausableQueueImpl[*string], stopper concurrency.Stopper) {
+func (s *pausableQueueSuite) pullBlockingCall(q *PausableQueue[*string], stopper concurrency.Stopper) {
 	ch := make(chan *string)
 	go func() {
 		defer close(ch)
@@ -123,21 +121,21 @@ func (s *pausableQueueSuite) pullBlockingCall(q *pausableQueueImpl[*string], sto
 	}
 }
 
-func (s *pausableQueueSuite) resume(q *pausableQueueImpl[*string], _ concurrency.Stopper) {
+func (s *pausableQueueSuite) resume(q *PausableQueue[*string], _ concurrency.Stopper) {
 	q.Resume()
 }
 
-func (s *pausableQueueSuite) pull(q *pausableQueueImpl[*string], _ concurrency.Stopper) {
+func (s *pausableQueueSuite) pull(q *PausableQueue[*string], _ concurrency.Stopper) {
 	item := q.Pull()
 	s.Assert().Equal("item", *item)
 }
 
-func (s *pausableQueueSuite) pullBlocking(q *pausableQueueImpl[*string], stopper concurrency.Stopper) {
+func (s *pausableQueueSuite) pullBlocking(q *PausableQueue[*string], stopper concurrency.Stopper) {
 	item := q.PullBlocking(stopper.LowLevel().GetStopRequestSignal())
 	s.Assert().Equal("item", *item)
 }
 
-func (s *pausableQueueSuite) stopPullBlocking(q *pausableQueueImpl[*string], stopper concurrency.Stopper) {
+func (s *pausableQueueSuite) stopPullBlocking(q *PausableQueue[*string], stopper concurrency.Stopper) {
 	time.AfterFunc(500*time.Millisecond, func() {
 		stopper.Client().Stop()
 	})
@@ -147,7 +145,7 @@ func (s *pausableQueueSuite) stopPullBlocking(q *pausableQueueImpl[*string], sto
 	}, 1*time.Second, 100*time.Millisecond)
 }
 
-func (s *pausableQueueSuite) pushPullBlocking(q *pausableQueueImpl[*string], stopper concurrency.Stopper) {
+func (s *pausableQueueSuite) pushPullBlocking(q *PausableQueue[*string], stopper concurrency.Stopper) {
 	time.AfterFunc(500*time.Millisecond, func() {
 		item := "item"
 		q.Push(&item)
