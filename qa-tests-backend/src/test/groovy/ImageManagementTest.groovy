@@ -66,7 +66,7 @@ class ImageManagementTest extends BaseSpecification {
         "Data inputs are: "
 
         policyName                        | imageRegistry | imageRemote                      | imageTag     | note
-        "Latest nag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
         "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
