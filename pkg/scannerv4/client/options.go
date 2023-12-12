@@ -1,6 +1,9 @@
 package client
 
 import (
+	"fmt"
+
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -9,13 +12,13 @@ var (
 		indexerOpts: connOptions{
 			mTLSSubject: mtls.ScannerV4IndexerSubject,
 			address:     ":8443",
-			serverName:  "scanner-v4-indexer.stackrox", // TODO: allow custom namespaces
+			serverName:  fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting()),
 			skipTLS:     false,
 		},
 		matcherOpts: connOptions{
 			mTLSSubject: mtls.ScannerV4MatcherSubject,
 			address:     ":8443",
-			serverName:  "scanner-v4-matcher.stackrox",
+			serverName:  fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
 			skipTLS:     false,
 		},
 		comboMode: false,
