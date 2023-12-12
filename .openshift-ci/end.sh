@@ -125,7 +125,8 @@ generate_cluster_junit() {
 
     if [[ "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
         save_junit_success "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_DESTROY_DESCRIPTION} ${cluster_flavor_variant}"
-    elif [[ "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_FAILED}" ]]; then
+    elif [[ "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_FAILED}" && "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
+        # Only record cluster destroy failures when the create succeeded. Otherwise it is mostly noise.
         save_junit_failure "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_DESTROY_DESCRIPTION} ${cluster_flavor_variant}" \
             "${cluster_destroy_debug}"
     fi
