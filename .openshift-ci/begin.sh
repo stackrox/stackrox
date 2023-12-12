@@ -26,7 +26,3 @@ if [[ "${JOB_NAME:-}" =~ -ocp-4- ]]; then
     set_ci_shared_export WORKER_NODE_COUNT 2
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
 fi
-
-# Break them
-set_ci_shared_export WORKER_NODE_TYPE xyz
-set_ci_shared_export MACHINE_TYPE xyz
