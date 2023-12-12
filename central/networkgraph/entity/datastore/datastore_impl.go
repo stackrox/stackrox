@@ -175,6 +175,10 @@ func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID
 		if entity.GetScope().GetClusterId() != "" && entity.GetScope().GetClusterId() != clusterID {
 			return false
 		}
+		// By definition, learned entities are discovered by the cluster. So we don't want to send them.
+		if entity.GetInfo().GetExternalSource().GetLearned() {
+			return false
+		}
 
 		return !excludeEntityForGraphConfig(graphConfig, entity)
 	})
