@@ -17,3 +17,29 @@ scanner:
   replicas: 1
   autoscaling:
     disable: true
+
+scannerV4:
+  matcher:
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "800m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+  indexer:
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "800m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+  db:
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
