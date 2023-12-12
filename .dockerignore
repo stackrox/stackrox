@@ -6,3 +6,4 @@
 /linux-gocache/
 /operator/*/bin/
 /qa-tests-backend/
+.dccache

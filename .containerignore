@@ -10,3 +10,4 @@
 /bin/
 /linux-gocache/
 /operator/*/bin/
+.dccache

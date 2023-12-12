@@ -74,3 +74,6 @@ shellcheck-reports
 
 # Direnv
 .direnv/
+
+# Snyk
+.dccache
