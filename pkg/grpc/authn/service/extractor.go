@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -32,7 +34,13 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if e.validator != nil {
 		err := e.validator.ValidateClientCertificate(ctx, ri.VerifiedChains[0])
 		if err != nil {
-			return nil, err
+			logging.GetRateLimitedLogger().WarnL(
+				ri.Hostname,
+				"Client certificate validation failed for hostname %v: %v",
+				ri.Hostname,
+				err,
+			)
+			return nil, errors.New("client certificate validation failed")
 		}
 	}
 

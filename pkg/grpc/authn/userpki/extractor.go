@@ -3,6 +3,7 @@ package userpki
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -73,13 +74,13 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			}
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
-				logging.GetRateLimitedLogger().DebugL(
+				logging.GetRateLimitedLogger().WarnL(
 					ri.Hostname,
 					"Token validation failed for hostname %v: %v",
 					ri.Hostname,
 					err,
 				)
-				return nil, err
+				return nil, errors.New("failed to resolve user roles")
 			}
 			identity.resolvedRoles = resolvedRoles
 			return identity, nil

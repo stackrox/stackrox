@@ -9,7 +9,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
@@ -61,11 +60,12 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 
 	id, err := e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
-	if errors.Is(err, errox.NotAuthorized) {
+	if err != nil {
 		logging.GetRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to identify user with username %q", username)
 	}
-	return id, err
+
+	return id, nil
 }
 
 // NewExtractor returns a new identity extractor for basic auth.

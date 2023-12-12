@@ -37,7 +37,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		logging.GetRateLimitedLogger().DebugL(
+		logging.GetRateLimitedLogger().WarnL(
 			ri.Hostname,
 			"Token validation failed for hostname %v: %v",
 			ri.Hostname,
@@ -55,7 +55,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return nil, errors.New("API tokens must originate from an authentication provider source")
 	}
 	if !authProviderSrc.Enabled() {
-		return nil, fmt.Errorf("auth provider %s is not enabled", authProviderSrc.Name())
+		return nil, fmt.Errorf("auth provider %q is not enabled", authProviderSrc.Name())
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -75,12 +75,34 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	// Anonymous role-based tokens.
 	if len(roleNames) > 0 {
-		return e.withRoleNames(ctx, token, roleNames, authProviderSrc)
+		identityWithRoleNames, errWithRoleNames := e.withRoleNames(ctx, token, roleNames, authProviderSrc)
+		if errWithRoleNames != nil {
+			logging.GetRateLimitedLogger().WarnL(
+				ri.Hostname,
+				"Unable to get roles for token from host %v: %v",
+				ri.Hostname,
+				errWithRoleNames,
+			)
+			return nil, errors.New("failed to resolve user roles")
+		}
+
+		return identityWithRoleNames, nil
 	}
 
 	// External user token
 	if token.ExternalUser != nil {
-		return e.withExternalUser(ctx, token, authProviderSrc)
+		identityWithExternalUser, errWithExternalUser := e.withExternalUser(ctx, token, authProviderSrc)
+		if errWithExternalUser != nil {
+			logging.GetRateLimitedLogger().WarnL(
+				ri.Hostname,
+				"Unable to get external user for token from host %v: %v",
+				ri.Hostname,
+				errWithExternalUser,
+			)
+			return nil, errors.New("failed to resolve external user")
+		}
+
+		return identityWithExternalUser, nil
 	}
 
 	return nil, errors.New("could not determine token type")

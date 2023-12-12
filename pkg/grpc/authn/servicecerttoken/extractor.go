@@ -32,13 +32,25 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 
 	cert, err := servicecerttoken.ParseToken(token, e.maxLeeway)
 	if err != nil {
-		log.Warnf("Could not parse service cert token: %v", err)
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"Could not parse service cert token for hostname %v: %v",
+			ri.Hostname,
+			err,
+		)
 		return nil, errors.New("could not parse service cert token")
 	}
 
 	verifiedChains, err := cert.Verify(e.verifyOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not verify certificate")
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"Could not verify certificate for hostname %v: %v",
+			ri.Hostname,
+			err,
+		)
+
+		return nil, errors.New("could not verify certificate")
 	}
 
 	if len(verifiedChains) != 1 {
@@ -52,12 +64,17 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	chain := requestinfo.ExtractCertInfoChains(verifiedChains)
 	if e.validator != nil {
 		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
-			log.Errorf("Could not validate client certificate from service cert token: %v", err)
+			logging.GetRateLimitedLogger().ErrorL(
+				ri.Hostname,
+				"Could not validate client certificate from service cert token for hostname %v: %v",
+				ri.Hostname,
+				err,
+			)
 			return nil, errors.New("could not validate client certificate from service cert token")
 		}
 	}
 
-	log.Debugf("Woot! Someone (%s) is authenticating with a service cert token", verifiedChains[0][0].Subject)
+	log.Debugf("%q is authenticating with a service cert token", verifiedChains[0][0].Subject)
 
 	return service.WrapMTLSIdentity(mtls.IdentityFromCert(chain[0][0])), nil
 }
