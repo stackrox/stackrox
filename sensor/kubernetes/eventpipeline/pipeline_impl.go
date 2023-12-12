@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -122,6 +121,9 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
 			log.Info("Connection established: Starting Kubernetes listener")
+			// Stopping the listener here will allow Sensor to maintain the stores populated while offline.
+			// This is needed to capture runtime events in offline mode.
+			p.listener.Stop(nil)
 			// TODO(ROX-18613): use contextProvider to provide context for listener
 			p.createNewContext()
 			if err := p.listener.StartWithContext(p.context); err != nil {
@@ -129,10 +131,9 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 			}
 		}
 	case common.SensorComponentEventOfflineMode:
-		// Stop listening to events
+		// Cancel the current context of the listeners.
 		if p.offlineMode.CompareAndSwap(false, true) {
 			p.stopCurrentContext()
-			p.listener.Stop(errors.New("gRPC connection stopped"))
 		}
 	}
 }
