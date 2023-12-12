@@ -40,7 +40,7 @@ func (q *Queue[T]) run() {
 		case <-q.stopper.Flow().StopRequested():
 			return
 		default:
-			q.outputC <- q.queue.PullBlocking()
+			q.outputC <- q.queue.PullBlocking(q.stopper.LowLevel().GetStopRequestSignal())
 		}
 	}
 }
@@ -53,12 +53,6 @@ func (q *Queue[T]) Pause() {
 // Resume the queue.
 func (q *Queue[T]) Resume() {
 	q.queue.Resume()
-}
-
-// Stop the queue.
-func (q *Queue[T]) Stop() {
-	// TODO(ROX-21052): Resuming, pausing, and stopping the internal queue should be done in the QueueManager
-	q.queue.Stop()
 }
 
 // Pull returns the channel where run writes the front of the queue.

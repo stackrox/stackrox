@@ -11,13 +11,12 @@ import (
 type PausableQueue[T comparable] interface {
 	Push(T)
 	Pull() T
-	PullBlocking() T
+	PullBlocking(concurrency.Waitable) T
 	Pause()
 	Resume()
-	Stop()
-	AddAggregator(AggregateFunc[T])
-	SetSize(int)
-	SetMetric(*prometheus.CounterVec)
+	addAggregator(AggregateFunc[T])
+	setSize(int)
+	setMetric(*prometheus.CounterVec)
 }
 
 // AggregateFunc aggregates two comparable variables.
@@ -28,7 +27,6 @@ type pausableQueueImpl[T comparable] struct {
 	mu            sync.Mutex
 	internalQueue *Queue[T]
 	isRunning     concurrency.Signal
-	stop          concurrency.Signal
 	aggregators   []AggregateFunc[T]
 }
 
@@ -38,21 +36,21 @@ type PausableQueueOption[T comparable] func(PausableQueue[T])
 // WithAggregator provides an AggregateFunc for the queue.
 func WithAggregator[T comparable](aggregator AggregateFunc[T]) PausableQueueOption[T] {
 	return func(q PausableQueue[T]) {
-		q.AddAggregator(aggregator)
+		q.addAggregator(aggregator)
 	}
 }
 
 // WithPausableMaxSize provides a maximum size for the queue. By default, no size limit is set.
 func WithPausableMaxSize[T comparable](size int) PausableQueueOption[T] {
 	return func(q PausableQueue[T]) {
-		q.SetSize(size)
+		q.setSize(size)
 	}
 }
 
 // WithPausableQueueMetric provides a counter vec which tracks added and removed items from the queue.
 func WithPausableQueueMetric[T comparable](metric *prometheus.CounterVec) PausableQueueOption[T] {
 	return func(q PausableQueue[T]) {
-		q.SetMetric(metric)
+		q.setMetric(metric)
 	}
 }
 
@@ -61,7 +59,6 @@ func NewPausableQueue[T comparable](opts ...PausableQueueOption[T]) PausableQueu
 	q := &pausableQueueImpl[T]{
 		internalQueue: NewQueue[T](),
 		isRunning:     concurrency.NewSignal(),
-		stop:          concurrency.NewSignal(),
 	}
 	for _, opt := range opts {
 		opt(q)
@@ -69,22 +66,22 @@ func NewPausableQueue[T comparable](opts ...PausableQueueOption[T]) PausableQueu
 	return q
 }
 
-// SetSize sets the maximum size of the queue. Once we reach the maximum any call to Push will be ignored.
-func (q *pausableQueueImpl[T]) SetSize(size int) {
+// setSize sets the maximum size of the queue. Once we reach the maximum any call to Push will be ignored.
+func (q *pausableQueueImpl[T]) setSize(size int) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.internalQueue.maxSize = size
 }
 
-// SetMetric sets the counter metric.
-func (q *pausableQueueImpl[T]) SetMetric(metric *prometheus.CounterVec) {
+// setMetric sets the counter metric.
+func (q *pausableQueueImpl[T]) setMetric(metric *prometheus.CounterVec) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.internalQueue.counterMetric = metric
 }
 
-// AddAggregator appends a new AggregatorFunc.
-func (q *pausableQueueImpl[T]) AddAggregator(aggregator AggregateFunc[T]) {
+// addAggregator appends a new AggregatorFunc.
+func (q *pausableQueueImpl[T]) addAggregator(aggregator AggregateFunc[T]) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.aggregators = append(q.aggregators, aggregator)
@@ -139,13 +136,14 @@ func (q *pausableQueueImpl[T]) Pull() T {
 
 // PullBlocking will pull an item from the queue, potentially waiting until one is available.
 // In case the queue is stopped, the default value of T will be returned.
-func (q *pausableQueueImpl[T]) PullBlocking() T {
-	var ret T
+func (q *pausableQueueImpl[T]) PullBlocking(waitable concurrency.Waitable) T {
+	var retNil T
+	ret := q.internalQueue.PullBlocking(waitable)
 	select {
-	case <-q.stop.Done():
-		return ret
+	case <-waitable.Done():
+		return retNil
 	case <-q.isRunning.Done():
-		return q.internalQueue.PullBlocking(&q.stop)
+		return ret
 	}
 }
 
@@ -157,9 +155,4 @@ func (q *pausableQueueImpl[T]) Pause() {
 // Resume the queue.
 func (q *pausableQueueImpl[T]) Resume() {
 	q.isRunning.Signal()
-}
-
-// Stop the queue permanently.
-func (q *pausableQueueImpl[T]) Stop() {
-	q.stop.Signal()
 }
