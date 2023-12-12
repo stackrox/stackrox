@@ -110,7 +110,7 @@ ruleset {
     AbstractClassWithoutAbstractMethod 
     AssignmentToStaticFieldFromInstanceMethod 
     BooleanMethodReturnsNull 
-    // BuilderMethodWithSideEffects
+    BuilderMethodWithSideEffects
     CloneableWithoutClone 
     CloseWithoutCloseable 
     CompareToWithoutComparable 
@@ -120,7 +120,7 @@ ruleset {
     ImplementationAsType 
     // Instanceof
     LocaleSetDefault 
-    // NestedForLoop
+    NestedForLoop
     PrivateFieldCouldBeFinal 
     PublicInstanceField 
     ReturnsNullInsteadOfEmptyArray 

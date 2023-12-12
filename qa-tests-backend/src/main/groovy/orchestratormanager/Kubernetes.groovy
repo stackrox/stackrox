@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
-import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
@@ -368,10 +367,7 @@ class Kubernetes implements OrchestratorMain {
     def getAndPrintPods(String ns, String name) {
         log.debug "Status of ${name}'s pods:"
         for (Pod pod : getPodsByLabel(ns, ["deployment": name])) {
-            log.debug "\t- ${pod.metadata.name}"
-            for (ContainerStatus status : pod.status.containerStatuses) {
-                log.debug "\t  Container status: ${status.state}"
-            }
+            log.debug "\t- ${pod.metadata.name}\n\t  Container status: ${pod.status.containerStatuses*.state}"
         }
     }
 

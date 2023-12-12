@@ -695,16 +695,12 @@ class ImageScanningTest extends BaseSpecification {
 
             if (imageDetails.hasScan()) {
                 assert imageDetails.scan.scanTime
-                for (ImageOuterClass.EmbeddedImageScanComponent component : imageDetails.scan.componentsList) {
-                    for (Vulnerability.EmbeddedVulnerability vuln : component.vulnsList) {
-                        // Removed summary due to GCR's lack of summary
-                        if (0.0 > vuln.cvss || vuln.cvss > 10.0 ||
-                                vuln.link == null || vuln.link == "") {
-                            missingValues.containsKey(imageDetails.name) ?
-                                    missingValues.get(imageDetails.name).add(vuln) :
-                                    missingValues.put(imageDetails.name, [vuln])
-                        }
-                    }
+                imageDetails.scan.componentsList*.vulnsList.flatten().find { Vulnerability.EmbeddedVulnerability vuln ->
+                    0.0 > vuln.cvss || vuln.cvss > 10.0 || vuln.link == null || vuln.link == ""
+                }.each { Vulnerability.EmbeddedVulnerability vuln ->
+                    missingValues.containsKey(imageDetails.name) ?
+                            missingValues.get(imageDetails.name).add(vuln) :
+                            missingValues.put(imageDetails.name, [vuln])
                 }
             }
             if (missingValues.containsKey(imageDetails.name)) {
