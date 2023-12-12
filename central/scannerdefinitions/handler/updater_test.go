@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
 	"io"
@@ -21,8 +20,6 @@ const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
 	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
-
-	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
 )
 
 var (
@@ -69,7 +66,7 @@ func mustSetModTime(t *testing.T, path string, modTime time.Time) {
 
 func TestMappingUpdate(t *testing.T) {
 	filePath := filepath.Join(t.TempDir(), "test.zip")
-	u := newV4Updater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, mappingURL, 1*time.Hour)
 
 	// Should fetch first time.
 	require.NoError(t, u.doUpdate())
@@ -97,28 +94,6 @@ func TestCvssUpdate(t *testing.T) {
 	assert.Greater(t, n, 21, "Number of files should be greater than 21")
 }
 
-// countFilesInZip counts the number of files inside a zip archive.
-func countFilesInZip(zipFilePath string) (int, error) { /**/
-	r, err := zip.OpenReader(zipFilePath)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err := r.Close(); err != nil {
-			log.Errorf("Error closing zip reader: %v", err)
-		}
-	}()
-
-	count := 0
-	for _, f := range r.File {
-		if !f.FileInfo().IsDir() {
-			count++
-		}
-	}
-
-	return count, nil
-}
-
 func countFilesInTarGz(tarGzFilePath string) (int, error) {
 	file, err := os.Open(tarGzFilePath)
 	if err != nil {
@@ -144,6 +119,28 @@ func countFilesInTarGz(tarGzFilePath string) (int, error) {
 			return 0, err
 		}
 		if header.Typeflag != tar.TypeDir {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+// countFilesInZip counts the number of files inside a zip archive.
+func countFilesInZip(zipFilePath string) (int, error) {
+	r, err := zip.OpenReader(zipFilePath)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		if err := r.Close(); err != nil {
+			log.Errorf("Error closing zip reader: %v", err)
+		}
+	}()
+
+	count := 0
+	for _, f := range r.File {
+		if !f.FileInfo().IsDir() {
 			count++
 		}
 	}

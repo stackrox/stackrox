@@ -81,7 +81,7 @@ func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func (s *handlerTestSuite) getRequestWithFileType(t *testing.T, file string) *http.Request {
+func (s *handlerTestSuite) getRequestWithJSONFile(t *testing.T, file string) *http.Request {
 	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?type=%s", file)
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	require.NoError(t, err)
@@ -178,37 +178,30 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	assert.Empty(t, w.Data.String())
 }
 
-func (s *handlerTestSuite) TestServeHTTP_Online_V4_Definitions_Get() {
+func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 	t := s.T()
 	h := New(s.datastore, handlerOpts{})
 
 	w := mock.NewResponseWriter()
 
 	// Nothing should be found
-	req := s.getRequestWithFileType(t, "randomName")
+	req := s.getRequestWithJSONFile(t, "randomName")
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Should get mapping json file from online update.
-	req = s.getRequestWithFileType(t, "name2cpe")
+	req = s.getRequestWithJSONFile(t, "name2cpe")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
 	// Should get mapping json file from online update.
-	req = s.getRequestWithFileType(t, "repo2cpe")
+	req = s.getRequestWithJSONFile(t, "repo2cpe")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-
-	// Should get CVSS data bundle file from online update.
-	req = s.getRequestWithFileType(t, "cvss")
-	w.Data.Reset()
-	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "application/gzip", w.Header().Get("Content-Type"))
 }
 
 func (s *handlerTestSuite) mustWriteOffline(content string, modTime time.Time) {
