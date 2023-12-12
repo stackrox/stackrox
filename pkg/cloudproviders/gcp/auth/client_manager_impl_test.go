@@ -3,29 +3,29 @@ package auth
 import (
 	"testing"
 
-	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	"cloud.google.com/go/storage"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/auth/tokensource"
 	authMocks "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth/mocks"
-	handlerMocks "github.com/stackrox/rox/pkg/cloudproviders/gcp/handler/mocks"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-// TestClientManager asserts that on the happy path the factory update is called.
-func TestClientManager(t *testing.T) {
+// TestTokenManager asserts the credentials get is called twice when we expire the token.
+func TestTokenManager(t *testing.T) {
 	t.Parallel()
 	controller := gomock.NewController(t)
 
 	mockCredManager := authMocks.NewMockCredentialsManager(controller)
-	mockCredManager.EXPECT().GetCredentials(gomock.Any()).Return(nil, nil)
-	mockStorageHandler := handlerMocks.NewMockHandler[*storage.Client](controller)
-	mockStorageHandler.EXPECT().UpdateClient(gomock.Any(), gomock.Any()).Return(nil)
-	mockSecurityCenterHandler := handlerMocks.NewMockHandler[*securitycenter.Client](controller)
-	mockSecurityCenterHandler.EXPECT().UpdateClient(gomock.Any(), gomock.Any()).Return(nil)
+	// Return error here so we don't have to mock the google credentials token source.
+	dummyErr := errors.New("dummy error")
+	mockCredManager.EXPECT().GetCredentials(gomock.Any()).Return(nil, dummyErr).Times(2)
 
-	manager := &stsClientManagerImpl{
-		credManager:                 mockCredManager,
-		storageClientHandler:        mockStorageHandler,
-		securityCenterClientHandler: mockSecurityCenterHandler,
-	}
-	manager.updateClients()
+	ts := tokensource.NewReuseTokenSourceWithForceRefresh(&CredentialManagerTokenSource{credManager: mockCredManager})
+	manager := &stsTokenManagerImpl{credManager: mockCredManager, tokenSource: ts}
+
+	_, err := ts.Token()
+	assert.ErrorIs(t, err, dummyErr)
+	manager.expireToken()
+	_, err = ts.Token()
+	assert.ErrorIs(t, err, dummyErr)
 }
