@@ -11,9 +11,9 @@ const (
 
 var (
 	moduleToDomain = map[*regexp.Regexp]string{
-		regexp.MustCompile(`^reprocessor|image/service`): imageScanningDomain,
-		regexp.MustCompile(`^pkg/notifiers(/|$)`):        integrationDomain,
-		regexp.MustCompile(`^apitoken/expiration`):       authenticationDomain,
+		regexp.MustCompile(`^reprocessor|image/service`):         imageScanningDomain,
+		regexp.MustCompile(`^pkg/notifiers(/|$)|notifiers(/|$)`): integrationDomain,
+		regexp.MustCompile(`^apitoken/expiration`):               authenticationDomain,
 	}
 )
 
