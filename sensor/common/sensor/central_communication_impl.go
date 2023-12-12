@@ -242,6 +242,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	centralid.Set(centralHello.GetCentralId())
 	centralCaps := centralHello.GetCapabilities()
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
+	log.Infof("SHREWS -- setting caps %v", centralCaps)
 
 	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
 	s.clientReconcile = s.clientReconcile &&
