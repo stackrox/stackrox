@@ -1,7 +1,7 @@
 package objects
 
 import common.Constants
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.api.v1.ImageIntegrationOuterClass
 import services.ImageIntegrationService
 import util.Env
 

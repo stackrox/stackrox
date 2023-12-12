@@ -6,8 +6,8 @@ import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegrationCategory
+import io.stackrox.proto.api.v1.ImageIntegrationOuterClass
+import io.stackrox.proto.api.v1.ImageIntegrationOuterClass.ImageIntegrationCategory
 import objects.StackroxScannerIntegration
 import util.Timer
 
