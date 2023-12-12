@@ -69,6 +69,7 @@ func (u *updaterImpl) Stop(_ error) {
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventSyncFinished:
+		log.Info("SHREWS -- Sync finished")
 		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 			log.Infof("SHREWS -- central is next gen capable")
 			u.updateTicker.Reset(u.updateInterval)
@@ -76,6 +77,13 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 		}
 		log.Infof("SHREWS -- central is NOT next gen capable")
 		u.updateTicker.Stop()
+	case common.SensorComponentEventCentralReachable:
+		log.Info("SHREWS -- Central is reachable")
+		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+			log.Infof("SHREWS -- central is next gen capable")
+			return
+		}
+		log.Infof("SHREWS -- central is NOT next gen capable")
 	}
 }
 
