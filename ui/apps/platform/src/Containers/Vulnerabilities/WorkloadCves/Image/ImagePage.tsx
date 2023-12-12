@@ -23,6 +23,7 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useURLPagination from 'hooks/useURLPagination';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
@@ -74,6 +75,8 @@ function ImagePage() {
     });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
+
+    const pagination = useURLPagination(20);
 
     const imageData = data && data.image;
     const imageName = imageData?.name
@@ -137,7 +140,10 @@ function ImagePage() {
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={(e, key) => setActiveTabKey(key)}
+                        onSelect={(e, key) => {
+                            setActiveTabKey(key);
+                            pagination.setPage(1);
+                        }}
                         component={TabsComponent.nav}
                         className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter
@@ -158,6 +164,7 @@ function ImagePage() {
                                     }
                                 }
                                 refetchAll={refetchAll}
+                                pagination={pagination}
                             />
                         </Tab>
                         <Tab
@@ -165,7 +172,7 @@ function ImagePage() {
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
-                            <ImagePageResources imageId={imageId} />
+                            <ImagePageResources imageId={imageId} pagination={pagination} />
                         </Tab>
                     </Tabs>
                 </PageSection>
