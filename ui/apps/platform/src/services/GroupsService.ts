@@ -1,5 +1,6 @@
 import { Group } from 'types/group.proto';
 import axios from './instance';
+import { Empty } from './types';
 
 const url = '/v1/groups';
 const updateUrl = '/v1/groupsbatch';
@@ -26,14 +27,17 @@ export function fetchGroups(): Promise<{ response: { groups: Group[] } }> {
 /**
  * Update/Add a group rule.
  */
-export function updateOrAddGroup(request: GroupBatchUpdateRequest) {
-    return axios.post(updateUrl, request);
+export function updateOrAddGroup(request: GroupBatchUpdateRequest): Promise<Empty> {
+    return axios.post<Empty>(updateUrl, request).then((response) => response.data);
 }
 
 /**
  * Fetches the default rule.
  */
-export function getDefaultGroup({ authProviderId, roleName }: GetDefaultGroupRequest) {
+export function getDefaultGroup({
+    authProviderId,
+    roleName,
+}: GetDefaultGroupRequest): Promise<{ response: Group | undefined }> {
     // The default group is characterized by the following:
     // - Only authProviderID is set, key and value are empty.
     // - The role name of the group matches the given role name.
