@@ -7,6 +7,7 @@ import groovy.util.logging.Slf4j
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import org.apache.http.HttpResponse
+import org.apache.http.StatusLine
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
@@ -133,10 +134,15 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            log.debug "GraphQL response: " + (
+            def status = response.getStatusLine()
+            log.debug "GraphQL response: $status: " + (
                 bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
+            if (status.statusCode != 200) {
+                return new Response(status.statusCode, null, [bsa.toString()])
+            }
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
-            return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
+
+            return new Response(status.getStatusCode(), returnedValue.data, returnedValue.errors)
         }
 
         private CloseableHttpClient buildClient()  {
