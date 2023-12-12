@@ -1,0 +1,22 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore: {}
+patch: {}
+exclude:
+  global:
+    - '.openshift-ci'
+    - '.github/workflows/scripts/scanner-update-nvd.py'
+    - '.github/workflows/scripts/check-image-vulnerabilities.py'
+    - 'central'
+    - 'compliance'
+    - 'govulncheck/main.go'
+    - 'migrator'
+    - 'operator'
+    - 'pkg'
+    - 'roxctl'
+    - 'scale/tests'
+    - 'scripts/certification/format_csv.py'
+    - 'sensor'
+    - 'tests'
+    - 'tools'
+    - 'ui'
