@@ -37,23 +37,21 @@ func (g *googleRegistry) Match(image *storage.ImageName) bool {
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string,
-	func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error),
-) {
+func Creator() (string, types.Creator) {
 	return "google",
-		func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error) {
-			return NewRegistry(integration, false, options.GetGCPTokenManager())
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return NewRegistry(integration, false, cfg.GetGCPTokenManager())
 		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string,
-	func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error),
-) {
+func CreatorWithoutRepoList() (string, types.Creator) {
 	return "google",
-		func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error) {
-			return NewRegistry(integration, true, options.GetGCPTokenManager())
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			return NewRegistry(integration, true, cfg.GetGCPTokenManager())
 		}
 }
 

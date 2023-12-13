@@ -16,21 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
-// Creator is the func stub that defines how to instantiate an image registry.
-type Creator func(scanner *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error)
-
 // Factory provides a centralized location for creating a Scanner from a v1.ImageIntegrations.
 //
 //go:generate mockgen-wrapper
 type Factory interface {
-	CreateRegistry(source *storage.ImageIntegration, options *types.CreatorOptions) (types.ImageRegistry, error)
+	CreateRegistry(source *storage.ImageIntegration, options ...types.CreatorOption) (types.ImageRegistry, error)
 }
 
-// CreatorWrapper is a wrapper around a Creator which also returns the registry's name.
-type CreatorWrapper func() (string, func(integration *storage.ImageIntegration, options *types.CreatorOptions) (types.Registry, error))
-
 // AllCreatorFuncs defines all known registry creators.
-var AllCreatorFuncs = []CreatorWrapper{
+var AllCreatorFuncs = []types.CreatorWrapper{
 	artifactRegistryFactory.Creator,
 	artifactoryFactory.Creator,
 	dockerFactory.Creator,
@@ -44,7 +38,7 @@ var AllCreatorFuncs = []CreatorWrapper{
 }
 
 // AllCreatorFuncsWithoutRepoList defines all known registry creators with repo list disabled.
-var AllCreatorFuncsWithoutRepoList = []CreatorWrapper{
+var AllCreatorFuncsWithoutRepoList = []types.CreatorWrapper{
 	artifactRegistryFactory.CreatorWithoutRepoList,
 	artifactoryFactory.CreatorWithoutRepoList,
 	dockerFactory.CreatorWithoutRepoList,
@@ -60,8 +54,8 @@ var AllCreatorFuncsWithoutRepoList = []CreatorWrapper{
 // NewFactory creates a new registries factory.
 func NewFactory(opts FactoryOptions) Factory {
 	reg := &factoryImpl{
-		creators:                make(map[string]Creator),
-		creatorsWithoutRepoList: make(map[string]Creator),
+		creators:                make(map[string]types.Creator),
+		creatorsWithoutRepoList: make(map[string]types.Creator),
 	}
 
 	creatorFuncs := AllCreatorFuncs

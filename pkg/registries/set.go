@@ -2,7 +2,6 @@ package registries
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	gcpAuth "github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
@@ -22,10 +21,10 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet(factory Factory, gcpManager gcpAuth.STSTokenManager) Set {
+func NewSet(factory Factory, creatorOpts ...types.CreatorOption) Set {
 	return &setImpl{
 		factory:      factory,
 		integrations: make(map[string]types.ImageRegistry),
-		gcpManager:   gcpManager,
+		creatorOpts:  creatorOpts,
 	}
 }

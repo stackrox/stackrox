@@ -69,7 +69,6 @@ func TestGoogleMatch(t *testing.T) {
 }
 
 func TestGoogleValidate(t *testing.T) {
-	t.Parallel()
 	t.Setenv("ROX_CLOUD_CREDENTIALS", "true")
 	cases := []struct {
 		name    string
@@ -106,7 +105,6 @@ func TestGoogleValidate(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
 			err := validate(c.config)
 			if c.isValid {
 				assert.NoError(t, err)

@@ -17,12 +17,12 @@ var (
 
 func TestCreateRegistryWithoutRepoList(t *testing.T) {
 	onlyWithRepoOpts := FactoryOptions{
-		CreatorFuncs: []CreatorWrapper{creatorWithRepoList},
+		CreatorFuncs: []types.CreatorWrapper{creatorWithRepoList},
 	}
 
 	withAndWithoutOpts := FactoryOptions{
-		CreatorFuncs:                []CreatorWrapper{creatorWithRepoList},
-		CreatorFuncsWithoutRepoList: []CreatorWrapper{creatorWithoutRepoList},
+		CreatorFuncs:                []types.CreatorWrapper{creatorWithRepoList},
+		CreatorFuncsWithoutRepoList: []types.CreatorWrapper{creatorWithoutRepoList},
 	}
 
 	testCases := map[string]struct {
@@ -73,21 +73,17 @@ func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { ret
 func (f *FakeReg) Name() string                                            { return f.name }
 func (*FakeReg) Test() error                                               { return nil }
 
-func creatorWithoutRepoList() (string,
-	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
-) {
+func creatorWithoutRepoList() (string, types.Creator) {
 	return RegistryType,
-		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg := newFakeReg(NameRepoListDisabled)
 			return reg, nil
 		}
 }
 
-func creatorWithRepoList() (string,
-	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
-) {
+func creatorWithRepoList() (string, types.Creator) {
 	return RegistryType,
-		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg := newFakeReg(NameRepoListEnabled)
 			return reg, nil
 		}

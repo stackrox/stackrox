@@ -284,7 +284,7 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 }
 
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
-	registry, err := s.registryFactory.CreateRegistry(integration, &types.CreatorOptions{GCPTokenManager: gcp.Singleton()})
+	registry, err := s.registryFactory.CreateRegistry(integration, types.WithGCPTokenManager(gcp.Singleton()))
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}

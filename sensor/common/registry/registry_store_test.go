@@ -320,7 +320,7 @@ func TestRegistryStore_GenImgIntName(t *testing.T) {
 func TestDataRaceAtCleanup(_ *testing.T) {
 	testNamespace := "test-ns"
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-	regStore.store[testNamespace] = registries.NewSet(regStore.factory, nil)
+	regStore.store[testNamespace] = registries.NewSet(regStore.factory)
 	wg := sync.WaitGroup{}
 	doneSignal := concurrency.NewSignal()
 	wg.Add(1)

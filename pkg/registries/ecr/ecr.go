@@ -151,11 +151,9 @@ func (e *ecr) Test() error {
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string,
-	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
-) {
+func Creator() (string, types.Creator) {
 	return "ecr",
-		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := newRegistry(integration, false)
 			return reg, err
 		}
@@ -163,11 +161,9 @@ func Creator() (string,
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string,
-	func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error),
-) {
+func CreatorWithoutRepoList() (string, types.Creator) {
 	return "ecr",
-		func(integration *storage.ImageIntegration, _ *types.CreatorOptions) (types.Registry, error) {
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := newRegistry(integration, true)
 			return reg, err
 		}
