@@ -284,28 +284,22 @@ func (d *deployCheckTestSuite) SetupTest() {
 }
 
 func (d *deployCheckTestSuite) TestMultipleFiles() {
-	d.defaultDeploymentCheckCommand = deploymentCheckCommand{
-		files:              []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"},
-		retryDelay:         3,
-		retryCount:         3,
-		timeout:            1 * time.Minute,
-		printAllViolations: true,
-	}
+	deployCheckCmd := d.defaultDeploymentCheckCommand
+	deployCheckCmd.files = []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"}
 
 	conn, closeF, server := d.createGRPCMockDetectionService(testDeploymentAlertsWithoutFailure, []string{""})
 	defer closeF()
-	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.env, _, _ = d.createMockEnvironmentWithConn(conn)
 
 	tablePrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
 		defaultDeploymentCheckJSONPathExpression).CreatePrinter("table")
-	d.Assert().NoError(err)
+	d.Require().NoError(err)
 	deployCheckCmd.printer = tablePrinter
 	err = deployCheckCmd.Check()
-	d.Assert().NoError(err)
+	d.Require().NoError(err)
 	var expectedBinary []byte
 	expectedBinary, err = os.ReadFile("testdata/testMultipleFilesExpectedYaml.yaml")
-	d.Assert().NoError(err)
+	d.Require().NoError(err)
 	expectedString := fmt.Sprintf("yaml:%s ", strconv.Quote(string(expectedBinary)))
 	d.Assert().Equal(expectedString, server.request.String())
 }

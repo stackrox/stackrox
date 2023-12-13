@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -37,6 +38,7 @@ const (
 )
 
 var (
+	log = logging.CreateLogger(logging.CurrentModule(), 0)
 	// Default headers to use when printing tabular output
 	defaultDeploymentCheckHeaders = []string{
 		"POLICY", "SEVERITY", "BREAKS DEPLOY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION",
@@ -128,7 +130,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// We need a string parameter with the filenames for the sarif printer factory
 	// If a report is based on a single yaml file it will work as previously, if multiple
 	// they will be concatenated as csv
-	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.files[:], ",")
+	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.files, ",")
 
 	return c
 }
@@ -212,6 +214,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		}
 		deploymentFileContents = append(deploymentFileContents, fileContents...)
 	}
+	log.Info("roxctl deployment check is handling file input of size %s", len(deploymentFileContents))
 
 	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
 	if err != nil {
