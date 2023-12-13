@@ -247,10 +247,10 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-	mockDetectionServiceServer1 := mockDetectionServiceServer{alerts: alerts, ignoredObjRefs: ignoredObjRefs}
+	mockDetectionService := mockDetectionServiceServer{alerts: alerts, ignoredObjRefs: ignoredObjRefs}
 	server := grpc.NewServer()
 	v1.RegisterDetectionServiceServer(server,
-		&mockDetectionServiceServer1)
+		&mockDetectionService)
 
 	go func() {
 		utils.IgnoreError(func() error { return server.Serve(listener) })
@@ -266,7 +266,7 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 		server.Stop()
 	}
 
-	return conn, closeFunction, &mockDetectionServiceServer1
+	return conn, closeFunction, &mockDetectionService
 }
 
 func (d *deployCheckTestSuite) createMockEnvironmentWithConn(conn *grpc.ClientConn) (environment.Environment, *bytes.Buffer, *bytes.Buffer) {
