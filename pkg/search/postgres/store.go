@@ -276,16 +276,16 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+	return nil, RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
 }
 
 // Delete removes the object associated to the specified ID from the store.
 func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-	return s.DeleteByQuery(ctx, q)
+	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 // DeleteMany removes the objects associated to the specified IDs from the store.

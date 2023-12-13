@@ -506,5 +506,6 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
 }

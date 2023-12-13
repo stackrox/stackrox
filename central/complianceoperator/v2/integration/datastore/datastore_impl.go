@@ -109,6 +109,7 @@ func (ds *datastoreImpl) RemoveComplianceIntegrationByCluster(ctx context.Contex
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	_, storeErr := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	return storeErr
 }

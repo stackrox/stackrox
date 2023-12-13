@@ -69,9 +69,10 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 		return sac.ErrResourceAccessDenied
 	}
 
-	return d.profileEdgeStore.DeleteByQuery(ctx, search.NewQueryBuilder().
+	_, storeErr := d.profileEdgeStore.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ComplianceOperatorProfileUID, uid).ProtoQuery())
+	return storeErr
 }
 
 // GetProfileEdgesByCluster gets the list of profile edges for a given cluster

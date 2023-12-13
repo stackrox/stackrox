@@ -86,7 +86,7 @@ func (c *cacheImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (c *cacheImpl) DeleteByQuery(_ context.Context, _ *v1.Query) error {
+func (c *cacheImpl) DeleteByQuery(_ context.Context, _ *v1.Query) ([]string, error) {
 	// TODO implement me
 	panic("implement me")
 }

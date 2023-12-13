@@ -97,7 +97,8 @@ func TestGloballyScopedDeleteByQuery(t *testing.T) {
 	assert.True(t, found5)
 	assert.NoError(t, err5)
 
-	assert.NoError(t, reportConfigStore.DeleteByQuery(ctx, query))
+	_, deleteErr := reportConfigStore.DeleteByQuery(ctx, query)
+	assert.NoError(t, deleteErr)
 
 	objAfter1, foundAfter1, errAfter1 := reportConfigStore.Get(ctx, identifier1)
 	assert.Equal(t, getTestReportConfig(identifier1, name1), objAfter1)
