@@ -6,24 +6,24 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// ReuseTokenSourceWithForceRefresh works like oauth2.ReuseTokenSource but with
-// and additional manual expiry method that forces a token refresh.
-type ReuseTokenSourceWithForceRefresh struct {
+// ReuseTokenSourceWithInvalidate works like oauth2.ReuseTokenSource but with
+// an additional manual invalidate method that forces a token refresh.
+type ReuseTokenSourceWithInvalidate struct {
 	token     *oauth2.Token
 	base      oauth2.TokenSource
 	mutex     sync.Mutex
 	isExpired bool
 }
 
-var _ oauth2.TokenSource = &ReuseTokenSourceWithForceRefresh{}
+var _ oauth2.TokenSource = &ReuseTokenSourceWithInvalidate{}
 
-// NewReuseTokenSourceWithForceRefresh wraps a base token source and provides refresh and expiry functionality.
-func NewReuseTokenSourceWithForceRefresh(base oauth2.TokenSource) *ReuseTokenSourceWithForceRefresh {
-	return &ReuseTokenSourceWithForceRefresh{base: base}
+// NewReuseTokenSourceWithInvalidate wraps a base token source and provides refresh and expiry functionality.
+func NewReuseTokenSourceWithInvalidate(base oauth2.TokenSource) *ReuseTokenSourceWithInvalidate {
+	return &ReuseTokenSourceWithInvalidate{base: base}
 }
 
 // Token returns an oauth token.
-func (t *ReuseTokenSourceWithForceRefresh) Token() (*oauth2.Token, error) {
+func (t *ReuseTokenSourceWithInvalidate) Token() (*oauth2.Token, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	if !t.isExpired && t.token.Valid() {
@@ -38,8 +38,8 @@ func (t *ReuseTokenSourceWithForceRefresh) Token() (*oauth2.Token, error) {
 	return t.token, nil
 }
 
-// Expire forces the invalidation the cached token.
-func (t *ReuseTokenSourceWithForceRefresh) Expire() {
+// Invalidate forces the invalidation the cached token.
+func (t *ReuseTokenSourceWithInvalidate) Invalidate() {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	t.isExpired = true

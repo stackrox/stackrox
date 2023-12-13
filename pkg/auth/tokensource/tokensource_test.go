@@ -21,7 +21,7 @@ func (f *fakeTokenSource) Token() (*oauth2.Token, error) {
 
 func TestReuseTokenSourceWithForceRefresh(t *testing.T) {
 	t.Parallel()
-	ts := NewReuseTokenSourceWithForceRefresh(&fakeTokenSource{})
+	ts := NewReuseTokenSourceWithInvalidate(&fakeTokenSource{})
 
 	token, err := ts.Token()
 	assert.Equal(t, token.AccessToken, "1")
@@ -30,7 +30,7 @@ func TestReuseTokenSourceWithForceRefresh(t *testing.T) {
 	assert.Equal(t, token.AccessToken, "1")
 	require.NoError(t, err)
 
-	ts.Expire()
+	ts.Invalidate()
 
 	token, err = ts.Token()
 	assert.Equal(t, token.AccessToken, "2")

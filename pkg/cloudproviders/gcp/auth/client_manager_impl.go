@@ -9,7 +9,7 @@ import (
 
 type stsTokenManagerImpl struct {
 	credManager CredentialsManager
-	tokenSource *tokensource.ReuseTokenSourceWithForceRefresh
+	tokenSource *tokensource.ReuseTokenSourceWithInvalidate
 }
 
 var _ STSTokenManager = &stsTokenManagerImpl{}
@@ -18,7 +18,7 @@ func fallbackSTSClientManager() STSTokenManager {
 	credManager := &defaultCredentialsManager{}
 	mgr := &stsTokenManagerImpl{
 		credManager: credManager,
-		tokenSource: tokensource.NewReuseTokenSourceWithForceRefresh(&CredentialManagerTokenSource{credManager}),
+		tokenSource: tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{credManager}),
 	}
 	return mgr
 }
@@ -36,8 +36,8 @@ func NewSTSTokenManager(namespace string, secretName string) STSTokenManager {
 		return fallbackSTSClientManager()
 	}
 	mgr := &stsTokenManagerImpl{}
-	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.expireToken)
-	mgr.tokenSource = tokensource.NewReuseTokenSourceWithForceRefresh(&CredentialManagerTokenSource{mgr.credManager})
+	mgr.credManager = newCredentialsManagerImpl(k8sClient, namespace, secretName, mgr.invalidateToken)
+	mgr.tokenSource = tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{mgr.credManager})
 	return mgr
 }
 
@@ -53,6 +53,6 @@ func (c *stsTokenManagerImpl) TokenSource() oauth2.TokenSource {
 	return c.tokenSource
 }
 
-func (c *stsTokenManagerImpl) expireToken() {
-	c.tokenSource.Expire()
+func (c *stsTokenManagerImpl) invalidateToken() {
+	c.tokenSource.Invalidate()
 }

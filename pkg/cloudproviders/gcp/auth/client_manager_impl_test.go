@@ -20,12 +20,12 @@ func TestTokenManager(t *testing.T) {
 	dummyErr := errors.New("dummy error")
 	mockCredManager.EXPECT().GetCredentials(gomock.Any()).Return(nil, dummyErr).Times(2)
 
-	ts := tokensource.NewReuseTokenSourceWithForceRefresh(&CredentialManagerTokenSource{credManager: mockCredManager})
+	ts := tokensource.NewReuseTokenSourceWithInvalidate(&CredentialManagerTokenSource{credManager: mockCredManager})
 	manager := &stsTokenManagerImpl{credManager: mockCredManager, tokenSource: ts}
 
 	_, err := ts.Token()
 	assert.ErrorIs(t, err, dummyErr)
-	manager.expireToken()
+	manager.invalidateToken()
 	_, err = ts.Token()
 	assert.ErrorIs(t, err, dummyErr)
 }
