@@ -142,7 +142,8 @@ summarize_cluster_debug() {
         last_lines="No debug output found."
     fi
 
-    suspicious_lines="$(grep -E 'error|warn|fatal|fail' "${file}" | tail --lines="${_NUM_LINES_OF_INTEREST}")"
+    regex='error|warn|fatal|fail'
+    suspicious_lines="$(grep -E "${regex}" "${file}" | tail --lines="${_NUM_LINES_OF_INTEREST}")"
     if [[ -z "${suspicious_lines}" ]]; then
         suspicious_lines="None"
     fi
@@ -152,7 +153,7 @@ Last ${_NUM_LINES_OF_INTEREST} lines from output:
 ====
 ${last_lines}
 
-Lines matching error|warn|fatal|fail (last ${_NUM_LINES_OF_INTEREST}):
+Lines matching ${regex} (last ${_NUM_LINES_OF_INTEREST}):
 ====
 ${suspicious_lines}
 _EO_DEBUG_
