@@ -74,7 +74,7 @@ func TestMappingUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to count files in zip: %v", err)
 	}
-	assert.Equal(t, n, 2)
+	assert.Equal(t, len(v4FileMapping), n)
 }
 
 // countFilesInZip counts the number of files inside a zip archive.
