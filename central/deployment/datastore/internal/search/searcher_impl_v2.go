@@ -69,15 +69,11 @@ func (ds *searcherImplV2) searchListDeployments(ctx context.Context, q *v1.Query
 	}
 
 	ids := search.ResultsToIDs(results)
-	fetchedDeployments, missingIndices, err := ds.storage.GetManyListDeployments(ctx, ids...)
+	deployments, missingIndices, err := ds.storage.GetManyListDeployments(ctx, ids...)
 	if err != nil {
 		return nil, nil, err
 	}
 	results = search.RemoveMissingResults(results, missingIndices)
-	deployments := make([]*storage.ListDeployment, 0, len(fetchedDeployments))
-	for _, deployment := range fetchedDeployments {
-		deployments = append(deployments, deployment.Clone())
-	}
 	return deployments, results, nil
 }
 
@@ -101,13 +97,9 @@ func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([
 	}
 
 	ids := search.ResultsToIDs(results)
-	fetchedDeployments, _, err := ds.storage.GetMany(ctx, ids)
+	deployments, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
-	}
-	deployments := make([]*storage.Deployment, 0, len(fetchedDeployments))
-	for _, deployment := range fetchedDeployments {
-		deployments = append(deployments, deployment.Clone())
 	}
 	return deployments, nil
 }

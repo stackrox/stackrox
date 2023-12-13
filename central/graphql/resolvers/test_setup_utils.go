@@ -200,7 +200,17 @@ func CreateTestImageCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
 func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
-	ds, err := deploymentDatastore.NewTestDataStore(t, testDB, imageDatastore, nil, nil, mockRisk, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ds, err := deploymentDatastore.NewTestDataStore(
+		t,
+		testDB,
+		&deploymentDatastore.DeploymentTestStoreParams{
+			ImagesDataStore:  imageDatastore,
+			RisksDataStore:   mockRisk,
+			ClusterRanker:    ranking.ClusterRanker(),
+			NamespaceRanker:  ranking.NamespaceRanker(),
+			DeploymentRanker: ranking.DeploymentRanker(),
+		},
+	)
 	assert.NoError(t, err)
 	return ds
 }

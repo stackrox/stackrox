@@ -130,7 +130,7 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 		return nil, false, err
 	}
 	ds.updateListDeploymentPriority(deployment)
-	return deployment.Clone(), true, nil
+	return deployment, true, nil
 }
 
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
@@ -174,12 +174,12 @@ func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage
 		return nil, false, err
 	}
 	ds.updateDeploymentPriority(deployment)
-	return deployment.Clone(), true, nil
+	return deployment, true, nil
 }
 
 // GetDeployments
 func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error) {
-	var fetchedDeployments []*storage.Deployment
+	var deployments []*storage.Deployment
 	var err error
 	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -187,15 +187,11 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 		return ds.SearchRawDeployments(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
 	}
 
-	fetchedDeployments, _, err = ds.deploymentStore.GetMany(ctx, ids)
+	deployments, _, err = ds.deploymentStore.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
-	ds.updateDeploymentPriority(fetchedDeployments...)
-	deployments := make([]*storage.Deployment, 0, len(fetchedDeployments))
-	for _, deployment := range fetchedDeployments {
-		deployments = append(deployments, deployment.Clone())
-	}
+	ds.updateDeploymentPriority(deployments...)
 	return deployments, nil
 }
 
@@ -276,7 +272,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
-	if err := ds.deploymentStore.Upsert(ctx, deployment.Clone()); err != nil {
+	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
 	return nil
