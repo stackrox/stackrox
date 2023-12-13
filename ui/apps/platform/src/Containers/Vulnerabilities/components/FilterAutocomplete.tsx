@@ -38,7 +38,7 @@ export type FilterAutocompleteSelectProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter, changeEvent: FilterChangeEvent) => void;
     searchOptions: SearchOption[];
-    useRegexMatch?: boolean;
+    isRegexMatcher: boolean;
     autocompleteSearchContext?:
         | { 'Image SHA': string }
         | { 'Deployment ID': string }
@@ -50,7 +50,7 @@ function FilterAutocompleteSelect({
     searchFilter,
     onFilterChange,
     searchOptions,
-    useRegexMatch = true,
+    isRegexMatcher,
     autocompleteSearchContext = {},
 }: FilterAutocompleteSelectProps) {
     const [searchOption, setSearchOption] = useState<SearchOption>(() => {
@@ -72,16 +72,16 @@ function FilterAutocompleteSelect({
         : {};
 
     // If we are using regex matching, apply the regex modifier to the search filter
-    const autocompleteSearchFilter = useRegexMatch
+    const autocompleteSearchFilter = isRegexMatcher
         ? applyRegexSearchModifiers(autocompleteSearchFilterBase)
         : autocompleteSearchFilterBase;
 
     // Append the current typeahead value to the search filter, use regex matching only if:
-    // 1. `useRegexMatch` is true
+    // 1. `isRegexMatcher` is true
     // 2. The typeahead is not empty
     // 3. The search option supports regex matching
     autocompleteSearchFilter[searchOption.value] =
-        useRegexMatch &&
+        isRegexMatcher &&
         typeahead !== '' &&
         regexSearchOptions.some((option) => option === searchOption.value)
             ? [`r/${typeahead}`]
