@@ -118,7 +118,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	for _, portProcess := range portProcesses {
 		log.Info("")
-		log.Infof("plopObject= %+v", portProcess)
+		log.Infof("portProcess= %+v", portProcess)
 		log.Info("")
 	}
 
