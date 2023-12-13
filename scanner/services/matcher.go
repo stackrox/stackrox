@@ -16,8 +16,6 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // matcherService represents a vulnerability matcher gRPC service.
@@ -98,8 +96,19 @@ func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.Ind
 	return ir, nil
 }
 
-func (s *matcherService) GetMetadata(_ context.Context, _ *types.Empty) (*v4.Metadata, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetMetadata not implemented")
+func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.Metadata, error) {
+	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting last vulnerability update time: %w", err)
+	}
+
+	timestamp, err := types.TimestampProto(lastVulnUpdate)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: %w", err)
+	}
+	return &v4.Metadata{
+		LastVulnerabilityUpdate: timestamp,
+	}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
