@@ -11,20 +11,43 @@ import (
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 
+// ExtractorError represents an error that occurs during identity extraction.
 type ExtractorError struct {
+	// extractorType identifies the type of identity extractor that encountered the error.
 	extractorType string
-	msg           string
-	err           error
+
+	// msg provides additional information or context about the error.
+	msg string
+
+	// err holds the underlying error.
+	err error
 }
 
-var _ error = (*ExtractorError)(nil)
-
+// NewExtractorError creates and returns a new instance of ExtractorError.
+//
+// Parameters:
+//   - extractorType: A string representing the type of identity extractor where the error occurred.
+//   - msg: A string providing additional information or context about the error.
+//   - err: The underlying error that caused the extraction failure.
+//
+// Returns:
+//   - An initialized pointer to an ExtractorError struct with the given parameters.
 func NewExtractorError(extractorType string, msg string, err error) *ExtractorError {
 	return &ExtractorError{
 		extractorType: extractorType,
 		msg:           msg,
 		err:           err,
 	}
+}
+
+var _ error = (*ExtractorError)(nil)
+
+func (e *ExtractorError) Error() string {
+	if e == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("%v: cannot extract identity: %v", e.extractorType, e.msg)
 }
 
 func (e *ExtractorError) Unwrap() error {
@@ -35,14 +58,10 @@ func (e *ExtractorError) Unwrap() error {
 	return e.err
 }
 
-func (e *ExtractorError) Error() string {
-	if e == nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%v: cannot extract identity: %v", e.extractorType, e.msg)
-}
-
+// LogL logs the details of the ExtractorError, associating it with the provided RequestInfo.
+//
+// Parameters:
+//   - ri: The RequestInfo associated with the ExtractorError.
 func (e *ExtractorError) LogL(ri requestinfo.RequestInfo) {
 	if e == nil {
 		return
