@@ -249,7 +249,7 @@ class K8sRbacTest extends BaseSpecification {
     def "Verify scraped bindings"() {
         expect:
         "SR should have the same bindings"
-        withRetry(45, 2) {
+        withRetry(5, 30) {
             def stackroxBindings = RbacService.getRoleBindings()
             def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
 
