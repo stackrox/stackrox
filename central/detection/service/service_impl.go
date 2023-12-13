@@ -368,6 +368,9 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	// Enhance the deployments, then range over them
 	conn := s.connManager.GetConnection(eCtx.ClusterID)
+	if conn == nil {
+		return nil, errox.InvalidArgs.New("Connection to cluster is not ready. Please try again.")
+	}
 	enhancedDeployments, err := s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, time.Second*30)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed waiting for augmented deployment response")

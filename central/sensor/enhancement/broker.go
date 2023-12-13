@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -17,16 +18,21 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type enhancementSignal struct {
+	msgArrived concurrency.Signal
+	msg        *central.DeploymentEnhancementResponse
+}
+
 // The Broker coordinates and matches deployment enhancement requests to responses
 type Broker struct {
-	waiters map[string]func(msg *central.DeploymentEnhancementResponse)
-	lock    sync.Mutex
+	activeRequests map[string]*enhancementSignal
+	lock           sync.Mutex
 }
 
 // NewBroker returns a new broker
 func NewBroker() *Broker {
 	return &Broker{
-		waiters: make(map[string]func(msg *central.DeploymentEnhancementResponse)),
+		activeRequests: make(map[string]*enhancementSignal),
 	}
 }
 
@@ -39,20 +45,27 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if callbackFn, ok := b.waiters[msg.GetMsg().GetId()]; ok {
-		log.Debugf("Received answer for Deployment enrichment requestID %s", msg.GetMsg().GetId())
-		callbackFn(msg)
+	sig, ok := b.activeRequests[msg.GetMsg().GetId()]
+	if !ok {
+		log.Warnf("Received response to an unknown Deployment Enrichment Request ID %s", msg.GetMsg().GetId())
+		return
 	}
+	log.Debugf("Received answer for Deployment Enrichment Request ID %s", msg.GetMsg().GetId())
+	sig.msg = msg
+	delete(b.activeRequests, msg.GetMsg().GetId())
+	sig.msgArrived.Signal()
+
 }
 
 // SendAndWaitForEnhancedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
 func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
 	b.lock.Lock()
 	id := uuid.NewV4().String()
-	c := make(chan *central.DeploymentEnhancementResponse)
-	b.waiters[id] = func(msg *central.DeploymentEnhancementResponse) {
-		c <- msg
+	s := enhancementSignal{
+		msgArrived: concurrency.NewSignal(),
+		msg:        nil,
 	}
+	b.activeRequests[id] = &s
 	b.lock.Unlock()
 
 	log.Debugf("Sending Deployment Augmentation request to Sensor with requestID %s", id)
@@ -62,29 +75,19 @@ func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn con
 		return nil, errors.Wrapf(err, "failed to send message to cluster %s", conn.ClusterID())
 	}
 
-	enhanced, err := b.waitAndProcessResponse(c, timeout)
+	enhanced, err := b.waitAndProcessResponse(&s, timeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to process response for message %s", id)
 	}
 
-	b.lock.Lock()
-	if _, ok := b.waiters[id]; ok {
-		log.Debugf("Deregistering callback for id %s", id)
-		delete(b.waiters, id)
-	}
-	b.lock.Unlock()
-
 	return enhanced, nil
 }
 
-func (b *Broker) waitAndProcessResponse(c chan *central.DeploymentEnhancementResponse, timeout time.Duration) ([]*storage.Deployment, error) {
+func (b *Broker) waitAndProcessResponse(s *enhancementSignal, timeout time.Duration) ([]*storage.Deployment, error) {
 	var deployments []*storage.Deployment
 	select {
-	case m, ok := <-c:
-		if !ok {
-			return nil, errors.New("enhancement channel closed unexpectedly")
-		}
-		if deployments = m.GetMsg().GetDeployments(); deployments == nil {
+	case <-s.msgArrived.Done():
+		if deployments = s.msg.GetMsg().GetDeployments(); deployments == nil {
 			return nil, errors.New("enhanced deployments empty")
 		}
 		return deployments, nil

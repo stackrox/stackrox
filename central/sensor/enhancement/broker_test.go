@@ -8,6 +8,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -23,8 +24,8 @@ type BrokerTestSuite struct {
 
 func (s *BrokerTestSuite) TestNotifyDeploymentReceivedDoubleMessage() {
 	b := Broker{
-		waiters: map[string]func(msg *central.DeploymentEnhancementResponse){"1": func(msg *central.DeploymentEnhancementResponse) {}},
-		lock:    sync.Mutex{},
+		activeRequests: map[string]*enhancementSignal{"1": {msgArrived: concurrency.NewSignal()}},
+		lock:           sync.Mutex{},
 	}
 	msg := &central.DeploymentEnhancementResponse{
 		Msg: &central.DeploymentEnhancementMessage{
@@ -35,35 +36,26 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedDoubleMessage() {
 
 	// Simulate a duplicate message. Broker mustn't crash or deadlock
 	b.NotifyDeploymentReceived(msg)
+	// NotifyDeploymentReceived should remove the ID after updating the msg
+	s.NotContains(b.activeRequests, "1")
 	b.NotifyDeploymentReceived(msg)
 }
 
-func (s *BrokerTestSuite) TestNotifyDeploymentReceivedMatchesID() {
-	callbackCalled := false
-	wg := sync.WaitGroup{}
-	b := NewBroker()
+func (s *BrokerTestSuite) TestDeploymentReceivedWritesMessage() {
+	es := &enhancementSignal{msgArrived: concurrency.NewSignal()}
+	b := Broker{
+		activeRequests: map[string]*enhancementSignal{"1": es},
+		lock:           sync.Mutex{},
+	}
 	msg := &central.DeploymentEnhancementResponse{
 		Msg: &central.DeploymentEnhancementMessage{
 			Id:          "1",
-			Deployments: nil,
+			Deployments: []*storage.Deployment{{}, {}},
 		},
 	}
-	wg.Add(1)
-	go func() {
-		c := make(chan *central.DeploymentEnhancementResponse, 1)
-		b.waiters["1"] = func(msg *central.DeploymentEnhancementResponse) { callbackCalled = true }
-		wg.Done()
 
-		select {
-		case <-time.After(2 * time.Second):
-			s.Fail("did not receive response in time")
-		case <-c:
-		}
-	}()
-	wg.Wait()
 	b.NotifyDeploymentReceived(msg)
-
-	s.True(callbackCalled)
+	s.Len(es.msg.GetMsg().GetDeployments(), 2)
 }
 
 func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
@@ -79,4 +71,16 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
 	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
 
 	s.ErrorContains(err, "timed out waiting for augmented deployment", "Expected the function to time out, but it didn't")
+}
+
+func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsWritesToActiveRequests() {
+	fakeSensorConn := connMocks.NewMockSensorConnection(gomock.NewController(s.T()))
+	fakeSensorConn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).AnyTimes()
+	b := NewBroker()
+	deployments := make([]*storage.Deployment, 0)
+
+	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 10*time.Millisecond)
+	s.NoError(err)
+
+	s.Len(b.activeRequests, 1)
 }
