@@ -24,7 +24,7 @@ external-backup-tests:
 
 .PHONY: compliance-tests
 compliance-tests:
-	../scripts/go-test.sh -cover -v -run compliance_operator_test.go 2>&1 | tee test.log
+	../scripts/go-test.sh -cover -v -run TestCompliance 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-tests-results
 
 include ../make/stackrox.mk

@@ -155,7 +155,7 @@ func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
 	return dynamicClientGenerator
 }
 
-func TestDeleteAndAddRule(t *testing.T) {
+func TestComplianceOperatorDeleteAndAddRule(t *testing.T) {
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -195,7 +195,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 	checkBaseResults(t)
 }
 
-func TestDeleteAndAddScanSettingBinding(t *testing.T) {
+func TestComplianceOperatorDeleteAndAddScanSettingBinding(t *testing.T) {
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -227,7 +227,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	checkBaseResults(t)
 }
 
-func TestDeleteAndAddProfile(t *testing.T) {
+func TestComplianceOperatorDeleteAndAddProfile(t *testing.T) {
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -259,7 +259,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	checkBaseResults(t)
 }
 
-func TestUpdateProfile(t *testing.T) {
+func TestComplianceOperatorUpdateProfile(t *testing.T) {
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
