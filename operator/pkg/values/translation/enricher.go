@@ -11,6 +11,7 @@ import (
 )
 
 // Enricher reads helm values produced for an object by a Translator or another enricher, and returns new values.
+// Note: mutates provided vals.
 type Enricher interface {
 	Enrich(ctx context.Context, obj k8sutil.Object, vals chartutil.Values) (chartutil.Values, error)
 }

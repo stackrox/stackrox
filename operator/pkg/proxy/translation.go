@@ -52,7 +52,7 @@ type proxyEnvVarsInjector struct {
 var _ translation.Enricher = &proxyEnvVarsInjector{}
 
 // Enrich injects proxy configuration environment variables.
-func (i *proxyEnvVarsInjector) Enrich(ctx context.Context, obj k8sutil.Object, vals chartutil.Values) (chartutil.Values, error) {
+func (i *proxyEnvVarsInjector) Enrich(_ context.Context, obj k8sutil.Object, vals chartutil.Values) (chartutil.Values, error) {
 	proxyVals := getProxyConfigHelmValues(obj, i.proxyEnv)
 
 	mergedVals := chartutil.CoalesceTables(vals, proxyVals)
