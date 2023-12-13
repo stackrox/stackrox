@@ -1573,6 +1573,7 @@ _save_junit_record() {
     fi
 
     # record this instance
+    local record_length=3
     local record="${junit_dir}/db/${class}.txt"
     {
         echo "${description}"
@@ -1581,7 +1582,7 @@ _save_junit_record() {
      } >> "${record}"
 
     local tests
-    tests=$(( "$(wc -l < "${record}")" / 3 ))
+    tests=$(( "$(wc -l < "${record}")" / "${record_length}" ))
 
     local failures=0
     local skipped=0
@@ -1596,7 +1597,7 @@ _save_junit_record() {
         if [[ "${result}" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
             skipped=$(( skipped+1 ))
         fi
-        lines=( "${lines[@]:3}" )
+        lines=( "${lines[@]:${record_length}}" )
     done
 
     local junit_file="${junit_dir}/junit-${class}.xml"
