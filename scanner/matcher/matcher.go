@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
-	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln"
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
-	updaterdefaults "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
-	"github.com/stackrox/rox/scanner/updater/rhel"
+	metadatapostgres "github.com/stackrox/rox/scanner/matcher/metadata/postgres"
+	"github.com/stackrox/rox/scanner/matcher/updater"
 )
 
 // Matcher represents a vulnerability matcher.
@@ -22,12 +21,14 @@ import (
 //go:generate mockgen-wrapper
 type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
+	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	Close(ctx context.Context) error
 }
 
 // matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
-	libVuln *libvuln.Libvuln
+	libVuln       *libvuln.Libvuln
+	metadataStore metadatapostgres.MetadataStore
 }
 
 // NewMatcher creates a new matcher.
@@ -41,60 +42,64 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+	metadataStore, err := metadatapostgres.InitPostgresMetadataStore(ctx, pool, true)
+	if err != nil {
+		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
+	}
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
-	// TODO: Remove when Scanner V4 updater pipeline is available.
-	if err := updaterdefaults.Error(); err != nil {
-		return nil, fmt.Errorf("vulnerability updater init: %w", err)
-	}
+
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
-	// TODO: Disable when Scanner V4 updater pipeline is available.
-	disableUpdaters := false
-	var oot []driver.Updater
-	var updaterSets []string
-	if !disableUpdaters {
-		zlog.Info(ctx).Msg("creating out-of-tree RHEL updaters")
-		oot, err = rhel.Updaters(ctx, c)
-		if err != nil {
-			return nil, fmt.Errorf("out-of-tree RHEL updaters: %w", err)
-		}
-		updaterSets = []string{
-			"alpine",
-			"aws",
-			"debian",
-			"oracle",
-			"photon",
-			"pyupio",
-			"suse",
-			"ubuntu",
-		}
-	}
+
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
-		DisableBackgroundUpdates: disableUpdaters,
+		DisableBackgroundUpdates: true,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		Client:                   c,
-		Enrichers: []driver.Enricher{
-			&cvss.Enricher{},
-		},
-		UpdaterSets: updaterSets,
-		Updaters:    oot,
+		// TODO: Replace with our own enrichers.
+		Enrichers: nil,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
+
+	u, err := updater.New(updater.Opts{
+		Store:         store,
+		Locker:        locker,
+		Pool:          pool,
+		MetadataStore: metadataStore,
+		Client:        c,
+		// TODO: temporary URL
+		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/4.3.x-173-g6bbb2e07dc/output.json.zst",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating vuln updater: %w", err)
+	}
+
+	go func() {
+		if err := u.Start(ctx); err != nil {
+			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+		}
+	}()
+
 	return &matcherImpl{
-		libVuln: libVuln,
+		libVuln:       libVuln,
+		metadataStore: metadataStore,
 	}, nil
 }
 
 func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetVulnerabilities")
 	return m.libVuln.Scan(ctx, ir)
+}
+
+func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetLastVulnerabilityUpdate")
+	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
 }
 
 // Close closes the matcher.
