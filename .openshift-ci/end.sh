@@ -28,7 +28,7 @@ end() {
     post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}"
 
     if [[ "${OVERALL_JOB_OUTCOME}" == "${OUTCOME_FAILED}" ]]; then
-        (send_slack_failure_summary) || { echo "ERROR: Could not slack a test failure message"; }
+        (send_slack_failure_summary) || { echo >&2 "ERROR: Could not slack a test failure message"; }
     fi
 }
 
