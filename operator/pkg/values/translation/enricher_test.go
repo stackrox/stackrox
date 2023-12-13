@@ -24,6 +24,7 @@ func (e enricher) Enrich(_ context.Context, _ k8sutil.Object, vals chartutil.Val
 }
 
 func TestWithEnrichment(t *testing.T) {
+	rootCause := fmt.Errorf("%s", "boom") // silence "no variadic arguments"
 	tests := map[string]struct {
 		translator values.Translator
 		enrichers  []Enricher
@@ -32,9 +33,9 @@ func TestWithEnrichment(t *testing.T) {
 	}{
 		"translator error": {
 			translator: values.TranslatorFunc(func(_ context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
-				return nil, fmt.Errorf("boom")
+				return nil, rootCause
 			}),
-			wantErr: fmt.Errorf("boom"),
+			wantErr: rootCause,
 		},
 		"no enrichment": {
 			translator: values.TranslatorFunc(func(_ context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
@@ -58,9 +59,9 @@ func TestWithEnrichment(t *testing.T) {
 			}),
 			enrichers: []Enricher{
 				enricher{key: "bar", val: "val3"},
-				enricher{err: fmt.Errorf("boom2")},
+				enricher{err: rootCause},
 			},
-			wantErr: fmt.Errorf("helm values enricher with index 1 (translation.enricher) failed: %w", fmt.Errorf("boom2")),
+			wantErr: fmt.Errorf("helm values enricher with index 1 (translation.enricher) failed: %w", rootCause),
 		},
 	}
 	for name, tt := range tests {
