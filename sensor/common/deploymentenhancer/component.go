@@ -122,5 +122,5 @@ func (d *DeploymentEnhancer) Stop(_ error) {
 	defer close(d.deploymentsQueue)
 }
 
-// Notify .
+// Notify is unimplemented, part of the common interface
 func (d *DeploymentEnhancer) Notify(_ common.SensorComponentEvent) {}
