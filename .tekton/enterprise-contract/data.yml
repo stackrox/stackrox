@@ -4,3 +4,4 @@ rule_data_custom:
   - registry.access.redhat.com/
   - registry.redhat.io/
   - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
+  - quay.io/centos/centos
