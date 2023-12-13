@@ -166,7 +166,6 @@ LIMIT
 
     data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$q")"
 
-
     webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
 
     # shellcheck disable=SC2016
