@@ -166,5 +166,20 @@ LIMIT
 
     data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$q")"
 
-    
+    webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+
+    # shellcheck disable=SC2016
+    body='{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "```\n\($data)\n```"
+			}
+		}
+	]
+}'
+
+    jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
