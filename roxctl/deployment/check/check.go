@@ -172,14 +172,14 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	var errors errorhelpers.ErrorList
+	var fileErrs errorhelpers.ErrorList
 	for _, file := range d.files {
 		if _, err := os.Open(file); err != nil {
-			errors.AddError(err)
+			fileErrs.AddError(err)
 		}
 	}
-	if !errors.Empty() {
-		return common.ErrInvalidCommandOption.CausedBy(errors.ErrorStrings())
+	if !fileErrs.Empty() {
+		return common.ErrInvalidCommandOption.CausedBy(fileErrs.ErrorStrings())
 	}
 
 	return nil
@@ -214,7 +214,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		}
 		deploymentFileContents = append(deploymentFileContents, fileContents...)
 	}
-	log.Info("roxctl deployment check is handling file input of size %s", len(deploymentFileContents))
+	d.env.Logger().InfofLn("roxctl deployment check is handling file input of size %d", len(deploymentFileContents))
 
 	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
 	if err != nil {

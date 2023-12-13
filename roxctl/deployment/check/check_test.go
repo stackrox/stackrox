@@ -3,12 +3,10 @@ package check
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net"
 	"os"
 	"path"
 	"runtime"
-	"strconv"
 	"testing"
 	"time"
 
@@ -295,13 +293,12 @@ func (d *deployCheckTestSuite) TestMultipleFiles() {
 		defaultDeploymentCheckJSONPathExpression).CreatePrinter("table")
 	d.Require().NoError(err)
 	deployCheckCmd.printer = tablePrinter
-	err = deployCheckCmd.Check()
-	d.Require().NoError(err)
+	d.Require().NoError(deployCheckCmd.Check())
 	var expectedBinary []byte
 	expectedBinary, err = os.ReadFile("testdata/testMultipleFilesExpectedYaml.yaml")
 	d.Require().NoError(err)
-	expectedString := fmt.Sprintf("yaml:%s ", strconv.Quote(string(expectedBinary)))
-	d.Assert().Equal(expectedString, server.request.String())
+	expectedString := string(expectedBinary)
+	d.Assert().Equal(expectedString, server.request.GetYaml())
 }
 
 func (d *deployCheckTestSuite) TestConstruct() {
