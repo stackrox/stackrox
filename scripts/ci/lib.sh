@@ -1516,16 +1516,16 @@ get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
 
-_JUNIT_DISPOSITION_SUCCESS="SUCCESS"
-_JUNIT_DISPOSITION_FAILURE="FAILURE"
-_JUNIT_DISPOSITION_SKIPPED="SKIPPED"
+_JUNIT_RESULT_SUCCESS="SUCCESS"
+_JUNIT_RESULT_FAILURE="FAILURE"
+_JUNIT_RESULT_SKIPPED="SKIPPED"
 
 save_junit_success() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: save_junit_success <class> <description>"
     fi
 
-    _save_junit_record "${_JUNIT_DISPOSITION_SUCCESS}" "$@"
+    _save_junit_record "${_JUNIT_RESULT_SUCCESS}" "$@"
 }
 
 save_junit_failure() {
@@ -1533,7 +1533,7 @@ save_junit_failure() {
         die "missing args. usage: save_junit_failure <class> <description> <details>"
     fi
 
-    _save_junit_record "${_JUNIT_DISPOSITION_FAILURE}" "$@"
+    _save_junit_record "${_JUNIT_RESULT_FAILURE}" "$@"
 }
 
 save_junit_skipped() {
@@ -1541,7 +1541,7 @@ save_junit_skipped() {
         die "missing args. usage: save_junit_skipped <class> <description>"
     fi
 
-    _save_junit_record "${_JUNIT_DISPOSITION_SKIPPED}" "$@"
+    _save_junit_record "${_JUNIT_RESULT_SKIPPED}" "$@"
 }
 
 remove_junit_record() {
@@ -1589,11 +1589,11 @@ _save_junit_record() {
     readarray -t lines < "${record}"
     while (( ${#lines[@]} ))
     do
-        local disposition="${lines[1]}"
-        if [[ "${disposition}" == "${_JUNIT_DISPOSITION_FAILURE}" ]]; then
+        local result="${lines[1]}"
+        if [[ "${result}" == "${_JUNIT_RESULT_FAILURE}" ]]; then
             failures=$(( failures+1 ))
         fi
-        if [[ "${disposition}" == "${_JUNIT_DISPOSITION_SKIPPED}" ]]; then
+        if [[ "${result}" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
             skipped=$(( skipped+1 ))
         fi
         lines=( "${lines[@]:3}" )
@@ -1616,7 +1616,7 @@ _EO_SUITE_HEADER_
         <testcase name="${description}" classname="${class}">
 _EO_CASE_HEADER_
 
-        if [[ "$disposition" == "${_JUNIT_DISPOSITION_FAILURE}" ]]; then
+        if [[ "$disposition" == "${_JUNIT_RESULT_FAILURE}" ]]; then
             details="$(base64 --decode <<< "$details")"
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
