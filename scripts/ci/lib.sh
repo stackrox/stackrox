@@ -910,7 +910,7 @@ get_pr_details() {
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
 
     if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
-        echo "Github API error: $pr_details/$?" >&2
+        echo "Github API error: $pr_details, exit code: $?" >&2
         exit 2
     fi
 
