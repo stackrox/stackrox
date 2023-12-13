@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -30,43 +29,30 @@ type extractor struct {
 	validator tokens.Validator
 }
 
-func logErrorAndReturnNilIdentity(ri requestinfo.RequestInfo, err error) (authn.Identity, error) {
-	logging.GetRateLimitedLogger().WarnL(
-		ri.Hostname,
-		"Cannot extract identity from token for hostname %v: %v",
-		ri.Hostname,
-		err,
-	)
-
-	return nil, err
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("token-based", msg, err)
 }
 
-func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	rawToken := authn.ExtractToken(ri.Metadata, "Bearer")
 	if rawToken == "" {
 		return nil, nil
 	}
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		logging.GetRateLimitedLogger().WarnL(
-			ri.Hostname,
-			"Token validation failed for hostname %v: %v",
-			ri.Hostname,
-			err,
-		)
-		return nil, errors.New("token validation failed")
+		return nil, getExtractorError("token validation failed", err)
 	}
 
 	// All tokens should have a source.
 	if len(token.Sources) != 1 {
-		return logErrorAndReturnNilIdentity(ri, errors.New("tokens must originate from exactly one source"))
+		return nil, getExtractorError("tokens must originate from exactly one source", nil)
 	}
 	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
 	if !ok {
-		return logErrorAndReturnNilIdentity(ri, errors.New("API tokens must originate from an authentication provider source"))
+		return nil, getExtractorError("API tokens must originate from an authentication provider source", nil)
 	}
 	if !authProviderSrc.Enabled() {
-		return logErrorAndReturnNilIdentity(ri, fmt.Errorf("auth provider %q is not enabled", authProviderSrc.Name()))
+		return nil, getExtractorError(fmt.Sprintf("auth provider %q is not enabled", authProviderSrc.Name()), nil)
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -79,7 +65,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	roleNames := token.RoleNames
 	if token.RoleName != "" {
 		if len(roleNames) != 0 {
-			return logErrorAndReturnNilIdentity(ri, errors.New("malformed token: uses both 'roles' and deprecated 'role' claims"))
+			return nil, getExtractorError("malformed token: uses both 'roles' and deprecated 'role' claims", nil)
 		}
 		roleNames = []string{token.RoleName}
 	}
@@ -88,13 +74,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if len(roleNames) > 0 {
 		identityWithRoleNames, errWithRoleNames := e.withRoleNames(ctx, token, roleNames, authProviderSrc)
 		if errWithRoleNames != nil {
-			logging.GetRateLimitedLogger().WarnL(
-				ri.Hostname,
-				"Unable to get roles for token from host %v: %v",
-				ri.Hostname,
-				errWithRoleNames,
-			)
-			return nil, errors.New("failed to resolve user roles")
+			return nil, getExtractorError("failed to resolve user roles", errWithRoleNames)
 		}
 
 		return identityWithRoleNames, nil
@@ -104,19 +84,13 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if token.ExternalUser != nil {
 		identityWithExternalUser, errWithExternalUser := e.withExternalUser(ctx, token, authProviderSrc)
 		if errWithExternalUser != nil {
-			logging.GetRateLimitedLogger().WarnL(
-				ri.Hostname,
-				"Unable to get external user for token from host %v: %v",
-				ri.Hostname,
-				errWithExternalUser,
-			)
-			return nil, errors.New("failed to resolve external user")
+			return nil, getExtractorError("failed to resolve external user", errWithExternalUser)
 		}
 
 		return identityWithExternalUser, nil
 	}
 
-	return nil, errors.New("could not determine token type")
+	return nil, getExtractorError("could not determine token type", nil)
 }
 
 func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, roleNames []string, authProvider authproviders.Provider) (authn.Identity, error) {

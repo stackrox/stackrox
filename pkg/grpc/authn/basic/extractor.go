@@ -7,11 +7,9 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 // Extractor is the identity extractor for the basic auth identity.
@@ -34,9 +32,13 @@ func parseBasicAuthToken(basicAuthToken string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("basic", msg, err)
+}
+
 // IdentityForRequest returns an identity for the given request if it contains valid basic auth credentials.
 // If non-nil, the returned identity implements `basic.Identity`.
-func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	md := metautils.NiceMD(ri.Metadata)
 	authHeader := md.Get("Authorization")
 	if authHeader == "" {
@@ -50,19 +52,12 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
-		logging.GetRateLimitedLogger().WarnL(
-			ri.Hostname,
-			"failed to parse basic auth token from %q: %v",
-			ri.Hostname,
-			err,
-		)
-		return nil, errors.New("failed to parse basic auth token")
+		return nil, getExtractorError("failed to parse basic auth token", err)
 	}
 
 	id, err := e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
 	if err != nil {
-		logging.GetRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
-		return nil, fmt.Errorf("failed to identify user with username %q", username)
+		return nil, getExtractorError(fmt.Sprintf("failed to identify user with username %q", username), err)
 	}
 
 	return id, nil

@@ -22,7 +22,7 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 	ri := requestinfo.FromContext(ctx)
 	id, err := u.extractor.IdentityForRequest(ctx, ri)
 	if err != nil {
-		logging.GetRateLimitedLogger().DebugL(ri.Hostname, "Cannot extract identity: %v", err)
+		err.LogL(ri)
 
 		// Ignore id value if error is not nil.
 		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err)), nil
