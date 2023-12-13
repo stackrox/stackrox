@@ -279,21 +279,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	searchResults, searchErr := RunSearchRequestForSchema(ctx, s.schema, query, s.db)
-	if searchErr != nil {
-		return nil, searchErr
-	}
-	identifiersToRemove := make([]string, 0, len(searchResults))
-	for _, result := range searchResults {
-		identifiersToRemove = append(identifiersToRemove, result.ID)
-	}
-
-	removeErr := s.DeleteMany(ctx, identifiersToRemove)
-	if removeErr != nil {
-		return nil, removeErr
-	}
-
-	return identifiersToRemove, nil
+	return nil, RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
 }
 
 // Delete removes the object associated to the specified ID from the store.
