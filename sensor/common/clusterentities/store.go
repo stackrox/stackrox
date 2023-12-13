@@ -1,14 +1,19 @@
 package clusterentities
 
 import (
+	"net/http"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
+
+var log = logging.LoggerForModule()
 
 // ContainerMetadata is the container metadata that is stored per instance
 type ContainerMetadata struct {
@@ -61,6 +66,7 @@ type Store struct {
 	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 	historicalIPs       map[net.IPAddress]map[string]*entityStatus
 	historyMutex        sync.RWMutex
+	debugServer         *http.Server
 }
 
 // NewStore creates and returns a new store instance.
@@ -74,6 +80,7 @@ func NewStore() *Store {
 func NewStoreWithMemory(numTicks uint16) *Store {
 	store := &Store{entitiesMemorySize: numTicks}
 	store.initMaps()
+	store.debugServer = store.startDebugServer()
 	return store
 }
 
@@ -103,6 +110,23 @@ type EntityData struct {
 	ips          map[net.IPAddress]struct{}
 	endpoints    map[net.NumericEndpoint][]EndpointTargetInfo
 	containerIDs map[string]ContainerMetadata
+}
+
+func (ed *EntityData) String() string {
+	repr := "ips:["
+	for addr := range ed.ips {
+		repr += addr.String() + ", "
+	}
+	repr += "], endpoints: ["
+	for endpoint := range ed.endpoints {
+		repr += endpoint.String() + ", "
+	}
+	repr += "], containerIDs: ["
+	for cid := range ed.containerIDs {
+		repr += cid + ", "
+	}
+	repr += "]"
+	return repr
 }
 
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
