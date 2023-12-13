@@ -791,7 +791,7 @@ pr_has_label() {
     local exitstatus=0
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        info "Warning: checking for a label in a non PR context [${pr_details}/${exitstatus}]"
+        info "Warning: checking for a label in a non PR context: details: ${pr_details}, exitstatus: ${exitstatus}"
         return 1
     fi
 
