@@ -48,12 +48,6 @@ var (
 	tickerTime       = time.Second * 30
 )
 
-func focusedDebugf(namespace, template string, args ...interface{}) {
-	if namespace == "aaa" || namespace == "stackrox" {
-		log.Debugf(template, args...)
-	}
-}
-
 type hostConnections struct {
 	hostname           string
 	connections        map[connection]*connStatus
@@ -261,7 +255,6 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
 	go m.publicIPs.Run(&m.done, m.clusterEntities)
-	m.startDebugServer()
 	return nil
 }
 
@@ -448,13 +441,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 
-	focusedDebugf(container.Namespace, "LookupByEndpoint for %v: %+v", conn.remote, lookupResults)
-
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
-			focusedDebugf(container.Namespace, "Connection %v is fresh and IP valid", conn.remote)
 			return
 		}
 
@@ -464,13 +454,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
-			focusedDebugf(container.Namespace, "Connection %v is fresh and lookup by network: %v", conn.remote, extSrc)
 			return
 		}
 		if !status.used {
 			flowMetrics.ExternalFlowCounter.Inc()
 		}
-		focusedDebugf(container.Namespace, "Connection %v setting used=true (main)", conn.remote)
 		status.used = true
 
 		var port uint16
@@ -506,12 +494,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	} else {
-		focusedDebugf(container.Namespace, "Connection %v setting used=true (else)", conn.remote)
 		status.used = true
 		if conn.incoming {
 			// Only report incoming connections from outside of the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
-			focusedDebugf(container.Namespace, "Connection %v is incoming - exiting func (else)", conn.remote)
 			return
 		}
 	}
@@ -534,12 +520,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
-				focusedDebugf(container.Namespace, "Connection %v applying status to enriched connections. "+
-					"oldTS=%s, lastSeen=%s", conn.remote, oldTS.GoTime().String(), status.lastSeen.GoTime().String())
 				enrichedConnections[indicator] = status.lastSeen
-			} else {
-				focusedDebugf(container.Namespace, "Enriched Connection %v not found. "+
-					"oldTS=%s, lastSeen=%s", conn.remote, oldTS.GoTime().String(), status.lastSeen.GoTime().String())
 			}
 		}
 	}
@@ -622,19 +603,9 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
-
-		container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-		if ok {
-			focusedDebugf(container.Namespace, "Enriched connection %v - status: %+v", conn.remote, status)
-		}
-
 		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
-			if ok {
-				focusedDebugf(container.Namespace, "Deleting enriched connection %v - last seen %s", conn.remote, status.lastSeen.GoTime())
-			}
-
 		}
 	}
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
@@ -863,11 +834,6 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
-
-	log.Debug("Processing host connections from Collector")
-	defer log.Debug("DONE Processing host connections from Collector")
-	log.Debugf("Updated endpoints: %s", updatedEndpoints2String(updatedEndpoints))
-
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
 
@@ -912,9 +878,6 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		h.lastKnownTimestamp = nowTimestamp
 		flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
 	}
-
-	log.Debugf("Updated connections: %s", updatedConnections2String(updatedConnections))
-	log.Debugf("Already known connections: %s", knownConnections2String(h.connections))
 
 	{
 		prevSize := len(h.endpoints)
