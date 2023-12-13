@@ -114,7 +114,11 @@ export type CVEsTableProps = {
     filteredSeverities?: VulnerabilitySeverityLabel[];
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
+    createTableActions?: (cve: {
+        cve: string;
+        summary: string;
+        numAffectedImages: number;
+    }) => IAction[];
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
@@ -224,9 +228,10 @@ function CVEsTable({
                                         rowIndex={rowIndex}
                                         cve={cve}
                                         summary={summary}
+                                        numAffectedImages={affectedImageCount}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
+                                <Td dataLabel="CVE" modifier="nowrap">
                                     <PendingExceptionLabelLayout
                                         hasPendingException={pendingExceptionCount > 0}
                                         cve={cve}
@@ -273,14 +278,18 @@ function CVEsTable({
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn
-                                            items={createTableActions({ cve, summary })}
+                                            items={createTableActions({
+                                                cve,
+                                                summary,
+                                                numAffectedImages: affectedImageCount,
+                                            })}
                                         />
                                     </Td>
                                 )}
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={colSpan}>
+                                <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
                                         {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
                                     </ExpandableRowContent>

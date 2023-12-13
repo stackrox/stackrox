@@ -89,7 +89,7 @@ function ImagesTableContainer({
                         images={tableData.images}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                         hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                         onWatchImage={onWatchImage}
                         onUnwatchImage={onUnwatchImage}

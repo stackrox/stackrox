@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/jwt"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,7 +16,6 @@ import (
 )
 
 var (
-	log                   = logging.LoggerForModule()
 	errFingerPrintChanged = errors.New("IAP token fingerprint changed, please log in again")
 )
 

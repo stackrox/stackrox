@@ -22,6 +22,7 @@ export const selectors = {
         `${selectors.filterChipGroup} *:contains("${category}")`,
     filterChipGroupRemove: (category) =>
         `${selectors.filterChipGroupForCategory(category)} button[aria-label="close"]`,
+    filterChipGroupItems: (category) => `${selectors.filterChipGroupForCategory(category)} + ul li`,
     filterChipGroupItem: (category, item) =>
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
@@ -47,19 +48,18 @@ export const selectors = {
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
     tableRowMenuToggle: 'td button[aria-label="Actions"]',
-    nonZeroCveSeverityCounts: '*[aria-label*="severity cve"i]:not([aria-label^="0"])',
+    nonZeroCveSeverityCounts: '*[aria-label*="severity cve count"i]:not([aria-label^="0"])',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
-        `span[aria-label*="${severity.toLowerCase()} severity CVEs across this"]`,
+        `span[aria-label*="${severity.toLowerCase()} severity cve count across this"]`,
     nonZeroImageSeverityCount: (severity) =>
         `span[aria-label*="with ${severity.toLowerCase()} severity"]`,
-    hiddenSeverityCount: (severity) =>
-        `span[aria-label="${severity} severity is hidden by the applied filter"]`,
+    hiddenSeverityCount: `span[aria-label$="severity is hidden by the applied filter"]`,
 
     // Exception flow selectors
     deferCveModal: '*[role="dialog"]:contains("Request deferral for")',
-    markCveFalsePositiveModal: '*[role="dialog"]:contains("Mark"):contains("as false positive")',
+    markCveFalsePositiveModal: '*[role="dialog"]:contains("Request false positive for")',
     exceptionOptionsTab: 'button[role="tab"]:contains("Options")',
     cveSelectionTab: 'button[role="tab"]:contains("CVE selections")',
 

@@ -24,7 +24,6 @@ type ComplianceDataRepository interface {
 	Deployments() map[string]*storage.Deployment
 
 	UnresolvedAlerts() []*storage.ListAlert
-	NetworkPolicies() map[string]*storage.NetworkPolicy
 	DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy
 	// Policies returns all policies, keyed by their name.
 	Policies() map[string]*storage.Policy
@@ -46,4 +45,6 @@ type ComplianceDataRepository interface {
 	// Per-host data
 	HostScraped(node *storage.Node) *compliance.ComplianceReturn
 	NodeResults() map[string]map[string]*compliance.ComplianceStandardResult
+
+	AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn)
 }

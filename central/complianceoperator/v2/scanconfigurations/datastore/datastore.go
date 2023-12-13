@@ -12,12 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator metadata.
@@ -57,17 +52,6 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store,
 		clusterDS:     clusterDS,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		searcher:      searcher,
-	}
-	return ds
-}
-
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
-	ds := &datastoreImpl{
-		storage:       scanConfigStore,
-		statusStorage: scanConfigStatusStore,
-		clusterDS:     clusterDS,
-		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	return ds
 }

@@ -11,13 +11,15 @@ output:
   format: "junit-xml:report.xml,colored-line-number"
 
 issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
   exclude-use-default: false
 
   exclude-rules:
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
         - wrapcheck
-    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/"
       linters:
         - forbidigo
     - path: "roxctl/central/generate/interactive.go"
@@ -178,7 +180,7 @@ linters:
     # - typecheck
     # - unconvert TODO: add in follow-up
     # - unparam TODO: add in follow-up
-    # - unused
+    # - unused // enabled in Makefile as it fails with release tag
     # - varcheck
     # - whitespace
     - wrapcheck

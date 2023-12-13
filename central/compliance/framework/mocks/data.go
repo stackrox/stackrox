@@ -78,6 +78,18 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
+// AddHostScrapedData mocks base method.
+func (m *MockComplianceDataRepository) AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddHostScrapedData", scrapeResults)
+}
+
+// AddHostScrapedData indicates an expected call of AddHostScrapedData.
+func (mr *MockComplianceDataRepositoryMockRecorder) AddHostScrapedData(scrapeResults any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddHostScrapedData", reflect.TypeOf((*MockComplianceDataRepository)(nil).AddHostScrapedData), scrapeResults)
+}
+
 // CISKubernetesTriggered mocks base method.
 func (m *MockComplianceDataRepository) CISKubernetesTriggered() bool {
 	m.ctrl.T.Helper()
@@ -244,20 +256,6 @@ func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
 func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
-}
-
-// NetworkPolicies mocks base method.
-func (m *MockComplianceDataRepository) NetworkPolicies() map[string]*storage.NetworkPolicy {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkPolicies")
-	ret0, _ := ret[0].(map[string]*storage.NetworkPolicy)
-	return ret0
-}
-
-// NetworkPolicies indicates an expected call of NetworkPolicies.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkPolicies() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkPolicies", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkPolicies))
 }
 
 // NodeResults mocks base method.

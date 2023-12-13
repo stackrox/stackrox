@@ -6,9 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
-	"github.com/stackrox/rox/central/risk/datastore/internal/search"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -28,9 +25,6 @@ func TestRiskDataStore(t *testing.T) {
 type RiskDataStoreTestSuite struct {
 	suite.Suite
 
-	indexer   index.Indexer
-	searcher  search.Searcher
-	storage   store.Store
 	datastore DataStore
 
 	pool postgres.DB

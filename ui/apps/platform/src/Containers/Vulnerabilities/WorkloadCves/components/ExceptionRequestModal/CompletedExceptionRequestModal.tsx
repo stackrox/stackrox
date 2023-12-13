@@ -56,11 +56,13 @@ function expiryDisplay(
 }
 
 export type CompletedExceptionRequestModalProps = {
+    isUpdate?: boolean;
     exceptionRequest: BaseVulnerabilityException;
     onClose: () => void;
 };
 
 function CompletedExceptionRequestModal({
+    isUpdate = false,
     exceptionRequest,
     onClose,
 }: CompletedExceptionRequestModalProps) {
@@ -68,11 +70,19 @@ function CompletedExceptionRequestModal({
     let requestedAction = '';
 
     if (isDeferralException(exceptionRequest)) {
-        title = 'Request for deferral has been submitted';
+        if (isUpdate) {
+            title = 'Request for deferral update has been submitted';
+        } else {
+            title = 'Request for deferral has been submitted';
+        }
         requestedAction = 'Deferral';
     }
     if (isFalsePositiveException(exceptionRequest)) {
-        title = 'Request for false positive has been submitted';
+        if (isUpdate) {
+            title = 'Request for false positive update has been submitted';
+        } else {
+            title = 'Request for false positive has been submitted';
+        }
         requestedAction = 'False positive';
     }
 

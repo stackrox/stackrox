@@ -7,12 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // CreateSubjectID creates a composite ID from cluster id and subject

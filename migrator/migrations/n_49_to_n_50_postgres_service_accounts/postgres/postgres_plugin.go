@@ -22,8 +22,6 @@ import (
 )
 
 const (
-	baseTable = "service_accounts"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

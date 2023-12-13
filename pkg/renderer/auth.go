@@ -12,8 +12,6 @@ const (
 	adminUsername = basic.DefaultUsername
 
 	autogenPasswordLength = 25
-
-	pwCharacters = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
 )
 
 // GenerateHtpasswd creates a password for admin user if it was not created during the install

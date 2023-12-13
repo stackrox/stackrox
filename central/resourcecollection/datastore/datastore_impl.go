@@ -15,7 +15,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -31,7 +30,6 @@ const (
 )
 
 var (
-	log         = logging.LoggerForModule()
 	workflowSAC = sac.ForResource(resources.WorkflowAdministration)
 )
 

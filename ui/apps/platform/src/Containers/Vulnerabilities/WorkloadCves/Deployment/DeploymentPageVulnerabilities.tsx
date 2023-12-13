@@ -128,6 +128,8 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         },
         { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
+        fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,
@@ -158,6 +160,8 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             statusesForExceptionCount: string[];
         }
     >(deploymentVulnerabilitiesQuery, {
+        fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,
@@ -238,6 +242,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                             summaryData.deployment.imageCVECountBySeverity
                                         }
                                         hiddenStatuses={hiddenStatuses}
+                                        isBusy={summaryRequest.loading}
                                     />
                                 </GridItem>
                             </Grid>

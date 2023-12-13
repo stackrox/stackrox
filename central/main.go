@@ -28,6 +28,7 @@ import (
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
+	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -43,6 +44,7 @@ import (
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
+	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -68,6 +70,7 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
+	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -102,6 +105,7 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -369,7 +373,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
-		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -429,6 +432,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
+	// The scheduled backup service is not applicable when using an external database
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		servicesToRegister = append(servicesToRegister, backupService.Singleton())
+	}
+
 	if features.VulnReportingEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 	} else {
@@ -439,6 +447,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceResults.Singleton())
+		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 	}
 
 	if features.AdministrationEvents.Enabled() {
@@ -599,6 +608,8 @@ func startGRPCServer() {
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
+				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(externalbackupsDS.Gather)
 			}
 		}
 	}
@@ -802,6 +813,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/administration/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/extensions/certs/backup",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
 			Compression:   true,
 		},
 	}

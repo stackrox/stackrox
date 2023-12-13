@@ -75,7 +75,11 @@ export type ImageVulnerabilitiesTableProps = {
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
-    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
+    createTableActions?: (cve: {
+        cve: string;
+        summary: string;
+        numAffectedImages: number;
+    }) => IAction[];
 };
 
 function ImageVulnerabilitiesTable({
@@ -156,9 +160,10 @@ function ImageVulnerabilitiesTable({
                                         rowIndex={rowIndex}
                                         cve={cve}
                                         summary={summary}
+                                        numAffectedImages={1}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
+                                <Td dataLabel="CVE" modifier="nowrap">
                                     <PendingExceptionLabelLayout
                                         hasPendingException={pendingExceptionCount > 0}
                                         cve={cve}
@@ -199,7 +204,11 @@ function ImageVulnerabilitiesTable({
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn
-                                            items={createTableActions({ cve, summary })}
+                                            items={createTableActions({
+                                                cve,
+                                                summary,
+                                                numAffectedImages: 1,
+                                            })}
                                         />
                                     </Td>
                                 )}

@@ -16,11 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	// maxFinishedRunAge specifies the maximum age of a finished run before it will be flagged for deletion.
-	maxFinishedRunAge = 12 * time.Hour
-)
-
 // runInstance is a run managed by the ComplianceManager. It is different from a run in the compliance framework,
 // which only encompasses the execution of the checks. Instead, a `runInstance` is a run from start to finish,
 // including data collection and results storage.
@@ -158,14 +153,4 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		ErrorMessage: errorMessage,
 	}
 	return proto
-}
-
-func (r *runInstance) shouldDelete() bool {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-
-	if r.status != v1.ComplianceRun_FINISHED {
-		return false
-	}
-	return time.Since(r.finishTime) > maxFinishedRunAge
 }

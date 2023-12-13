@@ -69,14 +69,14 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.15')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.16')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.3.2'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.13'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.14'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion

@@ -37,7 +37,6 @@ type ResourceCountByResultByCluster struct {
 	InconsistentCount  int    `db:"inconsistent_count"`
 	ClusterID          string `db:"cluster_id"`
 	ClusterName        string `db:"cluster"`
-	ScanConfigID       string `db:"compliance_scan_config_id"`
 	ScanConfigName     string `db:"compliance_scan_name"`
 }
 
@@ -49,7 +48,7 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 		return sac.ErrResourceAccessDenied
 	}
 
-	// TODO (ROX-18102): populate the standard and control from the rule so that lookup only happens
+	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
 	return d.store.Upsert(ctx, result)
@@ -88,14 +87,12 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
-		search.NewQuerySelect(search.ComplianceOperatorScanConfig).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorScanName).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ClusterID.String(),
 			search.Cluster.String(),
-			search.ComplianceOperatorScanConfig.String(),
 			search.ComplianceOperatorScanName.String(),
 		},
 	}
@@ -108,9 +105,6 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 			},
 			{
 				Field: search.Cluster.String(),
-			},
-			{
-				Field: search.ComplianceOperatorScanConfig.String(),
 			},
 			{
 				Field: search.ComplianceOperatorScanName.String(),

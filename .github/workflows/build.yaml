@@ -171,9 +171,13 @@ jobs:
 
       - name: Setup Go build environment for -race
         if: |
-          contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
-            ||
-          matrix.name == 'race-condition-debug'
+          matrix.arch == 'amd64'
+            &&
+          (
+            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+              ||
+            matrix.name == 'race-condition-debug'
+          )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
@@ -353,14 +357,14 @@ jobs:
 
       - name: Build main images
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-main-image
 
       - name: Check debugger presence in the main image
         run: make check-debugger
 
       - name: Build roxctl image
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-roxctl-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
@@ -368,7 +372,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+          scripts/lib.sh retry 5 true docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
       - name: Push images
         # Skip for external contributions.
@@ -532,14 +536,15 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
+          scripts/lib.sh retry 5 true docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
 
       - name: Build Operator Bundle image
         run: |
           make -C operator/ bundle bundle-build
 
       - name: Build Operator image
-        run: make -C operator/ build docker-build
+        run: |
+          scripts/lib.sh retry 3 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -603,18 +608,7 @@ jobs:
 
     - name: Scan
       run: |
-        GOVULNCHECK_BIN="$(make  which-govulncheck --silent)"
-        find bin/linux_amd64 -maxdepth 1 -type f -exec "$GOVULNCHECK_BIN" -mode=binary -json {} \; | tee vulns.json
-        source "scripts/ci/lib.sh"
-        jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
-        do
-          id="${vulns[0]}"
-          summary="${vulns[1]}"
-          details="${vulns[2]}"
-          echo "$id" "$summary"
-          save_junit_failure "$id" "$summary" "$details"
-        done
-        grep -q finding vulns.json && (exit 1)
+        ./scripts/ci/govulncheck.sh
 
     - name: Publish Test Report
       uses: test-summary/action@v2

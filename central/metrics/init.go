@@ -2,11 +2,6 @@ package metrics
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func init() {
@@ -35,5 +30,6 @@ func init() {
 		totalOrphanedPLOPCounter,
 		processQueueLengthGauge,
 		sensorEventsDeduperCounter,
+		sensorConnectedCounter,
 	)
 }

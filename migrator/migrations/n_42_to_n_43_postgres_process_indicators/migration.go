@@ -37,7 +37,6 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = frozenSchema.ProcessIndicatorsSchema
 	log       = loghelper.LogWrapper{}
 )
 

@@ -11,9 +11,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -142,15 +142,6 @@ func (tc *TestCase) mapFillReport(vr *v4.VulnerabilityReport) *TestWant {
 		Source:    tc.Source,
 		Features:  tc.mapFillFeatures(vr),
 	}
-}
-
-func getDefault[K comparable, V any](m map[K]V, k K, defaultFunc func() V) V {
-	v, ok := m[k]
-	if !ok {
-		v = defaultFunc()
-		m[k] = v
-	}
-	return v
 }
 
 // mapFillFeatures creates a features slice by converting values found in the

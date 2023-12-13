@@ -665,23 +665,6 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 	return componentIDToEdgeMap, rows.Err()
 }
 
-func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageID string) (set.StringSet, error) {
-	rows, err := tx.Query(ctx, "SELECT id FROM "+imageCVEEdgesTable+" WHERE imageid = $1", imageID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids.Add(id)
-	}
-	return ids, rows.Err()
-}
-
 func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageCVEEdgesTable+" WHERE imageid = $1", imageID)
 	if err != nil {

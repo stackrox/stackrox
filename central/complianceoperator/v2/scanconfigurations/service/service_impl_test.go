@@ -184,8 +184,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -286,8 +285,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,

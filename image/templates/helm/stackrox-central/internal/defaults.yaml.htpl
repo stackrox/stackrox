@@ -212,8 +212,6 @@ defaults:
 [<- end >]
 
   system:
-    createSCCs: [< not .Operator >]
-
     [<- if not .AutoSensePodSecurityPolicies >]
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]
@@ -229,5 +227,6 @@ dbPVCDefaults:
 [<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4DBPVCDefaults:
   claimName: "scanner-v4-db"
-  size: "10Gi"
+  size: "50Gi"
+  createClaim: true
 [<- end >]

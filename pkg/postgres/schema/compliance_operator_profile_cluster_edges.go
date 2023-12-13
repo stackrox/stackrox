@@ -55,6 +55,7 @@ const (
 type ComplianceOperatorProfileClusterEdges struct {
 	ID                             string                      `gorm:"column:id;type:varchar;primaryKey"`
 	ProfileID                      string                      `gorm:"column:profileid;type:varchar"`
+	ProfileUID                     string                      `gorm:"column:profileuid;type:varchar"`
 	ClusterID                      string                      `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofileclusteredges_sac_filter,type:btree"`
 	Serialized                     []byte                      `gorm:"column:serialized;type:bytea"`
 	ComplianceOperatorProfileV2Ref ComplianceOperatorProfileV2 `gorm:"foreignKey:profileid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

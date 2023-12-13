@@ -125,7 +125,6 @@ type TestContext struct {
 	r                *resources.Resources
 	env              *envconf.Config
 	fakeCentral      *centralDebug.FakeService
-	centralReceived  chan *central.MsgFromSensor
 	stopFn           func()
 	sensorStopped    concurrency.ReadOnlyErrorSignal
 	centralStopped   atomic.Bool
@@ -143,7 +142,7 @@ type TestContext struct {
 func DefaultCentralConfig() CentralConfig {
 	// Uses replayed policies.json file as default policies for tests.
 	// These are all policies in ACS, which means many alerts might be generated.
-	policies, err := testutils.GetPoliciesFromFile("../../replay/data/policies.json")
+	policies, err := testutils.GetPoliciesFromFile("../../data/policies.json")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -796,7 +795,6 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(client.MustCreateInterfaceFromRest(env.Client().RESTConfig())).
 		WithLocalSensor(true).
-		WithResyncPeriod(1 * time.Second).
 		WithCentralConnectionFactory(c.grpcFactory))
 
 	if err != nil {

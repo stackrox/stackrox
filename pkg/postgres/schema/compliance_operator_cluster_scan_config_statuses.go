@@ -54,7 +54,8 @@ const (
 
 // ComplianceOperatorClusterScanConfigStatuses holds the Gorm model for Postgres table `compliance_operator_cluster_scan_config_statuses`.
 type ComplianceOperatorClusterScanConfigStatuses struct {
-	ClusterID       string     `gorm:"column:clusterid;type:uuid;primaryKey"`
+	ID              string     `gorm:"column:id;type:uuid;primaryKey"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorclusterscanconfigstatuses_sac_filter,type:btree"`
 	ScanID          string     `gorm:"column:scanid;type:varchar"`
 	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`

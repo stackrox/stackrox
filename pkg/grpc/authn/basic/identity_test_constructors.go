@@ -114,18 +114,6 @@ func (r *testRole) GetAccessScope() *storage.SimpleAccessScope {
 }
 
 var (
-	// accessScopeExcludeAll has empty rules and hence excludes all
-	// scoped resources. Global resources must be unaffected.
-	accessScopeExcludeAll = &storage.SimpleAccessScope{
-		Id:          accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope],
-		Name:        accesscontrol.DenyAllAccessScope,
-		Description: "No access to scoped resources",
-		Rules:       &storage.SimpleAccessScope_Rules{},
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DEFAULT,
-		},
-	}
-
 	// accessScopeIncludeAll gives access to all resources. It is checked by ID, as
 	// Rules cannot represent unrestricted scope.
 	accessScopeIncludeAll = &storage.SimpleAccessScope{

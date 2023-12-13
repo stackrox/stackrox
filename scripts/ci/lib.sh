@@ -33,12 +33,30 @@ ci_export() {
     fi
 }
 
+# set_ci_shared_export() - for openshift-ci this is state shared between steps.
+set_ci_shared_export() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: set_ci_shared_export <env-name> <env-value>"
+    fi
+
+    ci_export "$@"
+
+    local env_name="$1"
+    local env_value="$2"
+
+    echo "export ${env_name}=${env_value}" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
+}
+
 ci_exit_trap() {
     local exit_code="$?"
     info "Executing a general purpose exit trap for CI"
     echo "Exit code is: ${exit_code}"
 
-    finalize_job_record "${exit_code}" "false"
+    if [[ "${exit_code}" == "0" ]]; then
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_PASSED}"
+    else
+        set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
+    fi
 
     # `post_process_test_results` will generate the Slack attachment first, then
     # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
@@ -182,16 +200,19 @@ push_image_manifest_lists() {
 
     registry_rw_login "$registry"
     for image in "${main_image_set[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+        retry 5 true \
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
         if [[ "$push_context" == "merge-to-master" ]]; then
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
+            retry 5 true \
+              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:latest" "$architectures" | cat
         fi
     done
 
     # Push manifest lists for scanner and collector for amd64 only
     local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "collector-slim")
     for image in "${amd64_image_set[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
+        retry 5 true \
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
     done
 }
 
@@ -217,7 +238,8 @@ push_main_image_set() {
         local tag="$2"
 
         for image in "${main_image_set[@]}"; do
-            docker push "${registry}/${image}:${tag}" | cat
+            retry 5 true \
+              docker push "${registry}/${image}:${tag}" | cat
         done
     }
 
@@ -288,7 +310,8 @@ push_scanner_image_manifest_lists() {
     for registry in "${registries[@]}"; do
         registry_rw_login "$registry"
         for image in "${scanner_image_set[@]}"; do
-            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+            retry 5 true \
+              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
         done
     done
 }
@@ -309,7 +332,8 @@ push_scanner_image_set() {
         local tag="$2"
 
         for image in "${scanner_image_set[@]}"; do
-            docker push "${registry}/${image}:${tag}" | cat
+            retry 5 true \
+              docker push "${registry}/${image}:${tag}" | cat
         done
     }
 
@@ -344,10 +368,12 @@ registry_rw_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            retry 5 true \
+              docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
             ;;
         quay.io/stackrox-io)
-            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            retry 5 true \
+              docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
             ;;
         *)
             die "Unsupported registry login: $registry"
@@ -363,7 +389,8 @@ registry_ro_login() {
 
     case "$registry" in
         quay.io/rhacs-eng)
-            docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
+            retry 5 true \
+              docker login -u "$QUAY_RHACS_ENG_RO_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RO_PASSWORD" quay.io
             ;;
         *)
             die "Unsupported registry login: $registry"

@@ -138,6 +138,8 @@ export_test_environment() {
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-true}"
+    ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
+    ci_export ROX_SCANNER_V4_ENABLED "${ROX_SCANNER_V4_ENABLED:-false}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -328,9 +330,6 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
-
-    # Every E2E test should have ROX_RESYNC_DISABLED="true"
-    kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
 
 export_central_basic_auth_creds() {

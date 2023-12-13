@@ -70,7 +70,7 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 		}
 		return nil
 	}, retry.OnFailedAttempts(func(err error) {
-		log.Errorf("error scanning image: %v", err)
+		suite.T().Logf("error scanning image: %v", err)
 		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 

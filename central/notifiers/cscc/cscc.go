@@ -9,23 +9,22 @@ import (
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	adminOption "github.com/stackrox/rox/pkg/administration/events/option"
+	gcpHandler "github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
+	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
-	securitycenterv1 "google.golang.org/api/securitycenter/v1"
-	"google.golang.org/grpc"
 )
 
 var (
@@ -42,7 +41,7 @@ func init() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
@@ -64,7 +63,7 @@ type cscc struct {
 	// The Service Account is a Google JSON service account key.
 	// The GCP Organization ID is a numeric identifier for the Google Cloud Platform
 	// organization. It is required so that we can tag findings to the right org.
-	client *securitycenter.Client
+	client gcpHandler.Handler[*securitycenter.Client]
 	config *config
 	*storage.Notifier
 }
@@ -87,20 +86,20 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		}
 	}
 
-	cfg, err := google.CredentialsFromJSON(context.Background(), []byte(decCreds), securitycenterv1.CloudPlatformScope)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating JWT config for client")
+	var handler gcpHandler.Handler[*securitycenter.Client]
+	if features.CloudCredentials.Enabled() {
+		handler, err = gcpUtils.CreateSecurityCenterHandlerFromConfigWithManager(context.Background(), gcp.Singleton(),
+			[]byte(decCreds), conf.GetWifEnabled())
+	} else {
+		handler, err = gcpUtils.CreateSecurityCenterHandlerFromConfig(context.Background(), []byte(decCreds), conf.GetWifEnabled())
 	}
-
-	client, err := securitycenter.NewClient(context.Background(),
-		option.WithCredentials(cfg), option.WithGRPCDialOption(grpc.WithContextDialer(proxy.AwareDialContext)))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating client for security center API")
+		return nil, errors.Wrap(err, "could not create security center client handler")
 	}
 
 	return &cscc{
 		Notifier: protoNotifier,
-		client:   client,
+		client:   handler,
 		config: &config{
 			ServiceAccount: decCreds,
 			SourceID:       conf.SourceId,
@@ -115,7 +114,13 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	_, err = c.client.CreateFinding(ctx, &securitycenterpb.CreateFindingRequest{
+	client, done := c.client.GetClient()
+	defer done()
+	if client == nil {
+		return errors.New("failed to get security center client")
+	}
+
+	_, err = client.CreateFinding(ctx, &securitycenterpb.CreateFindingRequest{
 		Parent:    finding.GetParent(),
 		FindingId: findingID,
 		Finding:   finding,
@@ -135,7 +140,12 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 func (c *cscc) Close(_ context.Context) error {
-	return c.client.Close()
+	client, done := c.client.GetClient()
+	defer done()
+	if client == nil {
+		return nil
+	}
+	return client.Close()
 }
 
 func (c *cscc) ProtoNotifier() *storage.Notifier {

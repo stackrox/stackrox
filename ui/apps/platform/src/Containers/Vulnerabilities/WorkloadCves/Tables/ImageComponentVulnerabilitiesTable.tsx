@@ -65,6 +65,7 @@ function ImageComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE Fixed in</Th>
+                    <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -93,12 +94,13 @@ function ImageComponentVulnerabilitiesTable({
                             <Td modifier="nowrap">
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />
                             </Td>
+                            <Td>{source}</Td>
                             <Td>
                                 <ComponentLocationTd location={location} source={source} />
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={4} className="pf-u-pt-0">
+                            <Td colSpan={5} className="pf-u-pt-0">
                                 <DockerfileLayerTd layer={layer} />
                             </Td>
                         </Tr>

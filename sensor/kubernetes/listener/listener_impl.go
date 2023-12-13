@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"time"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -35,7 +34,6 @@ type listenerImpl struct {
 	stopSig            concurrency.Signal
 	credentialsManager awscredentials.RegistryCredentialsManager
 	configHandler      config.Handler
-	resyncPeriod       time.Duration
 	traceWriter        io.Writer
 	outputQueue        component.Resolver
 	storeProvider      *resources.StoreProvider

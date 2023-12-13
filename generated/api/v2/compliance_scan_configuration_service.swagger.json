@@ -1,0 +1,602 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/compliance_scan_configuration_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/compliance/scan/configurations": {
+      "get": {
+        "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "post": {
+        "summary": "CreateComplianceScanConfiguration creates a compliance scan configuration",
+        "operationId": "ComplianceScanConfigurationService_CreateComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/execute/{id}": {
+      "get": {
+        "summary": "RunComplianceScanConfiguration launches scan for the specified scan configuration",
+        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}": {
+      "get": {
+        "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
+        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name",
+        "operationId": "ComplianceScanConfigurationService_DeleteComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateComplianceScanConfiguration updates a compliance scan configuration",
+        "operationId": "ComplianceScanConfigurationService_UpdateComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/count/configurations": {
+      "get": {
+        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfigurationsCount"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "ScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "ScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY",
+        "DAILY"
+      ],
+      "default": "UNSET"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2BaseComplianceScanConfigurationSettings": {
+      "type": "object",
+      "properties": {
+        "oneTimeScan": {
+          "type": "boolean"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scanSchedule": {
+          "$ref": "#/definitions/v2Schedule"
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "v2ClusterScanStatus": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "clusterName": {
+          "type": "string"
+        }
+      },
+      "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 3"
+    },
+    "v2ComplianceScanConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "v2ComplianceScanConfigurationStatus": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusterStatus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ClusterScanStatus"
+          }
+        },
+        "createdTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdatedTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modifiedBy": {
+          "$ref": "#/definitions/v2SlimUser",
+          "title": "Most recent user to update the scan settings"
+        }
+      },
+      "title": "Next available tag: 8"
+    },
+    "v2ComplianceScanConfigurationsCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2ListComplianceScanConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "configurations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+          }
+        }
+      },
+      "title": "Next available tag: 2"
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2Schedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/ScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/ScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/ScheduleDaysOfMonth"
+        }
+      }
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    }
+  }
+}

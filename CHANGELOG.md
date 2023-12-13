@@ -11,10 +11,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 - Customer-provided PostgreSQL databases are now GA
+- ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
 - The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
+- ROX-12982: All custom `stackrox-*` SecurityContextConstraints (SCC) have been replaced with default SCCs (deprecation announced in 4.1 release notes).
 
 ### Deprecated Features
 - The following search terms will be disabled in the next release and removed from the deployment context in 2 releases:

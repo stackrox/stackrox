@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -34,7 +33,6 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
 		},
 	})
-	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -45,7 +43,7 @@ func New(complianceResultsDS complianceDS.DataStore) Service {
 }
 
 type serviceImpl struct {
-	v2.UnimplementedComplianceScanConfigurationServiceServer
+	v2.UnimplementedComplianceResultsServiceServer
 
 	complianceResultsDS complianceDS.DataStore
 }

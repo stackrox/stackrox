@@ -131,24 +131,6 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard *standar
 	return run
 }
 
-func (m *manager) cleanupRuns() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Step 1: Gather runs marked for deletion.
-	runsToDelete := set.NewStringSet()
-	for id, run := range m.runsByID {
-		if run.shouldDelete() {
-			runsToDelete.Add(id)
-		}
-	}
-
-	// Step 3: Actually delete the runs
-	for runID := range runsToDelete {
-		delete(m.runsByID, runID)
-	}
-}
-
 func (m *manager) interrupt() {
 	select {
 	case <-m.stopSig.Done():
@@ -291,6 +273,21 @@ func (m *manager) TriggerRuns(ctx context.Context, clusterStandardPairs ...compl
 	return runProtos, nil
 }
 
+type perClusterDataRepoFactory struct {
+	once            sync.Once
+	dataRepoFactory data.RepositoryFactory
+
+	dataRepo framework.ComplianceDataRepository
+	err      error
+}
+
+func (p *perClusterDataRepoFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
+	p.once.Do(func() {
+		p.dataRepo, p.err = p.dataRepoFactory.CreateDataRepository(ctx, domain)
+	})
+	return p.dataRepo, p.err
+}
+
 func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs []compliance.ClusterStandardPair) ([]*runInstance, error) {
 	// Check write access to all of the runs
 	clusterScopes := newClusterScopeCollector()
@@ -338,6 +335,9 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 		}
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
+		perClusterDataRepoOnce := &perClusterDataRepoFactory{
+			dataRepoFactory: m.dataRepoFactory,
+		}
 		for _, standard := range standardImpls {
 			if !m.complianceOperatorManager.IsStandardActiveForCluster(standard.ID, clusterID) {
 				continue
@@ -350,12 +350,12 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 					for _, standard := range standardImpls {
 						standardIDs = append(standardIDs, standard.ID)
 					}
-					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout, standardIDs)
+					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, perClusterDataRepoOnce, domain, scrapeTimeout, standardIDs)
 				}
 				dataPromise = scrapeBasedPromise
 			} else {
 				if scrapeLessPromise == nil {
-					scrapeLessPromise = newFixedDataPromise(elevatedCtx, m.dataRepoFactory, domain)
+					scrapeLessPromise = newFixedDataPromise(elevatedCtx, perClusterDataRepoOnce, domain)
 				}
 				dataPromise = scrapeLessPromise
 			}

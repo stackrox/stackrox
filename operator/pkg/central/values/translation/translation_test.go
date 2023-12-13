@@ -343,9 +343,6 @@ func TestTranslate(t *testing.T) {
 								},
 							},
 						},
-						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.Bool(true),
-						},
 					},
 				},
 				clientSet: fake.NewSimpleClientset(
@@ -536,9 +533,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": true,
-				},
-				"system": map[string]interface{}{
-					"createSCCs": true,
 				},
 			},
 		},

@@ -241,17 +241,6 @@ func (resolver *Resolver) OpenShiftClusterVulnerabilityCount(ctx context.Context
 /*
 Utility Functions
 */
-
-// withClusterTypeFiltering adds a conjunction as a raw query to filter vulnerability type by cluster
-// this is needed to support pre postgres requests
-func withClusterTypeFiltering(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVEType,
-			storage.CVE_ISTIO_CVE.String(),
-			storage.CVE_OPENSHIFT_CVE.String(),
-			storage.CVE_K8S_CVE.String()).Query())
-}
-
 // withK8sTypeFiltering adds a conjunction as a raw query to filter vulnerability k8s type
 func withK8sTypeFiltering(q string) string {
 	return search.AddRawQueriesAsConjunction(q,

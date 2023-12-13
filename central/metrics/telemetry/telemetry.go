@@ -4,13 +4,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	once      sync.Once
 	telemetry *telemetryImpl
 )

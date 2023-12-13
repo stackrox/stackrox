@@ -22,7 +22,7 @@ type fixedDataPromise struct {
 }
 
 func newFixedDataPromise(ctx context.Context, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
-	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain, nil)
+	dataRepo, err := dataRepoFactory.CreateDataRepository(ctx, domain)
 
 	return &fixedDataPromise{
 		dataRepo: dataRepo,
@@ -70,7 +70,10 @@ func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*com
 		log.Warnf("Did not collect scrape data for %+v", missingNodes)
 	}
 
-	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain, scrapeResult)
+	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain)
+	if err == nil {
+		p.result.AddHostScrapedData(scrapeResult)
+	}
 	p.finishedSig.SignalWithError(err)
 }
 

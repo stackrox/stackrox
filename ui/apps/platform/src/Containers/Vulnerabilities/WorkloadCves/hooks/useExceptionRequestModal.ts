@@ -5,7 +5,7 @@ import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModa
 export type ShowExceptionModalAction =
     | {
           type: 'DEFERRAL' | 'FALSE_POSITIVE';
-          cves: { cve: string; summary: string }[];
+          cves: { cve: string; summary: string; numAffectedImages: number }[];
       }
     | {
           type: 'COMPLETION';
@@ -20,6 +20,7 @@ export type UseExceptionRequestModalReturn = {
     createExceptionModalActions: (options: {
         cve: string;
         summary: string;
+        numAffectedImages: number;
     }) => { title: string; onClick: () => void }[];
 };
 
@@ -52,14 +53,19 @@ export default function useExceptionRequestModal(): UseExceptionRequestModalRetu
             setExceptionRequestOptions(null);
             setCompletedException(null);
         },
-        createExceptionModalActions: ({ cve, summary }) => [
+        createExceptionModalActions: ({ cve, summary, numAffectedImages }) => [
             {
                 title: 'Defer CVE',
-                onClick: () => showModal({ type: 'DEFERRAL', cves: [{ cve, summary }] }),
+                onClick: () =>
+                    showModal({ type: 'DEFERRAL', cves: [{ cve, summary, numAffectedImages }] }),
             },
             {
                 title: 'Mark as false positive',
-                onClick: () => showModal({ type: 'FALSE_POSITIVE', cves: [{ cve, summary }] }),
+                onClick: () =>
+                    showModal({
+                        type: 'FALSE_POSITIVE',
+                        cves: [{ cve, summary, numAffectedImages }],
+                    }),
             },
         ],
     };
