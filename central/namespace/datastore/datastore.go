@@ -79,7 +79,7 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 		return nil, false, nil
 	}
 	b.updateNamespacePriority(namespace)
-	return namespace.Clone(), true, err
+	return namespace, true, err
 }
 
 // GetAllNamespaces retrieves namespaces matching the request
@@ -93,7 +93,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 				IsAllowed() {
 				return nil
 			}
-			allowedNamespaces = append(allowedNamespaces, namespace.Clone())
+			allowedNamespaces = append(allowedNamespaces, namespace)
 			return nil
 		})
 	}
@@ -132,7 +132,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.Nam
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
-	var fetchedNamespaces []*storage.NamespaceMetadata
+	var namespaces []*storage.NamespaceMetadata
 	var err error
 	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
@@ -140,14 +140,10 @@ func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]
 		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
 		return b.SearchNamespaces(ctx, query)
 	}
-	fetchedNamespaces, _, err = b.store.GetMany(ctx, ids)
-	b.updateNamespacePriority(fetchedNamespaces...)
+	namespaces, _, err = b.store.GetMany(ctx, ids)
+	b.updateNamespacePriority(namespaces...)
 	if err != nil {
 		return nil, err
-	}
-	namespaces := make([]*storage.NamespaceMetadata, 0, len(fetchedNamespaces))
-	for _, ns := range fetchedNamespaces {
-		namespaces = append(namespaces, ns.Clone())
 	}
 	return namespaces, nil
 }
@@ -160,7 +156,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace.Clone())
+	return b.store.Upsert(ctx, namespace)
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -171,7 +167,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.store.Upsert(ctx, namespace.Clone())
+	return b.store.Upsert(ctx, namespace)
 }
 
 // RemoveNamespace removes a namespace.
