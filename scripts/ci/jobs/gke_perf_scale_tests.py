@@ -3,7 +3,6 @@
 """
 Run the perf scale test in a GKE cluster
 """
-import os
 from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import NullPreTest
