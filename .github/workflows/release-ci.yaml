@@ -127,7 +127,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
+        uses: 'google-github-actions/setup-gcloud@v2'
       - uses: actions/download-artifact@v3
         with:
           name: cli-build
