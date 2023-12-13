@@ -337,6 +337,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 				continue
 			}
 			m.enrichAndSend()
+			m.clusterEntities.Tick() // Used to measure whether historical endpoints should still be remembered
 
 			if env.ProcessesListeningOnPort.BooleanSetting() {
 				m.enrichAndSendProcesses()
@@ -352,7 +353,6 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
-	defer m.clusterEntities.Tick() // enrichAndSend is called on tick
 	ctx := m.getCurrentContext()
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
@@ -834,6 +834,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
+
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
 

@@ -31,42 +31,6 @@ type PublicIPsListener interface {
 	OnRemoved(ip net.IPAddress)
 }
 
-func newEntityStatus(numTicks uint16) *entityStatus {
-	return &entityStatus{
-		ticksLeft:    numTicks,
-		isHistorical: false,
-	}
-}
-
-type entityStatus struct {
-	ticksLeft    uint16
-	isHistorical bool
-}
-
-// markHistorical is called when entity would be deleted.
-// Istead, we mark it as historcal and keep it as long as ticksLeft
-func (es *entityStatus) markHistorical(ticksLeft uint16) {
-	if !es.isHistorical {
-		es.ticksLeft = ticksLeft
-	}
-	es.isHistorical = true
-}
-
-// recordTick decreases value of ticksLeft until it reaches 0
-func (es *entityStatus) recordTick() {
-	if !es.isHistorical {
-		return
-	}
-	if es.ticksLeft > 0 {
-		es.ticksLeft--
-	}
-}
-
-// IsExpired returns true if historical entry waited for `ticksLeft` ticks
-func (es *entityStatus) IsExpired() bool {
-	return es.isHistorical && es.ticksLeft == 0
-}
-
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
 // endpoint.
 type Store struct {
@@ -183,17 +147,19 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.applyNoLock(updates, incremental)
 }
 
-// Tick informs the store that unit of time has passed
+// Tick informs the store that a unit of time has passed
 func (e *Store) Tick() {
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
+			// Remove all historical entries that expired in this tick.
 			e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, endpoint)
 		}
 	}
 	for ip, m := range e.historicalIPs {
 		for deploymentID, status := range m {
 			status.recordTick()
+			// Remove all historical entries that expired in this tick.
 			e.removeHistoricalExpiredIPs(deploymentID, ip)
 		}
 	}
@@ -291,13 +257,12 @@ func (e *Store) markHistoricalIP(deploymentID string, ip net.IPAddress) {
 
 func (e *Store) purgeNoLock(deploymentID string) {
 	for ip := range e.reverseIPMap[deploymentID] {
-		set := e.ipMap[ip]
 		e.markHistoricalIP(deploymentID, ip)
-		if e.entitiesMemorySize == 0 {
-			e.removeHistoricalExpiredIPs(deploymentID, ip)
-		}
+		// For entitiesMemorySize > 0, the deletion of historical expired entries happens after a tick.
+		// If memory is disabled, we should not wait for a tick and delete them immediately.
+		e.removeHistoricalExpiredIPs(deploymentID, ip)
 
-		if len(set) == 0 {
+		if len(e.ipMap[ip]) == 0 {
 			delete(e.ipMap, ip)
 			if ip.IsPublic() {
 				e.decPublicIPRefNoLock(ip)
@@ -305,16 +270,12 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		}
 	}
 	for ep := range e.reverseEndpointMap[deploymentID] {
-		set := e.endpointMap[ep]
-
 		e.markEndpointHistorical(deploymentID, ep)
-		// Deletion of historical expired entries happens after a tick.
-		// If memory is disabled, we should not wait for a tick and delete immediately
-		if e.entitiesMemorySize == 0 {
-			e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, ep)
-		}
+		// For entitiesMemorySize > 0, the deletion of historical expired entries happens after a tick.
+		// If memory is disabled, we should delete historical expired entries immediately.
+		e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, ep)
 
-		if len(set) == 0 {
+		if len(e.endpointMap[ep]) == 0 {
 			delete(e.endpointMap, ep)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.decPublicIPRefNoLock(ipAddr)
@@ -373,6 +334,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		for _, tgtInfo := range targetInfos {
 			targetSet[tgtInfo] = struct{}{}
 		}
+		// Endpoints previously marked as historical would expire soon, so we must mark them as no longer historical.
 		e.unmarkEndpointHistorical(deploymentID, ep)
 	}
 
@@ -392,6 +354,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 			}
 		}
 		ipMap[deploymentID] = struct{}{}
+		// IP previously marked as historical would expire soon, so we must mark them as no longer historical.
 		e.unmarkHistoricalIP(deploymentID, ip)
 	}
 

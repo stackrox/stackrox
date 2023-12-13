@@ -39,7 +39,7 @@ func InitializeStore() *StoreProvider {
 	if memSizeSetting < 0 {
 		memSizeSetting = 20
 	}
-	log.Infof("Initializing cluster entities store with memory of size %d", memSizeSetting)
+	log.Infof("Initializing cluster entities store with memory that will last for %d ticks", memSizeSetting)
 	deployStore := newDeploymentStore()
 	podStore := newPodStore()
 	svcStore := newServiceStore()

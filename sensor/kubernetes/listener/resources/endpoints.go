@@ -206,8 +206,7 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector.Selector) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
-		data := m.endpointDataForDeployment(deployment)
-		updates[deployment.GetId()] = data
+		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
 
 	m.entityStore.Apply(updates, false)
