@@ -24,11 +24,13 @@ usage() {
 dump_logs() {
     for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${jpath}[*].name}"); do
         kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
-        prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
-        if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
-            exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
-            if [ "$exit_code" -eq "0" ]; then
-                mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+        exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
+        if [ "${exit_code}" != "null" ]; then
+            prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
+            if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
+                if [ "$exit_code" -eq "0" ]; then
+                    mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+                fi
             fi
         fi
     done
