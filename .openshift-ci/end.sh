@@ -9,7 +9,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 end() {
-    info "And it shall end"
+    info "End of CI handling"
 
     if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
         # shellcheck disable=SC1091
