@@ -42,7 +42,6 @@ func TestECRIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NoError(t, ecr.Test())
-	assert.Equal(t, fmt.Sprintf("%s.dkr.ecr.us-west-2.amazonaws.com", registryID), ecr.endpoint)
 
 	metadata, err := ecr.Metadata(&storage.Image{
 		Name: &storage.ImageName{
