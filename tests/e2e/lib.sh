@@ -746,7 +746,7 @@ _record_build_info() {
     fi
 
     # -race debug builds - use the image tag as the most reliable way to
-    # determin the build under test.
+    # determine the build under test.
     local central_image
     central_image="$(kubectl -n stackrox get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
     if [[ "${central_image}" =~ -rcd$ ]]; then

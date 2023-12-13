@@ -33,7 +33,7 @@ end() {
 }
 
 determine_an_overall_job_outcome() {
-    # Determin a useful overall job outcome based on state shared from prior steps.
+    # Determine a useful overall job outcome based on state shared from prior steps.
     # 'undefined' states mean the step did not run or openshift-ci canceled it.
     # Note: in openshift-ci, if SHARED_DIR files are created or changed after
     # cancelation that does not propagate.
