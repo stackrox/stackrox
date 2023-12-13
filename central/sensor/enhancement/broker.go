@@ -92,7 +92,7 @@ func (b *Broker) waitAndProcessResponse(s *enhancementSignal, timeout time.Durat
 		}
 		return deployments, nil
 	case <-time.After(timeout):
-		return nil, errors.New("timed out waiting for augmented deployment")
+		return nil, errors.New("timed out waiting for enhanced deployment")
 	}
 }
 

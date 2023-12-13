@@ -70,7 +70,7 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
 
 	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
 
-	s.ErrorContains(err, "timed out waiting for augmented deployment", "Expected the function to time out, but it didn't")
+	s.ErrorContains(err, "timed out waiting for enhanced deployment", "Expected the function to time out, but it didn't")
 }
 
 func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsWritesToActiveRequests() {
@@ -80,7 +80,7 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsWritesToActiveRe
 	deployments := make([]*storage.Deployment, 0)
 
 	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 10*time.Millisecond)
-	s.NoError(err)
+	s.ErrorContains(err, "timed out waiting for enhanced deployment")
 
 	s.Len(b.activeRequests, 1)
 }
