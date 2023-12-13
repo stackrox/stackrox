@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -119,6 +120,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
+	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", "default", "namespace to evaluate, defaults to \"default\" if unset.")
+	namespace, err := c.Flags().GetString("namespace")
+	// this error should never occur, it would only occur if default values are invalid
+	utils.Must(err)
+	if namespace == "default" {
+		fmt.Printf("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '%s [X]' or '-%s [X]'\n", c.Flag("namespace").DefValue, c.Flag("namespace").Shorthand)
+	}
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
@@ -142,6 +150,7 @@ type deploymentCheckCommand struct {
 	timeout            time.Duration
 	force              bool
 	cluster            string
+	namespace          string
 
 	// injected or constructed values by Construct
 	env                environment.Environment
