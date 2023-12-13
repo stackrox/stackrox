@@ -13,4 +13,5 @@ type EntityStore interface {
 	LookupByEndpoint(net.NumericEndpoint) []clusterentities.LookupResult
 	RegisterPublicIPsListener(clusterentities.PublicIPsListener) bool
 	UnregisterPublicIPsListener(clusterentities.PublicIPsListener) bool
+	Tick()
 }

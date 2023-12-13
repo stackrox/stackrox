@@ -1,14 +1,19 @@
 package clusterentities
 
 import (
+	"net/http"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
+
+var log = logging.LoggerForModule()
 
 // ContainerMetadata is the container metadata that is stored per instance
 type ContainerMetadata struct {
@@ -29,6 +34,42 @@ type ContainerMetadata struct {
 type PublicIPsListener interface {
 	OnAdded(ip net.IPAddress)
 	OnRemoved(ip net.IPAddress)
+}
+
+func newEntityStatus(numTicks uint16) *entityStatus {
+	return &entityStatus{
+		ticksLeft:    numTicks,
+		isHistorical: false,
+	}
+}
+
+type entityStatus struct {
+	ticksLeft    uint16
+	isHistorical bool
+}
+
+// markHistorical is called when entity would be deleted.
+// Istead, we mark it as historcal and keep it as long as ticksLeft
+func (es *entityStatus) markHistorical(ticksLeft uint16) {
+	if !es.isHistorical {
+		es.ticksLeft = ticksLeft
+	}
+	es.isHistorical = true
+}
+
+// recordTick decreases value of ticksLeft until it reaches 0
+func (es *entityStatus) recordTick() {
+	if !es.isHistorical {
+		return
+	}
+	if es.ticksLeft > 0 {
+		es.ticksLeft--
+	}
+}
+
+// IsExpired returns true if historical entry waited for `ticksLeft` ticks
+func (es *entityStatus) IsExpired() bool {
+	return es.isHistorical && es.ticksLeft == 0
 }
 
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
@@ -54,14 +95,27 @@ type Store struct {
 	publicIPsListeners map[PublicIPsListener]struct{}
 
 	mutex sync.RWMutex
+
+	// entitiesMemorySize defines how many ticks old endpoint data should be remembered after removal request
+	// Set to 0 to disable memory
+	entitiesMemorySize  uint16
+	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
+	historicalIPs       map[net.IPAddress]map[string]*entityStatus
+	debugServer         *http.Server
 }
 
 // NewStore creates and returns a new store instance.
 // Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
 // `StoreInstance()`.
 func NewStore() *Store {
-	store := &Store{}
+	return NewStoreWithMemory(0)
+}
+
+// NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
+func NewStoreWithMemory(numTicks uint16) *Store {
+	store := &Store{entitiesMemorySize: numTicks}
 	store.initMaps()
+	store.debugServer = store.startDebugServer()
 	return store
 }
 
@@ -74,6 +128,8 @@ func (e *Store) initMaps() {
 	e.reverseContainerIDMap = make(map[string]map[string]struct{})
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+	e.historicalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
+	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
 }
 
 // EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
@@ -87,6 +143,23 @@ type EntityData struct {
 	ips          map[net.IPAddress]struct{}
 	endpoints    map[net.NumericEndpoint][]EndpointTargetInfo
 	containerIDs map[string]ContainerMetadata
+}
+
+func (ed *EntityData) String() string {
+	repr := "ips:["
+	for addr := range ed.ips {
+		repr += addr.String() + ", "
+	}
+	repr += "], endpoints: ["
+	for endpoint := range ed.endpoints {
+		repr += endpoint.String() + ", "
+	}
+	repr += "], containerIDs: ["
+	for cid := range ed.containerIDs {
+		repr += cid + ", "
+	}
+	repr += "]"
+	return repr
 }
 
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
@@ -134,10 +207,120 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.applyNoLock(updates, incremental)
 }
 
+// Tick informs the store that unit of time has passed
+func (e *Store) Tick() {
+	for deploymentID, m := range e.historicalEndpoints {
+		for endpoint, status := range m {
+			status.recordTick()
+			e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, endpoint)
+		}
+	}
+	for ip, m := range e.historicalIPs {
+		for deploymentID, status := range m {
+			status.recordTick()
+			e.removeHistoricalExpiredIPs(deploymentID, ip)
+		}
+	}
+}
+
+func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
+	delete(e.endpointMap[ep], deploymentID)
+	if len(e.endpointMap[ep]) == 0 {
+		delete(e.endpointMap, ep)
+	}
+
+	delete(e.reverseEndpointMap[deploymentID], ep)
+	if len(e.reverseEndpointMap[deploymentID]) == 0 {
+		delete(e.reverseEndpointMap, deploymentID)
+	}
+}
+
+func (e *Store) removeHistoricalExpiredDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
+	if status, ok := e.historicalEndpoints[deploymentID][ep]; ok && status.isHistorical && status.IsExpired() {
+		e.removeDeploymentEndpoints(deploymentID, ep)
+		delete(e.historicalEndpoints[deploymentID], ep)
+		if len(e.historicalEndpoints[deploymentID]) == 0 {
+			delete(e.historicalEndpoints, deploymentID)
+		}
+	}
+}
+
+// unmarkEndpointHistorical marks previously marked historical endpoint as no longer historical
+func (e *Store) unmarkEndpointHistorical(deploymentID string, ep net.NumericEndpoint) {
+	if _, ok := e.historicalEndpoints[deploymentID]; !ok {
+		return
+	}
+	delete(e.historicalEndpoints[deploymentID], ep)
+	if len(e.historicalEndpoints[deploymentID]) == 0 {
+		delete(e.historicalEndpoints, deploymentID)
+	}
+}
+
+func (e *Store) markEndpointHistorical(deploymentID string, ep net.NumericEndpoint) {
+	if _, ok := e.historicalEndpoints[deploymentID]; !ok {
+		e.historicalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
+	}
+	es := e.historicalEndpoints[deploymentID][ep]
+	if es == nil {
+		es = newEntityStatus(e.entitiesMemorySize)
+	}
+	es.markHistorical(e.entitiesMemorySize)
+	e.historicalEndpoints[deploymentID][ep] = es
+}
+
+func (e *Store) removeDeploymentIP(deploymentID string, ip net.IPAddress) {
+	delete(e.ipMap[ip], deploymentID)
+	if len(e.ipMap[ip]) == 0 {
+		delete(e.ipMap, ip)
+	}
+
+	delete(e.reverseIPMap[deploymentID], ip)
+	if len(e.reverseIPMap[deploymentID]) == 0 {
+		delete(e.reverseIPMap, deploymentID)
+	}
+}
+
+func (e *Store) removeHistoricalExpiredIPs(deploymentID string, ip net.IPAddress) {
+	if status, ok := e.historicalIPs[ip][deploymentID]; ok && status.isHistorical && status.IsExpired() {
+		e.removeDeploymentIP(deploymentID, ip)
+		delete(e.historicalIPs[ip], deploymentID)
+		if len(e.historicalIPs[ip]) == 0 {
+			delete(e.historicalIPs, ip)
+		}
+	}
+}
+
+// unmarkHistoricalIP marks previously marked historical IP as no longer historical
+func (e *Store) unmarkHistoricalIP(deploymentID string, ip net.IPAddress) {
+	if _, ok := e.historicalIPs[ip]; !ok {
+		return
+	}
+	delete(e.historicalIPs[ip], deploymentID)
+	if len(e.historicalIPs[ip]) == 0 {
+		delete(e.historicalIPs, ip)
+	}
+}
+
+func (e *Store) markHistoricalIP(deploymentID string, ip net.IPAddress) {
+	if _, ok := e.historicalIPs[ip]; !ok {
+		e.historicalIPs[ip] = make(map[string]*entityStatus)
+	}
+	es := e.historicalIPs[ip][deploymentID]
+	if es == nil {
+		es = newEntityStatus(e.entitiesMemorySize)
+	}
+	es.markHistorical(e.entitiesMemorySize)
+	e.historicalIPs[ip][deploymentID] = es
+}
+
 func (e *Store) purgeNoLock(deploymentID string) {
 	for ip := range e.reverseIPMap[deploymentID] {
 		set := e.ipMap[ip]
-		delete(set, deploymentID)
+		e.markHistoricalIP(deploymentID, ip)
+		if e.entitiesMemorySize == 0 {
+			e.removeHistoricalExpiredIPs(deploymentID, ip)
+		}
+
 		if len(set) == 0 {
 			delete(e.ipMap, ip)
 			if ip.IsPublic() {
@@ -147,7 +330,14 @@ func (e *Store) purgeNoLock(deploymentID string) {
 	}
 	for ep := range e.reverseEndpointMap[deploymentID] {
 		set := e.endpointMap[ep]
-		delete(set, deploymentID)
+
+		e.markEndpointHistorical(deploymentID, ep)
+		// Deletion of historical expired entries happens after a tick.
+		// If memory is disabled, we should not wait for a tick and delete immediately
+		if e.entitiesMemorySize == 0 {
+			e.removeHistoricalExpiredDeploymentEndpoints(deploymentID, ep)
+		}
+
 		if len(set) == 0 {
 			delete(e.endpointMap, ep)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
@@ -207,6 +397,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		for _, tgtInfo := range targetInfos {
 			targetSet[tgtInfo] = struct{}{}
 		}
+		e.unmarkEndpointHistorical(deploymentID, ep)
 	}
 
 	for ip := range data.ips {
@@ -225,6 +416,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 			}
 		}
 		ipMap[deploymentID] = struct{}{}
+		e.unmarkHistoricalIP(deploymentID, ip)
 	}
 
 	mdsForCallback := make([]ContainerMetadata, 0, len(data.containerIDs))
