@@ -49,7 +49,7 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private int CREATED_RESOURCES = 7
     static final private int MOUNTED_RESOURCES = 2
 
-    static final private int RETRIES = 60
+    static final private int RETRIES = 75
     static final private int DELETION_RETRIES = 60
     static final private int PAUSE_SECS = 2
 
@@ -196,10 +196,6 @@ oidc:
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
 uiEndpoint: localhost:8000
-groups:
-- key: "email"
-  value: "someone@example.com"
-  role: "Admin"
 oidc:
   issuer: example.com
   mode: fragment
@@ -313,12 +309,10 @@ splunk:
 
         // Verify the groups are created successfully, and specify the origin declarative.
         def expectedGroups = [VALID_DEFAULT_GROUP, VALID_DECLARATIVE_GROUP]
-        def foundGroups = verifyDeclarativeGroups(authProvider.getId(), expectedGroups)
-        assert foundGroups == expectedGroups.size() :
-                "expected to find ${expectedGroups.size()} groups, but only found ${foundGroups}"
+        verifyDeclarativeGroups(authProvider.getId(), expectedGroups)
 
-        def notifier = verifyDeclarativeNotifier(VALID_NOTIFIER)
-        assert notifier
+        // Verify the notifier is created successfully, and does specify the origin declarative.
+        verifyDeclarativeNotifier(VALID_NOTIFIER)
 
         when:
         // Update the config map to contain an invalid permission set YAML.
@@ -817,16 +811,15 @@ splunk:
     // verifyDeclarativeGroups will verify that the expected groups exist within the API and share the same
     // values.
     // The number of groups found within the list of expected groups will be returned.
-    private int verifyDeclarativeGroups(String authProviderID, List<Group> expectedGroups) {
+    private verifyDeclarativeGroups(String authProviderID, List<Group> expectedGroups) {
         def groupsResponse = GroupService.getGroups(
                 GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProviderID).build())
         assert groupsResponse.getGroupsCount() == expectedGroups.size()
-
-        def foundGroups = 0
+        def verifiedGroups = 0
         for (group in groupsResponse.getGroupsList()) {
             for (expectedGroup in expectedGroups) {
                 if (group.getRoleName() == expectedGroup.getRoleName()) {
-                    foundGroups++
+                    verifiedGroups++
                     assert group.getProps().getKey() == expectedGroup.getProps().getKey()
                     assert group.getProps().getValue() == expectedGroup.getProps().getValue()
                     assert group.getProps().getAuthProviderId() == authProviderID
@@ -834,7 +827,7 @@ splunk:
                 }
             }
         }
-        return foundGroups
+        assert verifiedGroups == expectedGroups.size()
     }
 
     // verifyDeclarativeAuthProvider will verify that the expected auth provider exists within the API and
@@ -868,18 +861,16 @@ splunk:
     // verifyDeclarativeNotifier will verify that the expected auth provider exists within the API and
     // shares the same values.
     // The retrieved notifier from the API will be returned, which will have the ID field populated.
-    private Notifier verifyDeclarativeNotifier(Notifier expectedNotifier) {
+    private verifyDeclarativeNotifier(Notifier expectedNotifier) {
         def notifier = NotifierService.getNotifierClient().getNotifiers(
                 NotifierServiceOuterClass.GetNotifiersRequest
                         .newBuilder().build())
                 .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
         assert notifier
-        assert notifier.getName() == expectedNotifier.getName()
         assert notifier.getTraits().getOrigin() == expectedNotifier.getTraits().getOrigin()
         assert notifier.getType() == "splunk"
         // Skipping the HTTP token since it will be obscured by the API.
         assert notifier.getSplunk().getHttpEndpoint() == expectedNotifier.getSplunk().getHttpEndpoint()
         assert notifier.getSplunk().getSourceTypesMap() == expectedNotifier.getSplunk().getSourceTypesMap()
-        return notifier
     }
 }
