@@ -44,7 +44,8 @@ func checkIfShouldUpdate(
 	newPLOP *storage.ProcessListeningOnPortFromSensor) bool {
 
 	return existingPLOP.CloseTimestamp != newPLOP.CloseTimestamp ||
-		(existingPLOP.PodUid == "" && newPLOP.PodUid != "")
+		(existingPLOP.PodUid == "" && newPLOP.PodUid != "") ||
+		(existingPLOP.ClusterId == "" && newPLOP.ClusterId != "")
 }
 
 func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
@@ -176,6 +177,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
 			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -220,6 +222,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
 			}
 			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -499,6 +502,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
 		PodUid:             value.PodUid,
+		ClusterId:          value.ClusterId,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
