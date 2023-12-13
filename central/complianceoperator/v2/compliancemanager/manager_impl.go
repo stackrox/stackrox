@@ -246,7 +246,7 @@ func (m *managerImpl) ProcessRescanRequest(_ context.Context, _ interface{}) err
 // DeleteScan processes a request to delete an existing compliance scan configuration.
 func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	// Remove the scan configuration from the database
-	scanConfigName, clustersDeleted, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
+	scanConfigName, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to delete scan configuration ID %q.", scanID)
 	}
@@ -256,25 +256,20 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	}
 
 	// send delete request to sensor
-	for _, clusterID := range clustersDeleted {
-		// id for the request message to sensor
-		sensorRequestID := uuid.NewV4().String()
-		sensorMessage := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_DeleteScanConfig{
-						DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
-							Id:   sensorRequestID,
-							Name: scanConfigName,
-						},
+	sensorRequestID := uuid.NewV4().String()
+	sensorMessage := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_DeleteScanConfig{
+					DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
+						Id:   sensorRequestID,
+						Name: scanConfigName,
 					},
 				},
 			},
-		}
-		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
-		if err != nil {
-			log.Errorf("unable to remove scan config %q from cluster %q: %v", scanConfigName, clusterID, err)
-		}
+		},
 	}
+	m.sensorConnMgr.BroadcastMessage(sensorMessage)
+
 	return nil
 }
