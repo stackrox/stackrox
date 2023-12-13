@@ -133,3 +133,38 @@ _EO_UPDATE_
 
     bq query --use_legacy_sql=false "$sql"
 }
+
+slack_top_10_failures() {
+
+    # shellcheck disable=SC2016
+    q='  -- count of test failures in last week
+SELECT
+  MAX(count) AS LAST_WEEK_FAILURES_COUNT,
+  Suite
+FROM (
+  SELECT
+    COUNT(*) AS count,
+    Classname AS Suite,
+    Name
+  FROM
+    `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
+  WHERE
+    CONTAINS_SUBSTR(ShortName, "qa")
+    AND Status = "failed"
+    AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
+  GROUP BY
+    Classname,
+    Name
+  ORDER BY
+    COUNT(*) DESC)
+GROUP BY
+  Suite
+ORDER BY
+  LAST_WEEK_FAILURES_COUNT DESC
+LIMIT
+  10'
+
+    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$q")"
+
+    
+}
