@@ -1609,14 +1609,14 @@ _EO_SUITE_HEADER_
     while (( ${#lines[@]} ))
     do
         local description="${lines[0]}"
-        local disposition="${lines[1]}"
+        local result="${lines[1]}"
         local details="${lines[2]}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">
 _EO_CASE_HEADER_
 
-        if [[ "$disposition" == "${_JUNIT_RESULT_FAILURE}" ]]; then
+        if [[ "$result" == "${_JUNIT_RESULT_FAILURE}" ]]; then
             details="$(base64 --decode <<< "$details")"
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
