@@ -58,10 +58,7 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
-    # `post_process_test_results` will generate the Slack attachment first, then
-    # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
-    post_process_test_results
-    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
+    post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}"
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
@@ -794,7 +791,7 @@ pr_has_label() {
     local exitstatus=0
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        info "Warning: checking for a label in a non PR context"
+        info "Warning: checking for a label in a non PR context: details: ${pr_details}, exitstatus: ${exitstatus}"
         return 1
     fi
 
@@ -865,15 +862,16 @@ get_pr_details() {
 
     if [[ -n "${_PR_DETAILS}" ]]; then
         echo "${_PR_DETAILS}"
-        return
+        return 0
     fi
     if [[ -e "${_PR_DETAILS_CACHE_FILE}" ]]; then
         _PR_DETAILS="$(cat "${_PR_DETAILS_CACHE_FILE}")"
         echo "${_PR_DETAILS}"
-        return
+        return 0
     fi
 
     _not_a_PR() {
+        echo "This does not appear to be a PR context" >&2
         echo '{ "msg": "this is not a PR" }'
         exit 1
     }
@@ -888,7 +886,7 @@ get_pr_details() {
             org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
             repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
         else
-            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS" >&2
             exit 2
         fi
         [[ "${pull_request}" == "null" ]] && _not_a_PR
@@ -898,9 +896,11 @@ get_pr_details() {
         org="${GITHUB_REPOSITORY_OWNER}"
         repo="${GITHUB_REPOSITORY#*/}"
     else
-        echo "Unsupported CI"
+        echo "Unsupported CI" >&2
         exit 2
     fi
+
+    local headers url pr_details
 
     headers=()
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -908,10 +908,15 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-    pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}")
+
+    if ! pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}"); then
+        echo "Github API error: $pr_details, exit code: $?" >&2
+        exit 2
+    fi
+
     if [[ "$(jq .id <<<"$pr_details")" == "null" ]]; then
         # A valid PR response is expected at this point
-        echo "Invalid response from GitHub: $pr_details"
+        echo "Invalid response from GitHub: $pr_details" >&2
         exit 2
     fi
     _PR_DETAILS="$pr_details"
@@ -1131,6 +1136,10 @@ store_test_results() {
 }
 
 post_process_test_results() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: post_process_test_results <slack attachments file.json>"
+    fi
+
     if ! is_OPENSHIFT_CI; then
         return 0
     fi
@@ -1140,40 +1149,63 @@ post_process_test_results() {
         return 0
     fi
 
+    local slack_attachments_file="$1"
     local csv_output
     local extra_args=()
     local base_link
     local calculated_base_link
+    local create_jiras
+    local jira_project="ROX"
+    local prow_job_link
 
     set +u
     {
-        if is_in_PR_context || [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
-            info "Converting JUNIT found in ${ARTIFACT_DIR} to CSV"
-            extra_args=(--dry-run)
+        info "Post processing junit records to JIRA issues, BigQuery metrics and Slack attachments as appropriate"
+
+        prow_job_link="$(make_prow_job_link)"
+
+        if is_in_PR_context; then
+            if pr_has_label "ci-test-junit-processing"; then
+                create_jiras="true"
+            else
+                create_jiras="false"
+            fi
+            jira_project="RS"
         else
-            info "Creating JIRA issues for failures found in ${ARTIFACT_DIR}"
+            if [[ "${PULL_BASE_REF:-unknown}" =~ ^release ]]; then
+                create_jiras="false"
+            else
+                create_jiras="true"
+            fi
+        fi
+
+        if [[ "${create_jiras}" == "false" ]]; then
+            extra_args=(--dry-run)
+            info "Will use junit2jira to create CSV for BigQuery input"
+        else
+            info "Will create JIRA issues for junit failures found in ${ARTIFACT_DIR}"
         fi
 
         csv_output="$(mktemp --suffix=.csv)"
         # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
         # we will fallback to short commit
-        # TODO: Extract a function to obtain repo and org and use it here.
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.14/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.16/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
             -build-id "${BUILD_ID}" \
-            -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
+            -build-link "${prow_job_link}" \
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
+            -jira-project "${jira_project}" \
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
-            -slack-output "$ARTIFACT_DIR/junit2jira-slack-attachments.json" \
+            -slack-output "${slack_attachments_file}" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
@@ -1185,10 +1217,23 @@ post_process_test_results() {
     set -u
 }
 
-send_slack_notice_for_failures_on_merge() {
-    local exitstatus="${1:-}"
+make_prow_job_link() {
+    local prow_job_link="https://prow.ci.openshift.org/view/gs/origin-ci-test/"
+    if is_in_PR_context; then
+        prow_job_link+="pr-logs/pull/stackrox_stackrox/${PULL_NUMBER}/"
+    else
+        prow_job_link+="logs/"
+    fi
+    prow_job_link+="$JOB_NAME/$BUILD_ID"
+    echo "${prow_job_link}"
+}
 
-    if ! is_OPENSHIFT_CI || [[ "$exitstatus" == "0" ]] || is_in_PR_context || is_nightly_run; then
+# There are currently two openshift-ci steps where junit failures are summarized for slack.
+JOB_SLACK_FAILURE_ATTACHMENTS="${SHARED_DIR:-/tmp}/job-slack-failure-attachments.json"
+END_SLACK_FAILURE_ATTACHMENTS="/tmp/end-slack-failure-attachments.json"
+
+send_slack_failure_summary() {
+    if ! is_OPENSHIFT_CI || is_nightly_run; then
         return 0
     fi
 
@@ -1203,25 +1248,31 @@ send_slack_notice_for_failures_on_merge() {
         return 0
     fi
 
+    # Check env required for the job link and slack an error message when
+    # undefined.
+    _slack_check_env "BUILD_ID"
+    _slack_check_env "JOB_NAME"
+    local prow_job_link
+    prow_job_link="$(make_prow_job_link)"
+
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
-    local log_url="https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/${JOB_NAME:-missing}/${BUILD_ID:-missing}"
 
-    function slack_error() {
-        echo "ERROR: $1"
-        curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" << __EOM__
-{ "text": "*An error occurred dealing with a test failure:*\n\t- Test: ${log_url}.\n\t- $1." }
-__EOM__
-    }
+    _slack_check_env "PULL_BASE_SHA"
+    local commit_sha="${PULL_BASE_SHA}"
 
-    function check_env() {
-        (
-            set +u
-            if [[ -z "$(eval echo "\$$1")" ]]; then
-                slack_error "An expected environment variable is unset/empty: $1"
-                return 1
-            fi
-        )
-    }
+    if is_in_PR_context; then
+        if pr_has_label "ci-test-junit-processing"; then
+            # Send to #acs-slack-ci-integration-testing when testing the
+            # JUNIT -> Jira, BigQuery, Slack pipeline.
+            webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+            commit_sha="${PULL_PULL_SHA}"
+        else
+            info "Skipping slack message for PRs"
+            return 0
+        fi
+    fi
+
+    local org repo
 
     if [[ -n "${JOB_SPEC:-}" ]]; then
         org=$(jq -r <<<"$JOB_SPEC" '.refs.org')
@@ -1230,29 +1281,25 @@ __EOM__
         org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
         repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
     else
-        slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+        _send_slack_error "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
         return 1
     fi
 
     if [[ "$org" == "null" ]] || [[ "$repo" == "null" ]]; then
-        slack_error "Could not determine org and/or repo"
+        _send_slack_error "Could not determine org and/or repo"
         return 1
     fi
 
-    check_env "PULL_BASE_SHA"
-    check_env "JOB_NAME_SAFE"
-    check_env "JOB_NAME"
-    check_env "BUILD_ID"
-
-    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${PULL_BASE_SHA}"
+    local commit_details_url="https://api.github.com/repos/${org}/${repo}/commits/${commit_sha}"
     local exitstatus=0
     local commit_details
     commit_details=$(curl --retry 5 -sS "${commit_details_url}") || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        slack_error "Cannot get commit details: ${commit_details}"
+        _send_slack_error "Cannot get commit details: ${commit_details}"
         return 1
     fi
 
+    _slack_check_env "JOB_NAME_SAFE"
     local job_name="${JOB_NAME_SAFE#merge-}"
 
     local commit_msg
@@ -1265,43 +1312,15 @@ __EOM__
     local author_login
     author_login=$(jq -r <<<"$commit_details" '.author.login') || exitstatus="$?"
     if [[ "$exitstatus" != "0" ]]; then
-        slack_error "Error parsing the commit details: ${commit_details}"
+        _send_slack_error "Error parsing the commit details: ${commit_details}"
         return 1
     fi
 
-    local slack_mention
-    slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
-    if [[ -n "$slack_mention" ]]; then
-      slack_mention="<@${slack_mention}>"
-    else
-      slack_mention="_unable to resolve Slack user for GitHub login ${author_login}_"
-    fi
+    local slack_mention=""
+    _make_slack_mention
 
-    info "Converting junit failures to slack attachments"
-
-    local slack_attachments='
-[
-  {
-    "color": "#bb2124",
-    "blocks": [
-      {
-        "type": "section",
-        "text": {
-          "type": "plain_text",
-          "text": "Could not parse junit files. Check build logs for more information."
-        }
-      }
-    ]
-  }
-]
-'
-    if [[ -f "$ARTIFACT_DIR/junit2jira-slack-attachments.json" ]]; then
-        local check_slack_attachments
-        check_slack_attachments=$(cat "$ARTIFACT_DIR/junit2jira-slack-attachments.json") || exitstatus="$?"
-        if [[ "$exitstatus" == "0" ]]; then
-            slack_attachments="$check_slack_attachments"
-        fi
-    fi
+    local slack_attachments=""
+    _make_slack_failure_attachments
 
     # shellcheck disable=SC2016
     local body='
@@ -1319,7 +1338,7 @@ __EOM__
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name), \($slack_mention)\n*Log:* \($log_url)"
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Log:* \($prow_job_link)"
             }
         },
         {
@@ -1339,22 +1358,109 @@ __EOM__
 }
 '
 
-    payload="$(jq --null-input \
-      --arg job_name "$job_name" \
-      --arg commit_url "$commit_url" \
-      --arg commit_msg "$commit_msg" \
-      --arg repo "$repo" \
-      --arg author_name "$author_name" \
-      --arg slack_mention "$slack_mention" \
-      --arg log_url "$log_url" \
-      --argjson slack_attachments "$slack_attachments" \
-      "$body")"
+    local payload
+    if ! payload="$(jq --null-input \
+                       --arg job_name "$job_name" \
+                       --arg commit_url "$commit_url" \
+                       --arg commit_msg "$commit_msg" \
+                       --arg repo "$repo" \
+                       --arg author_name "$author_name" \
+                       --arg slack_mention "$slack_mention" \
+                       --arg prow_job_link "$prow_job_link" \
+                       --argjson slack_attachments "$slack_attachments" \
+                       "$body")"; then
+        _send_slack_error "Error formatting slack message: [${slack_attachments}/${payload}/$?]"
+        return 1
+    fi
+
     echo -e "About to post:\n$payload"
 
-    echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url" || {
-        slack_error "Error posting to Slack"
+    local post_output
+    if ! post_output="$(echo "$payload" | \
+                        curl --location --silent --show-error --fail \
+                             --data @- --header 'Content-Type: application/json' \
+                             "$webhook_url")"; then
+        _send_slack_error "Error posting to Slack: [${post_output}/$?]"
         return 1
-    }
+    fi
+}
+
+_make_slack_mention() {
+    if [[ "${author_login}" != "dependabot[bot]" ]]; then
+        slack_mention="$("$SCRIPTS_ROOT"/scripts/ci/get-slack-user-id.sh "$author_login")"
+        if [[ -n "$slack_mention" ]]; then
+            slack_mention=", <@${slack_mention}>"
+        else
+            slack_mention=", _unable to resolve Slack user for GitHub login ${author_login}_"
+        fi
+    fi
+}
+
+_make_slack_failure_attachments() {
+    info "Converting junit failures to slack attachments"
+
+    slack_attachments=""
+    if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
+            slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
+        fi
+    else
+        slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+    if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
+        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in final test step. Check build logs for more information.")"
+    else
+        slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
+    fi
+
+    slack_attachments="$(echo "${slack_attachments}" | jq '.[]' | jq -s '.')"
+
+    if [[ "$(echo "${slack_attachments}" | jq 'length')" == "0" ]]; then
+        msg="No junit records were found for this failure. Check build logs \
+and artifacts for more information. Consider adding an \
+issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
+        slack_attachments="$(_make_slack_failure_block "${msg}")"
+    fi
+}
+
+_make_slack_failure_block() {
+    # shellcheck disable=SC2016
+    local body='
+[
+  {
+    "color": "#bb2124",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "\($msg)"
+        }
+      }
+    ]
+  }
+]
+'
+    jq --null-input \
+       --arg msg "$1" \
+       "$body"
+}
+
+_send_slack_error() {
+    echo "ERROR: $1"
+    curl -XPOST -d @- -H 'Content-Type: application/json' "${webhook_url}" << __EOM__
+{ "text": "*An error occurred dealing with a job failure:*\n\t- Job: ${prow_job_link}.\n\t- $1." }
+__EOM__
+}
+
+_slack_check_env() {
+    (
+        set +u
+        if [[ -z "$(eval echo "\$$1")" ]]; then
+            _send_slack_error "An expected environment variable is unset/empty: $1"
+            return 1
+        fi
+    )
 }
 
 junit_wrap() {
@@ -1410,17 +1516,16 @@ get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
 
+_JUNIT_RESULT_SUCCESS="SUCCESS"
+_JUNIT_RESULT_FAILURE="FAILURE"
+_JUNIT_RESULT_SKIPPED="SKIPPED"
+
 save_junit_success() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: save_junit_success <class> <description>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
-        return
-    fi
-
-    save_junit_record "$@"
+    _save_junit_record "${_JUNIT_RESULT_SUCCESS}" "$@"
 }
 
 save_junit_failure() {
@@ -1428,12 +1533,15 @@ save_junit_failure() {
         die "missing args. usage: save_junit_failure <class> <description> <details>"
     fi
 
-    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
-        info "Warning: save_junit_failure() requires the \$ARTIFACT_DIR variable to be set"
-        return
+    _save_junit_record "${_JUNIT_RESULT_FAILURE}" "$@"
+}
+
+save_junit_skipped() {
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: save_junit_skipped <class> <description>"
     fi
 
-    save_junit_record "$@"
+    _save_junit_record "${_JUNIT_RESULT_SKIPPED}" "$@"
 }
 
 remove_junit_record() {
@@ -1444,10 +1552,16 @@ remove_junit_record() {
     rm -f "${junit_file}"
 }
 
-save_junit_record() {
-    local class="$1"
-    local description="$2"
-    local details="${3:-SUCCESS}"
+_save_junit_record() {
+    local disposition="$1"
+    local class="$2"
+    local description="$3"
+    local details="${4:-}"
+
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        info "Warning: save_junit_success() requires the \$ARTIFACT_DIR variable to be set"
+        return
+    fi
 
     local junit_dir
     junit_dir="$(get_junit_misc_dir)"
@@ -1459,42 +1573,51 @@ save_junit_record() {
     fi
 
     # record this instance
+    local record_length=3
     local record="${junit_dir}/db/${class}.txt"
-    echo "${description}" >> "${record}"
-    echo "${details}" >> "${record}"
+    {
+        echo "${description}"
+        echo "${disposition}"
+        echo "${details}"
+     } >> "${record}"
 
     local tests
-    tests=$(( "$(wc -l < "${record}")" / 2 ))
+    tests=$(( "$(wc -l < "${record}")" / "${record_length}" ))
 
     local failures=0
+    local skipped=0
     local lines
     readarray -t lines < "${record}"
     while (( ${#lines[@]} ))
     do
-        local details="${lines[1]}"
-        if [[ "$details" != "SUCCESS" ]]; then
+        local result="${lines[1]}"
+        if [[ "${result}" == "${_JUNIT_RESULT_FAILURE}" ]]; then
             failures=$(( failures+1 ))
         fi
-        lines=( "${lines[@]:2}" )
+        if [[ "${result}" == "${_JUNIT_RESULT_SKIPPED}" ]]; then
+            skipped=$(( skipped+1 ))
+        fi
+        lines=( "${lines[@]:${record_length}}" )
     done
 
     local junit_file="${junit_dir}/junit-${class}.xml"
 
     cat << _EO_SUITE_HEADER_ > "${junit_file}"
-<testsuite name="${class}" tests="${tests}" skipped="0" failures="${failures}" errors="0">
+<testsuite name="${class}" tests="${tests}" skipped="${skipped}" failures="${failures}" errors="0">
 _EO_SUITE_HEADER_
 
     readarray -t lines < "${record}"
     while (( ${#lines[@]} ))
     do
         local description="${lines[0]}"
-        local details="${lines[1]}"
+        local result="${lines[1]}"
+        local details="${lines[2]}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">
 _EO_CASE_HEADER_
 
-        if [[ "$details" != "SUCCESS" ]]; then
+        if [[ "$result" == "${_JUNIT_RESULT_FAILURE}" ]]; then
             details="$(base64 --decode <<< "$details")"
         cat << _EO_FAILURE_ >> "${junit_file}"
             <failure><![CDATA[${details}]]></failure>
@@ -1503,7 +1626,7 @@ _EO_FAILURE_
 
         echo "        </testcase>" >> "${junit_file}"
 
-        lines=( "${lines[@]:2}" )
+        lines=( "${lines[@]:3}" )
     done
 
     echo "</testsuite>" >> "${junit_file}"

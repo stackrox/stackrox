@@ -8,7 +8,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-info "It shall begin"
+info "Start of CI handling"
 
 openshift_ci_mods
 openshift_ci_import_creds
