@@ -390,6 +390,7 @@ func (m *networkFlowManager) enrichAndSend() {
 }
 
 func (m *networkFlowManager) enrichAndSendProcesses() {
+	log.Infof("In enrichAndSendProcesses")
 	ctx := m.getCurrentContext()
 	currentProcesses := m.currentEnrichedProcesses()
 
@@ -404,6 +405,12 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      types.TimestampNow(),
 	}
 
+	for _, updatedProcess := range updatedProcesses {
+		log.Info("")
+		log.Infof("updatedProcess= %+v", updatedProcess)
+		log.Info("")
+	}
+
 	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
@@ -412,6 +419,7 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		m.updateProcessesState(currentProcesses)
 		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	}
+	log.Infof("Leaving enrichAndSendProcesses")
 }
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
@@ -979,11 +987,13 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 }
 
 func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+	log.Infof("In getUpdatedContainerEndpoints")
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
 
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
+		log.Infof("endpoint= %+v", endpoint)
 		normalize.NetworkEndpoint(endpoint)
 
 		flowMetrics.ContainerEndpointsPerNode.With(prometheus.Labels{"Hostname": hostname, "Protocol": endpoint.Protocol.String()}).Inc()
@@ -1004,6 +1014,7 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 		}
 		updatedEndpoints[ep] = ts
 	}
+	log.Infof("Leaving getUpdatedContainerEndpoints")
 
 	return updatedEndpoints
 }
