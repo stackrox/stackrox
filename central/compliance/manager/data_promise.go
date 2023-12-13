@@ -70,7 +70,6 @@ func (p *scrapePromise) finish(ctx context.Context, scrapeResult map[string]*com
 		log.Warnf("Did not collect scrape data for %+v", missingNodes)
 	}
 
-	log.Info("CreateDataRepository finish")
 	p.result, err = p.dataRepoFactory.CreateDataRepository(ctx, p.domain)
 	if err == nil {
 		p.result.AddHostScrapedData(scrapeResult)

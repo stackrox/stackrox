@@ -75,7 +75,7 @@ describe('Workload CVE overview page tests', () => {
             cy.get(selectors.filterChipGroupItems).should('have.lengthOf', 1);
 
             // Ensure the correct search filter is present in the request
-            cy.wait('@' + opname).should((xhr) => {
+            cy.wait(`@${opname}`).should((xhr) => {
                 expect(xhr.request.body.variables.query).to.contain(
                     'SEVERITY:CRITICAL_VULNERABILITY_SEVERITY'
                 );

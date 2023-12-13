@@ -129,6 +129,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
         fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,
@@ -160,6 +161,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         }
     >(deploymentVulnerabilitiesQuery, {
         fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,

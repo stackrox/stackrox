@@ -52,7 +52,6 @@ func (s *suiteImpl) TestHostNetwork() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -95,7 +94,6 @@ func (s *suiteImpl) TestMissingIngress() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -138,7 +136,6 @@ func (s *suiteImpl) TestMissingEgress() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -174,11 +171,9 @@ func (s *suiteImpl) TestSkipKubeSystem() {
 	}
 
 	testNodes := s.nodes()
-	testPolicies := s.networkPolicies()
 
 	testDeploymentsToNetworkPolicies := map[string][]*storage.NetworkPolicy{}
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -227,7 +222,6 @@ func (s *suiteImpl) TestPass() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(testDeploymentsToNetworkPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -301,12 +295,4 @@ func (s *suiteImpl) nodes() []*storage.Node {
 			Id: uuid.NewV4().String(),
 		},
 	}
-}
-
-func toMap(in []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	merp := make(map[string]*storage.NetworkPolicy, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
 }

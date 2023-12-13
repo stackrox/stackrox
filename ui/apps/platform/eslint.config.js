@@ -91,6 +91,261 @@ module.exports = [
                 },
             ],
 
+            // Turn on rules from airbnb best-practices config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/best-practices.js
+            'array-callback-return': ['error', { allowImplicit: true }],
+            'block-scoped-var': 'error',
+            // 'class-methods-use-this' is intentional omission
+            'consistent-return': 'error',
+            'default-case': ['error', { commentPattern: '^no default$' }],
+            'default-case-last': 'error',
+            // 'default-param-last' is intentional omission
+            'dot-notation': ['error', { allowKeywords: true }],
+            eqeqeq: ['error', 'always', { null: 'ignore' }],
+            'grouped-accessor-pairs': 'error',
+            'guard-for-in': 'error',
+            'max-classes-per-file': ['error', 1],
+            'no-alert': 'warn',
+            'no-caller': 'error',
+            'no-constructor-return': 'error',
+            'no-else-return': ['error', { allowElseIf: false }], // TODO
+            'no-empty-function': [
+                'error',
+                {
+                    allow: ['arrowFunctions', 'functions', 'methods'],
+                },
+            ],
+            'no-eval': 'error',
+            'no-extend-native': 'error',
+            'no-extra-bind': 'error',
+            'no-extra-label': 'error',
+            'no-implied-eval': 'error',
+            'no-iterator': 'error',
+            'no-labels': ['error', { allowLoop: false, allowSwitch: false }],
+            'no-lone-blocks': 'error',
+            'no-loop-func': 'error',
+            'no-multi-str': 'error',
+            'no-new': 'error',
+            'no-new-func': 'error',
+            'no-new-wrappers': 'error',
+            'no-octal-escape': 'error',
+            'no-param-reassign': [
+                'error',
+                {
+                    props: true,
+                    ignorePropertyModificationsFor: [
+                        'acc', // for reduce accumulators
+                        'accumulator', // for reduce accumulators
+                        'e', // for e.returnvalue
+                        'ctx', // for Koa routing
+                        'context', // for Koa routing
+                        'req', // for Express requests
+                        'request', // for Express requests
+                        'res', // for Express responses
+                        'response', // for Express responses
+                        '$scope', // for Angular 1 scopes
+                        'staticContext', // for ReactRouter context
+                    ],
+                },
+            ],
+            'no-proto': 'error',
+            'no-restricted-properties': [
+                'error',
+                {
+                    object: 'arguments',
+                    property: 'callee',
+                    message: 'arguments.callee is deprecated',
+                },
+                {
+                    object: 'global',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'global',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    property: '__defineGetter__',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    property: '__defineSetter__',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    object: 'Math',
+                    property: 'pow',
+                    message: 'Use the exponentiation operator (**) instead.',
+                },
+            ],
+            'no-return-assign': ['error', 'always'],
+            'no-script-url': 'error',
+            'no-self-compare': 'error',
+            'no-sequences': 'error',
+            'no-throw-literal': 'error',
+            'no-unused-expressions': [
+                'error',
+                {
+                    allowShortCircuit: false,
+                    allowTernary: false,
+                    allowTaggedTemplates: false,
+                },
+            ],
+            'no-useless-concat': 'error',
+            'no-useless-return': 'error',
+            'no-void': 'error',
+            'prefer-promise-reject-errors': ['error', { allowEmptyReject: true }],
+            /*
+            'prefer-regex-literals': [
+                'error',
+                {
+                    disallowRedundantWrapping: true,
+                },
+            ],
+            */ // decide either is omitted intentionally, fix 3 errors, or disable comments
+            // radix: 'error', // TODO comment in after making sure no semantic merge conflict
+            'vars-on-top': 'error',
+            yoda: 'error',
+
+            // Turn on rules from airbnb errors config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/errors.js
+            'for-direction': 'error',
+            'getter-return': ['error', { allowImplicit: true }],
+            'no-async-promise-executor': 'error',
+            'no-compare-neg-zero': 'error',
+            'no-cond-assign': ['error', 'always'],
+            'no-constant-condition': 'warn',
+            'no-control-regex': 'error',
+            'no-debugger': 'error',
+            'no-dupe-args': 'error',
+            'no-dupe-else-if': 'error',
+            'no-dupe-keys': 'error',
+            'no-duplicate-case': 'error',
+            'no-empty': 'error',
+            'no-empty-character-class': 'error',
+            'no-ex-assign': 'error',
+            'no-extra-boolean-cast': 'error',
+            'no-extra-semi': 'error',
+            'no-func-assign': 'error',
+            'no-import-assign': 'error',
+            'no-inner-declarations': 'error',
+            'no-invalid-regexp': 'error',
+            'no-irregular-whitespace': 'error',
+            'no-loss-of-precision': 'error',
+            'no-misleading-character-class': 'error',
+            'no-obj-calls': 'error',
+            'no-prototype-builtins': 'error',
+            'no-regex-spaces': 'error',
+            'no-setter-return': 'error',
+            'no-sparse-arrays': 'error',
+            'no-unexpected-multiline': 'error',
+            'no-unreachable': 'error',
+            'no-unsafe-finally': 'error',
+            'no-unsafe-negation': 'error',
+            'no-unsafe-optional-chaining': ['error', { disallowArithmeticOperators: true }],
+            'no-useless-backreference': 'error',
+            'use-isnan': 'error',
+            'valid-typeof': ['error', { requireStringLiterals: true }],
+
+            'no-await-in-loop': 'error',
+            // 'no-promise-executor-return': 'error', // fix 5 errors
+            'no-template-curly-in-string': 'error',
+            'no-unreachable-loop': [
+                'error',
+                {
+                    ignore: [],
+                },
+            ],
+
+            // Turn on rules from airbnb es6 config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/es6.js
+            // 'arrow-body-style' is intentional omission
+            'constructor-super': 'error',
+            'no-class-assign': 'error',
+            'no-const-assign': 'error',
+            'no-dupe-class-members': 'error',
+            'no-new-symbol': 'error',
+            'no-this-before-super': 'error',
+            'require-yield': 'error',
+            // 'no-restricted-exports' is intentional omission
+            'no-useless-computed-key': 'error',
+            'no-useless-constructor': 'error',
+            'no-useless-rename': [
+                'error',
+                {
+                    ignoreDestructuring: false,
+                    ignoreImport: false,
+                    ignoreExport: false,
+                },
+            ],
+            'no-var': 'error',
+            'object-shorthand': [
+                'error',
+                'always',
+                {
+                    ignoreConstructors: false,
+                    avoidQuotes: true,
+                },
+            ],
+            'prefer-arrow-callback': [
+                'error',
+                {
+                    allowNamedFunctions: false,
+                    allowUnboundThis: true,
+                },
+            ],
+            'prefer-const': [
+                'error',
+                {
+                    destructuring: 'any',
+                    ignoreReadBeforeAssign: true,
+                },
+            ],
+            'prefer-destructuring': [
+                'error',
+                {
+                    VariableDeclarator: {
+                        array: false,
+                        object: true,
+                    },
+                    AssignmentExpression: {
+                        array: true,
+                        object: false,
+                    },
+                },
+                {
+                    enforceForRenamedProperties: false,
+                },
+            ],
+            'prefer-numeric-literals': 'error',
+            'prefer-rest-params': 'error',
+            'prefer-spread': 'error',
+            'prefer-template': 'error',
+            'rest-spread-spacing': ['error', 'never'], // deprecated
+            'symbol-description': 'error',
+
             // Turn on rules from airbnb import config that are not in import errors config.
             // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/imports.js
             'import/first': 'error',
@@ -111,6 +366,70 @@ module.exports = [
             'import/no-webpack-loader-syntax': 'error',
             'import/order': ['error', { groups: [['builtin', 'external', 'internal']] }],
             // 'import/prefer-default-export' is intentional omission
+
+            // Turn on rules from airbnb style config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/style.js
+            // camelcase is intentional omission
+            /*
+            // Discuss with team whether or not to turn on this rule
+            'max-len': [
+                'error',
+                100,
+                2,
+                {
+                    ignoreUrls: true,
+                    ignoreComments: false,
+                    ignoreRegExpLiterals: true,
+                    ignoreStrings: true,
+                    ignoreTemplateLiterals: true,
+                },
+            ],
+            */
+            'new-cap': [
+                'error',
+                {
+                    newIsCap: true,
+                    newIsCapExceptions: [],
+                    capIsNew: false,
+                    capIsNewExceptions: ['Immutable.Map', 'Immutable.Set', 'Immutable.List'],
+                },
+            ],
+            'no-array-constructor': 'error',
+            'no-bitwise': 'error',
+            'no-continue': 'error',
+            'no-multi-assign': ['error'],
+            'no-nested-ternary': 'error',
+            'no-plusplus': 'error',
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'ForInStatement',
+                    message:
+                        'for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array.',
+                },
+                {
+                    selector: 'ForOfStatement',
+                    message:
+                        'iterators/generators require regenerator-runtime, which is too heavyweight for this guide to allow them. Separately, loops should be avoided in favor of array iterations.',
+                },
+                {
+                    selector: 'LabeledStatement',
+                    message:
+                        'Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand.',
+                },
+                {
+                    selector: 'WithStatement',
+                    message:
+                        '`with` is disallowed in strict mode because it makes code impossible to predict and optimize.',
+                },
+            ],
+            // 'no-underscore-dangle' is intentional omission
+            'no-unneeded-ternary': ['error', { defaultAssignment: false }],
+            'one-var': ['error', 'never'],
+            'operator-assignment': ['error', 'always'],
+            'prefer-exponentiation-operator': 'error',
+            'prefer-object-spread': 'error',
+            'unicode-bom': ['error', 'never'],
 
             'prettier/prettier': 'error',
         },
@@ -162,9 +481,6 @@ module.exports = [
         rules: {
             // Turn off rules from ESLint recommended configuration.
 
-            // Omit warnings for anonymous functions to skip individual tests.
-            'func-names': 'off',
-
             // Allow chai-style expect(x).to.be.true chain.
             'no-unused-expressions': 'off',
 
@@ -211,6 +527,10 @@ module.exports = [
                     ],
                 },
             ],
+
+            // Turn on rules from airbnb strict config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/strict.js
+            strict: ['error', 'never'], // babel inserts `'use strict';` for us
 
             'import/no-extraneous-dependencies': [
                 'error',
@@ -282,7 +602,7 @@ module.exports = [
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
-            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error? or generic warnings as errors?
+            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error?
         },
     },
     {
