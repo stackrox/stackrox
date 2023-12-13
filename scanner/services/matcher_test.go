@@ -3,12 +3,14 @@ package services
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	indexerMocks "github.com/stackrox/rox/scanner/indexer/mocks"
-	matcherMocks "github.com/stackrox/rox/scanner/matcher/mocks"
+	indexermocks "github.com/stackrox/rox/scanner/indexer/mocks"
+	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -16,8 +18,8 @@ import (
 type matcherServiceTestSuite struct {
 	suite.Suite
 	ctx         context.Context
-	matcherMock *matcherMocks.MockMatcher
-	indexerMock *indexerMocks.MockIndexer
+	matcherMock *matchermocks.MockMatcher
+	indexerMock *indexermocks.MockIndexer
 	mockCtrl    *gomock.Controller
 }
 
@@ -27,8 +29,8 @@ func TestMatcherServiceSuite(t *testing.T) {
 func (s *matcherServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = context.Background()
-	s.matcherMock = matcherMocks.NewMockMatcher(s.mockCtrl)
-	s.indexerMock = indexerMocks.NewMockIndexer(s.mockCtrl)
+	s.matcherMock = matchermocks.NewMockMatcher(s.mockCtrl)
+	s.indexerMock = indexermocks.NewMockIndexer(s.mockCtrl)
 }
 
 func (s *matcherServiceTestSuite) TearDownTest() {
@@ -46,9 +48,8 @@ func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_disbled() {
 	// when empty content is disabled and empty contents then error
-	ctx := context.Background()
 	srv := NewMatcherService(s.matcherMock, nil)
-	res, err := srv.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
+	res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 		HashId:   "/v4/containerimage/sample-hash-id",
 		Contents: nil,
 	})
@@ -57,7 +58,6 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_enabled() {
-	ctx := context.Background()
 	emptyCPE := "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
 	emptyNormalizedVersion := v4.NormalizedVersion{
 		Kind: "",
@@ -79,7 +79,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 				},
 			}, nil)
 		srv := NewMatcherService(s.matcherMock, s.indexerMock)
-		res, err := srv.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
+		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId:   hashID,
 			Contents: nil,
 		})
@@ -108,7 +108,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 				},
 			}, nil)
 		srv := NewMatcherService(s.matcherMock, nil)
-		res, err := srv.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
+		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
 			HashId: hashID,
 			Contents: &v4.Contents{Packages: []*v4.Package{
 				{Id: "1", Name: "Foobar", Cpe: emptyCPE},
@@ -124,4 +124,22 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			},
 		})
 	})
+}
+
+func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
+	now := time.Now()
+	protoNow, err := types.TimestampProto(now)
+	s.Require().NoError(err)
+
+	s.matcherMock.
+		EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+
+	srv := NewMatcherService(s.matcherMock, nil)
+	res, err := srv.GetMetadata(s.ctx, &types.Empty{})
+	s.NoError(err)
+	s.Equal(&v4.Metadata{
+		LastVulnerabilityUpdate: protoNow,
+	}, res)
 }
