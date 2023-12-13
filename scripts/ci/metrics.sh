@@ -139,7 +139,7 @@ slack_top_10_failures() {
     # shellcheck disable=SC2016
     q='  -- count of test failures in last week
 SELECT
-  MAX(count) AS LAST_WEEK_FAILURES_COUNT,
+  MAX(count) AS Failures,
   Suite
 FROM (
   SELECT
@@ -160,17 +160,26 @@ FROM (
 GROUP BY
   Suite
 ORDER BY
-  LAST_WEEK_FAILURES_COUNT DESC
+  Failures DESC
 LIMIT
   10'
 
     data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$q")"
 
+
     webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
 
     # shellcheck disable=SC2016
     body='{
+    "text": "Top 10 QA E2E Test failures for the last 7 days",
 	"blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "Top 10 QA E2E Test failures for the last 7 days"
+            }
+        },
 		{
 			"type": "section",
 			"text": {
