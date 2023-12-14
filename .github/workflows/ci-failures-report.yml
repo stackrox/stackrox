@@ -12,11 +12,11 @@ on:
 jobs:
   report-e2e-failures-to-slack:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
     - name: Report
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}
