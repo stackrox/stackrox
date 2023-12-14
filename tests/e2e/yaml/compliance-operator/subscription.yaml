@@ -4,8 +4,7 @@ metadata:
   name: compliance-operator-sub
   namespace: openshift-compliance
 spec:
-  channel: "stable"
-  installPlanApproval: Automatic
+  channel: alpha
   name: compliance-operator
-  source: redhat-operators
+  source: compliance-operator
   sourceNamespace: openshift-marketplace
