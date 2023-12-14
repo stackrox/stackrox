@@ -23,7 +23,7 @@ slack_triage_report() {
     local curr=$(total_issues_in_filter $curr_filter)
     local prev=$(total_issues_in_filter $prev_filter)
 
-    local line="There are \`"${curr}+${prev}"\` *NOT* triaged issues from current+previous duty"
+    local line="There are "${curr}+${prev}" untriaged issues from current+previous duty"
     local body
     # shellcheck disable=SC2016
     body='{
