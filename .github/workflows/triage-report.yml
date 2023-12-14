@@ -17,5 +17,5 @@ jobs:
     - name: Report to Slack
       env:
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-        SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
       run: ./scripts/triage-slack.sh

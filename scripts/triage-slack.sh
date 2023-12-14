@@ -46,7 +46,7 @@ slack_triage_report() {
         }
     }]}'
     echo "Posting '$line' to slack"
-    jq -n "$body" | curl -sSfl -d @- -H 'Content-Type: application/json' "$SLACK_CI_INTEGRATION_TESTING_WEBHOOK"
+    jq -n "$body" | curl -sSfl -d @- -H 'Content-Type: application/json' "$SLACK_WEBHOOK"
 }
 
 slack_triage_report
