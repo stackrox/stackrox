@@ -3,7 +3,7 @@ package resources
 import "github.com/stackrox/rox/pkg/env"
 
 // pastEndpointsMemorySize defines for how many ticks Sensor should remember past endpoints.
-// The duration of one tick is defined as duration of defnetworkFlowManager.enricherTicker.
+// The duration of one tick is defined as duration of networkFlowManager.enricherTicker.
 // Value of 0 disables the memory completely.
 // The default value of 20 results in between 9.5 to 10 minutes (19-20 * 30s) - the precision of 1 tick is necessary,
 // as we have no influence in which part of the 30s window a deletion event from K8s informer arrives.
