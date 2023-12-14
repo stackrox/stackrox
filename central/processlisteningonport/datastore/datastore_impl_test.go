@@ -1662,7 +1662,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 
-
 	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUID}
 
 	// Add PLOP with PodUid
@@ -2006,6 +2005,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 		PodUid:             fixtureconsts.PodUID1,
 		ClusterId:          fixtureconsts.Cluster1,
 	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }
 
 func makeRandomString(length int) string {
