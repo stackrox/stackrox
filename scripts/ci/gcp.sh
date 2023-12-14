@@ -2,15 +2,6 @@
 
 # A collection of GCP related reusable bash functions for CI
 
-if [[ "$(type -t info)" != "function" ]]; then
-    # shellcheck source=../../scripts/lib.sh
-    source "$ROOT/scripts/lib.sh"
-fi
-if [[ "$(type -t ci_export)" != "function" ]]; then
-    # shellcheck source=../../scripts/ci/lib.sh
-    source "$ROOT/scripts/ci/lib.sh"
-fi
-
 set -euo pipefail
 
 setup_gcp() {
