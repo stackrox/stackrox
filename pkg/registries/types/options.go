@@ -17,7 +17,7 @@ func (c *CreatorConfig) GetGCPTokenManager() gcpAuth.STSTokenManager {
 	return c.GCPTokenManager
 }
 
-// CreatorOptionsFunc applies creator options.
+// CreatorOption is a functor that applies the creator config option.
 type CreatorOption func(opt *CreatorConfig) *CreatorConfig
 
 // WithGCPTokenManager adds a GCP token manager.
