@@ -139,6 +139,8 @@ slack_top_10_failures() {
     local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
     local is_test="${3:-true}"
 
+    setup_gcp
+
     local sql
     # shellcheck disable=SC2016
     sql='
@@ -172,11 +174,13 @@ LIMIT
 '
 
     local data
+    echo "Running query with job match name $job_name_match"
     data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)"
 
     if [[ -z "${data}" ]]; then
         data="No failures!"
     fi
+    echo "$data"
 
     local webhook_url
     if [[ "${is_test}" == "true" ]]; then
@@ -206,6 +210,6 @@ LIMIT
 		}
 	]
 }'
-
+    echo "Posting data to slack"
     jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
