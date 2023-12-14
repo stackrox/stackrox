@@ -20,8 +20,10 @@ slack_triage_report() {
     local curr_filter=12388299
     local prev_filter=12388044
 
-    local curr=$(total_issues_in_filter $curr_filter)
-    local prev=$(total_issues_in_filter $prev_filter)
+    local curr
+    curr=$(total_issues_in_filter $curr_filter)
+    local prev
+    prev=$(total_issues_in_filter $prev_filter)
 
     local line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues (not including ${prev} leftovers from previous duty)"
     local body
