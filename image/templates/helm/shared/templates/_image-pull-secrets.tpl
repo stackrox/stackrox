@@ -88,11 +88,14 @@
   {{ include "srox.fail" $msg }}
 {{ end }}
 
-{{/* For backward compatibility, include those secrets which already exist. */}}
+{{/* For backward compatibility, include those secrets which already exist.
+     In manifest installation mode, include them unconditionally, for lack of a better way.
+     TODO(ROX-9156): manually test that this DTRT in manifest mode, remove this TODO and mention in PR.
+*/}}
 {{ range $secretName := (append $defaultSecretNames $secretResourceName) }}
   {{ $secret := dict }}
   {{ include "srox.safeLookup" (list $ $secret "v1" "Secret" $namespace $secretName) }}
-  {{ if $secret.result }}
+  {{ if or (eq $._rox.env.installMethod "manifest") $secret.result }}
     {{ $imagePullSecretNames = append $imagePullSecretNames $secretName }}
   {{ end }}
 {{ end }}
