@@ -668,6 +668,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
+		ClusterId:     fixtureconsts.Cluster1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 			Port:     1234,
