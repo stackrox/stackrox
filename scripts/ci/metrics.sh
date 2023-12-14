@@ -174,6 +174,10 @@ LIMIT
     local data
     data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)"
 
+    if [[ -z "${data}" ]]; then
+        data="No failures!"
+    fi
+
     local webhook_url
     if [[ "${is_test}" == "true" ]]; then
         webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
