@@ -145,7 +145,9 @@ func (e *Store) Cleanup() {
 // that is a key in the map will be replaced (or deleted).
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
+	e.historyMutex.Lock()
 	defer e.mutex.Unlock()
+	defer e.historyMutex.Unlock()
 	defer e.updateMetrics()
 	e.applyNoLock(updates, incremental)
 }
