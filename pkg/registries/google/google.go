@@ -11,14 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/oauth2"
 )
-
-var log = logging.LoggerForModule()
 
 var _ types.Registry = (*googleRegistry)(nil)
 
