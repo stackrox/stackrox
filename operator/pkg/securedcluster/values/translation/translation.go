@@ -40,8 +40,8 @@ var (
 	baseValuesYAML []byte
 )
 
-// NewTranslator creates a translator
-func NewTranslator(client ctrlClient.Client) Translator {
+// New creates a translator
+func New(client ctrlClient.Client) Translator {
 	return Translator{client: client}
 }
 
