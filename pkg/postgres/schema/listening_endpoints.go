@@ -62,5 +62,6 @@ type ListeningEndpoints struct {
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
 	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
 	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash"`
+	ClusterID          string             `gorm:"column:clusterid;type:uuid;index:listeningendpoints_sac_filter,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

@@ -98,10 +98,11 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 		obj.GetClosed(),
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		pgutils.NilOrUUID(obj.GetPodUid()),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, CloseTimestamp, ProcessIndicatorId, Closed, DeploymentId, PodUid, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, CloseTimestamp = EXCLUDED.CloseTimestamp, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, PodUid = EXCLUDED.PodUid, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, CloseTimestamp, ProcessIndicatorId, Closed, DeploymentId, PodUid, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, CloseTimestamp = EXCLUDED.CloseTimestamp, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -127,6 +128,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 		"closed",
 		"deploymentid",
 		"poduid",
+		"clusterid",
 		"serialized",
 	}
 
@@ -150,6 +152,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 			obj.GetClosed(),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			pgutils.NilOrUUID(obj.GetPodUid()),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
 
