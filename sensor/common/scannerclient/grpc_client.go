@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
+	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
@@ -211,12 +212,12 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	if cfg.Insecure {
 		opts = append(opts, name.Insecure)
 	}
-	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
-	ref, err := name.NewDigest(n, opts...)
+
+	ref, err := pkgscanner.DigestFromImage(image, opts...)
 	if err != nil {
-		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
-		return nil, fmt.Errorf("creating digest reference: %w", err)
+		return nil, err
 	}
+
 	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,
