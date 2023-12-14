@@ -3,3 +3,7 @@ coverage:
     project:
       default:
         threshold: 1%
+codecov:
+  notify:
+    after_n_builds: 5
+    wait_for_ci: no
