@@ -117,6 +117,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint1.deploymentId
         assert endpoint1.podId
         assert endpoint1.podUid
+        assert endpoint1.clusterId
         assert endpoint1.containerName == TCPCONNECTIONTARGET1
         assert endpoint1.signal.name == "socat"
         assert endpoint1.signal.execFilePath == "/usr/bin/socat"
@@ -128,6 +129,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint2.deploymentId
         assert endpoint2.podId
         assert endpoint2.podUid
+        assert endpoint2.clusterId
         assert endpoint2.containerName == TCPCONNECTIONTARGET1
         assert endpoint2.signal.name == "socat"
         assert endpoint2.signal.execFilePath == "/usr/bin/socat"
@@ -146,6 +148,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.deploymentId
         assert endpoint.podId
         assert endpoint.podUid
+        assert endpoint.clusterId
         assert endpoint.containerName == TCPCONNECTIONTARGET2
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
@@ -194,6 +197,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.deploymentId
         assert endpoint.podId
         assert endpoint.podUid
+        assert endpoint.clusterId
         assert endpoint.containerName == TCPCONNECTIONTARGET3
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
@@ -227,6 +231,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.deploymentId
         assert endpoint.podId
         assert endpoint.podUid
+        assert endpoint.clusterId
         assert endpoint.containerName == TCPCONNECTIONTARGET2
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
