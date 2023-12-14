@@ -1,6 +1,12 @@
 name: CI Failures Report
 on:
   workflow_dispatch:
+    inputs:
+      test:
+        description: Slack to #acs-slack-integration-testing
+        required: true
+        default: true
+        type: boolean
   schedule:
   - cron: 0 12 * * 1
   pull_request:
@@ -17,13 +23,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
     - name: Report
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
-      run: source scripts/ci/metrics.sh; slack_top_10_failures "qa" "Top 10 QA E2E Test failures for the last 7 days" true
+      run: |
+        source scripts/ci/metrics.sh
+        slack_top_10_failures "qa-e2e" "Top 10 QA E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
+        slack_top_10_failures "operator-e2e" "Top 10 Operator E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
+        slack_top_10_failures "ui-e2e" "Top 10 UI E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
+        slack_top_10_failures "nongroovy-e2e" "Top 10 !.Groovy E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
