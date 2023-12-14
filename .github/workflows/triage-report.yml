@@ -18,4 +18,4 @@ jobs:
       env:
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
-      run: ./scripts/ci/triage-slack.sh
+      run: ./scripts/triage-slack.sh
