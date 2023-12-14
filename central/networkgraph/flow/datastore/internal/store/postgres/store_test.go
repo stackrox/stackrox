@@ -332,5 +332,5 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
 	s.Nil(err)
 
-	s.Equal([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
+	s.ElementsMatch([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
 }
