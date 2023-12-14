@@ -4,6 +4,8 @@ metadata:
   name: stackrox-secured-cluster-services
 spec:
   clusterName: testing-cluster
+  imagePullSecrets:
+  - name: e2e-test-pull-secret
   admissionControl:
     resources:
       requests:
