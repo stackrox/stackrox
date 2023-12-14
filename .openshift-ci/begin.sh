@@ -26,3 +26,15 @@ if [[ "${JOB_NAME:-}" =~ -ocp-4- ]]; then
     set_ci_shared_export WORKER_NODE_COUNT 2
     set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
 fi
+
+if [[ "${JOB_NAME:-}" =~ -gke-perf-scale- ]]; then
+    info "Setting node type and count for GKE perf scale jobs"
+    set_ci_shared_export NUM_NODES 9
+    set_ci_shared_export MACHINE_TYPE n1-standard-8
+fi
+
+if [[ "${JOB_NAME:-}" =~ ocp-4-.*-perf-scale- ]]; then
+    info "Setting worker node type and count for OCP perf scale jobs"
+    set_ci_shared_export WORKER_NODE_COUNT 9
+    set_ci_shared_export WORKER_NODE_TYPE n1-standard-8
+fi
