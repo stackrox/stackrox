@@ -156,6 +156,7 @@ FROM (
     CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
     AND Status = "failed"
     AND NOT IsPullRequest
+    AND CONTAINS_SUBSTR(JobName, "master")
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
   GROUP BY
     Classname,
