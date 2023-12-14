@@ -139,18 +139,17 @@ slack_top_10_failures() {
     local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
     local is_test="${3:-true}"
 
-    setup_gcp
-
     local sql
     # shellcheck disable=SC2016
     sql='
 SELECT
   MAX(count) AS Failures,
-  Suite
+  Classname AS Suite,
+  Name AS `Case`
 FROM (
   SELECT
     COUNT(*) AS count,
-    Classname AS Suite,
+    Classname,
     Name
   FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
@@ -166,7 +165,8 @@ FROM (
   ORDER BY
     COUNT(*) DESC)
 GROUP BY
-  Suite
+  Classname,
+  Name
 ORDER BY
   Failures DESC
 LIMIT

@@ -31,6 +31,8 @@ jobs:
       run: |
         source scripts/ci/lib.sh
 
+        setup_gcp
+
         # Avoid BQ init message in first report
         bq --quiet --format=pretty query --use_legacy_sql=false 'select 1'
 
