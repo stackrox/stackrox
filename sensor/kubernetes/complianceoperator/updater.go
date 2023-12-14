@@ -57,6 +57,7 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() error {
+	log.Infof("SHREWS -- in Start")
 	go u.run(u.updateTicker.C)
 	return nil
 }
@@ -67,6 +68,7 @@ func (u *updaterImpl) Stop(_ error) {
 }
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	log.Infof("SHREWS -- in Notify")
 	switch e {
 	case common.SensorComponentEventSyncFinished:
 		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
