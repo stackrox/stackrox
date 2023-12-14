@@ -23,30 +23,28 @@ slack_triage_report() {
     local curr=$(total_issues_in_filter $curr_filter)
     local prev=$(total_issues_in_filter $prev_filter)
 
-    local line="There are \`"${curr}+${prev}"\` *NOT* triaged issues from current + previous duty"
+    local line="There are \`"${curr}+${prev}"\` *NOT* triaged issues from current+previous duty"
     local body
     # shellcheck disable=SC2016
-    body='
-    {
-        "blocks": [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Triage report"
-                }
+    body='{
+    "blocks": [{
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": "'"${line}"'"
+        },
+        "accessory": {
+            "type": "button",
+            "text": {
+                "type": "plain_text",
+                "text": "Triage them 🔥",
+                "emoji": true
             },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "'"${line}"'"
-                }
-            }
-        ]
-    }'
+            "url": "https://issues.redhat.com/secure/Dashboard.jspa?selectPageId=12342126"
+        }
+    }]}'
     echo "Posting '$line' to slack"
-    jq -n "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$SLACK_CI_INTEGRATION_TESTING_WEBHOOK"
+    jq -n "$body" | curl -sSfl -d @- -H 'Content-Type: application/json' "$SLACK_CI_INTEGRATION_TESTING_WEBHOOK"
 }
 
 slack_triage_report
