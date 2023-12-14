@@ -361,9 +361,12 @@ deploy_optional_e2e_components() {
 install_the_compliance_operator() {
     csv=$(oc get csv -n openshift-compliance -o json | jq ".items[] | select(.metadata.name | test(\"compliance-operator\")).metadata.name")
     if [[ $csv == "" ]]; then
-        # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
+        # Install from subscription, but point to the upstream images available
+        # in https://github.com/complianceascode/compliance-operator/pkgs/container/compliance-operator.
+        # Similar process as documented in https://docs.openshift.com/container-platform/latest/security/compliance_operator/compliance-operator-installation.html
         info "Installing the compliance operator"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator
