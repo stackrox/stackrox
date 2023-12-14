@@ -22,6 +22,7 @@ function highlightPathData(data, highlightedNames) {
     if (data.children) {
         data.children.map((child) => highlightPathData(child, highlightedNames));
     }
+    // eslint-disable-next-line no-param-reassign
     data.style = {
         ...data.style,
         fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1,

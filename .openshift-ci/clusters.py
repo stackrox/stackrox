@@ -15,6 +15,7 @@ OUTCOME_PASSED = "passed"
 OUTCOME_FAILED = "failed"
 CREATE_CLUSTER_OUTCOME_VAR = "CREATE_CLUSTER_OUTCOME"
 DESTROY_CLUSTER_OUTCOME_VAR = "DESTROY_CLUSTER_OUTCOME"
+CLUSTER_FLAVOR_VARIANT_VAR = "CLUSTER_FLAVOR_VARIANT"
 
 
 class NullCluster:
@@ -45,6 +46,7 @@ class GKECluster:
         self.refresh_token_cmd = None
 
     def provision(self):
+        set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
         try:
             self._provision()
             set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)
@@ -96,6 +98,7 @@ class GKECluster:
         return self
 
     def teardown(self, canceled=False):
+        set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
         try:
             self._teardown(canceled)
             set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)

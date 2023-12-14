@@ -75,11 +75,6 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -90,6 +85,12 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Specify a secret that contains the administrator password in
           the "password" data item. If omitted, the operator will auto-generate a
           password and store it in the "password" item in the "central-htpasswd" secret.
@@ -388,11 +389,14 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
+      - description: Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints
           (SCCs) for the operands. This isn't usually needed, and may interfere with
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
@@ -582,11 +586,6 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -603,6 +602,12 @@ spec:
         path: registryOverride
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Set this to 'true' to enable preventive policy enforcement for
           object creations.
         displayName: Listen On Creates
@@ -670,11 +675,14 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Set this to true to have the operator create SecurityContextConstraints
+      - description: Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints
           (SCCs) for the operands. This isn't usually needed, and may interfere with
           other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:

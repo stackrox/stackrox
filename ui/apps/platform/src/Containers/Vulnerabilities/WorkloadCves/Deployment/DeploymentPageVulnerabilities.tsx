@@ -18,7 +18,7 @@ import {
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
-import useURLPagination from 'hooks/useURLPagination';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
@@ -95,15 +95,19 @@ const searchOptions: SearchOption[] = [
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
+    pagination: UseURLPaginationResult;
 };
 
-function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabilitiesProps) {
+function DeploymentPageVulnerabilities({
+    deploymentId,
+    pagination,
+}: DeploymentPageVulnerabilitiesProps) {
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const { page, setPage, perPage, setPerPage } = useURLPagination(20);
+    const { page, setPage, perPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -129,6 +133,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
         fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,
@@ -137,12 +142,6 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
-
-    const pagination = {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        sortOption,
-    };
 
     const vulnerabilityRequest = useQuery<
         {
@@ -160,10 +159,15 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
         }
     >(deploymentVulnerabilitiesQuery, {
         fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
         variables: {
             id: deploymentId,
             query,
-            pagination,
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });

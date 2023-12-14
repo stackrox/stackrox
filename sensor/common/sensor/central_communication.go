@@ -12,7 +12,7 @@ import (
 
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
 type CentralCommunication interface {
-	Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, handler config.Handler, detector detector.Detector)
+	Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, handler config.Handler, detector detector.Detector)
 	Stop(error)
 	Stopped() concurrency.ReadOnlyErrorSignal
 }

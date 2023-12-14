@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stretchr/testify/assert"
@@ -29,8 +28,7 @@ var (
 )
 
 func TestGetProxyConfigHelmValues_EmptyEnv(t *testing.T) {
-	vals, err := getProxyConfigHelmValues(testObj, nil)
-	assert.NoError(t, err)
+	vals := getProxyConfigHelmValues(testObj, nil)
 	assert.Empty(t, vals)
 }
 
@@ -40,8 +38,7 @@ func TestGetProxyConfigHelmValues_WithValues(t *testing.T) {
 		"NO_PROXY":   "127.0.0.1/8",
 	}
 
-	vals, err := getProxyConfigHelmValues(testObj, env)
-	assert.NoError(t, err)
+	vals := getProxyConfigHelmValues(testObj, env)
 
 	expectedVals, err := chartutil.ReadValues([]byte(`
 customize:
@@ -64,22 +61,16 @@ customize:
 func TestInjectProxyNoValueConflict(t *testing.T) {
 	t.Setenv("HTTP_PROXY", "some.proxy.dns:443")
 
-	proxyEnvVars := GetProxyEnvVars()
-	proxyCustomizeTranslator := func(ctx context.Context, u *unstructured.Unstructured) (chartutil.Values, error) {
-		customizeValue := translation.GetCustomize(&platform.CustomizeSpec{
-			EnvVars: []corev1.EnvVar{
-				{Name: "HTTP_PROXY", Value: "cr.proxy.value"},
-			},
-		})
+	customizeValue := translation.GetCustomize(&platform.CustomizeSpec{
+		EnvVars: []corev1.EnvVar{
+			{Name: "HTTP_PROXY", Value: "cr.proxy.value"},
+		},
+	})
+	baseValues, err := (&translation.ValuesBuilder{}).AddChild("customize", customizeValue).Build()
+	require.NoError(t, err)
 
-		vb := translation.ValuesBuilder{}
-		vb.AddChild("customize", customizeValue)
-
-		return vb.Build()
-	}
-
-	injectTranslator := InjectProxyEnvVars(values.TranslatorFunc(proxyCustomizeTranslator), proxyEnvVars, logr.New(nil))
-	values, err := injectTranslator.Translate(context.Background(), &unstructured.Unstructured{})
+	injector := NewProxyEnvVarsInjector(GetProxyEnvVars(), logr.New(nil))
+	values, err := injector.Enrich(context.Background(), &unstructured.Unstructured{}, baseValues)
 	require.NoError(t, err, "translating values")
 
 	envVars, err := values.Table("customize.envVars")

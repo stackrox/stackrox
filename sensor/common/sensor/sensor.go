@@ -335,7 +335,9 @@ func (s *Sensor) Stop() {
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
 
-	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
+	syncDone := concurrency.NewSignal()
+	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+	go s.notifySyncDone(&syncDone)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)
@@ -369,6 +371,19 @@ func wrapOrNewError(err error, message string) error {
 	return errors.Wrap(err, message)
 }
 
+func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal) {
+	s.currentStateMtx.Lock()
+	defer s.currentStateMtx.Unlock()
+	select {
+	case <-syncDone.Done():
+		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
+	case <-s.centralCommunication.Stopped().WaitC():
+		return
+	case <-s.stoppedSig.WaitC():
+		return
+	}
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -380,6 +395,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
+	syncDone := concurrency.NewSignal()
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
@@ -396,7 +412,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
 		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
-		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
+		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+		go s.notifySyncDone(&syncDone)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
 		select {

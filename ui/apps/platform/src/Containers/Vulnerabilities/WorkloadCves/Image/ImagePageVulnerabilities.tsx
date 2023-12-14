@@ -19,7 +19,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
-import useURLPagination from 'hooks/useURLPagination';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -99,12 +99,14 @@ export type ImagePageVulnerabilitiesProps = {
         tag: string;
     };
     refetchAll: () => void;
+    pagination: UseURLPaginationResult;
 };
 
 function ImagePageVulnerabilities({
     imageId,
     imageName,
     refetchAll,
+    pagination,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
@@ -113,7 +115,7 @@ function ImagePageVulnerabilities({
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -122,12 +124,6 @@ function ImagePageVulnerabilities({
         },
         onSort: () => setPage(1),
     });
-
-    const pagination = {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        sortOption,
-    };
 
     const { data, previousData, loading, error } = useQuery<
         {
@@ -146,7 +142,11 @@ function ImagePageVulnerabilities({
         variables: {
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
-            pagination,
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });

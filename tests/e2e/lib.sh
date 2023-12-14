@@ -359,15 +359,17 @@ deploy_optional_e2e_components() {
 }
 
 install_the_compliance_operator() {
-    info "Installing the compliance operator"
-
-    # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
-
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-
-    wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+    csv=$(oc get csv -n openshift-compliance -o json | jq ".items[] | select(.metadata.name | test(\"compliance-operator\")).metadata.name")
+    if [[ $csv == "" ]]; then
+        # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
+        info "Installing the compliance operator"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+    else
+        info "Reusing existing compliance operator deployment from $csv subscription"
+    fi
 
     oc get csv -n openshift-compliance
 }
@@ -746,7 +748,7 @@ _record_build_info() {
     fi
 
     # -race debug builds - use the image tag as the most reliable way to
-    # determin the build under test.
+    # determine the build under test.
     local central_image
     central_image="$(kubectl -n stackrox get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
     if [[ "${central_image}" =~ -rcd$ ]]; then
@@ -823,20 +825,11 @@ db_backup_and_restore_test() {
 handle_e2e_progress_failures() {
     info "Checking for deployment failure"
 
-    local cluster_provisioned=("Cluster_Provision" "Is the cluster available?")
     local images_available=("Image_Availability" "Are the required images are available?")
     local stackrox_deployed=("Stackrox_Deployment" "Was Stackrox was deployed to the cluster?")
 
     local check_images=false
     local check_deployment=false
-
-    if [[ -f "${STATE_CLUSTER_PROVISIONED}" ]]; then
-        save_junit_success "${cluster_provisioned[@]}" || true
-        check_images=true
-    else
-        save_junit_failure "${cluster_provisioned[@]}" \
-            "It appears that there is no cluster to test against."
-    fi
 
     if $check_images; then
         if [[ -f "${STATE_IMAGES_AVAILABLE}" ]]; then
@@ -855,10 +848,6 @@ handle_e2e_progress_failures() {
             save_junit_failure "${stackrox_deployed[@]}" "Check the build log" || true
         fi
     fi
-}
-
-set_provisioned_state() {
-    touch "${STATE_CLUSTER_PROVISIONED}"
 }
 
 setup_automation_flavor_e2e_cluster() {

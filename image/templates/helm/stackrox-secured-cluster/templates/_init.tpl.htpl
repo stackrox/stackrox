@@ -160,11 +160,10 @@
 {{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
   {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
+
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecretsNames" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.mergeInto" (list $._rox.collectorImagePullSecrets $._rox.imagePullSecrets) }}
-{{ include "srox.configureImagePullSecretsNames" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
 {{/* Additional CAs. */}}
 {{ $additionalCAList := list }}
@@ -245,16 +244,19 @@
   {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
   {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
-  {{ include "srox.configureImagePullSecretsNames" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+
+  {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
+       set of all referenced images first. */}}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
 [<- end >]
 
-{{/*
-    Post-processing steps.
-   */}}
+{{/* Setup Image Pull Secrets.
 
-{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.mainImagePullSecrets) }}
-{{ include "srox.configureImagePullSecretsCreds" (list $ ._rox.collectorImagePullSecrets) }}
+     Note: This must happen late, as we rely on "srox.configureImage" to collect the
+     set of all referenced images first. */}}
+{{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
 {{ end }}
 

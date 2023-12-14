@@ -109,7 +109,16 @@
         "eject": "react-app-rewired eject"
     },
     "devDependencies": {
-        "@babel/core": "7.12.3",
+        "@babel/core": "^7.23.6",
+        "@babel/plugin-proposal-decorators": "^7.23.6",
+        "@babel/plugin-proposal-private-property-in-object": "7.18.6",
+        "@babel/plugin-transform-flow-strip-types": "^7.23.3",
+        "@babel/plugin-transform-react-display-name": "^7.23.3",
+        "@babel/plugin-transform-runtime": "^7.23.6",
+        "@babel/preset-env": "^7.23.6",
+        "@babel/preset-react": "^7.23.3",
+        "@babel/preset-typescript": "^7.23.3",
+        "@babel/runtime": "^7.23.6",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/jest-dom": "^5.15.0",
         "@testing-library/react": "^14.0.0",
@@ -122,8 +131,8 @@
         "@types/react-dom": "^17.0.11",
         "@types/react-redux": "^7.1.20",
         "@types/segment-analytics": "^0.0.34",
-        "@typescript-eslint/eslint-plugin": "6.9.1",
-        "@typescript-eslint/parser": "6.9.1",
+        "@typescript-eslint/eslint-plugin": "^6.14.0",
+        "@typescript-eslint/parser": "^6.14.0",
         "autoprefixer": "^10.2.5",
         "cypress": "^12.17.4",
         "eslint": "^8.53.0",
@@ -159,7 +168,7 @@
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
         "ts-jest": "^29.1.1",
-        "typescript": "^5.2.2"
+        "typescript": "^5.3.3"
     },
     "browserslist": [
         "Chrome >= 80"

@@ -3251,7 +3251,7 @@
                 ],
                 "AddedBy": "sha256:36e8e9714b9a509fae9e515ff16237928c3d809f5ae228b14d2f7d7605c02623",
                 "Location": "jars/jackson-databind-2.9.10.4.jar",
-                "FixedBy": "2.12.7.1"
+                "FixedBy": "2.16.0"
             }
         ],
         "unexpected_features": [
@@ -5459,7 +5459,6 @@
         "required_feature_flag": null
     },
     {
-        "disabled_reason": "ROX-20729: unexpected fixedby and description in CVE-2021-41411",
         "image": "quay.io/rhacs-eng/qa:drools-CVE-2021-41411",
         "registry": "https://quay.io",
         "username": "QUAY_RHACS_ENG_RO_USERNAME",
@@ -5469,12 +5468,13 @@
         "expected_features": [
             {
                 "Name": "org.drools:drools-core",
+                "NamespaceName": "rhel:8",
                 "VersionFormat": "JavaSourceType",
                 "Version": "6.4.0.Final",
                 "Vulnerabilities": [
                     {
                         "Name": "CVE-2021-41411",
-                        "Description": "drools \u003c=7.59.x is affected by an XML External Entity (XXE) vulnerability in KieModuleMarshaller.java. The Validator class is not used correctly, resulting in the XXE injection vulnerability.",
+                        "Description": "XML External Entity Reference in drools",
                         "Link": "https://nvd.nist.gov/vuln/detail/CVE-2021-41411",
                         "Severity": "Critical",
                         "Metadata": {
