@@ -7,7 +7,7 @@ import (
 
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -68,8 +68,8 @@ func TestWithEnrichment(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			wrapped := WithEnrichment(tt.translator, tt.enrichers...)
 			vals, err := wrapped.Translate(context.Background(), nil)
-			require.Equal(t, tt.want, vals)
-			require.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want, vals)
+			assert.Equal(t, tt.wantErr, err)
 		})
 	}
 }
