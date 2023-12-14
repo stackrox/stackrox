@@ -29,7 +29,7 @@ jobs:
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
       shell: bash
       run: |
-        source scripts/ci/metrics.sh
+        source scripts/ci/lib.sh
         slack_top_10_failures "qa-e2e" "Top 10 QA E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
         slack_top_10_failures "operator-e2e" "Top 10 Operator E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
         slack_top_10_failures "ui-e2e" "Top 10 UI E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
