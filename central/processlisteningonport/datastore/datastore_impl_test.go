@@ -161,6 +161,7 @@ var (
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
@@ -176,6 +177,7 @@ var (
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 )
 
@@ -236,6 +238,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		Process:            nil,
 		DeploymentId:       plopObjects[0].GetDeploymentId(),
 		PodUid:             plopObjects[0].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -286,6 +289,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             plopObjectsClosed[0].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -353,6 +357,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -400,6 +405,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -472,6 +478,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -525,6 +532,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -570,6 +578,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -618,6 +627,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -686,6 +696,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		Process:            plopObjects[0].GetProcess(),
 		DeploymentId:       plopObjects[0].GetDeploymentId(),
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -725,6 +736,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 		Process:            plopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -775,6 +787,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 		Process:            closedPlopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -819,6 +832,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 		Process:            closedPlopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -913,6 +927,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -966,6 +981,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1018,6 +1034,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1046,6 +1063,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	closedPlopObject2 := storage.ProcessListeningOnPortFromSensor{
@@ -1061,6 +1079,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	closedPlopObject3 := storage.ProcessListeningOnPortFromSensor{
@@ -1076,6 +1095,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject1}
@@ -1121,6 +1141,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1225,6 +1246,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1288,6 +1310,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage1, plopsFromDB1[0])
@@ -1337,6 +1360,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		},
 		DeploymentId: fixtureconsts.Deployment2,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	newOpenPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&newOpenPlopObject}
@@ -1396,6 +1420,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment2,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1415,6 +1440,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	// It is not possible to add a PLOP from sensor with no process info
@@ -1455,6 +1481,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	plop2 := storage.ProcessListeningOnPortFromSensor{
@@ -1470,6 +1497,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID2,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plop1, &plop2}
@@ -1497,6 +1525,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 			Process:            plopObjects[0].GetProcess(),
 			DeploymentId:       plopObjects[0].GetDeploymentId(),
 			PodUid:             plopObjects[0].GetPodUid(),
+			ClusterId:          fixtureconsts.Cluster1,
 		},
 		{
 			Port:               plopObjects[1].GetPort(),
@@ -1507,6 +1536,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 			Process:            plopObjects[1].GetProcess(),
 			DeploymentId:       plopObjects[1].GetDeploymentId(),
 			PodUid:             plopObjects[1].GetPodUid(),
+			ClusterId:          fixtureconsts.Cluster1,
 		},
 	}
 
@@ -1536,6 +1566,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		Process:            plopObjects[1].GetProcess(),
 		DeploymentId:       plopObjects[1].GetDeploymentId(),
 		PodUid:             plopObjects[1].GetPodUid(),
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage1, newPlopsFromDB2[0])
@@ -1662,6 +1693,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	plopWithPodUID := storage.ProcessListeningOnPortFromSensor{
@@ -1677,6 +1709,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 		},
 		DeploymentId: fixtureconsts.Deployment1,
 		PodUid:       fixtureconsts.PodUID1,
+		ClusterId:    fixtureconsts.Cluster1,
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plopWithoutPodUID}
@@ -1724,6 +1757,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 			Closed:             true,
 			DeploymentId:       plopObjects[0].GetDeploymentId(),
 			PodUid:             plopObjects[0].GetPodUid(),
+			ClusterId:          fixtureconsts.Cluster1,
 		},
 	}
 
@@ -1793,6 +1827,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 		PodUid:             fixtureconsts.PodUID1,
+		ClusterId:          fixtureconsts.Cluster1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1831,6 +1866,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 						ProcessExecFilePath: execFilePath,
 					},
 					DeploymentId: deployment,
+					ClusterId:    fixtureconsts.Cluster1,
 				}
 				plopUDP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -1844,6 +1880,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 						ProcessExecFilePath: execFilePath,
 					},
 					DeploymentId: deployment,
+					ClusterId:    fixtureconsts.Cluster1,
 				}
 				plops[count] = plopTCP
 				count++
