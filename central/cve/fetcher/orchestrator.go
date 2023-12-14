@@ -12,6 +12,7 @@ import (
 	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -74,11 +75,11 @@ func (m *orchestratorCVEManager) Reconcile() {
 func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]*storage.EmbeddedVulnerability, error) {
 	scanners := map[string]types.OrchestratorScanner{}
 
-	m.mutex.Lock()
-	for k, v := range m.scanners {
-		scanners[k] = v
-	}
-	m.mutex.Unlock()
+	concurrency.WithLock(&m.mutex, func() {
+		for k, v := range m.scanners {
+			scanners[k] = v
+		}
+	})
 
 	if len(scanners) == 0 {
 		return nil, errors.New("no orchestrator scanners are integrated")

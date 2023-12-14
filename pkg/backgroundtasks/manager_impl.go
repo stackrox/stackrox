@@ -133,13 +133,13 @@ func (m *managerImpl) Start() {
 			m.parallel <- struct{}{}
 			t := <-m.pendingTasks
 			ctx, cancel := context.WithCancel(parentCtx)
-			m.cancelFuncTasksMutex.Lock(t.id)
-			if t.cancel != nil {
-				cancel()
-			}
 
-			t.cancel = cancel
-			m.cancelFuncTasksMutex.Unlock(t.id)
+			m.cancelFuncTasksMutex.DoWithLock(t.id, func() {
+				if t.cancel != nil {
+					cancel()
+				}
+				t.cancel = cancel
+			})
 
 			m.startTaskExec(ctx, t)
 		}
