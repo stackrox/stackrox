@@ -359,15 +359,17 @@ deploy_optional_e2e_components() {
 }
 
 install_the_compliance_operator() {
-    info "Installing the compliance operator"
-
-    # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
-
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
-    oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-
-    wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+    csv=$(oc get csv -n openshift-compliance -o json | jq ".items[] | select(.metadata.name | test(\"compliance-operator\")).metadata.name")
+    if [[ $csv == "" ]]; then
+        # ref: https://docs.openshift.com/container-platform/4.13/security/compliance_operator/compliance-operator-installation.html
+        info "Installing the compliance operator"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/namespace.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+    else
+        info "Reusing existing compliance operator deployment from $csv subscription"
+    fi
 
     oc get csv -n openshift-compliance
 }
