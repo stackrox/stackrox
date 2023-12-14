@@ -175,7 +175,10 @@ LIMIT
 
     local data
     echo "Running query with job match name $job_name_match"
-    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)"
+    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)" || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n${data}"
+        exit 1
+    }
 
     if [[ -z "${data}" ]]; then
         data="No failures!"
