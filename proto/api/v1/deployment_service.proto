@@ -88,4 +88,11 @@ service DeploymentService {
             get: "/v1/deployments/metadata/labels"
         };
     }
+
+    rpc Stream(RawQuery) returns (stream storage.Deployment) {
+        option (google.api.http) = {
+            get: "/v1/stream/deployments"
+        };
+    }
+
 }

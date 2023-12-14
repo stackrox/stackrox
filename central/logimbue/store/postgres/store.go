@@ -50,6 +50,7 @@ type Store interface {
 	GetAll(ctx context.Context) ([]*storeType, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.

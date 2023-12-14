@@ -3,10 +3,13 @@ package cache
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -138,6 +141,13 @@ func (c *cacheImpl) Walk(_ context.Context, fn func(deployment *storage.Deployme
 		}
 	}
 	return nil
+}
+
+func (c *cacheImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
+	if proto.Equal(query, search.EmptyQuery()) {
+		return c.Walk(ctx, fn)
+	}
+	return c.store.WalkByQuery(ctx, query, fn)
 }
 
 func (c *cacheImpl) Upsert(ctx context.Context, deployment *storage.Deployment) error {

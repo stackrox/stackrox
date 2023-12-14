@@ -3,10 +3,12 @@ package postgres
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -174,4 +176,11 @@ func (c *cacheImpl) Walk(_ context.Context, fn func(obj *storage.ProcessBaseline
 		}
 	}
 	return nil
+}
+
+func (c *cacheImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj *storage.ProcessBaseline) error) error {
+	if proto.Equal(q, search.EmptyQuery()) {
+		return c.dbStore.Walk(ctx, fn)
+	}
+	return c.dbStore.WalkByQuery(ctx, q, fn)
 }

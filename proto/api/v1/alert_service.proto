@@ -183,4 +183,10 @@ service AlertService {
         };
     }
 
+    rpc Stream(RawQuery) returns (stream storage.Alert) {
+        option (google.api.http) = {
+            get: "/v1/stream/alerts"
+        };
+    }
+
 }

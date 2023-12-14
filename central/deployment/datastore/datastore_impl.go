@@ -206,6 +206,15 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
+	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+	return ds.deploymentStore.WalkByQuery(ctx, query, fn)
+}
+
 // UpsertDeployment inserts a deployment into deploymentStore
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")

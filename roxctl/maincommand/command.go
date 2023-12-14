@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
+	"github.com/stackrox/rox/roxctl/stream"
 )
 
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -83,6 +84,7 @@ func Command() *cobra.Command {
 		completion.Command(cliEnvironment),
 		connectivitymapDeprecated.Command(cliEnvironment),
 		netpol.Command(cliEnvironment),
+		stream.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))

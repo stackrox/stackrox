@@ -178,6 +178,32 @@ func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 	return nil
 }
 
+// WalkByQuery iterates over all the objects scoped by the query and applies the closure.
+func (s *GenericStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
+
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, query, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			if err := fn(data); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
+}
+
 // GetAll retrieves all objects from the store.
 //
 // Deprecated: This can be dangerous on high cardinality stores consider Walk instead.

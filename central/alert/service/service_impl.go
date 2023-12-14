@@ -54,6 +54,7 @@ var (
 			"/v1.AlertService/GetAlertsGroup",
 			"/v1.AlertService/GetAlertsCounts",
 			"/v1.AlertService/GetAlertTimeseries",
+			"/v1.AlertService/Stream",
 		},
 		user.With(permissions.Modify(resources.Alert)): {
 			"/v1.AlertService/ResolveAlert",
@@ -168,6 +169,19 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, err
 	}
 	return &v1.CountAlertsResponse{Count: int32(count)}, nil
+}
+
+func (s *serviceImpl) Stream(query *v1.RawQuery, srv v1.AlertService_StreamServer) error {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	return s.dataStore.WalkByQuery(srv.Context(), parsedQuery, func(a *storage.Alert) error {
+		if err := srv.Send(a); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest {
