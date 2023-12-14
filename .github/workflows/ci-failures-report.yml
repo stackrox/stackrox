@@ -1,0 +1,23 @@
+name: CI Failures Report
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: 0 12 * * 1
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  report-e2e-failures-to-slack:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Report
+      env:
+        SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+      run: source scripts/ci/metrics.sh; slack_top_10_failures
