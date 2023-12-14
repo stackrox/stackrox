@@ -139,6 +139,8 @@ slack_top_10_failures() {
     local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
     local is_test="${3:-true}"
 
+    setup_gcp
+
     local sql
     # shellcheck disable=SC2016
     sql='
