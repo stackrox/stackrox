@@ -2,11 +2,6 @@ package env
 
 import (
 	"net"
-	"path/filepath"
-
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/fileutils"
 )
 
 const (
@@ -48,25 +43,6 @@ func validatePort(setting Setting) error {
 	return nil
 }
 
-func validateTLS() error {
-	certFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSCertFileName)
-	if ok, err := fileutils.Exists(certFile); !ok {
-		if err != nil {
-			log.Errorf("failed to validate file %q: %s", certFile, err.Error())
-		}
-		return errors.Wrapf(errox.NotFound, "secure metrics certificate file %q not found", certFile)
-	}
-
-	keyFile := filepath.Join(SecureMetricsCertDir.Setting(), TLSKeyFileName)
-	if ok, err := fileutils.Exists(keyFile); !ok {
-		if err != nil {
-			log.Errorf("failed to validate file %q: %s", keyFile, err.Error())
-		}
-		return errors.Wrapf(errox.NotFound, "secure metrics key file %q not found", keyFile)
-	}
-	return nil
-}
-
 // ValidateMetricsSetting returns an error if the environment variable is invalid.
 func ValidateMetricsSetting() error {
 	if !MetricsEnabled() {
@@ -84,9 +60,6 @@ func MetricsEnabled() bool {
 func ValidateSecureMetricsSetting() error {
 	if !SecureMetricsEnabled() {
 		return nil
-	}
-	if err := validateTLS(); err != nil {
-		return err
 	}
 	return validatePort(SecureMetricsPort)
 }

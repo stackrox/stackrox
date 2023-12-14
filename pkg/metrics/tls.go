@@ -20,18 +20,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func certFilePath() string {
-	certDir := env.SecureMetricsCertDir.Setting()
-	certFile := filepath.Join(certDir, env.TLSCertFileName)
-	return certFile
-}
-
-func keyFilePath() string {
-	certDir := env.SecureMetricsCertDir.Setting()
-	keyFile := filepath.Join(certDir, env.TLSKeyFileName)
-	return keyFile
-}
-
 // nilTLSConfigurer is a no-op configurer.
 type nilTLSConfigurer struct{}
 

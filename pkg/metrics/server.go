@@ -147,8 +147,8 @@ func secureMetricsEnabled() bool {
 
 func (s *Server) secureMetricsValid() bool {
 	if err := env.ValidateSecureMetricsSetting(); err != nil {
-		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
-		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
+		log.Error("Invalid secure metrics setting: ", err)
+		log.Warn("Secure metrics server is disabled")
 		return false
 	}
 	return true
@@ -175,7 +175,7 @@ func runForeverTLS(server *http.Server) {
 	if server == nil {
 		return
 	}
-	if err := server.ListenAndServeTLS(certFilePath(), keyFilePath()); !errors.Is(err, http.ErrServerClosed) {
+	if err := server.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 		// The HTTPS server should never terminate.
 		log.Panicf("Unexpected termination of secure metrics server %q: %v", server.Addr, err)
 	}
