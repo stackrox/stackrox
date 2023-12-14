@@ -2,12 +2,7 @@ name: Triage Report
 on:
   workflow_dispatch:
   schedule:
-  - cron: 0 5 * * 1
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+  - cron: 0 15 * * 5
 jobs:
   triage-report:
     runs-on: ubuntu-latest
