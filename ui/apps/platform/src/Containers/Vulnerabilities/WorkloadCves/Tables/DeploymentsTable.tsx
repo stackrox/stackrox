@@ -113,7 +113,7 @@ function DeploymentsTable({
                             }}
                         >
                             <Tr>
-                                <Td>
+                                <Td dataLabel="Deployment">
                                     <Link
                                         to={getEntityPagePath('Deployment', id, vulnerabilityState)}
                                     >
