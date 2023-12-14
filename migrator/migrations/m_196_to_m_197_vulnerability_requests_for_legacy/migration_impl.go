@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	batchSize = 2000
-	log       = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 //nolint:revive

@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	batchSize = 2000
-	log       = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 //nolint:revive
@@ -16,6 +15,6 @@ func migrate(database *types.Databases) error {
 	// We can't easily revert due to the way migrations stack on top of each other.
 	// The original changes can be found in commit 7e917d4139d04679efa4bbf14e389f697fb67467
 	// Or via https://github.com/stackrox/stackrox/tree/7e917d4139d04679efa4bbf14e389f697fb67467/migrator/migrations/m_194_to_m_195_vuln_request_global_scope
-	log.Debugf("Skipping migration 195 to 196")
+	log.Debugf("Skipping migration 194 to 195")
 	return nil
 }
