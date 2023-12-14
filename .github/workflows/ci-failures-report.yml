@@ -27,6 +27,7 @@ jobs:
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+      shell: bash
       run: |
         source scripts/ci/metrics.sh
         slack_top_10_failures "qa-e2e" "Top 10 QA E2E Test failures for the last 7 days" ${{github.event.inputs.test}}
