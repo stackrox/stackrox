@@ -5,5 +5,5 @@ coverage:
         threshold: 1%
 codecov:
   notify:
-    after_n_builds: 4
-    wait_for_ci: no
+    after_n_builds: 1
+    wait_for_ci: false
