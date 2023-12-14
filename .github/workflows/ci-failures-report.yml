@@ -21,4 +21,4 @@ jobs:
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
-      run: source scripts/ci/metrics.sh; slack_top_10_failures
+      run: source scripts/ci/metrics.sh; slack_top_10_failures "qa" "Top 10 QA E2E Test failures for the last 7 days" true
