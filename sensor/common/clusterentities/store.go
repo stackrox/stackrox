@@ -60,6 +60,7 @@ type Store struct {
 	entitiesMemorySize  uint16
 	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 	historicalIPs       map[net.IPAddress]map[string]*entityStatus
+	historyMutex        sync.RWMutex
 }
 
 // NewStore creates and returns a new store instance.
@@ -77,8 +78,8 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 }
 
 func (e *Store) initMaps() {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	e.historyMutex.Lock()
+	defer e.historyMutex.Unlock()
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -151,8 +152,8 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // Tick informs the store that a unit of time has passed
 func (e *Store) Tick() {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	e.historyMutex.Lock()
+	defer e.historyMutex.Unlock()
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
