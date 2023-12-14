@@ -135,9 +135,13 @@ _EO_UPDATE_
 }
 
 slack_top_10_failures() {
+    local job_name_match="${1:-qa}"
+    local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
+    local is_test="${3:-true}"
 
+    local sql
     # shellcheck disable=SC2016
-    q='  -- count of test failures in last week
+    sql='
 SELECT
   MAX(count) AS Failures,
   Suite
@@ -149,7 +153,7 @@ FROM (
   FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
   WHERE
-    CONTAINS_SUBSTR(ShortName, "qa")
+    CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
     AND Status = "failed"
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
   GROUP BY
@@ -162,21 +166,29 @@ GROUP BY
 ORDER BY
   Failures DESC
 LIMIT
-  10'
+  10
+'
 
-    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$q")"
+    local data
+    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)"
 
-    webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    local webhook_url
+    if [[ "${is_test}" == "true" ]]; then
+        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    else
+        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
+    fi
 
+    local body
     # shellcheck disable=SC2016
-    body='{
-    "text": "Top 10 QA E2E Test failures for the last 7 days",
+    body='
+{
 	"blocks": [
         {
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": "Top 10 QA E2E Test failures for the last 7 days"
+                "text": "'"${subject}"'"
             }
         },
 		{
