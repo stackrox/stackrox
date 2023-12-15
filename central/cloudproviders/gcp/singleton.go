@@ -8,13 +8,13 @@ import (
 
 var (
 	once    sync.Once
-	manager auth.STSClientManager
+	manager auth.STSTokenManager
 )
 
 // Singleton returns an instance of the GCP cloud credentials manager.
-func Singleton() auth.STSClientManager {
+func Singleton() auth.STSTokenManager {
 	once.Do(func() {
-		manager = auth.NewSTSClientManager(
+		manager = auth.NewSTSTokenManager(
 			env.Namespace.Setting(),
 			env.GCPCloudCredentialsSecret.Setting(),
 		)
