@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 )
@@ -153,6 +154,11 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new image integration")
 	}
 
+	// Do not allow manual creation of a scanner v4 integration.
+	if request.GetType() == scannerv4.TypeString {
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integrations cannot be manually created")
+	}
+
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -185,6 +191,11 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	ii, existed, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
+	}
+
+	// Do not allow manual deletion of a scanner v4 integration.
+	if existed && ii.GetType() == scannerv4.TypeString {
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integrations cannot be deleted")
 	}
 
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {

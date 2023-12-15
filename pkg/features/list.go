@@ -94,6 +94,9 @@ var (
 	// ScannerV4 enables various capabilities associated with ACS + Clair consolidated scanner.
 	ScannerV4 = registerUnchangeableFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4", true)
 
+	// ScannerV4Enabled indicates Scanner V4 is installed and should be used as the default image scanner in Central/Sensor.
+	ScannerV4Enabled = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4_ENABLED", false)
+
 	// CloudCredentials enables support for short-lived cloud credentials.
 	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
 )

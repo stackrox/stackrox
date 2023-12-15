@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,7 +15,16 @@ type setImpl struct {
 	integrations map[string]types.ImageScannerWithDataSource
 }
 
-var registryDependentScanners = set.NewFrozenStringSet("clair", "clairify")
+var (
+	// scannerSortPriority determines the order in which to sort scanners
+	// based on scanner type. Types not included will default to 0 and
+	// be sorted to the top.
+	scannerSortPriority = map[string]int{
+		"clair":     1,
+		"scannerv4": 2,
+		"clairify":  3,
+	}
+)
 
 // GetAll returns the set of integrations that are active.
 func (e *setImpl) GetAll() []types.ImageScannerWithDataSource {
@@ -28,7 +36,10 @@ func (e *setImpl) GetAll() []types.ImageScannerWithDataSource {
 		integrations = append(integrations, i)
 	}
 	sort.Slice(integrations, func(i, j int) bool {
-		return !registryDependentScanners.Contains(integrations[i].GetScanner().Type())
+		iType := integrations[i].GetScanner().Type()
+		jType := integrations[j].GetScanner().Type()
+
+		return scannerSortPriority[iType] < scannerSortPriority[jType]
 	})
 	return integrations
 }

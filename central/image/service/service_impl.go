@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -29,11 +30,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/scanners/clairify"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -108,6 +111,8 @@ type serviceImpl struct {
 	scanWaiterManager waiter.Manager[*storage.Image]
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	integrationSet integration.Set
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -203,12 +208,46 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
-func (s *serviceImpl) saveImage(img *storage.Image) error {
+func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) error {
+	if features.ScannerV4Enabled.Enabled() && !scannedByScannerV4(img) && s.scannedByClairify(img) {
+		// This image was scanned by the old Clairify scanner, we do not want to
+		// overwrite an existing Scanner V4 scan in the database (if it exists).
+		if existingImg, exists, err := s.datastore.GetImage(ctx, img.GetId()); err != nil {
+			return err
+		} else if exists && scannedByScannerV4(existingImg) {
+			// Note: This image will not have `RiskScore` fields populated because
+			// risk scores are heavily tied to upserting into Central DB and
+			// this image is not being upserted.
+			log.Warnw("Cannot overwrite Scanner V4 scan already in DB with Clairify scan and cannot calculate risk scores", logging.ImageName(img.GetName().GetFullName()))
+			return nil
+		}
+	}
+
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
 		return err
 	}
 	return nil
+}
+
+// scannedByClairify returns true if an image was scanned by the Clairify scanner, false otherwise.
+func (s *serviceImpl) scannedByClairify(img *storage.Image) bool {
+	if img.GetScan().GetDataSource() == nil {
+		return false
+	}
+
+	for _, scanner := range s.integrationSet.ScannerSet().GetAll() {
+		if scanner.GetScanner().Type() == clairify.TypeString && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
+			return true
+		}
+	}
+
+	return false
+}
+
+// scannedByScannerV4 returns true if an image was scanned by the Scanner V4 scanner, false otherwise.
+func scannedByScannerV4(img *storage.Image) bool {
+	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
 }
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
@@ -268,7 +307,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest.
 	if imgID != "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	return internalScanRespFromImage(img), nil
@@ -329,7 +368,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
-		if err := s.saveImage(img); err != nil {
+		if err := s.saveImage(ctx, img); err != nil {
 			return nil, err
 		}
 	}
@@ -381,7 +420,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
 	if imgID != "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	return internalScanRespFromImage(img), nil
@@ -494,7 +533,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	// Also do not upsert if there is a request id, this enables the caller to determine how to handle
 	// the results (and also prevents multiple upserts for the same image).
 	if imgID != "" && !(hasErrors && imgExists) && request.GetRequestId() == "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	if hasErrors && request.GetRequestId() != "" {
@@ -646,7 +685,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if err := s.saveImage(img); err != nil {
+	if err := s.saveImage(ctx, img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
 

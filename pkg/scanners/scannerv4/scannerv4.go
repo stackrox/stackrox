@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	typeString = "scannerv4"
+	// TypeString is the name of the Scanner V4 scanner.
+	TypeString = "scannerv4"
 )
 
 var (
@@ -35,7 +36,7 @@ var (
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return TypeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -159,5 +160,5 @@ func (s *scannerv4) Test() error {
 }
 
 func (s *scannerv4) Type() string {
-	return typeString
+	return TypeString
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -108,6 +109,20 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 			Docker: &storage.DockerConfig{
 				Endpoint: "registry.access.redhat.com",
 			},
+		},
+	},
+}
+
+var DefaultScannerV4Integration = &storage.ImageIntegration{
+	Id:   "a87471e6-9678-4e66-8348-91e302b6de07",
+	Name: "ScannerV4",
+	Type: scannerv4.TypeString,
+	Categories: []storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_SCANNER,
+	},
+	IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+		ScannerV4: &storage.ScannerV4Config{
+			// Use integration default values.
 		},
 	},
 }

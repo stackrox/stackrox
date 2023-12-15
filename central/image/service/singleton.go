@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -28,6 +29,7 @@ func initialize() {
 		enrichment.ImageMetadataCacheSingleton(),
 		scanwaiter.Singleton(),
 		sachelper.NewClusterSacHelper(clusterDataStore.Singleton()),
+		imageintegration.Set(),
 	)
 }
 
