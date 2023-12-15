@@ -1,16 +1,10 @@
 package auth
 
-import (
-	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	"cloud.google.com/go/storage"
-	"github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
-)
+import "golang.org/x/oauth2"
 
-// STSClientManager manages GCP clients with short-lived credentials.
-type STSClientManager interface {
+// STSTokenManager manages GCP short-living tokens.
+type STSTokenManager interface {
 	Start()
 	Stop()
-
-	StorageClientHandler() handler.Handler[*storage.Client]
-	SecurityCenterClientHandler() handler.Handler[*securitycenter.Client]
+	TokenSource() oauth2.TokenSource
 }
