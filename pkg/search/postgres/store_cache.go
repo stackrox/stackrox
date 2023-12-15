@@ -244,7 +244,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	results := make([]PT, 0, len(identifiers))
-	var misses []int
+	misses := make([]int, 0)
 	for idx, id := range identifiers {
 		obj, found := c.cache[id]
 		if !found {
