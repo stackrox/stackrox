@@ -159,8 +159,10 @@ class GraphQLService {
             CloseableHttpClient client = HttpClients
                     .custom()
                     .setSSLSocketFactory(connectionFactory)
-                    .setRetryHandler(new DefaultHttpRequestRetryHandler(maxRetryCount, true))
-                    .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
+                    .setRetryHandler(
+                            new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                    .setServiceUnavailableRetryStrategy(
+                            new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                     .build()
             return client
         }

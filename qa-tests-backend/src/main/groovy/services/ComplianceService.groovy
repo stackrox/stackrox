@@ -121,8 +121,10 @@ class ComplianceService extends BaseService {
         int retryIntervalMs = 5000
         CloseableHttpClient client = HttpClients
                 .custom()
-                .setRetryHandler(new DefaultHttpRequestRetryHandler(maxRetryCount, true))
-                .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
+                .setRetryHandler(
+                        new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                .setServiceUnavailableRetryStrategy(
+                        new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                 .setSSLSocketFactory(connectionFactory)
                 .build()
 
