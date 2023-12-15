@@ -1671,7 +1671,7 @@ EOT
 }
 
 is_system_test_without_images() {
-    case "${CI_JOB_NAME:-missing}" in
+    case "${JOB_NAME:-missing}" in
         *-e2e-tests|*-upgrade-tests|*-version-compatibility-tests)
             [[ ! -f "${STATE_IMAGES_AVAILABLE}" ]]
             ;;
