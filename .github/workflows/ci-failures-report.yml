@@ -5,15 +5,10 @@ on:
       test:
         description: Slack to #acs-slack-integration-testing
         required: true
-        default: true
+        default: false
         type: boolean
   schedule:
   - cron: 0 12 * * 1
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
 
 jobs:
   report-e2e-failures-to-slack:
