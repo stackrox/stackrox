@@ -73,7 +73,7 @@ func (m *orchestratorCVEManager) Reconcile() {
 }
 
 func (m *orchestratorCVEManager) Scan(version string, cveType utils.CVEType) ([]*storage.EmbeddedVulnerability, error) {
-	scanners := map[string]types.OrchestratorScanner{}
+	scanners := make(map[string]types.OrchestratorScanner)
 
 	concurrency.WithLock(&m.mutex, func() {
 		for k, v := range m.scanners {

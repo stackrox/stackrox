@@ -78,12 +78,12 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 
-	scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
-
-	concurrency.WithRLock(&e.lock, func() {
+	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeScannerWithDataSource {
+		scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
 		for _, scanner := range e.scanners {
 			scanners = append(scanners, scanner)
 		}
+		return scanners
 	})
 
 	if len(scanners) == 0 {
