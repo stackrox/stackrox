@@ -196,7 +196,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -261,11 +261,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsActive...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsActive...))
 
 	// Close PLOP objects
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsClosed...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsClosed...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -311,11 +311,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP again
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -376,11 +376,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP again
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -429,15 +429,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsActive...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsActive...))
 
 	// Close PLOP objects
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsClosed...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsClosed...))
 
 	// Reopen PLOP objects
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsActive...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsActive...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -500,15 +500,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsActive...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsActive...))
 
 	// Close PLOP objects
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsClosed...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsClosed...))
 
 	// Send same close event again
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjectsClosed...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjectsClosed...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -554,7 +554,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -604,7 +604,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -656,7 +656,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -712,7 +712,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -751,7 +751,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, openPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, openPlopObjects...))
 
 	indicators := getIndicators()
 
@@ -763,7 +763,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 
 	// Add closed PLOP now with a matching indicator
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, closedPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, closedPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -804,11 +804,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 
 	// Add open PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, openPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, openPlopObjects...))
 
 	// Add closed PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, closedPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, closedPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -888,7 +888,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -953,11 +953,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP in an open and closed state
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, batchPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, batchPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1007,11 +1007,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP in an open and closed state
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, batchPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, batchPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1114,11 +1114,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP in an open and closed state multiple times
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, batchPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, batchPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1219,11 +1219,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP in an open and closed state
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, batchPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, batchPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1287,13 +1287,13 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, openPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, openPlopObjects...))
 
 	closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
 	// Add the same PLOP in a closed state
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, closedPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, closedPlopObjects...))
 
 	idsToDelete := []string{initialIndicators[0].Id}
 
@@ -1372,7 +1372,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 
 	// Add the PLOP with the new DeploymentId
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, newOpenPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, newOpenPlopObjects...))
 
 	// Fetch inserted PLOP back from the new deployment
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1505,7 +1505,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Verify the newly added PLOP objects before deleting one of the pods
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -1620,7 +1620,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1666,7 +1666,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 
 	// Add PLOP with PodUid
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
@@ -1758,7 +1758,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1771,7 +1771,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	// Add PLOP with PodUid
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
@@ -1836,11 +1836,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Add the same PLOP in an open and closed state
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, batchPlopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, batchPlopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1917,7 +1917,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 
 	// Add PLOP referencing those indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, "", plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err := suite.datastore.GetProcessListeningOnPort(
@@ -1964,7 +1964,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 
 	// Add PLOP with PodUid
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP back
 	newPlops, err = suite.datastore.GetProcessListeningOnPort(
@@ -2077,7 +2077,7 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 
 	// Add PLOPs
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	for _, plop := range plopObjects {
 		plop.PodUid = makeRandomString(10)
@@ -2086,7 +2086,7 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 	startTime := time.Now()
 	// Add the same PLOPs but with PlopUids
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
-		suite.hasWriteCtx, plopObjects...))
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 	duration := time.Since(startTime)
 
 	log.Infof("Adding %d PLOPs with PodUids took %s", len(plopObjects), duration)

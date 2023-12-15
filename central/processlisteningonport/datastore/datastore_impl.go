@@ -103,6 +103,7 @@ func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) s
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
+	clusterID string,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) error {
 	defer metrics.SetDatastoreFunctionDuration(
@@ -182,7 +183,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		if !prevExists {
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			plopObjects = addNewPLOP(plopObjects, indicatorID, clusterID, processInfo, val)
 		}
 	}
 
@@ -232,7 +233,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
 			}
 
-			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
+			plopObjects = addNewPLOP(plopObjects, indicatorID, clusterID, processInfo, val)
 		}
 	}
 
@@ -484,6 +485,7 @@ func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 
 func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	indicatorID string,
+	clusterID string,
 	processInfo *storage.ProcessIndicatorUniqueKey,
 	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
 
@@ -502,7 +504,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
 		PodUid:             value.PodUid,
-		ClusterId:          value.ClusterId,
+		ClusterId:          clusterID,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
