@@ -86,8 +86,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
+	// TODO(ROX-21443): Pass deploymentCheckCmd.files to the Sarif printer CTor once they can handle multiple entities
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.joinedFiles))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.firstFile))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
@@ -127,17 +128,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.Flags().MarkDeprecated("print-all-violations", "use the new output format where all "+
 		"violations are printed by default. This flag will only be relevant in combination with the --json flag"))
 
-	// We need a string parameter with the filenames for the sarif printer factory
-	// If a report is based on a single yaml file it will work as previously, if multiple
-	// they will be concatenated as csv
-	deploymentCheckCmd.joinedFiles = strings.Join(deploymentCheckCmd.files, ",")
-
 	return c
 }
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
-	joinedFiles        string
+	// TODO(ROX-21443): Remove firstFile once sarif printers can handle multiple entities
+	firstFile          string
 	files              []string
 	json               bool
 	retryDelay         int
@@ -156,6 +153,11 @@ type deploymentCheckCommand struct {
 
 func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
+
+	// TODO(ROX-21443): Remove this once sarif printers can handle multiple entities
+	// Temporary solution until Sarif printers can handle string slices
+	// d.firstFile needs to be populated before the printer is created
+	d.firstFile = d.files[0]
 
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
