@@ -60,7 +60,18 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 2, check fields for invalid formats
+            // Step 2, check conditional fields
+
+            // Step 2.1, enable container IAM role, this should remove the AWS credentials fields
+            getInputByLabel('Use container IAM role').click();
+            getInputByLabel('Access key ID').should('not.exist');
+            getInputByLabel('Secret access key').should('not.exist');
+            // Step 2.2, disable container IAM role, this should render the AWS credentials fields again
+            getInputByLabel('Use container IAM role').clear();
+            getInputByLabel('Access key ID').should('be.visible');
+            getInputByLabel('Secret access key').should('be.visible');
+
+            // Step 3, check fields for invalid formats
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('AWS region').select('US East (N. Virginia) us-east-1');
             getInputByLabel('Access key ID').click().type('AKIA5VNQSYCDODH7VKMK');
@@ -75,7 +86,7 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid form and save
+            // Step 4, check valid form and save
             getInputByLabel('AWS account number').clear().type('939357552771').blur();
 
             testIntegrationInFormWithStoredCredentials(
@@ -248,7 +259,16 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 2, check fields for invalid formats
+            // Step 2, check conditional fields
+
+            // Step 2.1, enable workload identity, this should remove the service account field
+            getInputByLabel('Use workload identity').click();
+            getInputByLabel('Service Account Key (JSON)').should('not.exist');
+            // Step 2.2, disable workload identity, this should render the service account field again
+            getInputByLabel('Use workload identity').clear();
+            getInputByLabel('Service Account Key (JSON)').should('be.visible');
+
+            // Step 3, check fields for invalid formats
             getInputByLabel('Cloud SCC Source ID').type('organization-123');
             getInputByLabel('Service Account Key (JSON)')
                 .type('{ "type": "service_account", "project_id": "123456"', {
@@ -265,7 +285,7 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid from and save
+            // Step 4, check valid from and save
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
             getInputByLabel('Service Account Key (JSON)')
