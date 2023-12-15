@@ -370,6 +370,12 @@ function launch_central {
         )
       fi
 
+      if [[ "$ROX_CLOUD_CREDENTIALS" == "true" ]]; then
+          helm_args+=(
+            --set customize.central.envVars.ROX_CLOUD_CREDENTIALS="true"
+          )
+      fi
+
       local helm_chart="$unzip_dir/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
