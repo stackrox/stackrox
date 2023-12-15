@@ -35,6 +35,7 @@ func SetMemoryLimit() {
 			// Set limit to 95% of the maximum.
 			limit -= limit / 20
 			debug.SetMemoryLimit(limit)
+			return
 		}
 	}
 
