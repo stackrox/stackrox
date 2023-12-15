@@ -36,7 +36,7 @@ jobs:
         # Avoid BQ init message in first report
         bq --quiet --format=pretty query --use_legacy_sql=false 'select 1'
 
-        slack_top_10_failures "qa-e2e" "Top 10 QA E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "operator-e2e" "Top 10 Operator E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "ui-e2e" "Top 10 UI E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
-        slack_top_10_failures "nongroovy-e2e" "Top 10 !.Groovy E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_10_failures "qa-e2e" ":testgrid: Top 10 QA E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_10_failures "operator-e2e" ":operator: Top 10 Operator E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_10_failures "ui-e2e" ":computer: Top 10 UI E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
+        slack_top_10_failures "nongroovy-e2e" ":go: Top 10 NonGroovy E2E Test failures for the last 7 days" "${{github.event.inputs.test}}"
