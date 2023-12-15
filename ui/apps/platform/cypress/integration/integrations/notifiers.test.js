@@ -5,6 +5,7 @@ import {
     getInputByLabel,
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
+import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
 
 import {
     clickCreateNewIntegrationInTable,
@@ -269,9 +270,7 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
             getInputByLabel('Service Account Key (JSON)')
                 .clear()
-                .type('{ "type": "service_account", "project_id": "123456" }', {
-                    parseSpecialCharSequences: false,
-                })
+                .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
                 .blur();
 
             testIntegrationInFormWithStoredCredentials(
