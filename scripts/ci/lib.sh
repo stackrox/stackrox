@@ -1242,6 +1242,11 @@ send_slack_failure_summary() {
         return 0
     fi
 
+    if [[ "${JOB_TYPE:-unknown}" == "periodic" ]]; then
+        info "Skipping slack message for periodics (scheduled prow jobs)"
+        return 0
+    fi
+
     if is_system_test_without_images; then
         # Avoid multiple slack messages from the e2e tests waiting for images.
         info "Skipping slack message for a system test failure when images were not found"
