@@ -153,11 +153,14 @@ class GraphQLService {
                 .build()
             HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
             SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+
+            int maxRetryCount = 3
+            int retryIntervalMs = 5000
             CloseableHttpClient client = HttpClients
                     .custom()
                     .setSSLSocketFactory(connectionFactory)
-                    .setRetryHandler(new DefaultHttpRequestRetryHandler(3, true))
-                    .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy())
+                    .setRetryHandler(new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                    .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                     .build()
             return client
         }

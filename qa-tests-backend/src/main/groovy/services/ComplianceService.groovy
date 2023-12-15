@@ -17,6 +17,8 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
 
@@ -115,8 +117,12 @@ class ComplianceService extends BaseService {
                 .build()
         HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
         SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+        int maxRetryCount = 3
+        int retryIntervalMs = 5000
         CloseableHttpClient client = HttpClients
                 .custom()
+                .setRetryHandler(new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                .setServiceUnavailableRetryStrategy(new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                 .setSSLSocketFactory(connectionFactory)
                 .build()
 
