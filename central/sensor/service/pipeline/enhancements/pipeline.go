@@ -24,31 +24,28 @@ type pipelineImpl struct {
 	broker EnhancementBroker
 }
 
-// NewAugmentPipeline returns a new instance of the Augmentation Pipeline
-func NewAugmentPipeline(broker EnhancementBroker) pipeline.Fragment {
+// NewEnhancementPipeline returns a new instance of the Enhancement Pipeline
+func NewEnhancementPipeline(broker EnhancementBroker) pipeline.Fragment {
 	return &pipelineImpl{broker: broker}
 }
 
 // GetPipeline returns a new pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewAugmentPipeline(enhancement.BrokerSingleton())
+	return NewEnhancementPipeline(enhancement.BrokerSingleton())
 }
 
-// OnFinish .
-func (p pipelineImpl) OnFinish(_ string) {
-}
+func (p pipelineImpl) OnFinish(_ string) {}
 
-// Capabilities .
+// TODO(ROX-21202): Add capabilities
 func (p pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return nil
 }
 
-// Match .
 func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetDeploymentEnhancementResponse() != nil
 }
 
-// Run .
+// Run runs the pipeline template on the input and returns the output
 func (p pipelineImpl) Run(_ context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	p.broker.NotifyDeploymentReceived(msg.GetDeploymentEnhancementResponse())
 	return nil

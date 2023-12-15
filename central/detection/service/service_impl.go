@@ -352,26 +352,31 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	var deployments []*storage.Deployment
+	var errs []error
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
 		d, err := s.convertK8sResource(r)
 		if err != nil {
-			log.Warnf("could not convert to deployment from resource: %v", err)
+			errs = append(errs, err)
 			continue
 		}
 		deployments = append(deployments, d)
 	}
-	if len(deployments) == 0 {
-		return nil, errox.InvalidArgs.New("Every deployment YAML failed to parse - aborting")
+	if len(deployments) == 0 && len(errs) > 0 {
+		msg := fmt.Sprintf("every deployment YAML failed to parse - aborting. Errors:\n%v", errs)
+		return nil, errox.InvalidArgs.New(msg)
+	}
+	if len(deployments) > 0 && len(errs) > 0 {
+		log.Warnf("one or multiple deployment YAMLs failed to parse:\n%v", errs)
 	}
 
 	// Enhance the deployments, then range over them
 	conn := s.connManager.GetConnection(eCtx.ClusterID)
 	if conn == nil {
-		return nil, errox.InvalidArgs.New("Connection to cluster is not ready. Please try again.")
+		return nil, errox.InvalidArgs.New("Connection to cluster is not ready. Try again in a few seconds.")
 	}
-	enhancedDeployments, err := s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, time.Second*30)
+	enhancedDeployments, err := s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, 30*time.Second)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 	}

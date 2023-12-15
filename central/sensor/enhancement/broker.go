@@ -45,16 +45,16 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	sig, ok := b.activeRequests[msg.GetMsg().GetId()]
+	reqID := msg.GetMsg().GetId()
+	sig, ok := b.activeRequests[reqID]
 	if !ok {
-		log.Warnf("Received response to an unknown Deployment Enrichment Request ID %s", msg.GetMsg().GetId())
+		log.Warnf("Received response to an unknown Deployment Enrichment Request ID %s", reqID)
 		return
 	}
-	log.Debugf("Received answer for Deployment Enrichment Request ID %s", msg.GetMsg().GetId())
+	log.Debugf("Received answer for Deployment Enrichment Request ID %s", reqID)
 	sig.msg = msg
-	delete(b.activeRequests, msg.GetMsg().GetId())
+	delete(b.activeRequests, reqID)
 	sig.msgArrived.Signal()
-
 }
 
 // SendAndWaitForEnhancedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
@@ -63,7 +63,6 @@ func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn con
 	id := uuid.NewV4().String()
 	s := enhancementSignal{
 		msgArrived: concurrency.NewSignal(),
-		msg:        nil,
 	}
 	b.activeRequests[id] = &s
 	b.lock.Unlock()

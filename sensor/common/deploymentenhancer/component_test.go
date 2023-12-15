@@ -59,7 +59,7 @@ func (s *ComponentTestSuite) TestExtractAndEnrichDeployments() {
 		storeProvider:    s.mockStoreProvider,
 	}
 
-	actual := de.enrichDeployments(generateDeploymentMsg("1", 4))
+	actual := de.enhanceDeployments(generateDeploymentMsg("1", 4))
 
 	s.Len(actual, 4, "Expected %v deployments, got %v", 4, len(actual))
 }

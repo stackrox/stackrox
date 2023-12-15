@@ -77,11 +77,9 @@ func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespac
 }
 
 // EnhanceDeploymentReadOnly mocks base method.
-func (m *MockDeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) *storage.Deployment {
+func (m *MockDeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnhanceDeploymentReadOnly", d, dependencies)
-	ret0, _ := ret[0].(*storage.Deployment)
-	return ret0
+	m.ctrl.Call(m, "EnhanceDeploymentReadOnly", d, dependencies)
 }
 
 // EnhanceDeploymentReadOnly indicates an expected call of EnhanceDeploymentReadOnly.

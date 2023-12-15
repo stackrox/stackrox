@@ -55,30 +55,26 @@ func (d *DeploymentEnhancer) Start() error {
 				log.Warnf("received deploymentEnhancement msg with empty request ID. Discarding request.")
 				continue
 			}
-			deployments := d.enrichDeployments(deploymentMsg)
+			deployments := d.enhanceDeployments(deploymentMsg)
 			d.sendDeploymentsToCentral(requestID, deployments)
 		}
 	}()
 	return nil
 }
 
-func (d *DeploymentEnhancer) enrichDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
+func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
 	var ret []*storage.Deployment
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
 	if deployments == nil {
-		log.Warnf("received deploymentEnhancement msg with no deployments")
+		log.Warnf("received deploymentEnhancement message with no deployments")
 		return ret
 	}
 
 	log.Debugf("Received deploymentEnhancement msg with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
 	for _, deployment := range deployments {
-		enriched, err := d.enrichDeployment(deployment)
-		if err != nil {
-			log.Warnf("Failed to enrich deployment: %v", deployment)
-			continue
-		}
-		ret = append(ret, enriched)
+		d.enhanceDeployment(deployment)
+		ret = append(ret, deployment)
 	}
 
 	return ret
@@ -97,13 +93,11 @@ func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*
 	})
 }
 
-func (d *DeploymentEnhancer) enrichDeployment(deployment *storage.Deployment) (*storage.Deployment, error) {
-	deployment = d.storeProvider.Deployments().EnhanceDeploymentReadOnly(deployment, store.Dependencies{
+func (d *DeploymentEnhancer) enhanceDeployment(deployment *storage.Deployment) {
+	d.storeProvider.Deployments().EnhanceDeploymentReadOnly(deployment, store.Dependencies{
 		PermissionLevel: d.storeProvider.RBAC().GetPermissionLevelForDeployment(deployment),
 		Exposures:       d.storeProvider.Services().GetExposureInfos(deployment.GetNamespace(), deployment.GetPodLabels()),
 	})
-
-	return deployment, nil
 }
 
 // Capabilities return the capabilities of this component

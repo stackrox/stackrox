@@ -58,14 +58,11 @@ func (s *BrokerTestSuite) TestDeploymentReceivedWritesMessage() {
 	s.Len(es.msg.GetMsg().GetDeployments(), 2)
 }
 
-func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
+func (s *BrokerTestSuite) TestSendAndWaitForEnhancedDeploymentsTimeout() {
 	deployments := make([]*storage.Deployment, 0)
 	fakeSensorConn := connMocks.NewMockSensorConnection(gomock.NewController(s.T()))
-	fakeSensorConn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Do(
-		func(c context.Context, msg *central.MsgToSensor) error {
-			time.Sleep(500 * time.Millisecond)
-			return nil
-		})
+	fakeSensorConn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).AnyTimes()
+
 	b := NewBroker()
 
 	_, err := b.SendAndWaitForEnhancedDeployments(context.Background(), fakeSensorConn, deployments, 100*time.Millisecond)
@@ -73,7 +70,7 @@ func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsTimeout() {
 	s.ErrorContains(err, "timed out waiting for enhanced deployment", "Expected the function to time out, but it didn't")
 }
 
-func (s *BrokerTestSuite) TestSendAndWaitForAugmentedDeploymentsWritesToActiveRequests() {
+func (s *BrokerTestSuite) TestSendAndWaitForEnhancedDeploymentsWritesToActiveRequests() {
 	fakeSensorConn := connMocks.NewMockSensorConnection(gomock.NewController(s.T()))
 	fakeSensorConn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).AnyTimes()
 	b := NewBroker()
