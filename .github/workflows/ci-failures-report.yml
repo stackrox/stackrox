@@ -22,6 +22,7 @@ jobs:
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+        SLACK_ENG_DISCUSS_WEBHOOK: ${{ secrets.SLACK_ENG_DISCUSS_WEBHOOK }}
       shell: bash
       run: |
         source scripts/ci/lib.sh
