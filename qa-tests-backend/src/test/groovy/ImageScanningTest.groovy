@@ -850,7 +850,7 @@ class ImageScanningTest extends BaseSpecification {
 
     private static ImageOuterClass.Image expectedDigestImageFromScan(String imageName, String source) {
         ImageOuterClass.Image imageDetail = null
-        withRetry(30, 2) {
+        withRetry(3, 15) {
             imageDetail = ImageService.scanImage(imageName, false, true)
         }
         validateImageMetadata(imageDetail, source)
