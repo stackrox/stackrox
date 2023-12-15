@@ -2,6 +2,7 @@ package complianceoperator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -98,6 +99,103 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 		"v1.0.0", defaultNS, 1, 1,
 		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found",
 	}, actual)
+}
+
+// mockRequiredResources creates a list of mock required resources for testing.
+func mockRequiredResources() []metaV1.APIResource {
+	// loop through the list of required resources and return a list of APIResources
+	var kinds []string
+	for _, resource := range complianceoperator.GetRequiredResources() {
+		kinds = append(kinds, resource.Kind)
+	}
+	return convertToAPIResourceList(kinds)
+
+}
+
+// convertToAPIResourceList converts a string slice to an APIResourceList.
+func convertToAPIResourceList(kinds []string) []metaV1.APIResource {
+	var resources []metaV1.APIResource
+	for _, kind := range kinds {
+		resources = append(resources, metaV1.APIResource{Kind: kind})
+	}
+	return resources
+}
+
+func (s *UpdaterTestSuite) TestCheckRequiredComplianceCRDsExist() {
+	// Setup
+	requiredResources := mockRequiredResources()
+	detectedKinds := make(map[string]bool)
+	for _, resource := range requiredResources {
+		detectedKinds[resource.Kind] = true
+	}
+	// Define test cases
+	type testCase struct {
+		name                string
+		modifyDetectedKinds func(map[string]bool)
+		expectError         bool
+		expectedErrorMsg    string
+		msg                 string
+	}
+
+	testCases := []testCase{
+		{
+			name:                "All required CRDs exist",
+			modifyDetectedKinds: func(kinds map[string]bool) {},
+			expectError:         false,
+			msg:                 "checkRequiredComplianceCRDsExist should return no error when all required CRDs are present",
+		},
+		{
+			name: "One required CRD is missing",
+			modifyDetectedKinds: func(kinds map[string]bool) {
+				missingResource := requiredResources[0]
+				delete(kinds, missingResource.Kind)
+			},
+			expectError:      true,
+			expectedErrorMsg: requiredResources[0].Kind,
+			msg:              fmt.Sprintf("checkRequiredComplianceCRDsExist should return an error when %s is missing", requiredResources[0].Kind),
+		},
+		{
+			name: "DetectedKinds list is empty",
+			modifyDetectedKinds: func(kinds map[string]bool) {
+				for kind := range kinds {
+					delete(kinds, kind)
+				}
+			},
+			expectError:      true,
+			expectedErrorMsg: "required GroupVersionKind \"TailoredProfile/v1alpha1, Kind=TailoredProfile\" not found",
+			msg:              "checkRequiredComplianceCRDsExist should return an error when detectedKinds is empty",
+		},
+	}
+
+	// Run test cases
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			modifiedDetectedKinds := make(map[string]bool)
+			for kind, value := range detectedKinds {
+				modifiedDetectedKinds[kind] = value
+			}
+
+			tc.modifyDetectedKinds(modifiedDetectedKinds)
+
+			apiResourceList := convertToAPIResourceList(getKeys(modifiedDetectedKinds))
+			err := checkRequiredComplianceCRDsExist(&metaV1.APIResourceList{APIResources: apiResourceList})
+
+			if tc.expectError {
+				s.Require().Contains(err.Error(), tc.expectedErrorMsg, tc.msg)
+			} else {
+				s.Require().NoError(err, tc.msg)
+			}
+		})
+	}
+}
+
+// getKeys returns a slice of keys from the map.
+func getKeys(m map[string]bool) []string {
+	var keys []string
+	for key := range m {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *central.ComplianceOperatorInfo {
