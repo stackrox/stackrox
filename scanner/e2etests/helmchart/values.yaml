@@ -4,7 +4,7 @@
 
 image:
   tag: latest
-  repository: quay.io/stackrox-io
+  repository: docker.io/stackrox
 app:
   scanner:
     name: scanner-v4
