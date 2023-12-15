@@ -122,7 +122,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.16.0
-	golang.stackrox.io/grpc-http1 v0.3.4
+	golang.stackrox.io/grpc-http1 v0.3.5
 	google.golang.org/api v0.153.0
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17
 	google.golang.org/grpc v1.60.0

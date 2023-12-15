@@ -2385,8 +2385,8 @@ golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f/go.mod h1:K8+ghG5WaK9qNq
 golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2/go.mod h1:K8+ghG5WaK9qNqU5K3HdILfMLy1f3aNYFI/wnl100a8=
 golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 h1:+cNy6SZtPcJQH3LJVLOSmiC7MMxXNOb3PU/VUEz+EhU=
 golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028/go.mod h1:NDW/Ps6MPRej6fsCIbMTohpP40sJ/P/vI1MoTEGwX90=
-golang.stackrox.io/grpc-http1 v0.3.4 h1:fq+kjyCIOCB0PrBfrnQ6eEHUk7wHavdJYTINCLahiek=
-golang.stackrox.io/grpc-http1 v0.3.4/go.mod h1:MhYMpxxilEXfS4OnLi9Ik0jyrHhysbJUBh/IosV8pXw=
+golang.stackrox.io/grpc-http1 v0.3.5 h1:DxhqdqyuQmfw3DBRrNK7ct5GB9umbyZJ/3DViu/m5nQ=
+golang.stackrox.io/grpc-http1 v0.3.5/go.mod h1:AlqPlFH/aQWuFu6vfzYIMCrXH8evyFYgsM++ODJF9KM=
 gomodules.xyz/jsonpatch/v2 v2.4.0 h1:Ci3iUJyx9UeRx7CeFN8ARgGbkESwJK+KB9lLcWxY/Zw=
 gomodules.xyz/jsonpatch/v2 v2.4.0/go.mod h1:AH3dM2RI6uoBZxn3LVrfvJ3E0/9dG4cSrbuBJT4moAY=
 gonum.org/v1/gonum v0.0.0-20180816165407-929014505bf4/go.mod h1:Y+Yx5eoAFn32cQvJDxZx5Dpnq+c3wtXuadVZAcxbbBo=
