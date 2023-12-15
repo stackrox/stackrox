@@ -831,21 +831,7 @@ get_pr_details() {
 openshift_ci_mods() {
     info "BEGIN OpenShift CI mods"
 
-    local debug="${ARTIFACT_DIR:-/tmp}/debug.txt"
-
-    echo "Env A-Z dump:" > "${debug}"
-    env | sort | grep -E '^[A-Z]' >> "${debug}" || true
-
-    ensure_writable_home_dir
-
-    # Prevent fatal error "detected dubious ownership in repository" from recent git.
-    git config --global --add safe.directory "$(pwd)"
-
-    echo "Git log:" >> "${debug}"
-    git log --oneline --decorate -n 20 >> "${debug}" || true
-
-    echo "Recent git refs:" >> "${debug}"
-    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20 >> "${debug}"
+    openshift_ci_debug
 
     info "Current Status:"
     "$ROOT/status.sh" || true
@@ -890,6 +876,26 @@ openshift_ci_mods() {
     export STACKROX_BUILD_TAG
 
     info "END OpenShift CI mods"
+}
+
+# openshift_ci_debug() - store useful state (env & git) to help debug CI.
+# NOTE: only run before any creds are imported to the environment.
+openshift_ci_debug() {
+    local debug="${ARTIFACT_DIR:-/tmp}/debug.txt"
+
+    echo "Env A-Z dump:" > "${debug}"
+    env | sort | grep -E '^[A-Z]' >> "${debug}" || true
+
+    ensure_writable_home_dir
+
+    # Prevent fatal error "detected dubious ownership in repository" from recent git.
+    git config --global --add safe.directory "$(pwd)"
+
+    echo "Git log:" >> "${debug}"
+    git log --oneline --decorate -n 20 >> "${debug}" || true
+
+    echo "Recent git refs:" >> "${debug}"
+    git for-each-ref --format='%(creatordate) %(refname)' --sort=creatordate | tail -20 >> "${debug}"
 }
 
 ensure_writable_home_dir() {
