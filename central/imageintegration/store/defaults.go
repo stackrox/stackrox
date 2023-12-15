@@ -113,6 +113,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	},
 }
 
+// DefaultScannerV4Integration is the default Scanner V4 integration.
 var DefaultScannerV4Integration = &storage.ImageIntegration{
 	Id:   "a87471e6-9678-4e66-8348-91e302b6de07",
 	Name: "ScannerV4",
