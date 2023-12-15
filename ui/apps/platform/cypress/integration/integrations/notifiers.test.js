@@ -239,7 +239,7 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Cloud SCC Source ID').type(' ');
             getInputByLabel('Service Account Key (JSON)').type(' ').blur();
 
-            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Integration name').contains('An integration name is required');
             getHelperElementByLabel('Cloud SCC Source ID').contains('A source ID is required');
             getHelperElementByLabel('Service Account Key (JSON)').contains(
                 'A service account is required'
