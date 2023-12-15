@@ -92,7 +92,13 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	store.repopulateCache()
+	err := store.populateCache()
+	if err != nil {
+		// Failed to populate the cache, return the store connected to the DB
+		// in order to avoid serving data from a cache not consistent with
+		// the underlying database.
+		return underlyingStore
+	}
 	return store
 }
 
