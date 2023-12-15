@@ -17,8 +17,8 @@ total_issues_in_filter() {
 }
 
 slack_triage_report() {
-    local curr_filter=12388299
-    local prev_filter=12388044
+    local curr_filter=12413623
+    local prev_filter=12413975
 
     local curr
     curr=$(total_issues_in_filter $curr_filter)
