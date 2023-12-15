@@ -49,7 +49,13 @@ func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
 		setCacheOperationDurationTime: setCacheOperationDurationTime,
 	}
 	// Initial population of the cache. Make sure it is in sync with the DB.
-	store.repopulateCache()
+	err := store.populateCache()
+	if err != nil {
+		// Failed to populate the cache, return the store connected to the DB
+		// in order to avoid serving data from a cache not consistent with
+		// the underlying database.
+		return underlyingStore
+	}
 	return store
 }
 
@@ -111,7 +117,7 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	c.addToCacheNoLock(obj.Clone())
+	c.addToCacheNoLock(obj)
 	return nil
 }
 
@@ -125,17 +131,14 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	for _, obj := range objs {
-		c.addToCacheNoLock(obj.Clone())
+		c.addToCacheNoLock(obj)
 	}
 	return nil
 }
 
 // Delete removes the object associated to the specified ID from the store.
 func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
-	obj, found, err := c.Get(ctx, id)
-	if err != nil {
-		return err
-	}
+	obj, found := c.cache[id]
 	if !found {
 		return nil
 	}
@@ -155,9 +158,13 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
-	objects, _, err := c.GetMany(ctx, identifiers)
-	if err != nil {
-		return err
+	objects := make([]PT, 0, len(identifiers))
+	for _, identifier := range identifiers {
+		obj, found := c.cache[identifier]
+		if !found {
+			continue
+		}
+		objects = append(objects, obj)
 	}
 	filteredIDs := make([]string, 0, len(objects))
 	for _, obj := range objects {
@@ -166,9 +173,9 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 		}
 		filteredIDs = append(filteredIDs, c.pkGetter(obj))
 	}
-	dbErr := c.underlyingStore.DeleteMany(ctx, filteredIDs)
-	if dbErr != nil {
-		return dbErr
+	err := c.underlyingStore.DeleteMany(ctx, filteredIDs)
+	if err != nil {
+		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.RemoveMany)
 	c.cacheLock.Lock()
@@ -197,12 +204,12 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context) (int, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	count := 0
-	walkErr := c.walkCacheNoLock(ctx, func(obj PT) error {
+	err := c.walkCacheNoLock(ctx, func(obj PT) error {
 		count++
 		return nil
 	})
-	if walkErr != nil {
-		return 0, walkErr
+	if err != nil {
+		return 0, err
 	}
 	return count, nil
 }
@@ -231,15 +238,15 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	results := make([]PT, 0, len(identifiers))
-	misses := make([]int, 0, len(identifiers))
-	for ix, id := range identifiers {
+	var misses []int
+	for idx, id := range identifiers {
 		obj, found := c.cache[id]
 		if !found {
-			misses = append(misses, ix)
+			misses = append(misses, idx)
 			continue
 		}
 		if !c.isReadAllowed(ctx, obj) {
-			misses = append(misses, ix)
+			misses = append(misses, idx)
 			continue
 		}
 		results = append(results, obj.Clone())
@@ -299,7 +306,7 @@ func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	defer c.cacheLock.RUnlock()
 	result := make([]PT, 0, len(c.cache))
 	walkErr := c.walkCacheNoLock(ctx, func(obj PT) error {
-		result = append(result, obj)
+		result = append(result, obj.Clone())
 		return nil
 	})
 	if walkErr != nil {
@@ -371,16 +378,16 @@ func (c *cachedStore[T, PT]) hasPermissionsChecker() bool {
 	return c.permissionChecker != nil
 }
 
-func (c *cachedStore[T, PT]) repopulateCache() {
+func (c *cachedStore[T, PT]) populateCache() error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	c.cache = make(map[string]PT)
-	_ = c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
+	return c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
 		c.addToCacheNoLock(obj)
 		return nil
 	})
 }
 
 func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {
-	c.cache[c.pkGetter(obj)] = obj
+	c.cache[c.pkGetter(obj)] = obj.Clone()
 }
