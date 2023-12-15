@@ -9,13 +9,13 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import AwsRegionOptions from '../AwsRegionOptions';
-import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 export type AwsSecurityHubIntegration = {
     awsSecurityHub: {
@@ -122,7 +122,7 @@ function AwsSecurityHubIntegrationForm({
     isEditable = false,
 }: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const showSTSCheckbox = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
+    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -237,7 +237,7 @@ function AwsSecurityHubIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    {showSTSCheckbox && (
+                    {isCloudCredentialsEnabled && (
                         <FormLabelGroup
                             fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
                             touched={touched}
