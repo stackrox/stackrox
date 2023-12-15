@@ -74,7 +74,7 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
-        - name: GOMEMLIMIT
+        - name: ROX_MEMLIMIT
           valueFrom:
             resourceFieldRef:
               resource: limits.memory

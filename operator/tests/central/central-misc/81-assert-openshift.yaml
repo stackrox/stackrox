@@ -17,7 +17,7 @@ spec:
       containers:
         - name: central
           env:
-            - name: GOMEMLIMIT
+            - name: ROX_MEMLIMIT
               valueFrom:
                 resourceFieldRef:
                   resource: limits.memory
