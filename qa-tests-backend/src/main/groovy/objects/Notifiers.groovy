@@ -71,9 +71,7 @@ class EmailNotifier extends Notifier {
         }
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        log.debug("Not implemented: ROX-12418")
-    }
+    //TODO(ROX-12418): Implement validateViolationNotification and validateNetpolNotification)
 }
 
 class GenericNotifier extends Notifier {
