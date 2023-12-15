@@ -19,7 +19,7 @@ func RunWithFeatureFlagEnabled(t *testing.T, flag features.FeatureFlag, subTest 
 }
 
 // MustUpdateFeature will attempt to set the feature flag to the desired value,
-// if unable to do so will skip the the test.
+// if unable to do so will skip the test.
 func MustUpdateFeature(t *testing.T, flag features.FeatureFlag, desired bool) {
 	t.Setenv(flag.EnvVar(), strconv.FormatBool(desired))
 
