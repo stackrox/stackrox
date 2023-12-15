@@ -327,8 +327,7 @@ func (d *deployCheckTestSuite) TestMultipleFiles() {
 	d.Require().NoError(err)
 	deployCheckCmd.printer = tablePrinter
 	d.Require().NoError(deployCheckCmd.Check())
-	var expectedBinary []byte
-	expectedBinary, err = os.ReadFile("testdata/testMultipleFilesExpectedYaml.yaml")
+	expectedBinary, err := os.ReadFile("testdata/testMultipleFilesExpectedYaml.yaml")
 	d.Require().NoError(err)
 	expectedString := string(expectedBinary)
 	d.Assert().Equal(expectedString, server.request.GetYaml())
@@ -396,15 +395,15 @@ func (d *deployCheckTestSuite) TestConstruct() {
 
 func (d *deployCheckTestSuite) TestValidate() {
 	cases := map[string]struct {
-		file       []string
+		files      []string
 		shouldFail bool
 		error      error
 	}{
 		"should not fail with default file name": {
-			file: d.defaultDeploymentCheckCommand.files,
+			files: d.defaultDeploymentCheckCommand.files,
 		},
 		"should fail with non existing file name": {
-			file:       []string{"invalidfile"},
+			files:      []string{"invalidfile"},
 			shouldFail: true,
 			error:      errox.InvalidArgs,
 		},
@@ -413,7 +412,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 	for name, c := range cases {
 		d.Run(name, func() {
 			deployCheckCmd := d.defaultDeploymentCheckCommand
-			deployCheckCmd.files = c.file
+			deployCheckCmd.files = c.files
 
 			err := deployCheckCmd.Validate()
 			if c.shouldFail {
