@@ -143,9 +143,9 @@ slack_top_10_failures() {
     # shellcheck disable=SC2016
     sql='
 SELECT
-    COUNT(*) AS Failures,
-    Classname AS Suite,
-    Name AS `Case`
+    COUNT(*) AS `#`,
+    IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
+    IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
 FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
 WHERE
