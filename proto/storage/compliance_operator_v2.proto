@@ -60,7 +60,7 @@ message ComplianceOperatorProfileV2 {
     repeated string     values      = 13;
 }
 
-// Next Tag: 12
+// Next Tag: 14
 message ComplianceOperatorRuleV2 {
     string              name             = 1 [(gogoproto.moretags) = 'search:"Compliance Rule Name,hidden,store" sql:"pk"'];
     string              operator_version = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store"'];
@@ -73,6 +73,8 @@ message ComplianceOperatorRuleV2 {
     string              description      = 9;
     string              rationale        = 10;
     string              fixes            = 11;
+    repeated string     valuesUsed       = 12;
+    repeated string     warnings         = 13;
 }
 
 // Next Tag: 15
@@ -108,7 +110,7 @@ message ComplianceOperatorClusterScanConfigStatus {
     string                        cluster_name        = 5;
 }
 
-// Next Tag: 17
+// Next Tag: 20
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -139,6 +141,9 @@ message ComplianceOperatorCheckResultV2 {
     string                    control          = 13;
     string                    scan_id          = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
     string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Name,store" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint"'];
+    string                    rationale        = 17;
+    repeated string           valuesUsed       = 18;
+    repeated string           warnings         = 19;
 }
 
 message ScanStatus {

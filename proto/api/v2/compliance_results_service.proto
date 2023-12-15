@@ -24,7 +24,7 @@ message ComplianceScanCluster {
     string cluster_id   = 1;
     string cluster_name = 2;
 }
-
+// Next tag: 11
 // ComplianceCheckResult provides the results of a compliance check against a rule
 message ComplianceCheckResult {
     string                     check_id     = 1;
@@ -41,6 +41,9 @@ message ComplianceCheckResult {
     string                      instructions = 5;
     string                      standard     = 6;
     string                      control      = 7;
+    string                      rationale    = 8;
+    repeated string             valuesUsed   = 9;
+    repeated string             warnings     = 10;
 }
 
 // ComplianceScanResult provides the results of a scan
