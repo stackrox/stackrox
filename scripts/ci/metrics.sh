@@ -143,34 +143,24 @@ slack_top_10_failures() {
     # shellcheck disable=SC2016
     sql='
 SELECT
-  MAX(count) AS Failures,
-  Classname AS Suite,
-  Name AS `Case`
-FROM (
-  SELECT
-    COUNT(*) AS count,
-    Classname,
-    Name
-  FROM
+    COUNT(*) AS Failures,
+    Classname AS Suite,
+    Name AS `Case`
+FROM
     `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
-  WHERE
+WHERE
     CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
     AND Status = "failed"
     AND NOT IsPullRequest
     AND CONTAINS_SUBSTR(JobName, "master")
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
-  GROUP BY
+GROUP BY
     Classname,
     Name
-  ORDER BY
-    COUNT(*) DESC)
-GROUP BY
-  Classname,
-  Name
 ORDER BY
-  Failures DESC
+    COUNT(*) DESC
 LIMIT
-  10
+    10
 '
 
     local data
