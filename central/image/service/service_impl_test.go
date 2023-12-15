@@ -70,7 +70,7 @@ func TestBuildNames(t *testing.T) {
 func TestSaveImage(t *testing.T) {
 	ctx := context.Background()
 
-	clairifyScannerId := "id-clairify-scanner"
+	clairifyScannerID := "id-clairify-scanner"
 
 	createScanner := func(ctrl *gomock.Controller, typ, id string) types.ImageScannerWithDataSource {
 		scanner := scannerTypesMocks.NewMockScanner(ctrl)
@@ -87,7 +87,7 @@ func TestSaveImage(t *testing.T) {
 		ssMock.EXPECT().GetAll().Return([]types.ImageScannerWithDataSource{
 			createScanner(ctrl, "google", "id-gcr-scanner"),
 			createScanner(ctrl, "scannerv4", iiStore.DefaultScannerV4Integration.GetId()),
-			createScanner(ctrl, "clairify", clairifyScannerId),
+			createScanner(ctrl, "clairify", clairifyScannerID),
 		})
 
 		iiSet := integrationSetMocks.NewMockSet(ctrl)
@@ -106,7 +106,7 @@ func TestSaveImage(t *testing.T) {
 
 	noDataSourceImage := &storage.Image{}
 	scannerV4Image := createImage("id-scannerv4-img", iiStore.DefaultScannerV4Integration.GetId())
-	clairifyImage := createImage("id-clairify-img", clairifyScannerId)
+	clairifyImage := createImage("id-clairify-img", clairifyScannerID)
 	gcrImage := createImage("id-gcr-img", "id-gcr-scanner")
 
 	// These variables exist for readability.
@@ -149,7 +149,7 @@ func TestSaveImage(t *testing.T) {
 		},
 		{
 			"upsert image scanned by clairify when image from db not scanned by scanner v4",
-			feature, upsert, !wantErr, clairifyImage, dbGet, createImage("id", clairifyScannerId), dbImgExists, noDbErr, getScanners,
+			feature, upsert, !wantErr, clairifyImage, dbGet, createImage("id", clairifyScannerID), dbImgExists, noDbErr, getScanners,
 		},
 		{
 			"do not upsert image when scanned by clairify and image from db scanned by scanner v4",
