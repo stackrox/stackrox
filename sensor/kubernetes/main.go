@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,6 +24,10 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+func init() {
+	memlimit.SetMemoryLimit()
+}
 
 func main() {
 	premain.StartMain()

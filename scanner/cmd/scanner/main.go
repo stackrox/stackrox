@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
@@ -39,6 +40,10 @@ type Backends struct {
 	Matcher matcher.Matcher
 	// RemoteIndexer is the indexing backend located in a remote scanner instance.
 	RemoteIndexer indexer.RemoteIndexer
+}
+
+func init() {
+	memlimit.SetMemoryLimit()
 }
 
 func main() {

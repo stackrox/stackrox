@@ -5,8 +5,13 @@ import (
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
 )
+
+func init() {
+	memlimit.SetMemoryLimit()
+}
 
 func main() {
 	np := &compliance.EnvNodeNameProvider{}

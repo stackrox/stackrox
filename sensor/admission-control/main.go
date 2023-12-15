@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -34,6 +35,10 @@ const (
 var (
 	log = logging.LoggerForModule()
 )
+
+func init() {
+	memlimit.SetMemoryLimit()
+}
 
 func main() {
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
