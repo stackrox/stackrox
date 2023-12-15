@@ -32,9 +32,7 @@ const (
 	maxOccurrenceResults = 1000
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
@@ -63,6 +61,9 @@ func validate(google *storage.GoogleConfig) error {
 	}
 	if google.GetProject() == "" {
 		errorList.AddString("ProjectID must be specified for Google Container Analysis")
+	}
+	if google.GetWifEnabled() {
+		errorList.AddString("Workload identities are not supported for Scanner integrations")
 	}
 	return errorList.ToError()
 }
