@@ -43,6 +43,7 @@ export type AWSSecurityHub = {
 export type AWSSecurityHubCredentials = {
     accessKeyId: string; // scrub:always
     secretAccessKey: string; // scrub:always
+    stsEnabled: boolean;
 };
 
 // cscc
@@ -55,6 +56,7 @@ export type CSCCNotifierIntegration = {
 export type CSCC = {
     serviceAccount: string; // scrub:always
     sourceId: string;
+    wifEnabled: boolean;
 };
 
 // email
