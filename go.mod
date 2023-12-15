@@ -125,7 +125,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.4
 	google.golang.org/api v0.153.0
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17
-	google.golang.org/grpc v1.59.0
+	google.golang.org/grpc v1.60.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
