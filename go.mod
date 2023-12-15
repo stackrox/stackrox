@@ -60,7 +60,7 @@ require (
 	github.com/helm/helm-mapkubeapis v0.4.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.14.0
-	github.com/jackc/pgx/v5 v5.5.0
+	github.com/jackc/pgx/v5 v5.5.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.17.4
 	github.com/lib/pq v1.10.9
