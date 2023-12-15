@@ -23,7 +23,7 @@ import (
 
 const (
 	// GenericDockerRegistryType exposes the default registry type
-	GenericDockerRegistryType = "docker"
+	GenericDockerRegistryType = types.DockerType
 
 	registryTimeout  = 5 * time.Second
 	repoListInterval = 10 * time.Minute

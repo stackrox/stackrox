@@ -6,6 +6,38 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+const (
+	// ArtifactType represents the Google artifact image integration.
+	ArtifactType = "artifactregistry"
+
+	// ArtifactoryType represents the Artifactory image integration.
+	ArtifactoryType = "artifactory"
+
+	// AzureType represents the Azure container registry image integration.
+	AzureType = "azure"
+
+	// DockerType represents the docker image integration.
+	DockerType = "docker"
+
+	// ECRType represents the AWS ECR image integration.
+	ECRType = "ecr"
+
+	// GoogleType represents the Google container registry image integration.
+	GoogleType = "google"
+
+	// IBMType represents the IBM image integration.
+	IBMType = "ibm"
+
+	// NexusType represents the Nexus image integration.
+	NexusType = "nexus"
+
+	// QuayType represents the Quay image integration.
+	QuayType = "quay"
+
+	// RHELType represents the RHEL image integration.
+	RHELType = "rhel"
+)
+
 // Config is the config of the registry, which can be utilized by 3rd party scanners
 type Config struct {
 	Username         string

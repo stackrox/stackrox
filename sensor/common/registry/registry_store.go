@@ -153,7 +153,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool, name string) *storage.ImageIntegration {
 	registryType := dockerFactory.GenericDockerRegistryType
 	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
-		registryType = rhelFactory.RedHatRegistryType
+		registryType = registryTypes.RHELType
 	}
 
 	return &storage.ImageIntegration{
