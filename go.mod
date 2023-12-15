@@ -134,14 +134,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
-	helm.sh/helm/v3 v3.13.2
+	helm.sh/helm/v3 v3.13.3
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
 	k8s.io/apimachinery v0.28.4
 	k8s.io/apiserver v0.28.4
-	k8s.io/cli-runtime v0.28.2
+	k8s.io/cli-runtime v0.28.4
 	k8s.io/client-go v0.28.4
-	k8s.io/kubectl v0.28.2
+	k8s.io/kubectl v0.28.4
 	k8s.io/kubelet v0.27.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.16.3
