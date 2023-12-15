@@ -281,6 +281,39 @@ func (d *deployCheckTestSuite) SetupTest() {
 	}
 }
 
+func (d *deployCheckTestSuite) TestNormalizeYaml() {
+	cases := map[string]struct {
+		inputYaml              string
+		expectedNormalizedYaml string
+	}{
+		"Should trim leading and trailing whitespace": {
+			inputYaml:              " \n   \t\t \n \nYAMLCONTENT\n \t\t \n \n\t\n\t  ",
+			expectedNormalizedYaml: "YAMLCONTENT\n",
+		},
+		"Should add missing newline at EOF": {
+			inputYaml:              "YAMLCONTENT",
+			expectedNormalizedYaml: "YAMLCONTENT\n",
+		},
+		"Should remove \"---\\n\" prefix": {
+			inputYaml:              "---\nYAMLCONTENT\n",
+			expectedNormalizedYaml: "YAMLCONTENT\n",
+		},
+		"Should remove \"---\" postfix": {
+			inputYaml:              "YAMLCONTENT\n---",
+			expectedNormalizedYaml: "YAMLCONTENT\n",
+		},
+		"Should not remove \"---\" prefix or postfix not separated from yaml content by \\n": {
+			inputYaml:              "---YAMLCONTENT---\n",
+			expectedNormalizedYaml: "---YAMLCONTENT---\n",
+		},
+	}
+	for name, c := range cases {
+		d.Run(name, func() {
+			d.Assert().Equal(c.expectedNormalizedYaml, normalizeYaml(c.inputYaml))
+		})
+	}
+}
+
 func (d *deployCheckTestSuite) TestMultipleFiles() {
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.files = []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"}

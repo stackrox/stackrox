@@ -202,21 +202,33 @@ func (d *deploymentCheckCommand) Check() error {
 	return nil
 }
 
+func normalizeYaml(yamlContent string) string {
+	if yamlContent == "" {
+		return ""
+	}
+
+	yamlContent = strings.TrimSpace(yamlContent)
+	yamlContent = strings.TrimPrefix(yamlContent, "---\n")
+	yamlContent = strings.TrimSuffix(yamlContent, "\n---")
+	yamlContent = yamlContent + "\n"
+
+	return yamlContent
+}
+
 func (d *deploymentCheckCommand) checkDeployment() error {
-	var deploymentFileContents []byte
+	var combinedDeployments string
 	for _, file := range d.files {
 		fileContents, err := os.ReadFile(file)
 		if err != nil {
 			return errors.Wrapf(err, "could not read deployment file: %q", file)
 		}
-		if len(deploymentFileContents) > 0 {
-			deploymentFileContents = append(deploymentFileContents, "\n---\n"...)
+		if len(combinedDeployments) > 0 && len(fileContents) > 0 {
+			combinedDeployments = combinedDeployments + "---\n"
 		}
-		deploymentFileContents = append(deploymentFileContents, fileContents...)
+		combinedDeployments = combinedDeployments + normalizeYaml(string(fileContents))
 	}
-	d.env.Logger().InfofLn("roxctl deployment check is handling file input of size %d", len(deploymentFileContents))
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
+	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
