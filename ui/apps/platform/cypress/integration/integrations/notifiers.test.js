@@ -64,8 +64,8 @@ describe('Notifier Integrations', () => {
 
             // Step 2.1, enable container IAM role, this should remove the AWS credentials fields
             getInputByLabel('Use container IAM role').click();
-            getInputByLabel('Access key ID').should('not.exist');
-            getInputByLabel('Secret access key').should('not.exist');
+            cy.get('[id=notifier.awsSecurityHub.credentials.accessKeyId]').should('not.exist');
+            cy.get('[id=notifier.awsSecurityHub.credentials.secretAccessKey]').should('not.exist');
             // Step 2.2, disable container IAM role, this should render the AWS credentials fields again
             getInputByLabel('Use container IAM role').clear();
             getInputByLabel('Access key ID').should('be.visible');
@@ -263,7 +263,7 @@ describe('Notifier Integrations', () => {
 
             // Step 2.1, enable workload identity, this should remove the service account field
             getInputByLabel('Use workload identity').click();
-            getInputByLabel('Service Account Key (JSON)').should('not.exist');
+            cy.get('[id=notifier.cscc.serviceAccount]').should('not.exist');
             // Step 2.2, disable workload identity, this should render the service account field again
             getInputByLabel('Use workload identity').clear();
             getInputByLabel('Service Account Key (JSON)').should('be.visible');
