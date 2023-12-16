@@ -93,7 +93,7 @@ spec:
       - command:
         - stackrox/compliance
         env:
-        - name: GOMEMLIMIT
+        - name: ROX_MEMLIMIT
           valueFrom:
             resourceFieldRef:
               resource: limits.memory
