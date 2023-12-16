@@ -26,7 +26,7 @@ jobs:
       - name: Define the matrix for build jobs
         id: define-job-matrix
         run: |
-          source './scripts/ci/lb.sh'
+          source './scripts/ci/lib.sh'
 
           matrix='{ "pre_build_go_binaries": { "name":[], "arch":[] }, "build_and_push_main": { "name":[], "arch":[] }, "push_main_multiarch_manifests": { "name":[] } }'
 
