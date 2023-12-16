@@ -41,10 +41,10 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddProcessListeningOnPort mocks base method.
-func (m *MockDataStore) AddProcessListeningOnPort(arg0 context.Context, arg1 ...*storage.ProcessListeningOnPortFromSensor) error {
+func (m *MockDataStore) AddProcessListeningOnPort(arg0 context.Context, arg1 string, arg2 ...*storage.ProcessListeningOnPortFromSensor) error {
 	m.ctrl.T.Helper()
-	varargs := []any{arg0}
-	for _, a := range arg1 {
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AddProcessListeningOnPort", varargs...)
@@ -53,9 +53,9 @@ func (m *MockDataStore) AddProcessListeningOnPort(arg0 context.Context, arg1 ...
 }
 
 // AddProcessListeningOnPort indicates an expected call of AddProcessListeningOnPort.
-func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(arg0 any, arg1 ...any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) AddProcessListeningOnPort(arg0, arg1 any, arg2 ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{arg0}, arg1...)
+	varargs := append([]any{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).AddProcessListeningOnPort), varargs...)
 }
 
