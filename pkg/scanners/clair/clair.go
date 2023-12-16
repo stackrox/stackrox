@@ -22,7 +22,6 @@ import (
 
 const (
 	requestTimeout = 10 * time.Second
-	typeString     = "clair"
 )
 
 var (
@@ -31,7 +30,7 @@ var (
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Clair, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -159,7 +158,7 @@ func (c *clair) Match(_ *storage.ImageName) bool {
 }
 
 func (c *clair) Type() string {
-	return typeString
+	return types.Clair
 }
 
 func (c *clair) Name() string {

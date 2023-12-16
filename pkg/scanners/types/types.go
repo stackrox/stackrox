@@ -6,6 +6,15 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+const (
+	Clair     = "clair"
+	Clairify  = "clairify"
+	ClairV4   = "clairV4"
+	Google    = "google"
+	Quay      = "quay"
+	ScannerV4 = "scannerv4"
+)
+
 // Scanner is the interface that all scanners must implement
 type Scanner interface {
 	ScanSemaphore

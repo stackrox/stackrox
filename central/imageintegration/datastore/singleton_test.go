@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"go.uber.org/mock/gomock"
 )
@@ -80,8 +80,8 @@ func TestSetupScannerV4Integration(t *testing.T) {
 	defID := store.DefaultScannerV4Integration.GetId()
 
 	iis := []*storage.ImageIntegration{
-		{Id: "ID-Clairify", Type: "clairify"},
-		{Id: "ID-Other-ScannerV4", Type: scannerv4.TypeString},
+		{Id: "ID-Clairify", Type: scannerTypes.Clairify},
+		{Id: "ID-Other-ScannerV4", Type: scannerTypes.ScannerV4},
 		store.DefaultScannerV4Integration,
 	}
 

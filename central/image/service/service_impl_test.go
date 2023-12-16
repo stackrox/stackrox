@@ -85,9 +85,9 @@ func TestSaveImage(t *testing.T) {
 	createImageIntegrationSet := func(ctrl *gomock.Controller) integration.Set {
 		ssMock := scannerSetMocks.NewMockSet(ctrl)
 		ssMock.EXPECT().GetAll().Return([]types.ImageScannerWithDataSource{
-			createScanner(ctrl, "google", "id-gcr-scanner"),
-			createScanner(ctrl, "scannerv4", iiStore.DefaultScannerV4Integration.GetId()),
-			createScanner(ctrl, "clairify", clairifyScannerID),
+			createScanner(ctrl, types.Google, "id-gcr-scanner"),
+			createScanner(ctrl, types.ScannerV4, iiStore.DefaultScannerV4Integration.GetId()),
+			createScanner(ctrl, types.Clairify, clairifyScannerID),
 		})
 
 		iiSet := integrationSetMocks.NewMockSet(ctrl)

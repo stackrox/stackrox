@@ -26,7 +26,6 @@ import (
 
 const (
 	requestTimeout = 2 * time.Minute
-	typeString     = "clairV4"
 
 	indexStatePath          = "/indexer/api/v1/index_state"
 	indexReportPath         = "/indexer/api/v1/index_report"
@@ -44,7 +43,7 @@ var (
 
 // Creator provides the type a scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.ClairV4, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -301,7 +300,7 @@ func (c *clairv4) Test() error {
 }
 
 func (c *clairv4) Type() string {
-	return typeString
+	return types.ClairV4
 }
 
 func (c *clairv4) Name() string {

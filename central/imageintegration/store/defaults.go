@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -116,8 +116,8 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 // DefaultScannerV4Integration is the default Scanner V4 integration.
 var DefaultScannerV4Integration = &storage.ImageIntegration{
 	Id:   "a87471e6-9678-4e66-8348-91e302b6de07",
-	Name: "ScannerV4",
-	Type: scannerv4.TypeString,
+	Name: "Scanner V4",
+	Type: scannerTypes.ScannerV4,
 	Categories: []storage.ImageIntegrationCategory{
 		storage.ImageIntegrationCategory_SCANNER,
 	},
@@ -152,7 +152,7 @@ var (
 	defaultScanner = &storage.ImageIntegration{
 		Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 		Name: "Stackrox Scanner",
-		Type: "clairify",
+		Type: scannerTypes.Clairify,
 		Categories: []storage.ImageIntegrationCategory{
 			storage.ImageIntegrationCategory_SCANNER,
 			storage.ImageIntegrationCategory_NODE_SCANNER,

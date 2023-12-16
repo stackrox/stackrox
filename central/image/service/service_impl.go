@@ -36,7 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/scanners/clairify"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -237,7 +237,7 @@ func (s *serviceImpl) scannedByClairify(img *storage.Image) bool {
 	}
 
 	for _, scanner := range s.integrationSet.ScannerSet().GetAll() {
-		if scanner.GetScanner().Type() == clairify.TypeString && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
+		if scanner.GetScanner().Type() == scannerTypes.Clairify && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
 			return true
 		}
 	}

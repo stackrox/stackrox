@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations
@@ -45,7 +46,7 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 // Currently, only StackRox Scanner is a supported node integration.
 // Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE.
 func imageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
-	if integration.GetType() != "clairify" {
+	if integration.GetType() != scannerTypes.Clairify {
 		return nil, errors.Errorf("requires a clarify config: %q", integration.GetName())
 	}
 	return &storage.NodeIntegration{

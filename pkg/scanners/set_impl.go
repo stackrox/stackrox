@@ -20,9 +20,9 @@ var (
 	// based on scanner type. Types not included will default to 0 and
 	// be sorted to the top.
 	scannerSortPriority = map[string]int{
-		"clair":     1,
-		"scannerv4": 2,
-		"clairify":  3,
+		types.Clair:     1,
+		types.ScannerV4: 2,
+		types.Clairify:  3,
 	}
 )
 

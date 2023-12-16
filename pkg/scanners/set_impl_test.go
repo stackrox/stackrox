@@ -87,12 +87,12 @@ func TestSetOrdering(t *testing.T) {
 	scannerSet := NewSet(scannerFactory)
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("clairify", func(integration *storage.ImageIntegration) bool {
-		return integration.GetType() == "clairify"
-	})).Return(newFakeImageScanner(&fakeScanner{typ: "clairify"}), nil)
+		return integration.GetType() == types.Clairify
+	})).Return(newFakeImageScanner(&fakeScanner{typ: types.Clairify}), nil)
 
 	clairifyIntegration := &storage.ImageIntegration{
 		Id:   "clairify",
-		Type: "clairify",
+		Type: types.Clairify,
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
 				Endpoint: server.URL,
@@ -117,12 +117,12 @@ func TestSetOrdering(t *testing.T) {
 	}
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("scannerv4", func(integration *storage.ImageIntegration) bool {
-		return integration.GetType() == "scannerv4"
-	})).Return(newFakeImageScanner(&fakeScanner{typ: "scannerv4"}), nil)
+		return integration.GetType() == types.ScannerV4
+	})).Return(newFakeImageScanner(&fakeScanner{typ: types.ScannerV4}), nil)
 
 	scannerV4Integration := &storage.ImageIntegration{
 		Id:   "scannerv4",
-		Type: "scannerv4",
+		Type: types.ScannerV4,
 		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
 			ScannerV4: &storage.ScannerV4Config{},
 		},
@@ -134,8 +134,8 @@ func TestSetOrdering(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		scanners := scannerSet.GetAll()
 		assert.Equal(t, "ecr", scanners[0].GetScanner().Type())
-		assert.Equal(t, "scannerv4", scanners[1].GetScanner().Type())
-		assert.Equal(t, "clairify", scanners[2].GetScanner().Type())
+		assert.Equal(t, types.ScannerV4, scanners[1].GetScanner().Type())
+		assert.Equal(t, types.Clairify, scanners[2].GetScanner().Type())
 	}
 }
 
