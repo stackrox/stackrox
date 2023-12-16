@@ -170,6 +170,11 @@ func (m *managerImpl) Gather() phonehome.GatherFunc {
 
 // UpdateDeclarativeConfigContents will take the file contents and transform these to declarative configurations.
 func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents [][]byte) {
+	// Operate the whole function under a single lock.
+	// This is due to the nature of the function being called from multiple go routines, and the possibility currently
+	// being there that two concurrent calls to Update lead to transformed configurations being potentially overwritten.
+	m.transformedMessagesMutex.Lock()
+	defer m.transformedMessagesMutex.Unlock()
 	configurations, err := declarativeconfig.ConfigurationFromRawBytes(contents...)
 	if err != nil {
 		m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID, err))
@@ -195,9 +200,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 	m.updateDeclarativeConfigHealth(declarativeConfigUtils.HealthStatusForHandler(handlerID,
 		errors.Wrap(transformationErrors.ErrorOrNil(), "during transforming configuration")))
 
-	m.transformedMessagesMutex.Lock()
 	m.transformedMessagesByHandler[handlerID] = transformedConfigurations
-	m.transformedMessagesMutex.Unlock()
 	m.shortCircuitReconciliationLoop()
 }
 
@@ -233,9 +236,9 @@ func (m *managerImpl) reconciliationLoop() {
 }
 
 func (m *managerImpl) runReconciliation() {
-	m.transformedMessagesMutex.RLock()
-	transformedMessagesByHandler := maputil.ShallowClone(m.transformedMessagesByHandler)
-	m.transformedMessagesMutex.RUnlock()
+	transformedMessagesByHandler := concurrency.WithRLock1(&m.transformedMessagesMutex, func() map[string]protoMessagesByType {
+		return maputil.ShallowClone(m.transformedMessagesByHandler)
+	})
 
 	m.reconcileTransformedMessages(transformedMessagesByHandler)
 }
