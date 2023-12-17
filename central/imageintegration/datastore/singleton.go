@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imageintegration/search"
 	"github.com/stackrox/rox/central/imageintegration/store"
@@ -91,15 +92,15 @@ func setupScannerV4Integration(ctx context.Context, iiStore store.Store, iis []*
 	}
 
 	// Create the default Scanner V4 integration if it doesn't exist.
-	createScannerV4Integration(ctx, iiStore)
+	createDefaultScannerV4Integration(ctx, iiStore)
 
 	// Delete all but the default Scanner V4 integration (should be none).
 	deleteScannerV4Integrations(ctx, iiStore, iis, keepDefault)
 }
 
-// createScannerV4Integration will create the default Scanner V4 integration if it does
+// createDefaultScannerV4Integration will create the default Scanner V4 integration if it does
 // not currently exist.
-func createScannerV4Integration(ctx context.Context, iiStore store.Store) {
+func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store) {
 	if _, exists, err := iiStore.Get(ctx, store.DefaultScannerV4Integration.GetId()); err != nil {
 		log.Errorf("Unable to detect if default Scanner V4 integration exists: %v", err)
 		return
@@ -109,9 +110,8 @@ func createScannerV4Integration(ctx context.Context, iiStore store.Store) {
 	}
 
 	log.Infof("Upserting default Scanner V4 integration %q (%v)", store.DefaultScannerV4Integration.GetName(), store.DefaultScannerV4Integration.GetId())
-	if err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration); err != nil {
-		log.Errorf("Unable to upsert default Scanner V4 integration: %v", err)
-	}
+	err := iiStore.Upsert(ctx, store.DefaultScannerV4Integration)
+	utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
 }
 
 // deleteScannerV4Integrations will delete all Scanner V4 integrations except for the

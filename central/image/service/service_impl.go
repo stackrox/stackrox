@@ -212,9 +212,11 @@ func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) error {
 	if features.ScannerV4Enabled.Enabled() && !scannedByScannerV4(img) && s.scannedByClairify(img) {
 		// This image was scanned by the old Clairify scanner, we do not want to
 		// overwrite an existing Scanner V4 scan in the database (if it exists).
-		if existingImg, exists, err := s.datastore.GetImage(ctx, img.GetId()); err != nil {
+		existingImg, exists, err := s.datastore.GetImage(ctx, img.GetId())
+		if err != nil {
 			return err
-		} else if exists && scannedByScannerV4(existingImg) {
+		}
+		if exists && scannedByScannerV4(existingImg) {
 			// Note: This image will not have `RiskScore` fields populated because
 			// risk scores are heavily tied to upserting into Central DB and
 			// this image is not being upserted.

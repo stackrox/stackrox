@@ -369,6 +369,13 @@ func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, store
 	if updatedConfig.GetIntegrationConfig() == nil {
 		return errors.New("the request doesn't have a valid integration config type")
 	}
+
+	newType := updatedConfig.GetType()
+	oldType := storedConfig.GetType()
+	if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
+		return errors.New("cannot change integration type to/from scanner V4")
+	}
+
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
 }
 
