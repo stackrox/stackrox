@@ -442,3 +442,67 @@ func TestBroadcastOnDelete(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestScannerV4Restrictions(t *testing.T) {
+	ii := &storage.ImageIntegration{
+		Name: "fake",
+		Id:   "fake",
+		Type: types.ScannerV4,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_SCANNER,
+		},
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{},
+	}
+
+	t.Run("prevent scannerv4 create", func(t *testing.T) {
+		s := &serviceImpl{}
+
+		iiNew := ii.Clone()
+		iiNew.Id = ""
+
+		_, err := s.PostImageIntegration(context.Background(), iiNew)
+		assert.ErrorContains(t, err, "scanner V4")
+	})
+
+	t.Run("prevent scannerv4 delete", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		iiDS := integrationMocks.NewMockDataStore(ctrl)
+		s := &serviceImpl{datastore: iiDS}
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "fake"})
+		assert.ErrorContains(t, err, "scanner V4")
+	})
+
+	t.Run("prevent type change FROM scannerv4", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		iiDS := integrationMocks.NewMockDataStore(ctrl)
+		s := &serviceImpl{datastore: iiDS}
+
+		iiOld := ii.Clone()
+		iiOld.Type = types.Clairify
+
+		iiDS.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return([]*storage.ImageIntegration{iiOld}, nil)
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(iiOld, true, nil)
+
+		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: ii})
+		assert.ErrorContains(t, err, "scanner V4")
+	})
+
+	t.Run("prevent type change TO scannerv4", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		iiDS := integrationMocks.NewMockDataStore(ctrl)
+		s := &serviceImpl{datastore: iiDS}
+
+		iiNew := ii.Clone()
+		iiNew.Type = types.Clairify
+		iiNew.IntegrationConfig = &storage.ImageIntegration_Clairify{}
+
+		iiDS.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return([]*storage.ImageIntegration{ii}, nil)
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
+
+		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: iiNew})
+		assert.ErrorContains(t, err, "scanner V4")
+	})
+}
