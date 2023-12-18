@@ -42,5 +42,8 @@ func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckRe
 		Annotations:    sensorData.GetAnnotations(),
 		CreatedTime:    sensorData.GetCreatedTime(),
 		ScanConfigName: sensorData.GetSuiteName(),
+		Rationale:      sensorData.GetRationale(),
+		ValuesUsed:     sensorData.GetValuesUsed(),
+		Warnings:       sensorData.GetWarnings(),
 	}
 }

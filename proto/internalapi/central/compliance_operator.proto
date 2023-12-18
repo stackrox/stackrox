@@ -124,7 +124,7 @@ enum ComplianceOperatorRuleSeverity {
 }
 
 // ComplianceOperatorCheckResultV2 is a message from Sensor (to Central) representing a compliance check result.
-// Next tag: 16.
+// Next tag: 19.
 message ComplianceOperatorCheckResultV2 {
     enum CheckStatus {
         UNSET          = 0;
@@ -152,6 +152,9 @@ message ComplianceOperatorCheckResultV2 {
     string                         control      = 13;
     string                         scan_name    = 14;
     string                         suite_name   = 15;
+    string                         rationale    = 16;
+    repeated string                valuesUsed   = 17;
+    repeated string                warnings     = 18;
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
