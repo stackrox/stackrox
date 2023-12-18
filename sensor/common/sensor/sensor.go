@@ -395,7 +395,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
-	syncDone := concurrency.NewSignal()
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
@@ -412,6 +411,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
 		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		syncDone := concurrency.NewSignal()
 		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone)
 		// Reset the exponential back-off if the connection succeeds
