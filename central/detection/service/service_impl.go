@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -352,23 +353,24 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	var deployments []*storage.Deployment
-	var errs []error
+	errorList := errorhelpers.NewErrorList("error parsing YAML files")
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
 		d, err := s.convertK8sResource(r)
 		if err != nil {
-			errs = append(errs, err)
+			errorList.AddError(err)
 			continue
 		}
 		deployments = append(deployments, d)
 	}
-	if len(deployments) == 0 && len(errs) > 0 {
-		msg := fmt.Sprintf("every deployment YAML failed to parse - aborting. Errors:\n%v", errs)
-		return nil, errox.InvalidArgs.New(msg)
+	errs := errorList.ToError()
+
+	if len(deployments) == 0 && errs != nil {
+		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(errs)
 	}
-	if len(deployments) > 0 && len(errs) > 0 {
-		log.Warnf("one or multiple deployment YAMLs failed to parse:\n%v", errs)
+	if len(deployments) > 0 && errs != nil {
+		log.Warnf("one or multiple provided YAMLs parsed with errors:\n%v", errs)
 	}
 
 	// Enhance the deployments, then range over them
