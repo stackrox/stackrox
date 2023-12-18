@@ -501,9 +501,24 @@
         },
         "control": {
           "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "valuesUsed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
-      "title": "ComplianceCheckResult provides the results of a compliance check against a rule"
+      "title": "Next tag: 11\nComplianceCheckResult provides the results of a compliance check against a rule"
     },
     "v2ComplianceCheckStatus": {
       "type": "string",
