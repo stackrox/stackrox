@@ -6,6 +6,7 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// Scanner type strings.
 const (
 	Clair     = "clair"
 	Clairify  = "clairify"
