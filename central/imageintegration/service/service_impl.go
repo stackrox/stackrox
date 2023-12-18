@@ -239,7 +239,14 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 
 // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
-	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
+	if err := s.validateIntegration(ctx, imageIntegration); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	if err := s.testImageIntegration(imageIntegration); err != nil {
+		return nil, err
+	}
+
+	return &v1.Empty{}, nil
 }
 
 // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
@@ -343,9 +350,6 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
-	if updateRequest.GetUpdatePassword() {
-		return nil
-	}
 	if updateRequest.GetConfig() == nil {
 		return errors.Wrap(errox.InvalidArgs, "request is missing image integration config")
 	}
@@ -359,6 +363,16 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
 	}
+
+	newType := updateRequest.GetConfig().GetType()
+	oldType := integration.GetType()
+	if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
+		return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
+	}
+
+	if updateRequest.GetUpdatePassword() {
+		return nil
+	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -368,12 +382,6 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, storedConfig *storage.ImageIntegration) error {
 	if updatedConfig.GetIntegrationConfig() == nil {
 		return errors.New("the request doesn't have a valid integration config type")
-	}
-
-	newType := updatedConfig.GetType()
-	oldType := storedConfig.GetType()
-	if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
-		return errors.New("cannot change integration type to/from scanner V4")
 	}
 
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)

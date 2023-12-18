@@ -328,6 +328,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 		&v1.GetImageIntegrationsRequest{Name: "name"},
 	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
 	integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), clairifyIntegrationConfig.GetId()).Return(clairifyIntegrationConfigStored, true, nil).Times(1)
 	integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
 	reprocessorLoop.EXPECT().ShortCircuit().Times(1)
 	_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
