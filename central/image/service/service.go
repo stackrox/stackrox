@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
-	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/waiter"
 	"golang.org/x/sync/semaphore"
@@ -44,7 +43,6 @@ func New(
 	metadataCache expiringcache.Cache,
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
-	integrationsSet integration.Set,
 ) Service {
 
 	return &serviceImpl{
@@ -57,6 +55,5 @@ func New(
 		scanWaiterManager:     scanWaiterManager,
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 		clusterSACHelper:      clusterSACHelper,
-		integrationSet:        integrationsSet,
 	}
 }

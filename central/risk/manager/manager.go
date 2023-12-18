@@ -9,6 +9,7 @@ import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/metrics"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -18,10 +19,13 @@ import (
 	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
 	nodeScorer "github.com/stackrox/rox/central/risk/scorer/node"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
 var (
@@ -62,6 +66,8 @@ type managerImpl struct {
 	nodeComponentRanker  *ranking.Ranker
 
 	acUpdater acUpdater.Updater
+
+	iiSet integration.Set
 }
 
 // New returns a new manager
@@ -79,6 +85,7 @@ func New(nodeStorage nodeDS.DataStore,
 	componentRanker *ranking.Ranker,
 	nodeComponentRanker *ranking.Ranker,
 	acUpdater acUpdater.Updater,
+	iiSet integration.Set,
 ) Manager {
 	m := &managerImpl{
 		nodeStorage:       nodeStorage,
@@ -97,6 +104,8 @@ func New(nodeStorage nodeDS.DataStore,
 		imageComponentRanker: componentRanker,
 		nodeComponentRanker:  nodeComponentRanker,
 		acUpdater:            acUpdater,
+
+		iiSet: iiSet,
 	}
 	return m
 }
@@ -213,6 +222,10 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 
 // CalculateRiskAndUpsertImage will reprocess risk of the passed image and save the results.
 func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
+	if skip, err := e.skipImageUpsert(image); skip || err != nil {
+		return err
+	}
+
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
 	if err := e.calculateAndUpsertImageRisk(image); err != nil {
@@ -227,6 +240,47 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 		return errors.Wrapf(err, "populating executable cache for image %s", image.GetId())
 	}
 	return nil
+}
+
+// skipImageUpsert will return true if an image should not be upserted into the store.
+func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
+	if features.ScannerV4Enabled.Enabled() && !scannedByScannerV4(img) && e.scannedByClairify(img) {
+		// This image was scanned by the old Clairify scanner, we do not want to
+		// overwrite an existing Scanner V4 scan in the database (if it exists).
+		existingImg, exists, err := e.imageStorage.GetImage(riskReprocessorCtx, img.GetId())
+		if err != nil {
+			return false, err
+		}
+		if exists && scannedByScannerV4(existingImg) {
+			// Note: This image will not have `RiskScore` fields populated because
+			// risk scores are heavily tied to upserting into Central DB and
+			// this image is not being upserted.
+			log.Warnw("Cannot overwrite Scanner V4 scan already in DB with Clairify scan and cannot calculate risk scores", logging.ImageName(img.GetName().GetFullName()))
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// scannedByClairify returns true if an image was scanned by the Clairify scanner, false otherwise.
+func (s *managerImpl) scannedByClairify(img *storage.Image) bool {
+	if img.GetScan().GetDataSource() == nil {
+		return false
+	}
+
+	for _, scanner := range s.iiSet.ScannerSet().GetAll() {
+		if scanner.GetScanner().Type() == scannerTypes.Clairify && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
+			return true
+		}
+	}
+
+	return false
+}
+
+// scannedByScannerV4 returns true if an image was scanned by the Scanner V4 scanner, false otherwise.
+func scannedByScannerV4(img *storage.Image) bool {
+	return img.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
 }
 
 // reprocessImageComponentRisk will reprocess risk of image components and save the results.
