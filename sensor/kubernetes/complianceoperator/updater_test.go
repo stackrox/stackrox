@@ -7,8 +7,11 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -50,12 +53,18 @@ func (s *UpdaterTestSuite) SetupSuite() {
 }
 
 func (s *UpdaterTestSuite) SetupTest() {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
 	s.client = fake.NewSimpleClientset()
 	_, err := s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(defaultNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
 
 	_, err = s.client.CoreV1().Namespaces().Create(context.Background(), buildComplianceOperatorNamespace(customNS), metaV1.CreateOptions{})
 	s.Require().NoError(err)
+}
+
+func (s *UpdaterTestSuite) TearDownTest() {
+	// Clear out capabilities for next test
+	centralcaps.Set([]centralsensor.CentralCapability{})
 }
 
 func (s *UpdaterTestSuite) TestDefaultNamespace() {
@@ -202,6 +211,7 @@ func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *cen
 	timer := time.NewTimer(responseTimeout)
 	updater := NewInfoUpdater(s.client, updateInterval)
 
+	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()
 	s.Require().NoError(err)
 	defer updater.Stop(nil)

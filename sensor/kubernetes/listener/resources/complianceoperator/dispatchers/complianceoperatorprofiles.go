@@ -4,8 +4,9 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,7 +49,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	// is a bad practice, so we will make that split now.  V1 and V2 compliance will both need to work for a period
 	// of time.  However, we should not need to send the same profile twice, the pipeline can convert the V2 sensor message
 	// so V1 and V2 objects can both be stored.
-	if features.ComplianceEnhancements.Enabled() {
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		protoProfile := &central.ComplianceOperatorProfileV2{
 			Id:             uid,
 			ProfileId:      complianceProfile.ID,

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -46,9 +45,6 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 }
 
 func (m *handlerImpl) Start() error {
-	if !features.ComplianceEnhancements.Enabled() {
-		return nil
-	}
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
 	return nil
@@ -109,7 +105,6 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
-	// TODO: [ROX-18096] Start collecting compliance profiles & rules
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
