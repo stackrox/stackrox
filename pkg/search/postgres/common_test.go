@@ -561,7 +561,7 @@ func TestDeleteQueries(t *testing.T) {
 }
 
 func TestDeleteReturningIDsQueries(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	for _, c := range []struct {
 		desc          string
