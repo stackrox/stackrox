@@ -23,7 +23,7 @@ func TestExtractorErrorNilGuards(t *testing.T) {
 func TestExtractorErrorUnwrap(t *testing.T) {
 	jwtErr := jwt.ErrExpired
 	err := NewExtractorError("test", "test msg", jwtErr)
-	assert.ErrorIs(t, err.Unwrap(), jwt.ErrExpired)
+	assert.Equal(t, err.Unwrap(), jwt.ErrExpired)
 }
 
 func TestExtractorErrorRootErrorNotExposed(t *testing.T) {
