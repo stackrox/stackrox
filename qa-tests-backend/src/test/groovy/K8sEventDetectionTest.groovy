@@ -86,7 +86,7 @@ class K8sEventDetectionTest extends BaseSpecification {
     def checkViolationsAreAsExpected(String policyName, List<String> execedIntoDeploymentNames,
                                      List<String> violatingDeploymentNames, Map<String, String> podNames,
                                      int expectedK8sViolationsCount) {
-        for (def violatingDeploymentName: violatingDeploymentNames) {
+        violatingDeploymentNames.each { String violatingDeploymentName ->
             def violatingDeployment = DEPLOYMENTS.find { it.name == violatingDeploymentName }
             assert violatingDeployment
             def violations = Services.getViolationsByDeploymentID(

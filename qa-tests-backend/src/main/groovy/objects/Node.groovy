@@ -1,15 +1,18 @@
 package objects
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class Node {
-    def uid
-    def name
-    def labels
+    String uid
+    String name
+    Map<String, String> labels
     Map<String, String> annotations
-    def internalIps
-    def externalIps
-    def containerRuntimeVersion
-    def kernelVersion
-    def osImage
-    def kubeletVersion
-    def kubeProxyVersion
+    List<String> internalIps
+    List<String> externalIps
+    String containerRuntimeVersion
+    String kernelVersion
+    String osImage
+    String kubeletVersion
+    String kubeProxyVersion
 }

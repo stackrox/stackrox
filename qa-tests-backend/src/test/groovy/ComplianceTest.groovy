@@ -543,17 +543,9 @@ class ComplianceTest extends BaseSpecification {
         expect:
         "the control result has a pass/fail result when run in an environment with a master node"
         List<objects.Node> orchNodes = orchestrator.getNodeDetails()
-        def hasMaster = false
-        for (objects.Node node : orchNodes) {
-            for (String label : node.getLabels().keySet()) {
-                if (label == "node-role.kubernetes.io/master" || label == "node-role.kubernetes.io/control-plane") {
-                    hasMaster = true
-                    break
-                }
-            }
-            if (hasMaster) {
-                break
-            }
+        boolean hasMaster = orchNodes.any { objects.Node node ->
+            Set<String> keys = node.getLabels().keySet()
+            keys.contains("node-role.kubernetes.io/master") || keys.contains("node-role.kubernetes.io/control-plane")
         }
 
         def overallState = controlResult.getOverallState()
@@ -994,11 +986,7 @@ class ComplianceTest extends BaseSpecification {
             if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
-            for (def ctrlResults : entry.value.controlResultsMap.values()) {
-                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                    numErrors++
-                }
-            }
+            numErrors += errorsCount(entry.value.controlResultsMap.values())
         }
         assert numErrors == 0
         assert machineConfigsWithResults == 2
@@ -1172,24 +1160,12 @@ class ComplianceTest extends BaseSpecification {
             assert metadata.runId == complianceRun.id
             assert metadata.standardId == NIST_800_190_ID
 
-            for (def ctrlResults : results.clusterResults.controlResultsMap.values()) {
-                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                    numErrors++
-                }
-            }
+            numErrors += errorsCount(results.clusterResults.controlResultsMap.values())
             for (def deploymentResults : results.deploymentResultsMap.values()) {
-                for (def ctrlResults : deploymentResults.controlResultsMap.values()) {
-                    if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                        numErrors++
-                    }
-                }
+                numErrors += errorsCount(deploymentResults.controlResultsMap.values())
             }
             for (def nodeResults : results.nodeResultsMap.values()) {
-                for (def ctrlResults : nodeResults.controlResultsMap.values()) {
-                    if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                        numErrors++
-                    }
-                }
+                numErrors += errorsCount(nodeResults.controlResultsMap.values())
             }
         }
         assert numErrors > 0
@@ -1281,5 +1257,11 @@ class ComplianceTest extends BaseSpecification {
         BaseService.useBasicAuth()
         ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
         RoleService.deleteRole(testRole)
+    }
+
+    int errorsCount(Collection<ComplianceResultValue> values) {
+        return values.count { ComplianceResultValue ctrlResults ->
+            ctrlResults.overallState == ComplianceState.COMPLIANCE_STATE_ERROR
+        }
     }
 }

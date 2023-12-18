@@ -330,17 +330,15 @@ class ProcessVisualizationTest extends BaseSpecification {
         if (received.size() < expected.size()) {
             return false
         }
-        for ( String path : expected.keySet() ) {
+        expected.keySet().each {  String path ->
             if (!received.containsKey(path)) {
                 return false
             }
             if (expected[path].size() != received[path].size()) {
                 return false
             }
-            for ( Tuple2<Integer, Integer> ids : expected[path]) {
-                if (!received[path].contains(ids)) {
-                    return false
-                }
+            if (expected[path].any { !received[path].contains(it) }) {
+                return false
             }
         }
         return true
