@@ -543,7 +543,7 @@ class ComplianceTest extends BaseSpecification {
         expect:
         "the control result has a pass/fail result when run in an environment with a master node"
         List<objects.Node> orchNodes = orchestrator.getNodeDetails()
-        boolean hasMaster= orchNodes.any { objects.Node node ->
+        boolean hasMaster = orchNodes.any { objects.Node node ->
             Set<String> keys = node.getLabels().keySet()
             keys.contains("node-role.kubernetes.io/master") || keys.contains("node-role.kubernetes.io/control-plane")
         }
