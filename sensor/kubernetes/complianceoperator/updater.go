@@ -11,11 +11,11 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
@@ -36,16 +36,20 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration) I
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
+	updateTicker := time.NewTicker(updateInterval)
+	updateTicker.Stop()
 	return &updaterImpl{
 		client:         client,
 		updateInterval: updateInterval,
 		response:       make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
+		updateTicker:   updateTicker,
 	}
 }
 
 type updaterImpl struct {
 	client               kubernetes.Interface
+	updateTicker         *time.Ticker
 	updateInterval       time.Duration
 	response             chan *message.ExpiringMessage
 	stopSig              concurrency.Signal
@@ -53,18 +57,25 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() error {
-	if !features.ComplianceEnhancements.Enabled() {
-		return nil
-	}
-	go u.run()
+	go u.run(u.updateTicker.C)
 	return nil
 }
 
 func (u *updaterImpl) Stop(_ error) {
+	u.updateTicker.Stop()
 	u.stopSig.Signal()
 }
 
-func (u *updaterImpl) Notify(common.SensorComponentEvent) {}
+func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventSyncFinished:
+		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+			u.updateTicker.Reset(u.updateInterval)
+			return
+		}
+		u.updateTicker.Stop()
+	}
+}
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
@@ -82,17 +93,14 @@ func (u *updaterImpl) GetNamespace() string {
 	return u.complianceOperatorNS
 }
 
-func (u *updaterImpl) run() {
-	ticker := time.NewTicker(u.updateInterval)
-	defer ticker.Stop()
-
+func (u *updaterImpl) run(tickerC <-chan time.Time) {
 	if responseSent := u.collectInfoAndSendResponse(); !responseSent {
 		return
 	}
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-tickerC:
 			if responseSent := u.collectInfoAndSendResponse(); !responseSent {
 				return
 			}
