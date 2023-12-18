@@ -78,7 +78,8 @@ func (s *ComponentTestSuite) TestExtractAndEnrichDeployments() {
 
 	actual := de.enhanceDeployments(generateDeploymentMsg("1", 4))
 
-	s.Len(actual, 4, "Expected %v deployments, got %v", 4, len(actual))
+	expected := 4
+	s.Len(actual, expected)
 }
 
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {
