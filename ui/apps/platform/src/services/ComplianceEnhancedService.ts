@@ -10,25 +10,25 @@ import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationU
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 
-type ScheduleBase = {
+export type ScheduleBase = {
     hour: number;
     minute: number;
 };
 
-type UnsetSchedule = ScheduleBase & {
+export type UnsetSchedule = ScheduleBase & {
     intervalType: 'UNSET';
 };
 
-type DailySchedule = ScheduleBase & {
+export type DailySchedule = ScheduleBase & {
     intervalType: 'DAILY';
 };
 
-type WeeklySchedule = ScheduleBase & {
+export type WeeklySchedule = ScheduleBase & {
     intervalType: 'WEEKLY';
     daysOfWeek: { days: number[] };
 };
 
-type MonthlySchedule = ScheduleBase & {
+export type MonthlySchedule = ScheduleBase & {
     intervalType: 'MONTHLY';
     daysOfMonth: { days: number[] };
 };
