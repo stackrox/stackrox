@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "storage";
+option go_package = "generated/storage";
 option java_package = "io.stackrox.proto.storage";
 
 package storage;
