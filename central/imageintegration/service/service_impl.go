@@ -383,7 +383,6 @@ func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, store
 	if updatedConfig.GetIntegrationConfig() == nil {
 		return errors.New("the request doesn't have a valid integration config type")
 	}
-
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
 }
 
