@@ -5,7 +5,7 @@ import InitBundlesHeader from './InitBundlesHeader';
 function InitBundleWizard(): ReactElement {
     return (
         <>
-            <InitBundlesHeader titleNotInitBundles="Create bundle" />;
+            <InitBundlesHeader title="Create bundle" />;
         </>
     );
 }

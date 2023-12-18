@@ -57,10 +57,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <InitBundlesHeader
-                headerActions={headerActions}
-                titleNotInitBundles="Cluster init bundle"
-            />
+            <InitBundlesHeader headerActions={headerActions} title="Cluster init bundle" />
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>

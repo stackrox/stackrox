@@ -7,7 +7,7 @@ import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersInitBundlesPath } from 'routePaths';
 
-import InitBundlesHeader from './InitBundlesHeader';
+import InitBundlesHeader, { titleInitBundles } from './InitBundlesHeader';
 import InitBundlesTable from './InitBundlesTable';
 
 export type InitBundlesPageProps = {
@@ -34,7 +34,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <InitBundlesHeader headerActions={headerActions} />
+            <InitBundlesHeader headerActions={headerActions} title={titleInitBundles} />
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>

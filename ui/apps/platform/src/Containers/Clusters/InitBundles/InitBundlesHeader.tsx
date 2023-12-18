@@ -13,25 +13,21 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
-const titleInitBundles = 'Cluster init bundles';
+export const titleInitBundles = 'Cluster init bundles';
 
 export type InitBundlesHeaderProps = {
     headerActions?: ReactNode | null;
-    titleNotInitBundles?: string;
+    title: string;
 };
 
-function InitBundlesHeader({
-    headerActions,
-    titleNotInitBundles,
-}: InitBundlesHeaderProps): ReactElement {
-    const title = titleNotInitBundles ?? titleInitBundles;
+function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): ReactElement {
     return (
         <PageSection component="div" variant="light">
             <PageTitle title={title} />
             <Flex direction={{ default: 'column' }}>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
-                    {titleNotInitBundles && (
+                    {title !== titleInitBundles && (
                         <BreadcrumbItemLink to={clustersInitBundlesPath}>
                             {titleInitBundles}
                         </BreadcrumbItemLink>
