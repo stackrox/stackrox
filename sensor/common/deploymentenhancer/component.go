@@ -23,7 +23,7 @@ type DeploymentEnhancer struct {
 	deploymentsQueue chan *central.DeploymentEnhancementRequest
 	storeProvider    store.Provider
 	ctx              context.Context
-	ctxCancel        func()
+	ctxCancel        context.CancelFunc
 }
 
 // CreateEnhancer creates a new Enhancer
@@ -66,8 +66,7 @@ func (d *DeploymentEnhancer) Start() error {
 					log.Warnf("Received deploymentEnhancement msg with empty request ID. Discarding request.")
 					continue
 				}
-				deployments := d.enhanceDeployments(deploymentMsg)
-				d.sendDeploymentsToCentral(requestID, deployments)
+				d.sendDeploymentsToCentral(requestID, d.enhanceDeployments(deploymentMsg))
 			}
 		}
 	}()
