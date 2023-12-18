@@ -106,8 +106,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Tag("Integration")
-    @Ignore("ROX-15348")
+    @Tag("BAT")  // Potential FIXME: Turn back to only integration tests.
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -121,13 +120,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         "Search for violations in Splunk"
         // Splunk search for violations is volatile for some reason.
         // We added retries to make this test less flaky.
+        // Check for violations first
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 15; i++) {
-            log.info "Attempt ${i} to get violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            log.info "Attempt ${i} to get raw violations from Splunk"
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
@@ -138,7 +138,40 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasNetworkViolation |= isNetworkViolation(result)
                         hasProcessViolation |= isProcessViolation(result)
                     }
+                    // TODO: Remove debug log
+                    log.info "Found violations in Splunk: \n${results}"
+                    log.info "hasNetworkViolation: ${hasNetworkViolation}\nhasProcessViolation: ${hasProcessViolation}"
+                    // TODO: /Remove debug log
                     if (hasNetworkViolation && hasProcessViolation) {
+                        log.info "Success!"
+                        break
+                    }
+                }
+            }
+        }
+
+        // FIXME: After we know that violations are there, POST to manually run the conversion cronjob
+        // OR: Edit the conversion cronjob to run every 20 seconds in setup()
+
+        // Check for Alerts
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
+        for (int i = 0; i < 41; i++) { // FIXME: We must try for at least 10 minutes, as the conversion cron runs every 5 minutes. Try calling the search manually.
+            log.info "Attempt ${i} to get Alerts from Splunk"
+            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            TimeUnit.SECONDS.sleep(15)
+            Response v_response = SplunkUtil.getSearchResults(port, searchId)
+            // We should have at least one violation in the response
+            if (v_response != null) {
+                alerts = v_response.getBody().jsonPath().getList("results")
+                if (!alerts.isEmpty()) {
+                    for (alert in alerts) {
+                        hasNetworkAlert |= isNetworkViolation(alert)
+                        hasProcessAlert |= isProcessViolation(alert)
+                    }
+                    log.info "Found Alerts in Splunk: \n${alerts}"
+                    if (hasNetworkAlert && hasProcessAlert) {
                         log.info "Success!"
                         break
                     }
@@ -148,11 +181,11 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         then:
         "StackRox violations are in Splunk"
-        assert !results.isEmpty()
-        assert hasNetworkViolation
-        assert hasProcessViolation
-        for (result in results) {
-            validateCimMappings(result)
+        assert !alerts.isEmpty()
+        assert hasNetworkAlert
+        assert hasProcessAlert
+        for (alert in alerts) {
+            validateCimMappings(alert)
         }
     }
 
@@ -308,9 +341,17 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def triggerProcessViolation(SplunkUtil.SplunkDeployment splunkDeployment) {
-        orchestrator.execInContainer(splunkDeployment.deployment, "curl http://127.0.0.1:10248/ --max-time 2")
-        assert waitForAlertWithPolicyId(splunkDeployment.getDeployment().getName(),
-                                        "86804b96-e87e-4eae-b56e-1718a8a55763")
+        final String deploymentName = splunkDeployment.getDeployment().getName()
+        final String policyId = "ddb7af9c-5ec1-45e1-a0cf-c36e3ef2b2ce"
+        
+        assert retryUntilTrue({
+            orchestrator.execInContainer(splunkDeployment.deployment, "rpm -qa") // This lists all installed packages
+            AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest.newBuilder()
+                    .setQuery("Namespace:${TEST_NAMESPACE}+Violation State:*+Deployment:${deploymentName}")
+                    .build())
+                    .asList()
+                    .any { a -> a.getPolicy().getId() == policyId }
+        }, 15)
     }
 
     def triggerNetworkFlowViolation(SplunkUtil.SplunkDeployment splunkDeployment, String centralService) {
