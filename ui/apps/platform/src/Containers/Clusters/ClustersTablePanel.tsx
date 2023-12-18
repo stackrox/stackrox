@@ -228,7 +228,7 @@ function ClustersTablePanel({
                 });
             })
             .catch(() => {
-                // TODO render error in dialog
+                // TODO render error in dialogand move finally code to then block.
             })
             .finally(() => {
                 setShowDialog(false);
