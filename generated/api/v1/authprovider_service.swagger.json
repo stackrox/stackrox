@@ -527,7 +527,7 @@
         "SCANNER_V4_DB_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
-      "title": "Next available tag: 13"
+      "title": "Next available tag: 16"
     },
     "storageTraits": {
       "type": "object",
