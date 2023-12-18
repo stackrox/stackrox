@@ -55,8 +55,9 @@ function EnableDisableNotificationModal({
     }
 
     function onConfirmEnableDisableNotifications() {
+        // TODO refactor to move handler into callback function?
         setEnableDisableType(null);
-        enableDisableNotificationHandler().finally(() => {});
+        return enableDisableNotificationHandler();
     }
 
     function onCancelEnableDisableNotifications() {
