@@ -572,34 +572,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	}
 
-	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
-		// Sync delegated registry config.
-		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
-		}
-		if msg != nil {
-			if err := server.Send(msg); err != nil {
-				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
-			}
-
-			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
-		}
-
-		// Sync integrations.
-		msg, err = c.getImageIntegrationMsg(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "unable to get image integrations msg for %q", c.clusterID)
-		}
-		if msg != nil {
-			if err := server.Send(msg); err != nil {
-				return errors.Wrapf(err, "unable to sync initial image integrations to cluster %q", c.clusterID)
-			}
-
-			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
-		}
-	}
-
 	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SendDeduperStateOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
@@ -635,6 +607,37 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
 	} else {
 		log.Infof("Sensor (%s) cannot receive deduper state", c.clusterID)
+	}
+
+	// Any messages after this will be processed by Sensor components and can go in any order.
+	// Don't change the order of any messages above!
+
+	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
+		// Sync delegated registry config.
+		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
+			}
+
+			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
+		}
+
+		// Sync integrations.
+		msg, err = c.getImageIntegrationMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get image integrations msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial image integrations to cluster %q", c.clusterID)
+			}
+
+			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
+		}
 	}
 
 	go c.runSend(server)
