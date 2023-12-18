@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,7 +37,6 @@ const (
 )
 
 var (
-	log = logging.CreateLogger(logging.CurrentModule(), 0)
 	// Default headers to use when printing tabular output
 	defaultDeploymentCheckHeaders = []string{
 		"POLICY", "SEVERITY", "BREAKS DEPLOY", "DEPLOYMENT", "DESCRIPTION", "VIOLATION", "REMEDIATION",
@@ -86,7 +84,7 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
-	// TODO(ROX-21443): Pass deploymentCheckCmd.files to the Sarif printer CTor once they can handle multiple entities
+	// TODO(ROX-21443): Pass deploymentCheckCmd.files to the Sarif printer once it can handle multiple entities
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
 		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.firstFile))...)
 	// this error should never occur, it would only occur if default values are invalid

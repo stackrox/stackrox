@@ -318,7 +318,7 @@ func (d *deployCheckTestSuite) TestMultipleFiles() {
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.files = []string{"testdata/deployment.yaml", "testdata/deployment2.yaml"}
 
-	conn, closeF, server := d.createGRPCMockDetectionService(testDeploymentAlertsWithoutFailure, []string{""})
+	conn, closeF, server := d.createGRPCMockDetectionService(testDeploymentAlertsWithoutFailure, nil)
 	defer closeF()
 	deployCheckCmd.env, _, _ = d.createMockEnvironmentWithConn(conn)
 
