@@ -26,13 +26,13 @@ ruleset {
     DuplicateMapKey 
     DuplicateSetValue 
     EmptyCatchBlock 
-    // EmptyClass
+    EmptyClass
     EmptyElseBlock 
     EmptyFinallyBlock 
     EmptyForStatement 
     EmptyIfStatement 
     EmptyInstanceInitializer 
-    // EmptyMethod
+    EmptyMethod
     EmptyStaticInitializer 
     EmptySwitchStatement 
     EmptySynchronizedStatement 
@@ -110,7 +110,7 @@ ruleset {
     AbstractClassWithoutAbstractMethod 
     AssignmentToStaticFieldFromInstanceMethod 
     BooleanMethodReturnsNull 
-    // BuilderMethodWithSideEffects
+    BuilderMethodWithSideEffects
     CloneableWithoutClone 
     CloseWithoutCloseable 
     CompareToWithoutComparable 
@@ -120,7 +120,7 @@ ruleset {
     ImplementationAsType 
     // Instanceof
     LocaleSetDefault 
-    // NestedForLoop
+    NestedForLoop
     PrivateFieldCouldBeFinal 
     PublicInstanceField 
     ReturnsNullInsteadOfEmptyArray 
@@ -147,7 +147,7 @@ ruleset {
     // CatchException
     CatchIllegalMonitorStateException 
     CatchIndexOutOfBoundsException
-//    CatchNullPointerException
+    CatchNullPointerException
     CatchRuntimeException 
     CatchThrowable 
     ConfusingClassNamedException 

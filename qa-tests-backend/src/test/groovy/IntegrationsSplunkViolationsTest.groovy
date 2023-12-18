@@ -131,18 +131,18 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
-            if (response != null) {
-                results = response.getBody().jsonPath().getList("results")
-                if (!results.isEmpty()) {
-                    for (result in results) {
-                        hasNetworkViolation |= isNetworkViolation(result)
-                        hasProcessViolation |= isProcessViolation(result)
-                    }
-                    if (hasNetworkViolation && hasProcessViolation) {
-                        log.info "Success!"
-                        break
-                    }
-                }
+            if (response == null) {
+                continue
+            }
+            results = response.getBody().jsonPath().getList("results")
+            if (results.isEmpty()) {
+                continue
+            }
+            hasNetworkViolation = results.any { isNetworkViolation(it) }
+            hasProcessViolation = results.any { isProcessViolation(it) }
+            if (hasNetworkViolation && hasProcessViolation) {
+                log.info "Success!"
+                break
             }
         }
 
