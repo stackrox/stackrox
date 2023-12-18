@@ -1,6 +1,8 @@
 package deploymentenhancer
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -20,14 +22,20 @@ type DeploymentEnhancer struct {
 	responsesC       chan *message.ExpiringMessage
 	deploymentsQueue chan *central.DeploymentEnhancementRequest
 	storeProvider    store.Provider
+	ctx              context.Context
+	ctxCancel        func()
 }
 
 // CreateEnhancer creates a new Enhancer
 func CreateEnhancer(provider store.Provider) common.SensorComponent {
+	ctx, ctxCancel := context.WithCancel(context.Background())
+
 	return &DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
 		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, deploymentQueueSize),
 		storeProvider:    provider,
+		ctx:              ctx,
+		ctxCancel:        ctxCancel,
 	}
 }
 
@@ -46,17 +54,21 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 func (d *DeploymentEnhancer) Start() error {
 	go func() {
 		for {
-			deploymentMsg, more := <-d.deploymentsQueue
-			if !more {
+			select {
+			case <-d.ctx.Done():
 				return
+			case deploymentMsg, more := <-d.deploymentsQueue:
+				if !more {
+					return
+				}
+				requestID := deploymentMsg.GetMsg().GetId()
+				if requestID == "" {
+					log.Warnf("Received deploymentEnhancement msg with empty request ID. Discarding request.")
+					continue
+				}
+				deployments := d.enhanceDeployments(deploymentMsg)
+				d.sendDeploymentsToCentral(requestID, deployments)
 			}
-			requestID := deploymentMsg.GetMsg().GetId()
-			if requestID == "" {
-				log.Warnf("received deploymentEnhancement msg with empty request ID. Discarding request.")
-				continue
-			}
-			deployments := d.enhanceDeployments(deploymentMsg)
-			d.sendDeploymentsToCentral(requestID, deployments)
 		}
 	}()
 	return nil
@@ -67,7 +79,7 @@ func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.Deploymen
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
 	if deployments == nil {
-		log.Warnf("received deploymentEnhancement message with no deployments")
+		log.Warnf("Received deploymentEnhancement message with no deployments")
 		return ret
 	}
 
@@ -113,7 +125,7 @@ func (d *DeploymentEnhancer) ResponsesC() <-chan *message.ExpiringMessage {
 
 // Stop stops the component
 func (d *DeploymentEnhancer) Stop(_ error) {
-	defer close(d.deploymentsQueue)
+	d.ctxCancel()
 }
 
 // Notify is unimplemented, part of the common interface

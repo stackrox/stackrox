@@ -51,7 +51,6 @@ func (p pipelineImpl) Run(_ context.Context, _ string, msg *central.MsgFromSenso
 	return nil
 }
 
-// Reconcile .
 func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }

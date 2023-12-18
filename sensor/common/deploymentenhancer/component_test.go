@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
 )
 
@@ -45,7 +46,23 @@ func (s *ComponentTestSuite) SetupTest() {
 }
 
 func (s *ComponentTestSuite) TearDownTest() {
+	defer assertNoGoroutineLeaks(s.T())
 	s.T().Cleanup(s.mockCtrl.Finish)
+}
+
+func assertNoGoroutineLeaks(t *testing.T) {
+	goleak.VerifyNone(t,
+		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
+		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
+	)
+}
+
+func (s *ComponentTestSuite) TestComponentLifecycle() {
+	de := CreateEnhancer(s.mockStoreProvider)
+	s.NoError(de.Start())
+	de.Stop(nil)
+	s.NoError(de.Start())
+	de.Stop(nil)
 }
 
 func (s *ComponentTestSuite) TestExtractAndEnrichDeployments() {
