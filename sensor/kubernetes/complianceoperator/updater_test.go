@@ -62,6 +62,11 @@ func (s *UpdaterTestSuite) SetupTest() {
 	s.Require().NoError(err)
 }
 
+func (s *UpdaterTestSuite) TearDownTest() {
+	// Clear out capabilities for next test
+	centralcaps.Set([]centralsensor.CentralCapability{})
+}
+
 func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	ds := buildComplianceOperator(defaultNS)
 
