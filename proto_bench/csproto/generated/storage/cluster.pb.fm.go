@@ -20,7 +20,7 @@ func (m *GoogleProviderMetadata) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -36,7 +36,7 @@ func (m *GoogleProviderMetadata) Size() int {
 		sz += csproto.SizeOfTagKey(2) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -117,7 +117,7 @@ func (m *GoogleProviderMetadata) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -135,7 +135,7 @@ func (m *AWSProviderMetadata) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -147,7 +147,7 @@ func (m *AWSProviderMetadata) Size() int {
 		sz += csproto.SizeOfTagKey(1) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -214,7 +214,7 @@ func (m *AWSProviderMetadata) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -232,7 +232,7 @@ func (m *AzureProviderMetadata) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -244,7 +244,7 @@ func (m *AzureProviderMetadata) Size() int {
 		sz += csproto.SizeOfTagKey(1) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -311,7 +311,7 @@ func (m *AzureProviderMetadata) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -329,7 +329,7 @@ func (m *ProviderMetadata) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -367,7 +367,7 @@ func (m *ProviderMetadata) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -512,7 +512,7 @@ func (m *ProviderMetadata) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -530,7 +530,7 @@ func (m *OrchestratorMetadata) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -559,7 +559,7 @@ func (m *OrchestratorMetadata) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -661,7 +661,7 @@ func (m *OrchestratorMetadata) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -679,7 +679,7 @@ func (m *AdmissionControllerConfig) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -707,7 +707,7 @@ func (m *AdmissionControllerConfig) Size() int {
 		sz += csproto.SizeOfTagKey(5) + 1
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -826,7 +826,7 @@ func (m *AdmissionControllerConfig) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -844,7 +844,7 @@ func (m *TolerationsConfig) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -856,7 +856,7 @@ func (m *TolerationsConfig) Size() int {
 		sz += csproto.SizeOfTagKey(1) + 1
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -923,7 +923,7 @@ func (m *TolerationsConfig) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -941,7 +941,7 @@ func (m *StaticClusterConfig) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -990,7 +990,7 @@ func (m *StaticClusterConfig) Size() int {
 		sz += csproto.SizeOfTagKey(10) + 1
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -1179,7 +1179,7 @@ func (m *StaticClusterConfig) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -1197,7 +1197,7 @@ func (m *DynamicClusterConfig) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -1218,7 +1218,7 @@ func (m *DynamicClusterConfig) Size() int {
 		sz += csproto.SizeOfTagKey(3) + 1
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -1314,7 +1314,7 @@ func (m *DynamicClusterConfig) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -1332,7 +1332,7 @@ func (m *CompleteClusterConfig) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -1365,7 +1365,7 @@ func (m *CompleteClusterConfig) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -1517,7 +1517,7 @@ func (m *CompleteClusterConfig) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -1535,7 +1535,7 @@ func (m *SensorDeploymentIdentification) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -1567,7 +1567,7 @@ func (m *SensorDeploymentIdentification) Size() int {
 		sz += csproto.SizeOfTagKey(6) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -1704,7 +1704,7 @@ func (m *SensorDeploymentIdentification) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -1722,7 +1722,7 @@ func (m *Cluster) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -1844,7 +1844,7 @@ func (m *Cluster) Size() int {
 		sz += csproto.SizeOfTagKey(30) + csproto.SizeOfVarint(uint64(m.ManagedBy))
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2303,7 +2303,7 @@ func (m *Cluster) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2321,7 +2321,7 @@ func (m *ClusterCertExpiryStatus) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2329,7 +2329,7 @@ func (m *ClusterCertExpiryStatus) Size() int {
 	_ = l // avoid unused variable
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2382,7 +2382,7 @@ func (m *ClusterCertExpiryStatus) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2400,7 +2400,7 @@ func (m *ClusterStatus) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2432,7 +2432,7 @@ func (m *ClusterStatus) Size() int {
 		sz += csproto.SizeOfTagKey(6) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2560,7 +2560,7 @@ func (m *ClusterStatus) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2578,7 +2578,7 @@ func (m *ClusterUpgradeStatus) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2599,7 +2599,7 @@ func (m *ClusterUpgradeStatus) Size() int {
 		sz += csproto.SizeOfTagKey(3) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2695,7 +2695,7 @@ func (m *ClusterUpgradeStatus) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2713,7 +2713,7 @@ func (m *UpgradeProgress) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2729,7 +2729,7 @@ func (m *UpgradeProgress) Size() int {
 		sz += csproto.SizeOfTagKey(2) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2809,7 +2809,7 @@ func (m *UpgradeProgress) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2827,7 +2827,7 @@ func (m *AuditLogFileState) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2839,7 +2839,7 @@ func (m *AuditLogFileState) Size() int {
 		sz += csproto.SizeOfTagKey(2) + csproto.SizeOfVarint(uint64(l)) + l
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -2906,7 +2906,7 @@ func (m *AuditLogFileState) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -2924,7 +2924,7 @@ func (m *ClusterHealthStatus) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -2975,7 +2975,7 @@ func (m *ClusterHealthStatus) Size() int {
 		sz += csproto.SizeOfTagKey(6) + 1
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -3166,7 +3166,7 @@ func (m *ClusterHealthStatus) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -3184,7 +3184,7 @@ func (m *CollectorHealthInfo) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -3232,7 +3232,7 @@ func (m *CollectorHealthInfo) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -3376,7 +3376,7 @@ func (m *CollectorHealthInfo) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -3394,7 +3394,7 @@ func (m *AdmissionControlHealthInfo) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -3428,7 +3428,7 @@ func (m *AdmissionControlHealthInfo) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -3538,7 +3538,7 @@ func (m *AdmissionControlHealthInfo) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -3556,7 +3556,7 @@ func (m *ScannerHealthInfo) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -3610,7 +3610,7 @@ func (m *ScannerHealthInfo) Size() int {
 	}
 
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -3762,7 +3762,7 @@ func (m *ScannerHealthInfo) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}
@@ -3780,7 +3780,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Size() int {
 		return 0
 	}
 	// return cached size, if present
-	if csz := int(atomic.LoadInt32(&m.XXX_sizecache)); csz > 0 {
+	if csz := int(atomic.LoadInt32(&m.sizeCache)); csz > 0 {
 		return csz
 	}
 	// calculate and cache
@@ -3813,7 +3813,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Size() int {
 		sz += csproto.SizeOfTagKey(7) + csproto.SizeOfVarint(uint64(m.Type))
 	}
 	// cache the size so it can be re-used in Marshal()/MarshalTo()
-	atomic.StoreInt32(&m.XXX_sizecache, int32(sz))
+	atomic.StoreInt32(&m.sizeCache, int32(sz))
 	return sz
 }
 
@@ -3950,7 +3950,7 @@ func (m *ClusterUpgradeStatus_UpgradeProcessStatus) Unmarshal(p []byte) error {
 			if skipped, err := dec.Skip(tag, wt); err != nil {
 				return fmt.Errorf("invalid operation skipping tag %v: %w", tag, err)
 			} else {
-				m.XXX_unrecognized = append(m.XXX_unrecognized, skipped...)
+				m.unknownFields = append(m.unknownFields, skipped...)
 			}
 		}
 	}

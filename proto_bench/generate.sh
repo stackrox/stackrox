@@ -23,7 +23,7 @@ go install github.com/CrowdStrike/csproto/cmd/protoc-gen-fastmarshal@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ./bin/protoc \
     --go_out=csproto \
-    --fastmarshal_out=paths=source_relative:. \
+    --fastmarshal_out=apiversion=v2,paths=source_relative:csproto \
     proto/cluster.proto;
 
 mkdir -p gogo
