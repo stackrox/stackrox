@@ -67,7 +67,7 @@ func TestUpsert(t *testing.T) {
 func TestUpsertMany(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newStore(testDB)
-	
+
 	testObjects := sampleTestSingleKeyStructArray("UpsertMany")
 
 	for _, obj := range testObjects {
