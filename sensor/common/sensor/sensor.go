@@ -337,7 +337,7 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 
 	syncDone := concurrency.NewSignal()
 	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
-	go s.notifySyncDone(&syncDone)
+	go s.notifySyncDone(&syncDone, s.centralCommunication)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)
@@ -371,13 +371,13 @@ func wrapOrNewError(err error, message string) error {
 	return errors.Wrap(err, message)
 }
 
-func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal) {
-	s.currentStateMtx.Lock()
-	defer s.currentStateMtx.Unlock()
+func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
 	select {
 	case <-syncDone.Done():
+		s.currentStateMtx.Lock()
+		defer s.currentStateMtx.Unlock()
 		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
-	case <-s.centralCommunication.Stopped().WaitC():
+	case <-centralCommunication.Stopped().WaitC():
 		return
 	case <-s.stoppedSig.WaitC():
 		return
@@ -410,10 +410,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
-		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
-		go s.notifySyncDone(&syncDone)
+		s.centralCommunication = centralCommunication
+		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
 		select {
