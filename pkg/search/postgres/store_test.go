@@ -67,24 +67,8 @@ func TestUpsert(t *testing.T) {
 func TestUpsertMany(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	store := newStore(testDB)
-
-	key1 := "TestUpsertMany1"
-	name1 := "Test UpsertMany 1"
-	testObj1 := newTestSingleKeyStruct(key1, name1, int64(1))
-	key2 := "TestUpsertMany2"
-	name2 := "Test UpsertMany 2"
-	testObj2 := newTestSingleKeyStruct(key2, name2, int64(2))
-	key3 := "TestUpsertMany3"
-	name3 := "Test UpsertMany 3"
-	testObj3 := newTestSingleKeyStruct(key3, name3, int64(3))
-	key4 := "TestUpsertMany4"
-	name4 := "Test UpsertMany 4"
-	testObj4 := newTestSingleKeyStruct(key4, name4, int64(4))
-	key5 := "TestUpsertMany5"
-	name5 := "Test UpsertMany 5"
-	testObj5 := newTestSingleKeyStruct(key5, name5, int64(5))
-
-	testObjects := []*storage.TestSingleKeyStruct{testObj1, testObj2, testObj3, testObj4, testObj5}
+	
+	testObjects := sampleTestSingleKeyStructArray("UpsertMany")
 
 	for _, obj := range testObjects {
 		objBefore, foundBefore, errBefore := store.Get(ctx, pkGetter(obj))
