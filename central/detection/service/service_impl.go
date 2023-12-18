@@ -370,7 +370,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(errs)
 	}
 	if len(deployments) > 0 && errs != nil {
-		log.Warnf("one or multiple provided YAMLs parsed with errors: %v", errs)
+		log.Warnf("deployment YAMLs failed to parse: %v", errs)
 	}
 
 	// Enhance the deployments, then range over them
