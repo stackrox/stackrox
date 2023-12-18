@@ -264,12 +264,12 @@ func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
 }
 
 // scannedByClairify returns true if an image was scanned by the Clairify scanner, false otherwise.
-func (s *managerImpl) scannedByClairify(img *storage.Image) bool {
+func (e *managerImpl) scannedByClairify(img *storage.Image) bool {
 	if img.GetScan().GetDataSource() == nil {
 		return false
 	}
 
-	for _, scanner := range s.iiSet.ScannerSet().GetAll() {
+	for _, scanner := range e.iiSet.ScannerSet().GetAll() {
 		if scanner.GetScanner().Type() == scannerTypes.Clairify && scanner.DataSource().GetId() == img.GetScan().GetDataSource().GetId() {
 			return true
 		}
