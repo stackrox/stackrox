@@ -42,7 +42,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             });
     }
 
-    const alignRightElement =
+    const headerActions =
         hasWriteAccessForInitBundles && initBundle ? (
             <Button
                 variant="danger"
@@ -58,7 +58,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
     return (
         <>
             <InitBundlesHeader
-                alignRightElement={alignRightElement}
+                headerActions={headerActions}
                 titleNotInitBundles="Cluster init bundle"
             />
             <PageSection component="div">

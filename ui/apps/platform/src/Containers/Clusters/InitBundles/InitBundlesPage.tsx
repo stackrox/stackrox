@@ -15,7 +15,7 @@ export type InitBundlesPageProps = {
 };
 
 function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps): ReactElement {
-    const alignRightElement = hasWriteAccessForInitBundles ? (
+    const headerActions = hasWriteAccessForInitBundles ? (
         <Button
             variant="primary"
             component={LinkShim}
@@ -34,7 +34,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
     /* eslint-disable no-nested-ternary */
     return (
         <>
-            <InitBundlesHeader alignRightElement={alignRightElement} />
+            <InitBundlesHeader headerActions={headerActions} />
             <PageSection component="div">
                 {isFetching ? (
                     <Bullseye>

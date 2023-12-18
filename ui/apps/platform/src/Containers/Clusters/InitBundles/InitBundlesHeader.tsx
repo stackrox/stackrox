@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -16,12 +16,12 @@ import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 const titleInitBundles = 'Cluster init bundles';
 
 export type InitBundlesHeaderProps = {
-    alignRightElement?: ReactElement | null;
+    headerActions?: ReactNode | null;
     titleNotInitBundles?: string;
 };
 
 function InitBundlesHeader({
-    alignRightElement,
+    headerActions,
     titleNotInitBundles,
 }: InitBundlesHeaderProps): ReactElement {
     const title = titleNotInitBundles ?? titleInitBundles;
@@ -46,8 +46,8 @@ function InitBundlesHeader({
                             authenticate with Central.
                         </Text>
                     </FlexItem>
-                    {alignRightElement && (
-                        <FlexItem align={{ default: 'alignRight' }}>{alignRightElement}</FlexItem>
+                    {headerActions && (
+                        <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>
                     )}
                 </Flex>
             </Flex>
