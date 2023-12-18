@@ -51,4 +51,7 @@ var (
 
 	// NetworkFlowBufferSize holds the size of how many network flows updates will be kept in Sensor while offline.
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
+
+	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
+	ProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_PROCESS_INDICATOR_OFFLINE_BUFFER_SIZE", 100)
 )

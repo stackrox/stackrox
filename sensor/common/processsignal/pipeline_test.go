@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -16,7 +17,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestProcessPipelineOffline(t *testing.T) {
+func TestProcessPipelineOfflineV1(t *testing.T) {
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
 	containerMetadata1 := clusterentities.ContainerMetadata{
 		DeploymentID: "mock-deployment-1",
 		ContainerID:  "1e43ac4f61f9",
@@ -133,7 +135,7 @@ func TestProcessPipelineOffline(t *testing.T) {
 		},
 	}
 
-	sensorEvents := make(chan *message.ExpiringMessage)
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
 	defer close(sensorEvents)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -166,11 +168,22 @@ func TestProcessPipelineOffline(t *testing.T) {
 			defer p.Shutdown()
 
 			metadataWg := &sync.WaitGroup{}
-			metadataWg.Add(2)
+			metadataWg.Add(1)
 
 			p.Notify(tc.initialState)
 			tc.initialSignal.signalProcessingRoutine(p, tc.initialSignal.signal, mockStore, containerMetadata1, metadataWg)
+			// Wait for metadata to arrive - either directly or through the ticker
+			metadataWg.Wait()
 
+			events := collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
+
+			// At this point we should have only one message
+			assert.Len(t, events, 1)
+			assert.Equal(t, events[0].GetEvent().GetProcessIndicator().GetDeploymentId(), containerMetadata1.DeploymentID)
+			tc.initialSignal.expectContextCancel(t, events[0].Context.Err())
+
+			// Process second part of the test
+			metadataWg.Add(1)
 			p.Notify(tc.laterState)
 			tc.laterSignal.signalProcessingRoutine(p, tc.laterSignal.signal, mockStore, containerMetadata2, metadataWg)
 
@@ -178,15 +191,12 @@ func TestProcessPipelineOffline(t *testing.T) {
 			metadataWg.Wait()
 
 			// Events contains processed signals. They may arrive in any order
-			events := collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
-			// These tests always use two signals that should be processed
-			assert.Len(t, events, 2)
+			events = collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
 
-			for _, e := range events {
-				assert.Contains(t,
-					[]string{containerMetadata1.DeploymentID, containerMetadata2.DeploymentID},
-					e.GetEvent().GetProcessIndicator().GetDeploymentId())
-			}
+			// At this point we should have only one message
+			assert.Len(t, events, 1)
+			assert.Equal(t, events[0].GetEvent().GetProcessIndicator().GetDeploymentId(), containerMetadata2.DeploymentID)
+			tc.laterSignal.expectContextCancel(t, events[0].Context.Err())
 		})
 	}
 }
