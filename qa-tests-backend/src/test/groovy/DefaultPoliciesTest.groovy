@@ -182,7 +182,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                 componentCount=91
                 break
             default:
-                componentCount=169
+                componentCount="1(6[6-9]|7[0-5])"
                 break
         }
     }

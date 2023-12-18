@@ -38,8 +38,8 @@ environment.
 Options:
   -c, --config-only - configure the cluster for test but do not run
     any tests. [qa flavor only]
-  --run-tests-only - reuse prior configuration and run tests. [qa
-    flavor only]
+  --test-only - reuse prior configuration and run tests. [qa flavor
+    only]
   -d, --gather-debug - enable debug log gathering to '${QA_TEST_DEBUG_LOGS}'.
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
