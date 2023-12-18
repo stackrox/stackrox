@@ -59,13 +59,16 @@ func (b *Broker) NotifyDeploymentReceived(msg *central.DeploymentEnhancementResp
 
 // SendAndWaitForEnhancedDeployments sends a list of deployments to Sensor for additional data. Blocks while waiting.
 func (b *Broker) SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error) {
-	b.lock.Lock()
-	id := uuid.NewV4().String()
-	s := enhancementSignal{
-		msgArrived: concurrency.NewSignal(),
-	}
-	b.activeRequests[id] = &s
-	b.lock.Unlock()
+	var id string
+	var s enhancementSignal
+
+	concurrency.WithLock(&b.lock, func() {
+		id = uuid.NewV4().String()
+		s = enhancementSignal{
+			msgArrived: concurrency.NewSignal(),
+		}
+		b.activeRequests[id] = &s
+	})
 
 	log.Debugf("Sending Deployment Augmentation request to Sensor with requestID %s", id)
 
