@@ -209,7 +209,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 						s.True(len(result) == 0, "Should not find endpoint %q in tick %d.  Result: %v", endpoint, tickNo, result)
 					}
 				}
-				entityStore.Tick()
+				entityStore.RecordTick()
 			}
 		})
 	}

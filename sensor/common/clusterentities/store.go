@@ -152,8 +152,8 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.applyNoLock(updates, incremental)
 }
 
-// Tick informs the store that a unit of time has passed
-func (e *Store) Tick() {
+// RecordTick records the information that a unit of time (1 tick) has passed
+func (e *Store) RecordTick() {
 	e.historyMutex.Lock()
 	defer e.historyMutex.Unlock()
 	for deploymentID, m := range e.historicalEndpoints {

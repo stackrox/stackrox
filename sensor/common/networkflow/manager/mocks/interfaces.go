@@ -68,6 +68,18 @@ func (mr *MockEntityStoreMockRecorder) LookupByEndpoint(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupByEndpoint", reflect.TypeOf((*MockEntityStore)(nil).LookupByEndpoint), arg0)
 }
 
+// RecordTick mocks base method.
+func (m *MockEntityStore) RecordTick() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordTick")
+}
+
+// RecordTick indicates an expected call of RecordTick.
+func (mr *MockEntityStoreMockRecorder) RecordTick() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTick", reflect.TypeOf((*MockEntityStore)(nil).RecordTick))
+}
+
 // RegisterPublicIPsListener mocks base method.
 func (m *MockEntityStore) RegisterPublicIPsListener(arg0 clusterentities.PublicIPsListener) bool {
 	m.ctrl.T.Helper()
@@ -80,18 +92,6 @@ func (m *MockEntityStore) RegisterPublicIPsListener(arg0 clusterentities.PublicI
 func (mr *MockEntityStoreMockRecorder) RegisterPublicIPsListener(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPublicIPsListener", reflect.TypeOf((*MockEntityStore)(nil).RegisterPublicIPsListener), arg0)
-}
-
-// Tick mocks base method.
-func (m *MockEntityStore) Tick() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Tick")
-}
-
-// Tick indicates an expected call of Tick.
-func (mr *MockEntityStoreMockRecorder) Tick() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tick", reflect.TypeOf((*MockEntityStore)(nil).Tick))
 }
 
 // UnregisterPublicIPsListener mocks base method.
