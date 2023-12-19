@@ -496,7 +496,7 @@ go-unit-tests: build-prep test-prep
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... > /dev/null; \
+			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration" > /dev/null; \
 		done; \
 	done
 
