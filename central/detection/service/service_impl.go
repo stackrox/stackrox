@@ -373,17 +373,19 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
 	}
 
-	// Enhance the deployments, then range over them
-	conn := s.connManager.GetConnection(eCtx.ClusterID)
-	if conn == nil {
-		return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
-	}
-	enhancedDeployments, err := s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, 30*time.Second)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
+	// If a cluster is provided, enhance deployments with additional info from Sensor
+	if eCtx.ClusterID != "" {
+		conn := s.connManager.GetConnection(eCtx.ClusterID)
+		if conn == nil {
+			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
+		}
+		deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, 30*time.Second)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
+		}
 	}
 
-	for _, d := range enhancedDeployments {
+	for _, d := range deployments {
 		run, err := s.runDeployTimeDetect(ctx, eCtx, d, req.GetPolicyCategories())
 
 		if err != nil {
