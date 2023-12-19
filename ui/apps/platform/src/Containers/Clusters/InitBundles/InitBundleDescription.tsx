@@ -8,11 +8,11 @@ import {
 
 import { ClusterInitBundle } from 'services/ClustersService';
 
-export type InitBundleViewProps = {
+export type InitBundleDescriptionProps = {
     initBundle: ClusterInitBundle;
 };
 
-function InitBundleView({ initBundle }: InitBundleViewProps): ReactElement {
+function InitBundleDescription({ initBundle }: InitBundleDescriptionProps): ReactElement {
     return (
         <DescriptionList isCompact isHorizontal className="pf-u-background-color-100 pf-u-p-lg">
             <DescriptionListGroup>
@@ -43,4 +43,4 @@ function InitBundleView({ initBundle }: InitBundleViewProps): ReactElement {
     );
 }
 
-export default InitBundleView;
+export default InitBundleDescription;

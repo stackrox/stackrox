@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
@@ -6,14 +6,16 @@ import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useRestQuery from 'hooks/useRestQuery';
-import { listComplianceProfiles } from 'services/ComplianceEnhancedService';
+import { createScanConfig, listComplianceProfiles } from 'services/ComplianceEnhancedService';
 
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigOptions from './ScanConfigOptions';
 import ClusterSelection from './ClusterSelection';
 import ProfileSelection from './ProfileSelection';
 import ReviewConfig from './ReviewConfig';
 import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
+import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set Parameters';
 const PARAMETERS_ID = 'parameters';
@@ -30,12 +32,25 @@ function ScanConfigPage(): ReactElement {
     const { clusters, isLoading: isFetchingClusters } = useFetchClustersForPermissions([
         'Compliance',
     ]);
+    const [isCreating, setIsCreating] = useState(false);
+    const [createScanConfigError, setCreateScanConfigError] = useState('');
 
     const listQuery = useCallback(() => listComplianceProfiles(), []);
     const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listQuery);
 
-    function onCreate() {
-        // TODO: create scan
+    async function onCreate() {
+        setIsCreating(true);
+        setCreateScanConfigError('');
+        const complianceScanConfig = convertFormikToScanConfig(formik.values);
+
+        try {
+            await createScanConfig(complianceScanConfig);
+            history.push(complianceEnhancedScanConfigsBasePath);
+        } catch (error) {
+            setCreateScanConfigError(getAxiosErrorMessage(error));
+        } finally {
+            setIsCreating(false);
+        }
     }
 
     function onClose(): void {
@@ -87,7 +102,13 @@ function ScanConfigPage(): ReactElement {
         {
             name: REVIEW_CONFIG,
             id: REVIEW_CONFIG_ID,
-            component: <ReviewConfig />,
+            component: (
+                <ReviewConfig
+                    clusters={clusters}
+                    profiles={profiles || []}
+                    errorMessage={createScanConfigError}
+                />
+            ),
             canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
         },
     ];
@@ -105,7 +126,7 @@ function ScanConfigPage(): ReactElement {
                         <ScanConfigWizardFooter
                             wizardSteps={wizardSteps}
                             onSave={onCreate}
-                            isSaving={false}
+                            isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
                         />
                     }

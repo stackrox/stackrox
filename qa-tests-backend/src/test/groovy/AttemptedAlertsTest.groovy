@@ -89,10 +89,10 @@ class AttemptedAlertsTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
 
-        for (def policyName : POLICY_NAMES) {
+        POLICY_NAMES.each { String policyName ->
             def alerts = Services.getViolationsWithTimeout(DEP_PREFIX, policyName, 0)
-            for (def oldAlert : alerts) {
-                AlertService.resolveAlert(oldAlert.getId())
+            alerts.each { ListAlert oldAlert ->
+                    AlertService.resolveAlert(oldAlert.getId())
             }
         }
     }

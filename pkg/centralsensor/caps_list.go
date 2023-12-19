@@ -39,4 +39,7 @@ const (
 
 	// SendDeduperStateOnReconnect identifies the capability to receive resource hashes from Central when reconnecting.
 	SendDeduperStateOnReconnect = "SendDeduperStateOnReconnect"
+
+	// ComplianceV2Integrations identifies the capability of central to support V2 integrations with compliance operator
+	ComplianceV2Integrations = "ComplianceV2Integrations"
 )

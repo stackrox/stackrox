@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	adminOption "github.com/stackrox/rox/pkg/administration/events/option"
-	gcpHandler "github.com/stackrox/rox/pkg/cloudproviders/gcp/handler"
 	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
@@ -63,7 +62,7 @@ type cscc struct {
 	// The Service Account is a Google JSON service account key.
 	// The GCP Organization ID is a numeric identifier for the Google Cloud Platform
 	// organization. It is required so that we can tag findings to the right org.
-	client gcpHandler.Handler[*securitycenter.Client]
+	client *securitycenter.Client
 	config *config
 	*storage.Notifier
 }
@@ -86,20 +85,20 @@ func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		}
 	}
 
-	var handler gcpHandler.Handler[*securitycenter.Client]
+	var client *securitycenter.Client
 	if features.CloudCredentials.Enabled() {
-		handler, err = gcpUtils.CreateSecurityCenterHandlerFromConfigWithManager(context.Background(), gcp.Singleton(),
+		client, err = gcpUtils.CreateSecurityCenterClientFromConfigWithManager(context.Background(), gcp.Singleton(),
 			[]byte(decCreds), conf.GetWifEnabled())
 	} else {
-		handler, err = gcpUtils.CreateSecurityCenterHandlerFromConfig(context.Background(), []byte(decCreds), conf.GetWifEnabled())
+		client, err = gcpUtils.CreateSecurityCenterClientFromConfig(context.Background(), []byte(decCreds), conf.GetWifEnabled())
 	}
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create security center client handler")
+		return nil, errors.Wrap(err, "could not create security center client")
 	}
 
 	return &cscc{
 		Notifier: protoNotifier,
-		client:   handler,
+		client:   client,
 		config: &config{
 			ServiceAccount: decCreds,
 			SourceID:       conf.SourceId,
@@ -114,13 +113,7 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return err
 	}
 
-	client, done := c.client.GetClient()
-	defer done()
-	if client == nil {
-		return errors.New("failed to get security center client")
-	}
-
-	_, err = client.CreateFinding(ctx, &securitycenterpb.CreateFindingRequest{
+	_, err = c.client.CreateFinding(ctx, &securitycenterpb.CreateFindingRequest{
 		Parent:    finding.GetParent(),
 		FindingId: findingID,
 		Finding:   finding,
@@ -140,12 +133,7 @@ func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 func (c *cscc) Close(_ context.Context) error {
-	client, done := c.client.GetClient()
-	defer done()
-	if client == nil {
-		return nil
-	}
-	return client.Close()
+	return c.client.Close()
 }
 
 func (c *cscc) ProtoNotifier() *storage.Notifier {
@@ -179,7 +167,8 @@ func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore
 
 // initFinding takes in an alert and generates the finding.
 func (c *cscc) initFinding(_ context.Context, alert *storage.Alert,
-	clusterDatastore clusterDatastore.DataStore) (string, *securitycenterpb.Finding, error) {
+	clusterDatastore clusterDatastore.DataStore,
+) (string, *securitycenterpb.Finding, error) {
 	if alert.GetImage() != nil {
 		return "", nil, errors.New("CSCC integration can only handle alerts for deployments and resources")
 	}

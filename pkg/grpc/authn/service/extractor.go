@@ -14,7 +14,11 @@ type extractor struct {
 	validator authn.ValidateCertChain
 }
 
-func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("service", msg, err)
+}
+
+func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	l := len(ri.VerifiedChains)
 	// For all mTLS communication, there will be exactly one verified chain.
 	// If there are multiple verified chains, no need to send an error -- it just
@@ -32,7 +36,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	if e.validator != nil {
 		err := e.validator.ValidateClientCertificate(ctx, ri.VerifiedChains[0])
 		if err != nil {
-			return nil, err
+			return nil, getExtractorError("client certificate validation failed", err)
 		}
 	}
 

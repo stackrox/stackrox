@@ -7,7 +7,7 @@ Central Services Configuration Summary:
 
   Name:                                        {{ ._rox.clusterName }}
   Kubernetes Version:                          {{ ._rox._apiServer.version }}
-  Kubernetes Namespace:                        {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }}[NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
+  Kubernetes Namespace:                        {{ .Release.Namespace }}
   Helm Release Name:                           {{ .Release.Name }}
   Central Endpoint:                            {{ ._rox.centralEndpoint }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}

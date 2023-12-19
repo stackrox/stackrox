@@ -9,6 +9,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -23,6 +24,7 @@ export type AwsSecurityHubIntegration = {
         credentials: {
             accessKeyId: string;
             secretAccessKey: string;
+            stsEnabled: boolean;
         };
     };
     type: 'awsSecurityHub';
@@ -43,44 +45,49 @@ export const validationSchema = yup.object().shape({
                 .length(12, 'AWS account numbers must be 12 characters long'),
             region: yup.string().required('An AWS region is required'),
             credentials: yup.object().shape({
-                accessKeyId: yup
-                    .string()
-                    .test(
-                        'accessKeyId-test',
-                        'An access key ID is required',
-                        (value, context: yup.TestContext) => {
-                            const requirePasswordField =
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                context?.from[3]?.value?.updatePassword || false;
+                stsEnabled: yup.boolean(),
+                accessKeyId: yup.string().when('stsEnabled', {
+                    is: false,
+                    then: (accessKeyIdSchema) =>
+                        accessKeyIdSchema.test(
+                            'accessKeyId-test',
+                            'An access key ID is required',
+                            (value, context: yup.TestContext) => {
+                                const requirePasswordField =
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                    // @ts-ignore
+                                    context?.from[3]?.value?.updatePassword || false;
 
-                            if (!requirePasswordField) {
-                                return true;
+                                if (!requirePasswordField) {
+                                    return true;
+                                }
+
+                                const trimmedValue = value?.trim();
+                                return !!trimmedValue;
                             }
+                        ),
+                }),
+                secretAccessKey: yup.string().when('stsEnabled', {
+                    is: false,
+                    then: (secretAccessKeySchema) =>
+                        secretAccessKeySchema.test(
+                            'secretAccessKey-test',
+                            'A secret access key is required',
+                            (value, context: yup.TestContext) => {
+                                const requirePasswordField =
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                    // @ts-ignore
+                                    context?.from[3]?.value?.updatePassword || false;
 
-                            const trimmedValue = value?.trim();
-                            return !!trimmedValue;
-                        }
-                    ),
-                secretAccessKey: yup
-                    .string()
-                    .test(
-                        'secretAccessKey-test',
-                        'A secret access key is required',
-                        (value, context: yup.TestContext) => {
-                            const requirePasswordField =
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                context?.from[3]?.value?.updatePassword || false;
+                                if (!requirePasswordField) {
+                                    return true;
+                                }
 
-                            if (!requirePasswordField) {
-                                return true;
+                                const trimmedValue = value?.trim();
+                                return !!trimmedValue;
                             }
-
-                            const trimmedValue = value?.trim();
-                            return !!trimmedValue;
-                        }
-                    ),
+                        ),
+                }),
             }),
         }),
         uiEndpoint: yup.string(),
@@ -99,6 +106,7 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
             credentials: {
                 accessKeyId: '',
                 secretAccessKey: '',
+                stsEnabled: false,
             },
         },
         labelDefault: '',
@@ -113,6 +121,8 @@ function AwsSecurityHubIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -227,50 +237,73 @@ function AwsSecurityHubIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    <FormLabelGroup
-                        isRequired={values.updatePassword}
-                        label="Access key ID"
-                        fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="notifier.awsSecurityHub.credentials.accessKeyId"
-                            value={values.notifier.awsSecurityHub.credentials.accessKeyId}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored access key ID will be used.'
-                            }
-                        />
-                    </FormLabelGroup>
-                    <FormLabelGroup
-                        isRequired={values.updatePassword}
-                        label="Secret access key"
-                        fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="notifier.awsSecurityHub.credentials.secretAccessKey"
-                            value={values.notifier.awsSecurityHub.credentials.secretAccessKey}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored secret access key will be used.'
-                            }
-                        />
-                    </FormLabelGroup>
+                    {isCloudCredentialsEnabled && (
+                        <FormLabelGroup
+                            fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Use container IAM role"
+                                id="notifier.awsSecurityHub.credentials.stsEnabled"
+                                aria-label="enable sts"
+                                isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
+                    {!values.notifier.awsSecurityHub.credentials.stsEnabled && (
+                        <>
+                            <FormLabelGroup
+                                isRequired={values.updatePassword}
+                                label="Access key ID"
+                                fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired={values.updatePassword}
+                                    type="password"
+                                    id="notifier.awsSecurityHub.credentials.accessKeyId"
+                                    value={values.notifier.awsSecurityHub.credentials.accessKeyId}
+                                    onChange={onChange}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable || !values.updatePassword}
+                                    placeholder={
+                                        values.updatePassword
+                                            ? ''
+                                            : 'Currently-stored access key ID will be used.'
+                                    }
+                                />
+                            </FormLabelGroup>
+                            <FormLabelGroup
+                                isRequired={values.updatePassword}
+                                label="Secret access key"
+                                fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired={values.updatePassword}
+                                    type="password"
+                                    id="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                    value={
+                                        values.notifier.awsSecurityHub.credentials.secretAccessKey
+                                    }
+                                    onChange={onChange}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable || !values.updatePassword}
+                                    placeholder={
+                                        values.updatePassword
+                                            ? ''
+                                            : 'Currently-stored secret access key will be used.'
+                                    }
+                                />
+                            </FormLabelGroup>
+                        </>
+                    )}
                 </Form>
             </PageSection>
             {isEditable && (
