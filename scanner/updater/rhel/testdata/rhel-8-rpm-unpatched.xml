@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5" xmlns:unix-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#unix" xmlns:red-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux" xmlns:ind-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://oval.mitre.org/XMLSchema/oval-common-5 oval-common-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5 oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#unix unix-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#linux linux-definitions-schema.xsd">
+<generator>
+<oval:product_name>Red Hat OVAL Patch Definition Merger</oval:product_name>
+<oval:product_version>3</oval:product_version>
+<oval:schema_version>5.10</oval:schema_version>
+<oval:timestamp>2022-06-02T08:52:56</oval:timestamp>
+<oval:content_version>1654159976</oval:content_version>
+</generator>
+<definitions>
+<definition class="vulnerability" id="oval:com.redhat.cve:def:202135937" version="636">
+ <metadata>
+  <title>CVE-2021-35937 rpm: TOCTOU race in checks for unsafe symlinks (moderate)</title>
+  <reference ref_id="CVE-2021-35937" ref_url="https://access.redhat.com/security/cve/CVE-2021-35937" source="CVE"/>
+  <description>DOCUMENTATION: A race condition vulnerability was found in rpm. A local unprivileged user could use this flaw to bypass the checks that were introduced in response to CVE-2017-7500 and CVE-2017-7501, potentially gaining root privileges. The highest threat from this vulnerability is to data confidentiality and integrity as well as system availability. 
+            STATEMENT: System and service accounts may have the required permissions to exploit this flaw. Conversely, regular user accounts should not be allowed to manipulate RPM artifacts during installation, thus reducing the attack surface and hence the impact of this flaw considerably.
+            MITIGATION: Mitigation for this issue is either not available or the currently available options do not meet the Red Hat Product Security criteria comprising ease of use and deployment, applicability to widespread installation base or stability.</description>
+  <advisory from="secalert@redhat.com">
+   <severity>Moderate</severity>
+   <updated date="2022-05-12"/>
+   <cve cvss3="6.3/CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:H" cwe="(CWE-59|CWE-367)" href="https://access.redhat.com/security/cve/CVE-2021-35937" impact="moderate" public="20210630">CVE-2021-35937</cve>
+   <affected>
+    <resolution state="Affected">
+     <component>python3-rpm</component>
+     <component>rpm</component>
+     <component>rpm-apidocs</component>
+     <component>rpm-build</component>
+     <component>rpm-build-libs</component>
+     <component>rpm-cron</component>
+     <component>rpm-debugsource</component>
+     <component>rpm-devel</component>
+     <component>rpm-libs</component>
+     <component>rpm-plugin-fapolicyd</component>
+     <component>rpm-plugin-ima</component>
+     <component>rpm-plugin-prioreset</component>
+     <component>rpm-plugin-selinux</component>
+     <component>rpm-plugin-syslog</component>
+     <component>rpm-plugin-systemd-inhibit</component>
+     <component>rpm-sign</component>
+    </resolution>
+   </affected>
+   <affected_cpe_list>
+    <cpe>cpe:/a:redhat:enterprise_linux:8</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::appstream</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::crb</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::highavailability</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::nfv</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::realtime</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::resilientstorage</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::sap</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::sap_hana</cpe>
+    <cpe>cpe:/a:redhat:enterprise_linux:8::supplementary</cpe>
+    <cpe>cpe:/o:redhat:enterprise_linux:8</cpe>
+    <cpe>cpe:/o:redhat:enterprise_linux:8::baseos</cpe>
+   </affected_cpe_list>
+  </advisory>
+ </metadata>
+ <criteria operator="OR">
+      <criterion comment="Red Hat Enterprise Linux must be installed" test_ref="oval:com.redhat.cve:tst:20052541004"/>
+      <criteria operator="AND">
+          <criterion comment="Red Hat Enterprise Linux 8 is installed" test_ref="oval:com.redhat.cve:tst:20052541003"/>
+          <criteria operator="OR">
+                <criteria operator="AND">
+                    <criterion comment="rpm-build-libs is installed" test_ref="oval:com.redhat.cve:tst:202135937001"/>
+                    <criterion comment="rpm-build-libs is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937002"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-libs is installed" test_ref="oval:com.redhat.cve:tst:202135937003"/>
+                    <criterion comment="rpm-libs is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937004"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-cron is installed" test_ref="oval:com.redhat.cve:tst:202135937005"/>
+                    <criterion comment="rpm-cron is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937006"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-devel is installed" test_ref="oval:com.redhat.cve:tst:202135937007"/>
+                    <criterion comment="rpm-devel is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937008"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-prioreset is installed" test_ref="oval:com.redhat.cve:tst:202135937009"/>
+                    <criterion comment="rpm-plugin-prioreset is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937010"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-syslog is installed" test_ref="oval:com.redhat.cve:tst:202135937011"/>
+                    <criterion comment="rpm-plugin-syslog is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937012"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-ima is installed" test_ref="oval:com.redhat.cve:tst:202135937013"/>
+                    <criterion comment="rpm-plugin-ima is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937014"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-apidocs is installed" test_ref="oval:com.redhat.cve:tst:202135937015"/>
+                    <criterion comment="rpm-apidocs is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937016"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-build is installed" test_ref="oval:com.redhat.cve:tst:202135937017"/>
+                    <criterion comment="rpm-build is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937018"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="python3-rpm is installed" test_ref="oval:com.redhat.cve:tst:202135937019"/>
+                    <criterion comment="python3-rpm is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937020"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm is installed" test_ref="oval:com.redhat.cve:tst:202135937021"/>
+                    <criterion comment="rpm is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937022"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-debugsource is installed" test_ref="oval:com.redhat.cve:tst:202135937023"/>
+                    <criterion comment="rpm-debugsource is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937024"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-systemd-inhibit is installed" test_ref="oval:com.redhat.cve:tst:202135937025"/>
+                    <criterion comment="rpm-plugin-systemd-inhibit is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937026"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-sign is installed" test_ref="oval:com.redhat.cve:tst:202135937027"/>
+                    <criterion comment="rpm-sign is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937028"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-selinux is installed" test_ref="oval:com.redhat.cve:tst:202135937029"/>
+                    <criterion comment="rpm-plugin-selinux is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937030"/>
+                </criteria>
+                <criteria operator="AND">
+                    <criterion comment="rpm-plugin-fapolicyd is installed" test_ref="oval:com.redhat.cve:tst:202135937031"/>
+                    <criterion comment="rpm-plugin-fapolicyd is signed with Red Hat redhatrelease2 key" test_ref="oval:com.redhat.cve:tst:202135937032"/>
+                </criteria>
+          </criteria>
+      </criteria>
+ </criteria>
+</definition>
+</definitions>
+<tests>
+<red-def:rpmverifyfile_test check="none satisfy" comment="Red Hat Enterprise Linux must be installed" id="oval:com.redhat.cve:tst:20052541004" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:20052541002"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:20052541003"/>
+</red-def:rpmverifyfile_test>
+<red-def:rpmverifyfile_test check="at least one" comment="Red Hat Enterprise Linux 8 is installed" id="oval:com.redhat.cve:tst:20052541003" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:20052541002"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:20052541002"/>
+</red-def:rpmverifyfile_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-build-libs is installed" id="oval:com.redhat.cve:tst:202135937001" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-build-libs is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937002" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937001"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-libs is installed" id="oval:com.redhat.cve:tst:202135937003" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937002"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-libs is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937004" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937002"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-cron is installed" id="oval:com.redhat.cve:tst:202135937005" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937003"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-cron is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937006" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937003"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-devel is installed" id="oval:com.redhat.cve:tst:202135937007" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937004"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-devel is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937008" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937004"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-prioreset is installed" id="oval:com.redhat.cve:tst:202135937009" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937005"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-prioreset is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937010" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937005"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-syslog is installed" id="oval:com.redhat.cve:tst:202135937011" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937006"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-syslog is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937012" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937006"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-ima is installed" id="oval:com.redhat.cve:tst:202135937013" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937007"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-ima is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937014" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937007"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-apidocs is installed" id="oval:com.redhat.cve:tst:202135937015" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937008"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-apidocs is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937016" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937008"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-build is installed" id="oval:com.redhat.cve:tst:202135937017" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937009"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-build is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937018" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937009"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="python3-rpm is installed" id="oval:com.redhat.cve:tst:202135937019" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937010"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="python3-rpm is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937020" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937010"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm is installed" id="oval:com.redhat.cve:tst:202135937021" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937011"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937022" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937011"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-debugsource is installed" id="oval:com.redhat.cve:tst:202135937023" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937012"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-debugsource is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937024" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937012"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-systemd-inhibit is installed" id="oval:com.redhat.cve:tst:202135937025" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937013"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-systemd-inhibit is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937026" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937013"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-sign is installed" id="oval:com.redhat.cve:tst:202135937027" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937014"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-sign is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937028" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937014"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-selinux is installed" id="oval:com.redhat.cve:tst:202135937029" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937015"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-selinux is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937030" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937015"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-fapolicyd is installed" id="oval:com.redhat.cve:tst:202135937031" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937016"/>
+</red-def:rpminfo_test>
+<red-def:rpminfo_test check="at least one" comment="rpm-plugin-fapolicyd is signed with Red Hat redhatrelease2 key" id="oval:com.redhat.cve:tst:202135937032" version="636">
+ <red-def:object object_ref="oval:com.redhat.cve:obj:202135937016"/>
+ <red-def:state state_ref="oval:com.redhat.cve:ste:201520107001"/>
+</red-def:rpminfo_test>
+</tests>
+<objects>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:20052541001" version="636">
+ <red-def:name>tar</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpmverifyfile_object id="oval:com.redhat.cve:obj:20052541002" version="636">
+ <red-def:behaviors noconfigfiles="true" noghostfiles="true" nogroup="true" nolinkto="true" nomd5="true" nomode="true" nomtime="true" nordev="true" nosize="true" nouser="true"/>
+ <red-def:name operation="pattern match"/>
+ <red-def:epoch operation="pattern match"/>
+ <red-def:version operation="pattern match"/>
+ <red-def:release operation="pattern match"/>
+ <red-def:arch operation="pattern match"/>
+ <red-def:filepath>/etc/redhat-release</red-def:filepath>
+</red-def:rpmverifyfile_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937001" version="636">
+ <red-def:name>rpm-build-libs</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937002" version="636">
+ <red-def:name>rpm-libs</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937003" version="636">
+ <red-def:name>rpm-cron</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937004" version="636">
+ <red-def:name>rpm-devel</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937005" version="636">
+ <red-def:name>rpm-plugin-prioreset</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937006" version="636">
+ <red-def:name>rpm-plugin-syslog</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937007" version="636">
+ <red-def:name>rpm-plugin-ima</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937008" version="636">
+ <red-def:name>rpm-apidocs</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937009" version="636">
+ <red-def:name>rpm-build</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937010" version="636">
+ <red-def:name>python3-rpm</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937011" version="636">
+ <red-def:name>rpm</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937012" version="636">
+ <red-def:name>rpm-debugsource</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937013" version="636">
+ <red-def:name>rpm-plugin-systemd-inhibit</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937014" version="636">
+ <red-def:name>rpm-sign</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937015" version="636">
+ <red-def:name>rpm-plugin-selinux</red-def:name>
+</red-def:rpminfo_object>
+<red-def:rpminfo_object id="oval:com.redhat.cve:obj:202135937016" version="636">
+ <red-def:name>rpm-plugin-fapolicyd</red-def:name>
+</red-def:rpminfo_object>
+</objects>
+<states>
+<red-def:rpminfo_state id="oval:com.redhat.cve:ste:20052541001" version="636">
+ <red-def:signature_keyid operation="equals">None</red-def:signature_keyid>
+</red-def:rpminfo_state>
+<red-def:rpmverifyfile_state id="oval:com.redhat.cve:ste:20052541002" version="636">
+ <red-def:name operation="pattern match">^redhat-release</red-def:name>
+ <red-def:version operation="pattern match">^8[^\d]</red-def:version>
+</red-def:rpmverifyfile_state>
+<red-def:rpmverifyfile_state id="oval:com.redhat.cve:ste:20052541003" version="636">
+ <red-def:name operation="pattern match">^redhat-release</red-def:name>
+</red-def:rpmverifyfile_state>
+<red-def:rpminfo_state id="oval:com.redhat.cve:ste:201520107001" version="636">
+ <red-def:signature_keyid operation="equals">199e2f91fd431d51</red-def:signature_keyid>
+</red-def:rpminfo_state>
+</states>
+<variables>
+<local_variable comment="Get saved_entry in /boot/grub2/grubenv" datatype="int" id="oval:com.redhat.rhsa:var:20191167001" version="643">
+ <arithmetic arithmetic_operation="add">
+  <literal_component datatype="int">1</literal_component>
+  <object_component item_field="text" object_ref="oval:com.redhat.rhsa:obj:20191167027"/>
+ </arithmetic>
+</local_variable>
+</variables>
+</oval_definitions>

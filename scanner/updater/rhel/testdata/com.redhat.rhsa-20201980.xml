@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5" xmlns:oval-def="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:unix-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#unix" xmlns:red-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://oval.mitre.org/XMLSchema/oval-common-5 oval-common-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5 oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#unix unix-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#linux linux-definitions-schema.xsd">
+  <generator>
+    <oval:product_name>Red Hat Errata System</oval:product_name>
+    <oval:schema_version>5.10.1</oval:schema_version>
+    <oval:timestamp>2020-04-30T14:16:09</oval:timestamp>
+  </generator>
+
+  <definitions>
+    <definition id="oval:com.redhat.rhsa:def:20201980" version="632" class="patch">
+      <metadata>
+        <title>RHSA-2020:1980: git security update (Important)</title>
+    <affected family="unix">
+          <platform>Red Hat Enterprise Linux 8</platform>
+    </affected>
+    <reference source="RHSA" ref_id="RHSA-2020:1980" ref_url="https://access.redhat.com/errata/RHSA-2020:1980"/>
+      <reference source="CVE" ref_id="CVE-2020-11008" ref_url="https://access.redhat.com/security/cve/CVE-2020-11008"/>
+    <description>Git is a distributed revision control system with a decentralized architecture. As opposed to centralized version control systems with a client-server model, Git ensures that each working copy of a Git repository is an exact copy with complete revision history. This not only allows the user to work on and contribute to projects without the need to have permission to push the changes to their official repositories, but also makes it possible for the user to work with no network connection.
+
+The following packages have been upgraded to a later upstream version: git (2.18.4). (BZ#1826008)
+
+Security Fix(es):
+
+* git: Crafted URL containing new lines, empty host or lacks a scheme can cause credential leak (CVE-2020-11008)
+
+For more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.</description>
+
+<advisory from="secalert@redhat.com">
+        <severity>Important</severity>
+        <rights>Copyright 2020 Red Hat, Inc.</rights>
+        <issued date="2020-04-30"/>
+        <updated date="2020-04-30"/>
+        <cve href="https://access.redhat.com/security/cve/CVE-2020-11008" cvss3="7.5/CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N" public="20200420:1800" cwe="CWE-20">CVE-2020-11008</cve>
+
+        <bugzilla href="https://bugzilla.redhat.com/1826001" id="1826001">CVE-2020-11008 git: Crafted URL containing new lines, empty host or lacks a scheme can cause credential leak</bugzilla>
+    <affected_cpe_list>
+        <cpe>cpe:/a:redhat:enterprise_linux:8</cpe>
+        <cpe>cpe:/a:redhat:enterprise_linux:8::appstream</cpe>
+    </affected_cpe_list>
+</advisory>
+      </metadata>
+      <criteria operator="OR">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980032" comment="Red Hat Enterprise Linux must be installed" />
+ <criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980031" comment="Red Hat Enterprise Linux 8 is installed" />
+ <criteria operator="OR">
+ 
+ <criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980001" comment="perl-Git-SVN is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980002" comment="perl-Git-SVN is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980003" comment="perl-Git is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980004" comment="perl-Git is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980005" comment="gitweb is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980006" comment="gitweb is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980007" comment="gitk is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980008" comment="gitk is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980009" comment="git-gui is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980010" comment="git-gui is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980011" comment="git-email is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980012" comment="git-email is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980013" comment="git-core-doc is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980014" comment="git-core-doc is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980015" comment="git-all is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980016" comment="git-all is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980017" comment="git-debugsource is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980018" comment="git-debugsource is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980019" comment="git-svn is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980020" comment="git-svn is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980021" comment="git-subtree is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980022" comment="git-subtree is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980023" comment="git-instaweb is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980024" comment="git-instaweb is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980025" comment="git-daemon is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980026" comment="git-daemon is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980027" comment="git-core is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980028" comment="git-core is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+<criteria operator="AND">
+ <criterion test_ref="oval:com.redhat.rhsa:tst:20201980029" comment="git is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980030" comment="git is signed with Red Hat redhatrelease2 key" />
+ 
+</criteria>
+
+</criteria>
+
+</criteria>
+
+</criteria>
+
+    </definition>
+  </definitions>
+  <tests>
+    <rpminfo_test id="oval:com.redhat.rhsa:tst:20201980001"  version="632" comment="perl-Git-SVN is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980001" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980002"  version="632" comment="perl-Git-SVN is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980001" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980003"  version="632" comment="perl-Git is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980002" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980004"  version="632" comment="perl-Git is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980002" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980005"  version="632" comment="gitweb is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980003" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980006"  version="632" comment="gitweb is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980003" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980007"  version="632" comment="gitk is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980004" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980008"  version="632" comment="gitk is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980004" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980009"  version="632" comment="git-gui is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980005" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980010"  version="632" comment="git-gui is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980005" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980011"  version="632" comment="git-email is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980006" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980012"  version="632" comment="git-email is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980006" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980013"  version="632" comment="git-core-doc is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980007" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980014"  version="632" comment="git-core-doc is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980007" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980015"  version="632" comment="git-all is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980008" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980001" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980016"  version="632" comment="git-all is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980008" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980017"  version="632" comment="git-debugsource is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980009" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980018"  version="632" comment="git-debugsource is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980009" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980019"  version="632" comment="git-svn is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980010" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980020"  version="632" comment="git-svn is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980010" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980021"  version="632" comment="git-subtree is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980011" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980022"  version="632" comment="git-subtree is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980011" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980023"  version="632" comment="git-instaweb is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980012" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980024"  version="632" comment="git-instaweb is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980012" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980025"  version="632" comment="git-daemon is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980013" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980026"  version="632" comment="git-daemon is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980013" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980027"  version="632" comment="git-core is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980014" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980028"  version="632" comment="git-core is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980014" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980029"  version="632" comment="git is earlier than 0:2.18.4-2.el8_2" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980015" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980003" />
+</rpminfo_test>
+<rpminfo_test id="oval:com.redhat.rhsa:tst:20201980030"  version="632" comment="git is signed with Red Hat redhatrelease2 key" check='at least one' xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980015" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980002" />
+</rpminfo_test>
+<rpmverifyfile_test id="oval:com.redhat.rhsa:tst:20201980031"  version="632" comment="Red Hat Enterprise Linux 8 is installed" check="at least one" xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980016" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980004" />
+</rpmverifyfile_test>
+<rpmverifyfile_test id="oval:com.redhat.rhsa:tst:20201980032"  version="632" comment="Red Hat Enterprise Linux must be installed" check="none satisfy" xmlns='http://oval.mitre.org/XMLSchema/oval-definitions-5#linux'>
+  <object object_ref="oval:com.redhat.rhsa:obj:20201980016" />
+    <state state_ref="oval:com.redhat.rhsa:ste:20201980005" />
+</rpmverifyfile_test>
+
+  </tests>
+  <objects>
+    <rpminfo_object id="oval:com.redhat.rhsa:obj:20201980001"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>perl-Git-SVN</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980002"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>perl-Git</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980003"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>gitweb</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980004"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>gitk</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980005"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-gui</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980006"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-email</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980007"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-core-doc</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980008"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-all</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980009"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-debugsource</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980010"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-svn</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980011"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-subtree</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980012"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-instaweb</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980013"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-daemon</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980014"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git-core</name>
+</rpminfo_object>
+<rpminfo_object id="oval:com.redhat.rhsa:obj:20201980015"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <name>git</name>
+</rpminfo_object>
+<rpmverifyfile_object id="oval:com.redhat.rhsa:obj:20201980016" version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <behaviors nolinkto='true' nomd5='true' nosize='true' nouser='true' nogroup='true' nomtime='true' nomode='true' nordev='true' noconfigfiles='true' noghostfiles='true' />
+  <name operation="pattern match"/>
+  <epoch operation="pattern match"/>
+  <version operation="pattern match"/>
+  <release operation="pattern match"/>
+  <arch operation="pattern match"/>
+  <filepath>/etc/redhat-release</filepath>
+</rpmverifyfile_object>
+
+  </objects>
+  <states>
+    <rpminfo_state id="oval:com.redhat.rhsa:ste:20201980001"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <evr datatype="evr_string" operation="less than">0:2.18.4-2.el8_2</evr>
+</rpminfo_state>
+<rpminfo_state id="oval:com.redhat.rhsa:ste:20201980002"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <signature_keyid  operation="equals">199e2f91fd431d51</signature_keyid>
+</rpminfo_state>
+<rpminfo_state id="oval:com.redhat.rhsa:ste:20201980003"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+  <arch datatype="string" operation="pattern match">aarch64|ppc64le|s390x|x86_64</arch>
+  <evr datatype="evr_string" operation="less than">0:2.18.4-2.el8_2</evr>
+</rpminfo_state>
+<rpmverifyfile_state id="oval:com.redhat.rhsa:ste:20201980004"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+    <name operation="pattern match">^redhat-release</name>
+    <version operation="pattern match">^8[^\d]</version>
+</rpmverifyfile_state>
+<rpmverifyfile_state id="oval:com.redhat.rhsa:ste:20201980005"  version="632" xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux">
+    <name operation="pattern match">^redhat-release</name>
+</rpmverifyfile_state>
+
+  </states>
+</oval_definitions>
