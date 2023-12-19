@@ -5,8 +5,9 @@ import { useQuery } from '@apollo/client';
 import { SearchFilter } from 'types/search';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
+import { searchValueAsArray } from 'utils/searchUtils';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
-import { SearchOption } from '../searchOptions';
+import { SearchOption, SearchOptionValue } from '../searchOptions';
 
 import './FilterAutocomplete.css';
 
@@ -26,9 +27,15 @@ function getAutocompleteOptionsQueryString(searchFilter: SearchFilter): string {
         .join('+');
 }
 
+export type FilterChangeEvent = {
+    action: 'ADD' | 'REMOVE';
+    category: SearchOptionValue;
+    value: string;
+};
+
 export type FilterAutocompleteSelectProps = {
     searchFilter: SearchFilter;
-    setSearchFilter: (s) => void;
+    onFilterChange: (newFilter: SearchFilter, changeEvent: FilterChangeEvent) => void;
     searchOptions: SearchOption[];
     autocompleteSearchContext?:
         | { 'Image SHA': string }
@@ -39,7 +46,7 @@ export type FilterAutocompleteSelectProps = {
 
 function FilterAutocompleteSelect({
     searchFilter,
-    setSearchFilter,
+    onFilterChange,
     searchOptions,
     autocompleteSearchContext = {},
 }: FilterAutocompleteSelectProps) {
@@ -69,20 +76,19 @@ function FilterAutocompleteSelect({
 
     const { data, loading } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
 
-    function onSelect(newValue) {
-        const oldValue = searchFilter[searchOption.value] as string[];
+    function onSelect(value) {
         setTypeahead('');
-        if (oldValue?.includes(newValue)) {
-            setSearchFilter({
-                ...searchFilter,
-                [searchOption.value]: oldValue.filter((fil: string) => fil !== newValue),
-            });
-        } else {
-            setSearchFilter({
-                ...searchFilter,
-                [searchOption.value]: oldValue ? [...oldValue, newValue] : [newValue],
-            });
-        }
+
+        const category = searchOption.value;
+        const oldValues = searchValueAsArray(searchFilter[category]);
+        const action = oldValues.includes(value) ? 'REMOVE' : 'ADD';
+
+        const newValues =
+            action === 'ADD'
+                ? oldValues.concat(value)
+                : oldValues.filter((f: string) => f !== value);
+
+        onFilterChange({ ...searchFilter, [category]: newValues }, { action, category, value });
     }
 
     // Debounce the autocomplete requests to not overload the backend
