@@ -53,7 +53,9 @@ describe('Resource scope bar', () => {
 
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
         const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
-        await waitFor(() => expect(clusterDropdownToggle).toBeEnabled());
+        await waitFor(() => {
+            expect(clusterDropdownToggle).toBeEnabled();
+        });
 
         // The default state is all clusters selected, with the ns dropdown disabled
         await act(() => user.click(clusterDropdownToggle));
@@ -67,7 +69,9 @@ describe('Resource scope bar', () => {
 
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
         const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
-        await waitFor(() => expect(clusterDropdownToggle).toBeEnabled());
+        await waitFor(() => {
+            expect(clusterDropdownToggle).toBeEnabled();
+        });
 
         // Selecting one or more clusters enables the ns dropdown
         await act(() => user.click(clusterDropdownToggle));
@@ -117,7 +121,9 @@ describe('Resource scope bar', () => {
         // Check that the default state of "select all" results in empty URL search parameters
         const clusterDropdownToggle = screen.getByLabelText('Select clusters');
         const namespaceDropdownToggle = screen.getByLabelText('Select namespaces');
-        await waitFor(() => expect(clusterDropdownToggle).toBeEnabled());
+        await waitFor(() => {
+            expect(clusterDropdownToggle).toBeEnabled();
+        });
         expect(history.location.search).toBe('');
 
         // Select a cluster and verify it has been added to the URL
