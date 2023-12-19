@@ -27,9 +27,6 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.0
 	github.com/docker/distribution v2.8.3+incompatible
-	// If this is updated, be sure to check the version of github.com/opencontainers/runc used.
-	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/facebookincubator/nvdtools v0.1.5
 	github.com/fatih/color v1.16.0
 	github.com/fullsailor/pkcs7 v0.0.0
@@ -196,7 +193,9 @@ require (
 	github.com/docker/cli v24.0.7+incompatible // indirect
 	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
