@@ -8,8 +8,17 @@ import {
     verifySelectedCvesInModal,
     visitWorkloadCveOverview,
 } from '../workloadCves/WorkloadCves.helpers';
-import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.selectors';
+import { selectors as workloadCVEsSelectors } from '../workloadCves/WorkloadCves.selectors';
 import { visitExceptionManagement } from './ExceptionManagement.helpers';
+
+function clearWorkloadCVEsFilters() {
+    cy.get('body').then((body) => {
+        if (body.find(workloadCVEsSelectors.clearFiltersButton).length > 0) {
+            // If button exists, click it
+            cy.get(workloadCVEsSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+        }
+    });
+}
 
 describe('Exception Management Pending Requests Page', () => {
     withAuth();
@@ -46,6 +55,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view deferred pending requests', () => {
         visitWorkloadCveOverview();
+        clearWorkloadCVEsFilters();
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -72,6 +82,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view false positive pending requests', () => {
         visitWorkloadCveOverview();
+        clearWorkloadCVEsFilters();
 
         // mark a single cve as false positive
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
@@ -90,5 +101,34 @@ describe('Exception Management Pending Requests Page', () => {
                 'exist'
             );
         });
+    });
+
+    it('should be able to navigate to the Request Details page by clicking on the request name', () => {
+        visitWorkloadCveOverview();
+        clearWorkloadCVEsFilters();
+
+        selectSingleCveForException('FALSE_POSITIVE')
+            // mark a single cve as false positive
+            .then((cveName) => {
+                verifySelectedCvesInModal([cveName]);
+                fillAndSubmitExceptionForm({ comment: 'Test comment' });
+                verifyExceptionConfirmationDetails({
+                    expectedAction: 'False positive',
+                    cves: [cveName],
+                    scope: 'All images',
+                });
+            })
+            .then(() => {
+                visitExceptionManagement();
+
+                const requestNameLink = 'table td[data-label="Request name"]';
+
+                cy.get(requestNameLink)
+                    .invoke('text')
+                    .then((requestName) => {
+                        cy.get(requestNameLink).click();
+                        cy.get(`h1:contains("${requestName}")`).should('exist');
+                    });
+            });
     });
 });
