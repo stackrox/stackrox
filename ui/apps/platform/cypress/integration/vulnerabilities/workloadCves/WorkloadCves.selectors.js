@@ -39,6 +39,11 @@ export const selectors = {
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
     paginationPrevious: "button[aria-label='Go to previous page']",
     paginationNext: "button[aria-label='Go to next page']",
+    severityIcon: (severity) => `svg:has(title:contains('${severity}'))`,
+
+    // Image/Deployment tab selectors
+    vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',
+    resourcesTab: 'button[role="tab"]:contains("Resources")',
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
