@@ -186,7 +186,7 @@ LIMIT
     # shellcheck disable=SC2016
     body='
 {
-	"blocks": [
+    "blocks": [
         {
             "type": "header",
             "text": {
@@ -194,15 +194,16 @@ LIMIT
                 "text": "'"${subject}"'"
             }
         },
-		{
-			"type": "section",
-			"text": {
-				"type": "mrkdwn",
-				"text": "```\n\($data)\n```"
-			}
-		}
-	]
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "```\n\($data)\n```"
+            }
+        }
+    ]
 }'
+
     echo "Posting data to slack"
     jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }
