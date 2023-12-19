@@ -566,6 +566,27 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 	}
 }
 
+func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
+	d := storage.Deployment{
+		Id:   uuid.NewV4().String(),
+		Name: "testDeployment",
+	}
+	deps := store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+			{
+				service.PortRefOf(stubService()): make([]*storage.PortConfig_ExposureInfo, 0),
+			},
+		},
+	}
+
+	s.deploymentStore.EnhanceDeploymentReadOnly(&d, deps)
+
+	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, d.GetServiceAccountPermissionLevel())
+	s.Contains(d.GetPorts(), &storage.PortConfig{ContainerPort: 4321, Protocol: "TCP"})
+	s.Empty(s.deploymentStore.deployments, "EnhanceDeploymentReadOnly mustn't modify deployment store")
+}
+
 func makeDeploymentObject(name, namespace string, id types.UID) *v1.Deployment {
 	return &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

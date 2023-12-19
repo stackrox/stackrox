@@ -9,14 +9,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/registry"
-	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestComponent(t *testing.T) {
@@ -68,34 +65,6 @@ func (s *ComponentTestSuite) TestComponentLifecycle() {
 	de.Stop(nil)
 }
 
-func (s *ComponentTestSuite) TestEnhanceDeployment() {
-	var ei []map[service.PortRef][]*storage.PortConfig_ExposureInfo
-	ex := map[service.PortRef][]*storage.PortConfig_ExposureInfo{{Port: intstr.IntOrString{IntVal: 42}}: make([]*storage.PortConfig_ExposureInfo, 0)}
-	ei = append(ei, ex)
-	s.mockStoreProvider = mockStoreProvider{
-		rbac: s.rbacStore,
-		srv:  s.srvStore,
-		dep:  &resources.DeploymentStore{},
-	}
-	s.rbacStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Return(storage.PermissionLevel_DEFAULT)
-	s.srvStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).Return(ei)
-
-	de := DeploymentEnhancer{
-		storeProvider: s.mockStoreProvider,
-	}
-	d := storage.Deployment{
-		Id:        uuid.NewV4().String(),
-		Name:      "testDeployment",
-		Namespace: "testns",
-	}
-
-	de.enhanceDeployment(&d)
-
-	s.Equal(storage.PermissionLevel_DEFAULT, d.GetServiceAccountPermissionLevel())
-	s.Contains(d.GetPorts(), &storage.PortConfig{ContainerPort: 42})
-	s.Empty(s.mockStoreProvider.Deployments().GetAll(), "enhanceDeployment mustn't change or write to the deployment store")
-}
-
 func (s *ComponentTestSuite) TestEnhanceDeploymentsWithMessage() {
 	s.rbacStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).AnyTimes()
 	s.srvStore.EXPECT().GetExposureInfos(gomock.Any(), gomock.Any()).AnyTimes()
@@ -129,7 +98,7 @@ func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEn
 type mockStoreProvider struct {
 	rbac *mocks.MockRBACStore
 	srv  *mocks.MockServiceStore
-	dep  store.DeploymentStore
+	dep  *mocks.MockDeploymentStore
 }
 
 func (m mockStoreProvider) RBAC() store.RBACStore {

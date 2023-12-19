@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -44,7 +45,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
-		return nil
+		return errox.ReferencedObjectNotFound.New("received empty message")
 	}
 	log.Debugf("Received message to process in DeploymentEnhancer: %+v", toEnhance)
 	d.deploymentsQueue <- toEnhance
