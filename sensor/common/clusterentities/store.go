@@ -66,8 +66,6 @@ type Store struct {
 }
 
 // NewStore creates and returns a new store instance.
-// Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
-// `StoreInstance()`.
 func NewStore() *Store {
 	return NewStoreWithMemory(0)
 }
