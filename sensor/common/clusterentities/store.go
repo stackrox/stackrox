@@ -57,10 +57,12 @@ type Store struct {
 
 	// entitiesMemorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
-	entitiesMemorySize  uint16
+	entitiesMemorySize uint16
+	// historicalEndpoints is mimicking endpointMap: deploymentID -> endpointInfo -> historyStatus
 	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
-	historicalIPs       map[net.IPAddress]map[string]*entityStatus
-	historyMutex        sync.RWMutex
+	// historicalIPs is mimicking ipMap: IP Address -> deploymentID -> historyStatus
+	historicalIPs map[net.IPAddress]map[string]*entityStatus
+	historyMutex  sync.RWMutex
 }
 
 // NewStore creates and returns a new store instance.
