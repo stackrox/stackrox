@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { LiveRegion } from 'Components/PatternFly/LiveRegion';
 import { TableUIState } from 'utils/getTableUIState';
 import { ensureExhaustive } from 'utils/type.utils';
 
@@ -63,8 +64,13 @@ function TbodyUnified<T>({
             that the data is being refreshed would be elsewhere in the UI.
         */
         case 'COMPLETE':
+        case 'UPDATING':
         case 'POLLING':
-            return <>{renderer({ data: tableState.data })}</>;
+            return (
+                <LiveRegion isUpdating={tableState.type === 'UPDATING'}>
+                    {renderer({ data: tableState.data })}
+                </LiveRegion>
+            );
         default:
             return ensureExhaustive(type);
     }

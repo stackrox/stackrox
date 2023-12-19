@@ -25,6 +25,7 @@ import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import LiveTr from 'Components/PatternFly/LiveRegion/components/LiveTr';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
@@ -151,20 +152,26 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
-                        const isExpanded = expandedRowSet.has(cve);
+                        const isExpanded =
+                            expandedRowSet.has(cve) && tableState.type === 'COMPLETE';
 
                         return (
                             <Tbody key={cve} isExpanded={isExpanded}>
-                                <Tr>
+                                <LiveTr>
                                     <Td
                                         expand={{
                                             rowIndex,
                                             isExpanded,
-                                            onToggle: () => expandedRowSet.toggle(cve),
+                                            onToggle: () => {
+                                                if (tableState.type === 'COMPLETE') {
+                                                    expandedRowSet.toggle(cve);
+                                                }
+                                            },
                                         }}
                                     />
                                     {canSelectRows && (
                                         <CVESelectionTd
+                                            isDisabled={tableState.type !== 'COMPLETE'}
                                             selectedCves={selectedCves}
                                             rowIndex={rowIndex}
                                             item={{ cve, summary, numAffectedImages: 1 }}
@@ -226,7 +233,7 @@ function ImageVulnerabilitiesTable({
                                             />
                                         </Td>
                                     )}
-                                </Tr>
+                                </LiveTr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
                                     <Td colSpan={colSpan}>

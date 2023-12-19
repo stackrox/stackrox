@@ -126,7 +126,7 @@ function ImagePageVulnerabilities({
     });
 
     // TODO Split metadata, counts, and vulnerabilities into separate queries
-    const { data, loading, error } = useQuery<
+    const { data, previousData, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
@@ -168,9 +168,10 @@ function ImagePageVulnerabilities({
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
+    const tableData = data ?? previousData;
     const tableState = getTableUIState({
         isLoading: loading,
-        data: data?.image.imageVulnerabilities,
+        data: tableData?.image.imageVulnerabilities,
         error,
         searchFilter,
     });
@@ -271,27 +272,20 @@ function ImagePageVulnerabilities({
                         />
                     </SplitItem>
                 </Split>
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <ImageVulnerabilitiesTable
-                        imageMetadata={data?.image}
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        selectedCves={selectedCves}
-                        canSelectRows={canSelectRows}
-                        vulnerabilityState={currentVulnerabilityState}
-                        createTableActions={createTableActions}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1, 'replace');
-                        }}
-                    />
-                </div>
+                <ImageVulnerabilitiesTable
+                    imageMetadata={data?.image}
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    isFiltered={isFiltered}
+                    selectedCves={selectedCves}
+                    canSelectRows={canSelectRows}
+                    vulnerabilityState={currentVulnerabilityState}
+                    createTableActions={createTableActions}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1, 'replace');
+                    }}
+                />
             </div>
         </>
     );
