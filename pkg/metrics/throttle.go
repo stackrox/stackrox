@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	cgroup2CPUStatFile = "/sys/fs/cgroup/cpu.stat"
-	cgroupCPUStatFile  = "/sys/fs/cgroup/cpu/cpu.stat"
+	cgroup2CPUStatFile = "sys/fs/cgroup/cpu.stat"
+	cgroupCPUStatFile  = "sys/fs/cgroup/cpu/cpu.stat"
 )
 
 type cpuStats struct {
@@ -23,6 +23,12 @@ type cpuStats struct {
 	throttled     string
 	throttledTime string
 	nanosFunc     func(float64) float64
+}
+
+type cpuStatValues struct {
+	periods       int
+	throttled     int
+	throttledTime int
 }
 
 var (
@@ -73,59 +79,80 @@ func gatherThrottleMetricsForever(subsystem string) {
 		processCPUThrottledTime,
 	)
 
+	fsys := os.DirFS("/")
 	statFile := cgroup2CPUStatFile
 	stats := cgroup2Stats
-	if _, err := os.Stat(statFile); errors.Is(err, fs.ErrNotExist) {
+	if _, err := fs.Stat(fsys, statFile); errors.Is(err, fs.ErrNotExist) {
 		statFile = cgroupCPUStatFile
 		stats = cgroupStats
-	}
-
-	setProcessCPUThrottledTime := func(toNanos func(float64) float64) func(float64) {
-		return func(f float64) {
-			processCPUThrottledTime.Set(toNanos(f))
-		}
 	}
 
 	log.Infof("gathering CPU throttle metrics from %s", statFile)
 	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
-		b, err := os.ReadFile(statFile)
+		b, err := fs.ReadFile(fsys, statFile)
 		if err != nil {
 			log.Debugf("error reading file %s: %v", statFile, err)
 			continue
 		}
 
-		s := bufio.NewScanner(bytes.NewReader(b))
-		for s.Scan() {
-			metric, strValue, ok := strings.Cut(s.Text(), " ")
-			if !ok {
-				continue
-			}
-
-			var set func(float64)
-			switch metric {
-			case stats.periods:
-				set = processCPUPeriods.Set
-			case stats.throttled:
-				set = processCPUThrottledCount.Set
-			case stats.throttledTime:
-				set = setProcessCPUThrottledTime(stats.nanosFunc)
-			default:
-			}
-			if set == nil {
-				continue
-			}
-
-			value, err := strconv.Atoi(strValue)
-			if err != nil {
-				log.Debugf("error parsing int64 in %s for metric %s: %v", statFile, metric, err)
-				continue
-			}
-
-			set(float64(value))
+		statVals := parseStats(statFile, b, stats)
+		if statVals.periods != -1 {
+			processCPUPeriods.Set(float64(statVals.periods))
 		}
-		if err := s.Err(); err != nil {
-			log.Debugf("error scanning file %s: %v", statFile, err)
+		if statVals.throttled != -1 {
+			processCPUThrottledCount.Set(float64(statVals.throttled))
+		}
+		if statVals.throttledTime != -1 {
+			processCPUThrottledTime.Set(stats.nanosFunc(float64(statVals.throttledTime)))
 		}
 	}
+}
+
+// parseStats parses the desired cpuStats from the relevant stats files represented by b.
+//
+// If a stat has value -1, it was unable to be read and should be ignored.
+func parseStats(path string, b []byte, stats cpuStats) cpuStatValues {
+	statVals := cpuStatValues{
+		periods:       -1,
+		throttled:     -1,
+		throttledTime: -1,
+	}
+
+	s := bufio.NewScanner(bytes.NewReader(b))
+	for s.Scan() {
+		metric, strValue, ok := strings.Cut(s.Text(), " ")
+		if !ok {
+			continue
+		}
+
+		switch metric {
+		case stats.periods:
+		case stats.throttled:
+		case stats.throttledTime:
+		default:
+			continue
+		}
+
+		value, err := strconv.Atoi(strValue)
+		if err != nil {
+			log.Debugf("error parsing int64 in %s for metric %s: %v", path, metric, err)
+			continue
+		}
+
+		switch metric {
+		case stats.periods:
+			statVals.periods = value
+		case stats.throttled:
+			statVals.throttled = value
+		case stats.throttledTime:
+			statVals.throttledTime = value
+		default:
+		}
+	}
+	if err := s.Err(); err != nil {
+		log.Debugf("error scanning file %s: %v", path, err)
+	}
+
+	return statVals
 }
