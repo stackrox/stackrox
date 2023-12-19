@@ -85,6 +85,8 @@ require (
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.45.0
 	github.com/quay/claircore v1.5.19
+	github.com/quay/claircore/toolkit v1.1.1
+	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.7
 	github.com/rs/zerolog v1.31.0
 	github.com/russellhaering/gosaml2 v0.9.1
@@ -322,9 +324,7 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	github.com/quay/claircore/toolkit v1.1.1 // indirect
 	github.com/quay/claircore/updater/driver v1.0.0 // indirect
-	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
