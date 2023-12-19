@@ -73,9 +73,10 @@ describe('Workload CVE Deployment Single page', () => {
         cy.get('table thead tr th').contains('Image status');
         cy.get('table thead tr th').contains('Image OS');
         cy.get('table thead tr th').contains('Created');
+    });
 
-        // Back to the vulnerabilities tab
-        cy.get(selectors.vulnerabilitiesTab).click();
+    it('should reset pagination when navigating between resources and vulnerabilities tabs', () => {
+        visitFirstDeployment();
 
         // Check that pagination is reset across tabs
         // 1. Manually reload page with a page query param to ensure that the page is not 1
