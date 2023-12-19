@@ -260,6 +260,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		Yaml:             deploymentYaml,
 		PolicyCategories: d.policyCategories,
 		Cluster:          d.cluster,
+		Namespace:        d.namespace,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
