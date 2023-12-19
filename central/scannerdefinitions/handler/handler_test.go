@@ -66,7 +66,7 @@ func (s *handlerTestSuite) TearDownSuite() {
 	s.LessOrEqual(len(entries), 2)
 	if len(entries) == 2 {
 		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[1].Name(), <something>))
+		s.True(strings.HasPrefix(entries[1].Name(), definitionsBaseDir))
 	}
 
 	s.testDB.Teardown(s.T())

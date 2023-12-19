@@ -181,18 +181,31 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 }
 
 // getUpdater gets or creates the updater for the scanner definitions
-// identified by the given uuid.
+// identified by the given key/uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
-func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
-	return h.getUpdaterInternal(uuid)
-}
+func (h *httpHandler) getUpdater(key string) *requestedUpdater {
+	h.lock.Lock()
+	defer h.lock.Unlock()
 
-// getV4Updater gets or creates the updater for RH repository mapping data
-func (h *httpHandler) getV4Updater(key string) *requestedUpdater {
-	if key != mappingUpdaterKey {
-		return nil
+	updater, exists := h.updaters[key]
+	if !exists {
+		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
+		var url string
+
+		if key == mappingUpdaterKey {
+			url = strings.Join([]string{v4StorageDomain, mappingFile}, "/")
+		} else { // if it's uuid
+			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
+		}
+
+		h.updaters[key] = &requestedUpdater{
+			updater: newUpdater(file.New(filePath), client, url, h.interval),
+		}
+		updater = h.updaters[key]
 	}
-	return h.getUpdaterInternal(key)
+
+	updater.lastRequestedTime = time.Now()
+	return updater
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -371,7 +384,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 func (h *httpHandler) openMostRecentMappings(fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
 	log.Info("Getting v4 repository mapping data updater")
-	u := h.getV4Updater(mappingUpdaterKey)
+	u := h.getUpdater(mappingUpdaterKey)
 
 	var onlineFile *vulDefFile
 	onlineZipFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
@@ -448,31 +461,6 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, nil
-}
-
-func (h *httpHandler) getUpdaterInternal(key string) *requestedUpdater {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	updater, exists := h.updaters[key]
-	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
-		var url string
-
-		if key == mappingUpdaterKey {
-			url = strings.Join([]string{v4StorageDomain, mappingFile}, "/")
-		} else {
-			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
-		}
-
-		h.updaters[key] = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, url, h.interval),
-		}
-		updater = h.updaters[key]
-	}
-
-	updater.lastRequestedTime = time.Now()
-	return updater
 }
 
 func (h *httpHandler) getMappingFile(w http.ResponseWriter, r *http.Request, fileName string) {
