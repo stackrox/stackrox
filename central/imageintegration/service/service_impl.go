@@ -239,14 +239,7 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 
 // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
-	if err := s.validateIntegration(ctx, imageIntegration); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-	if err := s.testImageIntegration(imageIntegration); err != nil {
-		return nil, err
-	}
-
-	return &v1.Empty{}, nil
+	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
 // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
@@ -350,28 +343,35 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
+	var integration *storage.ImageIntegration
+	var exists bool
+	var err error
+
+	// Use the presence of ID to determine if this request is for an updated integration.
+	if updateRequest.GetConfig().GetId() != "" {
+		integration, exists, err = s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
+		}
+
+		newType := updateRequest.GetConfig().GetType()
+		oldType := integration.GetType()
+		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
+			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
+		}
+	}
+
+	if updateRequest.GetUpdatePassword() {
+		return nil
+	}
 	if updateRequest.GetConfig() == nil {
 		return errors.Wrap(errox.InvalidArgs, "request is missing image integration config")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "id required for stored credential reconciliation")
-	}
-	integration, exists, err := s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
-	}
-
-	newType := updateRequest.GetConfig().GetType()
-	oldType := integration.GetType()
-	if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
-		return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
-	}
-
-	if updateRequest.GetUpdatePassword() {
-		return nil
 	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
