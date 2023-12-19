@@ -104,6 +104,8 @@
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}
 [<- end >]
 
+{{ include "srox.setInstallMethod" (list $) }}
+
 {{ include "srox.applyDefaults" $ }}
 
 {{/* Expand applicable config values */}}
