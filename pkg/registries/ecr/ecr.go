@@ -212,7 +212,7 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 // setRegistry creates and sets the docker registry client based on the
 // credentials provided.
 func (e *ecr) setRegistry(username, password string, expiresAt time.Time) error {
-	conf := docker.Config{
+	conf := &docker.Config{
 		Endpoint:        e.endpoint,
 		Username:        username,
 		Password:        password,

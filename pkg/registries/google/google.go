@@ -77,7 +77,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 		return nil, err
 	}
 
-	dockerConfig := docker.Config{
+	dockerConfig := &docker.Config{
 		Endpoint:        config.GetEndpoint(),
 		DisableRepoList: disableRepoList,
 	}
@@ -104,7 +104,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool, ma
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
 	}
-	dockerConfig.TokenSource = tokenSource
+	dockerConfig.Transport = newGoogleTransport(dockerConfig, tokenSource)
 	reg, err := docker.NewDockerRegistryWithConfig(dockerConfig, integration)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create docker registry")

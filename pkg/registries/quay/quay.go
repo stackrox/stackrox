@@ -110,7 +110,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 		}
 	}
 
-	cfg := docker.Config{
+	cfg := &docker.Config{
 		Username:        username,
 		Password:        password,
 		Endpoint:        config.GetEndpoint(),
