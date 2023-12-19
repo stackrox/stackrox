@@ -9,6 +9,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import { LiveRegion, LiveRegionContent, LiveRegionOverlay } from 'Components/PatternFly/LiveRegion';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
@@ -156,24 +157,26 @@ function CVEsTableContainer({
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {!error && tableData && (
-                <div
-                    className="workload-cves-table-container"
-                    role="region"
-                    aria-live="polite"
-                    aria-busy={loading ? 'true' : 'false'}
-                >
-                    <CVEsTable
-                        cves={tableData.imageCVEs}
-                        unfilteredImageCount={imageCountData?.imageCount || 0}
-                        getSortParams={getSortParams}
-                        isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                        selectedCves={selectedCves}
-                        canSelectRows={canSelectRows}
-                        vulnerabilityState={vulnerabilityState}
-                        createTableActions={createTableActions}
-                    />
-                </div>
+                <LiveRegion isUpdating={loading} className="workload-cves-table-container">
+                    <LiveRegionOverlay>
+                        <Spinner className="pf-u-mt-xl" isSVG aria-label="Fetching updated data" />
+                    </LiveRegionOverlay>
+                    <LiveRegionContent shouldFadeWhenUpdating>
+                        <CVEsTable
+                            cves={tableData.imageCVEs}
+                            unfilteredImageCount={imageCountData?.imageCount || 0}
+                            getSortParams={getSortParams}
+                            isFiltered={isFiltered}
+                            filteredSeverities={
+                                searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
+                            }
+                            selectedCves={selectedCves}
+                            canSelectRows={canSelectRows}
+                            vulnerabilityState={vulnerabilityState}
+                            createTableActions={createTableActions}
+                        />
+                    </LiveRegionContent>
+                </LiveRegion>
             )}
         </>
     );

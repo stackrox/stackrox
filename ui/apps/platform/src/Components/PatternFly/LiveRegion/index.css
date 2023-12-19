@@ -1,0 +1,26 @@
+.acs-live-region {
+  position: relative;
+}
+
+.acs-live-region-content {}
+
+.acs-live-region-content-fade {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.acs-live-region-content-fade-in {
+  opacity: 1;
+}
+
+.acs-live-region-content-fade-out {
+  opacity: 0.5;
+}
+
+.acs-live-region-overlay {
+  z-index: 1;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  left: 0px;
+  bottom: 0px;
+}
