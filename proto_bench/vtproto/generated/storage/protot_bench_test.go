@@ -35,4 +35,16 @@ func BenchmarkMarshal(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("vtp clone", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = c.CloneVT()
+		}
+	})
+
+	b.Run("vtp size", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = c.SizeVT()
+		}
+	})
 }

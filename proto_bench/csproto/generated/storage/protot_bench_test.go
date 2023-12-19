@@ -35,4 +35,10 @@ func BenchmarkMarshal(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("cs size", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = c.Size()
+		}
+	})
 }

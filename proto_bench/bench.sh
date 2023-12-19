@@ -6,7 +6,7 @@ generated="generated/storage"
 for value in vtproto gogo csproto
 do
    echo $value
-   cd vtproto/${generated}
+   cd $value/${generated}
    go test -run=. -bench=. -benchmem -count 10 -benchtime 3s ./...
    cd -
 done

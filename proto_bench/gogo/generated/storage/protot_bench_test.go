@@ -36,4 +36,16 @@ func BenchmarkMarshal(b *testing.B) {
 			}
 		}
 	})
+
+	b.Run("gogo clone", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = c.Clone()
+		}
+	})
+
+	b.Run("gogo size", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = c.Size()
+		}
+	})
 }
