@@ -73,7 +73,12 @@ function BySeveritySummaryCard({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
-                                    {Icon && <Icon color={hasNoResults ? textColor : undefined} />}
+                                    {Icon && (
+                                        <Icon
+                                            title={vulnerabilitySeverityLabels[severity]}
+                                            color={hasNoResults ? textColor : undefined}
+                                        />
+                                    )}
                                     <Text style={{ color: textColor }}>{text}</Text>
                                 </Flex>
                             </GridItem>
