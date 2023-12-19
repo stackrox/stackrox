@@ -38,6 +38,7 @@ module.exports = [
             'scripts/**',
             'src/setupProxy.js',
             'src/setupTests.js',
+            'cypress.d.ts',
         ],
     },
     {

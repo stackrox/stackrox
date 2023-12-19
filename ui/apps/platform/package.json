@@ -103,8 +103,10 @@
         "lint:fix": "eslint --fix --quiet .",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
         "cypress-spec": "./scripts/cypress.sh run --spec",
+        "cypress-component": "./scripts/cypress.sh open --component",
         "test-e2e": "./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
         "test-e2e-local": "./scripts/cypress.sh run",
+        "test-component": "./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js --component",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
         "eject": "react-app-rewired eject"
     },
@@ -120,6 +122,7 @@
         "@babel/preset-typescript": "^7.23.3",
         "@babel/runtime": "^7.23.6",
         "@tailwindcss/forms": "^0.2.1",
+        "@testing-library/cypress": "^10.0.1",
         "@testing-library/jest-dom": "^5.17.0",
         "@testing-library/react": "^14.1.2",
         "@testing-library/react-hooks": "^8.0.1",
