@@ -239,9 +239,9 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	s.Require().Equal(0, len(clusterStatuses))
 
 	// Delete a non-existing one
-	scanConfigName, err = s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, uuid.NewV4().String())
-	s.Require().Error(err)
+	scanConfigName, err = s.dataStore.DeleteScanConfiguration(s.hasWriteCtx, configID)
 	s.Require().Equal("", scanConfigName)
+	s.Require().Error(err)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {

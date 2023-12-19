@@ -103,7 +103,7 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 		return "", errors.Wrapf(err, "Unable to find scan configuration id %q", id)
 	}
 	if !found {
-		return "", errors.Wrapf(err, "Scan configuration id %q not found", id)
+		return "", errors.Errorf("Scan configuration id %q not found", id)
 	}
 	scanConfigName := scanConfig.GetScanName()
 
