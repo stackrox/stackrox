@@ -373,6 +373,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
 	}
 
+	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
 	// If a cluster is provided, enhance deployments with additional info from Sensor
 	if eCtx.ClusterID != "" {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
