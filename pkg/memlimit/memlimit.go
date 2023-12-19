@@ -12,6 +12,7 @@ var log = logging.LoggerForModule()
 
 func SetMemoryLimit() {
 	var limit int64
+
 	defer func() {
 		if limit == 0 {
 			log.Warn("Memory limit left unset")
@@ -28,7 +29,6 @@ func SetMemoryLimit() {
 			return
 		}
 	}
-
 	if roxLimit := os.Getenv(`ROX_MEMLIMIT`); roxLimit != "" {
 		limit, err = strconv.ParseInt(roxLimit, 10, 64)
 		if err == nil {
@@ -38,6 +38,4 @@ func SetMemoryLimit() {
 			return
 		}
 	}
-
-	limit = setMemoryLimit()
 }
