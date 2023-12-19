@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/manual"
+	"github.com/stackrox/rox/scanner/updater/rhel"
 	"golang.org/x/time/rate"
 
 	// default updaters
@@ -56,42 +57,48 @@ func Export(ctx context.Context, outputDir string) error {
 		}
 	}()
 
+	var opts [][]updates.ManagerOption
+
+	// Manual CVEs.
 	manualSet, err := manual.UpdaterSet(ctx, nil)
 	if err != nil {
 		return err
 	}
-
 	outOfTree := append([]driver.Updater{}, manualSet.Updaters()...)
+	opts = append(opts, []updates.ManagerOption{
+		updates.WithOutOfTree(outOfTree)})
 
-	for i, uSet := range [][]string{
+	// RHEL custom: Forked from ClairCore.
+	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
+	if err != nil {
+		return err
+	}
+	opts = append(opts, []updates.ManagerOption{
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{"rhel-custom": fac})})
+
+	// ClairCore updaters.
+	for _, uSet := range [][]string{
 		{"oracle"}, {"photon"},
 		{"suse"}, {"aws"},
-		{"alpine"}, {"rhel"},
+		{"alpine"},
 		{"debian"}, {"rhcc"},
 		{"ubuntu"}, {"osv"},
 	} {
+		opts = append(opts, []updates.ManagerOption{updates.WithEnabled(uSet)})
+	}
+
+	for _, o := range opts {
 		jsonStore, err := jsonblob.New()
 		if err != nil {
 			return err
 		}
-		var mgr *updates.Manager
-		if i == 0 {
-			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
-				updates.WithEnabled(uSet),
-				updates.WithOutOfTree(outOfTree),
-			)
-		} else {
-			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
-				updates.WithEnabled(uSet),
-			)
-		}
+		mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient, o...)
 		if err != nil {
 			return err
 		}
 		if err := mgr.Run(ctx); err != nil {
 			return err
 		}
-
 		if err := jsonStore.Store(zstdWriter); err != nil {
 			return err
 		}
