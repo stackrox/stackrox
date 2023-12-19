@@ -30,6 +30,7 @@ type EntityTabToggleGroupProps = {
     deploymentCount?: number;
     setSortOption: (sortOption: SortOption) => void;
     setPage: (num) => void;
+    onChange: (entityTab: EntityTab) => void;
 };
 
 function EntityTabToggleGroup({
@@ -40,6 +41,7 @@ function EntityTabToggleGroup({
     deploymentCount = 0,
     setSortOption,
     setPage,
+    onChange,
 }: EntityTabToggleGroupProps) {
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion('entityTab', entityTabs);
 
@@ -47,6 +49,7 @@ function EntityTabToggleGroup({
         setActiveEntityTabKey(entityTab);
         setSortOption(getDefaultSortOption(entityTab));
         setPage(1);
+        onChange(entityTab);
     }
 
     return (

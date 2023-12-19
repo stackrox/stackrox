@@ -12,7 +12,7 @@ import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 export { imageListQuery } from '../Tables/ImagesTable';
@@ -25,6 +25,7 @@ type ImagesTableContainerProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
     onUnwatchImage: ImagesTableProps['onUnwatchImage'];
+    onEntityTabChange: (entityTab: EntityTab) => void;
 };
 
 function ImagesTableContainer({
@@ -35,6 +36,7 @@ function ImagesTableContainer({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
+    onEntityTabChange,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -68,6 +70,7 @@ function ImagesTableContainer({
                 pagination={pagination}
                 tableRowCount={countsData.imageCount}
                 isFiltered={isFiltered}
+                onEntityTabChange={onEntityTabChange}
             />
             <Divider component="div" />
             {loading && !tableData && (

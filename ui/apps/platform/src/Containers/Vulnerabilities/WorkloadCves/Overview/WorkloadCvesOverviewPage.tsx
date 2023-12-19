@@ -23,11 +23,15 @@ import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import useAnalytics, { WATCH_IMAGE_MODAL_OPENED } from 'hooks/useAnalytics';
+import useAnalytics, {
+    WATCH_IMAGE_MODAL_OPENED,
+    WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+} from 'hooks/useAnalytics';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
 import {
     DefaultFilters,
+    EntityTab,
     VulnMgmtLocalStorage,
     entityTabValues,
     isVulnMgmtLocalStorage,
@@ -125,6 +129,21 @@ function WorkloadCvesOverviewPage() {
         );
     }
 
+    function onEntityTabChange(entityTab: EntityTab) {
+        analyticsTrack({
+            event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'Overview',
+            },
+        });
+    }
+
+    // Track the current entity tab when the page is initially visited.
+    useEffect(() => {
+        onEntityTabChange(activeEntityTabKey);
+    }, []);
+
     // When the page is initially visited and no local filters are applied, apply the default filters.
     //
     // Note that this _does not_ take into account a direct navigation via the left navigation when the user
@@ -205,6 +224,7 @@ function WorkloadCvesOverviewPage() {
                                     pagination={pagination}
                                     vulnerabilityState={currentVulnerabilityState}
                                     isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
+                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
@@ -223,6 +243,7 @@ function WorkloadCvesOverviewPage() {
                                         setUnwatchImageName(imageName);
                                         unwatchImageModalToggle.openSelect();
                                     }}
+                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
@@ -231,6 +252,7 @@ function WorkloadCvesOverviewPage() {
                                     countsData={countsData}
                                     pagination={pagination}
                                     vulnerabilityState={currentVulnerabilityState}
+                                    onEntityTabChange={onEntityTabChange}
                                 />
                             )}
                         </CardBody>
