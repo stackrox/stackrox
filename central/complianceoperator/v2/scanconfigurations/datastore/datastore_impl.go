@@ -87,17 +87,39 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 }
 
 // DeleteScanConfiguration deletes the scan configuration specified by id
-func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string) error {
+func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string) (string, error) {
 	if ok, err := scanConfigurationsSAC.WriteAllowed(ctx); err != nil {
-		return err
+		return "", err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return "", sac.ErrResourceAccessDenied
 	}
 
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
-	return ds.storage.Delete(ctx, id)
+	// first check if the scan configuration exists
+	scanConfig, found, err := ds.GetScanConfiguration(ctx, id)
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to find scan configuration id %q", id)
+	}
+	if !found {
+		return "", errors.Errorf("Scan configuration id %q not found", id)
+	}
+	scanConfigName := scanConfig.GetScanName()
+
+	// remove scan data from scan status table first
+	err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, id).ProtoQuery())
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", id)
+	}
+
+	err = ds.storage.Delete(ctx, id)
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to delete scan configuration id %q", id)
+	}
+
+	return scanConfigName, nil
 }
 
 // UpdateClusterStatus updates the scan configuration with the cluster status
