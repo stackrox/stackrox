@@ -1,0 +1,17 @@
+{{/*
+  srox.setInstallMethod $
+
+  Sets $.env.installMethod to one of: "operator", "helm", "manifest".
+*/}}
+
+{{ define "srox.setInstallMethod" }}
+{{ $ := index . 0 }}
+
+[< if .Operator >]
+{{ $_ := set $._rox.env "installMethod" "operator" }}
+[< else if .KubectlOutput >]
+{{ $_ := set $._rox.env "installMethod" "manifest" }}
+[< else >]
+{{ $_ := set $._rox.env "installMethod" "helm" }}
+[< end >]
+{{ end }}
