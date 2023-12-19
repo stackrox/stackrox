@@ -185,7 +185,7 @@ func (e *Store) removeDeploymentEndpoints(deploymentID string, ep net.NumericEnd
 }
 
 func (e *Store) removeHistoricalExpiredDeploymentEndpoints(deploymentID string, ep net.NumericEndpoint) {
-	if status, ok := e.historicalEndpoints[deploymentID][ep]; ok && status.isHistorical && status.IsExpired() {
+	if status, ok := e.historicalEndpoints[deploymentID][ep]; ok && status.IsExpired() {
 		e.removeDeploymentEndpoints(deploymentID, ep)
 		delete(e.historicalEndpoints[deploymentID], ep)
 		if len(e.historicalEndpoints[deploymentID]) == 0 {
@@ -230,7 +230,7 @@ func (e *Store) removeDeploymentIP(deploymentID string, ip net.IPAddress) {
 }
 
 func (e *Store) removeHistoricalExpiredIPs(deploymentID string, ip net.IPAddress) {
-	if status, ok := e.historicalIPs[ip][deploymentID]; ok && status.isHistorical && status.IsExpired() {
+	if status, ok := e.historicalIPs[ip][deploymentID]; ok && status.IsExpired() {
 		e.removeDeploymentIP(deploymentID, ip)
 		delete(e.historicalIPs[ip], deploymentID)
 		if len(e.historicalIPs[ip]) == 0 {
