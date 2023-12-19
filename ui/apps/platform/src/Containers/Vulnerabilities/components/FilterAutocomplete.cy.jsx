@@ -58,7 +58,7 @@ function mockAutocompleteResponse() {
 }
 
 describe(Cypress.spec.relative, () => {
-    it.only('should debounce search requests as the user types', () => {
+    it('should debounce search requests as the user types', () => {
         mockAutocompleteResponse();
         setup([IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION]);
 

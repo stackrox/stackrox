@@ -45,7 +45,7 @@ test: deps $(SOURCES)
 .PHONY: test-component
 test-component: deps $(SOURCES)
 	@echo "+ $@"
-	cd apps/platform && yarn test-component
+	cd apps/platform; yarn test-component
 
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
