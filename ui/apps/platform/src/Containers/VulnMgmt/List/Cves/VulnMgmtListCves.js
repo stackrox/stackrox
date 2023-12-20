@@ -380,7 +380,7 @@ const VulnMgmtCves = ({
     };
 
     function trackGlobalSnooze(cveNames, entityType, duration) {
-        let type = undefined;
+        let type;
 
         if (entityType === resourceTypes.NODE_CVE) {
             type = 'NODE';
