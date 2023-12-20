@@ -865,7 +865,6 @@ func mustReadTimeout[T any](t *testing.T, ch chan T) T {
 			require.True(t, more, "channel should never close")
 		}
 		result = v
-		return v
 	case <-time.After(waitTimeout):
 		t.Fatal("blocked on reading from channel")
 	}
