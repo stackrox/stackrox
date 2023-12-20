@@ -222,7 +222,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
 
 	// Add Scan config status
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, fixtureconsts.Cluster1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, s.clusterID1, "testing status"))
 
 	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID)
 	s.Require().NoError(err)
