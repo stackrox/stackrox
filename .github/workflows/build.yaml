@@ -309,12 +309,12 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
 
@@ -322,7 +322,7 @@ jobs:
         run: |
           tar xvzf cli-build.tgz
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
@@ -330,7 +330,7 @@ jobs:
         run: |
           tar xvzf go-binaries-build.tgz
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: docs-build
           path: image/rhel/docs
@@ -590,7 +590,7 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: cli-build
 
@@ -598,7 +598,7 @@ jobs:
       run: |
         tar xvzf cli-build.tgz
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: go-binaries-build-amd64-default
 
@@ -648,7 +648,7 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
 
