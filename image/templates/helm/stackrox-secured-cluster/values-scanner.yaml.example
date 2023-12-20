@@ -1,5 +1,5 @@
 # # NOTE:
-# # The Scanner is not available in the secured clusters installed via roxctl.
+# # The Scanner is only available in the secured clusters on the OpenShift Container Platform.
 #
 # # Public configuration options for the StackRox Scanner:
 # # When installing the Secured Cluster chart, a slim scanner mode is deployed with reduced image caching.
