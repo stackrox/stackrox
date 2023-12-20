@@ -1475,10 +1475,9 @@ spec:
                         type: string
                     type: object
                   scannerComponent:
-                    default: Disabled
-                    description: If you want to deploy the Red Hat Advanced Cluster
-                      Security ScannerV4, you can enable it here By default, Scanner
-                      V4 is disabled.
+                    default: Enabled
+                    description: If you don't want to deploy the Red Hat Advanced
+                      Cluster Security ScannerV4, you can disable it here
                     enum:
                     - Enabled
                     - Disabled
