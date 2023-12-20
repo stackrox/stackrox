@@ -3,6 +3,7 @@ package rhel
 import (
 	"context"
 	"encoding/xml"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -89,6 +90,22 @@ func TestParse(t *testing.T) {
 	count := make(map[string]int)
 	for _, vuln := range vs {
 		count[vuln.Repo.Name]++
+		s, err := url.ParseQuery(vuln.Severity)
+		if err != nil {
+			t.Fatalf("invalid severity: %s", vuln.Severity)
+		}
+		if got, want := s.Get("cvss3_score"), "7.5"; got != want {
+			t.Fatalf("unexpected CVSS3 score: got: %s, want: %s", got, want)
+		}
+		if got, want := s.Get("cvss3_vector"), "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"; got != want {
+			t.Fatalf("unexpected CVSS3 vector: got: %s, want: %s", got, want)
+		}
+		if got, want := s.Get("cvss2_score"), ""; got != want {
+			t.Fatalf("unexpected CVSS2 score: got: %s, want: %s", got, want)
+		}
+		if got, want := s.Get("severity"), "Important"; got != want {
+			t.Fatalf("unexpected severity: got: %s, want: %s", got, want)
+		}
 	}
 
 	const (
