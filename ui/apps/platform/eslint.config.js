@@ -432,6 +432,23 @@ module.exports = [
             'prefer-object-spread': 'error',
             'unicode-bom': ['error', 'never'],
 
+            // Turn on rules from airbnb variables config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/variables.js
+            'no-label-var': 'error',
+            'no-restricted-globals': [
+                'error',
+                {
+                    name: 'isFinite',
+                    message: 'Use Number.isFinite instead',
+                },
+                {
+                    name: 'isNaN',
+                    message: 'Use Number.isNaN',
+                },
+            ],
+            // 'no-shadow': 'error', // fix 15 errors
+            'no-undef-init': 'error',
+
             'prettier/prettier': 'error',
         },
 
@@ -542,6 +559,8 @@ module.exports = [
                 },
             ],
 
+            // TODO compare eslint-plugin-jsx-a11y recommended and strict config to former airbnb-config-react react-a11y config.
+
             // TODO Reconfigure for using react-router Link
             'jsx-a11y/anchor-is-valid': [
                 'error',
@@ -566,20 +585,28 @@ module.exports = [
             // Turn off new rules until after we fix errors in follow-up contributions.
             'react/jsx-key': 'off', // more that 30 errors
 
+            // Turn on rules from airbnb react config that are not in eslint-plugin-react recommended.
+            'react/button-has-type': [
+                'error',
+                {
+                    button: true,
+                    submit: true,
+                    reset: false,
+                },
+            ],
             'react/forbid-prop-types': [
                 'error',
                 {
                     forbid: ['any', 'array'], // allow object
                 },
             ],
-
+            'react/jsx-boolean-value': ['error', 'never', { always: [] }],
             'react/jsx-filename-extension': [
                 'error',
                 {
                     extensions: ['.js', '.tsx'], // allow JSX in .js files
                 },
             ],
-
             'react/jsx-no-bind': [
                 'error',
                 {
@@ -590,15 +617,42 @@ module.exports = [
                     ignoreRefs: true,
                 },
             ],
-
+            'react/jsx-no-script-url': [
+                'error',
+                [
+                    {
+                        name: 'Link',
+                        props: ['to'],
+                    },
+                ],
+            ],
+            'react/jsx-pascal-case': [
+                'error',
+                {
+                    allowAllCaps: true,
+                    ignore: [],
+                },
+            ],
+            'react/no-array-index-key': 'error',
+            'react/no-danger': 'error',
+            'react/no-invalid-html-attribute': 'error',
+            'react/no-unused-prop-types': [
+                'error',
+                {
+                    customValidators: [],
+                    skipShapeProps: true,
+                },
+            ],
+            'react/no-unused-state': 'error',
             'react/prop-types': [
                 'error',
                 {
-                    skipUndeclared: true,
+                    skipUndeclared: true, // more specific than eslint-plugin-react
                 },
             ],
-
             'react/static-property-placement': ['error', 'static public field'],
+            'react/style-prop-object': 'error',
+            'react/void-dom-elements-no-children': 'error',
 
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
