@@ -300,6 +300,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
+	utils.Must(builder.AddType("ClusterMetadata", []string{
+		"id: ID!",
+		"name: String!",
+		"type: ClusterMetadata_Type!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterMetadata_Type(0)))
 	utils.Must(builder.AddType("ClusterStatus", []string{
 		"certExpiryStatus: ClusterCertExpiryStatus",
 		"orchestratorMetadata: OrchestratorMetadata",
@@ -1102,6 +1108,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ProviderMetadata", []string{
 		"aws: AWSProviderMetadata",
 		"azure: AzureProviderMetadata",
+		"cluster: ClusterMetadata",
 		"google: GoogleProviderMetadata",
 		"region: String!",
 		"verified: Boolean!",
@@ -4158,6 +4165,81 @@ func toClusterHealthStatus_HealthStatusLabels(values *[]string) []storage.Cluste
 	output := make([]storage.ClusterHealthStatus_HealthStatusLabel, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterHealthStatus_HealthStatusLabel(&v)
+	}
+	return output
+}
+
+type clusterMetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterMetadata
+}
+
+func (resolver *Resolver) wrapClusterMetadata(value *storage.ClusterMetadata, ok bool, err error) (*clusterMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterMetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadatas(values []*storage.ClusterMetadata, err error) ([]*clusterMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterMetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadataWithContext(ctx context.Context, value *storage.ClusterMetadata, ok bool, err error) (*clusterMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterMetadataResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadatasWithContext(ctx context.Context, values []*storage.ClusterMetadata, err error) ([]*clusterMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterMetadataResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterMetadataResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterMetadataResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *clusterMetadataResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func toClusterMetadata_Type(value *string) storage.ClusterMetadata_Type {
+	if value != nil {
+		return storage.ClusterMetadata_Type(storage.ClusterMetadata_Type_value[*value])
+	}
+	return storage.ClusterMetadata_Type(0)
+}
+
+func toClusterMetadata_Types(values *[]string) []storage.ClusterMetadata_Type {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ClusterMetadata_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterMetadata_Type(&v)
 	}
 	return output
 }
@@ -12050,6 +12132,11 @@ func (resolver *providerMetadataResolver) Aws(ctx context.Context) (*aWSProvider
 func (resolver *providerMetadataResolver) Azure(ctx context.Context) (*azureProviderMetadataResolver, error) {
 	value := resolver.data.GetAzure()
 	return resolver.root.wrapAzureProviderMetadata(value, true, nil)
+}
+
+func (resolver *providerMetadataResolver) Cluster(ctx context.Context) (*clusterMetadataResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapClusterMetadata(value, true, nil)
 }
 
 func (resolver *providerMetadataResolver) Google(ctx context.Context) (*googleProviderMetadataResolver, error) {

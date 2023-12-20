@@ -17,6 +17,29 @@ enum ClusterType {
     OPENSHIFT4_CLUSTER       = 5;
 }
 
+// ClusterMetadata contains metadata information about the cluster infrastructure.
+message ClusterMetadata {
+    enum Type {
+        UNSPECIFIED            = 0;
+        AKS                    = 1;
+        ARO                    = 2;
+        EKS                    = 3;
+        GKE                    = 4;
+        OPENSHIFT_SELF_MANAGED = 5;
+        ROSA                   = 6;
+    }
+
+    Type type   = 1 [(gogoproto.moretags) = 'search:"Cluster Type"'];
+    // Name represents the name under which the cluster is registered with the
+    // cloud provider. In case of self managed OpenShift it is the name chosen
+    // by the OpenShift installer.
+    string name = 2;
+    // Id represents a unique ID under which the cluster is registered with the
+    // cloud provider. Not all cluster types have an id. For all OpenShift
+    // clusters, this is the Red Hat `cluster_id` registered with OCM.
+    string id   = 3;
+}
+
 message GoogleProviderMetadata {
     string project      = 1;
     string cluster_name = 2;
@@ -40,7 +63,8 @@ message ProviderMetadata {
         AzureProviderMetadata azure   = 5;
     }
 
-    bool verified = 15;
+    bool verified           = 15;
+    ClusterMetadata cluster = 16;
 }
 
 message OrchestratorMetadata {

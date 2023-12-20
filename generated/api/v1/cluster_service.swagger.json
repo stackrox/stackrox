@@ -539,6 +539,36 @@
         }
       }
     },
+    "storageClusterMetadata": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/storageClusterMetadataType"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name represents the name under which the cluster is registered with the\ncloud provider. In case of self managed OpenShift it is the name chosen\nby the OpenShift installer."
+        },
+        "id": {
+          "type": "string",
+          "description": "Id represents a unique ID under which the cluster is registered with the\ncloud provider. Not all cluster types have an id. For all OpenShift\nclusters, this is the Red Hat `cluster_id` registered with OCM."
+        }
+      },
+      "description": "ClusterMetadata contains metadata information about the cluster infrastructure."
+    },
+    "storageClusterMetadataType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "AKS",
+        "ARO",
+        "EKS",
+        "GKE",
+        "OPENSHIFT_SELF_MANAGED",
+        "ROSA"
+      ],
+      "default": "UNSPECIFIED"
+    },
     "storageClusterStatus": {
       "type": "object",
       "properties": {
@@ -727,6 +757,9 @@
         },
         "verified": {
           "type": "boolean"
+        },
+        "cluster": {
+          "$ref": "#/definitions/storageClusterMetadata"
         }
       }
     },

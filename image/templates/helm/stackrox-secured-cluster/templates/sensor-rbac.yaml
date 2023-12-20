@@ -291,3 +291,35 @@ roleRef:
   kind: ClusterRole
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:metadata
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:metadata") | nindent 4 }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:metadata") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:metadata
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:metadata") | nindent 4 }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:metadata") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: {{ ._rox._namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:metadata
+  apiGroup: rbac.authorization.k8s.io
