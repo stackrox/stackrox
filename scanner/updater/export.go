@@ -65,8 +65,7 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 	outOfTree := append([]driver.Updater{}, manualSet.Updaters()...)
-	opts = append(opts, []updates.ManagerOption{
-		updates.WithOutOfTree(outOfTree)})
+	opts = append(opts, []updates.ManagerOption{updates.WithOutOfTree(outOfTree)})
 
 	// RHEL custom: Forked from ClairCore.
 	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
@@ -78,11 +77,15 @@ func Export(ctx context.Context, outputDir string) error {
 
 	// ClairCore updaters.
 	for _, uSet := range [][]string{
-		{"oracle"}, {"photon"},
-		{"suse"}, {"aws"},
+		{"oracle"},
+		{"photon"},
+		{"suse"},
+		{"aws"},
 		{"alpine"},
-		{"debian"}, {"rhcc"},
-		{"ubuntu"}, {"osv"},
+		{"debian"},
+		{"rhcc"},
+		{"ubuntu"},
+		{"osv"},
 	} {
 		opts = append(opts, []updates.ManagerOption{updates.WithEnabled(uSet)})
 	}
