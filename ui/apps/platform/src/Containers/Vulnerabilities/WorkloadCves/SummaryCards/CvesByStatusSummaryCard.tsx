@@ -69,14 +69,22 @@ const disabledColor100 = 'var(--pf-global--disabled-color--100)';
 export type CvesByStatusSummaryCardProps = {
     cveStatusCounts: ResourceCountByCveSeverityAndStatus;
     hiddenStatuses: Set<FixableStatus>;
+    isBusy: boolean;
 };
 
 function CvesByStatusSummaryCard({
     cveStatusCounts,
     hiddenStatuses,
+    isBusy,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact isFlat>
+        <Card
+            role="region"
+            aria-live="polite"
+            aria-busy={isBusy ? 'true' : 'false'}
+            isCompact
+            isFlat
+        >
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-u-pl-sm">

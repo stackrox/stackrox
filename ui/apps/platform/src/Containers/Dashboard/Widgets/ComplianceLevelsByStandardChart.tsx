@@ -36,7 +36,6 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
             <Chart
                 ariaDesc="Compliance coverage percentages by standard across the selected resource scope"
                 ariaTitle="Compliance coverage by standard"
-                animate={{ duration: 300 }}
                 domainPadding={{ x: [20, 20] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width}

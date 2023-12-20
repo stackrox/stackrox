@@ -18,6 +18,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import useURLPagination from 'hooks/useURLPagination';
 import { getOverviewCvesPath } from '../searchUtils';
 import DeploymentPageHeader, {
     DeploymentMetadata,
@@ -45,6 +46,8 @@ const deploymentMetadataQuery = gql`
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+
+    const pagination = useURLPagination(20);
 
     const metadataRequest = useQuery<{ deployment: DeploymentMetadata | null }, { id: string }>(
         deploymentMetadataQuery,
@@ -99,7 +102,10 @@ function DeploymentPage() {
                     >
                         <Tabs
                             activeKey={activeTabKey}
-                            onSelect={(e, key) => setActiveTabKey(key)}
+                            onSelect={(e, key) => {
+                                setActiveTabKey(key);
+                                pagination.setPage(1);
+                            }}
                             component={TabsComponent.nav}
                             className="pf-u-pl-md pf-u-background-color-100"
                             mountOnEnter
@@ -110,14 +116,20 @@ function DeploymentPage() {
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
-                                <DeploymentPageVulnerabilities deploymentId={deploymentId} />
+                                <DeploymentPageVulnerabilities
+                                    deploymentId={deploymentId}
+                                    pagination={pagination}
+                                />
                             </Tab>
                             <Tab
                                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                                 eventKey="Resources"
                                 title={<TabTitleText>Resources</TabTitleText>}
                             >
-                                <DeploymentPageResources deploymentId={deploymentId} />
+                                <DeploymentPageResources
+                                    deploymentId={deploymentId}
+                                    pagination={pagination}
+                                />
                             </Tab>
                         </Tabs>
                     </PageSection>

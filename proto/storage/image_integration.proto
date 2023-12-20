@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 23
+// Next Tag: 24
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -20,14 +20,15 @@ message ImageIntegration {
     repeated ImageIntegrationCategory categories = 6;
 
     oneof IntegrationConfig {
-        ClairifyConfig    clairify  = 8;
-        DockerConfig      docker    = 9;
-        QuayConfig        quay      = 10;
-        ECRConfig         ecr       = 11;
-        GoogleConfig      google    = 13;
-        ClairConfig       clair     = 14;
-        ClairV4Config     clair_v4  = 22;
-        IBMRegistryConfig ibm       = 20;
+        ClairifyConfig    clairify   = 8;
+        ScannerV4Config   scanner_v4 = 23;
+        DockerConfig      docker     = 9;
+        QuayConfig        quay       = 10;
+        ECRConfig         ecr        = 11;
+        GoogleConfig      google     = 13;
+        ClairConfig       clair      = 14;
+        ClairV4Config     clair_v4   = 22;
+        IBMRegistryConfig ibm        = 20;
     }
     reserved 7, 12, 17; // Previously Docker Trusted Registry, Tenable, and Anchore respectively
 
@@ -122,6 +123,12 @@ message GoogleConfig {
     string service_account = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     string project         = 3;
     bool wif_enabled       = 4;
+}
+
+message ScannerV4Config {
+    int32  num_concurrent_scans = 1;
+    string indexer_endpoint     = 2;
+    string matcher_endpoint     = 3;
 }
 
 enum ImageIntegrationCategory {

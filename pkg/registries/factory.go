@@ -20,6 +20,8 @@ import (
 type Creator func(scanner *storage.ImageIntegration) (types.Registry, error)
 
 // Factory provides a centralized location for creating a Scanner from a v1.ImageIntegrations.
+//
+//go:generate mockgen-wrapper
 type Factory interface {
 	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }

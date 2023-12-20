@@ -29,20 +29,9 @@ scannerV4_test() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs
 
-    deploy_stackrox_in_scannerV4_mode
+    deploy_stackrox
 
     run_scannerV4_test
-}
-
-deploy_stackrox_in_scannerV4_mode() {
-    "$ROOT/deploy/k8s/deploy.sh"
-
-    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
-    export_central_basic_auth_creds
-
-    wait_for_api
-
-    touch "${STATE_DEPLOYED}"
 }
 
 run_scannerV4_test() {

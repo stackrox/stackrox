@@ -59,8 +59,8 @@ var (
 	errIncorrectEventOrder           = errors.Wrap(errCantReconcile, "central sent incorrect order of events")
 )
 
-func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
-	go s.sendEvents(client, centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector) {
+	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(_ error) {
@@ -112,7 +112,7 @@ func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorSt
 	return central.SensorHello_STARTUP
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
@@ -187,6 +187,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
+	syncDone.Signal()
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////

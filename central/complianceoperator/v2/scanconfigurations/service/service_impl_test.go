@@ -10,6 +10,7 @@ import (
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -121,6 +122,30 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	s.Require().Equal(request, config)
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Test Case 1: Successful Deletion
+	validID := "validScanConfigID"
+	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
+
+	_, err := s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
+	s.Require().NoError(err)
+
+	// Test Case 2: Deletion with Empty ID
+	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: ""})
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Scan configuration ID is required for deletion")
+
+	// Test Case 3: Deletion Fails in Manager
+	failingID := "failingScanConfigID"
+	s.manager.EXPECT().DeleteScan(gomock.Any(), failingID).Return(errors.New("manager error")).Times(1)
+
+	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: failingID})
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Unable to delete scan config")
+}
+
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationScanExists() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
@@ -184,8 +209,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -286,8 +310,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,

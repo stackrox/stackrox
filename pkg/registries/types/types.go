@@ -28,6 +28,8 @@ type Registry interface {
 
 // ImageRegistry adds a DataSource function to Registry that describes which
 // integration formed the interface
+//
+//go:generate mockgen-wrapper
 type ImageRegistry interface {
 	Registry
 	DataSource() *storage.DataSource

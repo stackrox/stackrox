@@ -40,12 +40,13 @@ import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 import ScanConfigsHeader from '../ScanConfigsHeader';
+import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
 };
 
-const CreateReportsButton = () => {
+const CreateScanConfigButton = () => {
     return (
         <Link to={`${complianceEnhancedScanConfigsBasePath}?action=create`}>
             <Button variant="primary">Create scan schedule</Button>
@@ -70,40 +71,6 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: scanSchedules, loading: isLoading, error } = useRestQuery(listQuery);
-
-    const formatScanSchedule = (schedule: Schedule) => {
-        const daysOfWeekMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-        const formatDays = (days: string[]): string => {
-            if (days.length === 1) {
-                return days[0];
-            }
-            if (days.length === 2) {
-                return days.join(' and ');
-            }
-            return `${days.slice(0, -1).join(', ')}, and ${days[days.length - 1]}`;
-        };
-
-        // arbitrary date, we only care about the time
-        const date = new Date(2000, 0, 0, schedule.hour, schedule.minute);
-        const timeString = getTimeHoursMinutes(date);
-
-        switch (schedule.intervalType) {
-            case 'DAILY':
-                return `Daily at ${timeString}`;
-            case 'WEEKLY': {
-                const daysOfWeek = schedule.daysOfWeek.days.map((day) => daysOfWeekMap[day]);
-                return `Every ${formatDays(daysOfWeek)} at ${timeString}`;
-            }
-            case 'MONTHLY': {
-                const formattedDaysOfMonth =
-                    schedule.daysOfMonth.days.map(getDayOfMonthWithOrdinal);
-                return `Monthly on the ${formatDays(formattedDaysOfMonth)} at ${timeString}`;
-            }
-            default:
-                return 'Invalid Schedule';
-        }
-    };
 
     const scanConfigActions = (): IAction[] => [
         {
@@ -146,7 +113,7 @@ function ScanConfigsTablePage({
 
     const renderLoadingContent = () => (
         <Tr>
-            <Td colSpan={8}>
+            <Td colSpan={5}>
                 <Bullseye>
                     <Spinner isSVG />
                 </Bullseye>
@@ -156,7 +123,7 @@ function ScanConfigsTablePage({
 
     const renderEmptyContent = () => (
         <Tr>
-            <Td colSpan={6}>
+            <Td colSpan={5}>
                 <Bullseye>
                     <EmptyStateTemplate
                         title="No scan schedules"
@@ -169,7 +136,7 @@ function ScanConfigsTablePage({
                                     <Text>Create one to get started</Text>
                                 </FlexItem>
                                 <FlexItem>
-                                    <CreateReportsButton />
+                                    <CreateScanConfigButton />
                                 </FlexItem>
                             </Flex>
                         )}
@@ -186,16 +153,13 @@ function ScanConfigsTablePage({
         if (scanSchedules && scanSchedules.length > 0) {
             return renderTableContent();
         }
-        if (scanSchedules && scanSchedules.length === 0) {
-            return renderEmptyContent();
-        }
-        return null;
+        return renderEmptyContent();
     };
 
     return (
         <>
             <ScanConfigsHeader
-                actions={hasWriteAccessForCompliance ? <CreateReportsButton /> : <></>}
+                actions={hasWriteAccessForCompliance ? <CreateScanConfigButton /> : <></>}
                 description="Configure scan schedules bound to clusters and policies."
             />
             <Divider component="div" />

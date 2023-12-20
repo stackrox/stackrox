@@ -638,6 +638,73 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when vuln with plain fixedIn then convert": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:         now,
+					FixedInVersion: "1.2.3",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "1.2.3",
+				},
+			},
+		},
+		"when vuln with range and no fixedIn then use upper limit": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Range: &claircore.Range{
+						Upper: claircore.Version{
+							Kind: "test",
+							V:    [10]int32{0, 1, 2, 3},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "1.2.3",
+				},
+			},
+		},
+		"when vuln with range and with fixeIn then use fixedIn": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:         now,
+					FixedInVersion: "4.5.6",
+					Range: &claircore.Range{
+						Upper: claircore.Version{
+							Kind: "test",
+							V:    [10]int32{0, 1, 2, 3},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "4.5.6",
+				},
+			},
+		},
+		"when vuln urlencoded fixeIn then use fixed value in fixedIn": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:         now,
+					FixedInVersion: "fixed=4.5.6",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:         protoNow,
+					FixedInVersion: "4.5.6",
+				},
+			},
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {

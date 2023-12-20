@@ -374,9 +374,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.Bool(true),
-						},
 						RegistryOverride: "my.registry.override.com",
 					},
 				},
@@ -541,9 +538,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"memory": "1003Mi",
 						},
 					},
-				},
-				"system": map[string]interface{}{
-					"createSCCs": true,
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{

@@ -11,26 +11,17 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// signatureIntegrationIDPrefix should be prepended to every human-hostile ID of a
-// signature integration for readability, e.g.,
-//
-//	"io.stackrox.signatureintegration.94ac7bfe-f9b2-402e-b4f2-bfda480e1a13".
-//
-// TODO(ROX-9716): refactor to reference the same constant here and in
-// pkg/booleanpolicy/value_regex.go
-const signatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
-
 // GenerateSignatureIntegrationID returns a random valid signature integration ID.
 func GenerateSignatureIntegrationID() string {
-	return signatureIntegrationIDPrefix + uuid.NewV4().String()
+	return signatures.SignatureIntegrationIDPrefix + uuid.NewV4().String()
 }
 
 // ValidateSignatureIntegration checks that signature integration is valid.
 func ValidateSignatureIntegration(integration *storage.SignatureIntegration) error {
 	var multiErr error
 
-	if !strings.HasPrefix(integration.GetId(), signatureIntegrationIDPrefix) {
-		err := errors.Errorf("id field must be in '%s*' format", signatureIntegrationIDPrefix)
+	if !strings.HasPrefix(integration.GetId(), signatures.SignatureIntegrationIDPrefix) {
+		err := errors.Errorf("id field must be in '%s*' format", signatures.SignatureIntegrationIDPrefix)
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if integration.GetName() == "" {

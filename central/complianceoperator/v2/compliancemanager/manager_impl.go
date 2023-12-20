@@ -137,7 +137,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileName())
+		profiles = append(profiles, profile.GetProfileId())
 	}
 
 	for _, clusterID := range clusters {
@@ -244,11 +244,32 @@ func (m *managerImpl) ProcessRescanRequest(_ context.Context, _ interface{}) err
 }
 
 // DeleteScan processes a request to delete an existing compliance scan configuration.
-// TODO(ROX-19540)
-func (m *managerImpl) DeleteScan(_ context.Context, _ interface{}) error {
-	// TODO:
-	// 1. Validate config exists in database
-	// 2. Lock config so it cannot be edited/updated
-	// 3. Push request to Sensor
-	panic("implement me")
+func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
+	// Remove the scan configuration from the database
+	scanConfigName, err := m.scanSettingDS.DeleteScanConfiguration(ctx, scanID)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to delete scan configuration ID %q.", scanID)
+	}
+
+	if scanConfigName == "" {
+		return errors.Errorf("Unable to find scan configuration name for ID %q.", scanID)
+	}
+
+	// send delete request to sensor
+	sensorRequestID := uuid.NewV4().String()
+	sensorMessage := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_DeleteScanConfig{
+					DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
+						Id:   sensorRequestID,
+						Name: scanConfigName,
+					},
+				},
+			},
+		},
+	}
+	m.sensorConnMgr.BroadcastMessage(sensorMessage)
+
+	return nil
 }

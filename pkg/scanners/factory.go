@@ -8,6 +8,7 @@ import (
 	clairV4Scanner "github.com/stackrox/rox/pkg/scanners/clairv4"
 	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
 	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -40,6 +41,9 @@ func NewFactory(set registries.Set) Factory {
 
 	quayScannerType, quayScannerCreator := quayScanner.Creator()
 	reg.creators[quayScannerType] = quayScannerCreator
+
+	scannerV4Type, scannerV4Creator := scannerv4.Creator(set)
+	reg.creators[scannerV4Type] = scannerV4Creator
 
 	return reg
 }

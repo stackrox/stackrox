@@ -3,6 +3,10 @@
     overflow-x: scroll;
 }
 
+#policy-sections .pf-c-toggle-group .pf-c-toggle-group__button {
+    white-space: initial;
+}
+
 #policy-sections-container {
     overflow: auto;
 }

@@ -38,9 +38,6 @@ var (
 	// ConnectionRetryMaxInterval defines the maximum interval between retries after the gRPC connection disconnects.
 	ConnectionRetryMaxInterval = registerDurationSetting("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", 5*time.Minute)
 
-	// ScanTimeout defines the scan timeout duration for Sensor initiated scans
-	ScanTimeout = registerDurationSetting("ROX_SCAN_TIMEOUT", 6*time.Minute)
-
 	// DelegatedScanningDisabled disables the capabilities associated with delegated image scanning.
 	// This is meant to be a 'kill switch' that allows for local scanning to continue (ie: for OCP internal repos)
 	// in the event the delegated scanning capabilities are causing unforeseen issues.

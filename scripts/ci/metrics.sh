@@ -133,3 +133,77 @@ _EO_UPDATE_
 
     bq query --use_legacy_sql=false "$sql"
 }
+
+slack_top_10_failures() {
+    local job_name_match="${1:-qa}"
+    local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
+    local is_test="${3:-true}"
+
+    local sql
+    # shellcheck disable=SC2016
+    sql='
+SELECT
+    COUNT(*) AS `#`,
+    IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
+    IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
+FROM
+    `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
+WHERE
+    CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
+    AND Status = "failed"
+    AND NOT IsPullRequest
+    AND CONTAINS_SUBSTR(JobName, "master")
+    AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
+GROUP BY
+    Classname,
+    Name
+ORDER BY
+    COUNT(*) DESC
+LIMIT
+    10
+'
+
+    local data
+    echo "Running query with job match name $job_name_match"
+    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)" || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n${data}"
+        exit 1
+    }
+
+    if [[ -z "${data}" ]]; then
+        data="No failures!"
+    fi
+    echo "$data"
+
+    local webhook_url
+    if [[ "${is_test}" == "true" ]]; then
+        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    else
+        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
+    fi
+
+    local body
+    # shellcheck disable=SC2016
+    body='
+{
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "'"${subject}"'"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "```\n\($data)\n```"
+            }
+        }
+    ]
+}'
+
+    echo "Posting data to slack"
+    jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}

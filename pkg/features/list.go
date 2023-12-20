@@ -44,7 +44,7 @@ var (
 	MoveInitBundlesUI = registerUnchangeableFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", false)
 
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
-	ComplianceEnhancements = registerUnchangeableFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
+	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", true)

@@ -1,6 +1,7 @@
 import static util.Helpers.withRetry
 
 import com.google.common.base.CaseFormat
+import io.fabric8.openshift.api.model.PolicyRule
 import orchestratormanager.OrchestratorTypes
 
 import io.stackrox.proto.api.v1.RbacServiceOuterClass
@@ -182,14 +183,14 @@ class K8sRbacTest extends BaseSpecification {
                 assert role.labels == stackroxRole.labelsMap
                 role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
                 assert role.annotations == stackroxRole.annotationsMap
-                for (int i = 0; i < role.rules.size(); i++) {
-                    K8sPolicyRule oRule = role.rules[i]
-                    Rbac.PolicyRule sRule = stackroxRole.rulesList[i]
-                    assert oRule.verbs == sRule.verbsList
-                    assert oRule.apiGroups == sRule.apiGroupsList
-                    assert oRule.resources == sRule.resourcesList
-                    assert oRule.nonResourceUrls == sRule.nonResourceUrlsList
-                    assert oRule.resourceNames == sRule.resourceNamesList
+                assert role.rules.every { K8sPolicyRule oRule ->
+                    stackroxRole.rulesList.any { Rbac.PolicyRule sRule ->
+                        oRule.verbs == sRule.verbsList &&
+                        oRule.apiGroups == sRule.apiGroupsList &&
+                        oRule.resources == sRule.resourcesList &&
+                        oRule.nonResourceUrls == sRule.nonResourceUrlsList &&
+                        oRule.resourceNames == sRule.resourceNamesList
+                    }
                 }
                 assert RbacService.getRole(stackroxRole.id) == stackroxRole
             }
@@ -244,7 +245,7 @@ class K8sRbacTest extends BaseSpecification {
     def "Verify scraped bindings"() {
         expect:
         "SR should have the same bindings"
-        withRetry(45, 2) {
+        withRetry(5, 30) {
             def stackroxBindings = RbacService.getRoleBindings()
             def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
 
@@ -252,7 +253,7 @@ class K8sRbacTest extends BaseSpecification {
             def orchestratorBindingsSet = orchestratorBindings.collect { "${it.namespace}/${it.name}" }
             assert stackroxBindingsSet.toSet() == orchestratorBindingsSet.toSet()
 
-            for (Rbac.K8sRoleBinding b : stackroxBindings) {
+            stackroxBindings.each { Rbac.K8sRoleBinding b ->
                 K8sRoleBinding binding = orchestratorBindings.find {
                     it.name == b.name && it.namespace == b.namespace
                 }

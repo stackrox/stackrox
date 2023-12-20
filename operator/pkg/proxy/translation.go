@@ -5,37 +5,27 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/operator-framework/helm-operator-plugins/pkg/values"
+	"github.com/stackrox/rox/operator/pkg/values/translation"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string) (chartutil.Values, error) {
+func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string) chartutil.Values {
 	if len(proxyEnvVars) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	secretName := getProxyEnvSecretName(obj)
 
 	envVarsMap := map[string]interface{}{}
 	for envVarName := range proxyEnvVars {
-		src := v1.EnvVarSource{
-			SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: secretName,
-				},
-				Key: envVarName,
-			},
-		}
-		uSrc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&src)
-		if err != nil {
-			return nil, err
-		}
 		envVarsMap[envVarName] = map[string]interface{}{
-			"valueFrom": uSrc,
+			"valueFrom": map[string]interface{}{
+				"secretKeyRef": map[string]interface{}{
+					"key":  envVarName,
+					"name": secretName,
+				},
+			},
 		}
 	}
 
@@ -43,29 +33,37 @@ func getProxyConfigHelmValues(obj k8sutil.Object, proxyEnvVars map[string]string
 		"customize": map[string]interface{}{
 			"envVars": envVarsMap,
 		},
-	}, nil
+	}
 }
 
-// InjectProxyEnvVars wraps a Translator to inject proxy configuration environment variables.
-func InjectProxyEnvVars(translator values.Translator, proxyEnv map[string]string, log logr.Logger) values.Translator {
-	return values.TranslatorFunc(func(ctx context.Context, obj *unstructured.Unstructured) (chartutil.Values, error) {
-		vals, err := translator.Translate(ctx, obj)
-		if err != nil {
-			return nil, err
-		}
+// NewProxyEnvVarsInjector returns an object which injects proxy env vars into enriched chart values.
+func NewProxyEnvVarsInjector(proxyEnv map[string]string, log logr.Logger) *proxyEnvVarsInjector {
+	return &proxyEnvVarsInjector{
+		proxyEnv: proxyEnv,
+		log:      log,
+	}
+}
 
-		proxyVals, _ := getProxyConfigHelmValues(obj, proxyEnv) // ignore errors for now
+type proxyEnvVarsInjector struct {
+	proxyEnv map[string]string
+	log      logr.Logger
+}
 
-		mergedVals := chartutil.CoalesceTables(vals, proxyVals)
+var _ translation.Enricher = &proxyEnvVarsInjector{}
 
-		mergedVals, conflicts := deleteValueFromIfValueExists(mergedVals)
-		if len(conflicts) > 0 {
-			err := fmt.Errorf("conflicts: %s for %s/%s", conflicts, obj.GetNamespace(), obj.GetName())
-			log.Error(err, "injecting proxy env vars")
-		}
+// Enrich injects proxy configuration environment variables.
+func (i *proxyEnvVarsInjector) Enrich(_ context.Context, obj k8sutil.Object, vals chartutil.Values) (chartutil.Values, error) {
+	proxyVals := getProxyConfigHelmValues(obj, i.proxyEnv)
 
-		return mergedVals, nil
-	})
+	mergedVals := chartutil.CoalesceTables(vals, proxyVals)
+
+	mergedVals, conflicts := deleteValueFromIfValueExists(mergedVals)
+	if len(conflicts) > 0 {
+		err := fmt.Errorf("conflicts: %s for %s/%s", conflicts, obj.GetNamespace(), obj.GetName())
+		i.log.Error(err, "injecting proxy env vars")
+	}
+
+	return mergedVals, nil
 }
 
 // deleteValueFromIfValueExists deletes the valueFrom key from customize.envVars entries

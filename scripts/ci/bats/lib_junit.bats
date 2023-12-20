@@ -89,6 +89,29 @@ function setup() {
     assert_output 2
 }
 
+@test "creates a skipped junit" {
+    run save_junit_skipped "UNITTest" "A unit test"
+    assert_success
+    run cat "${junit_dir}/junit-UNITTest.xml"
+    assert_output --partial 'tests="1"'
+    assert_output --partial 'skipped="1"'
+    assert_output --partial 'failures="0"'
+}
+
+@test "handles success, skipped and failure" {
+    run save_junit_success "UNITTest" "A unit test"
+    run save_junit_skipped "UNITTest" "A unit test"
+    run save_junit_failure "UNITTest" "A unit test" "more failure details"
+    run save_junit_skipped "UNITTest" "A unit test"
+    run save_junit_success "UNITTest" "A unit test"
+    run cat "${junit_dir}/junit-UNITTest.xml"
+    assert_output --partial 'tests="5"'
+    assert_output --partial 'failures="1"'
+    assert_output --partial 'skipped="2"'
+    run grep -c 'more failure details' "${junit_dir}/junit-UNITTest.xml"
+    assert_output 1
+}
+
 @test "handles multiline failure details" {
     read -r -d '' details << _EO_DETAILS_ || true
 more failure details

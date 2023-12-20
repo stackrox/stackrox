@@ -3,12 +3,14 @@ package check
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -82,8 +84,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
+	// TODO(ROX-21443): Pass deploymentCheckCmd.files to the Sarif printer once it can handle multiple entities
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.firstFile))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
@@ -107,7 +110,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringArrayVarP(&deploymentCheckCmd.files, "file", "f", nil, "yaml files to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
@@ -128,7 +131,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
-	file               string
+	// TODO(ROX-21443): Remove firstFile once sarif printers can handle multiple entities
+	firstFile          string
+	files              []string
 	json               bool
 	retryDelay         int
 	retryCount         int
@@ -147,6 +152,11 @@ type deploymentCheckCommand struct {
 func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
 
+	// TODO(ROX-21443): Remove this once sarif printers can handle multiple entities
+	// Temporary solution until Sarif printers can handle string slices
+	// d.firstFile needs to be populated before the printer is created
+	d.firstFile = d.files[0]
+
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
 	if !d.json {
@@ -162,8 +172,14 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	if _, err := os.Open(d.file); err != nil {
-		return common.ErrInvalidCommandOption.CausedBy(err)
+	var fileErrs errorhelpers.ErrorList
+	for _, file := range d.files {
+		if _, err := os.Open(file); err != nil {
+			fileErrs.AddError(err)
+		}
+	}
+	if !fileErrs.Empty() {
+		return common.ErrInvalidCommandOption.CausedBy(fileErrs.ErrorStrings())
 	}
 
 	return nil
@@ -186,13 +202,33 @@ func (d *deploymentCheckCommand) Check() error {
 	return nil
 }
 
-func (d *deploymentCheckCommand) checkDeployment() error {
-	deploymentFileContents, err := os.ReadFile(d.file)
-	if err != nil {
-		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
+func normalizeYaml(yamlContent string) string {
+	if yamlContent == "" {
+		return ""
 	}
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
+	yamlContent = strings.TrimSpace(yamlContent)
+	yamlContent = strings.TrimPrefix(yamlContent, "---\n")
+	yamlContent = strings.TrimSuffix(yamlContent, "\n---")
+	yamlContent = yamlContent + "\n"
+
+	return yamlContent
+}
+
+func (d *deploymentCheckCommand) checkDeployment() error {
+	var combinedDeployments string
+	for _, file := range d.files {
+		fileContents, err := os.ReadFile(file)
+		if err != nil {
+			return errors.Wrapf(err, "could not read deployment file: %q", file)
+		}
+		if len(combinedDeployments) > 0 && len(fileContents) > 0 {
+			combinedDeployments = combinedDeployments + "---\n"
+		}
+		combinedDeployments = combinedDeployments + normalizeYaml(string(fileContents))
+	}
+
+	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
@@ -224,6 +260,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
 	}
+
 	return alerts, response.GetIgnoredObjectRefs(), nil
 }
 

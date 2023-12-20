@@ -2,7 +2,7 @@ UI_BASE_URL ?= https://localhost:8000
 YARN_NETWORK_TIMEOUT ?= 60000
 
 .PHONY: all
-all: deps lint test build
+all: deps lint test test-component build
 
 SOURCES := $(shell find packages -type d \( -name node_modules \) -prune -o -print)
 SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
@@ -40,7 +40,12 @@ start: deps
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test
+	cd apps/platform; yarn test
+
+.PHONY: test-component
+test-component: deps $(SOURCES)
+	@echo "+ $@"
+	cd apps/platform; yarn test-component
 
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)

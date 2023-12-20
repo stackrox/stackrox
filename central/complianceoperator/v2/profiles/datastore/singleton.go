@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	edge "github.com/stackrox/rox/central/complianceoperator/v2/profiles/profileclusteredge/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -16,10 +17,15 @@ var (
 
 func initialize() {
 	db := globaldb.GetPostgres()
+	indexer := pgStore.NewIndexer(db)
+	storage := pgStore.New(db)
+	profileSearch := search.New(storage, indexer)
+
 	dataStore = New(
-		pgStore.New(db),
+		storage,
 		edge.New(db),
 		db,
+		profileSearch,
 	)
 }
 

@@ -43,7 +43,7 @@ func New(complianceResultsDS complianceDS.DataStore) Service {
 }
 
 type serviceImpl struct {
-	v2.UnimplementedComplianceScanConfigurationServiceServer
+	v2.UnimplementedComplianceResultsServiceServer
 
 	complianceResultsDS complianceDS.DataStore
 }

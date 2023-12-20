@@ -19,7 +19,7 @@ issues:
     - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
       linters:
         - wrapcheck
-    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck)/"
       linters:
         - forbidigo
     - path: "roxctl/central/generate/interactive.go"

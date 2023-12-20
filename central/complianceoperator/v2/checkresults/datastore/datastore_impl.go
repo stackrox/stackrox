@@ -48,7 +48,7 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 		return sac.ErrResourceAccessDenied
 	}
 
-	// TODO (ROX-18102): populate the standard and control from the rule so that lookup only happens
+	// TODO (ROX-20573): populate the standard and control from the rule so that lookup only happens
 	// one time on insert and not everytime we pull the results.
 
 	return d.store.Upsert(ctx, result)

@@ -491,6 +491,9 @@
         "clairify": {
           "$ref": "#/definitions/storageClairifyConfig"
         },
+        "scannerV4": {
+          "$ref": "#/definitions/storageScannerV4Config"
+        },
         "docker": {
           "$ref": "#/definitions/storageDockerConfig"
         },
@@ -525,7 +528,7 @@
           "$ref": "#/definitions/storageImageIntegrationSource"
         }
       },
-      "title": "Next Tag: 23"
+      "title": "Next Tag: 24"
     },
     "storageImageIntegrationCategory": {
       "type": "string",
@@ -567,6 +570,21 @@
         "registryRobotCredentials": {
           "$ref": "#/definitions/QuayConfigRobotAccount",
           "description": "For registry integrations, Quay recommends using robot accounts. oauthToken will continue to be used for scanner integration."
+        }
+      }
+    },
+    "storageScannerV4Config": {
+      "type": "object",
+      "properties": {
+        "numConcurrentScans": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "indexerEndpoint": {
+          "type": "string"
+        },
+        "matcherEndpoint": {
+          "type": "string"
         }
       }
     },

@@ -1,5 +1,9 @@
 import { useCallback, useState } from 'react';
 
+import useAnalytics, {
+    VULNERABILITY_REPORT_DOWNLOAD_GENERATED,
+    VULNERABILITY_REPORT_SENT_MANUALLY,
+} from 'hooks/useAnalytics';
 import { runReportRequest } from 'services/ReportsService';
 import { ReportNotificationMethod } from 'services/ReportsService.types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -25,6 +29,7 @@ const defaultResult = {
 };
 
 function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
+    const { analyticsTrack } = useAnalytics();
     const [result, setResult] = useState<Result>(defaultResult);
 
     const runReport = useCallback(
@@ -43,6 +48,12 @@ function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                         runError: null,
                     });
                     onCompleted({ reportNotificationMethod });
+
+                    if (reportNotificationMethod === 'EMAIL') {
+                        analyticsTrack(VULNERABILITY_REPORT_SENT_MANUALLY);
+                    } else if (reportNotificationMethod === 'DOWNLOAD') {
+                        analyticsTrack(VULNERABILITY_REPORT_DOWNLOAD_GENERATED);
+                    }
                 })
                 .catch((err) => {
                     setResult({
@@ -52,7 +63,7 @@ function useRunReport({ onCompleted }: UseSaveReportProps): SaveReportResult {
                     });
                 });
         },
-        [onCompleted]
+        [analyticsTrack, onCompleted]
     );
 
     return {

@@ -171,9 +171,13 @@ jobs:
 
       - name: Setup Go build environment for -race
         if: |
-          contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
-            ||
-          matrix.name == 'race-condition-debug'
+          matrix.arch == 'amd64'
+            &&
+          (
+            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+              ||
+            matrix.name == 'race-condition-debug'
+          )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
@@ -604,18 +608,7 @@ jobs:
 
     - name: Scan
       run: |
-        GOVULNCHECK_BIN="$(make  which-govulncheck --silent)"
-        find bin/linux_amd64 -maxdepth 1 -type f -exec "$GOVULNCHECK_BIN" -mode=binary -json {} \; | tee vulns.json
-        source "scripts/ci/lib.sh"
-        jq '.osv | select(. != null ) | [.id, .summary, .details] | @tsv' -r vulns.json | sort -u | while IFS=$'\t' read -r -a vulns
-        do
-          id="${vulns[0]}"
-          summary="${vulns[1]}"
-          details="${vulns[2]}"
-          echo "$id" "$summary"
-          save_junit_failure "$id" "$summary" "$details"
-        done
-        grep -q finding vulns.json && (exit 1)
+        ./scripts/ci/govulncheck.sh
 
     - name: Publish Test Report
       uses: test-summary/action@v2

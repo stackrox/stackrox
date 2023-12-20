@@ -80,6 +80,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
+                    <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -133,12 +134,13 @@ function DeploymentComponentVulnerabilitiesTable({
                             <Td modifier="nowrap">
                                 <FixedByVersionTd fixedByVersion={fixedByVersion} />
                             </Td>
+                            <Td>{source}</Td>
                             <Td>
                                 <ComponentLocationTd location={location} source={source} />
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={7} className="pf-u-pt-0">
+                            <Td colSpan={8} className="pf-u-pt-0">
                                 <DockerfileLayerTd layer={layer} />
                             </Td>
                         </Tr>

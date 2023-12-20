@@ -51,7 +51,7 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
-    static final private int PAUSE_SECS = 2
+    static final private int PAUSE_SECS = 3
 
     // Values used within testing for permission sets.
     // These include:
@@ -196,10 +196,6 @@ oidc:
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
 uiEndpoint: localhost:8000
-groups:
-- key: "email"
-  value: "someone@example.com"
-  role: "Admin"
 oidc:
   issuer: example.com
   mode: fragment
@@ -313,12 +309,18 @@ splunk:
 
         // Verify the groups are created successfully, and specify the origin declarative.
         def expectedGroups = [VALID_DEFAULT_GROUP, VALID_DECLARATIVE_GROUP]
-        def foundGroups = verifyDeclarativeGroups(authProvider.getId(), expectedGroups)
-        assert foundGroups == expectedGroups.size() :
-                "expected to find ${expectedGroups.size()} groups, but only found ${foundGroups}"
+        def groupsResponse = GroupService.getGroups(
+                GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProvider.getId()).build())
+        def expectedProperties = expectedGroups.props
+        verifyAll(groupsResponse.getGroupsList().props) {
+            it.key == expectedProperties.key
+            it.value == expectedProperties.value
+            it.traits.origin == expectedProperties.traits.origin
+            it.authProviderId.every { it == authProvider.id }
+        }
 
-        def notifier = verifyDeclarativeNotifier(VALID_NOTIFIER)
-        assert notifier
+        // Verify the notifier is created successfully, and does specify the origin declarative.
+        assert verifyDeclarativeNotifier(VALID_NOTIFIER)
 
         when:
         // Update the config map to contain an invalid permission set YAML.
@@ -476,8 +478,8 @@ splunk:
         then:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 6 integration health status for the created resources and 2 for declarative config mounts.
-            assert response.healthsCount == CREATED_RESOURCES - 1 + MOUNTED_RESOURCES
+            // Expect 5 integration health status for the created resources and 2 for declarative config mounts.
+            assert response.healthsCount == CREATED_RESOURCES - 2 + MOUNTED_RESOURCES
 
             for (integrationHealth in response.getHealthsList()) {
                 // Config map health will be healthy and do not indicate an error.
@@ -765,20 +767,24 @@ splunk:
     private Role verifyDeclarativeRole(Role expectedRole, String permissionSetID, String accessScopeID) {
         def role = RoleService.getRole(expectedRole.getName())
         assert role : "declarative role ${expectedRole.getName()} does not exist"
-        assert role.getName() == expectedRole.getName()
-        assert role.getDescription() == expectedRole.getDescription()
-        assert role.getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
-        assert role.getAccessScopeId() == accessScopeID
-        assert role.getPermissionSetId() == permissionSetID
+        verifyAll(role) {
+            getName() == expectedRole.getName()
+            getDescription() == expectedRole.getDescription()
+            getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
+            getAccessScopeId() == accessScopeID
+            getPermissionSetId() == permissionSetID
+        }
         return role
     }
 
     private Role verifyDeclarativeRole(Role expectedRole) {
         def role = RoleService.getRole(expectedRole.getName())
         assert role : "declarative role ${expectedRole.getName()} does not exist"
-        assert role.getName() == expectedRole.getName()
-        assert role.getDescription() == expectedRole.getDescription()
-        assert role.getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
+        verifyAll(role) {
+            getName() == expectedRole.getName()
+            getDescription() == expectedRole.getDescription()
+            getTraits().getOrigin() == expectedRole.getTraits().getOrigin()
+        }
         return role
     }
 
@@ -791,10 +797,12 @@ splunk:
             it.getName() == expectedPermissionSet.getName()
         }
         assert permissionSet
-        assert permissionSet.getDescription() == expectedPermissionSet.getDescription()
-        assert permissionSet.getTraits().getOrigin() == expectedPermissionSet.getTraits().getOrigin()
-        assert permissionSet.getResourceToAccessMap() == expectedPermissionSet.getResourceToAccessMap()
-        assert permissionSet.getId()
+        verifyAll(permissionSet) {
+            getDescription() == expectedPermissionSet.getDescription()
+            getTraits().getOrigin() == expectedPermissionSet.getTraits().getOrigin()
+            getResourceToAccessMap() == expectedPermissionSet.getResourceToAccessMap()
+            getId() != ""
+        }
         return permissionSet
     }
 
@@ -807,34 +815,13 @@ splunk:
             it.getName() == expectedAccessScope.getName()
         }
         assert accessScope
-        assert accessScope.getDescription() == expectedAccessScope.getDescription()
-        assert accessScope.getTraits().getOrigin() == expectedAccessScope.getTraits().getOrigin()
-        assert accessScope.getRules() == expectedAccessScope.getRules()
-        assert accessScope.getId()
-        return accessScope
-    }
-
-    // verifyDeclarativeGroups will verify that the expected groups exist within the API and share the same
-    // values.
-    // The number of groups found within the list of expected groups will be returned.
-    private int verifyDeclarativeGroups(String authProviderID, List<Group> expectedGroups) {
-        def groupsResponse = GroupService.getGroups(
-                GroupServiceOuterClass.GetGroupsRequest.newBuilder().setAuthProviderId(authProviderID).build())
-        assert groupsResponse.getGroupsCount() == expectedGroups.size()
-
-        def foundGroups = 0
-        for (group in groupsResponse.getGroupsList()) {
-            for (expectedGroup in expectedGroups) {
-                if (group.getRoleName() == expectedGroup.getRoleName()) {
-                    foundGroups++
-                    assert group.getProps().getKey() == expectedGroup.getProps().getKey()
-                    assert group.getProps().getValue() == expectedGroup.getProps().getValue()
-                    assert group.getProps().getAuthProviderId() == authProviderID
-                    assert group.getProps().getTraits().getOrigin() == expectedGroup.getProps().getTraits().getOrigin()
-                }
-            }
+        verifyAll(accessScope) {
+            getDescription() == expectedAccessScope.getDescription()
+            getTraits().getOrigin() == expectedAccessScope.getTraits().getOrigin()
+            getRules() == expectedAccessScope.getRules()
+            getId() != ""
         }
-        return foundGroups
+        return accessScope
     }
 
     // verifyDeclarativeAuthProvider will verify that the expected auth provider exists within the API and
@@ -854,14 +841,16 @@ splunk:
             authProvider = authProviderResponse.getAuthProviders(0)
         }
         assert authProvider
-        assert authProvider.getName() == expectedAuthProvider.getName()
-        assert authProvider.getType() == expectedAuthProvider.getType()
-        assert authProvider.getLoginUrl()
-        assert authProvider.getUiEndpoint() == expectedAuthProvider.getUiEndpoint()
-        assert authProvider.getTraits().getOrigin() == expectedAuthProvider.getTraits().getOrigin()
-        assert authProvider.getActive()
-        assert authProvider.getEnabled()
-        assert authProvider.getConfigMap() == expectedAuthProvider.getConfigMap()
+        verifyAll(authProvider) {
+            getName() == expectedAuthProvider.getName()
+            getType() == expectedAuthProvider.getType()
+            getLoginUrl() != ""
+            getUiEndpoint() == expectedAuthProvider.getUiEndpoint()
+            getTraits().getOrigin() == expectedAuthProvider.getTraits().getOrigin()
+            getActive()
+            getEnabled()
+            getConfigMap() == expectedAuthProvider.getConfigMap()
+        }
         return authProvider
     }
 
@@ -874,12 +863,13 @@ splunk:
                         .newBuilder().build())
                 .notifiersList.find { it.getName() == VALID_NOTIFIER.getName() }
         assert notifier
-        assert notifier.getName() == expectedNotifier.getName()
-        assert notifier.getTraits().getOrigin() == expectedNotifier.getTraits().getOrigin()
-        assert notifier.getType() == "splunk"
-        // Skipping the HTTP token since it will be obscured by the API.
-        assert notifier.getSplunk().getHttpEndpoint() == expectedNotifier.getSplunk().getHttpEndpoint()
-        assert notifier.getSplunk().getSourceTypesMap() == expectedNotifier.getSplunk().getSourceTypesMap()
+        verifyAll(notifier) {
+            getTraits().getOrigin() == expectedNotifier.getTraits().getOrigin()
+            getType() == "splunk"
+            // Skipping the HTTP token since it will be obscured by the API.
+            getSplunk().getHttpEndpoint() == expectedNotifier.getSplunk().getHttpEndpoint()
+            getSplunk().getSourceTypesMap() == expectedNotifier.getSplunk().getSourceTypesMap()
+        }
         return notifier
     }
 }

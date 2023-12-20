@@ -33,6 +33,11 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
@@ -94,6 +99,11 @@ jobs:
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
 
     - name: Generate junit report
       if: always()
@@ -170,18 +180,23 @@ jobs:
     - name: UI Unit Tests
       run: make ui-test
 
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: ui-unit-tests
+
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
-        paths: 'ui/test-results/reports/*.xml'
+        paths: 'ui/apps/platform/test-results/reports/*.xml'
 
     - name: Report junit failures in jira
       if: (!cancelled()) && github.event_name == 'push'
       uses: ./.github/actions/junit2jira
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
-        directory: 'ui/test-results/reports'
+        directory: 'ui/apps/platform/test-results/reports'
 
   local-roxctl-tests:
     runs-on: ubuntu-latest

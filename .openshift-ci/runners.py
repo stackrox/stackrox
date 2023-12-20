@@ -4,7 +4,6 @@
 Common test run patterns
 """
 
-import subprocess
 from datetime import datetime
 from clusters import NullCluster
 from pre_tests import NullPreTest
@@ -36,7 +35,6 @@ class ClusterTestSetsRunner:
             self.log_event("About to provision")
             self.cluster.provision()
             self.log_event("provisioned")
-            self.set_provisioned_state()
         except Exception as err:
             self.log_event(f"ERROR: provision failed [{err}]")
             hold = err
@@ -124,10 +122,6 @@ class ClusterTestSetsRunner:
         print(marker)
         print(f"{marker} {time}: {msg}")
         print(marker)
-
-    def set_provisioned_state(self):
-        subprocess.check_call(
-            "tests/e2e/lib.sh set_provisioned_state", shell=True)
 
 
 # pylint: disable=too-many-arguments

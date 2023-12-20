@@ -5,8 +5,9 @@ import { useQuery } from '@apollo/client';
 import { SearchFilter } from 'types/search';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
+import { searchValueAsArray } from 'utils/searchUtils';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
-import { SearchOption } from '../searchOptions';
+import { SearchOption, SearchOptionValue } from '../searchOptions';
 
 import './FilterAutocomplete.css';
 
@@ -26,9 +27,15 @@ function getAutocompleteOptionsQueryString(searchFilter: SearchFilter): string {
         .join('+');
 }
 
+export type FilterChangeEvent = {
+    action: 'ADD' | 'REMOVE';
+    category: SearchOptionValue;
+    value: string;
+};
+
 export type FilterAutocompleteSelectProps = {
     searchFilter: SearchFilter;
-    setSearchFilter: (s) => void;
+    onFilterChange: (newFilter: SearchFilter, changeEvent: FilterChangeEvent) => void;
     searchOptions: SearchOption[];
     autocompleteSearchContext?:
         | { 'Image SHA': string }
@@ -39,7 +46,7 @@ export type FilterAutocompleteSelectProps = {
 
 function FilterAutocompleteSelect({
     searchFilter,
-    setSearchFilter,
+    onFilterChange,
     searchOptions,
     autocompleteSearchContext = {},
 }: FilterAutocompleteSelectProps) {
@@ -47,6 +54,7 @@ function FilterAutocompleteSelect({
         return searchOptions[0];
     });
     const [typeahead, setTypeahead] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const { isOpen, onToggle } = useSelectToggle();
 
     // TODO Autocomplete requests for "Cluster" never return results if there is a 'CVE ID' or 'Severity' search filter
@@ -66,29 +74,34 @@ function FilterAutocompleteSelect({
         categories: searchOption.category,
     };
 
-    const { data } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
+    const { data, loading } = useQuery(SEARCH_AUTOCOMPLETE_QUERY, { variables });
 
-    function onSelect(newValue) {
-        const oldValue = searchFilter[searchOption.value] as string[];
+    function onSelect(value) {
         setTypeahead('');
-        if (oldValue?.includes(newValue)) {
-            setSearchFilter({
-                ...searchFilter,
-                [searchOption.value]: oldValue.filter((fil: string) => fil !== newValue),
-            });
-        } else {
-            setSearchFilter({
-                ...searchFilter,
-                [searchOption.value]: oldValue ? [...oldValue, newValue] : [newValue],
-            });
-        }
+
+        const category = searchOption.value;
+        const oldValues = searchValueAsArray(searchFilter[category]);
+        const action = oldValues.includes(value) ? 'REMOVE' : 'ADD';
+
+        const newValues =
+            action === 'ADD'
+                ? oldValues.concat(value)
+                : oldValues.filter((f: string) => f !== value);
+
+        onFilterChange({ ...searchFilter, [category]: newValues }, { action, category, value });
     }
 
     // Debounce the autocomplete requests to not overload the backend
     const updateTypeahead = useMemo(
-        () => debounce((value: string) => setTypeahead(value), 800),
+        () =>
+            debounce((value: string) => {
+                setTypeahead(value);
+                setIsTyping(false);
+            }, 800),
         []
     );
+
+    const autocompleteOptions = loading || isTyping ? [] : getOptions(data?.searchAutocomplete);
 
     return (
         <ToolbarGroup
@@ -102,6 +115,7 @@ function FilterAutocompleteSelect({
                         (option) => option.value === selection
                     );
                     if (newSearchOption) {
+                        setTypeahead('');
                         setSearchOption(newSearchOption);
                     }
                 }}
@@ -130,11 +144,12 @@ function FilterAutocompleteSelect({
                 // We set this as empty because we want to use SearchFilterChips to display the search values
                 selections={searchFilter[searchOption.value]}
                 onTypeaheadInputChanged={(val: string) => {
+                    setIsTyping(true);
                     updateTypeahead(val);
                 }}
                 className="pf-u-flex-grow-1"
             >
-                {getOptions(data?.searchAutocomplete)}
+                {autocompleteOptions}
             </Select>
         </ToolbarGroup>
     );

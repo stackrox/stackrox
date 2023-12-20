@@ -26,6 +26,13 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
         - init-entrypoint.sh
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
+        - name: POSTGRES_PASSWORD_FILE
+          value: "/run/secrets/stackrox.io/secrets/password"
         resources:
           limits:
             cpu: 2
@@ -46,6 +53,11 @@ spec:
       - name: db
         image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
         imagePullPolicy: IfNotPresent
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "scram-sha-256"
         ports:
         - name: postgresql
           protocol: TCP
@@ -66,6 +78,8 @@ spec:
         - name: tls-volume
           mountPath: /run/secrets/stackrox.io/certs
           readOnly: true
+        - name: shared-memory
+          mountPath: /dev/shm
       volumes:
       - name: config
         configMap:
@@ -83,6 +97,11 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          # Keep this in sync with shared_buffers in config-templates/scanner-v4-db/postgresql.conf.default
+          sizeLimit: 250Mi
       - name: password
         secret:
           secretName: {{ .Values.app.db.name }}-password

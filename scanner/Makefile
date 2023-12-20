@@ -135,7 +135,7 @@ scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
-db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
+db-image:
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
@@ -164,21 +164,6 @@ SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
-
-.PHONY: copy-db-scripts
-copy-db-scripts: ../image/postgres/download.sh
-	@echo "+ $@"
-	$(SILENT)cp $^ image/db
-
-.PHONY: copy-db-image-scripts
-copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
-	@echo "+ $@"
-	$(SILENT)cp $^ image/db/scripts
-
-.PHONY: copy-db-sigs
-copy-db-sigs: ../image/postgres/signatures
-	@echo "+ $@"
-	$(SILENT)cp -R $^ image/db/signatures
 
 ##################
 ## Certificates ##
@@ -342,7 +327,7 @@ clean-e2e:
 
 # DB configuration files.
 #
-$(e2e-files-d)/db-%.conf: image/db/%.conf
+$(e2e-files-d)/db-%.conf: ../image/templates/helm/shared/config-templates/scanner-v4-db/%.conf.default
 	$(SILENT)mkdir -p $(@D)
 	$(SILENT)cp $^ $@
 

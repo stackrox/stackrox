@@ -3,6 +3,8 @@ kind: Central
 metadata:
   name: stackrox-central-services
 spec:
+  imagePullSecrets:
+  - name: e2e-test-pull-secret
   # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
   central:
     adminPasswordSecret:

@@ -14,10 +14,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/version"
-	"github.com/stackrox/rox/scanner/pkg/client"
 	"golang.org/x/sys/unix"
 )
 

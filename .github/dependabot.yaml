@@ -112,7 +112,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/operator"
@@ -128,7 +128,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/scanner"

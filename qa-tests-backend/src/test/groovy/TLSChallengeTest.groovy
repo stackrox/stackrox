@@ -61,6 +61,9 @@ class TLSChallengeTest extends BaseSpecification {
         orchestrator.restartPodByLabelWithExecKill("stackrox", [app: "central"])
         orchestrator.waitForPodsReady("stackrox", [app: "central"], 1, 50, 3)
 
+        // Ensure Central API is reachable.
+        withRetry(30, 2) { Services.getMetadataClient().getMetadata() }
+
         // Restart sensor to reset the gRPC connection to central.
         // Scale to 0 and back to 1 so that the check for sensor healthiness is based on the restarted sensor pod.
         orchestrator.scaleDeployment("stackrox", "sensor", 0)

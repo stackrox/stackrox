@@ -169,7 +169,6 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 func (s *suiteImpl) checkTestCase(tc *testCase) {
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(tc.networkPolicies))
 	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(tc.deploymentsToNetworkPolicies)
 
 	check := s.verifyCheckRegistered()
@@ -235,12 +234,4 @@ func (s *suiteImpl) nodes() []*storage.Node {
 			Id: uuid.NewV4().String(),
 		},
 	}
-}
-
-func toMap(in []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	merp := make(map[string]*storage.NetworkPolicy, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
 }

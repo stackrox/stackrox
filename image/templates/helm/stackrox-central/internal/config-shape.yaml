@@ -159,5 +159,4 @@ meta:
   noCreateStorageClass: null # bool
 globalPrefix: null # string
 system:
-  createSCCs: null # bool
   enablePodSecurityPolicies: null # bool

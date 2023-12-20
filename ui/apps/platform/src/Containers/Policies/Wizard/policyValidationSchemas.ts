@@ -3,7 +3,10 @@ import * as yup from 'yup';
 import { Policy } from 'types/policy.proto';
 
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
-import { imageSigningCriteriaName } from './Step3/policyCriteriaDescriptors';
+import {
+    imageSigningCriteriaName,
+    mountPropagationCriteriaName,
+} from './Step3/policyCriteriaDescriptors';
 
 type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
 
@@ -68,24 +71,42 @@ const validationSchemaStep3 = yup.object().shape(
                                     .array()
                                     .of(
                                         yup.object().shape({
-                                            value: yup.string(), // dryrun validates whether value is required
+                                            // value: yup.string(), // dryrun validates whether value is required
                                             arrayValue: yup
                                                 .array(yup.string().required())
-                                                .test((value, context: yup.TestContext) => {
-                                                    if (
-                                                        // from[1] means one level up in the object
-                                                        context.from &&
-                                                        context.from[1]?.value?.fieldName ===
-                                                            imageSigningCriteriaName
-                                                    ) {
-                                                        return (
-                                                            Array.isArray(value) &&
-                                                            value.length !== 0
-                                                        );
-                                                    }
+                                                .test(
+                                                    'policy-criteria',
+                                                    'Please enter a valid value',
+                                                    (value, context: yup.TestContext) => {
+                                                        if (
+                                                            // from[1] means one level up in the object
+                                                            context.from &&
+                                                            context.from[1]?.value?.fieldName ===
+                                                                imageSigningCriteriaName
+                                                        ) {
+                                                            return (
+                                                                Array.isArray(value) &&
+                                                                value.length !== 0
+                                                            );
+                                                        }
+                                                        if (
+                                                            // from[1] means one level up in the object
+                                                            context.from &&
+                                                            context.from[1]?.value?.fieldName ===
+                                                                mountPropagationCriteriaName
+                                                        ) {
+                                                            return (
+                                                                Array.isArray(
+                                                                    context.from[0]?.value?.value
+                                                                ) &&
+                                                                context.from[0]?.value?.value
+                                                                    .length !== 0
+                                                            );
+                                                        }
 
-                                                    return true;
-                                                }),
+                                                        return true;
+                                                    }
+                                                ),
                                         })
                                     )
                                     .min(1)

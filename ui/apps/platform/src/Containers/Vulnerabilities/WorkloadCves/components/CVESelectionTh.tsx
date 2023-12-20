@@ -5,7 +5,9 @@ import { Th } from '@patternfly/react-table';
 import useMap from 'hooks/useMap';
 
 export type CVESelectionThProps = {
-    selectedCves: ReturnType<typeof useMap<string, { cve: string; summary: string }>>;
+    selectedCves: ReturnType<
+        typeof useMap<string, { cve: string; summary: string; numAffectedImages: number }>
+    >;
 };
 
 function CVESelectionTh({ selectedCves }: CVESelectionThProps) {

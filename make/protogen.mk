@@ -14,7 +14,7 @@ SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
 
 # Space separated list of v2 service proto files to include in API docs
-V2_SERVICES_TO_INCLUDE_IN_DOCS = report_service.proto
+V2_SERVICES_TO_INCLUDE_IN_DOCS = report_service.proto compliance_integration_service.proto compliance_profile_service.proto compliance_results_service.proto compliance_scan_configuration_service.proto
 
 V2_SERVICE_PROTOS_REL = $(V2_SERVICES_TO_INCLUDE_IN_DOCS:%=api/v2/%)
 API_SERVICE_PROTOS_V2 = $(filter $(V2_SERVICE_PROTOS_REL), $(SERVICE_PROTOS_REL))

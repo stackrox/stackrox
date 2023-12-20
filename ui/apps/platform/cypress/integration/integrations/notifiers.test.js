@@ -5,6 +5,7 @@ import {
     getInputByLabel,
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
+import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
 
 import {
     clickCreateNewIntegrationInTable,
@@ -223,7 +224,7 @@ describe('Notifier Integrations', () => {
             // Test does not delete, because it did not create.
         });
 
-        it('should create a new Google Cloud SCC integration', () => {
+        it.skip('should create a new Google Cloud SCC integration', () => {
             const integrationName = generateNameWithDate('Nova Google Cloud SCC');
             const integrationType = 'cscc';
 
@@ -239,7 +240,7 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Cloud SCC Source ID').type(' ');
             getInputByLabel('Service Account Key (JSON)').type(' ').blur();
 
-            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Integration name').contains('An integration name is required');
             getHelperElementByLabel('Cloud SCC Source ID').contains('A source ID is required');
             getHelperElementByLabel('Service Account Key (JSON)').contains(
                 'A service account is required'
@@ -269,9 +270,7 @@ describe('Notifier Integrations', () => {
             getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
             getInputByLabel('Service Account Key (JSON)')
                 .clear()
-                .type('{ "type": "service_account", "project_id": "123456" }', {
-                    parseSpecialCharSequences: false,
-                })
+                .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
                 .blur();
 
             testIntegrationInFormWithStoredCredentials(

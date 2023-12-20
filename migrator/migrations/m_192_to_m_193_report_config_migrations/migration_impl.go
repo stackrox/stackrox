@@ -87,6 +87,9 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 				ReportRequestType: storage.ReportStatus_SCHEDULED,
 				CompletedAt:       v1Config.LastSuccessfulRunTime,
 			},
+			Filter: &storage.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: v2Config.GetVulnReportFilters().Clone(),
+			},
 		}
 	}
 	return nil

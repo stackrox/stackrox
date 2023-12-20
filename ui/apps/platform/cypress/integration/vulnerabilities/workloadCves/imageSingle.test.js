@@ -109,7 +109,9 @@ describe('Workload CVE Image Single page', () => {
                         const severity = upperFirst(severityRaw);
 
                         const bySeverityCard = selectors.summaryCard('CVEs by severity');
-                        const byStatusCard = selectors.summaryCard('CVEs by status');
+                        const byStatusCard = `.pf-c-card[aria-busy="false"]${selectors.summaryCard(
+                            'CVEs by status'
+                        )}`;
 
                         // Click the link in the table to visit the image page
                         cy.wrap($rowWithCves).find('td[data-label="Image"] a').click();

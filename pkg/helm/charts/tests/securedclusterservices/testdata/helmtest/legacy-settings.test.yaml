@@ -69,7 +69,6 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)
 
 - name: OpenShift in Legacy mode with Kubernetes v3.11 should detect OpenShift 3
   values:
@@ -85,7 +84,6 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)
 
 - name: OpenShift in Legacy mode accepts OpenShift4 cluster type
   values:
@@ -98,4 +96,3 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT4_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)

@@ -14,16 +14,16 @@ function makeEventLoopPromise(signal: AbortSignal): Promise<{ message: string }>
 }
 
 describe('makeCancellableAxiosRequest', () => {
-    it('should resolve the Promise when the cancel function is not called', () => {
+    it('should resolve the Promise when the cancel function is not called', async () => {
         const { request } = makeCancellableAxiosRequest((signal) => makeEventLoopPromise(signal));
-        return expect(request).resolves.toStrictEqual({ message: 'success' });
+        await expect(request).resolves.toStrictEqual({ message: 'success' });
     });
 
-    it('should reject the Promise when the cancel function is called before the promise resolves', () => {
+    it('should reject the Promise when the cancel function is called before the promise resolves', async () => {
         const { request, cancel } = makeCancellableAxiosRequest((signal) =>
             makeEventLoopPromise(signal)
         );
         cancel();
-        return expect(request).rejects.toBeInstanceOf(CancelledPromiseError);
+        await expect(request).rejects.toBeInstanceOf(CancelledPromiseError);
     });
 });

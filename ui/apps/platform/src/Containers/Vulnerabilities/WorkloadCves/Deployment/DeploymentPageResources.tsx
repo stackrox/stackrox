@@ -11,15 +11,16 @@ import {
 import { gql, useQuery } from '@apollo/client';
 import { Pagination as PaginationParam } from 'services/types';
 
-import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import TableErrorComponent from '../components/TableErrorComponent';
 import ImageResourceTable, { ImageResources, imageResourcesFragment } from './ImageResourceTable';
 
 export type DeploymentPageResourcesProps = {
     deploymentId: string;
+    pagination: UseURLPaginationResult;
 };
 
 const deploymentResourcesQuery = gql`
@@ -32,8 +33,8 @@ const deploymentResourcesQuery = gql`
     }
 `;
 
-function DeploymentPageResources({ deploymentId }: DeploymentPageResourcesProps) {
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+function DeploymentPageResources({ deploymentId, pagination }: DeploymentPageResourcesProps) {
+    const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultImageSortFields,
         defaultSortOption: imagesDefaultSort,

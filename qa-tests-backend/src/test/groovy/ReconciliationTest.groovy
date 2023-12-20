@@ -46,14 +46,10 @@ class ReconciliationTest extends BaseSpecification {
     ]
 
     private Set<String> getPodsInCluster() {
-        Set<String> result = [] as Set
-        for (namespace in orchestrator.getNamespaces()) {
+        return orchestrator.getNamespaces().collectMany { String namespace ->
             List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
-            for (pod in allPods) {
-                result.add(namespace + ":" + pod.metadata.getName())
-            }
+            allPods.collect { Pod pod -> namespace + ":" + pod.metadata.getName() }
         }
-        return result
     }
 
     private Set<String> getDifference(Set<String> list1, Set<String> list2) {

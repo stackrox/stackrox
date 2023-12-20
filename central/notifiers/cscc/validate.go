@@ -23,14 +23,15 @@ func ValidateSourceID(s string) error {
 
 // Validate CSCC notifier.
 func Validate(cscc *storage.CSCC, validateSecret bool) error {
-	if validateSecret && cscc.ServiceAccount == "" {
-		return errors.New("serviceAccount must be defined in the Cloud SCC Configuration")
-	}
 	if cscc.SourceId == "" {
 		return errors.New("sourceID must be defined in the Cloud SCC Configuration")
 	}
 	if err := ValidateSourceID(cscc.SourceId); err != nil {
 		return err
+	}
+
+	if validateSecret && !cscc.GetWifEnabled() && cscc.ServiceAccount == "" {
+		return errors.New("serviceAccount must be defined in the Cloud SCC Configuration")
 	}
 
 	if cscc.GetWifEnabled() && !features.CloudCredentials.Enabled() {

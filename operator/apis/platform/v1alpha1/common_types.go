@@ -9,9 +9,10 @@ import (
 
 // MiscSpec defines miscellaneous settings for custom resources.
 type MiscSpec struct {
+	// Deprecated field. This field will be removed in a future release.
 	// Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This
 	// isn't usually needed, and may interfere with other workloads.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Create SecurityContextConstraints for Operand"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Create SecurityContextConstraints for Operand",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	CreateSCCs *bool `json:"createSCCs,omitempty"`
 }
 

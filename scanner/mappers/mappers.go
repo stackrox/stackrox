@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -281,10 +282,28 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			PackageId:          pkgID,
 			DistributionId:     distID,
 			RepositoryId:       repoID,
-			FixedInVersion:     v.FixedInVersion,
+			FixedInVersion:     fixedInVersion(v),
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// fixedInVersion returns the string to populate FixedInVersion, typically
+// provided the report's `FixedInVersion` as a plain string, but, in some OSV
+// updaters, it can be an urlencoded string or expected to be extracted from
+// Range.Upper.
+func fixedInVersion(v *claircore.Vulnerability) string {
+	fixedIn := v.FixedInVersion
+	if fixedIn == "" && v.Range != nil {
+		// If fixed in is empty but range is provided, use that.
+		fixedIn = v.Range.Upper.String()
+	} else {
+		// Try to parse url encoded params; if expected values are not found leave it.
+		if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
+			fixedIn = q.Get("fixed")
+		}
+	}
+	return fixedIn
 }
 
 // getVulnName returns the first vulnerability name that matches a known

@@ -180,7 +180,7 @@ function InviteUsersModal(): ReactElement | null {
             }));
 
             // eslint-disable-next-line no-void
-            void updateOrAddGroup({ oldGroups: [], newGroups: requiredGroups })
+            void updateOrAddGroup({ previousGroups: [], requiredGroups })
                 .then(() => {
                     // TODO: detect if an email server is available
                     //       1. if so, send emails to the listed recipients

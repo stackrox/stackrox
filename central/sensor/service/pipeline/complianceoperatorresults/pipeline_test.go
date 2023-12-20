@@ -85,6 +85,9 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 						CreatedTime:  createdTime,
 						ScanName:     mockScanName,
 						SuiteName:    mockSuiteName,
+						Rationale:    "test rationale",
+						ValuesUsed:   []string{"var1", "var2"},
+						Warnings:     []string{"warning1", "warning2"},
 					},
 				},
 			},
@@ -122,6 +125,9 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 						CreatedTime:  createdTime,
 						ScanName:     mockScanName,
 						SuiteName:    mockSuiteName,
+						Rationale:    "test rationale",
+						ValuesUsed:   []string{"var1", "var2"},
+						Warnings:     []string{"warning1", "warning2"},
 					},
 				},
 			},
@@ -210,6 +216,9 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Annotations:    nil,
 		CreatedTime:    createdTime,
 		ScanConfigName: mockSuiteName,
+		Rationale:      "test rationale",
+		ValuesUsed:     []string{"var1", "var2"},
+		Warnings:       []string{"warning1", "warning2"},
 	}
 }
 
