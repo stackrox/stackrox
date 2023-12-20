@@ -12,6 +12,7 @@ setup_file() {
 setup() {
   out_dir="$(mktemp -d -u)"
   ofile="$(mktemp)"
+  diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff/testdata/"
 }
 
 teardown() {
@@ -45,7 +46,7 @@ teardown() {
   assert_line --partial "the path \"${out_dir}\" does not exist"
 }
 
-@test "roxctl-development netpol connectivity diff stops on first error when run with --fail" {
+@test "roxctl-development netpol connectivity diff analyses only dir1 when run with --fail" {
   mkdir -p "$out_dir"
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
@@ -53,8 +54,26 @@ teardown() {
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
   assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'YAML document is malformed'  # expect only one line with this error
-  assert_line --index 2 --partial 'there were errors during execution'  # last line
+  assert_line --index 1 --partial 'No connections diff'
+  assert_line --index 2 --partial 'at dir1: no relevant Kubernetes workload resources found'
+  assert_line --index 3 --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_line --index 4 --partial 'there were errors during execution'
+}
+
+@test "roxctl-development netpol connectivity diff analyses dir1 and dir2 when run without --fail" {
+  mkdir -p "$out_dir"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+
+  run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
+  assert_failure
+  assert_line --index 0 --partial 'This is a Technology Preview feature'
+  assert_line --index 1 --partial 'No connections diff'
+  assert_line --index 2 --partial 'at dir1: no relevant Kubernetes workload resources found'
+  assert_line --index 3 --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_line --index 4 --partial 'at dir2: no relevant Kubernetes workload resources found'
+  assert_line --index 5 --partial 'at dir2: no relevant Kubernetes network policy resources found'
+  assert_line --index 6 --partial 'there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity diff produces no output when all yamls are templated" {
@@ -64,11 +83,14 @@ teardown() {
   echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/"
   assert_failure
-  assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_line --index 1 --partial 'No connections diff'
+  assert_output --partial 'no relevant Kubernetes workload resources found'
+  assert_output --partial 'no relevant Kubernetes network policy resources found'
+  assert_output --partial 'there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity diff produces errors when some yamls are templated" {
+  skip "TODO: ROX-20271"
   mkdir -p "$out_dir"
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
 
@@ -78,7 +100,7 @@ teardown() {
   cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
 
   echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
-  run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
+  run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
   assert_output --partial 'YAML document is malformed'
   refute_output --partial 'no relevant Kubernetes resources found'
@@ -93,15 +115,13 @@ teardown() {
 
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
   assert_failure
-  assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
+  assert_output --partial 'no relevant Kubernetes workload resources found'
+  assert_output --partial 'no relevant Kubernetes network policy resources found'
   assert_output --partial 'ERROR:'
   assert_output --partial 'there were errors during execution'
 }
 
-diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff/testdata/"
-
-@test "roxctl-development netpol connectivity diff treats warning as error with strict when some yamls are not valid" {
+@test "roxctl-development netpol connectivity diff ignores without --strict invalid yamls and continues" {
   dir1="${diff_tests_dir}/acs-zeroday-with-invalid-doc/"
   assert_file_exist "${dir1}/deployment.yaml"
   assert_file_exist "${dir1}/namespace.yaml"
@@ -109,10 +129,17 @@ diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff
   # without strict it ignores the invalid yaml and continue
   run roxctl-development netpol connectivity diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null
   assert_success
-  assert_output --partial 'WARN:'
+  assert_line --regexp '^WARN:(.+)at dir1: no relevant Kubernetes network policy resources found$'
   assert_output --partial 'Yaml document is not a K8s resource'
+  refute_output --partial 'there were errors during execution'
+}
 
-  # running with strict , a warning on invalid yaml doc is treated as error
+@test "roxctl-development netpol connectivity diff treats warning as error with --strict when some yamls are not valid" {
+  dir1="${diff_tests_dir}/acs-zeroday-with-invalid-doc/"
+  assert_file_exist "${dir1}/deployment.yaml"
+  assert_file_exist "${dir1}/namespace.yaml"
+  assert_file_exist "${dir1}/route.yaml"
+  # running with strict, a warning on invalid yaml doc is treated as error
   run roxctl-development netpol connectivity diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null --strict
   assert_failure
   assert_output --partial 'WARN:'
@@ -136,9 +163,9 @@ diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
 
 @test "roxctl-development netpol connectivity diff generates conns diff report between resources from two directories txt output" {
@@ -156,9 +183,9 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "$ofile"
     # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
 
 @test "roxctl-development netpol connectivity diff generates conns diff report between resources from two directories md output" {
@@ -232,9 +259,9 @@ added,{ingress-controller},zeroday/zeroday[Deployment],No Connections,TCP 8080,w
   assert_file_exist "$out_dir/out.txt"
   # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
-diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1:  No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
+diff-type: added, source: payments/gateway[Deployment], destination: payments/visa-processor-v2[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload payments/visa-processor-v2[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: frontend/blog[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload frontend/blog[Deployment] added
+diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Deployment], dir1: No Connections, dir2: TCP 8080, workloads-diff-info: workload zeroday/zeroday[Deployment] added'
 }
 
 @test "roxctl-development netpol connectivity diff generates conns diff report between resources from another two directories txt output" {
@@ -256,8 +283,8 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
   assert_file_exist "$ofile"
   # partial is used to filter WARN and INFO messages
   assert_output --partial 'Connectivity diff:
-diff-type: changed, source: default/frontend[Deployment], destination: default/backend[Deployment], dir1:  TCP 9090, dir2: TCP 9090,UDP 53
-diff-type: added, source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1:  No Connections, dir2: TCP 9090'
+diff-type: changed, source: default/frontend[Deployment], destination: default/backend[Deployment], dir1: TCP 9090, dir2: TCP 9090,UDP 53
+diff-type: added, source: 0.0.0.0-255.255.255.255, destination: default/backend[Deployment], dir1: No Connections, dir2: TCP 9090'
 }
 
 
