@@ -36,11 +36,8 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
-	imageIntegrations      imageIntegrationStore.DataStore
-	scannerConfig          *tls.Config
-	scannerV4IndexerConfig *tls.Config
-	scannerV4MatcherConfig *tls.Config
-	scannerV4DBConfig      *tls.Config
+	imageIntegrations imageIntegrationStore.DataStore
+	scannerConfig     *tls.Config
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -49,9 +46,6 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getCentralCertExpiry()
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
-	// TODO(ROX-20064): Needs to be implemented when Scanner V4 has been added to imageIntegrations.
-	case v1.GetCertExpiry_SCANNER_V4:
-		return nil, errors.New("Querying Scanner V4 components for certificate expiration date is not yet implemented")
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }

@@ -57,7 +57,6 @@ func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.Cluste
 	return clusterType, errorList.ToError()
 }
 
-// Does not support Scanner V4.
 func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.ClusterType) ([]*zip.File, error) {
 	centralCA, err := mtls.CACertPEM()
 	if err != nil {

@@ -25,7 +25,7 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(imageIntegrations imageIntegrationStore.DataStore) Service {
-	scannerTLSConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
+	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
@@ -35,35 +35,8 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 		// scanner must have patched their deployment to not hit this.
 		// At the same time, we don't want to make this a fatal error, so just log a warning.
 		log.Warnf("Failed to initialize scanner TLS config: %v", err)
-		scannerTLSConfig = nil
-	}
-	scannerV4IndexerTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4IndexerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-	})
-	if err != nil {
-		log.Warnf("Failed to initialize Scanner V4 Indexer TLS config: %v", err)
-		scannerV4IndexerTLSConfig = nil
-	}
-	scannerV4MatcherTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4MatcherSubject, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-	})
-	if err != nil {
-		log.Warnf("Failed to initialize Scanner V4 Matcher TLS config: %v", err)
-		scannerV4MatcherTLSConfig = nil
-	}
-	scannerV4DBTLSConfig, err := clientconn.TLSConfig(mtls.ScannerV4DBSubject, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-	})
-	if err != nil {
-		log.Warnf("Failed to initialize Scanner V4 DB TLS config: %v", err)
-		scannerV4DBTLSConfig = nil
+		tlsConfig = nil
 	}
 
-	return &serviceImpl{
-		imageIntegrations:      imageIntegrations,
-		scannerConfig:          scannerTLSConfig,
-		scannerV4IndexerConfig: scannerV4IndexerTLSConfig,
-		scannerV4MatcherConfig: scannerV4MatcherTLSConfig,
-		scannerV4DBConfig:      scannerV4DBTLSConfig,
-	}
+	return &serviceImpl{imageIntegrations: imageIntegrations, scannerConfig: tlsConfig}
 }
