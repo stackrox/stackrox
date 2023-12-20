@@ -16,10 +16,10 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 
 set -euo pipefail
 
-# Could also use
+# Use
 #   CHART_BASE="/rhacs"
 #   export DEFAULT_IMAGE_REGISTRY="quay.io/rhacs-eng"
-# for the opensource flavour.
+# for the RHACS flavor.
 CHART_BASE=""
 export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
 CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
