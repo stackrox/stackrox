@@ -22,7 +22,7 @@ scannerV4:
   matcher:
     resources:
       requests:
-        memory: "2Gi"
+        memory: "4Gi"
         cpu: "800m"
       limits:
         memory: "4Gi"
