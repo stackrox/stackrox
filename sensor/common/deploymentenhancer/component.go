@@ -115,7 +115,7 @@ func (d *DeploymentEnhancer) enhanceDeployment(deployment *storage.Deployment) {
 // Capabilities return the capabilities of this component
 func (d *DeploymentEnhancer) Capabilities() []centralsensor.SensorCapability {
 	if features.ClusterAwareDeploymentCheck.Enabled() {
-		return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
+		return []centralsensor.SensorCapability{centralsensor.SensorEnhancedDeploymentCheckCap}
 	}
 	return nil
 }
