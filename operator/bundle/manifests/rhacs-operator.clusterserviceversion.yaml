@@ -509,8 +509,8 @@ spec:
           connections to the port.
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
-      - description: If you want to deploy the Red Hat Advanced Cluster Security ScannerV4,
-          you can enable it here By default, Scanner V4 is disabled.
+      - description: If you don't want to deploy the Red Hat Advanced Cluster Security
+          ScannerV4, you can disable it here
         displayName: Scanner V4 Component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
