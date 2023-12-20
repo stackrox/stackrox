@@ -641,7 +641,7 @@ func (m *ComplianceOperatorRuleV2) Clone() *ComplianceOperatorRuleV2 {
 	return cloned
 }
 
-// Next Tag: 15
+// Next Tag: 16
 type ComplianceOperatorScanConfigurationV2 struct {
 	Id                     string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden,store" sql:"pk,type(uuid)"`
 	ScanName               string            `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,store" sql:"unique"`
