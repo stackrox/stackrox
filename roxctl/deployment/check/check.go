@@ -159,13 +159,6 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 	// d.firstFile needs to be populated before the printer is created
 	d.firstFile = d.files[0]
 
-	if d.cluster != "" && d.namespace == "default" {
-		d.env.Logger().WarnfLn("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '--namespace [NAMESPACE]' or '-n [NAMESPACE]'\n")
-	}
-	if d.cluster == "" && d.namespace != "default" {
-		d.env.Logger().WarnfLn("Warning: Namespace has been set, but cluster remains unset. Setting the namespace only makes sense when also setting the cluster with '--cluster [CLUSTER]'.\n")
-	}
-
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
 	if !d.json {
@@ -181,6 +174,12 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
+	if d.cluster != "" && d.namespace == "default" {
+		d.env.Logger().WarnfLn("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '--namespace [NAMESPACE]' or '-n [NAMESPACE]'\n")
+	}
+	if d.cluster == "" && d.namespace != "default" {
+		d.env.Logger().WarnfLn("Warning: Namespace has been set, but cluster remains unset. Setting the namespace only makes sense when also setting the cluster with '--cluster [CLUSTER]'.\n")
+	}
 	var fileErrs errorhelpers.ErrorList
 	for _, file := range d.files {
 		if _, err := os.Open(file); err != nil {
