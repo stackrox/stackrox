@@ -14,8 +14,172 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+const (
+	containerID1      = "1e43ac4f61f9"
+	containerID2      = "2e43ac4f61f9"
+	containerID3      = "3e43ac4f61f9"
+	deploymentID1     = "mock-deployment-1"
+	deploymentID2     = "mock-deployment-2"
+	deploymentID3     = "mock-deployment-3"
+	outputChannelSize = 2
+)
+
+func TestProcessPipelineOfflineV3(t *testing.T) {
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	cases := map[string]struct {
+		entities []clusterentities.ContainerMetadata
+		events   []func(*testing.T, *Pipeline)
+	}{
+		"Online -> signal -> read -> offline -> signal -> online -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+			},
+			events: []func(*testing.T, *Pipeline){
+				online,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				assertSize(1),
+				read(containerID1, deploymentID1),
+				assertSize(0),
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				assertSize(1),
+				online,
+				read(containerID2, deploymentID2),
+				assertSize(0),
+			},
+		},
+		"Offline -> signal -> signal -> online -> read -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+			},
+			events: []func(*testing.T, *Pipeline){
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				assertSize(2),
+				online,
+				read(containerID1, deploymentID1),
+				read(containerID2, deploymentID2),
+				assertSize(0),
+			},
+		},
+		"Offline -> signal -> signal -> signal -> Online -> read -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+				newEntity(containerID3, deploymentID3),
+			},
+			events: []func(*testing.T, *Pipeline){
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID3}, true),
+				assertSize(2), // The third signal should be dropped
+				online,
+				read(containerID1, deploymentID1),
+				read(containerID2, deploymentID2),
+				assertSize(0), // The buffer should be empty at this point
+			},
+		},
+	}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
+			// defer close(sensorEvents)
+			mockStore := clusterentities.NewStore()
+			mockDetector := mocks.NewMockDetector(mockCtrl)
+			pipeline := NewProcessPipeline(sensorEvents, mockStore,
+				filter.NewFilter(5, 5, []int{3, 3, 3}),
+				mockDetector)
+			mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).AnyTimes()
+			for _, entity := range tc.entities {
+				updateStore(entity.ContainerID, entity.DeploymentID, entity, mockStore)
+			}
+			defer func() {
+				for _, entity := range tc.entities {
+					deleteStore(entity.DeploymentID, mockStore)
+				}
+			}()
+			for _, fn := range tc.events {
+				fn(t, pipeline)
+			}
+			pipeline.Shutdown()
+		})
+	}
+}
+
+func newEntity(containerID, deploymentID string) clusterentities.ContainerMetadata {
+	return clusterentities.ContainerMetadata{
+		DeploymentID: deploymentID,
+		ContainerID:  containerID,
+	}
+}
+
+func online(_ *testing.T, pipeline *Pipeline) {
+	pipeline.Notify(common.SensorComponentEventCentralReachable)
+}
+
+func offline(_ *testing.T, pipeline *Pipeline) {
+	pipeline.Notify(common.SensorComponentEventOfflineMode)
+}
+
+func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		previousLen := len(pipeline.indicators)
+		pipeline.Process(signal)
+		done := make(chan struct{})
+		defer close(done)
+		go func() {
+			if shouldBeDropped {
+				// There is no way to know if the message was dropped, so we wait here before returning
+				time.Sleep(100 * time.Millisecond)
+				done <- struct{}{}
+				return
+			}
+			for previousLen >= len(pipeline.indicators) {
+				time.Sleep(time.Millisecond) // Just so we don't burn too much CPU
+			}
+			done <- struct{}{}
+		}()
+		select {
+		case <-done:
+			return
+		case <-time.After(500 * time.Millisecond):
+			t.Error("Timeout waiting for indicator")
+		}
+	}
+}
+
+func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		select {
+		case msg, ok := <-pipeline.indicators:
+			if !ok {
+				t.Error("The indicators channel should not be closed")
+			}
+			assert.False(t, msg.IsExpired())
+			require.NotNil(t, msg.GetEvent().GetProcessIndicator())
+			assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
+			assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
+		case <-time.After(500 * time.Millisecond):
+			t.Error("Timeout waiting for indicator")
+		}
+	}
+}
+
+func assertSize(size int) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		assert.Len(t, pipeline.indicators, size)
+	}
+}
 
 func TestProcessPipelineOfflineV1(t *testing.T) {
 	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")

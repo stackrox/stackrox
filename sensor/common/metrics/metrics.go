@@ -125,6 +125,20 @@ var (
 		Help:      "A counter of the total number of processes received by Sensor from Collector",
 	})
 
+	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_signal_buffer_size",
+		Help:      "A gauge of the current size of the Process Indicator buffer in Sensor",
+	})
+
+	processSignalDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_signal_dropper_counter",
+		Help:      "A counter of the total number of process indicators that were dropped",
+	})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -296,6 +310,16 @@ func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 // IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
 	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
+}
+
+// SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
+func SetProcessSignalBufferSizeGauge(number int) {
+	processSignalBufferGauge.Set(float64(number))
+}
+
+// IncrementProcessSignalDroppedCount increments the number of times the process signal was dropped.
+func IncrementProcessSignalDroppedCount() {
+	processSignalDroppedCount.Inc()
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.

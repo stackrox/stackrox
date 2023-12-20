@@ -167,6 +167,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 				},
 			}),
 		)
+		metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
 	}
 }
 
@@ -177,6 +178,7 @@ func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
 		case <-p.stopper.Flow().StopRequested():
 			return
 		default:
+			metrics.IncrementProcessSignalDroppedCount()
 			log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
 				msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
 				msg.GetEvent().GetProcessIndicator().GetId(),
