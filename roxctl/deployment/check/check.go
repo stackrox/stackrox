@@ -34,6 +34,7 @@ const (
 		"results.#.violatedPolicies.#.description," +
 		"results.#.violatedPolicies.#.violation.@list," +
 		"results.#.violatedPolicies.#.remediation}"
+	defaultNamespace = "default"
 )
 
 var (
@@ -119,7 +120,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
-	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", "default", "namespace to evaluate, defaults to \"default\" if unset.")
+	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "namespace to evaluate, defaults to \"default\" if unset.")
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
@@ -174,11 +175,11 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	if d.cluster != "" && d.namespace == "default" {
-		d.env.Logger().WarnfLn("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '--namespace [NAMESPACE]' or '-n [NAMESPACE]'\n")
+	if d.cluster != "" && d.namespace == defaultNamespace {
+		d.env.Logger().WarnfLn("No custom namespace provided. Any deployments without an explicit namespace will be defaulted to \"default\". Overwrite the default with --namespace/-n [NAMESPACE]\n")
 	}
-	if d.cluster == "" && d.namespace != "default" {
-		d.env.Logger().WarnfLn("Warning: Namespace has been set, but cluster remains unset. Setting the namespace only makes sense when also setting the cluster with '--cluster [CLUSTER]'.\n")
+	if d.cluster == "" && d.namespace != defaultNamespace {
+		d.env.Logger().WarnfLn("Namespace has been set, but cluster remains unset. Setting the namespace only makes sense when also setting the cluster with '--cluster [CLUSTER]'.\n")
 	}
 	var fileErrs errorhelpers.ErrorList
 	for _, file := range d.files {
