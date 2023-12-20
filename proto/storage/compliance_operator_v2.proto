@@ -96,6 +96,7 @@ message ComplianceOperatorScanConfigurationV2 {
     google.protobuf.Timestamp     last_updated_time        = 13;
     // Most recent user to update the scan configurations
     SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    string                        description              = 15;
 }
 
 // Next Tag: 7
