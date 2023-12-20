@@ -362,6 +362,9 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			errorList.AddError(err)
 			continue
 		}
+		if d == nil {
+			continue
+		}
 		deployments = append(deployments, d)
 	}
 	errs := errorList.ToError()
