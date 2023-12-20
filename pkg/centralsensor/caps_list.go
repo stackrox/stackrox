@@ -13,6 +13,9 @@ const (
 	// SensorDetectionCap identifies the capability to run detection from sensor
 	SensorDetectionCap SensorCapability = "SensorDetection"
 
+	// SensorEnhancedDeploymentCheckCap identifies the capability for sensor to enhance roxctl deployment check
+	SensorEnhancedDeploymentCheckCap SensorCapability = "SensorEnhancedDeploymentCheck"
+
 	// ComplianceInNodesCap identifies the capability to run compliance in compliance pods
 	ComplianceInNodesCap SensorCapability = "ComplianceInNodes"
 
