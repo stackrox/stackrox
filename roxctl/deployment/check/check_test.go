@@ -278,7 +278,7 @@ func (d *deployCheckTestSuite) SetupTest() {
 		retryCount:         3,
 		timeout:            1 * time.Minute,
 		printAllViolations: true,
-		namespace:          "test",
+		namespace:          "default",
 	}
 }
 
