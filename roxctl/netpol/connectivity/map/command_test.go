@@ -43,9 +43,9 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		errStringContainment  bool
 	}{
 		{
-			name:                  "not existing inputFolderPath should raise 'os.ErrNotExist' error",
+			name:                  "Not existing inputFolderPath should result in error 'errox.NotFound'",
 			inputFolderPath:       "/tmp/xxx",
-			expectedAnalysisError: os.ErrNotExist,
+			expectedAnalysisError: errox.NotFound,
 		},
 		{
 			name:                  "happyPath",

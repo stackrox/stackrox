@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/npg"
+	"github.com/stackrox/rox/roxctl/netpol/connectivity/netpolerrors"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
@@ -37,10 +38,11 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	errHandler := newErrHandler(cmd.treatWarningsAsErrors)
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
 	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError)
 	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError)
-	if err := errHandler.HandleErrors(err1, err2); err != nil {
+	if err := errHandler.HandleErrorPair(err1, err2); err != nil {
+		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err
 	}
 
