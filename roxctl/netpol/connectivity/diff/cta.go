@@ -17,11 +17,6 @@ const (
 	defaultOutputFormat         = "txt"
 )
 
-var (
-	ErrYAMLMalformed = errors.New("YAML document is malformed")
-	ErrYAMLIsNotK8s  = errors.New("YAML document does not represent a K8s resource")
-)
-
 type diffAnalyzer interface {
 	ConnDiffFromResourceInfos(infos1, infos2 []*resource.Info) (npgdiff.ConnectivityDiff, error)
 	ConnectivityDiffToString(connectivityDiff npgdiff.ConnectivityDiff) (string, error)
@@ -37,11 +32,12 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 	if !failFast {
 		b.ContinueOnError()
 	}
+	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
 	return b.Do().Infos()
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	errHandler := NewErrHandler(cmd.treatWarningsAsErrors)
+	errHandler := newErrHandler(cmd.treatWarningsAsErrors)
 	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError)
 	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError)
 	if err := errHandler.HandleErrors(err1, err2); err != nil {
