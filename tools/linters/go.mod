@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/golangci/golangci-lint v1.55.2
-	github.com/nilslice/protolock v0.16.0
+	github.com/nilslice/protolock v0.17.0
 	golang.org/x/vuln v1.0.1
 )
 
