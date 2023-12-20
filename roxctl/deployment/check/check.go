@@ -2,7 +2,6 @@ package check
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -121,12 +120,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", "default", "namespace to evaluate, defaults to \"default\" if unset.")
-	namespace, err := c.Flags().GetString("namespace")
-	// this error should never occur, it would only occur if default values are invalid
-	utils.Must(err)
-	if namespace == "default" {
-		fmt.Printf("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '%s [X]' or '-%s [X]'\n", c.Flag("namespace").DefValue, c.Flag("namespace").Shorthand)
-	}
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
@@ -165,6 +158,10 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 	// Temporary solution until Sarif printers can handle string slices
 	// d.firstFile needs to be populated before the printer is created
 	d.firstFile = d.files[0]
+
+	if d.namespace == "default" {
+		d.env.Logger().WarnfLn("Warning: The namespace defaulted to \"default\", if you want to check deployments in a custom namespace set it with '--namespace [NAMESPACE]' or '-n [NAMESPACE]'\n")
+	}
 
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
