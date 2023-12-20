@@ -82,6 +82,34 @@ func (s *ComponentTestSuite) TestEnhanceDeploymentsWithMessage() {
 	s.Len(actual, expected)
 }
 
+func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessage() {
+	dQueue := make(chan *central.DeploymentEnhancementRequest, 10)
+	de := DeploymentEnhancer{
+		responsesC:       make(chan *message.ExpiringMessage),
+		deploymentsQueue: dQueue,
+		storeProvider:    s.mockStoreProvider,
+	}
+	msg := &central.DeploymentEnhancementRequest{}
+
+	actual := de.enhanceDeployments(msg)
+
+	s.Empty(actual)
+}
+
+func (s *ComponentTestSuite) TestEnhanceDeploymentsNoDeployments() {
+	dQueue := make(chan *central.DeploymentEnhancementRequest, 10)
+	de := DeploymentEnhancer{
+		responsesC:       make(chan *message.ExpiringMessage),
+		deploymentsQueue: dQueue,
+		storeProvider:    s.mockStoreProvider,
+	}
+	msg := &central.DeploymentEnhancementRequest{Msg: &central.DeploymentEnhancementMessage{Id: uuid.NewV4().String()}}
+
+	actual := de.enhanceDeployments(msg)
+
+	s.Empty(actual)
+}
+
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {
 	d := make([]*storage.Deployment, noOfDeployments)
 	for i := 0; i < noOfDeployments; i++ {

@@ -78,13 +78,14 @@ func (d *DeploymentEnhancer) Start() error {
 func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
 	var ret []*storage.Deployment
 
-	deployments := deploymentMsg.GetMsg().GetDeployments()
-	if deployments == nil {
-		log.Warnf("Received deploymentEnhancement message with no deployments")
+	if deploymentMsg.GetMsg() == nil || deploymentMsg.GetMsg().GetDeployments() == nil {
+		log.Warnf("Received empty deploymentEnhancement message")
 		return ret
 	}
 
-	log.Debugf("Received deploymentEnhancement msg with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	deployments := deploymentMsg.GetMsg().GetDeployments()
+
+	log.Debugf("Received deploymentEnhancement message with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
 	for _, deployment := range deployments {
 		d.enhanceDeployment(deployment)
 		ret = append(ret, deployment)
