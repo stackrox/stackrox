@@ -10,7 +10,7 @@ const (
 )
 
 var (
-	additionalCACertsDirPathSetting = env.RegisterSetting("ROX_MTLS_ADDITIONAL_ENV_VAR", env.WithDefault(defaultAdditionalCAsDir))
+	additionalCACertsDirPathSetting = env.RegisterSetting(MTLSAdditionalCADirEnvName, env.WithDefault(defaultAdditionalCAsDir))
 )
 
 // AdditionalCACertsDirPath returns the path where the additional CA certs are stored.
