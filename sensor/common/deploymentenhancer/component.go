@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -113,7 +114,9 @@ func (d *DeploymentEnhancer) enhanceDeployment(deployment *storage.Deployment) {
 
 // Capabilities return the capabilities of this component
 func (d *DeploymentEnhancer) Capabilities() []centralsensor.SensorCapability {
-	// TODO(ROX-21197): Add Capability
+	if features.ClusterAwareDeploymentCheck.Enabled() {
+		return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
+	}
 	return nil
 }
 
