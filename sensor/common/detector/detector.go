@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
+	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
 	"github.com/stackrox/rox/sensor/common/detector/queue"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
@@ -72,8 +74,24 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
-	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](detectorStopper)
-	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](detectorStopper)
+	netFlowQueueSize := 0
+	piQueueSize := 0
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		netFlowQueueSize = env.DetectorNetworkFlowBufferSize.IntegerSetting()
+		piQueueSize = env.DetectorProcessIndicatorBufferSize.IntegerSetting()
+	}
+	netFlowQueue := queue.NewQueue[*queue.FlowQueueItem](
+		detectorStopper,
+		netFlowQueueSize,
+		detectorMetrics.DetectorNetworkFlowBufferSize,
+		detectorMetrics.DetectorNetworkFlowDroppedCount,
+	)
+	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
+		detectorStopper,
+		piQueueSize,
+		detectorMetrics.DetectorProcessIndicatorBufferSize,
+		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+	)
 
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),

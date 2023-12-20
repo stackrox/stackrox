@@ -20,6 +20,7 @@ var (
 type Queue[T comparable] struct {
 	maxSize        int
 	counterMetric  *prometheus.CounterVec
+	droppedMetric  prometheus.Counter
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
@@ -108,6 +109,9 @@ func (q *Queue[T]) Push(item T) {
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
 		log.Warnf("Queue size limit reached (%d). New items added to the queue will be dropped.", q.maxSize)
+		if q.droppedMetric != nil {
+			q.droppedMetric.Inc()
+		}
 		return
 	}
 

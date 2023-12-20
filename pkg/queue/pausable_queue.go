@@ -43,6 +43,13 @@ func WithPausableQueueMetric[T comparable](metric *prometheus.CounterVec) Pausab
 	}
 }
 
+// WithPausableQueueDroppedMetric provides a counter which tracks number of items dropped.
+func WithPausableQueueDroppedMetric[T comparable](metric prometheus.Counter) PausableQueueOption[T] {
+	return func(q *PausableQueue[T]) {
+		q.internalQueue.droppedMetric = metric
+	}
+}
+
 // NewPausableQueue creates a new PausableQueue.
 func NewPausableQueue[T comparable](opts ...PausableQueueOption[T]) *PausableQueue[T] {
 	q := &PausableQueue[T]{

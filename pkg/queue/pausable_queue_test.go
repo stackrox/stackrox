@@ -46,6 +46,11 @@ func (s *pausableQueueSuite) TestPush() {
 			items:         []string{"item-1", "item-2", "no-item", "no-item"},
 			expectedItems: []string{"item-1", "no-item"},
 		},
+		"drop item": {
+			options:       []PausableQueueOption[*string]{WithPausableMaxSize[*string](2)},
+			items:         []string{"item-1", "item-2", "item-3"},
+			expectedItems: []string{"item-1", "item-2"},
+		},
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
