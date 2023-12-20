@@ -306,6 +306,24 @@ func TestCreateCentralTLS(t *testing.T) {
 			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
+		"When deleting an existing scanner-v4-indexer-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Indexer},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When deleting an existing scanner-v4-matcher-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Matcher},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When deleting an existing scanner-v4-db-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4DB},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
+		},
 		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
 			ExistingManaged:        []*v1.Secret{existingScanner},

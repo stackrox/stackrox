@@ -11,7 +11,7 @@ import (
 
 const (
 	scannerV4DBPasswordKey          = `password`
-	scannerV4DBPasswordResourceName = "scanner-db-password"
+	scannerV4DBPasswordResourceName = "scanner-v4-db-password"
 )
 
 // ScannerV4BearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.
@@ -21,12 +21,12 @@ type ScannerV4BearingCustomResource interface {
 }
 
 // ReconcileScannerV4DBPassword reconciles a scanner db password
-func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client) error {
+func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerV4DBPassword(ctx, obj, client)
 }
 
-func reconcileScannerV4DBPassword(ctx context.Context, obj ScannerBearingCustomResource, client ctrlClient.Client) error {
-	run := &reconcileScannerDBPasswordExtensionRun{
+func reconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
+	run := &reconcileScannerV4DBPasswordExtensionRun{
 		SecretReconciliator:  NewSecretReconciliator(client, obj),
 		obj:                  obj,
 		passwordResourceName: scannerV4DBPasswordResourceName,
