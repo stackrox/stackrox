@@ -39,6 +39,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Enforce the existence of the OpenShift monitoring `/metrics` server certificate by requiring
   the secrets `central-monitoring-tls` / `sensor-monitoring-tls` to exist on start up. This only applies
   if OpenShift monitoring is enabled.
+- Configuration files now specify ROX_MEMLIMIT instead of GOMEMLIMIT.
+  - ROX_MEMLIMIT is meant to capture the memory limit of the deployment, so it may adjust the GOMEMLIMIT accordingly.
+  - ROX_MEMLIMIT is not as flexible as GOMEMLIMIT. It may only be set to an integer representing a number of bytes.
 
 ## [4.3.0]
 

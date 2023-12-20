@@ -1,6 +1,7 @@
 package memlimit
 
 import (
+	"fmt"
 	"os"
 	"runtime/debug"
 	"strconv"
@@ -11,31 +12,43 @@ import (
 var log = logging.LoggerForModule()
 
 func SetMemoryLimit() {
-	var limit int64
+	var limit string
+	var reason string
 
 	defer func() {
-		if limit == 0 {
-			log.Warn("Memory limit left unset")
+		if limit == "" {
+			log.Warnf("Memory limit left unset: %s", reason)
 			return
 		}
 
-		limitGi := float64(limit) / 1024 / 1024 / 1024
-		log.Infof("Memory limit set: %.2fGi", limitGi)
+		prettyLimit := limit
+		if l, err := strconv.ParseInt(limit, 10, 64); err == nil {
+			limitGi := float64(l) / 1024 / 1024 / 1024
+			prettyLimit = fmt.Sprintf("%.2fGi", limitGi)
+		}
+
+
+		log.Infof("Memory limit set: %s", prettyLimit)
 	}()
 
-	var err error
 	if goLimit := os.Getenv(`GOMEMLIMIT`); goLimit != "" {
-		if limit, err = strconv.ParseInt(goLimit, 10, 64); err == nil {
-			return
-		}
+		// Respect the set GOMEMLIMIT.
+		limit = goLimit
+		return
 	}
+
 	if roxLimit := os.Getenv(`ROX_MEMLIMIT`); roxLimit != "" {
-		limit, err = strconv.ParseInt(roxLimit, 10, 64)
-		if err == nil {
-			// Set limit to 95% of the maximum.
-			limit -= limit / 20
-			debug.SetMemoryLimit(limit)
+		l, err := strconv.ParseInt(roxLimit, 10, 64)
+		if err != nil {
+			reason = fmt.Sprintf("ROX_MEMLIMIT set improperly (must be an integer in bytes): %v", err)
 			return
 		}
+
+		// Set limit to 95% of the maximum.
+		l -= l / 20
+		debug.SetMemoryLimit(l)
+		limit = strconv.FormatInt(l, 10)
 	}
+
+	reason = "Neither GOMEMLIMIT nor ROX_MEMLIMIT set"
 }
