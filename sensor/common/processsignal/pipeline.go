@@ -72,7 +72,7 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	}
 	// If we are in offline v3 the context won't be cancelled on disconnect, so we can create it here and forget about it.
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		p.createNewContext()
+		p.msgCtx = context.Background()
 	}
 	go p.sendIndicatorEvent()
 	return p
