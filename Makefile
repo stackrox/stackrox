@@ -549,6 +549,10 @@ endif
 ui-test:
 	make -C ui test
 
+.PHONY: ui-test-component
+ui-test-component:
+	make -C ui test-component
+
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
 
