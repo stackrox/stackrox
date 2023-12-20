@@ -431,7 +431,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 
 // region Helper Functions
 
-func newStore(testDB *pgtest.TestPostgres) *GenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
+func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
 		pkgSchema.TestSingleKeyStructsSchema,
