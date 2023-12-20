@@ -1,4 +1,4 @@
-package diff
+package netpolerrors
 
 import (
 	goerrors "errors"
@@ -10,30 +10,34 @@ import (
 )
 
 var (
-	// errYAMLMalformed is returned when YAML document cannot be parsed as such
-	errYAMLMalformed = errors.New("YAML document is malformed")
-	// errYAMLIsNotK8s is returned when YAML document is valid but doesn't represent a K8s/OS resource
-	errYAMLIsNotK8s = errors.New("YAML document does not represent a K8s resource")
+	// ErrYAMLMalformed is returned when YAML document cannot be parsed as such
+	ErrYAMLMalformed = errors.New("YAML document is malformed")
+	// ErrYAMLIsNotK8s is returned when YAML document is valid but doesn't represent a K8s/OS resource
+	ErrYAMLIsNotK8s = errors.New("YAML document does not represent a K8s resource")
 
 	errorsMapping = map[string]error{
 		"the path \".*\" does not exist": errox.NotFound,
 	}
 	warningsMapping = map[string]error{
-		"error parsing":               errYAMLMalformed,
-		"cannot unmarshal":            errYAMLMalformed,
-		"Object 'Kind' is missing in": errYAMLIsNotK8s,
+		"error parsing":               ErrYAMLMalformed,
+		"cannot unmarshal":            ErrYAMLMalformed,
+		"Object 'Kind' is missing in": ErrYAMLIsNotK8s,
 	}
 )
 
-func newErrHandler(treatWarningsAsErrors bool) *errHandler {
-	return &errHandler{treatWarningsAsErrors: treatWarningsAsErrors}
+func NewErrHandler(treatWarningsAsErrors bool) *ErrHandler {
+	return &ErrHandler{treatWarningsAsErrors: treatWarningsAsErrors}
 }
 
-type errHandler struct {
+type ErrHandler struct {
 	treatWarningsAsErrors bool
 }
 
-func (e *errHandler) HandleErrors(err1, err2 error) error {
+func (e *ErrHandler) HandleError(err error) error {
+	return e.handleErrorsWarnings(e.mapErrorsWarnings(err))
+}
+
+func (e *ErrHandler) HandleErrorPair(err1, err2 error) error {
 	w1, e1 := e.mapErrorsWarnings(err1)
 	w2, e2 := e.mapErrorsWarnings(err2)
 	if err := e.handleErrorsWarnings(w1, e1); err != nil {
@@ -48,7 +52,7 @@ func (e *errHandler) HandleErrors(err1, err2 error) error {
 	return nil
 }
 
-func (e *errHandler) handleErrorsWarnings(warnings []error, err error) error {
+func (e *ErrHandler) handleErrorsWarnings(warnings []error, err error) error {
 	if err == nil && (len(warnings) == 0 || !e.treatWarningsAsErrors) {
 		return nil
 	}
@@ -59,7 +63,7 @@ func (e *errHandler) handleErrorsWarnings(warnings []error, err error) error {
 	return goerrors.Join(markerErr, goerrors.Join(err, goerrors.Join(warnings...)))
 }
 
-func (e *errHandler) mapErrorsWarnings(err error) ([]error, error) {
+func (e *ErrHandler) mapErrorsWarnings(err error) ([]error, error) {
 	if err == nil {
 		return nil, nil
 	}

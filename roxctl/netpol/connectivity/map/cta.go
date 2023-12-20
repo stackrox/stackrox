@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
+	"github.com/stackrox/rox/roxctl/netpol/connectivity/netpolerrors"
+	"k8s.io/cli-runtime/pkg/resource"
 )
 
 const (
@@ -19,7 +21,7 @@ const (
 )
 
 type netpolAnalyzer interface {
-	ConnlistFromDirPath(dirPath string) ([]npguard.Peer2PeerConnection, []npguard.Peer, error)
+	ConnlistFromResourceInfos(info []*resource.Info) ([]npguard.Peer2PeerConnection, []npguard.Peer, error)
 	ConnectionsListToString(conns []npguard.Peer2PeerConnection) (string, error)
 	Errors() []npguard.ConnlistError
 }
@@ -107,8 +109,28 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	return c
 }
 
+func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
+	b := resource.NewLocalBuilder().
+		Unstructured().
+		FilenameParam(false,
+			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
+		Flatten()
+	if !failFast {
+		b.ContinueOnError()
+	}
+	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
+	return b.Do().Infos()
+}
+
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
-	conns, _, err := analyzer.ConnlistFromDirPath(cmd.inputFolderPath)
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
+	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError)
+	if err := errHandler.HandleError(err); err != nil {
+		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
+		return err
+	}
+
+	conns, _, err := analyzer.ConnlistFromResourceInfos(infos)
 	if err != nil {
 		return errors.Wrap(err, "error in connectivity analysis")
 	}
