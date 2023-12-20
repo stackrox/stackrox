@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -24,6 +25,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -97,6 +100,8 @@ type serviceImpl struct {
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
 	connManager        connection.Manager
+
+	netpols            networkPolicyDS.DataStore
 	enhancementWatcher EnhancementRequestWatcher
 
 	notifications notifier.Processor
@@ -166,6 +171,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 
 		enrichmentContext.ClusterID = clusterID
+
 	}
 
 	enrichmentContext.FetchOpt = fetchOpt
@@ -220,10 +226,19 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
+	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+	if err != nil {
+		log.Warnf("Could not determine applied network policies for deployment %s. Continuing with deployment enrichment.", deployment.GetName())
+	}
+
+	log.Debugf("Determined applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: appliedNetpols,
 	}, filter)
 	if err != nil {
 		return nil, err
@@ -237,6 +252,15 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		Type:   deployment.GetType(),
 		Alerts: alerts,
 	}, nil
+}
+
+func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	if err != nil {
+		return nil, errox.InvalidArgs.New("failed to look up network policies for deployment").CausedBy(err)
+	}
+	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
 }
 
 func convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
@@ -350,6 +374,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 
 		eCtx.ClusterID = clusterID
+	}
+
+	ns := req.GetNamespace()
+	if ns != "" {
+		eCtx.Namespace = ns
 	}
 
 	var deployments []*storage.Deployment

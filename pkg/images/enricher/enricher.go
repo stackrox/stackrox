@@ -72,6 +72,9 @@ type EnrichmentContext struct {
 	// Used to override the delegated registry configuration.
 	ClusterID string
 
+	// Namespace contains the name of the namespace used to filter NetworkPolicies for Deployments.
+	Namespace string
+
 	Source *RequestSource
 }
 
