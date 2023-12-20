@@ -359,7 +359,7 @@ func TestDeleteByQuery(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
@@ -370,7 +370,7 @@ func TestDeleteByQuery(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 
 	for idx, obj := range testObjects {
