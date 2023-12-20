@@ -165,38 +165,6 @@ scanner:
     {{- end }}
   {{- end }}
 
-scannerV4:
-  indexer:
-    {{- if .K8sConfig.ImageOverrides.Main }}
-    image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
-      {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
-      {{- end }}
-    {{- end }}
-  matcher:
-    {{- if .K8sConfig.ImageOverrides.Main }}
-    image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
-      {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
-      {{- end }}
-    {{- end }}
-  db:
-    {{- if .K8sConfig.ImageOverrides.Main }}
-    image:
-      {{- if .K8sConfig.ImageOverrides.Main.Name }}
-      name: {{ .K8sConfig.ImageOverrides.Main.Name }}
-      {{- end }}
-      {{- if .K8sConfig.ImageOverrides.Main.Tag }}
-      tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
-      {{- end }}
-    {{- end }}
-
 {{- $envVars := deepCopy .EnvironmentMap -}}
 {{- $_ := unset $envVars "ROX_OFFLINE_MODE" -}}
 {{- $_ := unset $envVars "ROX_TELEMETRY_ENDPOINT" -}}
