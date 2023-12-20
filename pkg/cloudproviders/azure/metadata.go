@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
@@ -22,9 +23,7 @@ type azureInstanceMetadata struct {
 	} `json:"compute"`
 }
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // GetMetadata tries to obtain the Azure instance metadata.
 // If not on Azure, returns nil, nil.
@@ -59,7 +58,6 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 
 	var metadata azureInstanceMetadata
-
 	if err := json.Unmarshal(contents, &metadata); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling response")
 	}
@@ -70,6 +68,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 	verified := attestedVMID != "" && attestedVMID == metadata.Compute.VMID
 
+	clusterMetadata := cloudproviders.GetClusterMetadataFromNodeLabels(ctx)
+
 	return &storage.ProviderMetadata{
 		Region: metadata.Compute.Location,
 		Zone:   metadata.Compute.Zone,
@@ -79,5 +79,6 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 			},
 		},
 		Verified: verified,
+		Cluster:  clusterMetadata,
 	}, nil
 }

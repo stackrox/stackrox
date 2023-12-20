@@ -539,6 +539,32 @@
         }
       }
     },
+    "storageClusterMetadata": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/storageClusterMetadataType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "storageClusterMetadataType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "AKS",
+        "ARO",
+        "EKS",
+        "GKE",
+        "ROSA"
+      ],
+      "default": "UNSPECIFIED"
+    },
     "storageClusterStatus": {
       "type": "object",
       "properties": {
@@ -727,6 +753,9 @@
         },
         "verified": {
           "type": "boolean"
+        },
+        "cluster": {
+          "$ref": "#/definitions/storageClusterMetadata"
         }
       }
     },

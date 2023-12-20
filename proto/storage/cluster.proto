@@ -17,6 +17,21 @@ enum ClusterType {
     OPENSHIFT4_CLUSTER       = 5;
 }
 
+message ClusterMetadata {
+    enum Type {
+        UNSPECIFIED  = 0;
+        AKS          = 1;
+        ARO          = 2;
+        EKS          = 3;
+        GKE          = 4;
+        ROSA         = 5;
+    }
+
+    Type type   = 1;
+    string name = 2;
+    string id   = 3;
+}
+
 message GoogleProviderMetadata {
     string project      = 1;
     string cluster_name = 2;
@@ -40,7 +55,8 @@ message ProviderMetadata {
         AzureProviderMetadata azure   = 5;
     }
 
-    bool verified = 15;
+    bool verified           = 15;
+    ClusterMetadata cluster = 16;
 }
 
 message OrchestratorMetadata {

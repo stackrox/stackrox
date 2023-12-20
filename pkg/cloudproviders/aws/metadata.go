@@ -13,6 +13,7 @@ import (
 	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,6 +63,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, errs.ToError()
 	}
 
+	clusterMetadata := cloudproviders.GetClusterMetadataFromNodeLabels(ctx)
+
 	return &storage.ProviderMetadata{
 		Region: doc.Region,
 		Zone:   doc.AvailabilityZone,
@@ -71,6 +74,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 			},
 		},
 		Verified: verified,
+		Cluster:  clusterMetadata,
 	}, nil
 }
 
