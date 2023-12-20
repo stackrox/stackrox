@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,16 +80,17 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db-tls secret")
 	}
-
-	scannerV4Enabled := r.centralObj.Spec.ScannerV4.IsEnabled()
-	if err := r.ReconcileSecret(ctx, "scanner-v4-indexer-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, true); err != nil {
-		return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
-	}
-	if err := r.ReconcileSecret(ctx, "scanner-v4-matcher-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, true); err != nil {
-		return errors.Wrap(err, "reconciling scanner-v4-matcher-tls secret")
-	}
-	if err := r.ReconcileSecret(ctx, "scanner-v4-db-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, true); err != nil {
-		return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
+	if features.ScannerV4.Enabled() {
+		scannerV4Enabled := r.centralObj.Spec.ScannerV4.IsEnabled()
+		if err := r.ReconcileSecret(ctx, "scanner-v4-indexer-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, true); err != nil {
+			return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
+		}
+		if err := r.ReconcileSecret(ctx, "scanner-v4-matcher-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, true); err != nil {
+			return errors.Wrap(err, "reconciling scanner-v4-matcher-tls secret")
+		}
+		if err := r.ReconcileSecret(ctx, "scanner-v4-db-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, true); err != nil {
+			return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
+		}
 	}
 
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.

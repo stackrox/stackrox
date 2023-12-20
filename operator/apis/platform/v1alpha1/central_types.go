@@ -639,6 +639,7 @@ func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
 }
 
+// IsScannerV4Enabled returns true if scanner is enabled.
 func (c *Central) IsScannerV4Enabled() bool {
 	return c.Spec.ScannerV4.IsEnabled()
 }

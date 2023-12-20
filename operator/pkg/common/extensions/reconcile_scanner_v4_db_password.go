@@ -11,7 +11,7 @@ import (
 
 const (
 	scannerV4DBPasswordKey          = `password`
-	scannerV4DBPasswordResourceName = "scanner-v4-db-password"
+	scannerV4DBPasswordResourceName = "scanner-v4-db-password" // #nosec G101
 )
 
 // ScannerV4BearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.

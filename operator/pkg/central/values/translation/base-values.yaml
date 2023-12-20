@@ -42,6 +42,6 @@ scannerV4:
     password:
       generate: false
     serviceTLS:
-      generate: false 
+      generate: false
 allowNonstandardReleaseName: true
 allowNonstandardNamespace: true

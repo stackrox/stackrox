@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/central/common"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
@@ -103,7 +104,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
 	}
 
-	if c.Spec.ScannerV4 != nil {
+	if c.Spec.ScannerV4 != nil && features.ScannerV4.Enabled() {
 		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(c.Spec.ScannerV4))
 	}
 
