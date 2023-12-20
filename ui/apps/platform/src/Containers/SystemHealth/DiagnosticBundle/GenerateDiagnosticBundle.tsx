@@ -67,9 +67,13 @@ function GenerateDiagnosticBundle(): ReactElement {
             startingTimeObject,
             isStartingTimeValid,
         });
-        downloadDiagnostics(queryString).finally(() => {
-            setSubmitting(false);
-        });
+        downloadDiagnostics(queryString)
+            .catch(() => {
+                // TODO render error in DiagnosticBundleForm
+            })
+            .finally(() => {
+                setSubmitting(false);
+            });
     }
 
     const footerContent = (
