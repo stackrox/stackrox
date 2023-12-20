@@ -1,0 +1,1 @@
+These files correspond to `central-tls` secret.
