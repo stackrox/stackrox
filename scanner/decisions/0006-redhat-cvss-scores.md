@@ -18,6 +18,9 @@ the StackRox 4.4 release is cut. So, we need a temporary solution.
 
 We want to minimize any divergences we have with upstream ClairCore, which means we do **not** want to fork
 the ClairCore repository. That being said, forking the repository is the simplest way to proceed here.
+Instead of a true, git fork, however, we opt to copy over the necessary files into the `scanner/` directory.
+This simplifies things, as we will not need to manage an entire forked repository. For the remainder of this document,
+we will still refer to this process as a fork.
 
 We know there is already an effort to replace the current [Red Hat vulnerability updater](https://github.com/quay/claircore/blob/v1.5.20/rhel/updaterset.go)
 with an implementation which supports CSAF and VEX files, and we know Red Hat Product Security is definitely moving away from
@@ -34,11 +37,11 @@ as the team did not want to change the semantics of this field which may be used
 we know we are not using this field, so we do not mind overwriting it. As can be seen from the original pull request,
 implementing this is rather straightforward and quick to do.
 
-The [stackrox/claircore](https://github.com/stackrox/claircore) repository has been created for this purpose.
-We will recreate the origin pull request, merge it into this repository, and add a `replace` directive to this repository's
-`go.mod` to replace the `github.com/quay/claircore` repository with our fork.
+There is already work towards this effort [here](https://github.com/stackrox/stackrox/pull/9112).
 
 Again, we expect this to be temporary, as we know there is work in-progress to adopt CSAF and VEX files in favor of OVAL v2.
+
+Once ClairCore implements CSAF and VEX support, our fork will be deleted in favor of using the new upstream updater.
 
 ## Consequences
 
@@ -46,6 +49,5 @@ There is always a risk this fork becomes more permanent than expected/desired. T
 differences between upstream Clair/ClairCore and Scanner v4 are minimal, so should this happen, corrective action will
 need to be taken.
 
-The main annoyance is the requirement to maintain a fork of the upstream ClairCore repository. We do not expect much, if any,
-changes to the current Red Hat vulnerability updaters until CSAF/VEX support is implemented, but until this, we will
-need to ensure our fork of ClairCore is synced with upstream ClairCore, especially upon cutting a release of Scanner v4.
+The main annoyance is the requirement to maintain a fork of the upstream ClairCore repository (even though it's a subset).
+Any changes/fixes to ClairCore's current pre-VEX version will need to be ported to our repository.
