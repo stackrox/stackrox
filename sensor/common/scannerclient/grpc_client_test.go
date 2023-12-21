@@ -23,13 +23,13 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		setMock func(m *mocks.MockScannerClient)
+		setMock func(m *mocks.MockScanner)
 		want    *ImageAnalysis
 		wantErr string
 	}{
 		{
 			name: "when get index fails then return error",
-			setMock: func(m *mocks.MockScannerClient) {
+			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
 					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{}, status.Error(codes.Unavailable, "index failed"))
@@ -48,7 +48,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 		},
 		{
 			name: "when get index succeeds then return index report",
-			setMock: func(m *mocks.MockScannerClient) {
+			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
 					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v4.IndexReport{
@@ -74,7 +74,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := mocks.NewMockScannerClient(gomock.NewController(t))
+			m := mocks.NewMockScanner(gomock.NewController(t))
 			tt.setMock(m)
 			c := &v4Client{client: m}
 			got, err := c.GetImageAnalysis(context.Background(), tt.args.image, tt.args.cfg)

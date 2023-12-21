@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/client.go -source client.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -18,31 +19,31 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockScannerClient is a mock of ScannerClient interface.
-type MockScannerClient struct {
+// MockScanner is a mock of Scanner interface.
+type MockScanner struct {
 	ctrl     *gomock.Controller
-	recorder *MockScannerClientMockRecorder
+	recorder *MockScannerMockRecorder
 }
 
-// MockScannerClientMockRecorder is the mock recorder for MockScannerClient.
-type MockScannerClientMockRecorder struct {
-	mock *MockScannerClient
+// MockScannerMockRecorder is the mock recorder for MockScanner.
+type MockScannerMockRecorder struct {
+	mock *MockScanner
 }
 
-// NewMockScannerClient creates a new mock instance.
-func NewMockScannerClient(ctrl *gomock.Controller) *MockScannerClient {
-	mock := &MockScannerClient{ctrl: ctrl}
-	mock.recorder = &MockScannerClientMockRecorder{mock}
+// NewMockScanner creates a new mock instance.
+func NewMockScanner(ctrl *gomock.Controller) *MockScanner {
+	mock := &MockScanner{ctrl: ctrl}
+	mock.recorder = &MockScannerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockScannerClient) EXPECT() *MockScannerClientMockRecorder {
+func (m *MockScanner) EXPECT() *MockScannerMockRecorder {
 	return m.recorder
 }
 
 // Close mocks base method.
-func (m *MockScannerClient) Close() error {
+func (m *MockScanner) Close() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
@@ -50,13 +51,13 @@ func (m *MockScannerClient) Close() error {
 }
 
 // Close indicates an expected call of Close.
-func (mr *MockScannerClientMockRecorder) Close() *gomock.Call {
+func (mr *MockScannerMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockScannerClient)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockScanner)(nil).Close))
 }
 
 // GetOrCreateImageIndex mocks base method.
-func (m *MockScannerClient) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
+func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth)
 	ret0, _ := ret[0].(*v4.IndexReport)
@@ -65,13 +66,13 @@ func (m *MockScannerClient) GetOrCreateImageIndex(ctx context.Context, ref name.
 }
 
 // GetOrCreateImageIndex indicates an expected call of GetOrCreateImageIndex.
-func (mr *MockScannerClientMockRecorder) GetOrCreateImageIndex(ctx, ref, auth any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScannerClient)(nil).GetOrCreateImageIndex), ctx, ref, auth)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth)
 }
 
 // IndexAndScanImage mocks base method.
-func (m *MockScannerClient) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator) (*v4.VulnerabilityReport, error) {
+func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexAndScanImage", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*v4.VulnerabilityReport)
@@ -80,7 +81,7 @@ func (m *MockScannerClient) IndexAndScanImage(arg0 context.Context, arg1 name.Di
 }
 
 // IndexAndScanImage indicates an expected call of IndexAndScanImage.
-func (mr *MockScannerClientMockRecorder) IndexAndScanImage(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScannerClient)(nil).IndexAndScanImage), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), arg0, arg1, arg2)
 }
