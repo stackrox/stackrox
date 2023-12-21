@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/libvuln/driver"
 )
 

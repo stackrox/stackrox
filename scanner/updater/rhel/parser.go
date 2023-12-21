@@ -10,12 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/toolkit/types/cpe"
+	"github.com/quay/goval-parser/oval"
+	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/rhel/internal/common"
 )
 

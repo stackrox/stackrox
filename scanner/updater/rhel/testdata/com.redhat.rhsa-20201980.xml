@@ -45,66 +45,66 @@ For more details about the security issue(s), including the impact, a CVSS score
  <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980031" comment="Red Hat Enterprise Linux 8 is installed" />
  <criteria operator="OR">
- 
+
  <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980001" comment="perl-Git-SVN is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980002" comment="perl-Git-SVN is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980003" comment="perl-Git is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980004" comment="perl-Git is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980005" comment="gitweb is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980006" comment="gitweb is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980007" comment="gitk is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980008" comment="gitk is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980009" comment="git-gui is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980010" comment="git-gui is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980011" comment="git-email is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980012" comment="git-email is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980013" comment="git-core-doc is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980014" comment="git-core-doc is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980015" comment="git-all is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980016" comment="git-all is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980017" comment="git-debugsource is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980018" comment="git-debugsource is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980019" comment="git-svn is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980020" comment="git-svn is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980021" comment="git-subtree is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980022" comment="git-subtree is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980023" comment="git-instaweb is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980024" comment="git-instaweb is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980025" comment="git-daemon is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980026" comment="git-daemon is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980027" comment="git-core is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980028" comment="git-core is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 <criteria operator="AND">
  <criterion test_ref="oval:com.redhat.rhsa:tst:20201980029" comment="git is earlier than 0:2.18.4-2.el8_2" /><criterion test_ref="oval:com.redhat.rhsa:tst:20201980030" comment="git is signed with Red Hat redhatrelease2 key" />
- 
+
 </criteria>
 
 </criteria>

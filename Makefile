@@ -760,11 +760,15 @@ ifeq ($(UNAME_S),Darwin)
 	@echo "Please manually install RocksDB if you haven't already. See README for details"
 endif
 
+roxvet-filter := operator/pkg/clientset \
+                 scanner/updater/rhel
+
+
 .PHONY: roxvet
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go list -e ./... | grep -v 'operator/pkg/clientset' | xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
+	$(SILENT)go list -e ./... | $(foreach f,$(roxvet-filter),grep -v '$(f)' |) xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########
 ## Misc ##

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/stackrox/rox/scanner/updater/rhel/internal/pulp"
 )
@@ -161,6 +160,22 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	f.manifestEtag = res.Header.Get("etag")
 
 	return s, nil
+}
+
+// Updaters returns a list of pre-configured RHEL updaters. It configures the
+// factory, and returns the updaters from the factored updaterset.
+func Updaters(ctx context.Context, c *http.Client) ([]driver.Updater, error) {
+	f, err := NewFactory(ctx, DefaultManifest)
+	if err != nil {
+		return nil, err
+	}
+	nilCfg := func(interface{}) error { return nil }
+	f.Configure(ctx, nilCfg, c)
+	s, err := f.UpdaterSet(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.Updaters(), nil
 }
 
 var guessFromPath = regexp.MustCompile(`RHEL([0-9]+)`)

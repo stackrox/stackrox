@@ -13,7 +13,6 @@ import (
 	"net/url"
 
 	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"

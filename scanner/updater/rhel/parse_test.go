@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/libvuln/driver"
 )
 

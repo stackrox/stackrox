@@ -67,7 +67,7 @@ Users should upgrade to this updated package, which resolves these issues.</desc
     <reference ref_id="CVE-2005-2475" ref_url="https://access.redhat.com/security/cve/CVE-2005-2475" source="CVE"/>
     <reference ref_id="CVE-2005-4667" ref_url="https://access.redhat.com/security/cve/CVE-2005-4667" source="CVE"/>
     <description>The unzip utility is used to list, test, or extract files from a zip
-archive. 
+archive.
 
 This update addresses the following issues:
 
@@ -160,7 +160,7 @@ supporting FTP, gopher, and HTTP data objects.
 
 A denial of service flaw was found in the way squid processes certain NTLM
 authentication requests.  A remote attacker could send a specially crafted
-NTLM authentication request which would cause the Squid server to crash. 
+NTLM authentication request which would cause the Squid server to crash.
 The Common Vulnerabilities and Exposures project assigned the name
 CVE-2005-2917 to this issue.
 
@@ -281,7 +281,7 @@ user to cause a denial of service (crash)  (CVE-2004-1057, important)
 a local user to cause a denial of service (crash)  (CVE-2005-2708, important)
 
 - a flaw in procfs handling during unloading of modules that allowed a
-local user to cause a denial of service or potentially gain privileges 
+local user to cause a denial of service or potentially gain privileges
 (CVE-2005-2709, moderate)
 
 - a flaw in IPv6 network UDP port hash table lookups that allowed a local
@@ -1143,7 +1143,7 @@ contain backported patches and are not vulnerable to these issues.</description>
     <reference ref_id="RHSA-2006:0195" ref_url="https://access.redhat.com/errata/RHSA-2006:0195" source="RHSA"/>
     <reference ref_id="CVE-2005-1918" ref_url="https://access.redhat.com/security/cve/CVE-2005-1918" source="CVE"/>
     <description>The GNU tar program saves many files together in one archive and can
-restore individual files (or all of the files) from that archive. 
+restore individual files (or all of the files) from that archive.
 
 In 2002, a path traversal flaw was found in the way GNU tar extracted
 archives. A malicious user could create a tar archive that could write to
@@ -1279,7 +1279,7 @@ by Mailman which would cause that particular mailing list to stop working.
 The Common Vulnerabilities and Exposures project assigned the name
 CVE-2005-3573 to this issue.
 
-A flaw in date handling was found in Mailman version 2.1.4 through 2.1.6. 
+A flaw in date handling was found in Mailman version 2.1.4 through 2.1.6.
 An attacker could send a carefully crafted email message to a mailing list
 run by Mailman which would cause the Mailman server to crash.  (CVE-2005-4153).
 
@@ -1477,7 +1477,7 @@ in the linux kernel and includes racoon, an IKEv1 keying daemon.
 
 A denial of service flaw was found in the ipsec-tools racoon daemon.  If a
 victim's machine has racoon configured in a non-recommended insecure
-manner, it is possible for a remote attacker to crash the racoon daemon. 
+manner, it is possible for a remote attacker to crash the racoon daemon.
 (CVE-2005-3732)
 
 Users of ipsec-tools should upgrade to these updated packages, which contain
@@ -1520,7 +1520,7 @@ backported patches, and are not vulnerable to these issues.</description>
     <reference ref_id="CVE-2005-4744" ref_url="https://access.redhat.com/security/cve/CVE-2005-4744" source="CVE"/>
     <reference ref_id="CVE-2006-1354" ref_url="https://access.redhat.com/security/cve/CVE-2006-1354" source="CVE"/>
     <description>FreeRADIUS is a high-performance and highly configurable free RADIUS server
-designed to allow centralized authentication and authorization for a network. 
+designed to allow centralized authentication and authorization for a network.
 
 A bug was found in the way FreeRADIUS authenticates users via the MSCHAP V2
 protocol. It is possible for a remote attacker to authenticate as a victim
@@ -1591,7 +1591,7 @@ backported patches and are not vulnerable to these issues.</description>
     <reference ref_id="RHSA-2006:0272" ref_url="https://access.redhat.com/errata/RHSA-2006:0272" source="RHSA"/>
     <reference ref_id="CVE-2005-3964" ref_url="https://access.redhat.com/security/cve/CVE-2005-3964" source="CVE"/>
     <description>OpenMotif provides libraries which implement the Motif industry standard
-graphical user interface. 
+graphical user interface.
 
 A number of buffer overflow flaws were discovered in OpenMotif's libUil
 library. It is possible for an attacker to execute arbitrary code as a
@@ -1666,11 +1666,11 @@ contain a backported security patch to correct this issue.</description>
     <reference ref_id="CVE-2006-0996" ref_url="https://access.redhat.com/security/cve/CVE-2006-0996" source="CVE"/>
     <reference ref_id="CVE-2006-1490" ref_url="https://access.redhat.com/security/cve/CVE-2006-1490" source="CVE"/>
     <description>PHP is an HTML-embedded scripting language commonly used with the Apache
-HTTP Web server. 
+HTTP Web server.
 
 The phpinfo() PHP function did not properly sanitize long strings.  An
 attacker could use this to perform cross-site scripting attacks against
-sites that have publicly-available PHP scripts that call phpinfo(). 
+sites that have publicly-available PHP scripts that call phpinfo().
 (CVE-2006-0996)
 
 The html_entity_decode() PHP function was found to not be binary safe. An
@@ -2002,7 +2002,7 @@ instructions with the permissions of &quot;chrome&quot;, allowing the page to st
 sensitive information or install browser malware. (CVE-2006-1727,
 CVE-2006-1728, CVE-2006-1733, CVE-2006-1734, CVE-2006-1735, CVE-2006-1742)
 
-Several bugs were found in the way Mozilla processes malformed web pages. 
+Several bugs were found in the way Mozilla processes malformed web pages.
 A carefully crafted malicious web page could cause the execution of
 arbitrary code as the user running Mozilla. (CVE-2006-0748, CVE-2006-0749,
 CVE-2006-1730, CVE-2006-1737, CVE-2006-1738, CVE-2006-1739, CVE-2006-1790)
@@ -2099,7 +2099,7 @@ The elfutils packages that originally shipped with Red Hat Enterprise Linux
 3 were GPL-licensed versions which lacked some functionality. Previous
 updates provided fully functional versions of elfutils only under the OSL
 license. This update provides a fully functional, GPL-licensed version of
-elfutils. 
+elfutils.
 
 In the OSL-licensed elfutils versions provided in previous updates, some
 tools could sometimes crash when given corrupted input files. (CVE-2005-1704)
@@ -2838,7 +2838,7 @@ for an attacker to provide an application a carefully crafted string
 containing invalidly-encoded characters, which may be improperly escaped,
 allowing the attacker to inject malicious SQL. While this update fixes how
 PQescapeString operates, the PostgreSQL server has also been modified to
-prevent such an attack occurring through unpatched clients. 
+prevent such an attack occurring through unpatched clients.
 (CVE-2006-2313, CVE-2006-2314).  More details about this issue are
 available in the linked PostgreSQL technical documentation.
 
@@ -2985,7 +2985,7 @@ magic_quotes_gpc is off, it became possible for an unauthenticated remote
 user to view the contents of arbitrary local files the web server has
 read-access to. This configuration is neither default nor safe, and
 configuring PHP with the register_globals set on is dangerous and not
-recommended.  (CVE-2006-2842) 
+recommended.  (CVE-2006-2842)
 
 Users of SquirrelMail should upgrade to this erratum package, which
 contains a backported patch to correct this issue.</description>
@@ -3027,7 +3027,7 @@ contains a backported patch to correct this issue.</description>
     <reference ref_id="CVE-2006-1990" ref_url="https://access.redhat.com/security/cve/CVE-2006-1990" source="CVE"/>
     <reference ref_id="CVE-2006-3017" ref_url="https://access.redhat.com/security/cve/CVE-2006-3017" source="CVE"/>
     <description>PHP is an HTML-embedded scripting language commonly used with the Apache
-HTTP Web server. 
+HTTP Web server.
 
 A directory traversal vulnerability was found in PHP.  Local users could
 bypass open_basedir restrictions allowing remote attackers to create files
@@ -3036,7 +3036,7 @@ in arbitrary directories via the tempnam() function.  (CVE-2006-1494)
 The wordwrap() PHP function did not properly check for integer overflow in
 the handling of the &quot;break&quot; parameter. An attacker who could control the
 string passed to the &quot;break&quot; parameter could cause a heap overflow.
-(CVE-2006-1990) 
+(CVE-2006-1990)
 
 A flaw was found in the zend_hash_del() PHP function.  For PHP scripts that
 rely on the use of the unset() function, a remote attacker could force
@@ -3307,7 +3307,7 @@ A flaw was found in KDE where the kdesktop_lock process sometimes
 failed to terminate properly.  This issue could either block the user's
 ability to manually lock the desktop or prevent the screensaver to
 activate, both of which could have a security impact for users who rely on
-these functionalities. 
+these functionalities.
 (CVE-2006-2933)
 
 Please note that this issue only affected Red Hat Enterprise Linux 3.
@@ -3427,7 +3427,7 @@ CVE-2006-2780)
 A double-free flaw was found in the way Mozilla-mail displayed malformed
 inline vcard attachments. If a victim viewed an email message containing
 a carefully crafted vcard it could execute arbitrary code as the user
-running Mozilla-mail. (CVE-2006-2781) 
+running Mozilla-mail. (CVE-2006-2781)
 
 A cross site scripting flaw was found in the way Mozilla processed Unicode
 Byte-order-Mark (BOM) markers in UTF-8 web pages. A malicious web page
@@ -3821,7 +3821,7 @@ backported fixes for these issues.</description>
     </affected>
     <reference ref_id="RHSA-2006:0604" ref_url="https://access.redhat.com/errata/RHSA-2006:0604" source="RHSA"/>
     <reference ref_id="CVE-2006-3694" ref_url="https://access.redhat.com/security/cve/CVE-2006-3694" source="CVE"/>
-    <description>Ruby is an interpreted scripting language for object-oriented programming. 
+    <description>Ruby is an interpreted scripting language for object-oriented programming.
 
 A number of flaws were found in the safe-level restrictions in Ruby.  It
 was possible for an attacker to create a carefully crafted malicious script
@@ -4437,7 +4437,7 @@ Environment.
 
 Tavis Ormandy of Google discovered a number of flaws in libtiff during a
 security audit.  The kfax application contains a copy of the libtiff code
-used for parsing TIFF files and is therefore affected by these flaws.  
+used for parsing TIFF files and is therefore affected by these flaws.
 An attacker who has the ability to trick a user into opening a malicious
 TIFF file could cause kfax to crash or possibly execute arbitrary code.
 (CVE-2006-3459, CVE-2006-3460, CVE-2006-3461, CVE-2006-3462, CVE-2006-3463,
@@ -4570,7 +4570,7 @@ Daniel Bleichenbacher recently described an attack on PKCS #1 v1.5
 signatures.  Where an RSA key with exponent 3 is used it may be possible
 for an attacker to forge a PKCS #1 v1.5 signature that would be incorrectly
 verified by implementations that do not check for excess data in the RSA
-exponentiation result of the signature.  
+exponentiation result of the signature.
 
 The Google Security Team discovered that OpenSSL is vulnerable to this
 attack.  This issue affects applications that use OpenSSL to verify X.509
@@ -4716,7 +4716,7 @@ iDefense reported two integer overflow flaws in the way the XFree86 server
 processed CID font files. A malicious authorized client could exploit this
 issue to cause a denial of service (crash) or potentially execute arbitrary
 code with root privileges on the XFree86 server. (CVE-2006-3739,
-CVE-2006-3740) 
+CVE-2006-3740)
 
 Users of XFree86 should upgrade to these updated packages, which contain a
 backported patch and is not vulnerable to this issue.</description>
@@ -5007,7 +5007,7 @@ A buffer overflow was discovered in the PHP gd extension.  If a script was
 set up to process GIF images from untrusted sources using the gd extension,
 a remote attacker could cause a heap overflow.  (CVE-2006-4484)
 
-An integer overflow was discovered in the PHP memory allocation handling. 
+An integer overflow was discovered in the PHP memory allocation handling.
 On 64-bit platforms, the &quot;memory_limit&quot; setting was not enforced correctly,
 which could allow a denial of service attack by a remote user.  (CVE-2006-4486)
 
@@ -5315,14 +5315,14 @@ function and overrun a buffer (CVE-2006-3738).  Few applications make use
 of this vulnerable function and generally it is used only when applications
 are compiled for debugging.
 
-Tavis Ormandy and Will Drewry of the Google Security Team discovered a 
+Tavis Ormandy and Will Drewry of the Google Security Team discovered a
 flaw in the SSLv2 client code.  When a client application used OpenSSL to
 create an SSLv2 connection to a malicious server, that server could cause
 the client to crash.  (CVE-2006-4343)
 
 Dr S. N. Henson of the OpenSSL core team and Open Network Security recently
 developed an ASN.1 test suite for NISCC (www.niscc.gov.uk) which uncovered
-denial of service vulnerabilities: 
+denial of service vulnerabilities:
 
 * Certain public key types can take disproportionate amounts of time to
 process, leading to a denial of service.  (CVE-2006-2940)
@@ -5552,7 +5552,7 @@ kernel on 64-bit dual-core x86_64 hardware.
 
 Note: The kernel-unsupported package contains various drivers and modules
 that are unsupported and therefore might contain security problems that
-have not been addressed. 
+have not been addressed.
 
 All Red Hat Enterprise Linux 3 users are advised to upgrade their kernels
 to the packages associated with their machine architecture and
@@ -5719,7 +5719,7 @@ backported patch to correct this issue.</description>
     <description>The kdelibs package provides libraries for the K Desktop Environment (KDE).
  Qt is a GUI software toolkit for the X Window System.
 
-An integer overflow flaw was found in the way Qt handled pixmap images. 
+An integer overflow flaw was found in the way Qt handled pixmap images.
 The KDE khtml library uses Qt in such a way that untrusted parameters could
 be passed to Qt, triggering the overflow.  An attacker could for example
 create a malicious web page that when viewed by a victim in the Konqueror
@@ -6120,13 +6120,13 @@ backported patches and are not vulnerable to these issues.</description>
     <reference ref_id="RHSA-2006:0730" ref_url="https://access.redhat.com/errata/RHSA-2006:0730" source="RHSA"/>
     <reference ref_id="CVE-2006-5465" ref_url="https://access.redhat.com/security/cve/CVE-2006-5465" source="CVE"/>
     <description>PHP is an HTML-embedded scripting language commonly used with the Apache
-HTTP Web server. 
+HTTP Web server.
 
 The Hardened-PHP Project discovered an overflow in the PHP htmlentities()
 and htmlspecialchars() routines.  If a PHP script used the vulnerable
 functions to parse UTF-8 data, a remote attacker sending a carefully
 crafted request could trigger the overflow and potentially execute
-arbitrary code as the 'apache' user. (CVE-2006-5465) 
+arbitrary code as the 'apache' user. (CVE-2006-5465)
 
 Users of PHP should upgrade to these updated packages which contain a
 backported patch to correct this issue.</description>
@@ -6400,7 +6400,7 @@ able to login without possessing proper credentials. (CVE-2006-5794)
 Please note that this flaw by itself poses no direct threat to OpenSSH
 users. Without another security flaw that could allow an attacker to alter
 the behavior of OpenSSH's unprivileged process, this flaw cannot be
-exploited. There are currently no known flaws to exploit this behavior. 
+exploited. There are currently no known flaws to exploit this behavior.
 However, we have decided to issue this erratum to fix this flaw to reduce
 the security impact if an unprivileged process flaw is ever found.
 
@@ -6482,7 +6482,7 @@ backported patch to resolve this issue.</description>
     <reference ref_id="RHSA-2006:0749" ref_url="https://access.redhat.com/errata/RHSA-2006:0749" source="RHSA"/>
     <reference ref_id="CVE-2006-6097" ref_url="https://access.redhat.com/security/cve/CVE-2006-6097" source="CVE"/>
     <description>The GNU tar program saves many files together in one archive and can
-restore individual files (or all of the files) from that archive. 
+restore individual files (or all of the files) from that archive.
 
 Teemu Salmela discovered a path traversal flaw in the way GNU tar extracted
 archives. A malicious user could create a tar archive that could write to
@@ -7123,9 +7123,9 @@ A flaw was found in the way Fetchmail used TLS encryption to connect to
 remote hosts.  Fetchmail provided no way to enforce the use of TLS
 encryption and would not authenticate POP3 protocol connections properly
 (CVE-2006-5867).  This update corrects this issue by enforcing TLS
-encryption when the &quot;sslproto&quot; configuration directive is set to &quot;tls1&quot;.  
+encryption when the &quot;sslproto&quot; configuration directive is set to &quot;tls1&quot;.
 
-Users of Fetchmail should update to these packages, which contain 
+Users of Fetchmail should update to these packages, which contain
 backported patches to correct these issues.
 
 Note: This update may break configurations which assumed that Fetchmail
@@ -7175,10 +7175,10 @@ need to modify your configuration appropriately after installing this update.</d
 Several cross-site scripting bugs were discovered in SquirrelMail.  An
 attacker could inject arbitrary Javascript or HTML content into
 SquirrelMail pages by tricking a user into visiting a carefully crafted
-URL.  (CVE-2006-6142) 
+URL.  (CVE-2006-6142)
 
 Users of SquirrelMail should upgrade to this erratum package, which
-contains a backported patch to correct these issues. 
+contains a backported patch to correct these issues.
 
 Notes:
 - After installing this update, users are advised to restart their
@@ -7241,7 +7241,7 @@ if the file was opened by a victim. (CVE-2007-0238)
 
 Flaws were discovered in the way OpenOffice.org handled hyperlinks.  An
 attacker could create an OpenOffice.org document which could run commands
-if a victim opened the file and clicked on a malicious hyperlink. 
+if a victim opened the file and clicked on a malicious hyperlink.
 (CVE-2007-0239)
 
 All users of OpenOffice.org are advised to upgrade to these updated
@@ -7318,7 +7318,7 @@ CVE-2007-0238.</description>
     <reference ref_id="RHSA-2007:0044" ref_url="https://access.redhat.com/errata/RHSA-2007:0044" source="RHSA"/>
     <reference ref_id="CVE-2007-0494" ref_url="https://access.redhat.com/security/cve/CVE-2007-0494" source="CVE"/>
     <description>ISC BIND (Berkeley Internet Name Domain) is an implementation of the DNS
-(Domain Name System) protocols.  
+(Domain Name System) protocols.
 
 A flaw was found in the way BIND processed certain DNS query responses.  On
 servers that had enabled DNSSEC validation, this could allow an remote
@@ -7720,7 +7720,7 @@ Wireshark version 0.99.5, which is not vulnerable to these issues.</description>
     <reference ref_id="CVE-2007-1701" ref_url="https://access.redhat.com/security/cve/CVE-2007-1701" source="CVE"/>
     <reference ref_id="CVE-2007-1825" ref_url="https://access.redhat.com/security/cve/CVE-2007-1825" source="CVE"/>
     <description>PHP is an HTML-embedded scripting language commonly used with the Apache
-HTTP Web server. 
+HTTP Web server.
 
 A number of buffer overflow flaws were found in the PHP session extension,
 the str_replace() function, and the imap_mail_compose() function.
@@ -8124,7 +8124,7 @@ remote access to the telnet port.  This flaw does not affect the telnet
 daemon distributed in the telnet-server package.
 
 For users who have enabled the krb5 telnet daemon and have it accessible
-remotely, this update should be applied immediately.  
+remotely, this update should be applied immediately.
 
 Whilst we are not aware at this time that the flaw is being actively
 exploited, we have confirmed that the flaw is very easily exploitable.
@@ -8663,7 +8663,7 @@ HTTP Web server.
 
 A denial of service flaw was found in the way PHP processed a deeply nested
 array. A remote attacker could cause the PHP interpreter to crash by
-submitting an input variable with a deeply nested array. (CVE-2007-1285) 
+submitting an input variable with a deeply nested array. (CVE-2007-1285)
 
 A flaw was found in the way PHP's unserialize() function processed data. If
 a remote attacker was able to pass arbitrary data to PHP's unserialize()
@@ -9349,7 +9349,7 @@ Unescaped user input parameters were being passed as arguments to /bin/sh.
 A remote, authenticated, user could have triggered this flaw and executed
 arbitrary code on the server.  Additionally, on Red Hat Enterprise Linux 5
 only, this flaw could be triggered by a remote unauthenticated user if
-Samba was configured to use the non-default &quot;username map script&quot; option. 
+Samba was configured to use the non-default &quot;username map script&quot; option.
 (CVE-2007-2447)
 
 Users of Samba should upgrade to these packages, which contain backported
@@ -9464,7 +9464,7 @@ manipulated.  (CVE-2007-2445)
 
 A flaw was found in the sPLT chunk handling code in libpng. An attacker
 could create a carefully crafted PNG image file in such a way that it could
-cause an application linked with libpng to crash when the file was opened. 
+cause an application linked with libpng to crash when the file was opened.
 (CVE-2006-5793)
 
 Users of libpng should update to these updated packages which contain
@@ -9557,11 +9557,11 @@ Ormandy for supplying details and patches for these issues.</description>
     <reference ref_id="RHSA-2007:0358" ref_url="https://access.redhat.com/errata/RHSA-2007:0358" source="RHSA"/>
     <reference ref_id="CVE-2007-1262" ref_url="https://access.redhat.com/security/cve/CVE-2007-1262" source="CVE"/>
     <reference ref_id="CVE-2007-2589" ref_url="https://access.redhat.com/security/cve/CVE-2007-2589" source="CVE"/>
-    <description>SquirrelMail is a standards-based webmail package written in PHP4. 
+    <description>SquirrelMail is a standards-based webmail package written in PHP4.
 
 Several HTML filtering bugs were discovered in SquirrelMail.  An attacker
 could inject arbitrary JavaScript leading to cross-site scripting attacks
-by sending an e-mail viewed by a user within SquirrelMail. 
+by sending an e-mail viewed by a user within SquirrelMail.
 (CVE-2007-1262)
 
 Squirrelmail did not sufficiently check arguments to IMG tags in HTML
@@ -9997,8 +9997,8 @@ modify sensitive data from another web site. (CVE-2007-2870)
 
 A flaw was found in the way SeaMonkey displayed certain web content. A
 malicious web page could generate content that would overlay user
-interface elements such as the hostname and security indicators, tricking 
-users into thinking they are visiting a different site. (CVE-2007-2871) 
+interface elements such as the hostname and security indicators, tricking
+users into thinking they are visiting a different site. (CVE-2007-2871)
 
 Users of SeaMonkey are advised to upgrade to these erratum packages, which
 contain SeaMonkey version 1.0.9 that corrects these issues.</description>
@@ -10810,7 +10810,7 @@ packages, which contain a backported fix to correct this issue.</description>
     </affected>
     <reference ref_id="RHSA-2007:0430" ref_url="https://access.redhat.com/errata/RHSA-2007:0430" source="RHSA"/>
     <reference ref_id="CVE-2006-4600" ref_url="https://access.redhat.com/security/cve/CVE-2006-4600" source="CVE"/>
-    <description>OpenLDAP is an open source suite of LDAP (Lightweight Directory Access 
+    <description>OpenLDAP is an open source suite of LDAP (Lightweight Directory Access
 Protocol) applications, libraries and development tools.
 
 A flaw was found in the way OpenLDAP handled selfwrite access. Users with
@@ -10822,7 +10822,7 @@ A memory leak bug was found in OpenLDAP's ldap_start_tls_s() function. An
 application using this function could result in an Out Of Memory (OOM)
 condition, crashing the application.
 
-All users are advised to upgrade to this updated openldap package, 
+All users are advised to upgrade to this updated openldap package,
 which contains a backported fix and is not vulnerable to these issues.</description>
     <advisory from="secalert@redhat.com">
      <severity>Low</severity>
@@ -10868,8 +10868,8 @@ which contains a backported fix and is not vulnerable to these issues.</descript
     <reference ref_id="RHSA-2007:0431" ref_url="https://access.redhat.com/errata/RHSA-2007:0431" source="RHSA"/>
     <reference ref_id="CVE-2006-1174" ref_url="https://access.redhat.com/security/cve/CVE-2006-1174" source="CVE"/>
     <description>The shadow-utils package includes the necessary programs for converting
-UNIX password files to the shadow password format, as well as programs 
-for managing user and group accounts. 
+UNIX password files to the shadow password format, as well as programs
+for managing user and group accounts.
 
 A flaw was found in the useradd tool in shadow-utils. A new user's
 mailbox, when created, could have random permissions for a short period.
@@ -10882,7 +10882,7 @@ This update also fixes the following bugs:
 
 * chage.1 and chage -l gave incorrect information about sp_inact.
 
-All users of shadow-utils are advised to upgrade to this updated 
+All users of shadow-utils are advised to upgrade to this updated
 package, which contains backported patches to resolve these issues.</description>
     <advisory from="secalert@redhat.com">
      <severity>Low</severity>
@@ -11267,7 +11267,7 @@ these issues.</description>
     <reference ref_id="CVE-2007-2022" ref_url="https://access.redhat.com/security/cve/CVE-2007-2022" source="CVE"/>
     <description>The kdebase packages provide the core applications for KDE, the K Desktop
 Environment. These core packages include Konqueror, the web browser and
-file manager. 
+file manager.
 
 A problem with the interaction between the Flash Player and the Konqueror
 web browser was found. The problem could lead to key presses leaking to the
@@ -11562,7 +11562,7 @@ after installing this update.</description>
     </affected>
     <reference ref_id="RHSA-2007:0662" ref_url="https://access.redhat.com/errata/RHSA-2007:0662" source="RHSA"/>
     <reference ref_id="CVE-2007-3304" ref_url="https://access.redhat.com/security/cve/CVE-2007-3304" source="CVE"/>
-    <description>The Apache HTTP Server is a popular Web server. 
+    <description>The Apache HTTP Server is a popular Web server.
 
 The Apache HTTP Server did not verify that a process was an Apache child
 process before sending it signals. A local attacker with the ability to run
@@ -11649,18 +11649,18 @@ below:
 denial of service or potential privilege escalation. (CVE-2007-1217, Moderate)
 
 * a flaw in the Bluetooth subsystem that allowed a local user to trigger an
-information leak. (CVE-2007-1353, Low) 
+information leak. (CVE-2007-1353, Low)
 
 In addition to the security issues described above, fixes for the following
 have been included:
 
 * a race condition in the e1000 network driver that could cause ESB2
-systems to be started without the RX unit being turned on. 
+systems to be started without the RX unit being turned on.
 
 * a related e1000 bug on ESB2 systems that could cause rlogin to fail.
 
 Red Hat would like to thank Ilja van Sprundel for reporting an issue fixed
-in this erratum. 
+in this erratum.
 
 Note: The kernel-unsupported package contains various drivers and modules
 that are unsupported and therefore might contain security problems that
@@ -12153,7 +12153,7 @@ formatting commands as input and creates a typesetter-independent .dvi
 
 Maurycy Prodeus discovered an integer overflow flaw in the processing
 of PDF files.  An attacker could create a malicious PDF file that would
-cause TeTeX to crash or potentially execute arbitrary code when opened. 
+cause TeTeX to crash or potentially execute arbitrary code when opened.
 (CVE-2007-3387)
 
 All users of TeTeX should upgrade to these updated packages, which
@@ -12280,11 +12280,11 @@ contain a backported patch to resolve this issue.</description>
     <reference ref_id="RHSA-2007:0735" ref_url="https://access.redhat.com/errata/RHSA-2007:0735" source="RHSA"/>
     <reference ref_id="CVE-2007-3387" ref_url="https://access.redhat.com/security/cve/CVE-2007-3387" source="CVE"/>
     <description>Xpdf is an X Window System-based viewer for Portable Document Format (PDF)
-files. 
+files.
 
 Maurycy Prodeus discovered an integer overflow flaw in the processing
 of PDF files.  An attacker could create a malicious PDF file that would
-cause Xpdf to crash or potentially execute arbitrary code when opened. 
+cause Xpdf to crash or potentially execute arbitrary code when opened.
 (CVE-2007-3387)
 
 All users of Xpdf should upgrade to these updated packages, which
@@ -12326,7 +12326,7 @@ contain a backported patch to resolve this issue.</description>
     <reference ref_id="RHSA-2007:0740" ref_url="https://access.redhat.com/errata/RHSA-2007:0740" source="RHSA"/>
     <reference ref_id="CVE-2007-2926" ref_url="https://access.redhat.com/security/cve/CVE-2007-2926" source="CVE"/>
     <description>ISC BIND (Berkeley Internet Name Domain) is an implementation of the DNS
-(Domain Name System) protocols. 
+(Domain Name System) protocols.
 
 A flaw was found in the way BIND generates outbound DNS query ids. If an
 attacker is able to acquire a finite set of query IDs, it becomes possible
@@ -12457,7 +12457,7 @@ A flaw was found in the SSL_get_shared_ciphers() utility function. An
 attacker could send a list of ciphers to an application that used this
 function and overrun a buffer with a single byte (CVE-2007-5135). Few
 applications make use of this vulnerable function and generally it is used
-only when applications are compiled for debugging. 
+only when applications are compiled for debugging.
 
 A number of possible side-channel attacks were discovered affecting
 OpenSSL. A local attacker could possibly obtain RSA private keys being
@@ -12466,7 +12466,7 @@ outside of a lab environment. This update contains backported patches
 designed to mitigate these issues.  (CVE-2007-3108).
 
 Users of OpenSSL should upgrade to these updated packages, which contain
-backported patches to resolve these issues.  
+backported patches to resolve these issues.
 
 Note: After installing this update, users are advised to either restart all
 services that use OpenSSL or restart their system.</description>
@@ -13271,7 +13271,7 @@ part of the DIGEST-MD5 authentication exchange, the client is expected to
 send a specific set of information to the server. If one of these items
 (the &quot;realm&quot;) was not sent or was malformed, it was possible for a remote
 unauthenticated attacker to cause a denial of service (segmentation fault)
-on the server. (CVE-2006-1721) 
+on the server. (CVE-2006-1721)
 
 Users of cyrus-sasl should upgrade to these updated packages, which contain a
 backported patch to correct this issue.</description>
@@ -13593,7 +13593,7 @@ backported patches to correct these issues.</description>
 
 A flaw was found in ia32 emulation affecting users running 64-bit versions
 of Red Hat Enterprise Linux on x86_64 architectures.  A local user could
-use this flaw to gain elevated privileges. (CVE-2007-4573).   
+use this flaw to gain elevated privileges. (CVE-2007-4573).
 
 Red Hat would like to thank Wojciech Purczynski for reporting this issue.
 
@@ -13755,7 +13755,7 @@ disclosing this issue.</description>
     <reference ref_id="RHSA-2007:0969" ref_url="https://access.redhat.com/errata/RHSA-2007:0969" source="RHSA"/>
     <reference ref_id="CVE-2007-5191" ref_url="https://access.redhat.com/security/cve/CVE-2007-5191" source="CVE"/>
     <description>The util-linux package contains a large variety of low-level system
-utilities that are necessary for a Linux system to function. 
+utilities that are necessary for a Linux system to function.
 
 A flaw was discovered in the way that the mount and umount utilities
 used the setuid and setgid functions, which could lead to privileges being
@@ -13835,7 +13835,7 @@ running SeaMonkey. (CVE-2007-5338, CVE-2007-5339, CVE-2007-5340)
 
 Several flaws were found in the way in which SeaMonkey displayed malformed
 web content. A web page containing specially-crafted content could
-potentially trick a user into surrendering sensitive information. 
+potentially trick a user into surrendering sensitive information.
 (CVE-2007-1095, CVE-2007-3844, CVE-2007-3511, CVE-2007-5334)
 
 A flaw was found in the SeaMonkey sftp protocol handler. A malicious web
@@ -14240,7 +14240,7 @@ files.
 
 Alin Rad Pop discovered several flaws in the handling of PDF files. An
 attacker could create a malicious PDF file that would cause Xpdf to crash,
-or potentially execute arbitrary code when opened.  
+or potentially execute arbitrary code when opened.
 (CVE-2007-4352, CVE-2007-5392, CVE-2007-5393)
 
 A flaw was found in the t1lib library, used in the handling of Type 1
@@ -14398,7 +14398,7 @@ which contain a backported patch to resolve this issue.</description>
     <reference ref_id="CVE-2007-3848" ref_url="https://access.redhat.com/security/cve/CVE-2007-3848" source="CVE"/>
     <reference ref_id="CVE-2007-4308" ref_url="https://access.redhat.com/security/cve/CVE-2007-4308" source="CVE"/>
     <description>The kernel packages contain the Linux kernel, the core of any Linux
-operating system. 
+operating system.
 
 A flaw was found in the handling of process death signals. This allowed a
 local user to send arbitrary signals to the suid-process executed by that
@@ -14406,19 +14406,19 @@ user. A successful exploitation of this flaw depends on the structure of
 the suid-program and its signal handling. (CVE-2007-3848, Important)
 
 A flaw was found in the IPv4 forwarding base. This allowed a local user to
-cause a denial of service. (CVE-2007-2172, Important) 
+cause a denial of service. (CVE-2007-2172, Important)
 
 A flaw was found where a corrupted executable file could cause cross-region
 memory mappings on Itanium systems. This allowed a local user to cause a
-denial of service. (CVE-2006-4538, Moderate) 
+denial of service. (CVE-2006-4538, Moderate)
 
 A flaw was found in the stack expansion when using the hugetlb kernel on
 PowerPC systems. This allowed a local user to cause a denial of service.
-(CVE-2007-3739, Moderate) 
+(CVE-2007-3739, Moderate)
 
 A flaw was found in the aacraid SCSI driver. This allowed a local user to
 make ioctl calls to the driver that should be restricted to privileged
-users. (CVE-2007-4308, Moderate) 
+users. (CVE-2007-4308, Moderate)
 
 As well, these updated packages fix the following bug:
 
@@ -15042,7 +15042,7 @@ would cause the Apache child process handling that request to crash. On
 sites where a forward proxy is configured, an attacker could cause a
 similar crash if a user could be persuaded to visit a malicious site using
 the proxy. This could lead to a denial of service if using a threaded
-Multi-Processing Module. (CVE-2007-3847) 
+Multi-Processing Module. (CVE-2007-3847)
 
 A flaw was found in the mod_status module. On sites where mod_status was
 enabled and the status pages were publicly available, a cross-site
@@ -16078,7 +16078,7 @@ possibly causing CUPS daemon crash after exhausting available memory.
 (CVE-2008-0596)
 
 These issues were found during the investigation of CVE-2008-0882, which
-did not affect Red Hat Enterprise Linux 3. 
+did not affect Red Hat Enterprise Linux 3.
 
 Note that the default configuration of CUPS on Red Hat Enterprise Linux
 3 allow requests of this type only from the local subnet.
@@ -23047,7 +23047,7 @@ libcurl must be restarted for the update to take effect.</description>
     <description>Ghostscript is a set of software that provides a PostScript(TM)
 interpreter, a set of C procedures (the Ghostscript library, which
 implements the graphics capabilities in the PostScript language) and
-an interpreter for Portable Document Format (PDF) files. 
+an interpreter for Portable Document Format (PDF) files.
 
 Multiple integer overflow flaws which could lead to heap-based buffer
 overflows, as well as multiple insufficient input validation flaws, were
@@ -23947,7 +23947,7 @@ a specially-crafted username could use this flaw to execute arbitrary code
 with the privileges of the web server. (CVE-2009-1579)
 
 Multiple cross-site scripting (XSS) flaws were found in SquirrelMail. An
-attacker could construct a carefully crafted URL, which once visited by an 
+attacker could construct a carefully crafted URL, which once visited by an
 unsuspecting user, could cause the user's web browser to execute malicious
 script in the context of the visited SquirrelMail web page. (CVE-2009-1578)
 
