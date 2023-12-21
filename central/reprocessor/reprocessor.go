@@ -544,13 +544,13 @@ func (l *loopImpl) riskLoop() {
 		case <-l.stopSig.Done():
 			return
 		case <-l.deploymentRiskTicker.C:
-			l.deploymentRiskLock.Lock()
-			if l.deploymentRiskSet.Cardinality() > 0 {
-				// goroutine to ensure this is non-blocking.
-				go l.sendDeployments(l.deploymentRiskSet.AsSlice())
-				l.deploymentRiskSet.Clear()
-			}
-			l.deploymentRiskLock.Unlock()
+			concurrency.WithLock(&l.deploymentRiskLock, func() {
+				if l.deploymentRiskSet.Cardinality() > 0 {
+					// goroutine to ensure this is non-blocking.
+					go l.sendDeployments(l.deploymentRiskSet.AsSlice())
+					l.deploymentRiskSet.Clear()
+				}
+			})
 		}
 	}
 }

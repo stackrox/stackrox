@@ -83,12 +83,13 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 }
 
 func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
-	s.receivedLock.Lock()
-	s.receivedMessages = append(s.receivedMessages, msg)
-	s.receivedLock.Unlock()
-	s.messageCallbackLock.RLock()
-	s.messageCallback(msg)
-	s.messageCallbackLock.RUnlock()
+	concurrency.WithLock(&s.receivedLock, func() {
+		s.receivedMessages = append(s.receivedMessages, msg)
+	})
+
+	concurrency.WithRLock(&s.messageCallbackLock, func() {
+		s.messageCallback(msg)
+	})
 }
 
 func (s *FakeService) startCentralStub(stream central.SensorService_CommunicateServer) {
