@@ -337,6 +337,8 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 				continue
 			}
 			m.enrichAndSend()
+			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
+			m.clusterEntities.RecordTick()
 
 			if env.ProcessesListeningOnPort.BooleanSetting() {
 				m.enrichAndSendProcesses()
