@@ -28,11 +28,6 @@ func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golan
 	}
 }
 
-// ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.
-func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
-	return gogoTimestamp.TimestampFromProto(gogo)
-}
-
 // ConvertTimestampToTimeOrNow converts a proto timestamp to a golang Time, and returns time.Now() if there is an error.
 func ConvertTimestampToTimeOrNow(gogo *gogoTimestamp.Timestamp) time.Time {
 	return ConvertTimestampToTimeOrDefault(gogo, time.Now())
@@ -45,11 +40,6 @@ func ConvertTimestampToTimeOrDefault(gogo *gogoTimestamp.Timestamp, defaultVal t
 		return defaultVal
 	}
 	return t
-}
-
-// ConvertTimeToTimestampOrError converts golang time to proto timestamp.
-func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, error) {
-	return gogoTimestamp.TimestampProto(goTime)
 }
 
 // ConvertTimeToTimestampOrNow converts golang time to proto timestamp.
@@ -99,11 +89,4 @@ func ConvertTimeString(str string) *gogoTimestamp.Timestamp {
 		return ConvertTimeToTimestamp(ts)
 	}
 	return nil
-}
-
-// CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
-// the first timestamp is before the second or a positive value if the first timestamp is
-// after the second.
-func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp) int {
-	return t1.Compare(t2)
 }
