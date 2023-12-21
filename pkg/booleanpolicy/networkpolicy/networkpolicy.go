@@ -36,6 +36,7 @@ func GenerateNetworkPoliciesAppliedObj(networkPolicies map[string]*storage.Netwo
 func FilterForDeployment(networkPolicies []*storage.NetworkPolicy, deployment *storage.Deployment) map[string]*storage.NetworkPolicy {
 	matchedNetworkPolicies := map[string]*storage.NetworkPolicy{}
 	for _, p := range networkPolicies {
+		//FIXME: Debugging this shows that the labels are instead in deployment.GetLabels()
 		if labels.MatchLabels(p.GetSpec().GetPodSelector(), deployment.GetPodLabels()) {
 			matchedNetworkPolicies[p.GetId()] = p
 		}
