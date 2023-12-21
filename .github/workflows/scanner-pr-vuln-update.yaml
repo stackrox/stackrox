@@ -1,0 +1,39 @@
+name: Scanner PR vulnerability update
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  upload-pr-vulnerabilities:
+    if: contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Update vulnerabilities
+      continue-on-error: true
+      run: |
+        if [ ! -d "scanner" ]; then
+          echo "Scanner directory not found. Terminating current step."
+          exit 1
+        fi
+
+        make -C scanner bin/updater
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        ./scanner/bin/updater -output-dir="$branch"
+        gsutil cp -r "$branch" "gs://scanner-v4-test/vulnerability-bundles"
