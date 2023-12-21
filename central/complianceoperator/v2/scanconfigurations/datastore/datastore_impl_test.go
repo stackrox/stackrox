@@ -288,5 +288,6 @@ func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 
 			},
 		},
 		StrictNodeScan: false,
+		Description:    "test-description",
 	}
 }
