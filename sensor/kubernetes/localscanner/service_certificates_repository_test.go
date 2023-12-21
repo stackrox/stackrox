@@ -345,9 +345,9 @@ func sensorOwnerReference() []metav1.OwnerReference {
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) *serviceCertificatesRepoSecretsImpl {
 
-	secretsSpec := make(map[storage.ServiceType]serviceCertSecretSpec)
+	secretsSpecs := make(map[storage.ServiceType]serviceCertSecretSpec)
 	for serviceType, secret := range secrets {
-		secretsSpec[serviceType] = serviceCertSecretSpec{
+		secretsSpecs[serviceType] = serviceCertSecretSpec{
 			secretName:          secret.Name,
 			caCertFileName:      mtls.CACertFileName,
 			serviceCertFileName: mtls.ServiceCertFileName,
@@ -356,7 +356,7 @@ func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	}
 
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:        secretsSpec,
+		secrets:        secretsSpecs,
 		ownerReference: sensorOwnerReference()[0],
 		namespace:      namespace,
 		secretsClient:  secretsClient,
