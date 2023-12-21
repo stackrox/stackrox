@@ -223,8 +223,6 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		}
 	}
 
-	// TODO/MC: Extend for ScannerV4 case?
-
 	if len(result.StatusErrors) > 0 {
 		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
 	}
