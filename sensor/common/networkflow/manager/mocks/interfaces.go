@@ -69,6 +69,18 @@ func (mr *MockEntityStoreMockRecorder) LookupByEndpoint(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupByEndpoint", reflect.TypeOf((*MockEntityStore)(nil).LookupByEndpoint), arg0)
 }
 
+// RecordTick mocks base method.
+func (m *MockEntityStore) RecordTick() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordTick")
+}
+
+// RecordTick indicates an expected call of RecordTick.
+func (mr *MockEntityStoreMockRecorder) RecordTick() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTick", reflect.TypeOf((*MockEntityStore)(nil).RecordTick))
+}
+
 // RegisterPublicIPsListener mocks base method.
 func (m *MockEntityStore) RegisterPublicIPsListener(arg0 clusterentities.PublicIPsListener) bool {
 	m.ctrl.T.Helper()
