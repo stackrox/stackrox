@@ -283,15 +283,15 @@ func (a *auditLogCollectionManagerImpl) stopAuditLogCollectionOnAllNodes() {
 // If the feature is already enabled and there are eligible nodes, then this will restart collection on those nodes from this state
 func (a *auditLogCollectionManagerImpl) SetAuditLogFileStateFromCentral(fileStates map[string]*storage.AuditLogFileState) {
 	a.receivedInitialStateFromCentral.Set(true)
-	a.fileStateLock.Lock()
-	a.fileStates = fileStates
 
-	// Ensure that the map is empty not nil if there is no saved state. The rest of the manager depends on it being _not nil_
-	if a.fileStates == nil {
-		a.fileStates = make(map[string]*storage.AuditLogFileState)
-	}
+	concurrency.WithLock(&a.fileStateLock, func() {
+		a.fileStates = fileStates
 
-	a.fileStateLock.Unlock()
+		// Ensure that the map is empty not nil if there is no saved state. The rest of the manager depends on it being _not nil_
+		if a.fileStates == nil {
+			a.fileStates = make(map[string]*storage.AuditLogFileState)
+		}
+	})
 
 	if a.enabled.Get() {
 		a.startAuditLogCollectionOnAllNodes()
