@@ -7,7 +7,7 @@
 
 Rejected.
 
-_ClairCore will support CSAF/VEX, and this work would be redundant.  To support Red Hat CVSS scores akin to Scanner V2, Scanner V4 will likely use a modified OVAL updater that CVSS scores from the OVAL XML parser._
+_ClairCore will support CSAF/VEX, and this work would be redundant.  To support Red Hat CVSS scores akin to Scanner V2, Scanner V4 will likely use a modified OVAL updater that retrieves CVSS scores from the OVAL XML parser._
 
 ## Context
 
