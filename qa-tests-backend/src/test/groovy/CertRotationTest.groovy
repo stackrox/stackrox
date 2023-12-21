@@ -177,9 +177,9 @@ class CertRotationTest extends BaseSpecification {
     }
 
     // This test is skipped in Operator and Helm, upgrader only works in Manifest based installations
-    def "Test sensor cert rotation with upgrader succeeds for non-Helm clusters"() {
+    def "Test sensor cert rotation with upgrader succeeds for manifest based installed clusters"() {
         when:
-        "Check that the cluster is not Helm-managed"
+        "Check that the cluster is manifest installed"
         def cluster = ClusterService.getCluster()
         assert cluster
 
