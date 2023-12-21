@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/waitable.go -source waitable.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

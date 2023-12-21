@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/flow.go -source flow.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

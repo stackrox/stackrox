@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/pruner.go -source pruner.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

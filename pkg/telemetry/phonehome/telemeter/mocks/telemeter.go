@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/telemeter.go -source telemeter.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

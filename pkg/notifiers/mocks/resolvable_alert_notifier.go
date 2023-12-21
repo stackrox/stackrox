@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/resolvable_alert_notifier.go github.com/stackrox/rox/pkg/notifiers ResolvableAlertNotifier
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

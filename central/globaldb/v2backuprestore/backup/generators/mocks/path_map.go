@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/path_map.go -source path_map.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/policy_set.go -source policy_set.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

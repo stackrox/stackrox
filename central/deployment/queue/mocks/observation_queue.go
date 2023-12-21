@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/observation_queue.go -source observation_queue.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

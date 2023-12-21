@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/lru.go -source lru.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

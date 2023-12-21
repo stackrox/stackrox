@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/health_reporter.go -source health_reporter.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
