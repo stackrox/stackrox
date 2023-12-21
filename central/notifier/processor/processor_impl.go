@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	timestamp "github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -88,7 +88,7 @@ func (p *processorImpl) UpdateNotifierHealthStatus(notifier notifiers.Notifier, 
 		Name:          notifier.ProtoNotifier().Id,
 		Type:          storage.IntegrationHealth_NOTIFIER,
 		Status:        healthStatus,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protoconv.TimestampNow(),
 		ErrorMessage:  errMessage,
 	})
 }

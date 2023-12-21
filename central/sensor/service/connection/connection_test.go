@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/hash/manager/mocks"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -250,7 +250,7 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	clusterID := "this-cluster"
 	auditLogState := map[string]*storage.AuditLogFileState{
 		"node-a": {
-			CollectLogsSince: types.TimestampNow(),
+			CollectLogsSince: protoconv.TimestampNow(),
 			LastAuditId:      "abcd",
 		},
 	}

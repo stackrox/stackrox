@@ -78,7 +78,7 @@ func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime *tim
 func (s *blobTestSuite) TestSearch() {
 	searchTime := protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
 	blobs1 := s.createBlobs("/path1", 10, 2, searchTime)
-	blobs2 := s.createBlobs("/path2", 20, 3, timestamp.TimestampNow())
+	blobs2 := s.createBlobs("/path2", 20, 3, protoconv.TimestampNow())
 
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery(), []*storage.Blob{blobs2[0]}, nil)
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery(), blobs2, nil)

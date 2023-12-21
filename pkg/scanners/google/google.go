@@ -8,7 +8,6 @@ import (
 	"unicode"
 
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
-	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"google.golang.org/api/iterator"
@@ -249,7 +249,7 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 	}
 	// Google can't give the data via layers at this time
 	return &storage.ImageScan{
-		ScanTime:        gogoTypes.TimestampNow(),
+		ScanTime:        protoconv.TimestampNow(),
 		Components:      components,
 		OperatingSystem: "unknown",
 		Notes: []storage.ImageScan_Note{

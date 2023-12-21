@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	protobuf "github.com/gogo/protobuf/types"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -24,7 +24,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 					Resource: &central.SensorEvent_Node{Node: &storage.Node{
 						OsImage: osImage,
 						// Set timestamp to assert it was nilled later on.
-						LastUpdated: protobuf.TimestampNow(),
+						LastUpdated: protoconv.TimestampNow(),
 					}}},
 			}}
 	}

@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
@@ -67,7 +67,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
-	event.Timestamp = types.TimestampNow()
+	event.Timestamp = protoconv.TimestampNow()
 	event.Object.ClusterId = s.ClusterId
 
 	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))

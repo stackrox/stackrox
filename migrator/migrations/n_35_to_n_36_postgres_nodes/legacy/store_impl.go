@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -126,7 +127,7 @@ func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Node, [
 
 // Upsert writes a node to the DB, overwriting previous data.
 func (b *storeImpl) Upsert(_ context.Context, node *storage.Node) error {
-	iTime := protoTypes.TimestampNow()
+	iTime := protoconv.TimestampNow()
 	if !b.noUpdateTimestamps {
 		node.LastUpdated = iTime
 	}

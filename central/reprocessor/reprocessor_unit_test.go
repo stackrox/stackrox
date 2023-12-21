@@ -3,12 +3,12 @@ package reprocessor
 import (
 	"testing"
 
-	protobuf "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"go.uber.org/mock/gomock"
 )
 
@@ -42,7 +42,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
 				node := &storage.Node{
 					OsImage:     "Something that is not RHCOS",
-					LastUpdated: protobuf.TimestampNow(),
+					LastUpdated: protoconv.TimestampNow(),
 				}
 				gomock.InOrder(
 					m.nodes.EXPECT().GetNode(gomock.Any(), gomock.Eq(a.id)).Times(1).Return(node, true, nil),

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
@@ -178,10 +179,10 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 
 	if fixTimestamps {
 		if startTS == nil {
-			startTS = types.TimestampNow()
+			startTS = protoconv.TimestampNow()
 		}
 		if finishTS == nil {
-			finishTS = types.TimestampNow()
+			finishTS = protoconv.TimestampNow()
 		}
 	}
 	var errMsg string

@@ -11,11 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/securityhub"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -64,8 +64,8 @@ func (l *LightAlert) convert() *storage.Alert {
 			{Message: "three"},
 			{Message: "https://www.stackrox.com"},
 		},
-		FirstOccurred: types.TimestampNow(),
-		Time:          types.TimestampNow(),
+		FirstOccurred: protoconv.TimestampNow(),
+		Time:          protoconv.TimestampNow(),
 		State:         l.state,
 	}
 }

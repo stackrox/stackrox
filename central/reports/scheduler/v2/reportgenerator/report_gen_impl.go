@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -110,7 +111,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 	zippedCSVData := zippedSCVResult.ZippedCsv
 
-	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	req.ReportSnapshot.ReportStatus.CompletedAt = protoconv.TimestampNow()
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
@@ -189,8 +190,8 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 	// Store downloadable report in blob storage
 	b := &storage.Blob{
 		Name:         common.GetReportBlobPath(configID, reportID),
-		LastUpdated:  types.TimestampNow(),
-		ModifiedTime: types.TimestampNow(),
+		LastUpdated:  protoconv.TimestampNow(),
+		ModifiedTime: protoconv.TimestampNow(),
 		Length:       int64(data.Len()),
 	}
 	return rg.blobStore.Upsert(reportGenCtx, b, data)
@@ -410,7 +411,7 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 		log.Errorf("Error while running report for config '%s': %s", req.ReportSnapshot.GetName(), reportErr)
 		req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
 	}
-	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
+	req.ReportSnapshot.ReportStatus.CompletedAt = protoconv.TimestampNow()
 	err := rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_FAILURE)
 
 	if err != nil {

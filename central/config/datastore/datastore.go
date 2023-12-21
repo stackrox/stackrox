@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -164,13 +164,13 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		if oldConf != nil {
 			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
 		} else {
-			clusterRetentionConf.CreatedAt = types.TimestampNow()
+			clusterRetentionConf.CreatedAt = protoconv.TimestampNow()
 		}
 
 		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
 
 		if hasUpdate {
-			clusterRetentionConf.LastUpdated = types.TimestampNow()
+			clusterRetentionConf.LastUpdated = protoconv.TimestampNow()
 		}
 	}
 

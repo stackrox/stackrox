@@ -1,7 +1,6 @@
 package compliance
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
 	"github.com/stackrox/rox/compliance/collection/file"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var log = logging.LoggerForModule()
@@ -93,7 +93,7 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult,
 			Return: &compliance.ComplianceReturn{
 				NodeName: nodeNameProvider.GetNodeName(),
 				ScrapeId: runID,
-				Time:     types.TimestampNow(),
+				Time:     protoconv.TimestampNow(),
 				Evidence: compressedResults,
 			},
 		},
@@ -150,6 +150,6 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 		log.Errorf("collecting kubelet configuration failed: %v", err)
 	}
 
-	complianceData.Time = types.TimestampNow()
+	complianceData.Time = protoconv.TimestampNow()
 	return complianceData
 }

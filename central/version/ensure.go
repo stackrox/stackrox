@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/protoconv"
 	versionUtil "github.com/stackrox/rox/pkg/version"
 )
 
@@ -37,7 +37,7 @@ func Ensure(versionStore vStore.Store) error {
 				SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 				Version:       versionUtil.GetMainVersion(),
 				MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-				LastPersisted: timestamp.TimestampNow(),
+				LastPersisted: protoconv.TimestampNow(),
 			},
 		)
 		if err != nil {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -110,7 +110,7 @@ func (s *suiteImpl) TestPass() {
 	}
 	flows := []*storage.NetworkFlow{
 		{
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: protoconv.TimestampNow(),
 		},
 	}
 

@@ -29,15 +29,15 @@ import (
 )
 
 var (
-	nowProcess        = getProcessIndicator(ptypes.TimestampNow())
+	nowProcess        = getProcessIndicator(protoconv.TimestampNow())
 	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
 	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
 
 	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondKubeEventViolation = getKubeEventViolation("2", ptypes.TimestampNow())
+	secondKubeEventViolation = getKubeEventViolation("2", protoconv.TimestampNow())
 
 	firstNetworkFlowViolation  = getNetworkFlowViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondNetworkFlowViolation = getNetworkFlowViolation("2", ptypes.TimestampNow())
+	secondNetworkFlowViolation = getNetworkFlowViolation("2", protoconv.TimestampNow())
 )
 
 func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {

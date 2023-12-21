@@ -1,10 +1,10 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -28,7 +28,7 @@ func LightweightDeploymentImage() *storage.Image {
 			},
 		},
 		Scan: &storage.ImageScan{
-			ScanTime: types.TimestampNow(),
+			ScanTime: protoconv.TimestampNow(),
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name: "name",

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
@@ -790,5 +791,5 @@ func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {
 		return timestamp
 	}
 	// If the flow is still active, use the current timestamp.
-	return types.TimestampNow()
+	return protoconv.TimestampNow()
 }

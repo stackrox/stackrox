@@ -8,13 +8,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/legacy"
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/postgres"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -64,11 +64,11 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: types.TimestampNow(),
+					Created: protoconv.TimestampNow(),
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime:        types.TimestampNow(),
+				ScanTime:        protoconv.TimestampNow(),
 				OperatingSystem: "cloud",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{

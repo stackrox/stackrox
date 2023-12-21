@@ -1,8 +1,8 @@
 package inventory
 
 import (
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -13,7 +13,7 @@ func ToNodeInventory(resp *scannerV1.GetNodeInventoryResponse) *storage.NodeInve
 		// NodeId is only available to Sensor. Until it arrives there, we add a placeholder
 		NodeId:     uuid.Nil.String(),
 		NodeName:   resp.GetNodeName(),
-		ScanTime:   timestamp.TimestampNow(),
+		ScanTime:   protoconv.TimestampNow(),
 		Components: toStorageComponents(resp.GetComponents()),
 		Notes:      convertNotes(resp.GetNotes()),
 	}

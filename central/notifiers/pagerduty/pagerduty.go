@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	pd "github.com/PagerDuty/go-pagerduty"
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -117,7 +117,7 @@ func (p *pagerDuty) Test(_ context.Context) *notifiers.NotifierError {
 		Violations: []*storage.Alert_Violation{
 			{Message: "This is a sample pagerduty alert message created to test integration with StackRox."},
 		},
-		Time: types.TimestampNow(),
+		Time: protoconv.TimestampNow(),
 	}, newAlert)
 
 	if err != nil {

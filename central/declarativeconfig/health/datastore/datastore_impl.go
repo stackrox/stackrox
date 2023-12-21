@@ -3,13 +3,13 @@ package datastore
 import (
 	"context"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/declarativeconfig/health/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 type datastoreImpl struct {
@@ -79,7 +79,7 @@ func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, i
 	}
 
 	existingHealth.ErrorMessage = errMsg
-	existingHealth.LastTimestamp = timestamp.TimestampNow()
+	existingHealth.LastTimestamp = protoconv.TimestampNow()
 	existingHealth.Status = status
 
 	return ds.UpsertDeclarativeConfig(ctx, existingHealth)

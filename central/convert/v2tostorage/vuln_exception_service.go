@@ -3,11 +3,11 @@ package v2tostorage
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -65,7 +65,7 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 
 // DeferVulnerabilityRequest converts a *v2.CreateDeferVulnerabilityExceptionRequest to a *storage.VulnerabilityRequest.
 func DeferVulnerabilityRequest(ctx context.Context, req *v2.CreateDeferVulnerabilityExceptionRequest) *storage.VulnerabilityRequest {
-	now := types.TimestampNow()
+	now := protoconv.TimestampNow()
 	ret := &storage.VulnerabilityRequest{
 		CreatedAt:   now,
 		LastUpdated: now,
@@ -104,7 +104,7 @@ func DeferVulnerabilityRequest(ctx context.Context, req *v2.CreateDeferVulnerabi
 
 // FalsePositiveVulnerabilityRequest converts a *v2.CreateFalsePositiveVulnerabilityExceptionRequest to a *storage.VulnerabilityRequest.
 func FalsePositiveVulnerabilityRequest(ctx context.Context, req *v2.CreateFalsePositiveVulnerabilityExceptionRequest) *storage.VulnerabilityRequest {
-	now := types.TimestampNow()
+	now := protoconv.TimestampNow()
 	ret := &storage.VulnerabilityRequest{
 		CreatedAt:   now,
 		LastUpdated: now,

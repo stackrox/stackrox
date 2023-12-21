@@ -3,12 +3,12 @@ package testutils
 import (
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
-	ts1 = timestamp.TimestampNow()
+	ts1 = protoconv.TimestampNow()
 )
 
 // GetTestVulnDeferralExceptionFull returns a mock *v2.VulnerabilityException of deferral kind.

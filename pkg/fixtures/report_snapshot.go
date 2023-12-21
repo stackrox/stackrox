@@ -1,8 +1,8 @@
 package fixtures
 
 import (
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // GetReportSnapshot returns a valid report snapshot object
@@ -44,8 +44,8 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 		},
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_PREPARING,
-			QueuedAt:                 timestamp.TimestampNow(),
-			CompletedAt:              timestamp.TimestampNow(),
+			QueuedAt:                 protoconv.TimestampNow(),
+			CompletedAt:              protoconv.TimestampNow(),
 			ErrorMsg:                 "",
 			ReportRequestType:        storage.ReportStatus_ON_DEMAND,
 			ReportNotificationMethod: storage.ReportStatus_EMAIL,

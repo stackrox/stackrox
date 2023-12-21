@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -62,7 +63,7 @@ func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[stri
 
 	fileStates := map[string]*storage.AuditLogFileState{
 		"node-a": {
-			CollectLogsSince: types.TimestampNow(),
+			CollectLogsSince: protoconv.TimestampNow(),
 			LastAuditId:      "last-audit-id",
 		},
 	}
@@ -243,7 +244,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), nil)
 	manager.enabled.Set(true) // start out enabled
 
-	firstState := s.getAuditLogFileState(types.TimestampNow(), "first-id-a")
+	firstState := s.getAuditLogFileState(protoconv.TimestampNow(), "first-id-a")
 	// add a state manually
 	manager.updateFileState("node-a", firstState.CollectLogsSince, firstState.LastAuditId)
 
@@ -254,10 +255,10 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	)
 
 	// Update the state and add a new node
-	secondState := s.getAuditLogFileState(types.TimestampNow(), "second-id-a")
+	secondState := s.getAuditLogFileState(protoconv.TimestampNow(), "second-id-a")
 	manager.updateFileState("node-a", secondState.CollectLogsSince, secondState.LastAuditId)
 
-	altNodeState := s.getAuditLogFileState(types.TimestampNow(), "first-id-b")
+	altNodeState := s.getAuditLogFileState(protoconv.TimestampNow(), "first-id-b")
 	manager.updateFileState("node-b", altNodeState.CollectLogsSince, altNodeState.LastAuditId)
 
 	// The originally retrieved state should not have changed

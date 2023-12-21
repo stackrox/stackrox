@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // LoadGeneratingNodeScanner is a scanner that generates fake scans with high frequecy of the node-inventory messages.
@@ -40,7 +40,7 @@ func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFrom
 			NodeInventory: &storage.NodeInventory{
 				NodeId:   "",
 				NodeName: n.nodeProvider.GetNodeName(),
-				ScanTime: timestamp.TimestampNow(),
+				ScanTime: protoconv.TimestampNow(),
 				Components: &storage.NodeInventory_Components{
 					Namespace:       "rhcos:4.11",
 					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},

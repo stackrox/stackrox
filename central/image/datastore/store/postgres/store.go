@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -697,7 +698,7 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
-	iTime := protoTypes.TimestampNow()
+	iTime := protoconv.TimestampNow()
 
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
@@ -1325,7 +1326,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image, *storage.Image](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -1387,7 +1388,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 	defer rows.Close()
 	var imageCVEEdges []*storage.ImageCVEEdge
-	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge](rows)
+	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge, *storage.ImageCVEEdge](rows)
 	if err != nil || len(imageCVEEdges) == 0 {
 		return err
 	}
@@ -1409,7 +1410,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		err = copyFromImageCVEEdges(ctx, tx, protoTypes.TimestampNow(), true, imageCVEEdges...)
+		err = copyFromImageCVEEdges(ctx, tx, protoconv.TimestampNow(), true, imageCVEEdges...)
 		if err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err

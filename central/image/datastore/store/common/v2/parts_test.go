@@ -3,16 +3,16 @@ package common
 import (
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAndMergeImage(t *testing.T) {
-	ts := timestamp.TimestampNow()
+	ts := protoconv.TimestampNow()
 	image := &storage.Image{
 		Id: "sha",
 		Name: &storage.ImageName{

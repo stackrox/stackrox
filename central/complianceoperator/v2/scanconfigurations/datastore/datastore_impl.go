@@ -3,13 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -156,12 +156,7 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
-	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
-}
-
-// upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
-func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
-	scanConfig.LastUpdatedTime = types.TimestampNow()
+	scanConfig.LastUpdatedTime = protoconv.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
 

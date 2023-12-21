@@ -3,12 +3,12 @@ package aggregator
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +83,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 			f10: d2 -> e4:8000/tcp:ts2
 	*/
 
-	ts1 := types.TimestampNow()
+	ts1 := protoconv.TimestampNow()
 	ts2 := ts1.Clone()
 	ts2.Seconds = ts2.Seconds + 1000
 
@@ -205,7 +205,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 	*/
 
-	ts1 := types.TimestampNow()
+	ts1 := protoconv.TimestampNow()
 	ts2 := ts1.Clone()
 	ts2.Seconds = ts2.Seconds + 1000
 
@@ -235,7 +235,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 }
 
 func TestAggregateExtConnsByName(t *testing.T) {
-	ts1 := types.TimestampNow()
+	ts1 := protoconv.TimestampNow()
 	ts2 := ts1.Clone()
 	ts2.Seconds = ts2.Seconds + 1000
 

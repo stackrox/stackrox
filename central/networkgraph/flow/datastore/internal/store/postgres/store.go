@@ -428,7 +428,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := types.TimestampNow()
+	lastUpdateTS := protoconv.TimestampNow()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
@@ -468,7 +468,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := types.TimestampNow()
+	lastUpdateTS := protoconv.TimestampNow()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()

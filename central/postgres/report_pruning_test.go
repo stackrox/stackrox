@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	configDatastore "github.com/stackrox/rox/central/reports/config/datastore"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -340,7 +340,7 @@ func newReportSnapshot(
 func newBlob(name string, data []byte) *storage.Blob {
 	return &storage.Blob{
 		Name:         name,
-		ModifiedTime: types.TimestampNow(),
+		ModifiedTime: protoconv.TimestampNow(),
 		Length:       int64(len(data)),
 	}
 }

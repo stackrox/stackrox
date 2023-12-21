@@ -1,7 +1,6 @@
 package admissioncontroller
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -47,7 +47,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	}
 	settings.ClusterId = clusterid.Get()
 	settings.CentralEndpoint = p.centralEndpoint
-	settings.Timestamp = types.TimestampNow()
+	settings.Timestamp = protoconv.TimestampNow()
 	return settings
 }
 

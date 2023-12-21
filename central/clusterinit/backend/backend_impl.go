@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -101,7 +102,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	meta := &storage.InitBundleMeta{
 		Id:        id.String(),
 		Name:      name,
-		CreatedAt: types.TimestampNow(),
+		CreatedAt: protoconv.TimestampNow(),
 		CreatedBy: user,
 		ExpiresAt: expiryDate,
 	}

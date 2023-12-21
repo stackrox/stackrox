@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	metadataGetterMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -126,7 +126,7 @@ func (s *SyslogNotifierTestSuite) TestCEFMakeJSONExtensionPair() {
 
 func (s *SyslogNotifierTestSuite) TestCEFMakeTimestampExtensionPair() {
 	key := "key"
-	value := types.TimestampNow()
+	value := protoconv.TimestampNow()
 
 	msTs := int64(value.GetSeconds())*1000 + int64(value.GetNanos())/1000000
 	expectedValue := []string{fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))}
@@ -266,7 +266,7 @@ func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
 	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
 	notifier := makeNotifierExtrafields(keyVals)
 	testAuditMessage := &v1.Audit_Message{
-		Time: types.TimestampNow(),
+		Time: protoconv.TimestampNow(),
 		User: &storage.UserInfo{
 			Username:     "Joseph",
 			FriendlyName: "Rules",
@@ -289,7 +289,7 @@ func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 	notifier := makeNotifier()
 	syslog := s.makeSyslog(notifier)
 	testAuditMessage := &v1.Audit_Message{
-		Time: types.TimestampNow(),
+		Time: protoconv.TimestampNow(),
 		User: &storage.UserInfo{
 			Username:     "Joseph",
 			FriendlyName: "Rules",

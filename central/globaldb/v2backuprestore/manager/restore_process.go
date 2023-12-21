@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -98,7 +98,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	metadata := &v1.DBRestoreProcessMetadata{
 		Id:        id,
 		Header:    header,
-		StartTime: types.TimestampNow(),
+		StartTime: protoconv.TimestampNow(),
 	}
 
 	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {

@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -281,7 +281,7 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 	}
 
 	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
-	request.ReportSnapshot.ReportStatus.QueuedAt = types.TimestampNow()
+	request.ReportSnapshot.ReportStatus.QueuedAt = protoconv.TimestampNow()
 	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err

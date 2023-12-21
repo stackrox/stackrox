@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/cloudflare/cfssl/log"
-	timestamp "github.com/gogo/protobuf/types"
 	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -45,7 +45,7 @@ func (l *backupListenerImpl) OnBackupSuccess(ctx context.Context) {
 
 func (l *backupListenerImpl) updateSystemInfo(ctx context.Context, backupStatus storage.OperationStatus) {
 	backupInfo := &storage.BackupInfo{
-		BackupLastRunAt: timestamp.TimestampNow(),
+		BackupLastRunAt: protoconv.TimestampNow(),
 		Status:          backupStatus,
 		Requestor:       authn.UserFromContext(ctx),
 	}

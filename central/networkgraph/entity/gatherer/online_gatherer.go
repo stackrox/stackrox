@@ -5,7 +5,6 @@ import (
 	"context"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -178,8 +178,8 @@ func (g *defaultExtSrcsGathererImpl) writeLocalChecksum(store blobstore.Datastor
 	b := &storage.Blob{
 		Name:         defaultexternalsrcs.LocalChecksumBlobPath,
 		Length:       int64(len(checksum)),
-		LastUpdated:  timestamp.TimestampNow(),
-		ModifiedTime: timestamp.TimestampNow(),
+		LastUpdated:  protoconv.TimestampNow(),
+		ModifiedTime: protoconv.TimestampNow(),
 	}
 	buf := bytes.NewBuffer(checksum)
 	if err := store.Upsert(blobAccessCtx, b, buf); err != nil {

@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	checkResultsStorage "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -674,7 +674,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    types.TimestampNow(),
+		CreatedTime:    protoconv.TimestampNow(),
 		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig1",
 	}
@@ -692,7 +692,7 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    types.TimestampNow(),
+		CreatedTime:    protoconv.TimestampNow(),
 		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig2",
 	}

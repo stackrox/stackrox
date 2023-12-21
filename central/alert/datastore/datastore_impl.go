@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -165,7 +165,7 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertsResolvedBatch")
 
-	resolvedAt := types.TimestampNow()
+	resolvedAt := protoconv.TimestampNow()
 	idsAsBytes := make([][]byte, 0, len(ids))
 	for _, id := range ids {
 		idsAsBytes = append(idsAsBytes, []byte(id))

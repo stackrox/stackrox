@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/globaldb"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -85,7 +85,7 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 			Name:          plugin.Name,
 			Type:          storage.IntegrationHealth_BACKUP,
 			Status:        storage.IntegrationHealth_UNHEALTHY,
-			LastTimestamp: timestamp.TimestampNow(),
+			LastTimestamp: protoconv.TimestampNow(),
 			ErrorMessage:  err.Error(),
 		})
 		return err
@@ -95,7 +95,7 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 		Name:          plugin.Name,
 		Type:          storage.IntegrationHealth_BACKUP,
 		Status:        storage.IntegrationHealth_HEALTHY,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protoconv.TimestampNow(),
 		ErrorMessage:  "",
 	})
 	log.Infof("Successfully ran backup to %T", backup)

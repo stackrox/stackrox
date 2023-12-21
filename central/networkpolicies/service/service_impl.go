@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -35,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -657,7 +657,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	}
 	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
 		User:                 user,
-		ApplyTimestamp:       types.TimestampNow(),
+		ApplyTimestamp:       protoconv.TimestampNow(),
 		OriginalModification: modification,
 		UndoModification:     undoMod,
 	}

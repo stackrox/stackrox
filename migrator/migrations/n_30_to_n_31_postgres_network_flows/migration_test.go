@@ -16,6 +16,7 @@ import (
 	pgStore "github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/postgres"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -59,7 +60,7 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 	for i := 0; i < 30; i++ {
 		flow := &storage.NetworkFlow{}
 		s.NoError(testutils.FullInit(flow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		flow.LastSeenTimestamp = types.TimestampNow()
+		flow.LastSeenTimestamp = protoconv.TimestampNow()
 		flow.ClusterId = clusterID
 		flows = append(flows, flow)
 	}

@@ -8,12 +8,12 @@ import (
 	"math/rand"
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	afterSchema "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/after"
 	beforeSchema "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/before"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -76,7 +76,7 @@ func (s *blobMigrationTestSuite) createMockBlobs(size int) map[string]*storage.B
 			Name:         name,
 			Oid:          oid,
 			Length:       int64(rand.Int()),
-			ModifiedTime: timestamp.TimestampNow(),
+			ModifiedTime: protoconv.TimestampNow(),
 		}
 		blobs[name] = blob
 	}

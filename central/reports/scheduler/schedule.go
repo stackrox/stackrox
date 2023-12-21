@@ -9,7 +9,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -255,7 +255,7 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 			LastRunTime:  timestamp.Now().GogoProtobuf(),
 			ErrorMsg:     "",
 		}
-		req.ReportConfig.LastSuccessfulRunTime = types.TimestampNow()
+		req.ReportConfig.LastSuccessfulRunTime = protoconv.TimestampNow()
 	}
 	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
 		return err

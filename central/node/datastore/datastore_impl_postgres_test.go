@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -28,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -465,7 +465,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(expectedNode, storedNode)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
-	testNode.Scan.ScanTime = types.TimestampNow()
+	testNode.Scan.ScanTime = protoconv.TimestampNow()
 	testNode.Scan.Components = testNode.Scan.Components[:len(testNode.Scan.Components)-1]
 	cveIDsSet := set.NewStringSet()
 	for _, component := range testNode.GetScan().GetComponents() {
@@ -527,7 +527,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 			{CveBaseInfo: &storage.CVEInfo{Cve: "cve"}},
 		}
 	}
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protoconv.TimestampNow()
 
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
@@ -553,7 +553,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
 	// Verify that new scan with less components cleans up the old relations correctly.
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protoconv.TimestampNow()
 	testNode2.Scan.Components = testNode2.Scan.Components[:len(testNode2.Scan.Components)-1]
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
@@ -575,7 +575,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
 	// Verify that new scan with no components and vulns cleans up the old relations correctly.
-	testNode2.Scan.ScanTime = types.TimestampNow()
+	testNode2.Scan.ScanTime = protoconv.TimestampNow()
 	testNode2.Scan.Components = nil
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
@@ -639,7 +639,7 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 		Name:      name,
 		ClusterId: id,
 		Scan: &storage.NodeScan{
-			ScanTime:        types.TimestampNow(),
+			ScanTime:        protoconv.TimestampNow(),
 			OperatingSystem: "ubuntu",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				{

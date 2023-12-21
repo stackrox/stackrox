@@ -1,11 +1,11 @@
 package runtime
 
 import (
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -78,7 +78,7 @@ func constructGenericRuntimeAlert(
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertDeployment(deployment),
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protoconv.TimestampNow(),
 	}
 }
 
@@ -93,7 +93,7 @@ func constructResourceRuntimeAlert(
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertResource(kubeEvent),
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protoconv.TimestampNow(),
 	}
 }
 

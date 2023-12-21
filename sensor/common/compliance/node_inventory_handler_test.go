@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
@@ -25,7 +25,7 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	msg := &storage.NodeInventory{
 		NodeId:   uuid.Nil.String(),
 		NodeName: nodeName,
-		ScanTime: timestamp.TimestampNow(),
+		ScanTime: protoconv.TimestampNow(),
 		Components: &storage.NodeInventory_Components{
 			Namespace: "rhcos:4.11",
 			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{

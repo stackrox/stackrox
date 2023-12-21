@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -65,7 +66,7 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 		return nil
 	}
 
-	now := types.TimestampNow()
+	now := protoconv.TimestampNow()
 	// Integration health does not exist yet, initialize it.
 	d.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 		Id:            id,

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
@@ -54,7 +54,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // SuppressCVEs suppresses CVEs from policy workflow and API endpoints that include cve in the responses.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
-	createdAt := types.TimestampNow()
+	createdAt := protoconv.TimestampNow()
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
