@@ -77,6 +77,7 @@ var targets = set.NewFrozenStringSet(
 	"KeyedMutex.Unlock",
 	"KeyedRWMutex.Unlock",
 	"KeyedRWMutex.RUnlock",
+	"KeyFence.Unlock",
 )
 
 func isTargetFun(fun *types.Func) bool {
