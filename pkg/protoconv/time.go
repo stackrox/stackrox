@@ -23,6 +23,11 @@ func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golan
 	}
 }
 
+// TimestampNow returns a protobuf timestamp set to the current time.
+func TimestampNow() *gogoTimestamp.Timestamp {
+	return gogoTimestamp.TimestampNow()
+}
+
 // ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.
 func ConvertTimestampToTimeOrError(gogo *gogoTimestamp.Timestamp) (time.Time, error) {
 	return gogoTimestamp.TimestampFromProto(gogo)
