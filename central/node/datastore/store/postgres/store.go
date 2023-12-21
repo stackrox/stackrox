@@ -971,7 +971,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 		search.NewQueryBuilder().AddExactMatches(search.NodeID, ids...).ProtoQuery(),
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Node, *storage.Node](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Node](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
