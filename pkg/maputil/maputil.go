@@ -132,14 +132,14 @@ func (m *FastRMap[K, V]) cloneAndMutateWithInitialPtr(initialMapPtr *map[K]V, mu
 		cloned := ShallowClone(*initialMapPtr)
 		mutateFunc(cloned)
 
-		concurrency.WithLock(&m.lock, func() {
-			if m.m == initialMapPtr {
-				m.m = &cloned
-				return
-			}
+		m.lock.Lock()
+		if m.m == initialMapPtr {
+			m.m = &cloned
+			return
+		}
 
-			// our work was for nothing, another goroutine beat us to the write!
-			initialMapPtr = m.m
-		})
+		// our work was for nothing, another goroutine beat us to the write!
+		initialMapPtr = m.m
+		concurrency.UnsafeUnlock(&m.lock)
 	}
 }

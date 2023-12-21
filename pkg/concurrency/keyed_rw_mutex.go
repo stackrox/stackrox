@@ -48,14 +48,14 @@ func (k *KeyedRWMutex) RLock(key string) {
 // It is the caller's responsibility to ensure that
 // the mutex was locked first; it is a runtime error otherwise.
 func (k *KeyedRWMutex) Unlock(key string) {
-	UnsafeUnlock(&k.mutexPool[k.indexFromKey(key)]) // suppress the error for calling Unlock()
+	UnsafeUnlock(&k.mutexPool[k.indexFromKey(key)])
 }
 
 // RUnlock releases a read lock for the mutex corresponding to the given key.
 // It is the caller's responsibility to ensure that
 // the mutex was locked first; it is a runtime error otherwise.
 func (k *KeyedRWMutex) RUnlock(key string) {
-	UnsafeRUnlock(&k.mutexPool[k.indexFromKey(key)]) // suppress the error for calling Unlock()
+	UnsafeRUnlock(&k.mutexPool[k.indexFromKey(key)])
 }
 
 // DoWithLock calls the given function while holding the lock. The lock is acquired in a safe manner, making sure
