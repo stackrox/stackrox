@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/watch_handler.go -source watch_handler.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

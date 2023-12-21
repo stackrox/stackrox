@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/filter.go -source filter.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
