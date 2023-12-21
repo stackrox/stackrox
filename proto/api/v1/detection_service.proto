@@ -43,6 +43,7 @@ message DeployYAMLDetectionRequest {
     repeated string policy_categories    = 4;
     // Cluster to delegate scan to, may be the cluster's name or ID.
     string          cluster              = 6;
+    string          namespace            = 7;
 }
 
 message DeployDetectionResponse {
