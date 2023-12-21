@@ -20,14 +20,15 @@ message ClusterScanStatus {
     string                    cluster_name = 3;
 }
 
-// Next available tag: 4
+// Next available tag: 5
 message BaseComplianceScanConfigurationSettings {
-    bool                  one_time_scan            = 1;
-    repeated string       profiles                 = 2;
-    Schedule              scan_schedule            = 3;
+    bool            one_time_scan = 1;
+    repeated string profiles      = 2;
+    Schedule        scan_schedule = 3;
+    string          description   = 4;
 }
 
-// Next available tag: 4
+// Next available tag: 5
 message ComplianceScanConfiguration {
     string                                     id             = 1;
     string                                     scan_name      = 2;

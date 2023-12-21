@@ -217,6 +217,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						CreatedTime:     createdTime,
 						LastUpdatedTime: lastUpdatedTime,
 						ModifiedBy:      storageRequester,
+						Description:     "test-description",
 					},
 				}, nil).Times(1)
 
@@ -318,6 +319,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						CreatedTime:     createdTime,
 						LastUpdatedTime: lastUpdatedTime,
 						ModifiedBy:      storageRequester,
+						Description:     "test-description",
 					}, true, nil).Times(1)
 
 				s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
@@ -352,6 +354,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.C
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
+			Description:  "test-description",
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
@@ -373,6 +376,7 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
+			Description:  "test-description",
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}
