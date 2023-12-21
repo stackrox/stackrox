@@ -136,7 +136,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_signal_dropper_counter",
-		Help:      "A counter of the total number of process indicators that were dropped",
+		Help:      "A counter of the total number of process indicators that were dropped if the buffer was full",
 	})
 
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{

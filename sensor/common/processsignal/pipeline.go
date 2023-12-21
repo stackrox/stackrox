@@ -70,10 +70,6 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		msgCtxCancel:       cancelMsgCtx,
 		stopper:            concurrency.NewStopper(),
 	}
-	// If we are in offline v3 the context won't be cancelled on disconnect, so we can create it here and forget about it.
-	if features.SensorCapturesIntermediateEvents.Enabled() {
-		p.msgCtx = context.Background()
-	}
 	go p.sendIndicatorEvent()
 	return p
 }
@@ -91,7 +87,12 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 // Shutdown closes all communication channels and shutdowns the enricher
 func (p *Pipeline) Shutdown() {
 	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
-	defer close(p.enrichedIndicators)
+	defer func() {
+		close(p.enrichedIndicators)
+		_ = p.enricher.Stopped().Wait()
+		_ = p.stopper.Client().Stopped().Wait()
+	}()
+	p.stopper.Client().Stop()
 }
 
 // Notify allows the component state to be propagated to the pipeline
@@ -116,6 +117,10 @@ func (p *Pipeline) createNewContext() {
 }
 
 func (p *Pipeline) getCurrentContext() context.Context {
+	// If we are in offline v3 the context won't be cancelled on disconnect, so we can just return Background here.
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		return context.Background()
+	}
 	p.msgCtxMux.Lock()
 	defer p.msgCtxMux.Unlock()
 	return p.msgCtx
@@ -149,6 +154,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 }
 
 func (p *Pipeline) sendIndicatorEvent() {
+	defer p.stopper.Flow().ReportStopped()
 	for indicator := range p.cm.GetOutput() {
 		if !p.processFilter.Add(indicator) {
 			continue

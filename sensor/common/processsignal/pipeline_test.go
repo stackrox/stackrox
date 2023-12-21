@@ -30,6 +30,8 @@ const (
 
 func TestProcessPipelineOfflineV3(t *testing.T) {
 	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	// In v3 going from online to offline and vice-versa won't do anything.
+	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
 	cases := map[string]struct {
 		entities []clusterentities.ContainerMetadata
 		events   []func(*testing.T, *Pipeline)
@@ -93,25 +95,25 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
-			// defer close(sensorEvents)
 			mockStore := clusterentities.NewStore()
 			mockDetector := mocks.NewMockDetector(mockCtrl)
 			pipeline := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
 				mockDetector)
+			t.Cleanup(func() {
+				pipeline.Shutdown()
+				for _, entity := range tc.entities {
+					deleteStore(entity.DeploymentID, mockStore)
+				}
+				close(sensorEvents)
+			})
 			mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).AnyTimes()
 			for _, entity := range tc.entities {
 				updateStore(entity.ContainerID, entity.DeploymentID, entity, mockStore)
 			}
-			defer func() {
-				for _, entity := range tc.entities {
-					deleteStore(entity.DeploymentID, mockStore)
-				}
-			}()
 			for _, fn := range tc.events {
 				fn(t, pipeline)
 			}
-			pipeline.Shutdown()
 		})
 	}
 }
@@ -135,25 +137,14 @@ func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T
 	return func(t *testing.T, pipeline *Pipeline) {
 		previousLen := len(pipeline.indicators)
 		pipeline.Process(signal)
-		done := make(chan struct{})
-		defer close(done)
-		go func() {
-			if shouldBeDropped {
-				// There is no way to know if the message was dropped, so we wait here before returning
-				time.Sleep(100 * time.Millisecond)
-				done <- struct{}{}
-				return
-			}
-			for previousLen >= len(pipeline.indicators) {
-				time.Sleep(time.Millisecond) // Just so we don't burn too much CPU
-			}
-			done <- struct{}{}
-		}()
-		select {
-		case <-done:
-			return
-		case <-time.After(500 * time.Millisecond):
-			t.Error("Timeout waiting for indicator")
+		if shouldBeDropped {
+			assert.Never(t, func() bool {
+				return previousLen < len(pipeline.indicators)
+			}, 500*time.Millisecond, 10*time.Millisecond, "the indicator should be dropped")
+		} else {
+			assert.Eventually(t, func() bool {
+				return previousLen < len(pipeline.indicators)
+			}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for indicator")
 		}
 	}
 }
@@ -170,7 +161,7 @@ func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
 			assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
 			assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
 		case <-time.After(500 * time.Millisecond):
-			t.Error("Timeout waiting for indicator")
+			t.Fatal("Timeout waiting for indicator")
 		}
 	}
 }
