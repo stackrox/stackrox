@@ -91,6 +91,7 @@ message VulnerabilityRequest {
             string registry  = 1 [(gogoproto.moretags) = 'search:"Image Registry Scope"'];
             string remote    = 2 [(gogoproto.moretags) = 'search:"Image Remote Scope"'];
             string tag       = 3 [(gogoproto.moretags) = 'search:"Image Tag Scope"'];
+            string digest    = 4 [(gogoproto.moretags) = 'search:"Image Digest Scope"'];
         }
 
         message Global {}

@@ -2,6 +2,7 @@ export type ImageName = {
     registry: string;
     remote: string;
     tag: string;
+    digest: string;
     fullName: string;
 };
 

@@ -8,14 +8,15 @@ export type UseMarkFalsePositiveProps = {
     registry: string;
     remote: string;
     tag: string;
+    digest: string;
 };
 
-function useMarkFalsePositive({ cves, registry, remote, tag }: UseMarkFalsePositiveProps) {
+function useMarkFalsePositive({ cves, registry, remote, tag, digest }: UseMarkFalsePositiveProps) {
     const [markFalsePositive] = useMutation(MARK_FALSE_POSITIVE);
 
     function requestFalsePositive(formValues: FalsePositiveFormValues) {
         const { comment } = formValues;
-        const scope = getScopeValue(formValues.imageAppliesTo, registry, remote, tag);
+        const scope = getScopeValue(formValues.imageAppliesTo, registry, remote, tag, digest);
 
         const promises = cves.map((cve) => {
             const request: MarkFalsePositiveRequest = {

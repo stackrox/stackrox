@@ -21,5 +21,6 @@ export type Scope = {
         registry: string;
         remote: string;
         tag: string;
+        digest: string;
     };
 };

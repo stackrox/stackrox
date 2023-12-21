@@ -545,6 +545,7 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 			Registry: img.GetName().GetRegistry(),
 			Remote:   img.GetName().GetRemote(),
 			Tag:      img.GetName().GetTag(),
+			Digest:   img.GetId(),
 		})
 	if err != nil {
 		return nil, err

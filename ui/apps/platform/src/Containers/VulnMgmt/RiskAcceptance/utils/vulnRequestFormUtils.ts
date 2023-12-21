@@ -25,7 +25,8 @@ export function getScopeValue(
     imageAppliesTo: string,
     registry: string,
     remote: string,
-    tag: string
+    tag: string,
+    digest: string,
 ): Scope {
     let value: Scope = { imageScope: undefined };
     if (imageAppliesTo === 'All tags within image') {
@@ -34,6 +35,7 @@ export function getScopeValue(
                 registry,
                 remote,
                 tag: '.*',
+                digest: '.*',
             },
         };
     } else if (imageAppliesTo === 'Only this image tag') {
@@ -42,6 +44,16 @@ export function getScopeValue(
                 registry,
                 remote,
                 tag,
+                digest: '.*',
+            },
+        };
+    } else if (imageAppliesTo === 'Only this image digest') {
+        value = {
+            imageScope: {
+                registry,
+                remote,
+                tag: '.*',
+                digest,
             },
         };
     }

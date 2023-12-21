@@ -150,6 +150,7 @@ type VulnReqImageScope struct {
 	Registry *string
 	Remote   *string
 	Tag      *string
+	Digest   *string
 }
 
 // AsV1VulnerabilityRequestImageScope converts vulnerability request image scope to proto.
@@ -175,6 +176,12 @@ func (rs *VulnReqImageScope) AsV1VulnerabilityRequestImageScope() *storage.Vulne
 				return ""
 			}
 			return *rs.Tag
+		}(),
+		Digest: func() string {
+			if rs.Digest == nil {
+				return ""
+			}
+			return *rs.Digest
 		}(),
 	}
 }
