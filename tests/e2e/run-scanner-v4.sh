@@ -84,13 +84,15 @@ run_scannerV4_test() {
     wait_for_deployment "scanner-db" 1
 
     wait_for_deployment "scanner-v4-db"     1
-    wait_for_deployment "scanner-v4-indexer" 1
-    wait_for_deployment "scanner-v4-matcher" 1
+    wait_for_deployment "scanner-v4-indexer" 2
+    wait_for_deployment "scanner-v4-matcher" 2
 }
 
 wait_for_deployment() {
     local deployment_name="$1"
     local expected_replicas="$2"
+
+    info "Waiting for $deployment_name to have $expected_replicas ready replicas"
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
@@ -111,7 +113,7 @@ wait_for_deployment() {
         if (( elapsed_seconds > max_seconds )); then
             kubectl -n stackrox get pod -o wide
             kubectl -n stackrox get deploy -o wide
-            echo >&2 "wait_for_deployment() timeout after $max_seconds seconds."
+            echo >&2 "wait_for_deployment() timeout after $max_seconds seconds. Ready replicas: $ready_replicas"
             exit 1
         fi
 
