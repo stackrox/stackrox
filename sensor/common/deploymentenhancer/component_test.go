@@ -76,38 +76,32 @@ func (s *ComponentTestSuite) TestEnhanceDeploymentsWithMessage() {
 		storeProvider:    s.mockStoreProvider,
 	}
 
-	actual := de.enhanceDeployments(generateDeploymentMsg("1", 4))
-
-	expected := 4
-	s.Len(actual, expected)
+	s.Len(de.enhanceDeployments(generateDeploymentMsg("1", 4)), 4)
 }
 
-func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessage() {
-	dQueue := make(chan *central.DeploymentEnhancementRequest, 10)
-	de := DeploymentEnhancer{
-		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: dQueue,
-		storeProvider:    s.mockStoreProvider,
+func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessages() {
+	cases := map[string]struct {
+		msg *central.DeploymentEnhancementRequest
+	}{
+		"Empty Message": {
+			msg: &central.DeploymentEnhancementRequest{},
+		},
+		"No Deployments": {
+			msg: &central.DeploymentEnhancementRequest{Msg: &central.DeploymentEnhancementMessage{Id: uuid.NewV4().String()}},
+		},
 	}
-	msg := &central.DeploymentEnhancementRequest{}
 
-	actual := de.enhanceDeployments(msg)
-
-	s.Empty(actual)
-}
-
-func (s *ComponentTestSuite) TestEnhanceDeploymentsNoDeployments() {
-	dQueue := make(chan *central.DeploymentEnhancementRequest, 10)
-	de := DeploymentEnhancer{
-		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: dQueue,
-		storeProvider:    s.mockStoreProvider,
+	for name, c := range cases {
+		s.Run(name, func() {
+			dQueue := make(chan *central.DeploymentEnhancementRequest, 10)
+			de := DeploymentEnhancer{
+				responsesC:       make(chan *message.ExpiringMessage),
+				deploymentsQueue: dQueue,
+				storeProvider:    s.mockStoreProvider,
+			}
+			de.enhanceDeployments(c.msg)
+		})
 	}
-	msg := &central.DeploymentEnhancementRequest{Msg: &central.DeploymentEnhancementMessage{Id: uuid.NewV4().String()}}
-
-	actual := de.enhanceDeployments(msg)
-
-	s.Empty(actual)
 }
 
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {

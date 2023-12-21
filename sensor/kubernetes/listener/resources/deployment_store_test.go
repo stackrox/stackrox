@@ -579,6 +579,7 @@ func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
 			},
 		},
 	}
+	s.Empty(s.deploymentStore.deployments)
 
 	s.deploymentStore.EnhanceDeploymentReadOnly(&d, deps)
 

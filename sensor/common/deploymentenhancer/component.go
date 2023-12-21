@@ -63,6 +63,10 @@ func (d *DeploymentEnhancer) Start() error {
 				if !more {
 					return
 				}
+				if deploymentMsg.GetMsg() == nil {
+					log.Warnf("Received empty deploymentEnhancement message. Discarding request.")
+					return
+				}
 				requestID := deploymentMsg.GetMsg().GetId()
 				if requestID == "" {
 					log.Warnf("Received deploymentEnhancement msg with empty request ID. Discarding request.")
