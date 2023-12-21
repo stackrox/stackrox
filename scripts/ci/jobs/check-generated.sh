@@ -16,7 +16,7 @@ function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
     make proto-generated-srcs
     # Remove generated mocks, they should be regenerated and if source was deleted they should be deleted as well.
-    git grep --files-with-matches "Package mocks is a generated GoMock package." | xargs rm
+    git grep --files-with-matches "Package mocks is a generated GoMock package." -- '*.go' | xargs rm
     # Print the timestamp along with each new line of output, so we can track how long each command takes
     make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
     git diff --exit-code HEAD
