@@ -53,7 +53,6 @@ export const selectors = {
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
     tableRowMenuToggle: 'td button[aria-label="Actions"]',
-    nonZeroCveSeverityCounts: '*[aria-label*="severity cve count"i]:not([aria-label^="0"])',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
