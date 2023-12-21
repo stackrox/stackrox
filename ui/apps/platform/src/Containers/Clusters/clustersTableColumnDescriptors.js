@@ -67,6 +67,7 @@ export function getColumnsForClusters({
             Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            sortable: false,
         },
         {
             Header: 'Cluster Status',
@@ -78,6 +79,7 @@ export function getColumnsForClusters({
             },
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
             className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,
+            sortable: false,
         },
         {
             Header: 'Sensor Upgrade',
@@ -95,6 +97,7 @@ export function getColumnsForClusters({
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            sortable: false,
         },
         {
             Header: 'Credential Expiration',
@@ -107,6 +110,7 @@ export function getColumnsForClusters({
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            sortable: false,
         },
         {
             Header: 'Cluster Deletion',
@@ -117,6 +121,7 @@ export function getColumnsForClusters({
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            sortable: false,
         },
     ];
 
