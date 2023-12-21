@@ -5,6 +5,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
@@ -19,7 +20,7 @@ const (
 // ProtoTime takes a proto time type and converts it to a human readable string down to seconds.
 // It always prints a UTC time.
 func ProtoTime(ts *ptypes.Timestamp) string {
-	t, err := ptypes.TimestampFromProto(ts)
+	t, err := protoconv.ConvertTimestampToTimeOrError(ts)
 	if err != nil {
 		log.Error(err)
 		return "<malformed time>"

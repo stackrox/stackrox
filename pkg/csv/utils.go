@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 const (
@@ -38,7 +39,7 @@ func FromTimestamp(timestamp *types.Timestamp) string {
 	if timestamp == nil {
 		return "N/A"
 	}
-	ts, err := types.TimestampFromProto(timestamp)
+	ts, err := protoconv.ConvertTimestampToTimeOrError(timestamp)
 	if err != nil {
 		return "ERR"
 	}

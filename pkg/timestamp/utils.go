@@ -10,7 +10,7 @@ import (
 
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
 func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
-	t, err := types.TimestampFromProto(ts)
+	t, err := protoconv.ConvertTimestampToTimeOrError(ts)
 	if err != nil {
 		return
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -246,7 +247,7 @@ func convertTimestamp(name, resource string, t *types.Timestamp) (time.Time, boo
 		return time.Time{}, false
 	}
 
-	timestamp, err := types.TimestampFromProto(t)
+	timestamp, err := protoconv.ConvertTimestampToTimeOrError(t)
 	if err != nil {
 		log.Errorf("unable to convert timestamp for %s %s: %v", resource, name, err)
 	}

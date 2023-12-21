@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // ParseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
@@ -37,7 +38,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 		return nil, errors.Wrap(err, "could not unmarshal service cert auth structure")
 	}
 
-	ts, err := types.TimestampFromProto(auth.GetCurrentTime())
+	ts, err := protoconv.ConvertTimestampToTimeOrError(auth.GetCurrentTime())
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert timestamp")
 	}

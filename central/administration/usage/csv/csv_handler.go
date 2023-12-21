@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
 	grpcErrors "github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
@@ -25,7 +25,7 @@ func getSecuredUnitsConverter() csv.Converter[storage.SecuredUnits] {
 	return func(m *storage.SecuredUnits) csv.Row {
 		record[0] = ""
 		if m.GetTimestamp() != nil {
-			if t, err := types.TimestampFromProto(m.GetTimestamp()); err == nil {
+			if t, err := protoconv.ConvertTimestampToTimeOrError(m.GetTimestamp()); err == nil {
 				record[0] = t.UTC().Format(time.RFC3339)
 			}
 		}

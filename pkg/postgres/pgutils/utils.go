@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
@@ -56,7 +57,7 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 	if t == nil {
 		return nil
 	}
-	ts, err := types.TimestampFromProto(t)
+	ts, err := protoconv.ConvertTimestampToTimeOrError(t)
 	if err != nil {
 		return nil
 	}
@@ -70,7 +71,7 @@ func NilOrNow(t *types.Timestamp) *time.Time {
 	if t == nil {
 		return &now
 	}
-	ts, err := types.TimestampFromProto(t)
+	ts, err := protoconv.ConvertTimestampToTimeOrError(t)
 	if err != nil {
 		return &now
 	}

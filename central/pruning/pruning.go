@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -629,7 +630,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}()
 
 	// Allow 24hrs grace period after the config changes
-	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
+	lastUpdateTime, err := protoconv.ConvertTimestampToTimeOrError(clusterRetention.GetLastUpdated())
 	if err != nil {
 		log.Error(err)
 		return
@@ -641,7 +642,7 @@ func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
 	}
 
 	// Retention should start counting _after_ the config is created (which is basically when upgraded to 71)
-	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
+	configCreationTime, err := protoconv.ConvertTimestampToTimeOrError(clusterRetention.GetCreatedAt())
 	if err != nil {
 		log.Error(err)
 		return

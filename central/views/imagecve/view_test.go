@@ -20,6 +20,7 @@ import (
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -751,7 +752,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					continue
 				}
 
-				vulnTime, _ := types.TimestampFromProto(vuln.GetFirstSystemOccurrence())
+				vulnTime, _ := protoconv.ConvertTimestampToTimeOrError(vuln.GetFirstSystemOccurrence())
 				vulnTime = vulnTime.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
