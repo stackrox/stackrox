@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/grpc_metrics.go -source grpc_metrics.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/nonce_generator.go -source nonce_generator.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

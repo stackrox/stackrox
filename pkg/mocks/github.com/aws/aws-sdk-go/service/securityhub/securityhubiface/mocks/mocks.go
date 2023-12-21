@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go github.com/aws/aws-sdk-go/service/securityhub/securityhubiface SecurityHubAPI
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

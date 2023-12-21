@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination github.com/jackc/pgx/v5/mocks/mocks.go github.com/jackc/pgx/v5 Tx,BatchResults
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
