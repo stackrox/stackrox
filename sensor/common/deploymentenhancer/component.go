@@ -85,7 +85,7 @@ func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.Deploymen
 
 	deployments := deploymentMsg.GetMsg().GetDeployments()
 
-	log.Debugf("Received deploymentEnhancement message with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	log.Debugf("Received deploymentEnhancement message with %d deployment(s)", len(deployments))
 	for _, deployment := range deployments {
 		d.enhanceDeployment(deployment)
 		ret = append(ret, deployment)
