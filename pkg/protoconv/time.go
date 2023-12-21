@@ -12,7 +12,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp
+// ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp.
 func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golangTimestamp.Timestamp {
 	if gogo == nil {
 		return nil
@@ -21,6 +21,11 @@ func ConvertGoGoProtoTimeToGolangProtoTime(gogo *gogoTimestamp.Timestamp) *golan
 		Seconds: gogo.GetSeconds(),
 		Nanos:   gogo.GetNanos(),
 	}
+}
+
+// TimestampNow returns a protobuf timestamp set to the current time.
+func TimestampNow() *gogoTimestamp.Timestamp {
+	return gogoTimestamp.TimestampNow()
 }
 
 // ConvertTimestampToTimeOrError converts a proto timestamp to a golang Time, or returns an error if there is one.

@@ -8,6 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCompareTimestamps(t *testing.T) {
+	protoTS1 := &types.Timestamp{
+		Seconds: 2345678901,
+		Nanos:   234567891,
+	}
+
+	protoTS2 := &types.Timestamp{
+		Seconds: 3456789012,
+		Nanos:   345678912,
+	}
+
+	assert.Zero(t, CompareTimestamps(protoTS1, protoTS1))
+	assert.Negative(t, CompareTimestamps(protoTS1, protoTS2))
+	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
+}
+
 func TestConvertTimestampToTimeOrError(t *testing.T) {
 	seconds := int64(2345678901)
 	nanos := int32(123456789)
@@ -38,18 +54,12 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
 }
 
-func TestCompareTimestamps(t *testing.T) {
-	protoTS1 := &types.Timestamp{
-		Seconds: 2345678901,
-		Nanos:   234567891,
-	}
+func TestTimestampNow(t *testing.T) {
+	nowTime := time.Now()
+	nowTimestamp := TimestampNow()
 
-	protoTS2 := &types.Timestamp{
-		Seconds: 3456789012,
-		Nanos:   345678912,
-	}
-
-	assert.Zero(t, CompareTimestamps(protoTS1, protoTS1))
-	assert.Negative(t, CompareTimestamps(protoTS1, protoTS2))
-	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
+	timeFromTimestamp, convertErr := ConvertTimestampToTimeOrError(nowTimestamp)
+	assert.NoError(t, convertErr)
+	timeDelta := timeFromTimestamp.Sub(nowTime)
+	assert.Less(t, timeDelta, 500*time.Millisecond)
 }
