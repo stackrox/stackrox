@@ -1326,7 +1326,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 		search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery(),
 	)
 
-	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image, *storage.Image](ctx, schema, q, s.db)
+	rows, err := pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
@@ -1388,7 +1388,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	}
 	defer rows.Close()
 	var imageCVEEdges []*storage.ImageCVEEdge
-	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge, *storage.ImageCVEEdge](rows)
+	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge](rows)
 	if err != nil || len(imageCVEEdges) == 0 {
 		return err
 	}
