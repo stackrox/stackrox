@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
@@ -44,7 +45,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
-		return nil
+		return errox.ReferencedObjectNotFound.New("received empty message")
 	}
 	log.Debugf("Received message to process in DeploymentEnhancer: %+v", toEnhance)
 	d.deploymentsQueue <- toEnhance
@@ -62,6 +63,10 @@ func (d *DeploymentEnhancer) Start() error {
 				if !more {
 					return
 				}
+				if deploymentMsg.GetMsg() == nil {
+					log.Warnf("Received empty deploymentEnhancement message. Discarding request.")
+					return
+				}
 				requestID := deploymentMsg.GetMsg().GetId()
 				if requestID == "" {
 					log.Warnf("Received deploymentEnhancement msg with empty request ID. Discarding request.")
@@ -77,13 +82,14 @@ func (d *DeploymentEnhancer) Start() error {
 func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.DeploymentEnhancementRequest) []*storage.Deployment {
 	var ret []*storage.Deployment
 
-	deployments := deploymentMsg.GetMsg().GetDeployments()
-	if deployments == nil {
-		log.Warnf("Received deploymentEnhancement message with no deployments")
+	if deploymentMsg.GetMsg() == nil || deploymentMsg.GetMsg().GetDeployments() == nil {
+		log.Warnf("Received empty deploymentEnhancement message")
 		return ret
 	}
 
-	log.Debugf("Received deploymentEnhancement msg with %d deployment(s)", len(deploymentMsg.GetMsg().GetDeployments()))
+	deployments := deploymentMsg.GetMsg().GetDeployments()
+
+	log.Debugf("Received deploymentEnhancement message with %d deployment(s)", len(deployments))
 	for _, deployment := range deployments {
 		d.enhanceDeployment(deployment)
 		ret = append(ret, deployment)
