@@ -504,7 +504,9 @@ check_stackrox_logs() {
 
     check_for_stackrox_OOMs "$dir"
     check_for_stackrox_restarts "$dir"
+    set -x
     check_for_errors_in_stackrox_logs "$dir"
+    set +x
 }
 
 check_for_stackrox_OOMs() {
