@@ -5,6 +5,10 @@
 # Usage: check.sh <files...>
 # It returns a non-zero exit status if any offending patterns have been found.
 
+# The first line of output from this script when an offending pattern is found
+# is the first offending line that matches a block pattern. The rest of output
+# is standard grep output with filename prefix and context.
+
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 LINES_OF_CONTEXT=5
@@ -24,7 +28,6 @@ allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 if check_out="$(grep -vHP "$allowlist_pattern" "$@" | grep -"${LINES_OF_CONTEXT}" -Pi "$blocklist_pattern")"; then
     first_occurence="$(grep -vP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" | head -1)"
     echo "${first_occurence}"
-    echo "==="
     echo "${check_out}"
     exit 1
 fi
