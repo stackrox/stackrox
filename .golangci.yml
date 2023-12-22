@@ -2,6 +2,7 @@ run:
   timeout: 240m
   skip-dirs:
   - pkg/complianceoperator/api
+  - scanner/updater/rhel        # TODO(ROX-21539): Remove when CSAF/VEX arrives
   build-tags:
   - integration
   - sql_integration
