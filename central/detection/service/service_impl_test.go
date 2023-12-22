@@ -1,15 +1,20 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	openshiftRouteV1 "github.com/openshift/api/route/v1"
+	networkPolicyMockStore "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const listYAML = `
@@ -684,4 +689,24 @@ func TestFetchOptionFromRequest(t *testing.T) {
 			assert.Equal(t, c.fetchOption, fetchOpt)
 		})
 	}
+}
+
+func TestGetAppliedNetpolsForDeployment(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockNetpolDS := networkPolicyMockStore.NewMockDataStore(mockCtrl)
+	mockNetpolDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+		[]*storage.NetworkPolicy{
+			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "match"}}}},
+			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"nomatch": "nomatch"}}}},
+		}, nil)
+	s := serviceImpl{
+		netpols: mockNetpolDS,
+	}
+	eCtx := enricher.EnrichmentContext{Namespace: "ns", ClusterID: uuid.NewV4().String()}
+	d := storage.Deployment{Id: uuid.NewV4().String(), PodLabels: map[string]string{"app": "match"}}
+
+	actual, err := s.getAppliedNetpolsForDeployment(context.Background(), eCtx, &d)
+
+	assert.NoError(t, err)
+	assert.Len(t, actual.Policies, 1)
 }
