@@ -591,6 +591,7 @@ check_for_errors_in_stackrox_logs() {
 
     # Check the logs for each app separately
     local app logs check_out summary
+    local failure_found="false"
     LOGCHECK_SCRIPT="${LOGCHECK_SCRIPT:-scripts/ci/logcheck/check.sh}"
     for app in "${!podnames_by_app[@]}"; do
         logs="$(_get_logs_for_app "${app}")"
@@ -598,11 +599,14 @@ check_for_errors_in_stackrox_logs() {
         if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
             summary="$(summarize_check_output "${check_out}")"
             save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
-            die "ERROR: Found at least one suspicious log file entry."
+            failure_found="true"
         else
             save_junit_success "SuspiciousLog-${app}" "Suspicious entries in log file(s)"
         fi
     done
+    if [[ "${failure_found}" == "true" ]]; then
+        die "ERROR: Found at least one suspicious log file entry."
+    fi
 }
 
 _get_pod_objects() {
