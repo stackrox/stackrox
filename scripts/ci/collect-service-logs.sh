@@ -1,5 +1,6 @@
-#!/bin/sh
-set -eu
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 # Collect Service Logs script
 #
@@ -22,9 +23,10 @@ usage() {
 }
 
 dump_logs() {
-    for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${jpath}[*].name}"); do
+    local json_path="$1"
+    for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${json_path}[*].name}"); do
         kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
-        exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
+        exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${json_path}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
         if [ "${exit_code}" != "null" ]; then
             prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
             if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
@@ -72,6 +74,7 @@ main() {
         cat "$out"
 
         mkdir -p "${log_dir}/${object}"
+        local item_count=0
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
             kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>&1
@@ -84,12 +87,12 @@ main() {
               kubectl get "${object}" "${item}" -n "${namespace}" -o yaml 2>&1
             } > "${log_dir}/${object}/${item}_describe.log"
 
-            jpath='.status.containerStatuses'
-            dump_logs
-
-            jpath='.status.initContainerStatuses'
-            dump_logs
+            dump_logs '.status.containerStatuses'
+            dump_logs '.status.initContainerStatuses'
+            (( item_count++ ))
         done
+
+        echo "${item_count}" > "${log_dir}/${object}/ITEM_COUNT.txt"
     done
 
     kubectl -n "${namespace}" get events -o wide >"${log_dir}/events.txt"
