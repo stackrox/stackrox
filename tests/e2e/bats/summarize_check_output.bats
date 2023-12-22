@@ -34,7 +34,7 @@ function setup() {
     refute_output --partial '06:07:58.438015'
 }
 
-@test "removes image names" {
+@test "replaces images" {
     check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/image-fetch-error-check-output.txt")"
     run summarize_check_output "${check_out}"
     assert_success
