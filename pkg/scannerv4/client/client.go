@@ -23,6 +23,8 @@ import (
 // Scanner is the interface that contains the StackRox Scanner
 // application-oriented methods. It's offered to simplify application code to
 // call StackRox Scanner.
+//
+//go:generate mockgen-wrapper
 type Scanner interface {
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
