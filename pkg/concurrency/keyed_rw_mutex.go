@@ -58,6 +58,22 @@ func (k *KeyedRWMutex) RUnlock(key string) {
 	UnsafeRUnlock(&k.mutexPool[k.indexFromKey(key)])
 }
 
+// unsafeUnlock calls Unlock without triggering a roxvet error.
+// For use in tests only. For more info, see
+//
+//	tools/roxvet/analyzers/undeferredmutexunlocks/analyzer.go
+func (k *KeyedRWMutex) unsafeUnlock(key string) {
+	defer k.Unlock(key)
+}
+
+// unsafeRUnlock calls RUnlock without triggering a roxvet error.
+// For use in tests only. For more info, see
+//
+//	tools/roxvet/analyzers/undeferredmutexunlocks/analyzer.go
+func (k *KeyedRWMutex) unsafeRUnlock(key string) {
+	defer k.RUnlock(key)
+}
+
 // DoWithLock calls the given function while holding the lock. The lock is acquired in a safe manner, making sure
 // it's released even if `do` panics.
 func (k *KeyedRWMutex) DoWithLock(key string, do func()) {

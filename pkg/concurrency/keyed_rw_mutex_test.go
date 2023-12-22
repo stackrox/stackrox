@@ -25,7 +25,7 @@ func TestKeyedRWMutexSameKey(t *testing.T) {
 	}()
 
 	a.False(signal.IsDone())
-	func() { defer km.Unlock(testKey) }() // suppress the error for calling Unlock()
+	km.unsafeUnlock(testKey)
 	a.True(WaitWithTimeout(signal.WaitC(), 5*time.Second))
 }
 
