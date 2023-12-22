@@ -39,4 +39,30 @@ function setup() {
     run summarize_check_output "${check_out}"
     assert_success
     refute_output --partial 'quay.io/rhacs-eng/central-db:4.3.x-168-g03b03c03a9'
+    assert_output --partial '_image_'
+}
+
+@test "replaces IDs" {
+    check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/IDs-check-output.txt")"
+    run summarize_check_output "${check_out}"
+    assert_success
+    refute_output --partial '201e6325-1633-44fc-9a9b-7b1d59e011ba'
+    assert_output --partial '_ID_'
+}
+
+@test "replaces addresses" {
+    check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/addrs-check-output.txt")"
+    run summarize_check_output "${check_out}"
+    assert_success
+    refute_output --partial '0x3b62653'
+    refute_output --partial '0xc001717328?'
+    refute_output --partial '0x1'
+    assert_output --partial '_addr_'
+}
+
+@test "shortens long logs" {
+    check_out="$(cat "${BATS_TEST_DIRNAME}/fixtures/long-logs-check-output.txt")"
+    run summarize_check_output "${check_out}"
+    assert_success
+    assert_output --partial '...'
 }

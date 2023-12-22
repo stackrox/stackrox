@@ -504,9 +504,7 @@ check_stackrox_logs() {
 
     check_for_stackrox_OOMs "$dir"
     check_for_stackrox_restarts "$dir"
-    set -x
     check_for_errors_in_stackrox_logs "$dir"
-    set +x
 }
 
 check_for_stackrox_OOMs() {
@@ -611,7 +609,7 @@ _get_pod_objects() {
     local dir="$1"
 
     local nullglob_setting
-    nullglob_setting="$(shopt nullglob)"
+    nullglob_setting="$(shopt nullglob || true)"
     if [[ "${nullglob_setting}" =~ off ]]; then
         shopt -s nullglob
     fi
@@ -685,17 +683,33 @@ summarize_check_output() {
         die "missing args. usage: summarize_check_output <output>"
     fi
 
+    local MAX_SUMMARY_LENGTH=128
     local output="$1"
-    echo "${output}" | \
-    # The first line from check.sh is the first suspicious log found
-    head -1 | \
-    # Remove dates
-    sed -r -e 's/[[:digit:]]{4}[\-\/][[:digit:]]{2}[\-\/][[:digit:]]{2}//g' | \
-    # Remove time
-    sed -r -e 's/[[:digit:]]{2}\:[[:digit:]]{2}\:[[:digit:]]{2}\.?[[:digit:]]*//g' | \
-    # Replace images
-    sed -r -e 's/(image ").*?"/\1__image__"/g' \
-    || true
+
+    output="$(
+        echo "${output}" | \
+        # The first line from check.sh is the first suspicious log found
+        head -1 | \
+        # Remove dates
+        sed -r -e 's/[[:digit:]]{4}[/-][[:digit:]]{2}[/-][[:digit:]]{2}//g' | \
+        # Remove time
+        sed -r -e 's/[[:digit:]]{2}\:[[:digit:]]{2}\:[[:digit:]]{2}\.?[[:digit:]]*//g' | \
+        # Replace images
+        sed -r -e 's/(image ").*?"/\1__image__"/g' | \
+        # Replace IDs
+        sed -r -e 's/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/__ID__/g' | \
+        # Replace pointers
+        sed -r -e 's/0x[0-9a-f]+\??/_addr_/g' | \
+        # Replace IPs + Ports
+        sed -r -e 's/[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\:?[[:digit:]]*/__ip[:port]__"/g' \
+        || true
+    )"
+
+    if [[ "${#output}" -gt ${MAX_SUMMARY_LENGTH} ]]; then
+        output="${output:0:${MAX_SUMMARY_LENGTH}}..."
+    fi
+
+    echo "${output}"
 }
 
 collect_and_check_stackrox_logs() {
