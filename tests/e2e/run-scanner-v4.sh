@@ -78,7 +78,14 @@ scannerV4_test() {
 
 run_scannerV4_test() {
     info "Running scannerV4 test"
-    info "Nothing yet..."
+
+    # TODO: For now, scanner v2 is expected to run in parallel. This must be removed when scanner v2 will be phased out
+    wait_for_object_to_appear stackrox deploy/scanner 300
+    wait_for_object_to_appear stackrox deploy/scanner-db 300
+
+    wait_for_object_to_appear stackrox deploy/scanner-v4-db 300
+    wait_for_object_to_appear stackrox deploy/scanner-v4-indexer 300
+    wait_for_object_to_appear stackrox deploy/scanner-v4-matcher 300
 }
 
 scannerV4_test "$@"
