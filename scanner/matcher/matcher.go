@@ -14,6 +14,7 @@ import (
 	updaterdefaults "github.com/quay/claircore/updater/defaults"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/updater/rhel"
 )
 
 // Matcher represents a vulnerability matcher.
@@ -50,17 +51,38 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	}
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
+	// TODO: Disable when Scanner V4 updater pipeline is available.
+	disableUpdaters := false
+	var oot []driver.Updater
+	var updaterSets []string
+	if !disableUpdaters {
+		zlog.Info(ctx).Msg("creating out-of-tree RHEL updaters")
+		oot, err = rhel.Updaters(ctx, c)
+		if err != nil {
+			return nil, fmt.Errorf("out-of-tree RHEL updaters: %w", err)
+		}
+		updaterSets = []string{
+			"alpine",
+			"aws",
+			"debian",
+			"oracle",
+			"photon",
+			"pyupio",
+			"suse",
+			"ubuntu",
+		}
+	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:  store,
-		Locker: locker,
-		// TODO: Enable when Scanner V4 updater pipeline is available.
-		// // Run in "air-gapped" mode.
-		// DisableBackgroundUpdates: true,
-		UpdateRetention: libvuln.DefaultUpdateRetention,
-		Client:          c,
+		Store:                    store,
+		Locker:                   locker,
+		DisableBackgroundUpdates: disableUpdaters,
+		UpdateRetention:          libvuln.DefaultUpdateRetention,
+		Client:                   c,
 		Enrichers: []driver.Enricher{
 			&cvss.Enricher{},
 		},
+		UpdaterSets: updaterSets,
+		Updaters:    oot,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)

@@ -761,10 +761,14 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 .PHONY: roxvet
+roxvet: skip-dirs := operator/pkg/clientset \
+                     scanner/updater/rhel      # TODO(ROX-21539): Remove when CSAF/VEX arrives
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go list -e ./... | grep -v 'operator/pkg/clientset' | xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
+	$(SILENT)go list -e ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########
 ## Misc ##
