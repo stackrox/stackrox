@@ -624,10 +624,10 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 			state.expectEntityLookupContainer.runIfSet()
 			state.expectEntityLookupEndpoint.runIfSet()
 			state.expectDetector.runIfSet()
-			m.Notify(state.notify)
-			fakeTicker <- time.Now()
 			// We do not test ticking here, but without this line, the test would deadlock.
 			mockEntity.EXPECT().RecordTick().AnyTimes()
+			m.Notify(state.notify)
+			fakeTicker <- time.Now()
 			if state.expectedSensorMessage != nil {
 				select {
 				case <-time.After(10 * time.Second):
@@ -681,10 +681,10 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 		}
 	})
 	mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any(), gomock.Any()).Times(1)
+	mockEntity.EXPECT().RecordTick().AnyTimes()
 	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
 	m.Notify(common.SensorComponentEventCentralReachable)
 	fakeTicker <- time.Now()
-	mockEntity.EXPECT().RecordTick().AnyTimes()
 	select {
 	case <-time.After(10 * time.Second):
 		s.Fail("timeout waiting for sensor message")
