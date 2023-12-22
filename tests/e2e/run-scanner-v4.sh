@@ -80,47 +80,12 @@ run_scannerV4_test() {
     info "Running scannerV4 test"
 
     # TODO: For now, scanner v2 is expected to run in parallel. This must be removed when scanner v2 will be phased out
-    wait_for_deployment "scanner" 1
-    wait_for_deployment "scanner-db" 1
+    wait_for_object_to_appear stackrox deploy/scanner 300
+    wait_for_object_to_appear stackrox deploy/scanner-db 300
 
-    wait_for_deployment "scanner-v4-db"     1
-    wait_for_deployment "scanner-v4-indexer" 2
-    wait_for_deployment "scanner-v4-matcher" 2
-}
-
-wait_for_deployment() {
-    local deployment_name="$1"
-    local expected_replicas="$2"
-
-    info "Waiting for $deployment_name to have $expected_replicas ready replicas"
-
-    start_time="$(date '+%s')"
-    max_seconds=${MAX_WAIT_SECONDS:-300}
-
-    while true; do
-        deployment_json="$(kubectl -n stackrox get deploy/$deployment_name -o json)"
-        replicas="$(jq '.status.replicas' <<<"$deployment_json")"
-        ready_replicas="$(jq '.status.readyReplicas' <<<"$deployment_json")"
-        curr_time="$(date '+%s')"
-        elapsed_seconds=$(( curr_time - start_time ))
-
-        # Ready case
-        if [[ "$replicas" == "$expected_replicas" && "$ready_replicas" == "$expected_replicas" ]]; then
-            break
-        fi
-
-        # Timeout case
-        if (( elapsed_seconds > max_seconds )); then
-            kubectl -n stackrox get pod -o wide
-            kubectl -n stackrox get deploy -o wide
-            echo >&2 "wait_for_deployment() timeout after $max_seconds seconds. Ready replicas: $ready_replicas"
-            exit 1
-        fi
-
-        # Otherwise report and retry
-        echo "waiting ($elapsed_seconds/$max_seconds)"
-        sleep 5
-    done
+    wait_for_object_to_appear stackrox deploy/scanner 300
+    wait_for_object_to_appear stackrox deploy/scanner-v4-db 300
+    wait_for_object_to_appear stackrox deploy/scanner-v4-matcher 300
 }
 
 scannerV4_test "$@"
