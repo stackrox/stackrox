@@ -26,7 +26,7 @@ IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${a
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 
 if check_out="$(grep -vHP "$allowlist_pattern" "$@" | grep -"${LINES_OF_CONTEXT}" -Pi "$blocklist_pattern")"; then
-    first_occurence="$(grep -vP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" | head -1)"
+    first_occurence="$(grep -vhP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" | head -1)"
     echo "${first_occurence}"
     echo "${check_out}"
     exit 1

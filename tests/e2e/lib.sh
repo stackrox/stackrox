@@ -596,7 +596,7 @@ check_for_errors_in_stackrox_logs() {
         logs="$(_get_logs_for_app "${app}")"
         # shellcheck disable=SC2086
         if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
-            summary="$(summarize_check_output "{$check_out}")"
+            summary="$(summarize_check_output "${check_out}")"
             save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
             die "ERROR: Found at least one suspicious log file entry."
         else
