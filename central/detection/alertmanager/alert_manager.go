@@ -11,6 +11,8 @@ import (
 )
 
 // AlertManager is a simplified interface for fetching and updating alerts.
+//
+//go:generate mockgen-wrapper
 type AlertManager interface {
 	// AlertAndNotify takes in a list of alerts being produced, and a bunch of filters that specify what subset of alerts
 	// we're looking at. It then pulls out the alerts matching the filters, and compares the alerts in the DB with the ones
