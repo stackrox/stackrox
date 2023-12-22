@@ -1,5 +1,4 @@
 common/clusterid: 2023/11/16 06:07:58.438015 cluster_id.go:58: Panic: Invalid dynamic cluster ID value "": no concrete cluster ID was specified in conjunction with wildcard ID "00000000-0000-0000-0000-000000000000". This may be caused by Central data not being persisted between restarts; you may try deploying Central with STORAGE=pvc. For other potential solutions reffer to https://access.redhat.com/solutions/6972449
-===
 hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413478 notifiable.go:26: Info: Component 'Kernel object cache' runs now in Online mode
 hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413573 central_communication_impl.go:151: Info: Sensor has client reconciliation disabled
 hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413723 central_communication_impl.go:163: Info: Re-using cluster ID 85260c0c-22c0-4a49-a31b-8c41730f0b1d of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.

@@ -72,10 +72,10 @@ function setup() {
     # logs from previous container failures are ignored (checked elsewhere)
     touch "${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c_previous.log"
     LOGCHECK_SCRIPT="mock_check_script"
- 
+
     run check_for_errors_in_stackrox_logs "${BATS_TEST_TMPDIR}"
     assert_success
- 
+
     assert_output --partial "\
 check called with: ${BATS_TEST_TMPDIR}/stackrox/pods/an_app-a-1.log \
 ${BATS_TEST_TMPDIR}/stackrox/pods/an_app-a-2.log \
@@ -92,9 +92,9 @@ check called with: ${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c-prev-success.lo
 }
 
 function make_pod_object() {
-    cat <<__POD_OBJECT__ > "${BATS_TEST_TMPDIR}/stackrox/pods/$1_object.json" 
+    cat <<__POD_OBJECT__ > "${BATS_TEST_TMPDIR}/stackrox/pods/$1_object.json"
 {
-    "metadata": { 
+    "metadata": {
         "name": "$1",
         "labels": {
             "app": "$2"
