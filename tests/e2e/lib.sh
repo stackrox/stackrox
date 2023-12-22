@@ -590,14 +590,14 @@ check_for_errors_in_stackrox_logs() {
     _group_pods_by_app_label
 
     # Check the logs for each app separately
-    local app logs check_out last_log
+    local app logs check_out summary
     LOGCHECK_SCRIPT="${LOGCHECK_SCRIPT:-scripts/ci/logcheck/check.sh}"
     for app in "${!podnames_by_app[@]}"; do
         logs="$(_get_logs_for_app "${app}")"
         # shellcheck disable=SC2086
         if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
-            last_log="${check_out##*.log:}"
-            save_junit_failure "SuspiciousLog / ${app}" "${last_log##*: }" "$check_out"
+            summary="$(summarize_check_output "{$check_out}")"
+            save_junit_failure "SuspiciousLog / ${app}" "${summary}" "$check_out"
             die "ERROR: Found at least one suspicious log file entry."
         else
             save_junit_success "SuspiciousLog / ${app}" "Suspicious entries in log file(s)"
@@ -676,6 +676,24 @@ _get_logs_for_app() {
     filtered=$(ls $logs | grep -Ev "(previous|_describe).log$" || true)
 
     echo "${filtered}"
+}
+
+summarize_check_output() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: summarize_check_output <output>"
+    fi
+
+    local output="$1"
+    echo "${output}" | \
+    # The first line from check.sh is the first suspicious log found
+    head -1 | \
+    # Remove dates
+    sed -r -e 's/[[:digit:]]{4}[\-\/][[:digit:]]{2}[\-\/][[:digit:]]{2}//g' | \
+    # Remove time
+    sed -r -e 's/[[:digit:]]{2}\:[[:digit:]]{2}\:[[:digit:]]{2}\.?[[:digit:]]*//g' | \
+    # Replace images
+    sed -r -e 's/(image ").*?"/\1__image__"/g' \
+    || true
 }
 
 collect_and_check_stackrox_logs() {

@@ -7,9 +7,9 @@
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
+LINES_OF_CONTEXT=5
 BLOCKLIST_FILE="${DIR}/blocklist-patterns"
 allow_file="${ALLOWLIST_FILE:-${DIR}/allowlist-patterns}"
-echo "INFO:  Allow list file: ${allow_file}"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
@@ -21,6 +21,12 @@ IFS=$'\n' read -d '' -r -a allowlist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${a
 
 allowlist_pattern="$(join_by '|' "${allowlist_subpatterns[@]}")"
 
-grep -vP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" && exit 1
+if check_out="$(grep -vHP "$allowlist_pattern" "$@" | grep -"${LINES_OF_CONTEXT}" -Pi "$blocklist_pattern")"; then
+    first_occurence="$(grep -vP "$allowlist_pattern" "$@" | grep -Pi "$blocklist_pattern" | head -1)"
+    echo "${first_occurence}"
+    echo "==="
+    echo "${check_out}"
+    exit 1
+fi
 
 exit 0
