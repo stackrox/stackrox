@@ -582,9 +582,9 @@ check_for_errors_in_stackrox_logs() {
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
-    local pods=()
+    local pod_objects=()
     _get_pod_objects "${dir}"
-    _verify_item_count "${dir}" "${#pods[*]}"
+    _verify_item_count "${dir}" "${#pod_objects[*]}"
 
     declare -A podnames_by_app
     _group_pods_by_app_label
@@ -616,7 +616,7 @@ _get_pod_objects() {
 
     local pod
     for pod in "${dir}"/*_object.json; do
-        pods[${#pods[*]}]="${pod}"
+        pod_objects[${#pod_objects[*]}]="${pod}"
     done
 
     if [[ "${nullglob_setting}" =~ off ]]; then
@@ -645,7 +645,7 @@ _verify_item_count() {
 
 _group_pods_by_app_label() {
     local pod_object app podname
-    for pod_object in "${pods[@]}"; do
+    for pod_object in "${pod_objects[@]}"; do
         podname="$(jq -r '.metadata.name' < "${pod_object}")"
         if [[ -z "${podname}" || "${podname}" == "null" ]]; then
             die "ERROR: All pods should have a name! (check ${podname})"
