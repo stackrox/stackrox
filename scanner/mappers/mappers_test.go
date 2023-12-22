@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"net/url"
 	"testing"
 	"time"
 
@@ -705,11 +706,106 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when severity and unknown distribution then populate the proto": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:   now,
+					Severity: "sample severity",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+				},
+			},
+		},
+		"when severity with CVSSv3 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss3_vector": []string{"sample cvss3 vector"},
+						"cvss3_score":  []string{"9.9"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.9,
+							Vector:    "sample cvss3 vector",
+						},
+					},
+				},
+			},
+		},
+		"when severity with CVSSv2 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"sample cvss2 vector"},
+						"cvss2_score":  []string{"1.1"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 1.1,
+							Vector:    "sample cvss2 vector",
+						},
+					},
+				},
+			},
+		},
+		"when severity with CVSSv2 and CVSSv3 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"sample cvss2 vector"},
+						"cvss2_score":  []string{"1.1"},
+						"cvss3_vector": []string{"sample cvss3 vector"},
+						"cvss3_score":  []string{"9.9"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.9,
+							Vector:    "sample cvss3 vector",
+						},
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 1.1,
+							Vector:    "sample cvss2 vector",
+						},
+					},
+				},
+			},
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, nil)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {

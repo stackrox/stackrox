@@ -2,17 +2,21 @@ package mappers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 var (
@@ -58,7 +62,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities)
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, r.Enrichments[cvss.Type])
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -242,7 +246,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 	return pkgVulns
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, _ []json.RawMessage) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -271,18 +275,42 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+		sev, err := parseSeverity(v)
+		if err != nil {
+			return nil, err
+		}
+		// Look for CVSS scores in the severity field, then set the
+		// scores only if at least one is found.
+		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
+		hasV2, hasV3 := sev.v2Vector != "", sev.v3Vector != ""
+		if hasV2 || hasV3 {
+			cvss = &v4.VulnerabilityReport_Vulnerability_CVSS{}
+		}
+		if hasV2 {
+			cvss.V2 = &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+				BaseScore: sev.v2Score,
+				Vector:    sev.v2Vector,
+			}
+		}
+		if hasV3 {
+			cvss.V3 = &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+				BaseScore: sev.v3Score,
+				Vector:    sev.v3Vector,
+			}
+		}
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               getVulnName(v),
 			Description:        v.Description,
 			Issued:             issued,
 			Link:               v.Links,
-			Severity:           v.Severity,
+			Severity:           sev.severity,
 			NormalizedSeverity: normalizedSeverity,
 			PackageId:          pkgID,
 			DistributionId:     distID,
 			RepositoryId:       repoID,
 			FixedInVersion:     fixedInVersion(v),
+			Cvss:               cvss,
 		}
 	}
 	return vulnerabilities, nil
@@ -304,6 +332,55 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 		}
 	}
 	return fixedIn
+}
+
+// severityValues contains information that can be encoded in the severity of vulnerabilities.
+type severityValues struct {
+	severity string
+	v2Vector string
+	v2Score  float32
+	v3Vector string
+	v3Score  float32
+}
+
+// parseSeverity parses the severity information encoded in the severity field.
+// The information is distribution dependant.  If errors are found in the
+// encoded information, partial values are returned with an error.
+func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
+	var did string
+	if v.Dist != nil {
+		did = v.Dist.DID
+	}
+	switch did {
+	case "rhel":
+		var q url.Values
+		if q, err = url.ParseQuery(v.Severity); err != nil {
+			err = fmt.Errorf("invalid RHEL severity: %w", err)
+			break
+		}
+		s.severity = q.Get("severity")
+		// Look for CVSS fields, when at least one vector is found, we consider the CVSS
+		// information exists, but return partial results in case of failures.
+		errList := errorhelpers.NewErrorList("invalid RHEL CVSS")
+		if s.v2Vector = q.Get("cvss2_vector"); s.v2Vector != "" {
+			if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err == nil {
+				s.v2Score = float32(f)
+			} else {
+				errList.AddError(fmt.Errorf("v2 score: %w", err))
+			}
+		}
+		if s.v3Vector = q.Get("cvss3_vector"); s.v3Vector != "" {
+			if f, err := strconv.ParseFloat(q.Get("cvss3_score"), 32); err == nil {
+				s.v3Score = float32(f)
+			} else {
+				errList.AddError(fmt.Errorf("v3 score: %w", err))
+			}
+		}
+		err = errList.ToError()
+	default:
+		s.severity = v.Severity
+	}
+	return s, err
 }
 
 // getVulnName returns the first vulnerability name that matches a known
