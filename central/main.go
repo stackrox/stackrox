@@ -92,7 +92,6 @@ import (
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
-	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	"github.com/stackrox/rox/central/metrics/telemetry"
@@ -273,7 +272,7 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	log.Warn("The following permission resources have been replaced:\n" +
-		"	Access replaces AuthProvider, Group, Licenses, Role, and User\n" +
+		"	Access replaces AuthProvider, Group, Role, and User\n" +
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
@@ -391,7 +390,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		helmcharts.NewService(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		licenseService.New(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
