@@ -83,8 +83,8 @@ run_scannerV4_test() {
     wait_for_object_to_appear stackrox deploy/scanner 300
     wait_for_object_to_appear stackrox deploy/scanner-db 300
 
-    wait_for_object_to_appear stackrox deploy/scanner 300
     wait_for_object_to_appear stackrox deploy/scanner-v4-db 300
+    wait_for_object_to_appear stackrox deploy/scanner-v4-indexer 300
     wait_for_object_to_appear stackrox deploy/scanner-v4-matcher 300
 }
 
