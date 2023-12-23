@@ -6,8 +6,8 @@ indexer:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
   get_layer_timeout: 1m
-  repository_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=repo2cpe
-  name_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=name2cpe
+  repository_to_cpe_url:
+  name_to_cpe_url: 
 matcher:
   enable: true
   database:

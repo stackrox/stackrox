@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
-	"github.com/quay/claircore/indexer"
+	ccIndexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
@@ -32,11 +32,6 @@ import (
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
-}
-
-type RhelConfig struct {
-	ConfigKey string
-	CfgURL    string
 }
 
 // Indexer represents an image indexer.
@@ -69,7 +64,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
 
-	indexer, err := createLibIndex(ctx, cfg, store, locker)
+	indexer, err := newLibindex(ctx, cfg, store, locker)
 	if err != nil {
 		return nil, err
 	}
@@ -298,8 +293,7 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 	return dRef, nil
 }
 
-// createLibIndex handles the creation of libIndex.
-func createLibIndex(ctx context.Context, cfg config.IndexerConfig, store indexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccIndexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	c := http.DefaultClient
 	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
@@ -320,8 +314,12 @@ func createLibIndex(ctx context.Context, cfg config.IndexerConfig, store indexer
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
 
-	// Setup scanner configurations.
-	setupScannerConfig(&opts, cfg)
+	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf("{\"repo2cpe_mapping_url\": \"%s\"}", indexerCfg.RepositoryToCPEURL))),
+	}
+	opts.ScannerConfig.Package = map[string]func(interface{}) error{
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf("{\"name2repos_mapping_url\": \"%s\"}", indexerCfg.NameToCPEURL))),
+	}
 
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
@@ -331,27 +329,8 @@ func createLibIndex(ctx context.Context, cfg config.IndexerConfig, store indexer
 	return indexer, nil
 }
 
-// setupScannerConfig sets up the scanner configuration.
-func setupScannerConfig(opts *libindex.Options, cfg config.IndexerConfig) {
-	rhelConfigs := map[string]RhelConfig{
-		"rhel-repository-scanner": {
-			ConfigKey: "repo2cpe",
-			// If CfgURL is empty, Claircore will use default URL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
-			CfgURL: cfg.RepositoryToCPEURL,
-		},
-		"rhel_containerscanner": {
-			ConfigKey: "name2repos",
-			// If CfgURL is empty, Claircore will use default URL: "https://access.redhat.com/security/data/metrics/container-name-repos-map.json",
-			CfgURL: cfg.NameToCPEURL,
-		},
-	}
-
-	opts.ScannerConfig.Repo = make(map[string]func(interface{}) error, len(rhelConfigs))
-	for scannerName, rcfg := range rhelConfigs {
-		finalURL := rcfg.CfgURL
-		opts.ScannerConfig.Repo[scannerName] = func(v interface{}) error {
-			jsonData := []byte(`{"` + rcfg.ConfigKey + `_mapping_url": "` + finalURL + `"}`)
-			return json.Unmarshal(jsonData, v)
-		}
+func deserializeFunc(jsonData []byte) func(interface{}) error {
+	return func(v interface{}) error {
+		return json.Unmarshal(jsonData, v)
 	}
 }
