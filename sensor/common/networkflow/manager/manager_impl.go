@@ -130,10 +130,11 @@ type processUniqueKey struct {
 }
 
 type processListeningIndicator struct {
-	key      processUniqueKey
-	port     uint16
-	protocol storage.L4Protocol
-	podUID   string
+	key       processUniqueKey
+	port      uint16
+	protocol  storage.L4Protocol
+	podUID    string
+	namespace string
 }
 
 func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
@@ -587,9 +588,10 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 			deploymentID:  container.DeploymentID,
 			process:       ep.processKey,
 		},
-		port:     ep.endpoint.IPAndPort.Port,
-		protocol: ep.endpoint.L4Proto.ToProtobuf(),
-		podUID:   container.PodUID,
+		port:      ep.endpoint.IPAndPort.Port,
+		protocol:  ep.endpoint.L4Proto.ToProtobuf(),
+		podUID:    container.PodUID,
+		namespace: container.Namespace,
 	}
 
 	processesListening[indicator] = status.lastSeen
