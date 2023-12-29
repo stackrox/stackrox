@@ -40,6 +40,7 @@ message ProcessListeningOnPortFromSensor {
     string cluster_id                         = 6;
     string deployment_id                      = 7;
     string pod_uid                            = 8;
+    string namespace                          = 9;
 }
 
 // This is what is stored in the database
@@ -68,4 +69,6 @@ message ProcessListeningOnPortStorage {
     string pod_uid                    = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"'];
 
     string cluster_id                 = 10 [(gogoproto.moretags) = 'search:"Cluster ID" sql:"type(uuid)"'];
+
+    string namespace                  = 11 [(gogoproto.moretags) = 'search:"Namespace"'];
 }
