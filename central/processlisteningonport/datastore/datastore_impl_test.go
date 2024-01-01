@@ -1544,7 +1544,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 			DeploymentId:       plopObjects[0].GetDeploymentId(),
 			PodUid:             plopObjects[0].GetPodUid(),
 			ClusterId:          fixtureconsts.Cluster1,
-		        Namespace:          fixtureconsts.Namespace1,
+			Namespace:          fixtureconsts.Namespace1,
 		},
 		{
 			Port:               plopObjects[1].GetPort(),
@@ -1556,7 +1556,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 			DeploymentId:       plopObjects[1].GetDeploymentId(),
 			PodUid:             plopObjects[1].GetPodUid(),
 			ClusterId:          fixtureconsts.Cluster1,
-		        Namespace:          fixtureconsts.Namespace1,
+			Namespace:          fixtureconsts.Namespace1,
 		},
 	}
 
@@ -1820,7 +1820,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 			DeploymentId:       plopObjects[0].GetDeploymentId(),
 			PodUid:             plopObjects[0].GetPodUid(),
 			ClusterId:          fixtureconsts.Cluster1,
-		        Namespace:          fixtureconsts.Namespace1,
+			Namespace:          fixtureconsts.Namespace1,
 		},
 	}
 
