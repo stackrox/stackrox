@@ -24,28 +24,33 @@ type diffAnalyzer interface {
 	Errors() []npgdiff.DiffError
 }
 
-func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
+func getResult(path string, failFast bool, treatWarningsAsErrors bool) *resource.Result {
 	b := resource.NewLocalBuilder().
-		Unstructured().
-		FilenameParam(false,
-			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
-		Flatten()
-	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
-	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
+		Unstructured()
 	if !(failFast && treatWarningsAsErrors) {
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
-	return b.Do().Infos()
+	return b.Path(true, path).Do()
+}
+
+func getInfoObjs(result *resource.Result) ([]*resource.Info, error) {
+	return result.Infos()
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
 	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
-	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
-	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	info1, err1 := getInfoObjs(getResult(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors))
+	info2, err2 := getInfoObjs(getResult(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors))
 	if err := errHandler.HandleErrorPair(err1, err2); err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err
+	}
+
+	// There is nothing to analyze, so we return early.
+	// Running ConnDiffFromResourceInfos would return 2 pairs of errors for this case.
+	if len(info1)+len(info2) == 0 {
+		return nil
 	}
 
 	connsDiff, err := analyzer.ConnDiffFromResourceInfos(info1, info2)
