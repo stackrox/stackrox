@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -52,8 +52,8 @@ func (s *snapshotTestSuite) TestSnapshot() {
 	size := 1024*1024 + 16
 	insertBlob := &storage.Blob{
 		Name:         "test",
-		LastUpdated:  protoconv.TimestampNow(),
-		ModifiedTime: protoconv.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 		Length:       int64(size),
 	}
 

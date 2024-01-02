@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -674,7 +674,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    protoconv.TimestampNow(),
+		CreatedTime:    protocompat.TimestampNow(),
 		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig1",
 	}
@@ -692,7 +692,7 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Instructions:   "this is a test",
 		Labels:         nil,
 		Annotations:    nil,
-		CreatedTime:    protoconv.TimestampNow(),
+		CreatedTime:    protocompat.TimestampNow(),
 		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig2",
 	}

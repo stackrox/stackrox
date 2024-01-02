@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -29,15 +30,15 @@ import (
 )
 
 var (
-	nowProcess        = getProcessIndicator(protoconv.TimestampNow())
+	nowProcess        = getProcessIndicator(protocompat.TimestampNow())
 	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
 	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
 
 	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondKubeEventViolation = getKubeEventViolation("2", protoconv.TimestampNow())
+	secondKubeEventViolation = getKubeEventViolation("2", protocompat.TimestampNow())
 
 	firstNetworkFlowViolation  = getNetworkFlowViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
-	secondNetworkFlowViolation = getNetworkFlowViolation("2", protoconv.TimestampNow())
+	secondNetworkFlowViolation = getNetworkFlowViolation("2", protocompat.TimestampNow())
 )
 
 func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {

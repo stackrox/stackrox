@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	versionUtil "github.com/stackrox/rox/pkg/version"
 )
 
@@ -37,7 +37,7 @@ func Ensure(versionStore vStore.Store) error {
 				SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 				Version:       versionUtil.GetMainVersion(),
 				MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-				LastPersisted: protoconv.TimestampNow(),
+				LastPersisted: protocompat.TimestampNow(),
 			},
 		)
 		if err != nil {

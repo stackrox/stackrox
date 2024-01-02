@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -64,8 +64,8 @@ func (l *LightAlert) convert() *storage.Alert {
 			{Message: "three"},
 			{Message: "https://www.stackrox.com"},
 		},
-		FirstOccurred: protoconv.TimestampNow(),
-		Time:          protoconv.TimestampNow(),
+		FirstOccurred: protocompat.TimestampNow(),
+		Time:          protocompat.TimestampNow(),
 		State:         l.state,
 	}
 }

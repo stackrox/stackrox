@@ -14,7 +14,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -64,11 +64,11 @@ func (s *postgresMigrationSuite) TestImageMigration() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: protoconv.TimestampNow(),
+					Created: protocompat.TimestampNow(),
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime:        protoconv.TimestampNow(),
+				ScanTime:        protocompat.TimestampNow(),
 				OperatingSystem: "cloud",
 				Components: []*storage.EmbeddedImageScanComponent{
 					{

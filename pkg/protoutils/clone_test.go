@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/test"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +40,7 @@ func getFilledStruct() *test.TestClone {
 			"2": "2a",
 		},
 		EnumSlice: []test.TestClone_CloneEnum{test.TestClone_UNSET, test.TestClone_Val2},
-		Ts:        protoconv.TimestampNow(),
+		Ts:        protocompat.TimestampNow(),
 		Any: &types.Any{
 			TypeUrl: "type url",
 			Value:   []byte("123"),

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
@@ -271,7 +272,7 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 			Name:         name,
 			Args:         args,
 			ExecFilePath: path,
-			Time:         protoconv.TimestampNow(),
+			Time:         protocompat.TimestampNow(),
 			LineageInfo:  lineageInfo,
 			Uid:          uid,
 		},

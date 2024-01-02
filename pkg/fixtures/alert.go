@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -51,7 +51,7 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 		ProcessViolation: &storage.Alert_ProcessViolation{
 			Message: "This is a process violation",
 		},
-		Time:   protoconv.TimestampNow(),
+		Time:   protocompat.TimestampNow(),
 		Policy: GetPolicy(),
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
@@ -118,7 +118,7 @@ func GetScopedResourceAlert(ID string, clusterID string, namespace string) *stor
 				},
 			},
 		},
-		Time:   protoconv.TimestampNow(),
+		Time:   protocompat.TimestampNow(),
 		Policy: GetAuditLogEventSourcePolicy(),
 		Entity: &storage.Alert_Resource_{
 			Resource: &storage.Alert_Resource{
@@ -161,7 +161,7 @@ func GetClusterResourceAlert() *storage.Alert {
 				},
 			},
 		},
-		Time:   protoconv.TimestampNow(),
+		Time:   protocompat.TimestampNow(),
 		Policy: policy,
 		Entity: &storage.Alert_Resource_{
 			Resource: &storage.Alert_Resource{
@@ -237,7 +237,7 @@ func GetNetworkAlert() *storage.Alert {
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: protoconv.TimestampNow(),
+				Time: protocompat.TimestampNow(),
 			},
 			{
 				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
@@ -260,11 +260,11 @@ func GetNetworkAlert() *storage.Alert {
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: protoconv.TimestampNow(),
+				Time: protocompat.TimestampNow(),
 			},
 		},
-		Time:          protoconv.TimestampNow(),
-		FirstOccurred: protoconv.TimestampNow(),
+		Time:          protocompat.TimestampNow(),
+		FirstOccurred: protocompat.TimestampNow(),
 	})
 }
 

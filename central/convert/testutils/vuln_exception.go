@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
-	ts1 = protoconv.TimestampNow()
+	ts1 = protocompat.TimestampNow()
 )
 
 // GetTestVulnDeferralExceptionFull returns a mock *v2.VulnerabilityException of deferral kind.

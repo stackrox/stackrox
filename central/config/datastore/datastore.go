@@ -11,7 +11,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -164,13 +164,13 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		if oldConf != nil {
 			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
 		} else {
-			clusterRetentionConf.CreatedAt = protoconv.TimestampNow()
+			clusterRetentionConf.CreatedAt = protocompat.TimestampNow()
 		}
 
 		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
 
 		if hasUpdate {
-			clusterRetentionConf.LastUpdated = protoconv.TimestampNow()
+			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
 		}
 	}
 

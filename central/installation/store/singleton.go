@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	pgStore "github.com/stackrox/rox/central/installation/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,7 +33,7 @@ func createInitial() {
 	}
 	info := &storage.InstallationInfo{
 		Id:      uuid.NewV4().String(),
-		Created: protoconv.TimestampNow(),
+		Created: protocompat.TimestampNow(),
 	}
 	err = storeSingleton.Upsert(ctx, info)
 	if err != nil {

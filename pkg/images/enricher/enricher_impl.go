@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -377,7 +378,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 					Name:          registry.Source().GetName(),
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: protoconv.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -405,7 +406,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 				Name:          name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: protoconv.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return true, nil
@@ -588,7 +589,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 					Name:          scanner.DataSource().Name,
 					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 					Status:        storage.IntegrationHealth_UNHEALTHY,
-					LastTimestamp: protoconv.TimestampNow(),
+					LastTimestamp: protocompat.TimestampNow(),
 					ErrorMessage:  err.Error(),
 				})
 			}
@@ -620,7 +621,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				Name:          scanner.DataSource().Name,
 				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
 				Status:        storage.IntegrationHealth_HEALTHY,
-				LastTimestamp: protoconv.TimestampNow(),
+				LastTimestamp: protocompat.TimestampNow(),
 				ErrorMessage:  "",
 			})
 			return result, nil

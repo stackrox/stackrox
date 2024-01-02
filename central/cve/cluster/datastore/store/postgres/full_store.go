@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -72,7 +72,7 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 }
 
 func (s *fullStoreImpl) ReconcileClusterCVEParts(ctx context.Context, cveType storage.CVE_CVEType, cvePartsArr ...converter.ClusterCVEParts) error {
-	iTime := protoconv.TimestampNow()
+	iTime := protocompat.TimestampNow()
 
 	cves := make([]*storage.ClusterCVE, 0, len(cvePartsArr))
 	var edges []*storage.ClusterCVEEdge

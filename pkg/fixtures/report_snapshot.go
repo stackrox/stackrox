@@ -2,7 +2,7 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GetReportSnapshot returns a valid report snapshot object
@@ -44,8 +44,8 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 		},
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_PREPARING,
-			QueuedAt:                 protoconv.TimestampNow(),
-			CompletedAt:              protoconv.TimestampNow(),
+			QueuedAt:                 protocompat.TimestampNow(),
+			CompletedAt:              protocompat.TimestampNow(),
 			ErrorMsg:                 "",
 			ReportRequestType:        storage.ReportStatus_ON_DEMAND,
 			ReportNotificationMethod: storage.ReportStatus_EMAIL,

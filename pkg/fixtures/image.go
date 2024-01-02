@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 func getVulnsPerComponent(componentIndex int, numVulns int, cveType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
@@ -75,53 +75,53 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Author:  author,
-				Created: protoconv.TimestampNow(),
+				Created: protocompat.TimestampNow(),
 				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "CMD",
 						Value:       `["nginx" "-g" "daemon off;"]`,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "EXPOSE",
 						Value:       "443/tcp 80/tcp",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "RUN",
 						Value:       "ln -sf /dev/stdout /var/log/nginx/access.log && ln -sf /dev/stderr /var/log/nginx/error.log",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "RUN",
 						Value:       `apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 && echo "deb http://nginx.org/packages/debian/ jessie nginx" >> /etc/apt/sources.list && apt-get update && apt-get install --no-install-recommends --no-install-suggests -y ca-certificates nginx=${NGINX_VERSION} nginx-module-xslt nginx-module-geoip nginx-module-image-filter nginx-module-perl nginx-module-njs gettext-base && rm -rf /var/lib/apt/lists/*`,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "ENV",
 						Value:       "NGINX_VERSION=1.10.3-1~jessie",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "MAINTAINER",
 						Value:       author,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "CMD",
 						Value:       `["/bin/bash"]`,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "ADD",
 						Value:       "file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /",
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 				},
 			},
@@ -135,7 +135,7 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 			},
 		},
 		Scan: &storage.ImageScan{
-			ScanTime:   protoconv.TimestampNow(),
+			ScanTime:   protocompat.TimestampNow(),
 			Components: componentsPerImage,
 		},
 		SetComponents: &storage.Image_Components{

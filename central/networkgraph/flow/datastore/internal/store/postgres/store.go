@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -428,7 +429,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protoconv.TimestampNow()
+	lastUpdateTS := protocompat.TimestampNow()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
@@ -468,7 +469,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protoconv.TimestampNow()
+	lastUpdateTS := protocompat.TimestampNow()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()

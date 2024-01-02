@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type datastoreImpl struct {
@@ -79,7 +79,7 @@ func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, i
 	}
 
 	existingHealth.ErrorMessage = errMsg
-	existingHealth.LastTimestamp = protoconv.TimestampNow()
+	existingHealth.LastTimestamp = protocompat.TimestampNow()
 	existingHealth.Status = status
 
 	return ds.UpsertDeclarativeConfig(ctx, existingHealth)

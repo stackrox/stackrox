@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	dbTypes "github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -120,7 +120,7 @@ func getAlert() *storage.Alert {
 		ProcessViolation: &storage.Alert_ProcessViolation{
 			Message: "This is a process violation",
 		},
-		Time:   protoconv.TimestampNow(),
+		Time:   protocompat.TimestampNow(),
 		Policy: getPolicy(),
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
@@ -169,7 +169,7 @@ func getResourceAlert() *storage.Alert {
 				},
 			},
 		},
-		Time:   protoconv.TimestampNow(),
+		Time:   protocompat.TimestampNow(),
 		Policy: getAuditLogEventSourcePolicy(),
 		Entity: &storage.Alert_Resource_{
 			Resource: &storage.Alert_Resource{
@@ -252,53 +252,53 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Author:  author,
-				Created: protoconv.TimestampNow(),
+				Created: protocompat.TimestampNow(),
 				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "CMD",
 						Value:       `["nginx" "-g" "daemon off;"]`,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "EXPOSE",
 						Value:       "443/tcp 80/tcp",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "RUN",
 						Value:       "ln -sf /dev/stdout /var/log/nginx/access.log && ln -sf /dev/stderr /var/log/nginx/error.log",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "RUN",
 						Value:       `apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 && echo "deb http://nginx.org/packages/debian/ jessie nginx" >> /etc/apt/sources.list && apt-get update && apt-get install --no-install-recommends --no-install-suggests -y ca-certificates nginx=${NGINX_VERSION} nginx-module-xslt nginx-module-geoip nginx-module-image-filter nginx-module-perl nginx-module-njs gettext-base && rm -rf /var/lib/apt/lists/*`,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "ENV",
 						Value:       "NGINX_VERSION=1.10.3-1~jessie",
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "MAINTAINER",
 						Value:       author,
 						Author:      author,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "CMD",
 						Value:       `["/bin/bash"]`,
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 					{
 						Instruction: "ADD",
 						Value:       "file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /",
-						Created:     protoconv.TimestampNow(),
+						Created:     protocompat.TimestampNow(),
 					},
 				},
 			},
@@ -312,7 +312,7 @@ func getImageWithComponents(componentsPerImage []*storage.EmbeddedImageScanCompo
 			},
 		},
 		Scan: &storage.ImageScan{
-			ScanTime:   protoconv.TimestampNow(),
+			ScanTime:   protocompat.TimestampNow(),
 			Components: componentsPerImage,
 		},
 	}
@@ -337,7 +337,7 @@ func getLightweightDeploymentImage() *storage.Image {
 			},
 		},
 		Scan: &storage.ImageScan{
-			ScanTime: protoconv.TimestampNow(),
+			ScanTime: protocompat.TimestampNow(),
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name: "name",

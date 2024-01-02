@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/n_35_to_n_36_postgres_nodes/common/v2"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -450,7 +450,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, bo
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Node) error {
-	iTime := protoconv.TimestampNow()
+	iTime := protocompat.TimestampNow()
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err

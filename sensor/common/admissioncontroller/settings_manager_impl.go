@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -47,7 +47,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	}
 	settings.ClusterId = clusterid.Get()
 	settings.CentralEndpoint = p.centralEndpoint
-	settings.Timestamp = protoconv.TimestampNow()
+	settings.Timestamp = protocompat.TimestampNow()
 	return settings
 }
 

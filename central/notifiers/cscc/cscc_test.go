@@ -7,7 +7,7 @@ import (
 	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -51,7 +51,7 @@ func TestCSCC(t *testing.T) {
 			Id:        "myDeploymentID",
 			ClusterId: clusterID,
 		}},
-		Time: protoconv.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}
 
 	cases := map[string]struct {

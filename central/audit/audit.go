@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -92,7 +91,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	ri := requestinfo.FromContext(ctx)
 
 	msg := &v1.Audit_Message{
-		Time: protoconv.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}
 
 	identity := authn.IdentityFromContextOrNil(ctx)

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -386,7 +387,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.T
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protoconv.TimestampNow()
+	lastUpdateTS := protocompat.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -419,7 +420,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := protoconv.TimestampNow()
+	lastUpdateTS := protocompat.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {

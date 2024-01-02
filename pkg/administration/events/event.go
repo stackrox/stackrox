@@ -3,11 +3,9 @@ package events
 import (
 	"strings"
 
-	// TODO: find a way to break the dependency loop when pulling pkg/protoconv
-	// instead of type directly administration/events -> protoconv -> logging -> administration/events
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -107,7 +105,7 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 
 // ToStorageEvent converts the event to its storage representation.
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
-	tsNow := types.TimestampNow()
+	tsNow := protocompat.TimestampNow()
 	return &storage.AdministrationEvent{
 		Id:      GenerateEventID(m),
 		Type:    m.GetType(),

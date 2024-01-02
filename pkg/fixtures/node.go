@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GetNode returns a mock *storage.Node
@@ -40,7 +40,7 @@ func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *sto
 		Id:   fixtureconsts.Node1,
 		Name: "name",
 		Scan: &storage.NodeScan{
-			ScanTime:   protoconv.TimestampNow(),
+			ScanTime:   protocompat.TimestampNow(),
 			Components: components,
 		},
 		SetComponents: &storage.Node_Components{

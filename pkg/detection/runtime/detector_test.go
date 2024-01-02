@@ -7,7 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -93,7 +93,7 @@ func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent
 			ClusterId: clusterID,
 			Namespace: namespace,
 		},
-		Timestamp: protoconv.TimestampNow(),
+		Timestamp: protocompat.TimestampNow(),
 		ApiVerb:   verb,
 		User: &storage.KubernetesEvent_User{
 			Username: "username",

@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -191,7 +191,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				},
 			}))
 
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
@@ -312,7 +312,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
 				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 			}
-			return networkgraph.FilterFlowsByPredicate(flows, pred), protoconv.TimestampNow(), nil
+			return networkgraph.FilterFlowsByPredicate(flows, pred), protocompat.TimestampNow(), nil
 		})
 
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
@@ -790,7 +790,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 				},
 			}))
 
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
@@ -811,7 +811,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
 		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
-			return networkgraph.FilterFlowsByPredicate(flowsOrdered, pred), protoconv.TimestampNow(), nil
+			return networkgraph.FilterFlowsByPredicate(flowsOrdered, pred), protocompat.TimestampNow(), nil
 		})
 
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
@@ -851,7 +851,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
 		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
-			return networkgraph.FilterFlowsByPredicate(flowsShuffled, pred), protoconv.TimestampNow(), nil
+			return networkgraph.FilterFlowsByPredicate(flowsShuffled, pred), protocompat.TimestampNow(), nil
 		})
 
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
@@ -905,7 +905,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
@@ -1008,7 +1008,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
 				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 			}
-			return networkgraph.FilterFlowsByPredicate(flows, pred), protoconv.TimestampNow(), nil
+			return networkgraph.FilterFlowsByPredicate(flows, pred), protocompat.TimestampNow(), nil
 		})
 
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
@@ -1295,7 +1295,7 @@ func (s *NetworkGraphServiceTestSuite) TestReturnErrorIfNumberOfNodesExceedsLimi
 
 			ctx := sac.WithAllAccess(context.Background())
 
-			ts := protoconv.TimestampNow()
+			ts := protocompat.TimestampNow()
 			req := &v1.NetworkGraphRequest{
 				ClusterId: "mycluster",
 				Query:     "Namespace: foo,bar,far",

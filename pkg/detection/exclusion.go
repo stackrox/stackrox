@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
@@ -72,5 +72,5 @@ func exclusionIsExpired(exclusion *storage.Exclusion) bool {
 	if exclusion.GetExpiration() == nil {
 		return false
 	}
-	return exclusion.GetExpiration().Compare(protoconv.TimestampNow()) < 0
+	return exclusion.GetExpiration().Compare(protocompat.TimestampNow()) < 0
 }

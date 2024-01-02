@@ -11,7 +11,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/common"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -82,7 +82,7 @@ func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
 
 func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS *types.Timestamp, err error) {
 	// The entry for this should be present, but make sure we have a sane default if it is not
-	lastUpdateTS = protoconv.TimestampNow()
+	lastUpdateTS = protocompat.TimestampNow()
 
 	err = generic.DefaultForEachItemWithPrefix(s.db, s.keyPrefix, true, func(k, v []byte) error {
 		if bytes.Equal(k, updatedTSKey) {

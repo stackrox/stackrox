@@ -13,7 +13,7 @@ import (
 	beforeSchema "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search/schema/before"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 )
@@ -76,7 +76,7 @@ func (s *blobMigrationTestSuite) createMockBlobs(size int) map[string]*storage.B
 			Name:         name,
 			Oid:          oid,
 			Length:       int64(rand.Int()),
-			ModifiedTime: protoconv.TimestampNow(),
+			ModifiedTime: protocompat.TimestampNow(),
 		}
 		blobs[name] = blob
 	}

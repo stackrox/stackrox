@@ -11,7 +11,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/generated/storage"
 	imageutils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registrytypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -87,7 +87,7 @@ func fetchLayerURIAndHeader(client *http.Client, url, repository, digest string)
 // imageScan converts the given report to an image scan.
 func imageScan(report *claircore.VulnerabilityReport) *storage.ImageScan {
 	scan := &storage.ImageScan{
-		ScanTime:        protoconv.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		Components:      components(report),
 		OperatingSystem: os(report),
 	}

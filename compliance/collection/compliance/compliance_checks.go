@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var log = logging.LoggerForModule()
@@ -93,7 +93,7 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult,
 			Return: &compliance.ComplianceReturn{
 				NodeName: nodeNameProvider.GetNodeName(),
 				ScrapeId: runID,
-				Time:     protoconv.TimestampNow(),
+				Time:     protocompat.TimestampNow(),
 				Evidence: compressedResults,
 			},
 		},
@@ -150,6 +150,6 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 		log.Errorf("collecting kubelet configuration failed: %v", err)
 	}
 
-	complianceData.Time = protoconv.TimestampNow()
+	complianceData.Time = protocompat.TimestampNow()
 	return complianceData
 }

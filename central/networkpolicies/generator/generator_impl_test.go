@@ -16,7 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -215,7 +215,7 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 }
 
 func (s *generatorTestSuite) TestGenerate() {
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
@@ -383,7 +383,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, protoconv.TimestampNow(), nil)
+		}, protocompat.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -530,7 +530,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 				},
 			}))
 
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		Query:            "Namespace: foo,bar,qux",
@@ -661,7 +661,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, protoconv.TimestampNow(), nil)
+		}, protocompat.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

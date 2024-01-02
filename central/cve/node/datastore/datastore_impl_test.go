@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -129,7 +129,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
 
-	start := protoconv.TimestampNow()
+	start := protocompat.TimestampNow()
 	duration := types.DurationProto(10 * time.Minute)
 
 	expiry, err := getSuppressExpiry(start, duration)

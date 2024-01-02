@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -90,7 +90,7 @@ func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1
 
 func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *v1.GetNodeVulnerabilitiesResponse) *storage.NodeScan {
 	scan := &storage.NodeScan{
-		ScanTime:        protoconv.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
 		Notes:           convertNodeNotes(resp.GetNodeNotes()),
 	}
@@ -231,7 +231,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *storage.ImageScan {
 	components := convertFeatures(metadata, image.GetFeatures(), image.Namespace)
 	return &storage.ImageScan{
-		ScanTime:        protoconv.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		Components:      components,
 		OperatingSystem: image.GetNamespace(),
 	}

@@ -10,7 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -49,8 +49,8 @@ func (s *BlobsStoreSuite) TestStore() {
 	insertBlob := &storage.Blob{
 		Name:         "test",
 		Length:       int64(size),
-		LastUpdated:  protoconv.TimestampNow(),
-		ModifiedTime: protoconv.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 	}
 
 	buf := &bytes.Buffer{}
@@ -105,8 +105,8 @@ func (s *BlobsStoreSuite) TestSacForUpsertAndDelete() {
 	insertBlob := &storage.Blob{
 		Name:         "test",
 		Length:       int64(size),
-		LastUpdated:  protoconv.TimestampNow(),
-		ModifiedTime: protoconv.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 	}
 
 	randomData := make([]byte, size)

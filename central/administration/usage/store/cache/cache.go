@@ -3,7 +3,7 @@ package cache
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -95,7 +95,7 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 // period.
 func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
 	result := storage.SecuredUnits{
-		Timestamp: protoconv.TimestampNow(),
+		Timestamp: protocompat.TimestampNow(),
 	}
 
 	u.mux.Lock()

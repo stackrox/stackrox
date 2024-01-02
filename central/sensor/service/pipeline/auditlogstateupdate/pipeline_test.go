@@ -7,7 +7,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -38,7 +38,7 @@ func (suite *PipelineTestSuite) TestRun() {
 	statusInfo := &central.AuditLogStatusInfo{
 		NodeAuditLogFileStates: map[string]*storage.AuditLogFileState{
 			"node-a": {
-				CollectLogsSince: protoconv.TimestampNow(),
+				CollectLogsSince: protocompat.TimestampNow(),
 				LastAuditId:      "last-id",
 			},
 		},

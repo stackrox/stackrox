@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -188,7 +188,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	expected := &storage.SystemInfo{
 		BackupInfo: &storage.BackupInfo{
 			Status:          storage.OperationStatus_PASS,
-			BackupLastRunAt: protoconv.TimestampNow(),
+			BackupLastRunAt: protocompat.TimestampNow(),
 		},
 	}
 	err := srv.systemInfoStore.Upsert(ctx, expected)

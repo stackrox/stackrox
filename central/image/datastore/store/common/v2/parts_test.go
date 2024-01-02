@@ -5,14 +5,14 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAndMergeImage(t *testing.T) {
-	ts := protoconv.TimestampNow()
+	ts := protocompat.TimestampNow()
 	image := &storage.Image{
 		Id: "sha",
 		Name: &storage.ImageName{

@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/dberrors"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // Commands that providers can execute.
@@ -21,7 +21,7 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 			return nil
 		}
 		if pr.storedInfo.LastUpdated == nil {
-			pr.storedInfo.LastUpdated = protoconv.TimestampNow()
+			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		}
 		return store.AddAuthProvider(ctx, pr.storedInfo)
 	}
@@ -33,7 +33,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		pr.storedInfo.LastUpdated = protoconv.TimestampNow()
+		pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		return store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }

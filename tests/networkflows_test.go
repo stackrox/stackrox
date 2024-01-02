@@ -7,7 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/suite"
@@ -76,7 +76,7 @@ func (s *networkFlowTestSuite) TestStackroxNetworkFlows() {
 			graph, err = service.GetNetworkGraph(ctx, &v1.NetworkGraphRequest{
 				ClusterId: clusterID,
 				Query:     "namespace:stackrox",
-				Since:     protoconv.TimestampNow(),
+				Since:     protocompat.TimestampNow(),
 			})
 			cancel()
 			if err != nil {

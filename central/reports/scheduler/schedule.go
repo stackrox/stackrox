@@ -30,8 +30,8 @@ import (
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protocompat/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -255,7 +255,7 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 			LastRunTime:  timestamp.Now().GogoProtobuf(),
 			ErrorMsg:     "",
 		}
-		req.ReportConfig.LastSuccessfulRunTime = protoconv.TimestampNow()
+		req.ReportConfig.LastSuccessfulRunTime = protocompat.TimestampNow()
 	}
 	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
 		return err

@@ -8,7 +8,7 @@ import (
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -219,17 +219,17 @@ func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
-	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protoconv.TimestampNow()}
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()}
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protoconv.TimestampNow()})
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()})
 	s.NoError(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
-	oldTS := protoconv.TimestampNow()
-	newTS := protoconv.TimestampNow()
+	oldTS := protocompat.TimestampNow()
+	newTS := protocompat.TimestampNow()
 	// Ensure the timestamps differ
 	newTS.Nanos += 1000
 	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}

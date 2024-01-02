@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/n_04_to_n_05_postgres_images/store"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -485,7 +485,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
-	iTime := protoconv.TimestampNow()
+	iTime := protocompat.TimestampNow()
 	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err

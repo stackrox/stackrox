@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -66,7 +66,7 @@ func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*stora
 		Policy:         policy.Clone(),
 		Entity:         &storage.Alert_Image{Image: types.ToContainerImage(image)},
 		Violations:     violations,
-		Time:           protoconv.TimestampNow(),
+		Time:           protocompat.TimestampNow(),
 	}
 	return alert
 }

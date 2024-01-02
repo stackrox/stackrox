@@ -34,8 +34,8 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/protoconv"
-	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/protocompat"
+	networkPolicyConversion "github.com/stackrox/rox/pkg/protocompat/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -657,7 +657,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	}
 	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
 		User:                 user,
-		ApplyTimestamp:       protoconv.TimestampNow(),
+		ApplyTimestamp:       protocompat.TimestampNow(),
 		OriginalModification: modification,
 		UndoModification:     undoMod,
 	}

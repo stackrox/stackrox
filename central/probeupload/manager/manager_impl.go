@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -171,8 +171,8 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 		Name:         path.Join(rootBlobPathPrefix, file),
 		Checksum:     string(checksumBytes),
 		Length:       size,
-		LastUpdated:  protoconv.TimestampNow(),
-		ModifiedTime: protoconv.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
 	}
 
 	if err := m.blobStore.Upsert(ctx, b, verifyingReader); err != nil {

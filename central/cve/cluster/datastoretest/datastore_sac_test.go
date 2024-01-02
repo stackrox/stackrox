@@ -13,7 +13,7 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -965,7 +965,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 	for _, c := range getClusterCVESuppressUnsuppressTestCases(s.T(), validClusters[0], validClusters[1]) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			snoozeStart := protoconv.TimestampNow()
+			snoozeStart := protocompat.TimestampNow()
 			snoozeStart.Nanos = 0
 			snoozeDuration := types.DurationProto(10 * time.Minute)
 

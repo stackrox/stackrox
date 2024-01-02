@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -251,7 +251,7 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	os := stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown")
 	return &storage.ImageScan{
 		OperatingSystem: os,
-		ScanTime:        protoconv.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		ScannerVersion:  layerEnvelope.ScannerVersion,
 		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features, os),
 		Notes:           notes,

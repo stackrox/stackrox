@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -98,7 +98,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	metadata := &v1.DBRestoreProcessMetadata{
 		Id:        id,
 		Header:    header,
-		StartTime: protoconv.TimestampNow(),
+		StartTime: protocompat.TimestampNow(),
 	}
 
 	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {

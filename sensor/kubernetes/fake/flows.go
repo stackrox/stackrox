@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -261,7 +261,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 	return &sensor.NetworkConnectionInfo{
 		UpdatedConnections: conns,
 		UpdatedEndpoints:   networkEndpoints,
-		Time:               protoconv.TimestampNow(),
+		Time:               protocompat.TimestampNow(),
 	}
 }
 

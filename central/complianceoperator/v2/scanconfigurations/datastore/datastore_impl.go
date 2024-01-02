@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -156,7 +156,7 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
-	scanConfig.LastUpdatedTime = protoconv.TimestampNow()
+	scanConfig.LastUpdatedTime = protocompat.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
 

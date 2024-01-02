@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,7 +20,7 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 	scan := &storage.ImageScan{
 		// TODO(ROX-21362): Get ScannerVersion from ScannerV4 matcher API
 		// ScannerVersion: ,
-		ScanTime:        protoconv.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
 		Components:      components(metadata, report),
 		Notes:           notes(report),

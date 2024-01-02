@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -88,7 +88,7 @@ func (p *processorImpl) UpdateNotifierHealthStatus(notifier notifiers.Notifier, 
 		Name:          notifier.ProtoNotifier().Id,
 		Type:          storage.IntegrationHealth_NOTIFIER,
 		Status:        healthStatus,
-		LastTimestamp: protoconv.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 		ErrorMessage:  errMessage,
 	})
 }

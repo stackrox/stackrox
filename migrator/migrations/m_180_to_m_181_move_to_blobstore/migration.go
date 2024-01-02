@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/gorm/largeobject"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
@@ -110,7 +110,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	blob := &storage.Blob{
 		Name:         blobName,
 		Length:       stat.Size(),
-		LastUpdated:  protoconv.TimestampNow(),
+		LastUpdated:  protocompat.TimestampNow(),
 		ModifiedTime: modTime,
 	}
 	var dataReader io.ReadCloser = fd

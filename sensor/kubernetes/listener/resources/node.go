@@ -5,8 +5,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protocompat/k8s"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
@@ -94,6 +94,6 @@ func buildNode(node *v1.Node) *storage.Node {
 		OsImage:                 node.Status.NodeInfo.OSImage,
 		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
-		K8SUpdated:              protoconv.TimestampNow(),
+		K8SUpdated:              protocompat.TimestampNow(),
 	}
 }

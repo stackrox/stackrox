@@ -21,8 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoconv/schedule"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protocompat/schedule"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -281,7 +281,7 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 	}
 
 	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
-	request.ReportSnapshot.ReportStatus.QueuedAt = protoconv.TimestampNow()
+	request.ReportSnapshot.ReportStatus.QueuedAt = protocompat.TimestampNow()
 	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err
