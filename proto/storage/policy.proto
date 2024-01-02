@@ -73,7 +73,7 @@ message Policy {
     //
     // Depending on whether we decide to make teams a "stored" resource or something more "ephemeral", we have to use a
     // fk constraint here ensuring resources do not become stale in case a team is deleted.
-    AdditionalScope additional_scope = 27;
+    repeated string teams = 27 [(gogoproto.moretags) = 'search:"Team"'];
 }
 
 enum EventSource {

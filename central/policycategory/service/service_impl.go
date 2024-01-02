@@ -74,7 +74,11 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 	storageCategory := ToStorageProto(request.GetPolicyCategory())
 	id := authn.IdentityFromContextOrNil(ctx)
 	if id != nil && len(id.Teams()) != 0 {
-		storageCategory.AdditionalScope = &storage.AdditionalScope{Teams: id.Teams()}
+		names := make([]string, 0, len(id.Teams()))
+		for _, team := range id.Teams() {
+			names = append(names, team.GetName())
+		}
+		storageCategory.Teams = names
 	}
 
 	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, storageCategory)

@@ -5,6 +5,7 @@ package schema
 import (
 	"reflect"
 
+	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -43,7 +44,8 @@ const (
 
 // PolicyCategories holds the Gorm model for Postgres table `policy_categories`.
 type PolicyCategories struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string `gorm:"column:name;type:varchar;unique"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID         string          `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string          `gorm:"column:name;type:varchar;unique"`
+	Teams      *pq.StringArray `gorm:"column:teams;type:text[]"`
+	Serialized []byte          `gorm:"column:serialized;type:bytea"`
 }

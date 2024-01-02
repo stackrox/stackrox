@@ -229,9 +229,11 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 	// Probably would be good to do that within the context of datastore or even generic store, but doing it here now.
 	id := authn.IdentityFromContextOrNil(ctx)
 	if id != nil && len(id.Teams()) != 0 {
-		request.AdditionalScope = &storage.AdditionalScope{
-			Teams: id.Teams(),
+		names := make([]string, 0, len(id.Teams()))
+		for _, team := range id.Teams() {
+			names = append(names, team.GetName())
 		}
+		request.Teams = names
 	}
 
 	if err := updateFunc(ctx, request); err != nil {
