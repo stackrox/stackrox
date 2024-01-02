@@ -9,6 +9,7 @@ import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockDa
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
+const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
 
 export type ScheduleBase = {
     hour: number;
@@ -114,6 +115,17 @@ export interface ComplianceProfile {
     title: string;
 }
 
+// API types for Compliance Integrations:
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_integration_service
+export interface ComplianceIntegration {
+    id: string;
+    version: string;
+    clusterId: string;
+    clusterName: string;
+    namespace: string;
+    statusErrors: string[];
+}
+
 export function complianceResultsOverview(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
@@ -205,4 +217,12 @@ export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
     //     .then((response) => {
     //         return response?.data?.profiles ?? [];
     //     });
+}
+
+export function listComplianceIntegrations(): Promise<ComplianceIntegration[]> {
+    return axios
+        .get<{ integrations: ComplianceIntegration[] }>(complianceIntegrationServiceUrl)
+        .then((response) => {
+            return response?.data?.integrations ?? [];
+        });
 }

@@ -4,9 +4,12 @@ import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
 import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 
-import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useRestQuery from 'hooks/useRestQuery';
-import { createScanConfig, listComplianceProfiles } from 'services/ComplianceEnhancedService';
+import {
+    createScanConfig,
+    listComplianceIntegrations,
+    listComplianceProfiles,
+} from 'services/ComplianceEnhancedService';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import ScanConfigOptions from './ScanConfigOptions';
@@ -29,14 +32,14 @@ const REVIEW_CONFIG_ID = 'review';
 function ScanConfigPage(): ReactElement {
     const history = useHistory();
     const formik = useFormikScanConfig();
-    const { clusters, isLoading: isFetchingClusters } = useFetchClustersForPermissions([
-        'Compliance',
-    ]);
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
 
-    const listQuery = useCallback(() => listComplianceProfiles(), []);
-    const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listQuery);
+    const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
+    const { data: clusters, loading: isFetchingClusters } = useRestQuery(listClustersQuery);
+
+    const listProfilesQuery = useCallback(() => listComplianceProfiles(), []);
+    const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
 
     async function onCreate() {
         setIsCreating(true);
@@ -84,7 +87,10 @@ function ScanConfigPage(): ReactElement {
             name: SELECT_CLUSTERS,
             id: SELECT_CLUSTERS_ID,
             component: (
-                <ClusterSelection clusters={clusters} isFetchingClusters={isFetchingClusters} />
+                <ClusterSelection
+                    clusters={clusters || []}
+                    isFetchingClusters={isFetchingClusters}
+                />
             ),
             canJumpTo: Object.keys(formik.errors?.parameters || {}).length === 0,
         },
@@ -104,7 +110,7 @@ function ScanConfigPage(): ReactElement {
             id: REVIEW_CONFIG_ID,
             component: (
                 <ReviewConfig
-                    clusters={clusters}
+                    clusters={clusters || []}
                     profiles={profiles || []}
                     errorMessage={createScanConfigError}
                 />
