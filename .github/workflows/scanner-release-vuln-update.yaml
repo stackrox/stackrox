@@ -1,4 +1,4 @@
-name: Scanner vulnerability update
+name: Scanner release vulnerability update
 on:
   schedule:
   - cron: "0 */3 * * *"
@@ -6,9 +6,8 @@ on:
     branches:
     - scanner/*
 
-
 jobs:
-  read-versions:
+  read-release-versions:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
@@ -24,14 +23,14 @@ jobs:
         sed -n '/^\s*\(#.*\)\?$/!p' scanner/updater/version/RELEASE_VERSION | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
-  upload-vulnerabilities:
-    needs: read-versions
+  upload-release-vulnerabilities:
+    needs: read-release-versions
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false #if one of the versions fails to get updated vulns, we still want to update for the other versions
-      max-parallel: 1 #limit the number of concurrent jobs to avoid job interruption by OOM as creating json blob has been memory-intensive
+      fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
+      max-parallel: 1 # Jobs are memory intensive, so only run one at a time.
       matrix:
-        version: ${{ fromJson(needs.read-versions.outputs.matrix).versions }}
+        version: ${{ fromJson(needs.read-release-versions.outputs.matrix).versions }}
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
@@ -66,8 +65,8 @@ jobs:
 
   send-notification:
     needs:
-    - read-versions
-    - upload-vulnerabilities
+    - read-release-versions
+    - upload-release-vulnerabilities
     runs-on: ubuntu-latest
     if: failure()
     steps:
