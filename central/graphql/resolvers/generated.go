@@ -33,6 +33,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerName: String!",
 		"imageId: String!",
 	}))
+	utils.Must(builder.AddType("AdditionalScope", []string{
+		"teams: [Team]!",
+	}))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
 	}))
@@ -639,6 +642,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Group", []string{
 		"props: GroupProperties",
 		"roleName: String!",
+		"teamNames: [String!]!",
 	}))
 	utils.Must(builder.AddType("GroupProperties", []string{
 		"authProviderId: String!",
@@ -986,6 +990,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"instances: [ContainerInstance]!",
 	}))
 	utils.Must(builder.AddType("Policy", []string{
+		"additionalScope: AdditionalScope",
 		"categories: [String!]!",
 		"criteriaLocked: Boolean!",
 		"description: String!",
@@ -1358,6 +1363,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.TaintEffect(0)))
+	utils.Must(builder.AddType("Team", []string{
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("TokenMetadata", []string{
 		"expiration: Time",
 		"id: ID!",
@@ -1679,6 +1688,53 @@ func (resolver *activeComponent_ActiveContextResolver) ContainerName(ctx context
 func (resolver *activeComponent_ActiveContextResolver) ImageId(ctx context.Context) string {
 	value := resolver.data.GetImageId()
 	return value
+}
+
+type additionalScopeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AdditionalScope
+}
+
+func (resolver *Resolver) wrapAdditionalScope(value *storage.AdditionalScope, ok bool, err error) (*additionalScopeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &additionalScopeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdditionalScopes(values []*storage.AdditionalScope, err error) ([]*additionalScopeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*additionalScopeResolver, len(values))
+	for i, v := range values {
+		output[i] = &additionalScopeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAdditionalScopeWithContext(ctx context.Context, value *storage.AdditionalScope, ok bool, err error) (*additionalScopeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &additionalScopeResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdditionalScopesWithContext(ctx context.Context, values []*storage.AdditionalScope, err error) ([]*additionalScopeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*additionalScopeResolver, len(values))
+	for i, v := range values {
+		output[i] = &additionalScopeResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *additionalScopeResolver) Teams(ctx context.Context) ([]*teamResolver, error) {
+	value := resolver.data.GetTeams()
+	return resolver.root.wrapTeams(value, nil)
 }
 
 type admissionControlHealthInfoResolver struct {
@@ -7682,6 +7738,11 @@ func (resolver *groupResolver) RoleName(ctx context.Context) string {
 	return value
 }
 
+func (resolver *groupResolver) TeamNames(ctx context.Context) []string {
+	value := resolver.data.GetTeamNames()
+	return value
+}
+
 type groupPropertiesResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11071,6 +11132,11 @@ func (resolver *Resolver) wrapPoliciesWithContext(ctx context.Context, values []
 		output[i] = &policyResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *policyResolver) AdditionalScope(ctx context.Context) (*additionalScopeResolver, error) {
+	value := resolver.data.GetAdditionalScope()
+	return resolver.root.wrapAdditionalScope(value, true, nil)
 }
 
 func (resolver *policyResolver) Categories(ctx context.Context) []string {
@@ -14643,6 +14709,58 @@ func toTaintEffects(values *[]string) []storage.TaintEffect {
 		output[i] = toTaintEffect(&v)
 	}
 	return output
+}
+
+type teamResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Team
+}
+
+func (resolver *Resolver) wrapTeam(value *storage.Team, ok bool, err error) (*teamResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &teamResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapTeams(values []*storage.Team, err error) ([]*teamResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*teamResolver, len(values))
+	for i, v := range values {
+		output[i] = &teamResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapTeamWithContext(ctx context.Context, value *storage.Team, ok bool, err error) (*teamResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &teamResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapTeamsWithContext(ctx context.Context, values []*storage.Team, err error) ([]*teamResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*teamResolver, len(values))
+	for i, v := range values {
+		output[i] = &teamResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *teamResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *teamResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type tokenMetadataResolver struct {

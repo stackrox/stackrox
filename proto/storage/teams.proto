@@ -13,10 +13,10 @@ message AdditionalScope {
     // (dhaus): Allow within the API to model shared ownership between a resource, this way one could share resources
     // across teams R with one or more "governing" teams holding W. This can also be shared R/W, whatever people may
     // feel like doing.
-    repeated Team teams = 1 [(gogoproto.moretags) = 'search:"Team"'];
+    repeated Team teams = 1;
 }
 
 message Team {
     string id   = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];;
-    string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+    string name = 2 [(gogoproto.moretags) = 'sql:"unique",search:"Team"'];
 }

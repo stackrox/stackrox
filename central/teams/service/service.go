@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/teams/datastore"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -19,12 +19,14 @@ type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error)
 }
 
+// Singleton provides the service for teams.
 func Singleton() Service {
 	once.Do(func() {
-
+		s = &serviceImpl{
+			ds: datastore.Singleton(),
+		}
 	})
 	return s
 }

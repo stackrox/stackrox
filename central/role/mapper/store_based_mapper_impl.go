@@ -105,7 +105,7 @@ func (rm *storeBasedMapperImpl) teamsForGroups(ctx context.Context, groups []*st
 	}
 
 	if teamNamesSet.Cardinality() == 0 {
-		log.Info("No teams associated for any group matching auth provider %q", rm.authProviderID)
+		log.Infof("No teams associated for any group matching auth provider %q", rm.authProviderID)
 		return nil, nil
 	}
 

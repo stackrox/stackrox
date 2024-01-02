@@ -100,7 +100,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	// Additionally, since the context will have no access, elevate it locally to fetch roles.
 	resolveRolesCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
-	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings(), m.configRegExps)
+	_, _, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings(), m.configRegExps)
 	if err != nil {
 		return "", errox.NoCredentials.New("resolving roles for id token").CausedBy(err)
 	}

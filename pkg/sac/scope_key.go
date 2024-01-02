@@ -151,10 +151,12 @@ func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
 	return keys
 }
 
+// TeamScopeKey is the scope key for the teams scope.
 type TeamScopeKey string
 
 func (TeamScopeKey) isScopeKey() {}
 
+// ScopeKind returns TeamScopeKind.
 func (TeamScopeKey) ScopeKind() ScopeKind { return TeamScopeKind }
 
 func (k TeamScopeKey) String() string { return string(k) }

@@ -92,6 +92,8 @@ func (t *AuthzTrace) RecordAllowOnTeamScopeLevel(access string, resourceName str
 	t.allowed[fmt.Sprintf("%s for %s in team '%s'", access, resourceName, teamName)]++
 }
 
+// RecordDenyOnTeamScopeLevel writes a "deny resource" authorizer decision iff
+// the receiver is not nil.
 func (t *AuthzTrace) RecordDenyOnTeamScopeLevel(access string, resourceName string, teamName string) {
 	if t == nil {
 		return

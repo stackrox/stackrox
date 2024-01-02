@@ -139,6 +139,20 @@ func (mr *MockIdentityMockRecorder) Service() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Service", reflect.TypeOf((*MockIdentity)(nil).Service))
 }
 
+// Teams mocks base method.
+func (m *MockIdentity) Teams() []*storage.Team {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Teams")
+	ret0, _ := ret[0].([]*storage.Team)
+	return ret0
+}
+
+// Teams indicates an expected call of Teams.
+func (mr *MockIdentityMockRecorder) Teams() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Teams", reflect.TypeOf((*MockIdentity)(nil).Teams))
+}
+
 // UID mocks base method.
 func (m *MockIdentity) UID() string {
 	m.ctrl.T.Helper()

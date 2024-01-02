@@ -123,10 +123,10 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 			teamNames := getTeamNames(id.Teams())
 			log.Infof("Found the following team names: %+v", teamNames)
 			if !scopeChecker.IsAllowed(sac.TeamScopeKeys(teamNames...)...) {
-				log.Info("Not allowed with team names %+v for resource %s", teamNames, targetResource.String())
+				log.Infof("Not allowed with team names %+v for resource %s", teamNames, targetResource.String())
 				return nil, sac.ErrResourceAccessDenied
 			}
-			log.Infof("Building SAC Team Level Query filters...")
+			log.Info("Building SAC Team Level Query filters...")
 			return sac.BuildTeamLevelSACQueryFilter(teamNames)
 		}
 

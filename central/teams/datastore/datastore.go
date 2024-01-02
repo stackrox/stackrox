@@ -16,6 +16,7 @@ var (
 	ds DataStore
 )
 
+// DataStore for the teams.
 type DataStore interface {
 	GetTeam(ctx context.Context, id string) (*storage.Team, bool, error)
 	ListTeams(ctx context.Context) ([]*storage.Team, error)
