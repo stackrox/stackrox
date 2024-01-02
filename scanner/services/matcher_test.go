@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -142,4 +143,16 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	s.Equal(&v4.Metadata{
 		LastVulnerabilityUpdate: protoNow,
 	}, res)
+}
+
+func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {
+	s.matcherMock.
+		EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(time.Time{}, errors.New("some error"))
+
+	srv := NewMatcherService(s.matcherMock, nil)
+	res, err := srv.GetMetadata(s.ctx, &types.Empty{})
+	s.Error(err)
+	s.Nil(res)
 }
