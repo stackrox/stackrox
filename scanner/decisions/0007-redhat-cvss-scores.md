@@ -1,4 +1,4 @@
-# 0006 - Red Hat CVSS scores
+# 0007 - Red Hat CVSS scores
 
 - **Author(s):** Ross Tannenbaum
 - **Created:** [2023-12-15 Fri]
@@ -6,7 +6,7 @@
 ## Context
 
 [ClairCore](https://github.com/quay/claircore) provides us with CVSS scores from NVD in the form of a Vulnerability Report enrichment.
-These scores may be not accurate for Red Hat products, as Red Hat analyzes each CVE and, potentially,
+These scores may be inaccurate for Red Hat products, as Red Hat analyzes each CVE and, potentially,
 reassigns the CVSS score. For example: [CVE-2021-26291](https://access.redhat.com/security/cve/CVE-2021-26291).
 
 There is currently work being done in ClairCore to [adopt CSAF and VEX files for Red Hat vulnerability data](https://www.redhat.com/en/blog/vulnerability-exploitability-exchange-vex-beta-files-now-available),
