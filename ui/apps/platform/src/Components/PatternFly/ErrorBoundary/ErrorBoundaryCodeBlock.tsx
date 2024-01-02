@@ -26,9 +26,14 @@ function ErrorBoundaryCodeBlock({
     function onClickCopy() {
         // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText#browser_compatibility
         // Chrome 66 Edge 79 Firefox 63 Safari 13.1
-        navigator?.clipboard?.writeText(code).then(() => {
-            setWasCopied(true);
-        });
+        navigator?.clipboard
+            ?.writeText(code)
+            .then(() => {
+                setWasCopied(true);
+            })
+            .catch(() => {
+                // TODO addToast(title, message)
+            });
     }
 
     const actions = (

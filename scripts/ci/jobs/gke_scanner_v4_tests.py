@@ -11,8 +11,6 @@ from ci_tests import ScannerV4Test
 from post_tests import PostClusterTest, FinalPost
 
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
-os.environ["OUTPUT_FORMAT"] = "helm"
-os.environ["ROX_SCANNER_V4_ENABLED"] = "true"
 os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"

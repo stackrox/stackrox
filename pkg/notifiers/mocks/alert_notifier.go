@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/alert_notifier.go github.com/stackrox/rox/pkg/notifiers AlertNotifier
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

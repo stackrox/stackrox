@@ -1,21 +1,27 @@
 package client
 
 import (
+	"fmt"
+
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
 var (
-	defaultConnOptions = connOptions{
-		mTLSSubject: mtls.ScannerSubject,
-		address:     ":8443",
-		serverName:  "scanner-v4.stackrox",
-		skipTLS:     false,
-	}
-
 	defaultOptions = options{
-		indexerOpts: defaultConnOptions,
-		matcherOpts: defaultConnOptions,
-		comboMode:   true,
+		indexerOpts: connOptions{
+			mTLSSubject: mtls.ScannerV4IndexerSubject,
+			address:     ":8443",
+			serverName:  fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting()),
+			skipTLS:     false,
+		},
+		matcherOpts: connOptions{
+			mTLSSubject: mtls.ScannerV4MatcherSubject,
+			address:     ":8443",
+			serverName:  fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
+			skipTLS:     false,
+		},
+		comboMode: false,
 	}
 )
 

@@ -222,12 +222,13 @@ function ClustersTablePanel({
             .then(() => {
                 setCheckedClusterIds([]);
 
-                // Although return works around typescript-eslint/no-floating-promises error,
-                // catch block would be better.
                 return fetchClustersWithRetentionInfo().then((clustersResponse) => {
                     setCurrentClusters(clustersResponse.clusters);
                     setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
+            })
+            .catch(() => {
+                // TODO render error in dialogand move finally code to then block.
             })
             .finally(() => {
                 setShowDialog(false);

@@ -50,7 +50,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ComplianceOperatorRule{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorRuleV2{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorScan{}, resourceType: globallyScoped},
-		{typ: &storage.ComplianceOperatorScanV2{}, resourceType: globallyScoped},
+		{typ: &storage.ComplianceOperatorScanV2{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceOperatorScanConfigurationV2{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorScanSettingBinding{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceRunMetadata{}, resourceType: directlyScoped},

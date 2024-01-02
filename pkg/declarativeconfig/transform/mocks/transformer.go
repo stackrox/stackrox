@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/transformer.go -source transformer.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

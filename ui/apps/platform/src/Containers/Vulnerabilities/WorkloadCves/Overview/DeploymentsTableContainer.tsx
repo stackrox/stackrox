@@ -13,13 +13,14 @@ import TableEntityToolbar from '../components/TableEntityToolbar';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
+    onEntityTabChange: (entityTab: EntityTab) => void;
 };
 
 function DeploymentsTableContainer({
@@ -27,6 +28,7 @@ function DeploymentsTableContainer({
     countsData,
     vulnerabilityState,
     pagination,
+    onEntityTabChange,
 }: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -61,6 +63,7 @@ function DeploymentsTableContainer({
                 pagination={pagination}
                 tableRowCount={countsData.deploymentCount}
                 isFiltered={isFiltered}
+                onEntityTabChange={onEntityTabChange}
             />
             <Divider component="div" />
             {loading && !tableData && (

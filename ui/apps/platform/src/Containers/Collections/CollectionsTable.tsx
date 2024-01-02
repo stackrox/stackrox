@@ -85,10 +85,14 @@ function CollectionsTable({
 
     function onConfirmDeleteCollection(collection: Collection) {
         setIsDeleting(true);
-        onCollectionDelete(collection).finally(() => {
-            setCollectionToDelete(null);
-            setIsDeleting(false);
-        });
+        onCollectionDelete(collection)
+            .catch(() => {
+                // TODO render error in dialog and move finally code to then block.
+            })
+            .finally(() => {
+                setCollectionToDelete(null);
+                setIsDeleting(false);
+            });
     }
 
     function onCancelDeleteCollection() {

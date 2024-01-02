@@ -427,9 +427,12 @@
         },
         "scanSchedule": {
           "$ref": "#/definitions/v2Schedule"
+        },
+        "description": {
+          "type": "string"
         }
       },
-      "title": "Next available tag: 4"
+      "title": "Next available tag: 5"
     },
     "v2ClusterScanStatus": {
       "type": "object",
@@ -468,7 +471,7 @@
           }
         }
       },
-      "title": "Next available tag: 4"
+      "title": "Next available tag: 5"
     },
     "v2ComplianceScanConfigurationStatus": {
       "type": "object",

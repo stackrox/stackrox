@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/graph_provider.go -source graph_provider.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

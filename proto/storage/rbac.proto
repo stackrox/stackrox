@@ -8,8 +8,6 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-option (gogoproto.equal_all) = true;
-
 enum SubjectKind {
     UNSET_KIND              = 0;
     SERVICE_ACCOUNT         = 1;

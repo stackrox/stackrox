@@ -44,7 +44,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensor.RegisterNetworkConnectionInfoServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for network connection info service
 	return nil
@@ -55,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
-// PushSignals handles the bidirectional gRPC stream with the collector
+// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	return s.receiveMessages(stream)
 }

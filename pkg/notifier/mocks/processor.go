@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/processor.go -source processor.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

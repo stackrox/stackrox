@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/audit_notifier.go github.com/stackrox/rox/pkg/notifiers AuditNotifier
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -494,9 +494,10 @@ go-unit-tests: build-prep test-prep
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
+	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... > /dev/null; \
+			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration"; \
 		done; \
 	done
 
@@ -760,10 +761,14 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 .PHONY: roxvet
+roxvet: skip-dirs := operator/pkg/clientset \
+                     scanner/updater/rhel      # TODO(ROX-21539): Remove when CSAF/VEX arrives
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go list -e ./... | grep -v 'operator/pkg/clientset' | xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
+	$(SILENT)go list -e ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########
 ## Misc ##

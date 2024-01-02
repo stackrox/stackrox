@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/scheduler.go -source scheduler.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

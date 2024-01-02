@@ -196,6 +196,7 @@ function ImagesTable({
                                     <Td isActionCell>
                                         {name?.tag && (
                                             <ActionsColumn
+                                                menuAppendTo={() => document.body}
                                                 items={[
                                                     {
                                                         title: watchImageMenuText,

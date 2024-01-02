@@ -39,6 +39,11 @@ export const selectors = {
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
     paginationPrevious: "button[aria-label='Go to previous page']",
     paginationNext: "button[aria-label='Go to next page']",
+    severityIcon: (severity) => `svg:has(title:contains('${severity}'))`,
+
+    // Image/Deployment tab selectors
+    vulnerabilitiesTab: 'button[role="tab"]:contains("Vulnerabilities")',
+    resourcesTab: 'button[role="tab"]:contains("Resources")',
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
@@ -48,7 +53,6 @@ export const selectors = {
     tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
     tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
     tableRowMenuToggle: 'td button[aria-label="Actions"]',
-    nonZeroCveSeverityCounts: '*[aria-label*="severity cve count"i]:not([aria-label^="0"])',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>

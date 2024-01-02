@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/pgxpool_conn.go -source pgxpool_conn.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -231,10 +231,14 @@ function PoliciesTable({
 
     function onConfirmDeletePolicy() {
         setIsDeleting(true);
-        deletePoliciesHandler(deletingIds).finally(() => {
-            setDeletingIds([]);
-            setIsDeleting(false);
-        });
+        deletePoliciesHandler(deletingIds)
+            .catch(() => {
+                // TODO render error in dialog and move finally code to then block.
+            })
+            .finally(() => {
+                setDeletingIds([]);
+                setIsDeleting(false);
+            });
     }
 
     function onCancelDeletePolicy() {

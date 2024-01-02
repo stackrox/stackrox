@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/types.go -source types.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -74,6 +75,18 @@ func (m *MockDeploymentStore) CountDeploymentsForNamespace(namespaceName string)
 func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespaceName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
+}
+
+// EnhanceDeploymentReadOnly mocks base method.
+func (m *MockDeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnhanceDeploymentReadOnly", d, dependencies)
+}
+
+// EnhanceDeploymentReadOnly indicates an expected call of EnhanceDeploymentReadOnly.
+func (mr *MockDeploymentStoreMockRecorder) EnhanceDeploymentReadOnly(d, dependencies any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnhanceDeploymentReadOnly", reflect.TypeOf((*MockDeploymentStore)(nil).EnhanceDeploymentReadOnly), d, dependencies)
 }
 
 // FindDeploymentIDsByImages mocks base method.

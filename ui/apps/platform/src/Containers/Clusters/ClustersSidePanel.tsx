@@ -113,7 +113,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         kernelSupportAvailable,
                     } = clusterDefaults;
 
-                    // TODO add catch block to include error message as a property of the object.
                     setCentralEnv({
                         kernelSupportAvailable,
                         successfullyFetched: true,
@@ -128,6 +127,9 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         };
                         setSelectedCluster(updatedCluster);
                     }
+                })
+                .catch(() => {
+                    // TODO investigate how error affects ClusterEditForm
                 })
                 .finally(() => {
                     setLoadingCounter((prev) => prev - 1);

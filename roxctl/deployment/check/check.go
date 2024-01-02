@@ -34,6 +34,7 @@ const (
 		"results.#.violatedPolicies.#.description," +
 		"results.#.violatedPolicies.#.violation.@list," +
 		"results.#.violatedPolicies.#.remediation}"
+	defaultNamespace = "default"
 )
 
 var (
@@ -118,7 +119,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
-	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
+	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
+	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "a namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
@@ -142,6 +144,7 @@ type deploymentCheckCommand struct {
 	timeout            time.Duration
 	force              bool
 	cluster            string
+	namespace          string
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -172,6 +175,12 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
+	if d.cluster != "" && d.namespace == defaultNamespace {
+		d.env.Logger().WarnfLn("Deployments without a namespace in the spec will be enhanced with context information for the \"default\" namespace. This can be changed with setting '--namespace/-n'")
+	}
+	if d.cluster == "" && d.namespace != defaultNamespace {
+		d.env.Logger().WarnfLn("Cluster is empty. Namespace will only have an effect if '--cluster' is defined.")
+	}
 	var fileErrs errorhelpers.ErrorList
 	for _, file := range d.files {
 		if _, err := os.Open(file); err != nil {
@@ -251,6 +260,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		Yaml:             deploymentYaml,
 		PolicyCategories: d.policyCategories,
 		Cluster:          d.cluster,
+		Namespace:        d.namespace,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")

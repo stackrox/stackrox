@@ -57,6 +57,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
+			Description:  scanConfig.GetDescription(),
 		},
 	}, nil
 }
@@ -82,6 +83,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		Schedule:               convertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
 		Profiles:               profiles,
 		ModifiedBy:             authn.UserFromContext(ctx),
+		Description:            scanConfig.GetScanConfig().GetDescription(),
 	}
 }
 
@@ -173,6 +175,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
+			Description:  scanConfig.GetDescription(),
 		},
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),

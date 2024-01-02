@@ -54,8 +54,6 @@ message Deployment {
 
 // Next tag: 12
 message ContainerImage {
-    option (gogoproto.goproto_unrecognized) = false;
-
     // These tags maintain backwards compatibility with the previously embedded storage.Image
     // Tags after 10 may be used as needed
     reserved 2, 3, 5, 6, 7, 8, 9;

@@ -48,10 +48,10 @@ defs: |
       . as $hay | all(needles[]; . as $needle | all($hay[]; . != $needle));
 
   def saRefersTo(pullSecretNames):
-      [.imagePullSecrets[] | .name] | assertThat(. | containsAll(pullSecretNames));
+      (.imagePullSecrets // []) | [.[] | .name] | assertThat(. | containsAll(pullSecretNames));
 
   def saNotRefersTo(pullSecretNames):
-      [.imagePullSecrets[] | .name] | assertThat(. | containsNone(pullSecretNames));
+      (.imagePullSecrets // []) | [.[] | .name] | assertThat(. | containsNone(pullSecretNames));
 
   # This treats the lists as multisets.
   def saOnlyRefersTo(pullSecretNames):

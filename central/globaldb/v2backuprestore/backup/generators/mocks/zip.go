@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/zip.go -source zip.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

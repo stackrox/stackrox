@@ -21,6 +21,7 @@ import (
 
 const (
 	mockScanName = "mockScan"
+	mockScanID   = "mockScanID"
 )
 
 type pipelineTestCase struct {
@@ -223,8 +224,53 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 	}
 }
 
+func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
+	cases := []processScanConfigTestCase{
+		{
+			desc: "Successful delection of scan configuration",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					nil).Times(1)
+				suite.connectionMgr.EXPECT().BroadcastMessage(gomock.Any()).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Error from delection of scan configuration",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return(mockScanName,
+					errors.New("Unable to delete scan configuration")).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.New("Unable to delete scan configuration"),
+		},
+		{
+			desc: "Empty scan configuration name",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().DeleteScanConfiguration(gomock.Any(), mockScanID).Return("",
+					nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.Errorf("Unable to find scan configuration name for ID %q", mockScanID),
+		},
+	}
+	for _, tc := range cases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			err := suite.manager.DeleteScan(suite.hasWriteCtx, getTestRec().Id)
+			if tc.isErrorTest {
+				suite.Require().NotNil(err)
+			} else {
+				suite.Require().NoError(err)
+			}
+		})
+	}
+}
+
 func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:                     mockScanID,
 		ScanName:               mockScanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,

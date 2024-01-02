@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -56,11 +57,12 @@ func (mr *MockDataStoreMockRecorder) CountScanConfigurations(ctx, q any) *gomock
 }
 
 // DeleteScanConfiguration mocks base method.
-func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) error {
+func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteScanConfiguration", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteScanConfiguration indicates an expected call of DeleteScanConfiguration.
