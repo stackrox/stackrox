@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: Slack to \#acs-slack-integration-testing
+        description: "Slack to #acs-slack-integration-testing"
         required: true
         default: true
         type: boolean
