@@ -166,6 +166,8 @@ copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 #################
 
 integration-d       := matcher/metadata/postgres
+# Did not use "integration" in case it collides with
+# the "integration" build tag used outside this directory.
 integration-go-tag  := scanner_integration
 integration-timeout := 20m
 
