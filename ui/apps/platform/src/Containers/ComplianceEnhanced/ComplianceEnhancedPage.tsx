@@ -3,11 +3,11 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import {
     complianceEnhancedBasePath,
-    complianceEnhancedScanConfigsBasePath,
+    complianceEnhancedClusterComplianceBasePath,
     complianceEnhancedStatusPath,
 } from 'routePaths';
-import ComplianceStatusPage from 'Containers/ComplianceEnhanced/Status/ComplianceStatusPage';
-import ScanConfigsPage from 'Containers/ComplianceEnhanced/ScanConfigs/ScanConfigsPage';
+import ComplianceStatusPage from './Status/ComplianceStatusPage';
+import ClusterCompliancePage from './ClusterCompliance/ClusterCompliancePage';
 
 function ComplianceEnhancedPage() {
     return (
@@ -16,8 +16,8 @@ function ComplianceEnhancedPage() {
             <Route path={complianceEnhancedStatusPath}>
                 <ComplianceStatusPage />
             </Route>
-            <Route path={complianceEnhancedScanConfigsBasePath}>
-                <ScanConfigsPage />
+            <Route path={complianceEnhancedClusterComplianceBasePath}>
+                <ClusterCompliancePage />
             </Route>
         </Switch>
     );

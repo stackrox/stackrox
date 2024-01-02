@@ -39,7 +39,7 @@ export function visitComplianceEnhancedDashboard(staticResponseMap) {
 export function visitComplianceEnhancedScanConfigsFromLeftNav(staticResponseMap) {
     visitFromLeftNavExpandable(
         'Compliance (2.0)',
-        'Scheduling',
+        'Cluster Compliance',
         routeMatcherMapForComplianceScanConfigs,
         staticResponseMap
     );

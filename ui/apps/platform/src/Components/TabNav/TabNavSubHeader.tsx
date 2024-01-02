@@ -1,12 +1,12 @@
 import React from 'react';
 import { PageSection, Flex, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-type PolicyManagementSubHeaderProps = {
+type TabNavSubHeaderProps = {
     description: string;
     actions: React.ReactNode;
 };
 
-function PolicyManagementSubHeader({ description, actions }: PolicyManagementSubHeaderProps) {
+function TabNavSubHeader({ description, actions }: TabNavSubHeaderProps) {
     return (
         <PageSection variant="light" className="pf-u-py-0">
             <Toolbar inset={{ default: 'insetNone' }}>
@@ -23,4 +23,4 @@ function PolicyManagementSubHeader({ description, actions }: PolicyManagementSub
     );
 }
 
-export default PolicyManagementSubHeader;
+export default TabNavSubHeader;
