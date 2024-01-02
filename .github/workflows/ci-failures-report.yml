@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       test:
-        description: Slack to #acs-slack-integration-testing
+        description: Slack to \#acs-slack-integration-testing
         required: true
-        default: false
+        default: true
         type: boolean
   schedule:
   - cron: 0 12 * * 1
