@@ -199,10 +199,10 @@ func (u *Updater) update(ctx context.Context) error {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("error closing temp update file")
+			zlog.Error(ctx).Err(err).Msg("closing temp update file")
 		}
 		if err := os.Remove(f.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("error removing temp update file %q", f.Name())
+			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", f.Name())
 		}
 	}()
 
@@ -270,10 +270,10 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			return
 		}
 		if err := f.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("error closing temp update file")
+			zlog.Error(ctx).Err(err).Msg("closing temp update file")
 		}
 		if err := os.Remove(f.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("error removing temp update file %q", f.Name())
+			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", f.Name())
 		}
 	}()
 
@@ -312,7 +312,7 @@ func (u *Updater) runGC(ctx context.Context) {
 	zlog.Info(ctx).Int("retention", u.updateRetention).Msg("GC started")
 	i, err := u.store.GC(ctx, u.updateRetention)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("error while performing GC")
+		zlog.Error(ctx).Err(err).Msg("performing GC")
 		return
 	}
 	zlog.Info(ctx).
