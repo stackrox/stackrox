@@ -15,8 +15,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { ClusterScopeObject } from 'services/RolesService';
-import { ComplianceProfile } from 'services/ComplianceEnhancedService';
+import { ComplianceProfile, ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
 import { ScanConfigFormValues } from './useFormikScanConfig';
 import {
@@ -25,7 +24,7 @@ import {
 } from '../compliance.scanConfigs.utils';
 
 export type ProfileSelectionProps = {
-    clusters: ClusterScopeObject[];
+    clusters: ComplianceIntegration[];
     profiles: ComplianceProfile[];
     errorMessage: string;
 };
@@ -36,14 +35,14 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
     const scanSchedule = convertFormikParametersToSchedule(formikValues.parameters);
     const formattedScanSchedule = formatScanSchedule(scanSchedule);
 
-    function findById<T extends { id: string }>(selectedIds: string[], items: T[]): T[] {
+    function findById<T, K extends keyof T>(selectedIds: string[], items: T[], idKey: K): T[] {
         return selectedIds
-            .map((id) => items.find((item) => item.id === id))
+            .map((id) => items.find((item) => String(item[idKey]) === id))
             .filter((item): item is T => item !== undefined);
     }
 
-    const selectedClusters = findById<ClusterScopeObject>(formikValues.clusters, clusters);
-    const selectedProfiles = findById<ComplianceProfile>(formikValues.profiles, profiles);
+    const selectedClusters = findById(formikValues.clusters, clusters, 'clusterId');
+    const selectedProfiles = findById(formikValues.profiles, profiles, 'id');
 
     return (
         <>
@@ -84,7 +83,7 @@ function ReviewConfig({ clusters, profiles, errorMessage }: ProfileSelectionProp
                     </Text>
                     <TextList isPlain>
                         {selectedClusters.map((cluster) => (
-                            <TextListItem key={cluster.id}>{cluster.name}</TextListItem>
+                            <TextListItem key={cluster.id}>{cluster.clusterName}</TextListItem>
                         ))}
                     </TextList>
                 </StackItem>
