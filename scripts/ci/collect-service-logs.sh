@@ -92,6 +92,8 @@ main() {
             (( item_count++ ))
         done
 
+        # Save the count of objects found in order to couple this script with
+        # other functionality that expects object filenames to follow a format.
         echo "${item_count}" > "${log_dir}/${object}/ITEM_COUNT.txt"
     done
 

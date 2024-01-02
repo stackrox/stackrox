@@ -69,7 +69,7 @@ function setup() {
     touch "${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c-prev-success.log"
     # describe yaml saved to a .log file is ignored
     touch "${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c_describe.log"
-    # logs from previous container failures are ignored (checked elsewhere)
+    # logs from previous container failures are ignored (handled elsewhere)
     touch "${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c_previous.log"
     LOGCHECK_SCRIPT="mock_check_script"
 

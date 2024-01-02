@@ -6,8 +6,8 @@
 # It returns a non-zero exit status if any offending patterns have been found.
 
 # The first line of output from this script when an offending pattern is found
-# is the first offending line that matches a block pattern. The rest of output
-# is standard grep output with filename prefix and context.
+# is the first line that matches a block pattern. The rest of output is standard
+# grep output with filename prefix and context.
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
