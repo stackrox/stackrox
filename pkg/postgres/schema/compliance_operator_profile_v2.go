@@ -60,6 +60,7 @@ const (
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
 type ComplianceOperatorProfileV2 struct {
 	ID             string `gorm:"column:id;type:varchar;primaryKey"`
+	ProfileID      string `gorm:"column:profileid;type:varchar"`
 	Name           string `gorm:"column:name;type:varchar;uniqueIndex:profile_unique_indicator"`
 	ProfileVersion string `gorm:"column:profileversion;type:varchar;uniqueIndex:profile_unique_indicator"`
 	ProductType    string `gorm:"column:producttype;type:varchar"`

@@ -39,7 +39,7 @@ func init() {
 		&storage.ComplianceOperatorRuleV2{}:                     resources.ComplianceOperator,
 		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
 		&storage.ComplianceOperatorScanConfigurationV2{}:        resources.ComplianceOperator,
-		&storage.ComplianceOperatorScanV2{}:                     resources.ComplianceOperator,
+		&storage.ComplianceOperatorScanV2{}:                     resources.Compliance,
 		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
 		&storage.ComplianceRunMetadata{}:                        resources.Compliance,
 		&storage.ComplianceRunResults{}:                         resources.Compliance,

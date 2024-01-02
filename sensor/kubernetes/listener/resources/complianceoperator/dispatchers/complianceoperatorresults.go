@@ -12,15 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	ocpComplianceLabelsKey = "compliance.openshift.io/"
-)
-
-var (
-	scanNameKey  = ocpComplianceLabelsKey + "scan-name"
-	suiteNameKey = ocpComplianceLabelsKey + "suite"
-)
-
 // ResultDispatcher handles compliance check result objects
 type ResultDispatcher struct{}
 
@@ -72,7 +63,7 @@ func statusToV2Status(status v1alpha1.ComplianceCheckStatus) central.ComplianceO
 }
 
 func getScanName(labels map[string]string) string {
-	if value, ok := labels[scanNameKey]; ok {
+	if value, ok := labels[v1alpha1.ComplianceScanLabel]; ok {
 		return value
 	}
 
@@ -80,7 +71,7 @@ func getScanName(labels map[string]string) string {
 }
 
 func getSuiteName(labels map[string]string) string {
-	if value, ok := labels[suiteNameKey]; ok {
+	if value, ok := labels[v1alpha1.SuiteLabel]; ok {
 		return value
 	}
 

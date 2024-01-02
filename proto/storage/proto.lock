@@ -4806,8 +4806,7 @@
               {
                 "id": 3,
                 "name": "warnings",
-                "type": "string",
-                "is_repeated": true
+                "type": "string"
               }
             ]
           },
@@ -4827,17 +4826,17 @@
               },
               {
                 "id": 2,
-                "name": "scan_config_id",
+                "name": "scan_config_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint\""
                   }
                 ]
               },
               {
-                "id": 14,
+                "id": 13,
                 "name": "scan_name",
                 "type": "string"
               },
@@ -4853,21 +4852,19 @@
                 ]
               },
               {
-                "id": 13,
-                "name": "cluster_name",
+                "id": 14,
+                "name": "warnings",
                 "type": "string"
               },
               {
                 "id": 4,
                 "name": "errors",
-                "type": "string",
-                "is_repeated": true
+                "type": "string"
               },
               {
                 "id": 5,
                 "name": "profile",
-                "type": "ProfileShim",
-                "is_repeated": true
+                "type": "ProfileShim"
               },
               {
                 "id": 8,
