@@ -102,12 +102,11 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 
 			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrations(allAccessContext, tc.expectedQ).
 				Return([]*storage.ComplianceIntegration{{
-					Id:           uuid.NewDummy().String(),
-					Version:      "22",
-					ClusterId:    fixtureconsts.Cluster1,
-					Namespace:    fixtureconsts.Namespace1,
-					NamespaceId:  fixtureconsts.Namespace1,
-					StatusErrors: []string{"Error 1", "Error 2", "Error 3"},
+					Id:                  uuid.NewDummy().String(),
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
+					StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 				},
 				}, nil).Times(1)
 

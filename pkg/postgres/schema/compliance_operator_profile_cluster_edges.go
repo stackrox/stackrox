@@ -39,7 +39,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILE_CLUSTER_EDGE, "complianceoperatorprofileclusteredge", (*storage.ComplianceOperatorProfileClusterEdge)(nil)))
-		schema.ScopingResource = resources.ComplianceOperator
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorProfileClusterEdgesStmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_PROFILE_CLUSTER_EDGE, schema)
 		return schema
@@ -56,7 +56,7 @@ type ComplianceOperatorProfileClusterEdges struct {
 	ID                             string                      `gorm:"column:id;type:varchar;primaryKey"`
 	ProfileID                      string                      `gorm:"column:profileid;type:varchar"`
 	ProfileUID                     string                      `gorm:"column:profileuid;type:varchar"`
-	ClusterID                      string                      `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofileclusteredges_sac_filter,type:btree"`
+	ClusterID                      string                      `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofileclusteredges_sac_filter,type:hash"`
 	Serialized                     []byte                      `gorm:"column:serialized;type:bytea"`
 	ComplianceOperatorProfileV2Ref ComplianceOperatorProfileV2 `gorm:"foreignKey:profileid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

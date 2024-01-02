@@ -27,7 +27,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceOperatorProfileV2Schema
-	targetResource = resources.ComplianceOperator
+	targetResource = resources.Compliance
 )
 
 type storeType = storage.ComplianceOperatorProfileV2

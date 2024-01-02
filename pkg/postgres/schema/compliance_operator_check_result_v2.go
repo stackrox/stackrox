@@ -41,7 +41,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, "complianceoperatorcheckresultv2", (*storage.ComplianceOperatorCheckResultV2)(nil)))
-		schema.ScopingResource = resources.ComplianceOperator
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorCheckResultV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_CHECK_RESULTS, schema)
 		return schema
@@ -58,7 +58,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	ID             string                                              `gorm:"column:id;type:varchar;primaryKey"`
 	CheckID        string                                              `gorm:"column:checkid;type:varchar"`
 	CheckName      string                                              `gorm:"column:checkname;type:varchar"`
-	ClusterID      string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:btree"`
+	ClusterID      string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:hash"`
 	Status         storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
 	Severity       storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	CreatedTime    *time.Time                                          `gorm:"column:createdtime;type:timestamp"`

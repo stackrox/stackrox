@@ -94,7 +94,7 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScanConfigurationV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanConfigurationV2.GetId()), sac.ErrResourceAccessDenied)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorScanConfigurationV2.GetId()))
 
 	var complianceOperatorScanConfigurationV2s []*storage.ComplianceOperatorScanConfigurationV2
 	var complianceOperatorScanConfigurationV2IDs []string

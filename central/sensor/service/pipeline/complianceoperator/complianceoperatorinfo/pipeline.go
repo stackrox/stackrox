@@ -57,9 +57,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	var operatorErrors []string
 	operatorInfo := &storage.ComplianceIntegration{
-		Version:   msg.GetComplianceOperatorInfo().GetVersion(),
-		ClusterId: clusterID,
-		Namespace: msg.GetComplianceOperatorInfo().GetNamespace(),
+		Version:             msg.GetComplianceOperatorInfo().GetVersion(),
+		ClusterId:           clusterID,
+		ComplianceNamespace: msg.GetComplianceOperatorInfo().GetNamespace(),
 	}
 
 	if msg.GetComplianceOperatorInfo().GetStatusError() != "" {
