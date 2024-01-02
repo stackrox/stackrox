@@ -12,8 +12,8 @@ type entityStatus struct {
 	isHistorical bool
 }
 
-// markHistorical is called when entity would be deleted.
-// Istead, we mark it as historcal and keep it as long as ticksLeft
+// markHistorical is called when entity is deleted from the cluster.
+// Instead of deleting it from memory, we mark it as historical and keep it as long as ticksLeft
 func (es *entityStatus) markHistorical(ticksLeft uint16) {
 	if !es.isHistorical {
 		es.ticksLeft = ticksLeft
