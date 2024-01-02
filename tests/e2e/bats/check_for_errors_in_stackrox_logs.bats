@@ -80,15 +80,15 @@ function setup() {
 check called with: ${BATS_TEST_TMPDIR}/stackrox/pods/an_app-a-1.log \
 ${BATS_TEST_TMPDIR}/stackrox/pods/an_app-a-2.log \
 ${BATS_TEST_TMPDIR}/stackrox/pods/an_app-b.log<<"
-    assert_output --partial "save_junit_success called with: SuspiciousLog / an_app "
+    assert_output --partial "save_junit_success called with: SuspiciousLog-an_app "
 
     assert_output --partial "\
 check called with: ${BATS_TEST_TMPDIR}/stackrox/pods/other_app-c-prev-success.log<<"
-    assert_output --partial "save_junit_success called with: SuspiciousLog / other_app "
+    assert_output --partial "save_junit_success called with: SuspiciousLog-other_app "
 
     assert_output --partial "no_logs_app-d*.log': No such file or directory"
     assert_output --partial "no_logs_app-e*.log': No such file or directory"
-    assert_output --partial "save_junit_success called with: SuspiciousLog / no_logs_app "
+    assert_output --partial "save_junit_success called with: SuspiciousLog-no_logs_app "
 }
 
 function make_pod_object() {
