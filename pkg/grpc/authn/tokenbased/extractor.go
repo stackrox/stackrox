@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -136,18 +137,18 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 	}
 
 	// We expect `FromUserDescriptor()` to filter out invalid roles.
-	resolvedRoles, err := roleMapper.FromUserDescriptor(ctx, ud)
+	resolvedRoles, teams, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(resolvedRoles, token, authProvider)
+	id := createRoleBasedIdentity(resolvedRoles, teams, token, authProvider)
 	return id, nil
 }
 
-func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
+func createRoleBasedIdentity(roles []permissions.ResolvedRole, teams []*storage.Team, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		username:      token.ExternalUser.Email,
@@ -157,6 +158,7 @@ func createRoleBasedIdentity(roles []permissions.ResolvedRole, token *tokens.Tok
 		expiry:        token.Expiry(),
 		attributes:    token.Claims.ExternalUser.Attributes,
 		authProvider:  authProvider,
+		teams:         teams,
 	}
 	if id.friendlyName == "" {
 		if token.ExternalUser.Email != "" {

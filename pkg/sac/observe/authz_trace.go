@@ -79,6 +79,30 @@ func (t *AuthzTrace) RecordDenyOnResourceLevel(access string, resourceName strin
 	t.denied[fmt.Sprintf("%s for %s in *", access, resourceName)]++
 }
 
+// RecordAllowOnTeamScopeLevel writes an "allow resource" authorizer decision iff the receiver is
+// not nil.
+func (t *AuthzTrace) RecordAllowOnTeamScopeLevel(access string, resourceName string, teamName string) {
+	if t == nil {
+		return
+	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	t.allowed[fmt.Sprintf("%s for %s in team '%s'", access, resourceName, teamName)]++
+}
+
+func (t *AuthzTrace) RecordDenyOnTeamScopeLevel(access string, resourceName string, teamName string) {
+	if t == nil {
+		return
+	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	t.denied[fmt.Sprintf("%s for %s in team '%s'", access, resourceName, teamName)]++
+}
+
 // RecordAllowOnScopeLevel writes an "allow resource object in scope" authorizer
 // decision iff the receiver is not nil.
 func (t *AuthzTrace) RecordAllowOnScopeLevel(access string, resourceName string, clusterID string, namespaceName string, roleName string) {

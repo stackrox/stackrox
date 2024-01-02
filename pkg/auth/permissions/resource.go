@@ -36,6 +36,7 @@ type ResourceMetadata struct {
 	// (i.e., performing legacy auth for globally-scoped resources, and not performing it for resources with cluster
 	// or namespace scopes).
 	legacyAuthForSAC *bool
+	TeamScope        bool
 }
 
 // GetResource returns the resource for this metadata object.
@@ -68,6 +69,11 @@ func (m ResourceMetadata) GetScope() ResourceScope {
 // String returns a string representation of the resource for this metadata object.
 func (m ResourceMetadata) String() string {
 	return string(m.Resource)
+}
+
+// GetTeamScope returns whether the resource is team scopable.
+func (m ResourceMetadata) GetTeamScope() bool {
+	return m.TeamScope
 }
 
 // ResourceHandle allows referring to a resource, without having to specify whether it is a Resource

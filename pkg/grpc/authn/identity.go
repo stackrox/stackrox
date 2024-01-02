@@ -28,4 +28,7 @@ type Identity interface {
 	ValidityPeriod() (time.Time, time.Time)
 
 	ExternalAuthProvider() authproviders.Provider
+
+	// Teams associated with the identity.
+	Teams() []*storage.Team
 }

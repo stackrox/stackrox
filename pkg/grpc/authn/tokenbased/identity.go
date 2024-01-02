@@ -21,6 +21,7 @@ type roleBasedIdentity struct {
 	expiry        time.Time
 	attributes    map[string][]string
 	authProvider  authproviders.Provider
+	teams         []*storage.Team
 }
 
 func (i *roleBasedIdentity) UID() string {
@@ -54,6 +55,10 @@ func (i *roleBasedIdentity) User() *storage.UserInfo {
 		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
 		Roles:        utils.ExtractRolesForUserInfo(i.resolvedRoles),
 	}
+}
+
+func (i *roleBasedIdentity) Teams() []*storage.Team {
+	return i.teams
 }
 
 func (i *roleBasedIdentity) ValidityPeriod() (time.Time, time.Time) {

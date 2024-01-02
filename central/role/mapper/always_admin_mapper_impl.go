@@ -4,6 +4,7 @@ import (
 	"context"
 
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/sac"
@@ -15,8 +16,8 @@ type alwaysAdminMapperImpl struct {
 }
 
 // FromUserDescriptor always returns admin.
-func (rm *alwaysAdminMapperImpl) FromUserDescriptor(_ context.Context, _ *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
-	return []permissions.ResolvedRole{rm.adminRole}, nil
+func (rm *alwaysAdminMapperImpl) FromUserDescriptor(_ context.Context, _ *permissions.UserDescriptor) ([]permissions.ResolvedRole, []*storage.Team, error) {
+	return []permissions.ResolvedRole{rm.adminRole}, nil, nil
 }
 
 // AlwaysAdminRoleMapper returns an implementation of RoleMapper that always returns the admin role.

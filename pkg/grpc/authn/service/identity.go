@@ -17,6 +17,10 @@ type identity struct {
 	id mtls.Identity
 }
 
+func (i identity) Teams() []*storage.Team {
+	return nil
+}
+
 func (i identity) Service() *storage.ServiceIdentity {
 	return i.id.V1()
 }

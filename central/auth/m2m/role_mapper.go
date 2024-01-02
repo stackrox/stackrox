@@ -35,12 +35,12 @@ func newRoleMapper(config *storage.AuthMachineToMachineConfig, roleDS roleDataSt
 	}
 }
 
-func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
+func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, []*storage.Team, error) {
 	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.config.GetMappings(), r.configRegexps)
 }
 
 func resolveRolesForClaims(ctx context.Context, claims map[string][]string, roleDS roleDataStore.DataStore,
-	mappings []*storage.AuthMachineToMachineConfig_Mapping, expressions []*regexp.Regexp) ([]permissions.ResolvedRole, error) {
+	mappings []*storage.AuthMachineToMachineConfig_Mapping, expressions []*regexp.Regexp) ([]permissions.ResolvedRole, []*storage.Team, error) {
 	rolesForUser := set.NewStringSet()
 
 	for i, mapping := range mappings {
@@ -51,7 +51,7 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 
 	// If no roles are assigned to the user, we will return an error and short-circuit.
 	if rolesForUser.Cardinality() == 0 {
-		return nil, auth.ErrNoValidRole
+		return nil, nil, auth.ErrNoValidRole
 	}
 
 	resolvedRoles := make([]permissions.ResolvedRole, 0, rolesForUser.Cardinality())
@@ -60,7 +60,7 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 		// Short-circuit if _any_ role cannot be resolved that _should_ be assigned to the user.
 		// This theoretically shouldn't happen.
 		if err != nil {
-			return nil, errors.Wrapf(err, "resolving role %q", role)
+			return nil, nil, errors.Wrapf(err, "resolving role %q", role)
 		}
 
 		// Explicitly skip the none role, since this shouldn't be assigned.
@@ -69,7 +69,7 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 		}
 	}
 
-	return resolvedRoles, nil
+	return resolvedRoles, nil, nil
 }
 
 func valuesMatch(expr *regexp.Regexp, claimValues []string) bool {

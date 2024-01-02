@@ -95,6 +95,11 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 		Resource: name,
 		Scope:    scope,
 	}
+	// (dhaus): Workaround for now, problem is the current "scope" is too static and not flexible enough to cover
+	// things like "flexible" resources.
+	if name == "WorkflowAdministration" {
+		md.TeamScope = true
+	}
 	resourceToMetadata[name] = md
 	return md
 }

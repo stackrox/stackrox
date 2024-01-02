@@ -2,12 +2,14 @@ package permissions
 
 import (
 	"context"
+
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // A RoleMapper returns the role corresponding to an identifier
 // obtained from a token.
 type RoleMapper interface {
-	FromUserDescriptor(ctx context.Context, user *UserDescriptor) ([]ResolvedRole, error)
+	FromUserDescriptor(ctx context.Context, user *UserDescriptor) ([]ResolvedRole, []*storage.Team, error)
 }
 
 // UserDescriptor contains the necessary user information to map it to a user

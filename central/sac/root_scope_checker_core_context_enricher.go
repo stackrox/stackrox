@@ -49,7 +49,8 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 		// User has no valid role => deny all.
 		return sac.WithGlobalAccessScopeChecker(ctx, sac.DenyAllAccessScopeChecker()), observe.ScopeCheckerDenyForNoID, nil
 	}
-	scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
+	// (dhaus): enrich the scope checker here to also include the "teams" related stuff.
+	scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles(), id.Teams())
 	if err != nil {
 		return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
 	}

@@ -18,6 +18,11 @@ type identity struct {
 	provider      authproviders.Provider
 	resolvedRoles []permissions.ResolvedRole
 	attributes    map[string][]string
+	teams         []*storage.Team
+}
+
+func (i *identity) Teams() []*storage.Team {
+	return i.teams
 }
 
 func (i *identity) Attributes() map[string][]string {
@@ -52,7 +57,7 @@ func (i *identity) Service() *storage.ServiceIdentity {
 	return nil
 }
 
-func (i identity) ValidityPeriod() (time.Time, time.Time) {
+func (i *identity) ValidityPeriod() (time.Time, time.Time) {
 	return time.Time{}, i.info.NotAfter
 }
 

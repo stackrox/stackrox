@@ -458,6 +458,19 @@
         }
       }
     },
+    "storageAdditionalScope": {
+      "type": "object",
+      "properties": {
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageTeam"
+          },
+          "description": "(dhaus): Allow within the API to model shared ownership between a resource, this way one could share resources\nacross teams R with one or more \"governing\" teams holding W. This can also be shared R/W, whatever people may\nfeel like doing."
+        }
+      },
+      "description": "(dhaus): This will be used by other storage protos to include the additional scopeing info about teams to\ntheir structure, if required."
+    },
     "storageAlert": {
       "type": "object",
       "properties": {
@@ -1130,6 +1143,10 @@
         "isDefault": {
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
+        },
+        "additionalScope": {
+          "$ref": "#/definitions/storageAdditionalScope",
+          "description": "(dhaus): Model the additional scope here for policies (i.e. the \"teams\" stuff). This can be extended to also\ninclude things like cluster / namespace, ideally we have a single proto message which holds any potential\nscoping relevant info, this way code can be more genericly written but needs refactoring; with the intro of\nsplit between storage vs api protos, this could be easily extended but probably needs also a lot of time).\n\nAdditional scope currently holds one or more \"teams\" which are associated with this resource.\nIt does not provide access per-se, but rather only models \"relationship\" with the respective \"teams\".\nAccess itself will be provided by the access scope as usual.\n\nDepending on whether we decide to make teams a \"stored\" resource or something more \"ephemeral\", we have to use a\nfk constraint here ensuring resources do not become stale in case a team is deleted."
         }
       }
     },
@@ -1413,6 +1430,17 @@
         "NO_EXECUTE_TAINT_EFFECT"
       ],
       "default": "UNKNOWN_TAINT_EFFECT"
+    },
+    "storageTeam": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "storageToleration": {
       "type": "object",

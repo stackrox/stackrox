@@ -95,6 +95,7 @@ func init() {
 		&storage.SimpleAccessScope{}:                            resources.Access,
 		&storage.StoredLicenseKey{}:                             resources.Access,
 		&storage.SystemInfo{}:                                   resources.Administration,
+		&storage.Team{}:                                         resources.Access,
 		&storage.TelemetryConfiguration{}:                       resources.Administration,
 		&storage.TokenMetadata{}:                                resources.Integration,
 		&storage.User{}:                                         resources.Access,

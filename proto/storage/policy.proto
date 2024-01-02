@@ -9,6 +9,7 @@ import "storage/image.proto";
 import "gogoproto/gogo.proto";
 import "storage/deployment.proto";
 import "storage/rbac.proto";
+import "storage/teams.proto";
 
 package storage;
 
@@ -60,6 +61,19 @@ message Policy {
     bool                        mitre_vectors_locked    = 25;
     // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
     bool                        is_default              = 26;
+
+    // (dhaus): Model the additional scope here for policies (i.e. the "teams" stuff). This can be extended to also
+    // include things like cluster / namespace, ideally we have a single proto message which holds any potential
+    // scoping relevant info, this way code can be more genericly written but needs refactoring; with the intro of
+    // split between storage vs api protos, this could be easily extended but probably needs also a lot of time).
+    //
+    // Additional scope currently holds one or more "teams" which are associated with this resource.
+    // It does not provide access per-se, but rather only models "relationship" with the respective "teams".
+    // Access itself will be provided by the access scope as usual.
+    //
+    // Depending on whether we decide to make teams a "stored" resource or something more "ephemeral", we have to use a
+    // fk constraint here ensuring resources do not become stale in case a team is deleted.
+    AdditionalScope additional_scope = 27;
 }
 
 enum EventSource {

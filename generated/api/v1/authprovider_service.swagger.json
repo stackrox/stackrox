@@ -526,6 +526,17 @@
       "default": "UNKNOWN_SERVICE",
       "title": "Next available tag: 13"
     },
+    "storageTeam": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "storageTraits": {
       "type": "object",
       "properties": {
@@ -596,6 +607,12 @@
         },
         "userInfo": {
           "$ref": "#/definitions/storageUserInfo"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageTeam"
+          }
         },
         "userAttributes": {
           "type": "array",

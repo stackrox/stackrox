@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+
+package v1;
+
+message Team {
+    string id   = 1;
+    string name = 2;
+}
+
+message ListTeamsResponse {
+    repeated Team teams = 1;
+}
+
+message GetTeamResponse {
+    Team team = 1;
+}
+
+message AddTeamRequest {
+    Team team = 1;
+}
+
+message AddTeamResponse {
+    Team team = 1;
+}
+
+service TeamService {
+    rpc ListTeams(Empty) returns (ListTeamsResponse) {
+        option (google.api.http) = {
+            get: "/v1/teams"
+        };
+    }
+
+    rpc GetTeam(ResourceByID) returns (GetTeamResponse) {
+        option (google.api.http) = {
+            get: "/v1/teams/{id}"
+        };
+    }
+
+    rpc AddTeam(AddTeamRequest) returns (AddTeamResponse) {
+        option (google.api.http) = {
+            post: "/v1/teams"
+            body: "*"
+        };
+    }
+}

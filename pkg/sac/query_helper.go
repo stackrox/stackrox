@@ -9,6 +9,7 @@ import (
 var (
 	clusterIDField = search.ClusterID
 	namespaceField = search.Namespace
+	teamField      = search.Team
 )
 
 // BuildClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
@@ -67,6 +68,15 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 // injected in search queries for resource types that have direct namespace scope level.
 func BuildNonVerboseClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	return buildClusterNamespaceLevelSACQueryFilter(root, false)
+}
+
+// BuildTeamLevelSACQueryFilter builds a filter based on team names associated with a principal.
+func BuildTeamLevelSACQueryFilter(teamNames []string) (*v1.Query, error) {
+	teamQueries := make([]*v1.Query, 0, len(teamNames))
+	for _, teamName := range teamNames {
+		teamQueries = append(teamQueries, getTeamMatchQuery(teamName))
+	}
+	return search.DisjunctionQuery(teamQueries...), nil
 }
 
 func buildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree, verbose bool) (*v1.Query, error) {
@@ -131,6 +141,10 @@ func getMatchNoneQuery() *v1.Query {
 			},
 		},
 	}
+}
+
+func getTeamMatchQuery(teamName string) *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(teamField, teamName).ProtoQuery()
 }
 
 func getClusterMatchQuery(clusterID string, verbose bool) *v1.Query {

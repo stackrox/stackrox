@@ -137,7 +137,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			trace := observe.NewAuthzTrace()
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, trace)
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil, trace)
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
 				expected := tc.results[i]
@@ -155,7 +155,14 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 	t.Parallel()
 	roles := []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())}
 
-	subScopeChecker := newGlobalScopeCheckerCore(clusters, namespaces, roles, nil)
+	subScopeChecker := newGlobalScopeCheckerCore(clusters, namespaces, roles, []*storage.Team{
+		{
+			Name: "team-a",
+		},
+		{
+			Name: "team-b",
+		},
+	}, nil)
 
 	tests := []struct {
 		name      string
@@ -171,6 +178,11 @@ func TestScopeCheckerWithParallelAccessAndSharedGlobalScopeChecker(t *testing.T)
 			name:      "allow read from namespace with direct access",
 			scopeKeys: readNamespace(firstClusterID, firstNamespaceName),
 			results:   []bool{false, false, false, true},
+		},
+		{
+			name:      "allow read from team with direct access",
+			scopeKeys: readPolicy("team-a"),
+			results:   []bool{false, false, true},
 		},
 		{
 			name: "deny read from global",
@@ -691,7 +703,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil, nil)
 			// Checks on the global level SCC scope extraction
 			checkEffectiveAccessScope(t, scc, tc.resource, tc.resultEAS)
 			// Checks on the access mode level SCC scope extraction
@@ -717,7 +729,7 @@ func checkEffectiveAccessScope(t *testing.T, scc sac.ScopeCheckerCore, resource 
 
 func TestGlobalScopeCheckerCore(t *testing.T) {
 	t.Parallel()
-	scc := newGlobalScopeCheckerCore(nil, nil, nil, nil)
+	scc := newGlobalScopeCheckerCore(nil, nil, nil, nil, nil)
 	assert.Equal(t, false, scc.Allowed())
 }
 
@@ -746,7 +758,7 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
+			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil, nil)
 			for i, scopeKey := range tc.scopeKeys {
 				scc = scc.SubScopeChecker(scopeKey)
 				if i >= len(tc.results) {
@@ -770,6 +782,14 @@ func readCluster(clusterID string, resource permissions.Resource) []sac.ScopeKey
 
 func readNamespace(clusterID, namespaceName string) []sac.ScopeKey {
 	return scopeKeys(storage.Access_READ_ACCESS, resources.Namespace.Resource, clusterID, namespaceName)
+}
+
+func readPolicy(team string) []sac.ScopeKey {
+	return []sac.ScopeKey{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.WorkflowAdministration.Resource),
+		sac.TeamScopeKey(team),
+	}
 }
 
 func scopeKeys(access storage.Access, res permissions.Resource, clusterID, namespaceName string) []sac.ScopeKey {

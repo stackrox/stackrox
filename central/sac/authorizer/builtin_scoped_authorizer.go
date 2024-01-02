@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -36,7 +37,7 @@ const (
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
-func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
+func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole, teams []*storage.Team) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
 	clusters, err := fetchClusters(adminCtx)
@@ -48,13 +49,18 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
 
-	return newGlobalScopeCheckerCore(clusters, namespaces, roles, observe.AuthzTraceFromContext(ctx)), nil
+	return newGlobalScopeCheckerCore(clusters, namespaces, roles, teams, observe.AuthzTraceFromContext(ctx)), nil
 }
 
-func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
+func newGlobalScopeCheckerCore(clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, roles []permissions.ResolvedRole, teams []*storage.Team, trace *observe.AuthzTrace) sac.ScopeCheckerCore {
+	teamNames := make([]string, 0, len(teams))
+	for _, team := range teams {
+		teamNames = append(teamNames, team.GetName())
+	}
 	scc := &globalScopeChecker{
-		roles: roles,
-		trace: trace,
+		roles:     roles,
+		trace:     trace,
+		teamNames: teamNames,
 		cache: &authorizerDataCache{
 			clusters:                  clusters,
 			namespaces:                namespaces,
@@ -81,6 +87,8 @@ type globalScopeChecker struct {
 	cache *authorizerDataCache
 
 	roles []permissions.ResolvedRole
+
+	teamNames []string
 
 	// Should be nil unless authorization tracing is enabled for this instance.
 	trace *observe.AuthzTrace
@@ -159,9 +167,10 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 		accessModeLevelScopeCheckerCore: accessModeLevelScopeCheckerCore{
 			access: a.access,
 			globalScopeChecker: globalScopeChecker{
-				roles: filteredRoles,
-				trace: a.trace,
-				cache: a.cache,
+				roles:     filteredRoles,
+				teamNames: a.teamNames,
+				trace:     a.trace,
+				cache:     a.cache,
 			},
 		},
 	}
@@ -182,7 +191,10 @@ type resourceLevelScopeCheckerCore struct {
 }
 
 func (a *resourceLevelScopeCheckerCore) Allowed() bool {
-	if a.resource.GetScope() == permissions.GlobalScope {
+	// (dhaus): Workaround for the time being to allow more flexibility with the scope, ideally team scope resources
+	// Should get a new scope which is lower than global to skip this.
+	skipWorkaround := a.resource.GetTeamScope() && a.teamNames != nil
+	if a.resource.GetScope() == permissions.GlobalScope && !skipWorkaround {
 		a.trace.RecordAllowOnResourceLevel(a.access.String(), a.resource.String())
 		return true
 	}
@@ -230,13 +242,57 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
-	scope, ok := scopeKey.(sac.ClusterScopeKey)
-	if !ok {
+	switch t := scopeKey.(type) {
+	case sac.ClusterScopeKey:
+		return &clusterNamespaceLevelScopeCheckerCore{
+			clusterID:                 t.String(),
+			teamLevelScopeCheckerCore: teamLevelScopeCheckerCore{resourceLevelScopeCheckerCore: *a},
+		}
+	case sac.TeamScopeKey:
+		return &teamLevelScopeCheckerCore{
+			team:                          t.String(),
+			resourceLevelScopeCheckerCore: *a,
+		}
+	default:
 		return errorScopeChecker(a, scopeKey)
 	}
+}
+
+type teamLevelScopeCheckerCore struct {
+	resourceLevelScopeCheckerCore
+	team string
+}
+
+func (t *teamLevelScopeCheckerCore) Allowed() bool {
+	if sliceutils.Find(t.teamNames, t.team) == -1 {
+		t.trace.RecordDenyOnTeamScopeLevel(t.access.String(), t.resource.String(), t.team)
+		return false
+	}
+
+	for _, role := range t.roles {
+		scope, err := t.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if utils.ShouldErr(err) != nil {
+			return false
+		}
+		// (dhaus): Workaround for now, needs to be included into the access scope calculation.
+		if scope.State != effectiveaccessscope.Excluded {
+			t.trace.RecordAllowOnTeamScopeLevel(t.access.String(), t.resource.String(), t.team)
+			return true
+		}
+	}
+
+	t.trace.RecordDenyOnTeamScopeLevel(t.access.String(), t.resource.String(), t.team)
+	return false
+}
+
+func (t *teamLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
+	scope, ok := scopeKey.(sac.ClusterScopeKey)
+	if !ok {
+		return errorScopeChecker(t, scopeKey)
+	}
 	return &clusterNamespaceLevelScopeCheckerCore{
-		clusterID:                     scope.String(),
-		resourceLevelScopeCheckerCore: *a,
+		clusterID:                 scope.String(),
+		teamLevelScopeCheckerCore: *t,
 	}
 }
 
@@ -250,7 +306,7 @@ func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) s
 // augmenting the current instance with the namespace name extracted from the
 // scope key.
 type clusterNamespaceLevelScopeCheckerCore struct {
-	resourceLevelScopeCheckerCore
+	teamLevelScopeCheckerCore
 	clusterID string
 	namespace string
 }
@@ -279,9 +335,9 @@ func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.Sco
 		return errorScopeChecker(a, scopeKey)
 	}
 	return &clusterNamespaceLevelScopeCheckerCore{
-		clusterID:                     a.clusterID,
-		namespace:                     scope.String(),
-		resourceLevelScopeCheckerCore: a.resourceLevelScopeCheckerCore,
+		clusterID:                 a.clusterID,
+		namespace:                 scope.String(),
+		teamLevelScopeCheckerCore: a.teamLevelScopeCheckerCore,
 	}
 }
 
