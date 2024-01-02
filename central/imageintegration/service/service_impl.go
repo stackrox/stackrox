@@ -354,7 +354,7 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 			return err
 		}
 		if !exists {
-			return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
+			return errors.Wrapf(errox.NotFound, "image integration %q not found", updateRequest.GetConfig().GetId())
 		}
 
 		newType := updateRequest.GetConfig().GetType()

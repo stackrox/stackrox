@@ -47,7 +47,7 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 // Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE.
 func imageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
 	if integration.GetType() != scannerTypes.Clairify {
-		return nil, errors.Errorf("requires a clarify config: %q", integration.GetName())
+		return nil, errors.Errorf("requires a %s config: %q", scannerTypes.Clairify, integration.GetName())
 	}
 	return &storage.NodeIntegration{
 		Id:   integration.GetId(),
