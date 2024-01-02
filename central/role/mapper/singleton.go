@@ -3,6 +3,7 @@ package mapper
 import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	teamsDataStore "github.com/stackrox/rox/central/teams/datastore"
 	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sync"
@@ -16,7 +17,8 @@ var (
 // FactorySingleton returns the singleton user role mapper factory.
 func FactorySingleton() permissions.RoleMapperFactory {
 	once.Do(func() {
-		roleMapperFactory = NewStoreBasedMapperFactory(groupDataStore.Singleton(), roleDataStore.Singleton(), userDataStore.Singleton())
+		roleMapperFactory = NewStoreBasedMapperFactory(groupDataStore.Singleton(), roleDataStore.Singleton(),
+			userDataStore.Singleton(), teamsDataStore.Singleton())
 	})
 	return roleMapperFactory
 }
