@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -29,6 +30,8 @@ type Matcher interface {
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
 	metadataStore metadatapostgres.MetadataStore
+
+	updater *updater.Updater
 }
 
 // NewMatcher creates a new matcher.
@@ -67,21 +70,22 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
 
-	u, err := updater.New(updater.Opts{
+	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
 		Locker:        locker,
 		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        c,
 		// TODO: temporary URL
-		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/4.3.x-173-g6bbb2e07dc/output.json.zst",
+		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
 	})
 	if err != nil {
+		_ = libVuln.Close(ctx)
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
 	go func() {
-		if err := u.Start(ctx); err != nil {
+		if err := u.Start(); err != nil {
 			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
 		}
 	}()
@@ -89,6 +93,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	return &matcherImpl{
 		libVuln:       libVuln,
 		metadataStore: metadataStore,
+
+		updater: u,
 	}, nil
 }
 
@@ -105,5 +111,5 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	return m.libVuln.Close(ctx)
+	return errors.Join(m.updater.Close(), m.libVuln.Close(ctx))
 }
