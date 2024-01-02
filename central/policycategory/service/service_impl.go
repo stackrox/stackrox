@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -70,7 +71,13 @@ func (s *serviceImpl) PostPolicyCategory(ctx context.Context, request *v1.PostPo
 	if !validateName.MatchString(request.GetPolicyCategory().GetName()) {
 		return nil, errors.Wrap(errox.InvalidArgs, invalidNameErrString)
 	}
-	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, ToStorageProto(request.GetPolicyCategory()))
+	storageCategory := ToStorageProto(request.GetPolicyCategory())
+	id := authn.IdentityFromContextOrNil(ctx)
+	if id != nil && len(id.Teams()) != 0 {
+		storageCategory.AdditionalScope = &storage.AdditionalScope{Teams: id.Teams()}
+	}
+
+	category, err := s.policyCategoriesDatastore.AddPolicyCategory(ctx, storageCategory)
 	if err != nil {
 		return nil, err
 	}
