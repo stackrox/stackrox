@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	complianceOperatorSAC = sac.ForResource(resources.Compliance)
+	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
 type datastoreImpl struct {
@@ -29,7 +29,7 @@ type datastoreImpl struct {
 
 // GetProfile returns the profile for the given profile ID
 func (d *datastoreImpl) GetProfile(ctx context.Context, profileID string) (*storage.ComplianceOperatorProfileV2, bool, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
 		return nil, false, sac.ErrResourceAccessDenied
@@ -40,7 +40,7 @@ func (d *datastoreImpl) GetProfile(ctx context.Context, profileID string) (*stor
 
 // SearchProfiles returns the profiles for the given query
 func (d *datastoreImpl) SearchProfiles(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorProfileV2, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
@@ -51,7 +51,7 @@ func (d *datastoreImpl) SearchProfiles(ctx context.Context, query *v1.Query) ([]
 
 // UpsertProfile adds the profile to the database
 func (d *datastoreImpl) UpsertProfile(ctx context.Context, profile *storage.ComplianceOperatorProfileV2, clusterID string, profileUID string) error {
-	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -88,7 +88,7 @@ func (d *datastoreImpl) UpsertProfile(ctx context.Context, profile *storage.Comp
 
 // DeleteProfileForCluster removes a profile from the database
 func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string, clusterID string) error {
-	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -101,7 +101,7 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 
 // GetProfileEdgesByCluster gets the list of profile edges for a given cluster
 func (d *datastoreImpl) GetProfileEdgesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorProfileClusterEdge, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
@@ -113,7 +113,7 @@ func (d *datastoreImpl) GetProfileEdgesByCluster(ctx context.Context, clusterID 
 
 // CountProfiles returns count of profiles matching query
 func (d *datastoreImpl) CountProfiles(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, nil
