@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -108,9 +109,13 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.DeferStmt)(nil),
 	}
 
+	// There seems to be no need to exclude auto-generated files at the moment
+	// of writing so keeping it simple for now.
+	fileFilter := common.Not(common.IsTestFile)
+
 	// Preorder guarantees that we see defer statement before its underlying
 	// expression.
-	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
+	common.FilteredPreorder(inspectResult, fileFilter, nodeFilter, func(n ast.Node) {
 		switch n := n.(type) {
 		case *ast.DeferStmt:
 			deferredExpressions.Add(n.Call.Pos())

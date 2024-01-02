@@ -25,9 +25,9 @@ func BenchmarkKeyFence(b *testing.B) {
 				// Create a key made up of a single byte that is either 0 or 1 depending on odd or even j
 				ks := DiscreteKeySet([]byte{zeroOrOne})
 
-				keyFence.DoWithLock(ks, func() {
-					counters[zeroOrOne] = counters[zeroOrOne] + 1
-				})
+				keyFence.Lock(ks)
+				counters[zeroOrOne] = counters[zeroOrOne] + 1
+				keyFence.Unlock(ks)
 			}()
 		}
 		startSignal.Signal()
@@ -54,13 +54,13 @@ func TestKeyFence(t *testing.T) {
 
 				startSignal.Wait()
 
-				keyFence.DoWithLock(ks, func() {
-					// Make the zeros sleep before adding to imitate a long colliding operation.
-					if zeroOrOne == byte(0) {
-						time.Sleep(time.Millisecond)
-					}
-					counters[zeroOrOne] = counters[zeroOrOne] + 1
-				})
+				keyFence.Lock(ks)
+				// Make the zeros sleep before adding to immitate a long colliding operation.
+				if zeroOrOne == byte(0) {
+					time.Sleep(time.Millisecond)
+				}
+				counters[zeroOrOne] = counters[zeroOrOne] + 1
+				keyFence.Unlock(ks)
 
 				waitGroup.Done()
 			}()
