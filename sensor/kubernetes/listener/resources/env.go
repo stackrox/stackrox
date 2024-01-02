@@ -14,4 +14,4 @@ import "github.com/stackrox/rox/pkg/env"
 // for connections that are in fact not external.
 // Setting this value too high will result in higher memory consumption of Sensor (especially in clusters with many
 // deletions or dynamic changes to services or IP addresses).
-var pastEndpointsMemorySize = env.RegisterIntegerSetting("ROX_PAST_ENDPOINTS_MEMORY_SIZE", 0)
+var pastEndpointsMemorySize = env.RegisterIntegerSetting("ROX_PAST_ENDPOINTS_MEMORY_SIZE", 20)
