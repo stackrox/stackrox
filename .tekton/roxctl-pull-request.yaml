@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 
 metadata:
@@ -40,6 +40,8 @@ spec:
   #   value: "true"
   - name: prefetch-input
     value: '{"type": "gomod", "path": "."}'
+  - name: build-source-image
+    value: 'true'
 
   workspaces:
   - name: workspace
@@ -138,6 +140,11 @@ spec:
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
+      type: string
+    - default: "false"
+      description: Build a source image.
+      name: build-source-image
+      type: string
 
     results:
     - description: ""
@@ -267,6 +274,34 @@ spec:
       - name: source
         workspace: workspace
 
+    - name: build-source-image
+      params:
+      - name: BINARY_IMAGE
+        value: $(params.output-image)
+      - name: BASE_IMAGES
+        value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      runAfter:
+      - build-container
+      taskRef:
+        params:
+        - name: name
+          value: source-build
+        - name: bundle
+          value: quay.io/redhat-appstudio-tekton-catalog/task-source-build:0.1@sha256:f8c5dec871fb5347eb2fc61d44754bcc101897aecf953b374ab3e8315e1a9804
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
+      - input: $(params.build-source-image)
+        operator: in
+        values: [ "true" ]
+      workspaces:
+      - name: workspace
+        workspace: workspace
+
     - name: inspect-image
       params:
       - name: IMAGE_URL
@@ -296,6 +331,8 @@ spec:
       params:
       - name: BASE_IMAGES_DIGESTS
         value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      runAfter:
+      - build-container
       taskRef:
         params:
         - name: name
@@ -397,3 +434,4 @@ spec:
         values: [ "false" ]
 
 status: { }
+taskRunTemplate: { }
