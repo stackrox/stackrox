@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -27,6 +29,8 @@ const (
 	lastModified    = `Last-Modified`
 
 	name = `scanner-v4-updater`
+
+	updateFilePattern = `updates-*.json.zst`
 )
 
 var (
@@ -56,6 +60,9 @@ type Opts struct {
 }
 
 type Updater struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	store         datastore.MatcherStore
 	locker        updates.LockSource
 	pool          *pgxpool.Pool
@@ -72,12 +79,16 @@ type Updater struct {
 	importVulns func(ctx context.Context, reader io.Reader) error
 }
 
-func New(opts Opts) (*Updater, error) {
+func New(ctx context.Context, opts Opts) (*Updater, error) {
 	if err := fillOpts(&opts); err != nil {
 		return nil, fmt.Errorf("invalid updater options: %w", err)
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
 	u := &Updater{
+		ctx:    ctx,
+		cancel: cancel,
+
 		store:         opts.Store,
 		locker:        opts.Locker,
 		pool:          opts.Pool,
@@ -94,6 +105,9 @@ func New(opts Opts) (*Updater, error) {
 	u.importVulns = func(ctx context.Context, reader io.Reader) error {
 		return libvuln.OfflineImport(ctx, u.pool, reader)
 	}
+
+	u.tryRemoveExiting()
+
 	return u, nil
 }
 
@@ -131,10 +145,36 @@ func validate(opts Opts) error {
 	return nil
 }
 
+// tryRemoveExiting attempts to remove any leftover update files present in the updater's
+// root directory.
+//
+// It is assumed the previous updater used the same root directory.
+// Any errors when attempting to remove pre-existing files are simply logged.
+func (u *Updater) tryRemoveExiting() {
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.tryRemoveExiting")
+
+	files, err := fs.Glob(os.DirFS(u.root), updateFilePattern)
+	if err != nil {
+		zlog.Warn(ctx).Err(err).Msg("searching for previous update files to remove")
+	}
+	for _, file := range files {
+		if err := os.Remove(filepath.Join(u.root, file)); err != nil {
+			zlog.Warn(ctx).Err(err).Msgf("removing previous update file %s", file)
+		}
+	}
+}
+
+// Close cancels the updater's context and prevents future update cycles.
+// It does **not** cleanup any other resources. It is the user's responsibility to do so.
+func (u *Updater) Close() error {
+	u.cancel()
+	return nil
+}
+
 // Start periodically updates the vulnerability data via Update.
 // Each period is adjusted by some amount of jitter.
-func (u *Updater) Start(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.Start")
+func (u *Updater) Start() error {
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.Start")
 
 	zlog.Info(ctx).Msg("starting initial update")
 	if err := u.update(ctx); err != nil {
@@ -260,7 +300,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		return nil, time.Time{}, fmt.Errorf("received status code %q querying update endpoint", resp.StatusCode)
 	}
 
-	f, err := os.CreateTemp(u.root, "updates-*.json.zst")
+	f, err := os.CreateTemp(u.root, updateFilePattern)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
