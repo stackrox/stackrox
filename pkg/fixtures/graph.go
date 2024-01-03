@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 ///////////////////////////////
@@ -109,8 +110,8 @@ func GetEmbeddedImageCVE1234x0001() *storage.EmbeddedVulnerability {
 			Severity:            storage.CVSSV2_MEDIUM,
 		},
 		CvssV3:            nil,
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -118,8 +119,8 @@ func GetEmbeddedImageCVE1234x0001() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -162,8 +163,8 @@ func GetEmbeddedImageCVE4567x0002() *storage.EmbeddedVulnerability {
 			Score:               7.5,
 			Severity:            storage.CVSSV3_HIGH,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -171,8 +172,8 @@ func GetEmbeddedImageCVE4567x0002() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -215,8 +216,8 @@ func GetEmbeddedImageCVE1234x0003() *storage.EmbeddedVulnerability {
 			Score:               7.5,
 			Severity:            storage.CVSSV3_HIGH,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -224,8 +225,8 @@ func GetEmbeddedImageCVE1234x0003() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -268,8 +269,8 @@ func GetEmbeddedImageCVE3456x0004() *storage.EmbeddedVulnerability {
 			Score:               5.9,
 			Severity:            storage.CVSSV3_MEDIUM,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -277,8 +278,8 @@ func GetEmbeddedImageCVE3456x0004() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -321,8 +322,8 @@ func GetEmbeddedImageCVE3456x0005() *storage.EmbeddedVulnerability {
 			Score:               5.3,
 			Severity:            storage.CVSSV3_MEDIUM,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -330,8 +331,8 @@ func GetEmbeddedImageCVE3456x0005() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -374,8 +375,8 @@ func GetEmbeddedImageCVE2345x0006() *storage.EmbeddedVulnerability {
 			Score:               7.8,
 			Severity:            storage.CVSSV3_HIGH,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -383,8 +384,8 @@ func GetEmbeddedImageCVE2345x0006() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -427,8 +428,8 @@ func GetEmbeddedImageCVE2345x0007() *storage.EmbeddedVulnerability {
 			Score:               5.9,
 			Severity:            storage.CVSSV3_MEDIUM,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -436,8 +437,8 @@ func GetEmbeddedImageCVE2345x0007() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -736,7 +737,7 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 		Labels:                map[string]string{"k8s-app": "sherlock-holmes"},
 		PodLabels:             map[string]string{"k8s-app": "sherlock-holmes"},
 		LabelSelector:         &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "sherlock-holmes"}},
-		Created:               &types.Timestamp{Seconds: 1643589436},
+		Created:               protocompat.GetProtoTimestampFromSeconds(1643589436),
 		ClusterId:             namespace.GetClusterId(),
 		ClusterName:           namespace.GetClusterName(),
 		Containers: []*storage.Container{
@@ -801,7 +802,7 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 		Labels:                map[string]string{"k8s-app": "mr-hyde"},
 		PodLabels:             map[string]string{"k8s-app": "mr-hyde"},
 		LabelSelector:         &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "mr-hyde"}},
-		Created:               &types.Timestamp{Seconds: 1643589436},
+		Created:               protocompat.GetProtoTimestampFromSeconds(1643589436),
 		ClusterId:             namespace.GetClusterId(),
 		ClusterName:           namespace.GetClusterName(),
 		Containers: []*storage.Container{
@@ -1069,7 +1070,7 @@ func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 		ClusterName:             "test-cluster",
 		Labels:                  nil,
 		Annotations:             nil,
-		JoinedAt:                &types.Timestamp{Seconds: 1643789433},
+		JoinedAt:                protocompat.GetProtoTimestampFromSeconds(1643789433),
 		InternalIpAddresses:     nil,
 		ExternalIpAddresses:     nil,
 		ContainerRuntimeVersion: "",
@@ -1116,7 +1117,7 @@ func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 		ClusterName:             "test-cluster",
 		Labels:                  nil,
 		Annotations:             nil,
-		JoinedAt:                &types.Timestamp{Seconds: 1643789433},
+		JoinedAt:                protocompat.GetProtoTimestampFromSeconds(1643789433),
 		InternalIpAddresses:     nil,
 		ExternalIpAddresses:     nil,
 		ContainerRuntimeVersion: "",
@@ -1205,8 +1206,8 @@ func GetEmbeddedClusterCVE1234x0001() *storage.EmbeddedVulnerability {
 			Severity:            storage.CVSSV2_MEDIUM,
 		},
 		CvssV3:            nil,
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
@@ -1214,8 +1215,8 @@ func GetEmbeddedClusterCVE1234x0001() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -1258,8 +1259,8 @@ func GetEmbeddedClusterCVE4567x0002() *storage.EmbeddedVulnerability {
 			Score:               7.5,
 			Severity:            storage.CVSSV3_HIGH,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
@@ -1269,8 +1270,8 @@ func GetEmbeddedClusterCVE4567x0002() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}
@@ -1313,8 +1314,8 @@ func GetEmbeddedClusterCVE2345x0003() *storage.EmbeddedVulnerability {
 			Score:               7.8,
 			Severity:            storage.CVSSV3_HIGH,
 		},
-		PublishedOn:       &types.Timestamp{Seconds: 1234567890},
-		LastModified:      &types.Timestamp{Seconds: 1235467890},
+		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
+		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
 		VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
 		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
 			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
@@ -1322,8 +1323,8 @@ func GetEmbeddedClusterCVE2345x0003() *storage.EmbeddedVulnerability {
 		Suppressed:            false,
 		SuppressActivation:    nil,
 		SuppressExpiry:        nil,
-		FirstSystemOccurrence: &types.Timestamp{Seconds: 1243567890},
-		FirstImageOccurrence:  &types.Timestamp{Seconds: 1245367890},
+		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
+		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
 		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		State:                 storage.VulnerabilityState_OBSERVED,
 	}

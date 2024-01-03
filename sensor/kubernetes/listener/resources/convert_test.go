@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
@@ -629,7 +629,7 @@ func TestConvert(t *testing.T) {
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",
 				},
-				Created:     &timestamp.Timestamp{Seconds: 1000},
+				Created:     protocompat.GetProtoTimestampFromSeconds(1000),
 				Tolerations: []*storage.Toleration{},
 				Ports: []*storage.PortConfig{
 					{
@@ -992,7 +992,7 @@ func TestConvert(t *testing.T) {
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",
 				},
-				Created:     &timestamp.Timestamp{Seconds: 1000},
+				Created:     protocompat.GetProtoTimestampFromSeconds(1000),
 				Tolerations: []*storage.Toleration{},
 				Ports: []*storage.PortConfig{
 					{

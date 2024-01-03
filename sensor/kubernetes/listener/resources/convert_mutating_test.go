@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +119,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{},
 				},
-				Created:                      &timestamp.Timestamp{Seconds: 1000},
+				Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
@@ -257,7 +257,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{},
 				},
-				Created:                      &timestamp.Timestamp{Seconds: 1000},
+				Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
