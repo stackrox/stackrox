@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -148,12 +148,12 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 	timeNow := time.Now()
 	retentionDays := clusterRetentionConfig.GetRetentionDurationDays()
 
-	configCreateTime, err := protoconv.ConvertTimestampToTimeOrError(clusterRetentionConfig.GetCreatedAt())
+	configCreateTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetentionConfig.GetCreatedAt())
 	if err != nil {
 		return nil, err
 	}
 
-	lastContactTime, err := protoconv.ConvertTimestampToTimeOrError(cluster.GetHealthStatus().GetLastContact())
+	lastContactTime, err := protocompat.ConvertTimestampToTimeOrError(cluster.GetHealthStatus().GetLastContact())
 	if err != nil {
 		return nil, err
 	}

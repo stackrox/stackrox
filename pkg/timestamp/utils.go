@@ -5,12 +5,13 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
 func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
-	t, err := protoconv.ConvertTimestampToTimeOrError(ts)
+	t, err := protocompat.ConvertTimestampToTimeOrError(ts)
 	if err != nil {
 		return
 	}

@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -324,8 +323,8 @@ func (n *notifier) run(ctx context.Context) error {
 func (n *notifier) processAlert(alert *storage.Alert) {
 	cached := n.cache[alert.GetId()]
 	if cached != nil {
-		tsAlert, tsAlertErr := protoconv.ConvertTimestampToTimeOrError(alert.GetTime())
-		tsCached, tsCachedErr := protoconv.ConvertTimestampToTimeOrError(cached.GetTime())
+		tsAlert, tsAlertErr := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+		tsCached, tsCachedErr := protocompat.ConvertTimestampToTimeOrError(cached.GetTime())
 
 		switch {
 		case tsCachedErr != nil || tsCached.Before(tsAlert):

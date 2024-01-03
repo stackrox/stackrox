@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -268,7 +268,7 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	unstructuredData := s.alertToCEF(ctx, alert)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
-	timestamp, err := protoconv.ConvertTimestampToTimeOrError(alert.GetTime())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
 	if err != nil {
 		return err
 	}
@@ -303,7 +303,7 @@ func (s *syslog) Test(context.Context) *notifiers.NotifierError {
 
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
 	unstructuredData := s.auditLogToCEF(msg, s.Notifier)
-	timestamp, err := protoconv.ConvertTimestampToTimeOrError(msg.GetTime())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(msg.GetTime())
 	if err != nil {
 		return err
 	}

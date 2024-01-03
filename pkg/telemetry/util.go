@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,7 +33,7 @@ func GetProviderString(metadata *storage.ProviderMetadata) string {
 
 // GetTimeOrNil takes a pointer to a protobuf timestamp and returns a pointer to a Go Time or nil
 func GetTimeOrNil(inTime *types.Timestamp) *time.Time {
-	outTime, err := protoconv.ConvertTimestampToTimeOrError(inTime)
+	outTime, err := protocompat.ConvertTimestampToTimeOrError(inTime)
 	if err != nil {
 		return nil
 	}
