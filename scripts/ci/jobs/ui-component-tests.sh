@@ -8,7 +8,7 @@ set -euo pipefail
 
 ui_component_tests() {
     info "Starting UI component tests"
-    make ui-test-component || touch FAIL
+    make ui-component-tests || touch FAIL
 
     store_test_results "ui/apps/platform/cypress/test-results/reports" "reports"
 

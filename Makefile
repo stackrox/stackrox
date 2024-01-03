@@ -549,8 +549,8 @@ endif
 ui-test:
 	make -C ui test
 
-.PHONY: ui-test-component
-ui-test-component:
+.PHONY: ui-component-tests
+ui-component-tests:
 	make -C ui test-component
 
 .PHONY: test
