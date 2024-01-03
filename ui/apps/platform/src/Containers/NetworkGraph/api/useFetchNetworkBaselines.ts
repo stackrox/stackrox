@@ -45,6 +45,9 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
                     } else if (currPeerType === 'EXTERNAL_SOURCE') {
                         entity = currPeer.entity.info.externalSource.name;
                         type = 'CIDR_BLOCK';
+                    } else if (currPeerType === 'UKNOWN_INTERNAL_ENTITY') {
+                        entity = entityId;
+                        type = 'CIDR_BLOCK';
                     } else if (currPeerType === 'INTERNET') {
                         entity = 'External entities';
                         type = 'EXTERNAL_ENTITIES';

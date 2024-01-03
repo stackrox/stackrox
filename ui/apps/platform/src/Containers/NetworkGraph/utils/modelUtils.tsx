@@ -9,6 +9,7 @@ import {
     OutEdges,
     L4Protocol,
     EdgeProperties,
+    UnknownInternalEntityNetworkEntityInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -26,6 +27,7 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
+    UnknownInternalEntityNodeModel,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -112,9 +114,12 @@ function getDeploymentNodeModel(
 }
 
 function getExternalNodeModel(
-    entity: ExternalSourceNetworkEntityInfo | InternetNetworkEntityInfo,
+    entity:
+        | ExternalSourceNetworkEntityInfo
+        | InternetNetworkEntityInfo
+        | UnknownInternalEntityNetworkEntityInfo,
     outEdges: OutEdges
-): ExternalEntitiesNodeModel | CIDRBlockNodeModel {
+): ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel {
     const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
         case 'INTERNET':
@@ -123,6 +128,13 @@ function getExternalNodeModel(
                 shape: NodeShape.rect,
                 label: 'External Entities',
                 data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges, isFadedOut: false },
+            };
+        case 'UKNOWN_INTERNAL_ENTITY':
+            return {
+                ...baseNode,
+                shape: NodeShape.trapezoid,
+                label: entity?.id || 'Unknown entity',
+                data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
             };
         case 'EXTERNAL_SOURCE':
             // eslint-disable-next-line no-case-declarations
@@ -135,7 +147,7 @@ function getExternalNodeModel(
             return {
                 ...baseNode,
                 shape: NodeShape.rect,
-                label: entity.externalSource.name,
+                label: entity?.externalSource?.name || 'Unknown entity',
                 data: cidrBlockData,
             };
         default:
@@ -159,6 +171,7 @@ function getNodeModel(
                 isExternallyConnected
             );
         case 'EXTERNAL_SOURCE':
+        case 'UKNOWN_INTERNAL_ENTITY':
         case 'INTERNET':
             return getExternalNodeModel(entity, outEdges);
         default:
@@ -217,7 +230,10 @@ export function transformActiveData(
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
-    const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
+    const externalNodes: Record<
+        string,
+        ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel
+    > = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
@@ -228,7 +244,7 @@ export function transformActiveData(
             const { entity: targetEntity } = nodes[nodeIdx];
             return targetEntity.type === 'EXTERNAL_SOURCE' || targetEntity.type === 'INTERNET';
         });
-        const policyIds = policyNodeMap[id]?.data.policyIds || [];
+        const policyIds = policyNodeMap[id]?.data?.policyIds || [];
 
         // to group deployments into namespaces
         if (type === 'DEPLOYMENT') {
@@ -258,7 +274,7 @@ export function transformActiveData(
         }
 
         // to group external entities and cidr blocks to external grouping
-        if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET') {
+        if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET' || type === 'UKNOWN_INTERNAL_ENTITY') {
             const externalNode = getExternalNodeModel(entity, outEdges);
             if (!externalNodes[id]) {
                 externalNodes[id] = externalNode;

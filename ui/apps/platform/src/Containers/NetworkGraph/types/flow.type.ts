@@ -1,8 +1,12 @@
 import { L4Protocol } from 'types/networkFlow.proto';
 
-export type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
+export type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE' | 'UKNOWN_INTERNAL_ENTITY';
 
-export type FlowEntityType = 'DEPLOYMENT' | 'EXTERNAL_ENTITIES' | 'CIDR_BLOCK';
+export type FlowEntityType =
+    | 'DEPLOYMENT'
+    | 'EXTERNAL_ENTITIES'
+    | 'CIDR_BLOCK'
+    | 'UKNOWN_INTERNAL_ENTITY';
 
 export type BaselineStatusType = 'ANOMALOUS' | 'BASELINE';
 

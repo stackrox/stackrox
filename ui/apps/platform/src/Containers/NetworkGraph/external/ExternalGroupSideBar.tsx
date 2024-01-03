@@ -22,6 +22,7 @@ import {
     CustomNodeModel,
     ExternalEntitiesNodeModel,
     ExternalGroupNodeModel,
+    UnknownInternalEntityNodeModel,
 } from '../types/topology.type';
 
 import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
@@ -53,11 +54,20 @@ function ExternalGroupSideBar({
     // derived data
     const externalGroupNode = getNodeById(nodes, id) as ExternalGroupNodeModel;
     const externalNodes = nodes.filter(
-        (node) => node.data.type === 'CIDR_BLOCK' || node.data.type === 'EXTERNAL_ENTITIES'
-    ) as (ExternalEntitiesNodeModel | CIDRBlockNodeModel)[];
+        (node) =>
+            node.data.type === 'CIDR_BLOCK' ||
+            node.data.type === 'EXTERNAL_ENTITIES' ||
+            node.data.type === 'UKNOWN_INTERNAL_ENTITY'
+    ) as (ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel)[];
 
     const onNodeSelectHandler =
-        (externalNode: ExternalEntitiesNodeModel | CIDRBlockNodeModel) => () => {
+        (
+            externalNode:
+                | ExternalEntitiesNodeModel
+                | UnknownInternalEntityNodeModel
+                | CIDRBlockNodeModel
+        ) =>
+        () => {
             onNodeSelect(externalNode.id);
         };
 
