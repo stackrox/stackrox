@@ -18,9 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// TODO(ROX-19742):  Figure out SAC for the configurations
 var (
-	scanConfigurationsSAC = sac.ForResource(resources.ComplianceOperator)
+	scanConfigurationsSAC = sac.ForResource(resources.Compliance)
 )
 
 type datastoreImpl struct {

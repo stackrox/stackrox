@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	complianceOperatorSAC = sac.ForResource(resources.ComplianceOperator)
+	complianceOperatorSAC = sac.ForResource(resources.Compliance)
 )
 
 type searcherImpl struct {

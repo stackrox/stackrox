@@ -3678,25 +3678,8 @@
               },
               {
                 "id": 4,
-                "name": "namespace",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace,store\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "namespace_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)\""
-                  }
-                ]
+                "name": "compliance_namespace",
+                "type": "string"
               },
               {
                 "id": 5,
