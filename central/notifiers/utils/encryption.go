@@ -76,8 +76,11 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		return nil
 	}
 	secured, err := IsNotifierSecured(notifier)
-	if err != nil || secured {
+	if err != nil {
 		return err
+	}
+	if secured {
+		return nil
 	}
 	creds, err := getCredentials(notifier)
 	if err != nil || creds == "" {
