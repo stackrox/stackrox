@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
-	ccIndexer "github.com/quay/claircore/indexer"
+	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
@@ -73,6 +73,44 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		libIndex:        indexer,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
+}
+
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	// TODO: Update the HTTP client.
+	c := http.DefaultClient
+	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
+	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating indexer root directory: %w", err)
+	}
+	defer utils.IgnoreError(func() error {
+		if err != nil {
+			return os.RemoveAll(faRoot)
+		}
+		return nil
+	})
+
+	opts := libindex.Options{
+		Store:                store,
+		Locker:               locker,
+		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		ScanLockRetry:        libindex.DefaultScanLockRetry,
+		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
+	}
+
+	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf("{\"repo2cpe_mapping_url\": \"%s\"}", indexerCfg.RepositoryToCPEURL))),
+	}
+	opts.ScannerConfig.Package = map[string]func(interface{}) error{
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf("{\"name2repos_mapping_url\": \"%s\"}", indexerCfg.NameToCPEURL))),
+	}
+
+	indexer, err := libindex.New(ctx, &opts, c)
+	if err != nil {
+		return nil, fmt.Errorf("creating libindex: %w", err)
+	}
+
+	return indexer, nil
 }
 
 // Close closes the indexer.
@@ -291,44 +329,6 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
-}
-
-func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccIndexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	// TODO: Update the HTTP client.
-	c := http.DefaultClient
-	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
-	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
-	if err != nil {
-		return nil, fmt.Errorf("creating indexer root directory: %w", err)
-	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(faRoot)
-		}
-		return nil
-	})
-
-	opts := libindex.Options{
-		Store:                store,
-		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
-		ScanLockRetry:        libindex.DefaultScanLockRetry,
-		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
-	}
-
-	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`{"repo2cpe_mapping_url": "%s"}`, indexerCfg.RepositoryToCPEURL))),
-	}
-	opts.ScannerConfig.Package = map[string]func(interface{}) error{
-		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`{"name2repos_mapping_url": "%s"}`, indexerCfg.NameToCPEURL))),
-	}
-
-	indexer, err := libindex.New(ctx, &opts, c)
-	if err != nil {
-		return nil, fmt.Errorf("creating libindex: %w", err)
-	}
-
-	return indexer, nil
 }
 
 func deserializeFunc(jsonData []byte) func(interface{}) error {
