@@ -13,6 +13,7 @@ const (
 	InternalEntitiesName = "Internal Entities"
 )
 
+// IsConstantID returns true if entity ID matches one of the two hardcoded IDs
 func IsConstantID(id string) bool {
 	return id == InternetExternalSourceID || id == InternalSourceID
 }
