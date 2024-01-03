@@ -99,9 +99,6 @@ test_part_1() {
         test_target="test"
     fi
 
-    # Testing: DO NOT MERGE!
-    test_target="smoke-test"
-
     update_job_record "test_target" "${test_target}"
 
     make -C qa-tests-backend "${test_target}" || touch FAIL
