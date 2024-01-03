@@ -1,5 +1,6 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { graphql } from '../../../constants/apiEndpoints';
 import {
     applyLocalSeverityFilters,
     selectEntityTab,
@@ -47,8 +48,6 @@ describe('Workload CVE overview page tests', () => {
         cy.get(selectors.clearFiltersButton).click();
         cy.get(selectors.isUpdatingTable).should('not.exist');
 
-        const urlBase = '/api/graphql?opname=';
-
         const entityOpnameMap = {
             CVE: 'getImageCVEList',
             Image: 'getImageList',
@@ -58,9 +57,9 @@ describe('Workload CVE overview page tests', () => {
         const { CVE, Image, Deployment } = entityOpnameMap;
 
         // Intercept and mock responses as empty, since we don't care about the response
-        cy.intercept({ method: 'POST', url: urlBase + CVE }, { data: {} }).as(CVE);
-        cy.intercept({ method: 'POST', url: urlBase + Image }, { data: {} }).as(Image);
-        cy.intercept({ method: 'POST', url: urlBase + Deployment }, { data: {} }).as(Deployment);
+        cy.intercept({ method: 'POST', url: graphql(CVE) }, { data: {} }).as(CVE);
+        cy.intercept({ method: 'POST', url: graphql(Image) }, { data: {} }).as(Image);
+        cy.intercept({ method: 'POST', url: graphql(Deployment) }, { data: {} }).as(Deployment);
 
         applyLocalSeverityFilters('Critical');
 

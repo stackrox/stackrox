@@ -78,6 +78,7 @@ function SearchFilterChips({
                         >
                             {filters.map((filter) => (
                                 <Chip
+                                    closeBtnAriaLabel="Remove filter"
                                     key={filter}
                                     onClick={() => onDelete(searchFilterName, filter)}
                                 >

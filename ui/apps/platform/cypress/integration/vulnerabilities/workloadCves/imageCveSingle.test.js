@@ -17,15 +17,22 @@ describe('Workload CVE Image CVE Single page', () => {
         }
     });
 
-    it('should correctly handle ImageCVE single page specific behavior', () => {
-        // Apply global default filters
+    function visitFirstCve() {
         visitWorkloadCveOverview();
 
-        // Click any CVE link in the table to visit the ImageCVE Page.
-        cy.get('tbody tr td[data-label="CVE"] a:contains("CVE")').first().click();
+        // Clear any filters that may be applied to increase the likelihood of finding valid data
+        if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            cy.get(selectors.clearFiltersButton).click();
+        }
 
-        // Wait for the summary card skeleton to disappear
-        cy.get('.pf-c-skeleton:contains("Loading image cve summary data")').should('not.exist');
+        // Ensure the data in the table has settled
+        cy.get(selectors.isUpdatingTable).should('not.exist');
+
+        cy.get('tbody tr td[data-label="CVE"] a').first().click();
+    }
+
+    it('should correctly handle ImageCVE single page specific behavior', () => {
+        visitFirstCve();
 
         // Check that only applicable resource menu items are present in the toolbar
         cy.get(selectors.searchOptionsDropdown).click();
@@ -38,8 +45,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should correctly handle local filters on the images tab', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td[data-label="CVE"] a').first().click();
+        visitFirstCve();
 
         cy.get('table tbody tr:nth-of-type(1) td[data-label="CVE severity"]').then(
             ([$severity]) => {
@@ -82,8 +88,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should correctly handle local filters on the deployments tab', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td a:contains("CVE")').first().click();
+        visitFirstCve();
         cy.get(selectors.entityTypeToggleItem('Deployment')).click();
 
         // Wait for the loading spinner to disappear
@@ -109,8 +114,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should have consistent behavior within the data table', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td a:contains("CVE")').first().click();
+        visitFirstCve();
 
         // Test that the number of components in the top level row matches the table in the expanded row
         cy.get(`${selectors.firstTableRow} .pf-c-table__toggle button`).click();
