@@ -137,7 +137,7 @@ _EO_UPDATE_
 slack_top_10_failures() {
     local job_name_match="${1:-qa}"
     local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
-    local is_test="${3:-true}"
+    local is_test="${3:-false}"
 
     local sql
     # shellcheck disable=SC2016
