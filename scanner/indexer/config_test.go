@@ -70,7 +70,7 @@ func mockIndexerStore(t *testing.T) mockIndexer.Store {
 
 func digest(inp string) claircore.Digest {
 	h := sha256.New()
-	_, err := io.WriteString(h, inp)
+	_, err := h.Write([]byte(inp))
 	if err != nil {
 		panic(err)
 	}
