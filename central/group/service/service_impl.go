@@ -192,7 +192,7 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 	}
 	for key, group := range requiredByID {
 		if previousGroup, hasPreviousGroup := previousByID[key]; hasPreviousGroup {
-			if !proto.Equal(previousGroup, group) {
+			if !protocompat.Equal(previousGroup, group) {
 				updated = append(updated, group)
 				// Delete the to-be-updated group, otherwise we potentially do not create a group based on stale data.
 				delete(groupsByPropsAndRole,
