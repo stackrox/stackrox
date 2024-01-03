@@ -274,7 +274,11 @@ export function transformActiveData(
         }
 
         // to group external entities and cidr blocks to external grouping
-        if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET' || type === 'UKNOWN_INTERNAL_ENTITY') {
+        if (
+            type === 'EXTERNAL_SOURCE' ||
+            type === 'INTERNET' ||
+            type === 'UKNOWN_INTERNAL_ENTITY'
+        ) {
             const externalNode = getExternalNodeModel(entity, outEdges);
             if (!externalNodes[id]) {
                 externalNodes[id] = externalNode;
