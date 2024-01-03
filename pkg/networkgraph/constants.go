@@ -12,3 +12,7 @@ const (
 	// InternalEntitiesName is name for the internal-unknown network node
 	InternalEntitiesName = "Internal Entities"
 )
+
+func IsConstantID(id string) bool {
+	return id == InternetExternalSourceID || id == InternalSourceID
+}

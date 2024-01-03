@@ -67,18 +67,8 @@ func InternetEntity() Entity {
 	}
 }
 
-// InternalUnknownEntity returns the internal-unknown network entity to which all the connections to unidentified internal sources are attributed to.
-// The most common examples of internal-unknown entities are:
-// deleted containers, containers with changed IP (due to changes in the service object).
-func InternalUnknownEntity(id string) Entity {
-	return Entity{
-		ID:   InternetExternalSourceID,
-		Type: storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY,
-	}
-}
-
 // InternalEntities returns the internal-unknown network entity to which all the connections to unidentified internal sources are attributed to.
-func InternalEntities(id string) Entity {
+func InternalEntities() Entity {
 	return Entity{
 		ID:   InternalSourceID,
 		Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
