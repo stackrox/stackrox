@@ -458,11 +458,11 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 }
 
 func (ds *datastoreImpl) generateLockTimestamp() *types.Timestamp {
-	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+	lockTimestamp, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(genDuration))
 	// This should not occur unless genDuration is in a bad state.  If that happens just
 	// set it to one hour in the future.
 	if err != nil {
-		lockTimestamp, _ = types.TimestampProto(time.Now().Add(1 * time.Hour))
+		lockTimestamp, _ = protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
 	}
 	return lockTimestamp
 }

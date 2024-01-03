@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"reflect"
 
-	ptypes "github.com/gogo/protobuf/types"
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -100,7 +100,7 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 }
 
 func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {
-	createdTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
+	createdTime, err := protocompat.ConvertTimeToTimestampOrError(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Error(err)
 	}

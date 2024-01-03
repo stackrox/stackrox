@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -130,7 +131,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 		return false
 	}
 
-	maxAllowedResolvedAtTime, err := ptypes.TimestampProto(time.Now().Add(-dur))
+	maxAllowedResolvedAtTime, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-dur))
 	if err != nil {
 		log.Errorf("Failed to convert time: %v", err)
 		return false

@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -27,6 +26,7 @@ import (
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -466,7 +466,7 @@ func testWatchedImages(numImages int) []*storage.Image {
 }
 
 func testImage(prefix string) *storage.Image {
-	t, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
 	return &storage.Image{
 		Id:   fmt.Sprintf("%s_img", prefix),

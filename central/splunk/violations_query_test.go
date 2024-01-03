@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -31,7 +32,7 @@ type violationsTestSuite struct {
 }
 
 func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, err := types.TimestampProto(mustParseTime(timeStr))
+	ts, err := protocompat.ConvertTimeToTimestampOrError(mustParseTime(timeStr))
 	utils.CrashOnError(err)
 	return ts
 }

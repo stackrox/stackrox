@@ -227,7 +227,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			continue
 		}
 
-		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
 		if err != nil {
 			log.Errorf("Unable to set closeTS %+v", err)
 		}
@@ -247,7 +247,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 
 	for _, endpoint := range endpointPool.EndpointsToBeClosed {
 		networkEndpoint := endpoint
-		closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
 		if err != nil {
 			log.Errorf("Unable to set CloseTimestamp for endpoint %+v", err)
 		} else {

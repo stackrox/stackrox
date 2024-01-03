@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/datastore"
@@ -26,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -104,7 +104,7 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, _ *v1.Empty) (*v1.AuthS
 
 func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	_, notValidAfter := id.ValidityPeriod()
-	exp, err := types.TimestampProto(notValidAfter)
+	exp, err := protocompat.ConvertTimeToTimestampOrError(notValidAfter)
 	if err != nil {
 		return nil, pkgErrors.Errorf("expiration time: %s", err)
 	}

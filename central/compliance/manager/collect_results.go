@@ -164,14 +164,14 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 	var startTS, finishTS *types.Timestamp
 	var err error
 	if !r.startTime.IsZero() {
-		startTS, err = types.TimestampProto(r.startTime)
+		startTS, err = protocompat.ConvertTimeToTimestampOrError(r.startTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run start timestamp to proto: %v", err)
 		}
 	}
 
 	if !r.finishTime.IsZero() {
-		finishTS, err = types.TimestampProto(r.finishTime)
+		finishTS, err = protocompat.ConvertTimeToTimestampOrError(r.finishTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run finish timestamp to proto: %v", err)
 		}

@@ -71,7 +71,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 
 // CreateToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
 func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
-	tsPb, err := types.TimestampProto(currTime)
+	tsPb, err := protocompat.ConvertTimeToTimestampOrError(currTime)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create timestamp proto")
 	}

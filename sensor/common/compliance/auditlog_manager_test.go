@@ -282,7 +282,7 @@ func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(time *types.Ti
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getAsProtoTime(now time.Time) *types.Timestamp {
-	protoTime, err := types.TimestampProto(now)
+	protoTime, err := protocompat.ConvertTimeToTimestampOrError(now)
 	s.NoError(err)
 	return protoTime
 }

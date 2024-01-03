@@ -101,7 +101,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	if stat.IsDir() {
 		return nil
 	}
-	modTime, err := timestamp.TimestampProto(stat.ModTime())
+	modTime, err := protocompat.ConvertTimeToTimestampOrError(stat.ModTime())
 	if err != nil {
 		return errors.Wrapf(err, "invalid timestamp %v", stat.ModTime())
 	}
