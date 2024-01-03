@@ -32,7 +32,7 @@ type matcherImpl struct {
 
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
@@ -93,12 +93,12 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 }
 
 func (m *matcherImpl) GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.GetVulnerabilities")
 	return m.libVuln.Scan(ctx, ir)
 }
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
 	return m.libVuln.Close(ctx)
 }

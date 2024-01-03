@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/quay/claircore"
+	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -54,6 +55,11 @@ func (r *remoteIndexer) Close(_ context.Context) error {
 
 // GetIndexReport calls the remote service to retrieve an IndexReport for the given hash ID.
 func (r *remoteIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/backend/remoteIndexer.GetIndexReport",
+		"hash_id", hashID,
+	)
+	zlog.Info(ctx).Msg("fetching index report from remote indexer")
 	resp, err := r.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
 	if err != nil {
 		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {

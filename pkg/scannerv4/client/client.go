@@ -107,7 +107,11 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 // GetIndexReport, then if not found or if the report is not successful, then
 // call CreateIndexReport.
 func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetOrCreateImageIndex")
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "GetOrCreateImageIndex",
+		"image", ref.String(),
+	)
 	id := getImageManifestID(ref)
 	var ir *v4.IndexReport
 	// Get the IndexReport if it exists.
@@ -160,7 +164,11 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 // IndexAndScanImage get or create an index report for the image, then call the
 // matcher to return a vulnerability report.
 func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "IndexAndScanImage")
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "IndexAndScanImage",
+		"image", ref.String(),
+	)
 	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index: %w", err)
@@ -184,7 +192,7 @@ func getImageManifestID(ref name.Digest) string {
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
 // retryable gRPC codes.
 func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
-	zlog.ContextWithValues(ctx, "rpc", rpc)
+	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
 	f := func() error {
 		err := op()
 		if e, ok := status.FromError(err); ok {
