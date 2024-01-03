@@ -21,6 +21,12 @@ func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, 
 	return gogoTimestamp.TimestampProto(goTime)
 }
 
+// GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
+// with the input to the seconds granularity
+func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {
+	return &gogoTimestamp.Timestamp{Seconds: seconds}
+}
+
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
 // the first timestamp is before the second or a positive value if the first timestamp is
 // after the second.

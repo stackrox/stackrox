@@ -54,6 +54,17 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 	assert.Equal(t, &types.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
 }
 
+func TestGetProtoTimestampFromSeconds(t *testing.T) {
+	seconds1 := int64(1234567890)
+	seconds2 := int64(23456789012)
+	ts1 := GetProtoTimestampFromSeconds(seconds1)
+	assert.Equal(t, seconds1, ts1.GetSeconds())
+	assert.Equal(t, 0, ts1.GetNanos())
+	ts2 := GetProtoTimestampFromSeconds(seconds2)
+	assert.Equal(t, seconds2, ts2.GetSeconds())
+	assert.Equal(t, 0, ts2.GetNanos())
+}
+
 func TestTimestampNow(t *testing.T) {
 	nowTime := time.Now()
 	nowTimestamp := TimestampNow()
