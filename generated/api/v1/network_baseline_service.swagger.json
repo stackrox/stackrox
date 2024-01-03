@@ -403,9 +403,11 @@
         "INTERNET",
         "LISTEN_ENDPOINT",
         "EXTERNAL_SOURCE",
-        "UKNOWN_INTERNAL_ENTITY"
+        "UKNOWN_INTERNAL_ENTITY",
+        "INTERNAL_ENTITIES"
       ],
-      "default": "UNKNOWN_TYPE"
+      "default": "UNKNOWN_TYPE",
+      "title": "- UKNOWN_INTERNAL_ENTITY: UKNOWN_INTERNAL_ENTITY (temporary) is for representing each internal entity as a separate network graph node\n - INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storageNetworkEntityScope": {
       "type": "object",
