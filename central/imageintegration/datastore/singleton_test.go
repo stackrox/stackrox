@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/central/imageintegration/store"
 	mockIIStore "github.com/stackrox/rox/central/imageintegration/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
@@ -116,8 +118,13 @@ func TestSetupScannerV4Integration(t *testing.T) {
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		s.EXPECT().Get(ctx, defID).Return(nil, false, errors.New("fake"))
-		s.EXPECT().Delete(ctx, "ID-Other-ScannerV4")
-		setupScannerV4Integration(ctx, s, iis)
+
+		if buildinfo.ReleaseBuild {
+			s.EXPECT().Delete(ctx, "ID-Other-ScannerV4")
+			setupScannerV4Integration(ctx, s, iis)
+		} else {
+			assert.Panics(t, func() { setupScannerV4Integration(ctx, s, iis) })
+		}
 	})
 
 	t.Run("do not try upsert if default integration exists", func(t *testing.T) {
