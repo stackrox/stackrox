@@ -26,7 +26,7 @@ const defaultResultState = {
  * This hook does an API call to the baseline status API to get the baseline status
  * of the supplied peers
  */
-function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
+function useFetchNetworkBaselines(deploymentId: string): FetchNetworkBaselinesResult {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     function fetchBaselines() {
@@ -51,6 +51,9 @@ function useFetchNetworkBaselines(deploymentId): FetchNetworkBaselinesResult {
                     } else if (currPeerType === 'INTERNET') {
                         entity = 'External entities';
                         type = 'EXTERNAL_ENTITIES';
+                    } else if (currPeerType === 'INTERNAL_ENTITIES') {
+                        entity = 'Internal entities';
+                        type = 'INTERNAL_ENTITIES';
                     }
                     // we need a unique id for each network flow
                     const newNetworkBaselines = currPeer.properties.map(

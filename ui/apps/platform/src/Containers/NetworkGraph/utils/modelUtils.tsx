@@ -10,6 +10,7 @@ import {
     L4Protocol,
     EdgeProperties,
     UnknownInternalEntityNetworkEntityInfo,
+    InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -28,6 +29,7 @@ import {
     DeploymentData,
     CIDRBlockData,
     UnknownInternalEntityNodeModel,
+    InternalEntitiesNodeModel,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -117,9 +119,10 @@ function getExternalNodeModel(
     entity:
         | ExternalSourceNetworkEntityInfo
         | InternetNetworkEntityInfo
-        | UnknownInternalEntityNetworkEntityInfo,
+        | UnknownInternalEntityNetworkEntityInfo
+        | InternalNetworkEntitiesInfo,
     outEdges: OutEdges
-): ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel {
+): ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel | InternalEntitiesNodeModel {
     const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
         case 'INTERNET':
@@ -135,6 +138,13 @@ function getExternalNodeModel(
                 shape: NodeShape.trapezoid,
                 label: entity?.id || 'Unknown entity',
                 data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
+            };
+       case 'INTERNAL_ENTITIES':
+            return {
+                ...baseNode,
+                shape: NodeShape.stadium,
+                label: 'Internal entities',
+                data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
             };
         case 'EXTERNAL_SOURCE':
             // eslint-disable-next-line no-case-declarations
@@ -172,6 +182,7 @@ function getNodeModel(
             );
         case 'EXTERNAL_SOURCE':
         case 'UKNOWN_INTERNAL_ENTITY':
+        case 'INTERNAL_ENTITIES':
         case 'INTERNET':
             return getExternalNodeModel(entity, outEdges);
         default:
@@ -232,7 +243,7 @@ export function transformActiveData(
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     const externalNodes: Record<
         string,
-        ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel
+        ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel | InternalEntitiesNodeModel
     > = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
@@ -277,7 +288,8 @@ export function transformActiveData(
         if (
             type === 'EXTERNAL_SOURCE' ||
             type === 'INTERNET' ||
-            type === 'UKNOWN_INTERNAL_ENTITY'
+            type === 'UKNOWN_INTERNAL_ENTITY' ||
+            type === 'INTERNAL_ENTITIES'
         ) {
             const externalNode = getExternalNodeModel(entity, outEdges);
             if (!externalNodes[id]) {

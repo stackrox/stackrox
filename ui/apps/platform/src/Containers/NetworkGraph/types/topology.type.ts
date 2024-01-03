@@ -13,6 +13,7 @@ export type CustomNodeModel =
     | ExternalGroupNodeModel
     | ExternalEntitiesNodeModel
     | UnknownInternalEntityNodeModel
+    | InternalEntitiesNodeModel
     | CIDRBlockNodeModel
     | ExtraneousNodeModel;
 
@@ -20,6 +21,7 @@ export type CustomSingleNodeModel =
     | DeploymentNodeModel
     | ExternalEntitiesNodeModel
     | UnknownInternalEntityNodeModel
+    | InternalEntitiesNodeModel
     | CIDRBlockNodeModel;
 
 export type NamespaceNodeModel = Override<NodeModel, { data: NamespaceData }>;
@@ -35,6 +37,11 @@ export type UnknownInternalEntityNodeModel = Override<
     { data: UnknownInternalEntityData }
 >;
 
+export type InternalEntitiesNodeModel = Override<
+    NodeModel,
+    { data: InternalEntitiesData }
+>;
+
 export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
 
 export type ExtraneousNodeModel = Override<NodeModel, { data: ExtraneousData }>;
@@ -45,6 +52,7 @@ export type CustomSingleNodeData =
     | DeploymentData
     | ExternalEntitiesData
     | CIDRBlockData
+    | InternalEntitiesData
     | UnknownInternalEntityData;
 
 export type CustomNodeData =
@@ -53,6 +61,7 @@ export type CustomNodeData =
     | ExternalGroupData
     | ExternalEntitiesData
     | UnknownInternalEntityData
+    | InternalEntitiesData
     | CIDRBlockData;
 
 export type BadgeData = {
@@ -81,6 +90,7 @@ export type NodeDataType =
     | 'EXTERNAL_ENTITIES'
     | 'CIDR_BLOCK'
     | 'UKNOWN_INTERNAL_ENTITY'
+    | 'INTERNAL_ENTITIES'
     | 'EXTRANEOUS';
 
 export type DeploymentData = {
@@ -110,6 +120,13 @@ export type ExternalGroupData = {
 
 export type UnknownInternalEntityData = {
     type: 'UKNOWN_INTERNAL_ENTITY';
+    id: string;
+    outEdges: OutEdges;
+    isFadedOut: boolean;
+};
+
+export type InternalEntitiesData = {
+    type: 'INTERNAL_ENTITIES';
     id: string;
     outEdges: OutEdges;
     isFadedOut: boolean;

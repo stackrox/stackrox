@@ -21,7 +21,7 @@ import {
     CustomEdgeModel,
     CustomNodeModel,
     ExternalEntitiesNodeModel,
-    ExternalGroupNodeModel,
+    ExternalGroupNodeModel, InternalEntitiesNodeModel,
     UnknownInternalEntityNodeModel,
 } from '../types/topology.type';
 
@@ -57,8 +57,9 @@ function ExternalGroupSideBar({
         (node) =>
             node.data.type === 'CIDR_BLOCK' ||
             node.data.type === 'EXTERNAL_ENTITIES' ||
-            node.data.type === 'UKNOWN_INTERNAL_ENTITY'
-    ) as (ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel)[];
+            node.data.type === 'UKNOWN_INTERNAL_ENTITY' ||
+            node.data.type === 'INTERNAL_ENTITIES'
+    ) as (ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel | InternalEntitiesNodeModel)[];
 
     const onNodeSelectHandler =
         (
@@ -66,6 +67,7 @@ function ExternalGroupSideBar({
                 | ExternalEntitiesNodeModel
                 | UnknownInternalEntityNodeModel
                 | CIDRBlockNodeModel
+                | InternalEntitiesNodeModel
         ) =>
         () => {
             onNodeSelect(externalNode.id);

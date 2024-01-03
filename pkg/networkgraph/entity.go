@@ -20,6 +20,9 @@ var (
 		storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY: func(info *storage.NetworkEntityInfo) string {
 			return InternalUnknownEntityName + "(" + info.GetId() + ")"
 		},
+		storage.NetworkEntityInfo_INTERNAL_ENTITIES: func(info *storage.NetworkEntityInfo) string {
+			return InternalEntitiesName
+		},
 	}
 
 	ipv4InternetCIDR = "0.0.0.0/0"
@@ -69,8 +72,16 @@ func InternetEntity() Entity {
 // deleted containers, containers with changed IP (due to changes in the service object).
 func InternalUnknownEntity(id string) Entity {
 	return Entity{
-		ID:   id,
+		ID:   InternetExternalSourceID,
 		Type: storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY,
+	}
+}
+
+// InternalEntities returns the internal-unknown network entity to which all the connections to unidentified internal sources are attributed to.
+func InternalEntities(id string) Entity {
+	return Entity{
+		ID:   InternalSourceID,
+		Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
 	}
 }
 

@@ -237,6 +237,8 @@ func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 		}
 	case storage.NetworkEntityInfo_INTERNET:
 		return peerInfo{name: networkgraph.InternetExternalSourceName}
+	case storage.NetworkEntityInfo_INTERNAL_ENTITIES:
+		return peerInfo{name: networkgraph.InternalEntitiesName}
 	case storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY:
 		return peerInfo{
 			name:      networkgraph.InternalUnknownEntityName,
