@@ -89,7 +89,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		}
 		return nil
 	})
-
+	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
