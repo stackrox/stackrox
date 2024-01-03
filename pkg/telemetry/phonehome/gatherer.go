@@ -78,6 +78,9 @@ func (g *gatherer) identify() {
 	if !reflect.DeepEqual(g.lastData, data) {
 		// Issue an event so that the new data become visible on analytics:
 		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts, telemeter.WithTraits(data))...)
+	} else {
+		// No changes in properties, just send a heartbeat event.
+		g.telemeter.Track(g.clientType+" Identity", nil, g.opts...)
 	}
 	g.lastData = data
 }

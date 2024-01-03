@@ -33,6 +33,8 @@ func (s *gathererTestSuite) TestGatherer() {
 
 	t.EXPECT().Track("Updated Test Identity", nil,
 		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1)
+	t.EXPECT().Track("Test Identity", nil,
+		matchOptions(telemeter.WithTraits(nil))).Times(1)
 
 	props := make(map[string]any)
 	var i int64
