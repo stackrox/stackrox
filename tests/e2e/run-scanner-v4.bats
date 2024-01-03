@@ -3,7 +3,8 @@
 # Runs Scanner V4 tests using the Bats testing framework.
 
 setup_file() {
-    export ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
+    ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")"/../.. && pwd)"
+    export ROOT
 
     # Use
     #   export CHART_BASE="/rhacs"
@@ -65,7 +66,7 @@ teardown() {
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
-    local _MAIN_IMAGE_TAG=""
+    local MAIN_IMAGE_TAG=""
 
     if [[ "$CI" = "true" ]]; then
         setup_default_TLS_certs
@@ -75,14 +76,14 @@ teardown() {
     local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
     info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
-        _MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
+        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
     (
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=true
+        export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG="${_MAIN_IMAGE_TAG}"
+        export ROX_SCANNER_V4_ENABLED=true
         # shellcheck disable=SC2030,SC2031
         export CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}"
         # shellcheck disable=SC2030,SC2031
@@ -92,68 +93,68 @@ teardown() {
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
     info "Upgrading StackRox using HEAD Helm chart"
-    _MAIN_IMAGE_TAG=""
+    MAIN_IMAGE_TAG=""
     if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        _MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
     fi
     (
+        # shellcheck disable=SC2030,SC2031
+        export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
         export ROX_SCANNER_V4_ENABLED=true
         # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG="${_MAIN_IMAGE_TAG}"
-        # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
-        deploy_stackrox # This is doing an `helm upgrade --install ...` under the hood.
+        deploy_stackrox >&3 # This is doing an `helm upgrade --install ...` under the hood.
     )
 
     # Verify that Scanner v2 and v4 are up.
-    verify_scannerV2_deployed
-    verify_scannerV4_deployed
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 disabled" {
-    local _MAIN_IMAGE_TAG=""
+    MAIN_IMAGE_TAG=""
     info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled"
     if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        _MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
     fi
     (
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=false
+        export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG="${_MAIN_IMAGE_TAG}"
+        export ROX_SCANNER_V4_ENABLED=false
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
         deploy_stackrox >&3
     )
-    verify_scannerV2_deployed
+    verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
-    local _MAIN_IMAGE_TAG=""
+    MAIN_IMAGE_TAG=""
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        _MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
     fi
     (
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=true
+        export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG="${_MAIN_IMAGE_TAG}"
+        export ROX_SCANNER_V4_ENABLED=true
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
         deploy_stackrox >&3
     )
-    verify_scannerV2_deployed
-    verify_scannerV4_deployed
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
 }
 
 verify_no_scannerV4_deployed() {
-    namespace=${1:-stackrox}
+    local namespace=${1:-stackrox}
     run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4"
 }
@@ -161,12 +162,14 @@ verify_no_scannerV4_deployed() {
 # TODO: For now, Scanner v2 is expected to run in parallel.
 # This must be removed when Scanner v2 will be phased out.
 verify_scannerV2_deployed() {
-    wait_for_object_to_appear stackrox deploy/scanner 300
-    wait_for_object_to_appear stackrox deploy/scanner-db 300
+    local namespace=${1:-stackrox}
+    wait_for_object_to_appear "$namespace" deploy/scanner 300
+    wait_for_object_to_appear "$namespace" deploy/scanner-db 300
 }
 
 verify_scannerV4_deployed() {
-    wait_for_object_to_appear stackrox deploy/scanner-v4-db 300
-    wait_for_object_to_appear stackrox deploy/scanner-v4-indexer 300
-    wait_for_object_to_appear stackrox deploy/scanner-v4-matcher 300
+    local namespace=${1:-stackrox}
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
 }
