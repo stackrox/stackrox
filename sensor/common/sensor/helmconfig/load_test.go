@@ -20,7 +20,7 @@ clusterConfig:
     mainImage: stackrox/main
     collectorImage: stackrox/collector
     centralApiEndpoint: central.stackrox:443
-    collectionMethod: EBPF
+    collectionMethod: CORE_BPF
     admissionController: true
     admissionControllerUpdates: false
     admissionControllerEvents: true
@@ -61,7 +61,7 @@ clusterConfig:
 			Type:                       storage.ClusterType_KUBERNETES_CLUSTER,
 			MainImage:                  "stackrox/main",
 			CentralApiEndpoint:         "central.stackrox:443",
-			CollectionMethod:           storage.CollectionMethod_EBPF,
+			CollectionMethod:           storage.CollectionMethod_CORE_BPF,
 			CollectorImage:             "stackrox/collector",
 			AdmissionController:        true,
 			AdmissionControllerUpdates: false,
