@@ -67,7 +67,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, false, nil, nil, false)
+		return r.DeleteSecret(ctx, canonicalCentralDBPasswordSecretName)
 	}
 
 	centralSpec := r.centralObj.Spec.Central
@@ -91,7 +91,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 
 	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
 	// in which case the auto-generation logic will take effect.
-	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
+	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, r.validateSecretData, r.generateDBPassword, true); err != nil {
 		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
 	}
 	return nil
