@@ -28,7 +28,7 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *storage.Com
 		Version:      integration.GetVersion(),
 		ClusterId:    integration.GetClusterId(),
 		ClusterName:  clusterName,
-		Namespace:    integration.GetNamespace(),
+		Namespace:    integration.GetComplianceNamespace(),
 		StatusErrors: integration.GetStatusErrors(),
 	}, nil
 }

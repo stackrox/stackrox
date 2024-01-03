@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	complianceOperatorSAC = sac.ForResource(resources.ComplianceOperator)
+	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
 type searcherImpl struct {
@@ -21,7 +21,7 @@ type searcherImpl struct {
 
 // Count returns the number of profiles from the query
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, sac.ErrResourceAccessDenied

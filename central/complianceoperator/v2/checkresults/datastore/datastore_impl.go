@@ -7,6 +7,7 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -17,7 +18,7 @@ import (
 )
 
 var (
-	complianceOperatorSAC = sac.ForResource(resources.ComplianceOperator)
+	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
 type datastoreImpl struct {
@@ -42,7 +43,7 @@ type ResourceCountByResultByCluster struct {
 
 // UpsertResult adds the result to the database
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
-	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -56,7 +57,7 @@ func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.Compli
 
 // DeleteResult removes a result from the database
 func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
-	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -66,21 +67,15 @@ func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
 
 // SearchComplianceCheckResults retrieves the scan results specified by query
 func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
-
 	return d.store.GetByQuery(ctx, query)
 }
 
 // ComplianceCheckResultStats retrieves the scan results stats specified by query
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
 		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
 	}
 
 	cloned := query.Clone()
@@ -122,11 +117,6 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if !ok {
-		return 0, sac.ErrResourceAccessDenied
-	}
 	return d.searcher.Count(ctx, q)
 }
 
@@ -198,4 +188,12 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 	)
 	return cloned
+}
+
+func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
+	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
+	if err != nil {
+		return nil, err
+	}
+	return search.FilterQueryByQuery(query, sacQueryFilter), nil
 }

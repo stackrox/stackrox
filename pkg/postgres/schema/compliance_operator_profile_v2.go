@@ -43,7 +43,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILES, "complianceoperatorprofilev2", (*storage.ComplianceOperatorProfileV2)(nil)))
-		schema.ScopingResource = resources.ComplianceOperator
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_PROFILES, schema)
 		return schema
