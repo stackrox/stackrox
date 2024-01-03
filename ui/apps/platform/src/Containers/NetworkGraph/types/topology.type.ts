@@ -37,10 +37,7 @@ export type UnknownInternalEntityNodeModel = Override<
     { data: UnknownInternalEntityData }
 >;
 
-export type InternalEntitiesNodeModel = Override<
-    NodeModel,
-    { data: InternalEntitiesData }
->;
+export type InternalEntitiesNodeModel = Override<NodeModel, { data: InternalEntitiesData }>;
 
 export type CIDRBlockNodeModel = Override<NodeModel, { data: CIDRBlockData }>;
 

@@ -122,7 +122,11 @@ function getExternalNodeModel(
         | UnknownInternalEntityNetworkEntityInfo
         | InternalNetworkEntitiesInfo,
     outEdges: OutEdges
-): ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel | InternalEntitiesNodeModel {
+):
+    | ExternalEntitiesNodeModel
+    | UnknownInternalEntityNodeModel
+    | CIDRBlockNodeModel
+    | InternalEntitiesNodeModel {
     const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
         case 'INTERNET':
@@ -139,7 +143,7 @@ function getExternalNodeModel(
                 label: entity?.id || 'Unknown entity',
                 data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
             };
-       case 'INTERNAL_ENTITIES':
+        case 'INTERNAL_ENTITIES':
             return {
                 ...baseNode,
                 shape: NodeShape.stadium,
@@ -243,7 +247,10 @@ export function transformActiveData(
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     const externalNodes: Record<
         string,
-        ExternalEntitiesNodeModel | UnknownInternalEntityNodeModel | CIDRBlockNodeModel | InternalEntitiesNodeModel
+        | ExternalEntitiesNodeModel
+        | UnknownInternalEntityNodeModel
+        | CIDRBlockNodeModel
+        | InternalEntitiesNodeModel
     > = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
