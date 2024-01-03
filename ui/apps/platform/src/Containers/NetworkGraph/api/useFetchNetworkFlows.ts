@@ -30,30 +30,32 @@ type FetchNetworkFlowsResult = {
 } & Result;
 
 const defaultResultState = {
-    data: { networkFlows: [] },
+    data: {networkFlows: []},
     error: '',
     isLoading: true,
 };
 
 function useFetchNetworkFlows({
-    nodes,
-    edges,
-    deploymentId,
-    edgeState,
-}: FetchNetworkFlowsParams): FetchNetworkFlowsResult {
+                                  nodes,
+                                  edges,
+                                  deploymentId,
+                                  edgeState,
+                              }: FetchNetworkFlowsParams): FetchNetworkFlowsResult {
     const [result, setResult] = useState<Result>(defaultResultState);
 
     function fetchFlows() {
-        setResult({ data: { networkFlows: [] }, isLoading: true, error: '' });
+        setResult({data: {networkFlows: []}, isLoading: true, error: ''});
         const flows = getNetworkFlows(nodes, edges, deploymentId);
         const peers = transformFlowsToPeers(flows);
         fetchNetworkBaselineStatuses({ deploymentId, peers })
             .then((response: { statuses: BaselineStatus[] }) => {
-                const statusMap = response.statuses.reduce((acc, curr) => {
-                    const id = getUniqueIdFromPeer(curr.peer);
-                    acc[id] = curr.status;
-                    return acc;
-                }, {} as Record<string, BaselineStatusType>);
+                const statusMap = response.statuses.reduce(
+                    (acc, curr) => {
+                        const id = getUniqueIdFromPeer(curr.peer);
+                        acc[id] = curr.status;
+                        return acc;
+                    },
+                    {} as Record<string, BaselineStatusType>);
                 const modifiedFlows = flows.map((flow) => {
                     const id = getUniqueIdFromFlow(flow);
                     const modifiedFlow: Flow = {
