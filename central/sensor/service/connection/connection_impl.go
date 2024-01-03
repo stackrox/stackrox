@@ -185,6 +185,7 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
 		err := safe.Run(func() {
 			if err := c.handleMessage(ctx, msg); err != nil {
+				log.Infof("Error caused by message %+v", msg)
 				log.Errorf("Error handling sensor message: %v", err)
 			}
 		})
