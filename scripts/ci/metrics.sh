@@ -153,6 +153,8 @@ WHERE
     AND Status = "failed"
     AND NOT IsPullRequest
     AND CONTAINS_SUBSTR(JobName, "master")
+    AND NOT CONTAINS_SUBSTR(JobName, "ibmcloudz")
+    AND NOT CONTAINS_SUBSTR(JobName, "powervs")
     AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
 GROUP BY
     Classname,
