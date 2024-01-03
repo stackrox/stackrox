@@ -57,7 +57,7 @@ image:
     name: null # string
     tag: null # string
     fullRef: null # string
-  scannerV4: null # [dict]
+  scannerV4: null # dict
 env:
   openshift: null # bool | int
   istio: null # bool
