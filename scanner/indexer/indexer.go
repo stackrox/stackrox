@@ -294,7 +294,9 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccIndexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	// TODO: Update the HTTP client.
 	c := http.DefaultClient
+	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
 	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer root directory: %w", err)
