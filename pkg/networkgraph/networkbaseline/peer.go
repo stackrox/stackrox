@@ -30,13 +30,21 @@ var (
 		storage.NetworkEntityInfo_INTERNET: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
 			// No-op.
 		},
+		storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
+			// No-op.
+		},
+		storage.NetworkEntityInfo_INTERNAL_ENTITIES: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
+			// No-op.
+		},
 	}
 
 	// ValidBaselinePeerEntityTypes is a set of valid peer entity types that we currently support in network baseline
 	ValidBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
-		storage.NetworkEntityInfo_DEPLOYMENT:      {},
-		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
-		storage.NetworkEntityInfo_INTERNET:        {},
+		storage.NetworkEntityInfo_DEPLOYMENT:             {},
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE:        {},
+		storage.NetworkEntityInfo_INTERNET:               {},
+		storage.NetworkEntityInfo_UKNOWN_INTERNAL_ENTITY: {},
+		storage.NetworkEntityInfo_INTERNAL_ENTITIES:      {},
 	}
 )
 

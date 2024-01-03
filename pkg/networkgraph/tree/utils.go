@@ -18,7 +18,7 @@ func ipNetEqual(a, b *net.IPNet) bool {
 }
 
 func rmDescIfInternet(entity *storage.NetworkEntityInfo) {
-	// Throughout the codebase, internet node is expected only with ID and Type.
+	// Throughout the codebase, internet nodes are expected only with ID and Type.
 	if entity.GetId() == networkgraph.InternetExternalSourceID {
 		entity.Desc = nil
 	}

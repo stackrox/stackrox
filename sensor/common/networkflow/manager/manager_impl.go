@@ -442,6 +442,14 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) resolveEntityType(conn *connection) networkgraph.Entity {
+	// If collector hides the IP, then the entity is most probably from outside of the cluster
+	if conn.remote.IPAndPort.Address.String() == "255.255.255.255" {
+		return networkgraph.InternetEntity()
+	}
+	return networkgraph.InternalEntities()
+}
+
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -496,20 +504,20 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Fake a lookup result. This shows "External Entities" in the network graph
+			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         networkgraph.InternetEntity(),
+					Entity:         m.resolveEntityType(conn),
 					ContainerPorts: []uint16{port},
 				},
 			}
 			if conn.incoming {
 				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-					"Marking it as 'External Entities' in the network graph.",
+					"Marking it as 'Internal Entities' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)))
 			} else {
 				log.Debugf("Outgoing connection from container %s/%s to %s. "+
-					"Marking it as 'External Entities' in the network graph.",
+					"Marking it as 'Internal Entities' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
 			}
 		} else {

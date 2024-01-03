@@ -47,6 +47,8 @@ export const UrlDetailType = {
     CIDR_BLOCK: 'cidr',
     EXTERNAL_ENTITIES: 'internet',
     EXTERNAL_GROUP: 'external',
+    UKNOWN_INTERNAL_ENTITY: 'unknown',
+    INTERNAL_ENTITIES: 'internal',
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
 export type UrlDetailTypeValue = (typeof UrlDetailType)[UrlDetailTypeKey];

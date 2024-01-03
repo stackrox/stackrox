@@ -58,6 +58,10 @@ message NetworkEntityInfo {
         INTERNET        = 2;
         LISTEN_ENDPOINT = 3;
         EXTERNAL_SOURCE = 4;
+        // UKNOWN_INTERNAL_ENTITY (temporary) is for representing each internal entity as a separate network graph node
+        UKNOWN_INTERNAL_ENTITY = 5;
+        // INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node
+        INTERNAL_ENTITIES = 6;
     }
 
     message Deployment {

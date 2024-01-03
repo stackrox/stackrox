@@ -205,7 +205,7 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	// c. Finally remove any external peer that is fully contained by the netpol "except" networks.
 
 	if extSrc := b.networkTree.GetMatchingSupernetForCIDR(ipBlock.GetCidr(), func(entity *storage.NetworkEntityInfo) bool {
-		return entity.GetId() != networkgraph.InternetExternalSourceID
+		return !networkgraph.IsConstantID(entity.GetId())
 	}); extSrc != nil {
 		n := b.getOrCreateExtSrcNode(extSrc)
 		return []*node{n}
