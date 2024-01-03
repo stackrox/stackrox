@@ -7,8 +7,6 @@
 # Testing: Do not merge! Ensure matches for collector, sensor, central
 Established network connection info stream.
 Running StackRox Version
-# Testing: Do not merge! Creates a match for admission controller that we'll allow
-Detected and propagated updated admission controller settings via Kubernetes
 
 unexpected(?! EOF)
 panic
