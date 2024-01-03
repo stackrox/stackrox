@@ -20,7 +20,7 @@ Most environment variables can be found in [common/env.sh](common/env.sh).
 
 | **Name**                | **Values**            | **Description**                                                                                                                                                            |
 |-------------------------|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `COLLECTION_METHOD`     | `ebpf`  \ `kernel-module` | Set the collection method for collector.                                                                                                                                   |
+| `COLLECTION_METHOD`     | `core_bpf`  \ `ebpf` | Set the collection method for collector.                                                                                                                                   |
 | `HOTRELOAD`             | `true`  \ `false`         | `HOTRELOAD` mounts Sensor and Central local binaries into locally running pods. Only works with docker-desktop.  Alternatively you can use ./dev-tools/enabled-hotreload.sh. Note however that this will break the linter: https://stack-rox.atlassian.net/browse/ROX-6562 |
 | `LOAD_BALANCER`         | `route` \ `lb`            | Configure how to expose Central, important if deployed on remote clusters. Use `route` for OpenShift, `lb` for Kubernetes.                                                 |
 | `MAIN_IMAGE_TAG`        | `string`                  | Configure the image tag of the `stackrox/main` image to be deployed.                                                                                                       |
