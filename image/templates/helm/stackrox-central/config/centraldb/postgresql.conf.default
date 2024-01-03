@@ -18,6 +18,9 @@ max_wal_size = 5GB
 min_wal_size = 80MB
 
 log_timezone = 'Etc/UTC'
+logging_collector = on
+log_statement = 'all'
+log_directory = '/var/log/postgresql/'
 datestyle = 'iso, mdy'
 timezone = 'Etc/UTC'
 lc_messages = 'en_US.utf8'
