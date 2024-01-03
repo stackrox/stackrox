@@ -198,7 +198,6 @@ spec:
       - name: monitoring-tls
         secret:
           secretName: sensor-monitoring-tls
-          optional: true
       {{- end }}
 ---
 apiVersion: v1
