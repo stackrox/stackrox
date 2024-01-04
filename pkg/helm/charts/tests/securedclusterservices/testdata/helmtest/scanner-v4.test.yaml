@@ -115,7 +115,7 @@ tests:
     .deployments["sensor"].spec.template.spec.containers[0].env[] |
       select(.name == "ROX_SCANNER_GRPC_ENDPOINT") | assertThat(.value == "scanner.custom-ns.svc:8443")
 
-- name: "Test customize for local scanner"
+- name: "Test customize for local scanner v4"
   values:
     scannerV4:
       disable: false
