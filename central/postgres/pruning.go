@@ -180,6 +180,7 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing deployments
+	log.Info("Before deleteOrphanedPLOPDeploymentsAndPI")
 	query := fmt.Sprintf(deleteOrphanedPLOPDeploymentsAndPI, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
@@ -187,15 +188,18 @@ func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orpha
 
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing pods.
+	log.Info("Before deleteOrphanedPLOPPods")
 	query = fmt.Sprintf(deleteOrphanedPLOPPods, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process listening on ports by pods: %v", err)
 	}
 
+	log.Info("Before deleteOrphanedProcesses")
 	query = fmt.Sprintf(deleteOrphanedProcesses, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process indicators: %v", err)
 	}
+	log.Info("Leaving PruneOrphanedProcessIndicators")
 }
 
 // PruneReportHistory prunes report history as per specified retentionDuration and a few static criteria.
@@ -232,14 +236,17 @@ func PruneOrphanedPLOPs(ctx context.Context, pool postgres.DB, orphanWindow time
 	}
 
 	// Delete processes listening on ports orphaned due to missing deployments
+	log.Info("Before deleteOrphanedPLOPDeployments")
 	if _, err := pool.Exec(ctx, deleteOrphanedPLOPDeployments); err != nil {
 		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
 	}
 
 	// Delete processes listening on ports orphaned due to missing pods.
+	log.Info("Before deleteOrphanedPLOPPodsWithPodUID")
 	if _, err := pool.Exec(ctx, deleteOrphanedPLOPPodsWithPodUID); err != nil {
 		log.Errorf("failed to prune process listening on ports by pods: %v", err)
 	}
+	log.Info("Leaving PruneOrphanedPLOPs")
 
 	return commandTag.RowsAffected()
 }

@@ -115,6 +115,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
+	log.Info("In AddProcessListeningOnPort")
+
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
 	indicatorIds := getIndicatorIdsForPlops(allPLOPs)
@@ -234,7 +236,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Now save actual PLOP objects
-	return ds.storage.UpsertMany(ctx, plopObjects)
+	log.Info("About to UpsertMany plopObjects")
+	err = ds.storage.UpsertMany(ctx, plopObjects)
+	log.Infof("After UpsertMany plopObjects")
+
+	return err
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
@@ -507,11 +513,15 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 }
 
 func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error {
+	log.Info("In RemovePlopsByPod")
 	if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
+	err := ds.storage.DeleteByQuery(ctx, q)
+	log.Info("Leaving RemovePlopsByPod")
+
+	return err
 }
