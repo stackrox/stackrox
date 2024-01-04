@@ -2,14 +2,12 @@ package indexer
 
 import (
 	"context"
-	"crypto/sha256"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/claircore"
 	mockindexer "github.com/quay/claircore/test/mock/indexer"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
@@ -113,26 +111,6 @@ func loadIndexerConfig(r io.Reader) (config.IndexerConfig, error) {
 func mockIndexerStore(t *testing.T) mockindexer.Store {
 	ctrl := gomock.NewController(t)
 	s := mockindexer.NewMockStore(ctrl)
-	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-		[]claircore.Digest{
-			digest("first digest"),
-			digest("second digest"),
-		},
-		nil,
-	).MaxTimes(40)
 	s.EXPECT().RegisterScanners(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	return s
-}
-
-func digest(inp string) claircore.Digest {
-	h := sha256.New()
-	_, err := h.Write([]byte(inp))
-	if err != nil {
-		panic(err)
-	}
-	d, err := claircore.NewDigest("sha256", h.Sum(nil))
-	if err != nil {
-		panic(err)
-	}
-	return d
 }
