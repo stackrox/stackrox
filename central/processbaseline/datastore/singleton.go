@@ -6,7 +6,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	indicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,15 +13,10 @@ var (
 	once sync.Once
 
 	ad DataStore
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {
-	storage, err := pgStore.NewWithCache(pgStore.New(globaldb.GetPostgres()))
-	if err != nil {
-		log.Fatal("failed to open process baseline store")
-	}
+	storage := pgStore.New(globaldb.GetPostgres())
 
 	searcher, err := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
 	if err != nil {
