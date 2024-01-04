@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 # Allow to run the tests locally provided that bats-helpers are installed.
-# If $BATS_HELPERS_ROOT is set, an attempt is made to load them from that directory,
+# If $BATS_CORE_ROOT is set, an attempt is made to load them from that directory,
 # otherwise they are expected in the default location $HOME/bats-core.
 # This makes sure that current behaviour is unaltered and existing workflows are not broken.
 bats_helpers_root=${BATS_CORE_ROOT:-${HOME}/bats-core}
