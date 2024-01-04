@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Wizard, WizardStep } from '@patternfly/react-core';
 import { FormikProvider } from 'formik';
-import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
+import { complianceEnhancedScanConfigsPath } from 'routePaths';
 
 import useRestQuery from 'hooks/useRestQuery';
 import {
@@ -29,7 +29,7 @@ const SELECT_PROFILES_ID = 'profiles';
 const REVIEW_CONFIG = 'Review and create';
 const REVIEW_CONFIG_ID = 'review';
 
-function ScanConfigPage(): ReactElement {
+function ScanConfigWizardForm(): ReactElement {
     const history = useHistory();
     const formik = useFormikScanConfig();
     const [isCreating, setIsCreating] = useState(false);
@@ -48,7 +48,7 @@ function ScanConfigPage(): ReactElement {
 
         try {
             await createScanConfig(complianceScanConfig);
-            history.push(complianceEnhancedScanConfigsBasePath);
+            history.push(complianceEnhancedScanConfigsPath);
         } catch (error) {
             setCreateScanConfigError(getAxiosErrorMessage(error));
         } finally {
@@ -57,7 +57,7 @@ function ScanConfigPage(): ReactElement {
     }
 
     function onClose(): void {
-        history.push(complianceEnhancedScanConfigsBasePath);
+        history.push(complianceEnhancedScanConfigsPath);
     }
 
     function setAllFieldsTouched(formikGroupKey: string): void {
@@ -142,4 +142,4 @@ function ScanConfigPage(): ReactElement {
     );
 }
 
-export default ScanConfigPage;
+export default ScanConfigWizardForm;
