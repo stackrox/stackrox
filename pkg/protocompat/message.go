@@ -65,3 +65,5 @@ type ClonedUnmarshaler[T any] interface {
 	proto.Unmarshaler
 	*T
 }
+=======
+>>>>>>> ca2acf94bb (Add proto.MarshalTextString to compatibility layer)
