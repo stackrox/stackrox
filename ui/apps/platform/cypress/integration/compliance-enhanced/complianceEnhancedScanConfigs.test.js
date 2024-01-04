@@ -4,9 +4,11 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
 
 import {
-    visitComplianceEnhancedScanConfigsFromLeftNav,
+    visitComplianceEnhancedClusterComplianceFromLeftNav,
     visitComplianceEnhancedScanConfigs,
-    scanConfigsPath,
+    visitComplianceEnhancedClusterCompliance,
+    clusterComplianceCoveragePath,
+    clusterComplianceScanConfigsPath,
 } from './ComplianceEnhanced.helpers';
 
 describe('Compliance Dashboard', () => {
@@ -18,11 +20,19 @@ describe('Compliance Dashboard', () => {
         }
     });
 
-    it('should visit scan configurations scheduling from the left nav', () => {
-        visitComplianceEnhancedScanConfigsFromLeftNav();
+    it('should visit cluster compliance from the left nav and default to coverage view', () => {
+        visitComplianceEnhancedClusterComplianceFromLeftNav();
 
-        cy.location('pathname').should('eq', scanConfigsPath);
-        cy.title().should('match', getRegExpForTitleWithBranding('Scan schedules'));
+        cy.location('pathname').should('eq', clusterComplianceCoveragePath);
+        cy.title().should('match', getRegExpForTitleWithBranding('Cluster compliance'));
+    });
+
+    it('should visit scan configurations scheduling from tab nav menu', () => {
+        visitComplianceEnhancedClusterCompliance();
+        cy.get('a.pf-c-nav__link').contains('Schedules').click();
+
+        cy.location('pathname').should('eq', clusterComplianceScanConfigsPath);
+        cy.get('a.pf-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
     });
 
     it('should have expected elements on the scan configs page', () => {

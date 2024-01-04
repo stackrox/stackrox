@@ -18,7 +18,6 @@ function ScanConfigsPage() {
      * /main/compliance-enhanced/scan-configs/configId
      */
     const { pageAction } = usePageAction<PageActions>();
-    console.log('pageAction: ', pageAction);
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
@@ -33,7 +32,6 @@ function ScanConfigsPage() {
                         return <CreateScanConfigPage />;
                     }
                     if (pageAction === undefined) {
-                        console.log('pageAction undefined');
                         return (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}

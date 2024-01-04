@@ -5,7 +5,9 @@ import { visit } from '../../helpers/visit';
 
 export const basePath = '/main/compliance-enhanced';
 export const statusDashboardPath = `${basePath}/status`;
-export const scanConfigsPath = `${basePath}/scan-configs`;
+export const clusterCompliancePath = `${basePath}/cluster-compliance`;
+export const clusterComplianceCoveragePath = `${clusterCompliancePath}/coverage`;
+export const clusterComplianceScanConfigsPath = `${clusterCompliancePath}/scan-configs`;
 
 // visit helpers
 export const scanConfigsAlias = 'configurations';
@@ -36,19 +38,24 @@ export function visitComplianceEnhancedDashboard(staticResponseMap) {
     cy.get(`h1:contains("Compliance")`);
 }
 
-export function visitComplianceEnhancedScanConfigsFromLeftNav(staticResponseMap) {
-    visitFromLeftNavExpandable(
-        'Compliance (2.0)',
-        'Cluster Compliance',
+export function visitComplianceEnhancedClusterComplianceFromLeftNav(staticResponseMap) {
+    visitFromLeftNavExpandable('Compliance (2.0)', 'Cluster Compliance', null, staticResponseMap);
+
+    cy.get(`h1:contains("Cluster compliance")`);
+}
+
+export function visitComplianceEnhancedClusterCompliance(staticResponseMap) {
+    visit(clusterCompliancePath, null, staticResponseMap);
+
+    cy.get(`h1:contains("Cluster compliance")`);
+}
+
+export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
+    visit(
+        clusterComplianceScanConfigsPath,
         routeMatcherMapForComplianceScanConfigs,
         staticResponseMap
     );
 
-    cy.get(`h1:contains("Scan schedules")`);
-}
-
-export function visitComplianceEnhancedScanConfigs(staticResponseMap) {
-    visit(scanConfigsPath, routeMatcherMapForComplianceScanConfigs, staticResponseMap);
-
-    cy.get(`h1:contains("Scan schedules")`);
+    cy.get('a.pf-c-nav__link').contains('Schedules').should('have.class', 'pf-m-current');
 }
