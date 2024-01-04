@@ -549,10 +549,6 @@ func (e *email) getPassword() (string, error) {
 		return e.creds, nil
 	}
 
-	if e.notifier.GetNotifierSecret() == "" {
-		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
-	}
-
 	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.notifier.GetNotifierSecret())
 	if err != nil {
 		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", e.notifier.GetName())

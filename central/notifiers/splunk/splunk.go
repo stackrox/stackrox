@@ -203,9 +203,6 @@ func (s *splunk) getHTTPToken() (string, error) {
 		return s.creds, nil
 	}
 
-	if s.GetNotifierSecret() == "" {
-		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", s.GetName())
-	}
 	decCreds, err := s.cryptoCodec.Decrypt(s.cryptoKey, s.GetNotifierSecret())
 	if err != nil {
 		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", s.GetName())
