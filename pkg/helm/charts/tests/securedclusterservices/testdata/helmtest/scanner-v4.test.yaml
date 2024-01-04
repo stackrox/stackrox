@@ -122,5 +122,5 @@ tests:
     customize:
       envVars:
         FOO: bar
-    expect: |
-      envVars(.deployments.scanner; "scanner-v4")["FOO"] | assertThat(. == "bar")
+  expect: |
+    envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
