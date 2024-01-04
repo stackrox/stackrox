@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Alert } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -218,11 +219,22 @@ function ImageVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
-                                        <p className="pf-u-mb-md">{summary}</p>
-                                        <ImageComponentVulnerabilitiesTable
-                                            imageMetadataContext={image}
-                                            componentVulnerabilities={imageComponents}
-                                        />
+                                        {summary && image ? (
+                                            <>
+                                                <p className="pf-u-mb-md">{summary}</p>
+                                                <ImageComponentVulnerabilitiesTable
+                                                    imageMetadataContext={image}
+                                                    componentVulnerabilities={imageComponents}
+                                                />
+                                            </>
+                                        ) : (
+                                            <Alert
+                                                isInline
+                                                variant="warning"
+                                                title="Partial CVE data"
+                                                aria-label="Partial CVE data"
+                                            />
+                                        )}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

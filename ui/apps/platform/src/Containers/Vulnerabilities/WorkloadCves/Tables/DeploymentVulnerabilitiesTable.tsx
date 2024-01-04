@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Alert } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -218,12 +219,23 @@ function DeploymentVulnerabilitiesTable({
                             <Td />
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
-                                    <p className="pf-u-mb-md">{summary}</p>
-                                    <DeploymentComponentVulnerabilitiesTable
-                                        images={images}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    />
+                                    {summary && images.length > 0 ? (
+                                        <>
+                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <DeploymentComponentVulnerabilitiesTable
+                                                images={images}
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Alert
+                                            isInline
+                                            variant="warning"
+                                            title="Partial CVE data"
+                                            aria-label="Partial CVE data"
+                                        />
+                                    )}
                                 </ExpandableRowContent>
                             </Td>
                         </Tr>

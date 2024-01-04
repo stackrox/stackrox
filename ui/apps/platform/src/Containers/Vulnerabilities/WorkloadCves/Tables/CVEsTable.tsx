@@ -12,7 +12,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Text } from '@patternfly/react-core';
+import { Alert, Text } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
@@ -292,7 +292,16 @@ function CVEsTable({
                                 <Td />
                                 <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
-                                        {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
+                                        {summary ? (
+                                            <Text>{summary}</Text>
+                                        ) : (
+                                            <Alert
+                                                isInline
+                                                variant="warning"
+                                                title="Partial CVE data"
+                                                aria-label="Partial CVE data"
+                                            />
+                                        )}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
