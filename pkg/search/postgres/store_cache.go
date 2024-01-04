@@ -177,7 +177,7 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	filteredIDs := make([]string, 0, len(objects))
 	for _, obj := range objects {
 		if !c.isWriteAllowed(ctx, obj) {
-			return nil
+			continue
 		}
 		filteredIDs = append(filteredIDs, c.pkGetter(obj))
 	}
