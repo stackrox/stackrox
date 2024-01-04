@@ -105,7 +105,7 @@ tests:
     expect: |
       envVars(.deployments.sensor; "sensor")| assertThat(has("ROX_LOCAL_IMAGE_SCANNING_ENABLED") == false)
 
-- name: "sensor connects to local scanner using the correct GRPC endpoint"
+- name: "sensor connects to local scanner using the correct gRPC endpoint"
   release:
     namespace: custom-ns
   set:
