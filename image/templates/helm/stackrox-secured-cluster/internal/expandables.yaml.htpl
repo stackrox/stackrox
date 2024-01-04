@@ -50,12 +50,6 @@ scannerV4:
     serviceTLS:
       cert: true
       key: true
-  matcher:
-    nodeSelector: true
-    resources: true
-    serviceTLS:
-      cert: true
-      key: true
   db:
     postgresConfig: true
     hbaConfig: true

@@ -71,12 +71,6 @@ scanner:
 scannerV4:
   disable: false
   indexer:
-    disable: false
-    serviceTLS:
-      cert: "scanner tls cert pem"
-      key: "scanner tls key pem"
-  matcher:
-    disable: false
     serviceTLS:
       cert: "scanner tls cert pem"
       key: "scanner tls key pem"

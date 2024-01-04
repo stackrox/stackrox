@@ -148,12 +148,6 @@ customize:
     podLabels: {} # dict
     podAnnotations: {} # dict
     envVars: {} # dict
-  scanner-v4-matcher:
-    labels: {} # dict
-    annotations: {} # dict
-    podLabels: {} # dict
-    podAnnotations: {} # dict
-    envVars: {} # dict
   scanner-v4-db:
     labels: {} # dict
     annotations: {} # dict

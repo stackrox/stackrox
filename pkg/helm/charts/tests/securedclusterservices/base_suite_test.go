@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/image"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -104,12 +105,22 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)
 
+	excludes := set.NewFrozenStringSet(
+		"additional-ca-sensor.yaml",
+		"02-scanner-v4-03-matcher-tls-secret.yaml",
+		"02-scanner-v4-04-matcher-config.yaml",
+		"02-scanner-v4-05-matcher-network-policy.yaml",
+		"02-scanner-v4-07-matcher-deployment.yaml",
+		"02-scanner-v4-08-matcher-service.yaml",
+		"02-scanner-v4-09-matcher-hpa.yaml",
+	)
+
 	for k, v := range rendered {
-		if path.Base(k) == "additional-ca-sensor.yaml" {
-			s.Empty(v, "expected additional CAs to be empty")
-		} else {
-			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
+		if excludes.Contains(path.Base(k)) {
+			s.Empty(v, "expected generated values file %s to be empty when specifying all generatable values", k)
+			continue
 		}
+		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 	}
 
 	// Verify custom environment variable
