@@ -184,7 +184,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		if !prevExists {
-			plopObjects = addNewPLOP(plopObjects, indicatorID, clusterID, processInfo, val)
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 
@@ -235,7 +235,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				log.Warnf("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
 			}
 
-			plopObjects = addNewPLOP(plopObjects, indicatorID, clusterID, processInfo, val)
+			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
 
@@ -487,7 +487,6 @@ func sortByCloseTimestamp(values []*storage.ProcessListeningOnPortFromSensor) {
 
 func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 	indicatorID string,
-	clusterID string,
 	processInfo *storage.ProcessIndicatorUniqueKey,
 	value *storage.ProcessListeningOnPortFromSensor) []*storage.ProcessListeningOnPortStorage {
 
