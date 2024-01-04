@@ -6,11 +6,13 @@ indexer:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
   get_layer_timeout: 1m
+  repository_to_cpe_url: https://access.redhat.com/security/data/metrics/repository-to-cpe.json
+  name_to_cpe_url: https://access.redhat.com/security/data/metrics/container-name-repos-map.json
 matcher:
   enable: true
   database:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
 mtls:
-  certs_dir: ""
+  certs_dir: certs/scanner-v4
 log_level: info
