@@ -148,7 +148,9 @@ class PostClusterTest(StoreArtifacts):
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         if self.artifact_destination_prefix is not None:
-            self.service_logs_destination = os.path.join(PostTestsConstants.K8S_LOG_DIR, self.artifact_destination_prefix)
+            self.service_logs_destination = os.path.join(PostTestsConstants.K8S_LOG_DIR,
+                                                         self.artifact_destination_prefix,
+                                                         "k8s-logs")
         else:
             self.service_logs_destination = PostTestsConstants.K8S_LOG_DIR
         self._check_stackrox_logs = check_stackrox_logs
