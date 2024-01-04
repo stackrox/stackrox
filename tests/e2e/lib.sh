@@ -618,37 +618,16 @@ collect_and_check_stackrox_logs() {
 # system tests against the same cluster.
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
-    local psps_supported=false
-    local sccs_supported=false
-    if kubectl api-resources -o name | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
-        sccs_supported=true
-    fi
-    if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
-        psps_supported=true
-    fi
+
     (
         # midstream ocp specific
-        if kubectl get ns stackrox-operator 2>&1 >/dev/null; then
-            kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding -l "app=rhacs-operator" --wait
-            if [[ "$psps_supported" = "true" ]]; then
-                kubectl -n stackrox-operator delete psp -l "app=rhacs-operator" --wait
-            fi
-        fi
-        if kubectl get ns stackrox 2>&1 >/dev/null; then
-            kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding -l "app.kubernetes.io/name=stackrox" --wait
-            if [[ "$psps_supported" = "true" ]]; then
-                kubectl -n stackrox delete psp -l "app.kubernetes.io/name=stackrox" --wait
-            fi
-            # openshift specific:
-            if [[ "$sccs_supported" = "true" ]]; then
-                kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
-            fi
-        fi
-        if [[ "$psps_supported" = "true" ]]; then
-            kubectl delete -R -f scripts/ci/psp --wait
-        fi
-        kubectl delete --ignore-not-found ns stackrox --wait
-        kubectl delete --ignore-not-found ns stackrox-operator --wait
+        kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app=rhacs-operator" --wait
+        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
+        # openshift specific:
+        kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
+        kubectl delete -R -f scripts/ci/psp --wait
+        kubectl delete ns stackrox --wait
+        kubectl delete ns stackrox-operator --wait
         helm uninstall monitoring
         helm uninstall central
         helm uninstall scanner
