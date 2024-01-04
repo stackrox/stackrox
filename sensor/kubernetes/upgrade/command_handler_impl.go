@@ -3,7 +3,6 @@ package upgrade
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -11,6 +10,7 @@ import (
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -115,7 +115,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	defer h.currentProcessMutex.Unlock()
 
 	if h.stopSig.IsDone() {
-		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(trigger))
+		return errors.Errorf("unable to send command: %s", protocompat.MarshalTextString(trigger))
 	}
 
 	oldProcess := h.currentProcess

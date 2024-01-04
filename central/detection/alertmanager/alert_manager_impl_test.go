@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/detection"
@@ -183,11 +182,11 @@ func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 1", func(q *v1.Query) bool {
-			return strings.Contains(proto.MarshalTextString(q), "Dep1")
+			return strings.Contains(protocompat.MarshalTextString(q), "Dep1")
 		})).Return([]*storage.Alert{resolvedAlerts[0]}, nil)
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 2", func(q *v1.Query) bool {
-			return strings.Contains(proto.MarshalTextString(q), "Dep2")
+			return strings.Contains(protocompat.MarshalTextString(q), "Dep2")
 		})).Return([]*storage.Alert{resolvedAlerts[1]}, nil)
 
 	// Only the first alert will get notified
