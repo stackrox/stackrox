@@ -91,7 +91,11 @@ func TestSkipImageUpsert(t *testing.T) {
 			feature, upsert, !wantErr, scannerV4Image, !dbGet, noDbImg, !dbImgExists, noDbErr, !getScanners,
 		},
 		{
-			"upsert image not scanned by clairify or scanner v4",
+			"upsert image scanned by scanner v4 when image from db scanned by clairify",
+			feature, upsert, !wantErr, scannerV4Image, !dbGet, createImage("id", clairifyScannerID), dbImgExists, noDbErr, !getScanners,
+		},
+		{
+			"upsert image not scanned by clairify nor scanner v4",
 			feature, upsert, !wantErr, gcrImage, !dbGet, noDbImg, !dbImgExists, noDbErr, getScanners,
 		},
 		{

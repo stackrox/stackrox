@@ -156,7 +156,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 
 	// Do not allow manual creation of a scanner v4 integration.
 	if request.GetType() == scannerTypes.ScannerV4 {
-		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integrations cannot be manually created")
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be manually created")
 	}
 
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
@@ -195,7 +195,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 	// Do not allow manual deletion of a scanner v4 integration.
 	if existed && ii.GetType() == scannerTypes.ScannerV4 {
-		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integrations cannot be deleted")
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be deleted")
 	}
 
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
