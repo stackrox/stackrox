@@ -29,8 +29,10 @@ import {
 } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
-import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
+import { complianceEnhancedScanConfigsPath, complianceEnhancedCoveragePath } from 'routePaths';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import TabNavHeader from 'Components/TabNav/TabNavHeader';
+import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -39,7 +41,6 @@ import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
-import ScanConfigsHeader from '../ScanConfigsHeader';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
 type ScanConfigsTablePageProps = {
@@ -48,7 +49,7 @@ type ScanConfigsTablePageProps = {
 
 const CreateScanConfigButton = () => {
     return (
-        <Link to={`${complianceEnhancedScanConfigsBasePath}?action=create`}>
+        <Link to={`${complianceEnhancedScanConfigsPath}?action=create`}>
             <Button variant="primary">Create scan schedule</Button>
         </Link>
     );
@@ -87,7 +88,7 @@ function ScanConfigsTablePage({
                 <Tr key={id}>
                     <Td>
                         <Link
-                            to={generatePath(complianceEnhancedScanConfigsBasePath, {
+                            to={generatePath(complianceEnhancedScanConfigsPath, {
                                 policyId: id,
                             })}
                         >
@@ -158,9 +159,19 @@ function ScanConfigsTablePage({
 
     return (
         <>
-            <ScanConfigsHeader
+            <TabNavHeader
+                currentTabTitle="Schedules"
+                tabLinks={[
+                    { title: 'Coverage', href: complianceEnhancedCoveragePath },
+                    { title: 'Schedules', href: complianceEnhancedScanConfigsPath },
+                ]}
+                pageTitle="Compliance - Cluster compliance"
+                mainTitle="Cluster compliance"
+            />
+            <Divider component="div" />
+            <TabNavSubHeader
                 actions={hasWriteAccessForCompliance ? <CreateScanConfigButton /> : <></>}
-                description="Configure scan schedules bound to clusters and policies."
+                description="Configure a scan schedule to run profile compliance checks on selected clusters"
             />
             <Divider component="div" />
             {error ? (

@@ -3,7 +3,7 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
+import { complianceEnhancedScanConfigsPath } from 'routePaths';
 
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
 import CreateScanConfigPage from './CreateScanConfigPage';
@@ -26,7 +26,7 @@ function ScanConfigsPage() {
         <Switch>
             <Route
                 exact
-                path={complianceEnhancedScanConfigsBasePath}
+                path={complianceEnhancedScanConfigsPath}
                 render={() => {
                     if (pageAction === 'create' && hasWriteAccessForCompliance) {
                         return <CreateScanConfigPage />;
@@ -38,7 +38,7 @@ function ScanConfigsPage() {
                             />
                         );
                     }
-                    return <Redirect to={complianceEnhancedScanConfigsBasePath} />;
+                    return <Redirect to={complianceEnhancedScanConfigsPath} />;
                 }}
             />
         </Switch>

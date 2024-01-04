@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
-import TabNav from 'Components/TabNav';
+import TabNav from 'Components/TabNav/TabNav';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { accessControlLabels } from 'messages/common';
 
