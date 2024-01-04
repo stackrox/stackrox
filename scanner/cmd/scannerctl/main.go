@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/utils"
@@ -127,6 +128,10 @@ func scanCmd(ctx context.Context) *cobra.Command {
 		"Use the specified image digest in "+
 			"the image manifest ID. The default is to retrieve the image digest from "+
 			"the registry and use that.")
+	indexOnly := flags.Bool(
+		"index-only",
+		false,
+		"Only index the specified image")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Create scanner client.
 		scanner, err := factory.Create(ctx)
@@ -163,15 +168,25 @@ func scanCmd(ctx context.Context) *cobra.Command {
 			log.Printf("WARNING: the actual image digest %q is different from %q",
 				ref.DigestStr(), *imageDigest)
 		}
-		vr, err := scanner.IndexAndScanImage(ctx, ref, auth)
+		var report any
+		if *indexOnly {
+			var ir *v4.IndexReport
+			ir, err = scanner.GetOrCreateImageIndex(ctx, ref, auth)
+			report = ir
+		} else {
+			var vr *v4.VulnerabilityReport
+			vr, err = scanner.IndexAndScanImage(ctx, ref, auth)
+			report = vr
+		}
+
 		if err != nil {
 			return fmt.Errorf("scanning: %w", err)
 		}
-		vrJSON, err := json.MarshalIndent(vr, "", "  ")
+		reportJSON, err := json.MarshalIndent(report, "", "  ")
 		if err != nil {
 			return fmt.Errorf("decoding report: %w", err)
 		}
-		fmt.Println(string(vrJSON))
+		fmt.Println(string(reportJSON))
 		return nil
 	}
 	return &cmd
