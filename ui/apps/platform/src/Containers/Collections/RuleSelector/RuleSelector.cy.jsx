@@ -27,14 +27,14 @@ function setup(defaultSelector, onChange) {
 }
 
 describe(Cypress.spec.relative, () => {
-    it('Should render "All entities" option when selector is null', () => {
+    it('should render "All entities" option when selector is null', () => {
         setup({ type: 'All' }, () => {});
 
         cy.findByText('All deployments');
     });
 
-    it('Should allow users to add name selectors', () => {
-        let state = {
+    it('should allow users to add name selectors', () => {
+        const state = {
             resourceSelector: {
                 type: 'ByName',
                 field: 'Deployment',
@@ -124,8 +124,8 @@ describe(Cypress.spec.relative, () => {
         cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'All' } });
     });
 
-    it('Should allow users to add label key/value selectors', async () => {
-        let state = {
+    it('should allow users to add label key/value selectors', async () => {
+        const state = {
             resourceSelector: {
                 type: 'ByLabel',
                 field: 'Deployment Label',

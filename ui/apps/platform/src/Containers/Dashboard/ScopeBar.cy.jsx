@@ -31,7 +31,7 @@ const mockData = {
     ],
 };
 
-const setup = () => {
+function setup() {
     cy.intercept('POST', graphqlUrl('getAllNamespacesByCluster'), (req) => {
         req.reply({ data: mockData });
     });
@@ -41,7 +41,7 @@ const setup = () => {
             <ScopeBar />
         </ComponentTestProviders>
     );
-};
+}
 
 const clusterToggle = () => cy.findByLabelText('Select clusters');
 const namespaceToggle = () => cy.findByLabelText('Select namespaces');
