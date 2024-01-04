@@ -1,10 +1,18 @@
 package indexer
 
 import (
+	"context"
+	"io"
+	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-containerregistry/pkg/name"
+	mockindexer "github.com/quay/claircore/test/mock/indexer"
+	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseContainerImageURL(t *testing.T) {
@@ -59,4 +67,52 @@ func Test_parseContainerImageURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewLibindex(t *testing.T) {
+	ctx := context.Background()
+	s := mockIndexerStore(t)
+	yamlData := `
+http_listen_addr: 127.0.0.1:9443
+grpc_listen_addr: 127.0.0.1:8443
+indexer:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+    password_file: ""
+  get_layer_timeout: 1m
+  repository_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/repository-to-cpe.json
+  name_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
+matcher:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+    password_file: ""
+mtls:
+  certs_dir: ""
+log_level: info
+`
+	reader := strings.NewReader(yamlData)
+	ic, err := loadIndexerConfig(reader)
+	require.NoError(t, err)
+	indexer, err := newLibindex(zlog.Test(ctx, t), ic, s, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
+	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
+}
+
+// loadIndexerConfig parses the provided YAML data and returns the IndexerConfig.
+func loadIndexerConfig(r io.Reader) (config.IndexerConfig, error) {
+	cfg, err := config.Load(r)
+	if err != nil {
+		return config.IndexerConfig{}, err
+	}
+	return cfg.Indexer, nil
+}
+
+func mockIndexerStore(t *testing.T) mockindexer.Store {
+	ctrl := gomock.NewController(t)
+	s := mockindexer.NewMockStore(ctrl)
+	s.EXPECT().RegisterScanners(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	return s
 }
