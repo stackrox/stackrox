@@ -1,6 +1,6 @@
 [<- if and .FeatureFlags.ROX_SCANNER_V4 (not .KubectlOutput) >]
 scannerV4:
-  disable: true
+  disable: true [</* On secured-clusters local scanners (irregardless of the version) require explicit activation. */>]
   matcher:
     metricsPort: 9090
     autoscaling:
