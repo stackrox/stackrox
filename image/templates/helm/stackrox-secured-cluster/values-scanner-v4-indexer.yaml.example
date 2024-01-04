@@ -1,5 +1,7 @@
 # # NOTE:
 # # The Scanner v4 Indexer is not available in the secured clusters installed via roxctl.
+# # The Scanner v4 Matcher is never part of secured clusters, it is only installed as part
+# # of central-services.
 #
 # # Public configuration options for the StackRox Scanner v4 Indexer:
 # # To run Scanner v4 in the secured cluster, you must connect the Scanner v4 to Sensor.
