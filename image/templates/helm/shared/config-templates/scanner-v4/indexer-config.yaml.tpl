@@ -21,6 +21,8 @@ indexer:
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
   get_layer_timeout: 1m
+  repository_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=repo2cpe
+  name_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=name2cpe
 matcher:
   enable: false
 log_level: info
