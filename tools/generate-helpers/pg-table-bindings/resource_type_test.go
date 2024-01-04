@@ -99,7 +99,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ProcessBaseline{}, resourceType: directlyScoped},
 		{typ: &storage.ProcessBaselineResults{}, resourceType: directlyScoped},
 		{typ: &storage.ProcessIndicator{}, resourceType: directlyScoped},
-		{typ: &storage.ProcessListeningOnPortStorage{}, resourceType: indirectlyScoped},
+		{typ: &storage.ProcessListeningOnPortStorage{}, resourceType: directlyScoped},
 		{typ: &storage.ReportConfiguration{}, resourceType: globallyScoped},
 		{typ: &storage.ReportSnapshot{}, resourceType: globallyScoped},
 		{typ: &storage.ResourceCollection{}, resourceType: globallyScoped},
