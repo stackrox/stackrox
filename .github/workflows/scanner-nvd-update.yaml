@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 */4 * * *'  # this runs every 4 hours
   workflow_dispatch:
+  push:
+    branches:
+      - 'yli3/**'
 
 jobs:
   fetch-cves:
