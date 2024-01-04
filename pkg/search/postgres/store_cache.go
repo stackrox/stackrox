@@ -54,6 +54,7 @@ func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
 		// the underlying database.
+		log.Error("Failed to populate store cache, using direct store access instead")
 		return underlyingStore
 	}
 	return store
@@ -97,6 +98,7 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
 		// the underlying database.
+		log.Error("Failed to populate store cache, using direct store access instead")
 		return underlyingStore
 	}
 	return store
@@ -151,9 +153,9 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	if !c.isWriteAllowed(ctx, obj) {
 		return nil
 	}
-	dbErr := c.underlyingStore.Delete(ctx, id)
-	if dbErr != nil {
-		return dbErr
+	err := c.underlyingStore.Delete(ctx, id)
+	if err != nil {
+		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
@@ -175,7 +177,7 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	filteredIDs := make([]string, 0, len(objects))
 	for _, obj := range objects {
 		if !c.isWriteAllowed(ctx, obj) {
-			continue
+			return nil
 		}
 		filteredIDs = append(filteredIDs, c.pkGetter(obj))
 	}
@@ -274,9 +276,9 @@ func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([
 
 // DeleteByQuery removes the objects from the store based on the passed query.
 func (c *cachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
-	identifiersToRemove, dbErr := c.underlyingStore.DeleteByQuery(ctx, query)
-	if dbErr != nil {
-		return nil, dbErr
+	identifiersToRemove, err := c.underlyingStore.DeleteByQuery(ctx, query)
+	if err != nil {
+		return nil, err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
 	c.cacheLock.Lock()
@@ -293,12 +295,12 @@ func (c *cachedStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	result := make([]string, 0, len(c.cache))
-	walkErr := c.walkCacheNoLock(ctx, func(obj PT) error {
+	err := c.walkCacheNoLock(ctx, func(obj PT) error {
 		result = append(result, c.pkGetter(obj))
 		return nil
 	})
-	if walkErr != nil {
-		return nil, walkErr
+	if err != nil {
+		return nil, err
 	}
 	return result, nil
 }
@@ -311,12 +313,12 @@ func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	result := make([]PT, 0, len(c.cache))
-	walkErr := c.walkCacheNoLock(ctx, func(obj PT) error {
+	err := c.walkCacheNoLock(ctx, func(obj PT) error {
 		result = append(result, obj.Clone())
 		return nil
 	})
-	if walkErr != nil {
-		return nil, walkErr
+	if err != nil {
+		return nil, err
 	}
 	return result, nil
 }
