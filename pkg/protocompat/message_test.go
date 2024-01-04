@@ -45,3 +45,19 @@ func TestEqual(t *testing.T) {
 	assert.False(t, Equal(m3, m4))
 	assert.True(t, Equal(m4, m4))
 }
+
+func TestMarshalTextString(t *testing.T) {
+	msg := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		Name:        "Namespace A",
+		ClusterId:   testconsts.Cluster1,
+		ClusterName: "Cluster 1",
+	}
+	asString := MarshalTextString(msg)
+	expectedString := `id: "namespaceA"
+` + `name: "Namespace A"
+` + `cluster_id: "aaaaaaaa-bbbb-4011-0000-111111111111"
+` + `cluster_name: "Cluster 1"
+`
+	assert.Equal(t, expectedString, asString)
+}
