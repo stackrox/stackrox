@@ -103,10 +103,10 @@
         "lint:fix": "eslint --fix --quiet .",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
         "cypress-spec": "./scripts/cypress.sh run --spec",
-        "cypress-component": "./scripts/cypress.sh open --component",
+        "cypress-component": "./scripts/cypress-component.sh open --component",
         "test-e2e": "./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
         "test-e2e-local": "./scripts/cypress.sh run",
-        "test-component": "./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js --component",
+        "test-component": "./scripts/cypress-component.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js --component",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
         "eject": "react-app-rewired eject"
     },
