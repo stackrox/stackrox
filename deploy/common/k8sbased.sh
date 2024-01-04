@@ -57,7 +57,7 @@ function hotload_binary {
   binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_amd64/${local_name}")
   # set custom source path, e.g. when StackRox source is mounted into kind.
   if -z $ROX_LOCAL_SOURCE_PATH; then
-      binary_path="$ROX_LOCAL_SOURCE_PATH/${local_name}"
+      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
   fi
 
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
