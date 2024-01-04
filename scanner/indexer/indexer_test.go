@@ -95,8 +95,10 @@ log_level: info
 	reader := strings.NewReader(yamlData)
 	ic, err := loadIndexerConfig(reader)
 	require.NoError(t, err)
-	_, err = newLibindex(zlog.Test(ctx, t), ic, s, nil)
+	indexer, err := newLibindex(zlog.Test(ctx, t), ic, s, nil)
 	require.NoError(t, err)
+	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
+	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
 }
 
 // loadIndexerConfig parses the provided YAML data and returns the IndexerConfig.
