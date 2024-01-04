@@ -16,12 +16,14 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type datastoreImpl struct {
 	storage            store.Store
 	indicatorDataStore processIndicatorStore.DataStore
+	mutex              sync.RWMutex
 }
 
 var (
@@ -232,6 +234,9 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
 
 	// Now save actual PLOP objects
 	return ds.storage.UpsertMany(ctx, plopObjects)
@@ -512,6 +517,10 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
 	return ds.storage.DeleteByQuery(ctx, q)
 }
