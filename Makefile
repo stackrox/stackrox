@@ -9,11 +9,12 @@ BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+# Disable selinux for local podman builds.
+DOCKER_OPTS=--security-opt label=disable
+else
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
 DOCKER_OPTS=--user "$(shell id -u)"
-else
-DOCKER_OPTS=--security-opt label=disable
 endif
 
 # Set to empty string to echo some command lines which are hidden by default.
