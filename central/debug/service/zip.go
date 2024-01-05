@@ -8,13 +8,20 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var now = func() time.Time {
 	return time.Now()
 }
 
+var (
+	zipWriterMutex sync.Mutex
+)
+
 func writePrefixedFileToZip(zipWriter *zip.Writer, prefix string, file k8sintrospect.File) error {
+	zipWriterMutex.Lock()
+	defer zipWriterMutex.Unlock()
 	fullPath := path.Join(prefix, file.Path)
 	fileWriter, err := zipWriterWithCurrentTimestamp(zipWriter, fullPath)
 	if err != nil {
