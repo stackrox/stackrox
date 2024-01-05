@@ -194,9 +194,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 
 func (q *query) getPortionBeforeFromClause() string {
 	switch q.QueryType {
-	case DELETE:
-		return "delete"
-	case DELETERETURNINGIDS:
+	case DELETE, DELETERETURNINGIDS:
 		return "delete"
 	case COUNT:
 		countOn := "*"
