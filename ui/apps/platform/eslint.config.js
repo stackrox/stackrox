@@ -42,7 +42,7 @@ module.exports = [
         ],
     },
     {
-        files: ['**/*.{js,ts,tsx}'], // generic configuration
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
 
         // ESLint has cascade for rules (that is, last value for a rule wins).
         // ESLint only replaces other properties (that is, does not spread nor merge).
@@ -481,7 +481,10 @@ module.exports = [
         },
     },
     {
-        files: ['cypress/integration/**/*.test.js'], // integration tests
+        files: [
+            'cypress/integration/**/*.test.js', // integration tests
+            'src/**/*.cy.jsx', // component tests
+        ],
 
         languageOptions: {
             ...parserAndOptions,

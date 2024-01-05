@@ -65,22 +65,23 @@ describe(Cypress.spec.relative, () => {
         cy.findByText(`${alertCount} policy violations by severity`).should('exist');
     });
 
-    it('should link to the correct violations pages when clicking links in the widget', async () => {
+    it('should link to the correct violations pages when clicking links in the widget', () => {
         setup();
 
         // Test the 'View all' violations link button
         cy.findByText('View all').click();
         cy.location('pathname').should('eq', `${violationsBasePath}`);
-        cy.location('search').should('eq', '?sortOption[field]=Severity');
+        cy.location('search').should('include', 'sortOption[direction]=desc');
+        cy.location('search').should('include', 'sortOption[field]=Severity');
 
         // Test links from the violation count tiles
         cy.findByText('Low').click();
         cy.location('pathname').should('eq', `${violationsBasePath}`);
-        cy.location('search').should('eq', '?[Severity]=LOW_SEVERITY');
+        cy.location('search').should('include', 's[Severity]=LOW_SEVERITY');
 
         cy.findByText('Critical').click();
         cy.location('pathname').should('eq', `${violationsBasePath}`);
-        cy.location('search').should('eq', '?[Severity]=CRITICAL_SEVERITY');
+        cy.location('search').should('include', 's[Severity]=CRITICAL_SEVERITY');
 
         // Test links from the 'most recent violations' section
         cy.findByText(/ubuntu package manager/i).click();
