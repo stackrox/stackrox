@@ -80,7 +80,7 @@ message ComplianceOperatorRuleV2 {
 // Next Tag: 16
 message ComplianceOperatorScanConfigurationV2 {
     string                        id                       = 1 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"'];
-    string                        scan_name                = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name" sql:"unique"'];
+    string                        scan_config_name         = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"unique"'];
     bool                          auto_apply_remediations  = 3;
     bool                          auto_update_remediations = 4;
     bool                          one_time_scan            = 5;
@@ -140,8 +140,8 @@ message ComplianceOperatorCheckResultV2 {
     google.protobuf.Timestamp created_time     = 11 [(gogoproto.moretags) = 'search:"Compliance Check Result Created Time,hidden"'];
     string                    standard         = 12 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden"'];
     string                    control          = 13;
-    string                    scan_id          = 14 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorScanV2:id),no-fk-constraint"'];
-    string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint"'];
+    string                    scan_name        = 14 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden" sql:"fk(ComplianceOperatorScanV2:scan_name),no-fk-constraint"'];
+    string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"'];
     string                    rationale        = 17;
     repeated string           valuesUsed       = 18;
     repeated string           warnings         = 19;
@@ -157,8 +157,8 @@ message ScanStatus {
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
     string                     id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                     scan_config_name   = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint"'];
-    string                     scan_name          = 13;
+    string                     scan_config_name   = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"'];
+    string                     scan_name          = 13 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden"'];
     string                     cluster_id         = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     string                     errors             = 4;
     string                     warnings           = 14;

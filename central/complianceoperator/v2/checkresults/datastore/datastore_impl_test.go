@@ -439,9 +439,9 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	s.Require().NoError(err)
 	s.Require().Empty(checkResultIDs)
 
-	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID1, "scan 1")
+	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID1, "scan 1")
 	s.Require().NoError(err)
-	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID2, "scan 2")
+	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID2, "scan 2")
 	s.Require().NoError(err)
 
 	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", testconsts.Cluster1, "cluster1")
@@ -479,7 +479,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Labels:         nil,
 		Annotations:    nil,
 		CreatedTime:    types.TimestampNow(),
-		ScanId:         uuid.NewV4().String(),
+		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig1",
 	}
 }
@@ -497,7 +497,7 @@ func getTestRec2(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Labels:         nil,
 		Annotations:    nil,
 		CreatedTime:    types.TimestampNow(),
-		ScanId:         uuid.NewV4().String(),
+		ScanName:       uuid.NewV4().String(),
 		ScanConfigName: "scanConfig2",
 	}
 }

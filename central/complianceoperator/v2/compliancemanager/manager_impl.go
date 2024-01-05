@@ -93,7 +93,7 @@ func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complia
 // ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
 func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	if !features.ComplianceEnhancements.Enabled() {
-		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanName())
+		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
 	}
 
 	// Convert and validate schedule
@@ -105,26 +105,26 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
 		if err != nil {
-			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanName())
+			err = errors.Wrapf(err, "Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return nil, err
 		}
 		cronValidator := gronx.New()
 		if !cronValidator.IsValid(cron) {
-			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
+			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return nil, err
 		}
 	}
 
 	// Check if scan configuration already exists.
-	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanName())
+	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanName())
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 	if found {
-		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanName())
+		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
 	}
 
 	scanRequest.Id = uuid.NewV4().String()
@@ -132,7 +132,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanName())
+		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	var profiles []string
@@ -153,7 +153,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 							ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
 								ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
 									ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-										ScanName:       scanRequest.GetScanName(),
+										ScanName:       scanRequest.GetScanConfigName(),
 										StrictNodeScan: true,
 										Profiles:       profiles,
 									},
@@ -180,7 +180,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		err = m.scanSettingDS.UpdateClusterStatus(ctx, scanRequest.GetId(), clusterID, status)
 		if err != nil {
 			log.Error(err)
-			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanName())
+			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanConfigName())
 		}
 	}
 
