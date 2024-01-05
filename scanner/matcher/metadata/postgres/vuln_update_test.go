@@ -41,6 +41,7 @@ func dropDB(t *testing.T, name string, pool *pgxpool.Pool) {
 
 func TestVulnUpdateStore(t *testing.T) {
 	store, pgPool, dbPool := initDB(t, "vuln_update_test")
+	defer pgPool.Close()
 	defer dropDB(t, "vuln_update_test", pgPool)
 	defer dbPool.Close()
 
