@@ -15,7 +15,7 @@ var log = logging.LoggerForModule()
 
 // googleTransport represents a transport that converts an oauth token source
 // into docker registry credentials.
-// This is required kind of trickery is required because the docker API does not
+// This kind of trickery is required because the docker API does not
 // accept a standard oauth2 transport.
 type googleTransport struct {
 	registry.Transport
