@@ -1,12 +1,12 @@
 import React from 'react';
-import { Router } from 'react-router-dom';
-import { ApolloProvider } from '@apollo/client';
-import { createBrowserHistory } from 'history';
-import configureApolloClient from 'configureApolloClient';
+
+import ComponentTestProviders from 'test-utils/ComponentProviders';
+import { graphqlUrl } from 'test-utils/apiEndpoints';
+import useURLSearch from 'hooks/useURLSearch';
 
 import FilterAutocomplete from './FilterAutocomplete';
+
 import { IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION } from '../searchOptions';
-import useURLSearch from 'hooks/useURLSearch';
 
 const cveResponseMock = {
     data: {
@@ -37,18 +37,15 @@ function Wrapper({ searchOptions }) {
 }
 
 function setup(searchOptions) {
-    const history = createBrowserHistory();
     cy.mount(
-        <Router history={history}>
-            <ApolloProvider client={configureApolloClient()}>
-                <Wrapper searchOptions={searchOptions} />
-            </ApolloProvider>
-        </Router>
+        <ComponentTestProviders>
+            <Wrapper searchOptions={searchOptions} />
+        </ComponentTestProviders>
     );
 }
 
 function mockAutocompleteResponse() {
-    cy.intercept('POST', '/api/graphql?opname=autocomplete', (req) => {
+    cy.intercept('POST', graphqlUrl('autocomplete'), (req) => {
         if (req.body.query.includes('CVE')) {
             req.reply(cveResponseMock);
         } else {
