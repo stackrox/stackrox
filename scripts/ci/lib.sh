@@ -1111,6 +1111,10 @@ store_qa_test_results() {
     done
 }
 
+remove_qa_test_results() {
+    rm -rf qa-tests-backend/build/test-results
+}
+
 stored_test_results() {
     echo "${ARTIFACT_DIR}/junit-$1"
 }
