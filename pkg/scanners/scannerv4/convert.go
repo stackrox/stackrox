@@ -23,10 +23,7 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 		OperatingSystem: os(report),
 		Components:      components(metadata, report),
 	}
-
-	if scan.GetOperatingSystem() == "unknown" {
-		scan.Notes = append(scan.Notes, storage.ImageScan_OS_UNAVAILABLE)
-	}
+	scan.Notes = notes(report, scan.GetOperatingSystem())
 
 	return scan
 }
@@ -244,4 +241,24 @@ func os(report *v4.VulnerabilityReport) string {
 
 	dist := dists[0]
 	return dist.Did + ":" + dist.VersionId
+}
+
+func notes(report *v4.VulnerabilityReport, os string) []storage.ImageScan_Note {
+	notes := make([]storage.ImageScan_Note, 0, 3)
+
+	for _, note := range report.GetNotes() {
+		switch note {
+		case v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
+			notes = append(notes, storage.ImageScan_OS_CVES_UNAVAILABLE)
+		}
+	}
+	if os == "unknown" {
+		notes = append(notes, storage.ImageScan_OS_UNAVAILABLE)
+	}
+
+	if len(notes) > 0 {
+		notes = append(notes, storage.ImageScan_PARTIAL_SCAN_DATA)
+	}
+
+	return notes
 }

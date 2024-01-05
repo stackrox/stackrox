@@ -161,3 +161,89 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata_error() {
 	s.Error(err)
 	s.Nil(res)
 }
+
+func (s *matcherServiceTestSuite) Test_matcherService_notes() {
+	dists := []claircore.Distribution{
+		{
+			DID:       "rhel",
+			VersionID: "8",
+			Version:   "8",
+		},
+		{
+			DID:       "rhel",
+			VersionID: "9",
+			Version:   "9",
+		},
+		{
+			DID:       "ubuntu",
+			VersionID: "22.04",
+			Version:   "22.04 (Jammy)",
+		},
+		{
+			DID:       "debian",
+			VersionID: "10",
+			Version:   "10 (buster)",
+		},
+		{
+			DID:       "alpine",
+			VersionID: "",
+			Version:   "3.17",
+		},
+		{
+			DID:       "alpine",
+			VersionID: "",
+			Version:   "3.18",
+		},
+	}
+
+	s.matcherMock.
+		EXPECT().
+		GetKnownDistributions(gomock.Any()).
+		Times(2).
+		Return(dists)
+
+	srv := NewMatcherService(s.matcherMock, nil)
+
+	// Empty notes.
+	notes := srv.notes(s.ctx, &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "alpine",
+					VersionId: "3.18",
+				},
+			},
+		},
+	})
+	s.Empty(notes)
+
+	// Unknown OS.
+	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "debian",
+					VersionId: "8",
+				},
+			},
+		},
+	})
+	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}, notes)
+
+	// No known OSes.
+	s.matcherMock.
+		EXPECT().
+		GetKnownDistributions(gomock.Any()).
+		Return([]claircore.Distribution{})
+	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "alpine",
+					VersionId: "3.18",
+				},
+			},
+		},
+	})
+	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE}, notes)
+}

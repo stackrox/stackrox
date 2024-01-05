@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services/validators"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
 
@@ -85,6 +86,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		return nil, err
 	}
 	report.HashId = req.GetHashId()
+	report.Notes = s.notes(ctx, report)
 	return report, nil
 }
 
@@ -144,5 +146,24 @@ func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName st
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the matcher.
+	return nil
+}
+
+func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
+	dists := s.matcher.GetKnownDistributions(ctx)
+	if len(dists) == 0 {
+		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE}
+	}
+	dist := vr.Contents.Distributions[0]
+	dID := dist.GetDid()
+	versionID := dist.GetVersionId()
+	known := slices.ContainsFunc(dists, func(dist claircore.Distribution) bool {
+		vID := mappers.VersionID(&dist)
+		return dist.DID == dID && vID == versionID
+	})
+	if !known {
+		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
+	}
+
 	return nil
 }

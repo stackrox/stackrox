@@ -1,4 +1,4 @@
-package updater
+package vuln
 
 import (
 	"context"
@@ -168,7 +168,7 @@ func validate(opts Opts) error {
 // It is assumed the previous updater used the same root directory.
 // Any errors when attempting to remove pre-existing files are simply logged.
 func (u *Updater) tryRemoveExiting() {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.tryRemoveExiting")
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.tryRemoveExiting")
 
 	files, err := fs.Glob(os.DirFS(u.root), updateFilePattern)
 	if err != nil {
@@ -191,7 +191,7 @@ func (u *Updater) Stop() error {
 // Start periodically updates the vulnerability data.
 // Each period is adjusted by some amount of jitter.
 func (u *Updater) Start() error {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.Start")
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.Start")
 
 	zlog.Info(ctx).Msg("starting initial update")
 	if err := u.update(ctx); err != nil {
@@ -234,7 +234,7 @@ func (u *Updater) update(ctx context.Context) error {
 
 // runUpdate updates the vulnerability data.
 func (u *Updater) runUpdate(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runUpdate")
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runUpdate")
 
 	// Use TryLock instead of Lock to prevent simultaneous updates.
 	ctx, done := u.locker.TryLock(ctx, updateName)
@@ -300,7 +300,7 @@ func (u *Updater) runUpdate(ctx context.Context) error {
 // If there have been no updates since prevTimestamp, the returned file will be nil.
 // It is up to the user to close and delete the returned file.
 func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File, time.Time, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.fetch")
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
 	zlog.Info(ctx).Str("url", u.url).Msg("fetching vuln update")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
