@@ -35,9 +35,9 @@ config-templates/*scanner-v4*
 values-scanner-v4-indexer.yaml.example
 templates/00-storage-class.yaml
 [<- end >]
-[</* Ignore tls secrets unconditionally in secured cluster */>]
+[</* Ignore all matcher related manifests unconditionally in secured cluster. */>]
+templates/02-scanner-v4-*-matcher*.yaml
+[</* Ignore all other scanner related tls secrets unconditionally in secured cluster. */>]
 templates/02-scanner-03-tls-secret.yaml
 templates/02-scanner-v4-03-db-tls-secret.yaml
 templates/02-scanner-v4-03-indexer-tls-secret.yaml
-templates/02-scanner-v4-03-matcher-tls-secret.yaml
-templates/02-scanner-v4-*-matcher*.yaml
