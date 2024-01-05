@@ -102,7 +102,7 @@ $(build-deps-t): ../go.mod
 	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
+	$(SILENT)git diff --exit-code -- ../go.mod ../go.sum || { \
 		echo "go.mod/go.sum files were updated after running 'go mod tidy': run this command on your local machine and commit the results." ; \
 		exit 1 ; \
 	}
