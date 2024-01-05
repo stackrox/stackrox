@@ -12,10 +12,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/quay/zlog"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
+	"github.com/quay/zlog"
 )
 
 var (
