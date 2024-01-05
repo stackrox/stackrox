@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import isEqual from 'lodash/isEqual';
 
 import RuleSelector from './RuleSelector';
@@ -124,7 +124,7 @@ describe(Cypress.spec.relative, () => {
         cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'All' } });
     });
 
-    it('should allow users to add label key/value selectors', async () => {
+    it('should allow users to add label key/value selectors', () => {
         const state = {
             resourceSelector: {
                 type: 'ByLabel',
