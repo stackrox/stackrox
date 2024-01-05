@@ -1,5 +1,6 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { clearSearchFilters } from '../vulnerabilities.helpers';
 import {
     cancelAllCveExceptions,
     fillAndSubmitExceptionForm,
@@ -7,22 +8,10 @@ import {
     verifyExceptionConfirmationDetails,
     verifySelectedCvesInModal,
     visitWorkloadCveOverview,
+    typeAndSelectCustomSearchFilterValue,
 } from '../workloadCves/WorkloadCves.helpers';
-import { selectors as workloadCVEsSelectors } from '../workloadCves/WorkloadCves.selectors';
-import {
-    visitExceptionManagement,
-    typeAndEnterSearchFilterValue,
-} from './ExceptionManagement.helpers';
+import { visitExceptionManagement } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
-
-function clearSearchFilters() {
-    cy.get('body').then((body) => {
-        if (body.find(workloadCVEsSelectors.clearFiltersButton).length > 0) {
-            // If button exists, click it
-            cy.get(workloadCVEsSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
-        }
-    });
-}
 
 describe('Exception Management Pending Requests Page', () => {
     withAuth();
@@ -276,7 +265,7 @@ describe('Exception Management Pending Requests Page', () => {
 
             cy.get('table td[data-label="Request name"] a').then((element) => {
                 const requestName = element.text().trim();
-                typeAndEnterSearchFilterValue('Request name', requestName);
+                typeAndSelectCustomSearchFilterValue('Request name', requestName);
                 cy.get('table td[data-label="Request name"] a').should('exist');
             });
         });
@@ -302,10 +291,10 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitExceptionManagement();
 
-            typeAndEnterSearchFilterValue('Requester', 'ui_tests');
+            typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
             cy.get('table td[data-label="Request name"] a').should('exist');
             clearSearchFilters();
-            typeAndEnterSearchFilterValue('Requester', 'BLAH');
+            typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
             cy.get('table td[data-label="Request name"] a').should('not.exist');
         });
     });

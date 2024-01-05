@@ -1,9 +1,10 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { clearSearchFilters } from '../vulnerabilities.helpers';
 import {
     applyLocalSeverityFilters,
-    typeAndSelectResourceFilterValue,
-    typeAndSelectCustomResourceFilterValue as typeAndCreateResourceFilterValue,
+    typeAndSelectSearchFilterValue,
+    typeAndSelectCustomSearchFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
@@ -68,7 +69,7 @@ describe('Workload CVE Image CVE Single page', () => {
                 ).should('not.exist');
 
                 // Clear the filters
-                cy.get(selectors.clearFiltersButton).click();
+                clearSearchFilters();
 
                 // Apply the filter that _does_ match the value extracted from the first row to ensure all data
                 // in the table only contains that severity value. Since this value was pulled from the first row
@@ -103,9 +104,9 @@ describe('Workload CVE Image CVE Single page', () => {
                 'not.exist'
             );
 
-            cy.get(selectors.clearFiltersButton).click();
+            clearSearchFilters();
 
-            typeAndSelectResourceFilterValue('Namespace', namespace);
+            typeAndSelectSearchFilterValue('Namespace', namespace);
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`

@@ -27,7 +27,6 @@ export const selectors = {
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
-    clearFiltersButton: `${filterChipSection} button:contains("Clear filters")`,
 
     // General selectors
     filteredViewLabel: '.pf-c-label:contains("Filtered view")',

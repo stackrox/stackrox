@@ -7,7 +7,7 @@ import {
     selectUnwatchedImageTextFromTable,
     watchImageFlowFromModal,
     unwatchImageFromModal,
-    typeAndSelectCustomResourceFilterValue,
+    typeAndSelectCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
@@ -40,7 +40,7 @@ describe.skip('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
-            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
+            typeAndSelectCustomSearchFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
@@ -60,7 +60,7 @@ describe.skip('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
-            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
+            typeAndSelectCustomSearchFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 // Open the modal and watch the image
@@ -89,7 +89,7 @@ describe.skip('Workload CVE watched images flow', () => {
     it('should not allow adding a blank or invalid image name to the watch list', () => {
         visitWorkloadCveOverview();
         selectEntityTab('Image');
-        typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
+        typeAndSelectCustomSearchFilterValue('Namespace', 'stack');
 
         cy.get(selectors.manageWatchedImagesButton).click();
 
@@ -122,7 +122,7 @@ describe.skip('Workload CVE watched images flow', () => {
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
-            typeAndSelectCustomResourceFilterValue('Namespace', 'stack');
+            typeAndSelectCustomSearchFilterValue('Namespace', 'stack');
 
             selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
                 cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
