@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -278,6 +279,9 @@ func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool 
 }
 
 func (s *NetworkflowStoreSuite) TestGetMatching() {
+	now, err := types.TimestampProto(time.Now().Truncate(time.Microsecond))
+	s.Require().NoError(err)
+
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -307,7 +311,7 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: now,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -322,19 +326,16 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 				},
 			},
 			ClusterId:         clusterID,
-			LastSeenTimestamp: types.TimestampNow(),
+			LastSeenTimestamp: now,
 		},
 	}
 
-	err := s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
 	s.Nil(err)
+
+	// Normalize flow timestamps
 
 	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
 	s.Nil(err)
-
-	log.Infof("Expected: %s %s", flows[1], flows[2])
-	for idx, flow := range filteredFlows {
-		log.Infof("Actual %d: %s", idx, flow)
-	}
 	s.ElementsMatch([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
 }
