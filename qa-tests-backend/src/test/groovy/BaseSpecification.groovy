@@ -309,7 +309,7 @@ class BaseSpecification extends Specification {
     }
 
     private static boolean shouldTestRun(String specification, String testcase) {
-        log.info("Should ${specification}/${testcase} run?")
+        LOG.info("Should ${specification}/${testcase} run?")
         return false
     }
 
