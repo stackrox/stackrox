@@ -332,5 +332,9 @@ func (s *NetworkflowStoreSuite) TestGetMatching() {
 	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
 	s.Nil(err)
 
+	log.Infof("Expected: %s %s", flows[1], flows[2])
+	for idx, flow := range filteredFlows {
+		log.Infof("Actual %d: %s", idx, flow)
+	}
 	s.ElementsMatch([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
 }
