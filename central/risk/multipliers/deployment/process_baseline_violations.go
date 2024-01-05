@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/evaluator"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -65,6 +66,9 @@ func formatProcess(process *storage.ProcessIndicator) string {
 }
 
 func (p *processBaselineMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
+	if !env.ProcessBaselineRisk.BooleanSetting() {
+		return nil
+	}
 	violatingProcesses, err := p.evaluator.EvaluateBaselinesAndPersistResult(deployment)
 	if err != nil {
 		log.Errorf("Couldn't evaluate process baseline: %v", err)
