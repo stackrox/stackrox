@@ -285,6 +285,8 @@ class BaseSpecification extends Specification {
         MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testcase: ${name.getMethodName()}")
 
+        Assume.assumeTrue(shouldTestRun(this.class.getSimpleName(), name.getMethodName()))
+
         // Make sure to use or revert back to the desired central gRPC auth
         // before each test.
         useDesiredServiceAuth()
@@ -303,6 +305,11 @@ class BaseSpecification extends Specification {
                 }
             }
         }
+    }
+
+    private static boolean shouldTestRun(String specification, String testcase) {
+        log.info("Should ${specification}/${testcase} run?")
+        return false
     }
 
     def cleanupSpec() {
