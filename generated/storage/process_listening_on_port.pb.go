@@ -24,6 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// The API returns an array of these
 type ProcessListeningOnPort struct {
 	Endpoint             *ProcessListeningOnPort_Endpoint `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	DeploymentId         string                           `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
@@ -227,6 +228,7 @@ func (m *ProcessListeningOnPort_Endpoint) Clone() *ProcessListeningOnPort_Endpoi
 	return cloned
 }
 
+// This is what sensor sends to central
 type ProcessListeningOnPortFromSensor struct {
 	Port                 uint32                     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 	Protocol             L4Protocol                 `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
@@ -337,6 +339,7 @@ func (m *ProcessListeningOnPortFromSensor) Clone() *ProcessListeningOnPortFromSe
 	return cloned
 }
 
+// This is what is stored in the database
 type ProcessListeningOnPortStorage struct {
 	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
 	// bigint with a sequence. Unfortunately at the moment some bits of store
