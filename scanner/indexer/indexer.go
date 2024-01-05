@@ -128,7 +128,7 @@ func (i *localIndexer) IndexContainerImage(
 	imageURL string,
 	opts ...Option,
 ) (*claircore.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, err
@@ -273,7 +273,7 @@ func getContainerImageLayers(ctx context.Context, ref name.Reference, o options)
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
 	// We expect input was sanitized, so all errors here are considered internal errors.
 	if imageURL == "" {
-		return nil, errors.New("invalid URL")
+		return nil, errors.New("invalid URL: empty")
 	}
 	// Parse image reference to ensure it is valid.
 	parsedURL, err := url.Parse(imageURL)
@@ -287,7 +287,7 @@ func parseContainerImageURL(imageURL string) (name.Reference, error) {
 		parseOpts = append(parseOpts, name.Insecure)
 	case "https":
 	default:
-		return nil, errors.New("invalid URL")
+		return nil, fmt.Errorf("invalid URL scheme %q", parsedURL.Scheme)
 	}
 	// Strip the URL scheme:// and parse host/path as an image reference.
 	imageRef := strings.TrimPrefix(imageURL, parsedURL.Scheme+"://")
