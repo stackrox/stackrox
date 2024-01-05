@@ -210,6 +210,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralScanningCanUseContainerIamRoleForEcr())
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanUseCloudBackupIntegrations())
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanDisplayDeclarativeConfigHealth())
+		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralCanUpdateCert())
 	})
 
 	cases := map[string]string{"false": "false", "<empty>": ""}
@@ -224,6 +225,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUseCloudBackupIntegrations)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanDisplayDeclarativeConfigHealth)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanUpdateCert)
 		})
 	}
 }
