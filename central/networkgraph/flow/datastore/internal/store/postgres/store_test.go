@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -271,4 +272,70 @@ func (s *NetworkflowStoreSuite) TestPruneStaleNetworkFlows() {
 	err = row.Scan(&count)
 	s.Nil(err)
 	s.Equal(count, 2)
+}
+
+func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
+	return props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT
+}
+
+func (s *NetworkflowStoreSuite) TestGetMatching() {
+	now, err := types.TimestampProto(time.Now().Truncate(time.Microsecond))
+	s.Require().NoError(err)
+
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "TestInternetDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: nil,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentDst1",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "TestInternetSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: now,
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				DstPort: 22,
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentDst2",
+				},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   "TestDeploymentSrc1",
+				},
+			},
+			ClusterId:         clusterID,
+			LastSeenTimestamp: now,
+		},
+	}
+
+	err = s.store.UpsertFlows(s.ctx, flows, timestamp.Now())
+	s.Nil(err)
+
+	// Normalize flow timestamps
+
+	filteredFlows, _, err := s.store.GetMatchingFlows(s.ctx, deploymentIngressFlowsPredicate, nil)
+	s.Nil(err)
+	s.ElementsMatch([]*storage.NetworkFlow{flows[1], flows[2]}, filteredFlows)
 }
