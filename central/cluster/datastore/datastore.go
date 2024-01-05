@@ -45,6 +45,7 @@ type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
+	GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 

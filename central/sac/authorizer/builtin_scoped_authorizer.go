@@ -30,7 +30,7 @@ var (
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	clusters, err := clusterStore.Singleton().GetClusters(adminCtx)
+	clusters, err := clusterStore.Singleton().GetClustersForSAC(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
