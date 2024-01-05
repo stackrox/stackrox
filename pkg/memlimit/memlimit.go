@@ -9,7 +9,14 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	// setMemoryLimit specifies the function to use when setting the (soft) memory limit.
+	//
+	// This exists for testing purposes.
+	setMemoryLimit = debug.SetMemoryLimit
+)
 
 func SetMemoryLimit() {
 	var limit string
@@ -46,7 +53,7 @@ func SetMemoryLimit() {
 
 		// Set limit to 95% of the maximum.
 		l -= l / 20
-		debug.SetMemoryLimit(l)
+		setMemoryLimit(l)
 		limit = strconv.FormatInt(l, 10)
 	}
 
