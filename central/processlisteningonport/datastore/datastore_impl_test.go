@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 func TestPLOPDataStore(t *testing.T) {
@@ -1889,4 +1891,62 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 		suite.Equal(plop.PodUid != "", true)
 	}
 
+}
+
+// TestDeletePods: The purpose of this test is to check for a race condition between RemovePlopsByPod
+// and AddProcessListeningOnPort. They should not delete PLOPs simultaneously.
+func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
+	nport := 30
+	nprocess := 30
+	npod := 30
+
+	// Create a map to associate PodIds and PodUids. This is done to assign PodUids since makeRandomPlops
+	// doesn't do that. Also it is used in deleting PLOPs by PodUids.
+	podUidMap := make(map[string]string)
+
+	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+	for _, plop := range plopObjects {
+		podUid, exists := podUidMap[plop.Process.PodId]
+		if !exists {
+			plop.PodUid = uuid.NewV4().String()
+			podUidMap[plop.Process.PodId] = plop.PodUid
+		} else {
+			plop.PodUid = podUid
+		}
+	}
+
+	// Add the PLOPs
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+
+	// Close the PLOPs
+	for _, plop := range plopObjects {
+		plop.CloseTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
+	}
+
+	// Add the closed PLOPs. The PLOPs are opened and then closed.
+	// The reason for this is that we need to have UpsertMany delete PLOPs.
+	// This can only happen if there are updates for existing PLOPs.
+	// It is done async so that the UpsertMany in AddProcessListeningOnPort
+	// runs at the same time as PLOPs are deleted by pod
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		suite.NoError(suite.datastore.AddProcessListeningOnPort(
+			suite.hasWriteCtx, plopObjects...))
+	}()
+
+	// The pods are deleted and all PLOPs are deleted by pod
+	for _, podUid := range podUidMap {
+		suite.NoError(suite.datastore.RemovePlopsByPod(suite.hasWriteCtx, podUid))
+		// Sleep a little bit to increase the chance that the PLOPs will be deleted by RemovePlopsByPod at
+		// the same time as they are being deleted by the call to UpsertMany in AddProcessListeningOnPort.
+		// Without the sleeps this loop will finish before UpsertMany is reached in AddProcessListeningOnPort.
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	wg.Wait()
 }
