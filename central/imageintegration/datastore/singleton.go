@@ -114,7 +114,7 @@ func createDefaultScannerV4Integration(ctx context.Context, iiStore store.Store)
 	utils.Should(errors.Wrap(err, "unable to upsert default ScannerV4 integration"))
 }
 
-// deleteScannerV4Integrations will delete all Scanner V4 integrations except for the
+// deleteScannerV4Integrations will delete all Scanner V4 integrations except for
 // the default integration if keepDefault is true.
 func deleteScannerV4Integrations(ctx context.Context, iiStore store.Store, iis []*storage.ImageIntegration, keepDefault bool) {
 	for _, ii := range iis {
