@@ -8,11 +8,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	pkgauthn "github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
+	"github.com/stackrox/rox/scanner/cmd/scannerctl/fixtures"
 	"github.com/stackrox/rox/scanner/indexer"
 )
 
@@ -42,9 +44,8 @@ func (s *scaleStats) String() string {
 // scaleCmd creates the scale command.
 func scaleCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "scale <registry> [OPTIONS]",
+		Use:   "scale [OPTIONS]",
 		Short: "Perform scale tests via querying for the first N images in the given repository.",
-		Args:  cobra.ExactArgs(1),
 	}
 	flags := cmd.PersistentFlags()
 	basicAuth := flags.String(
@@ -52,58 +53,49 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		"",
 		fmt.Sprintf("Use the specified basic auth credentials (warning: debug "+
 			"only and unsafe, use env var %s).", authn.BasicAuthSetting))
+	repository := flags.String(
+		"repository",
+		"",
+		"Specify the repository from which to pull images (ex: quay.io/stackrox-io/scanner-v4)")
 	images := flags.Int(
 		"images",
 		1000,
-		"Specify the number of images from the given repository to scan")
+		"Specify the number of images from the given repository to scan (only used when repository is set)")
 	workers := flags.Int(
 		"workers",
 		15,
 		"Specify the number of parallel scans")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		// Create scanner client.
-		scanner, err := factory.Create(ctx)
-		if err != nil {
-			return fmt.Errorf("create client: %w", err)
-		}
 		// Extract basic auth username and password.
 		auth, err := authn.ParseBasic(*basicAuth)
 		if err != nil {
 			return err
 		}
-		repoName := args[0]
-		repo, err := name.NewRepository(repoName, name.StrictValidation)
-		if err != nil {
-			panic("programmer error")
-		}
-		puller, err := remote.NewPuller(remote.WithAuth(auth))
-		if err != nil {
-			log.Fatalf("creating puller: %v", err)
-		}
-		lister, err := puller.Lister(ctx, repo)
-		if err != nil {
-			log.Fatalf("creating lister: %v", err)
-		}
-		tags := make([]string, 0, *images)
-		for lister.HasNext() {
-			ts, err := lister.Next(ctx)
-			if err != nil {
-				log.Fatalf("listing tags: %v", err)
-			}
-			tags = append(tags, ts.Tags...)
-			if len(tags) >= *images {
-				tags = tags[:*images]
-				break
-			}
-		}
-		log.Printf("scale testing with %d images", len(tags))
 
-		tagsC := make(chan string)
+		// Create scanner client.
+		scanner, err := factory.Create(ctx)
+		if err != nil {
+			return fmt.Errorf("creating client: %w", err)
+		}
+
+		var refs []name.Reference
+		if *repository != "" {
+			refs, err = references(ctx, auth, *repository, *images)
+		} else {
+			refs, err = fixtures.References()
+		}
+		if err != nil {
+			return fmt.Errorf("fetching image references: %w", err)
+		}
+
+		log.Printf("scale testing with %d images", len(refs))
+
+		refsC := make(chan name.Reference)
 		go func() {
-			for _, tag := range tags {
-				tagsC <- tag
+			for _, ref := range refs {
+				refsC <- ref
 			}
-			close(tagsC)
+			close(refsC)
 		}()
 
 		var stats scaleStats
@@ -112,13 +104,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for tag := range tagsC {
-					ref, err := name.ParseReference(repoName+":"+tag, name.StrictValidation)
-					if err != nil {
-						stats.preFailure.Add(1)
-						log.Printf("could not parse reference for tag %s: %v", tag, err)
-						return
-					}
+				for ref := range refsC {
 					d, err := indexer.GetDigestFromReference(ref, auth)
 					if err != nil {
 						stats.preFailure.Add(1)
@@ -161,6 +147,45 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		return nil
 	}
 	return &cmd
+}
+
+func references(ctx context.Context, auth pkgauthn.Authenticator, repository string, n int) ([]name.Reference, error) {
+	repo, err := name.NewRepository(repository, name.StrictValidation)
+	if err != nil {
+		return nil, fmt.Errorf("validating repository: %w", err)
+	}
+	puller, err := remote.NewPuller(remote.WithAuth(auth))
+	if err != nil {
+		return nil, fmt.Errorf("creating puller: %w", err)
+	}
+	lister, err := puller.Lister(ctx, repo)
+	if err != nil {
+		return nil, fmt.Errorf("creating lister: %w", err)
+	}
+
+	refs := make([]name.Reference, 0, n)
+ListTags:
+	for lister.HasNext() {
+		ts, err := lister.Next(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("listing tags: %w", err)
+		}
+
+		for _, tag := range ts.Tags {
+			ref, err := name.ParseReference(repository+":"+tag, name.StrictValidation)
+			if err != nil {
+				return nil, err
+			}
+
+			refs = append(refs, ref)
+
+			if len(refs) == cap(refs) {
+				break ListTags
+			}
+		}
+	}
+
+	return refs, nil
 }
 
 func doWithTimeout(ctx context.Context, timeout time.Duration, f func(context.Context) error) error {
