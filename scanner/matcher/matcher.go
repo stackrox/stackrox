@@ -63,7 +63,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		DisableBackgroundUpdates: true,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		Client:                   c,
-		// TODO: Replace with our own enrichers.
+		// TODO(ROX-21264): Replace with our own enricher(s).
 		Enrichers: nil,
 	})
 	if err != nil {
@@ -76,7 +76,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        c,
-		// TODO: temporary URL
+		// TODO(ROX-19005): replace with a URL related to the desired version.
 		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
 	})
 	if err != nil {
