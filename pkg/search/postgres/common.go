@@ -196,8 +196,6 @@ func (q *query) getPortionBeforeFromClause() string {
 	switch q.QueryType {
 	case DELETE, DELETERETURNINGIDS:
 		return "delete"
-	case DELETERETURNINGIDS:
-		return "delete"
 	case COUNT:
 		countOn := "*"
 		if q.DistinctAppliedOnPrimaryKeySelect() {
