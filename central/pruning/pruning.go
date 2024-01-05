@@ -526,9 +526,10 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 			log.Errorf("[Image pruning] searching pods: %v", err)
 			continue
 		}
-		if len(podResults) == 0 {
-			imagesToPrune = append(imagesToPrune, result.ID)
+		if len(podResults) != 0 {
+			continue
 		}
+		imagesToPrune = append(imagesToPrune, result.ID)
 	}
 	if len(imagesToPrune) > 0 {
 		log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
