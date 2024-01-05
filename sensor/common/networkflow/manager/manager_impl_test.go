@@ -741,6 +741,7 @@ func (b *sendNetflowsSuite) updateConn(pair *connectionPair) {
 }
 
 func (b *sendNetflowsSuite) expectLookups(n int) {
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
 		DeploymentID: srcID,
 	}, true)()
