@@ -5,6 +5,7 @@ import { Page, Button } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
@@ -40,6 +41,12 @@ function MainPage(): ReactElement {
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
 
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const centralCanUpdateCert = isCentralCapabilityAvailable('centralCanUpdateCert');
+    const currentUserCanGenerateCert = centralCanUpdateCert && hasAdministrationWritePermission;
+
     useEffect(() => {
         if (hasWriteAccessForCluster) {
             setIsLoadingClustersCount(true);
@@ -75,8 +82,6 @@ function MainPage(): ReactElement {
         return <LoadingSection message="Loading..." />;
     }
 
-    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
-
     return (
         <>
             <Notifications />
@@ -84,11 +89,11 @@ function MainPage(): ReactElement {
             <AnnouncementBanner />
             <CredentialExpiryBanner
                 component="CENTRAL"
-                hasAdministrationWritePermission={hasAdministrationWritePermission}
+                showCertGenerateAction={currentUserCanGenerateCert}
             />
             <CredentialExpiryBanner
                 component="SCANNER"
-                hasAdministrationWritePermission={hasAdministrationWritePermission}
+                showCertGenerateAction={currentUserCanGenerateCert}
             />
             <OutdatedVersionBanner />
             <DatabaseStatusBanner />
