@@ -30,7 +30,7 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.CreateIndexReport")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
@@ -38,7 +38,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	if err := validators.ValidateContainerImageRequest(req); err != nil {
 		return nil, err
 	}
-	ctx = zlog.ContextWithValues(ctx, "resource_type", resourceType)
+	ctx = zlog.ContextWithValues(ctx, "resource_type", resourceType, "hash_id", req.GetHashId())
 
 	// Setup authentication.
 	var opts []indexer.Option
@@ -75,9 +75,13 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 }
 
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.GetIndexReport",
+		"hash_id", req.GetHashId(),
+	)
 	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
 	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
@@ -90,7 +94,10 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.HasIndexReport",
+		"hash_id", req.GetHashId(),
+	)
 	_, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
