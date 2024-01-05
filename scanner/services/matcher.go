@@ -73,7 +73,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	if err != nil {
 		return nil, err
 	}
-	zlog.Info(ctx).Msgf("getting vulnerabilities for index report %s", req.GetHashId())
+	zlog.Info(ctx).Msgf("getting vulnerabilities for index report %q", req.GetHashId())
 	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Send()
