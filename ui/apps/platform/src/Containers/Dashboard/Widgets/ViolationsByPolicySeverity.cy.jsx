@@ -65,7 +65,7 @@ describe(Cypress.spec.relative, () => {
         cy.findByText(`${alertCount} policy violations by severity`).should('exist');
     });
 
-    it('should link to the correct violations pages when clicking links in the widget', async () => {
+    it('should link to the correct violations pages when clicking links in the widget', () => {
         setup();
 
         // Test the 'View all' violations link button
