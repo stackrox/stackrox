@@ -267,7 +267,9 @@ splunk:
             assert configMapHealth.getStatus() == Status.HEALTHY
         }
 
-        annotateTaskHandle.cancel(true)
+        if (annotateTaskHandle) {
+            annotateTaskHandle.cancel(true)
+        }
     }
 
     @Tag("BAT")
