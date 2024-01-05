@@ -6,7 +6,6 @@ syntax = "proto3";
 
 package scanner.v4;
 
-import "google/protobuf/empty.proto";
 import "internalapi/scanner/v4/index_report.proto";
 
 option go_package = "v4";
@@ -33,6 +32,10 @@ message HasIndexReportRequest {
     string hash_id = 1;
 }
 
+message HasIndexReportResponse {
+    bool exists = 1;
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
 
@@ -43,6 +46,6 @@ service Indexer {
     rpc GetIndexReport (GetIndexReportRequest) returns (IndexReport);
 
     // HasIndexReport checks if an index report for the specified resource exists.
-    rpc HasIndexReport (HasIndexReportRequest) returns (google.protobuf.Empty);
+    rpc HasIndexReport (HasIndexReportRequest) returns (HasIndexReportResponse);
 
 }

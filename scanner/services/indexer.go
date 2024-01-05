@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
@@ -79,10 +78,13 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		"component", "scanner/service/indexer.GetIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
+	clairReport, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
+	}
+	if !exists {
+		return nil, errox.NotFound.Newf("index report not found: %s", req.GetHashId())
 	}
 	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
@@ -93,29 +95,31 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	return indexReport, nil
 }
 
-func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
+func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/service/indexer.HasIndexReport",
 		"hash_id", req.GetHashId(),
 	)
-	_, err := s.getClairIndexReport(ctx, req.GetHashId())
+	_, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
 	}
-	return &types.Empty{}, nil
+	return &v4.HasIndexReportResponse{
+		Exists: exists,
+	}, nil
 }
 
 // getClairIndexReport query and return a claircore index report, return a "not
 // found" error when the report does not exist.
-func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
+func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	clairReport, ok, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if !ok {
-		return nil, errox.NotFound.Newf("index report not found: %s", hashID)
+		return nil, false, nil
 	}
-	return clairReport, nil
+	return clairReport, true, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
