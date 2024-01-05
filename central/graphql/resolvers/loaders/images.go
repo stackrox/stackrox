@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -88,9 +89,9 @@ func (idl *imageLoaderImpl) FullImageWithID(ctx context.Context, id string) (*st
 		return image, nil
 	}
 
-	idl.lock.Lock()
-	delete(idl.loaded, id)
-	idl.lock.Unlock()
+	concurrency.WithLock(&idl.lock, func() {
+		delete(idl.loaded, id)
+	})
 
 	images, err := idl.load(ctx, []string{id}, true)
 	if err != nil {

@@ -186,8 +186,9 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 // for each message received. This can be used to log in stdout the messages that sensor is sending to central.
 func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
 	s.messageCallbackLock.Lock()
+	defer s.messageCallbackLock.Unlock()
+
 	s.messageCallback = callback
-	s.messageCallbackLock.Unlock()
 }
 
 // Stop kills fake central.

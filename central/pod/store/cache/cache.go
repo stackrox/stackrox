@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/pod/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -85,9 +86,11 @@ func (c *cacheImpl) GetKeys() ([]string, error) {
 }
 
 func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Pod, bool, error) {
-	c.lock.RLock()
-	pod, ok := c.cache[id]
-	c.lock.RUnlock()
+	pod, ok := concurrency.WithRLock2(&c.lock, func() (*storage.Pod, bool) {
+		pod, ok := c.cache[id]
+		return pod, ok
+	})
+
 	if !ok {
 		return nil, false, nil
 	}
