@@ -12,6 +12,7 @@ func GetCentralCapabilities() *v1.CentralServicesCapabilities {
 		CentralScanningCanUseContainerIamRoleForEcr: disabledIfManagedCentral(),
 		CentralCanUseCloudBackupIntegrations:        disabledIfExternalDatabase(),
 		CentralCanDisplayDeclarativeConfigHealth:    disabledIfManagedCentral(),
+		CentralCanUpdateCert:                        disabledIfManagedCentral(),
 	}
 }
 
