@@ -1,6 +1,5 @@
 --- a table to hold the timestamp for the latest vulnerability update.
 CREATE TABLE IF NOT EXISTS last_vuln_update (
-    id SERIAL PRIMARY KEY,
-    key VARCHAR(128) NOT NULL UNIQUE,
+    key VARCHAR(128) PRIMARY KEY,
     timestamp TEXT
 );
