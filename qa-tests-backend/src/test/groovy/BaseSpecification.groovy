@@ -31,6 +31,7 @@ import util.Env
 import util.Helpers
 import util.OnFailure
 
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
