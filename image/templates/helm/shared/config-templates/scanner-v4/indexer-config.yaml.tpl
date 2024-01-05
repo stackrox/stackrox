@@ -25,8 +25,8 @@ indexer:
   repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=repo2cpe
   name_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=name2cpe
   {{- else }}
-  repository_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=repo2cpe
-  name_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=name2cpe
+  repository_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?type=repo2cpe
+  name_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?type=name2cpe
   {{- end }}
 matcher:
   enable: false
