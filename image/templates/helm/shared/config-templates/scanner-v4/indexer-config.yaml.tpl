@@ -22,8 +22,8 @@ indexer:
     password_file: /run/secrets/stackrox.io/secrets/password
   get_layer_timeout: 1m
   {{- if ._rox.env.centralServices }}
-  repository_to_cpe_url: https://central.stackrox.svc/api/extensions/scannerdefinitions?type=repo2cpe
-  name_to_cpe_url: https://central.stackrox.svc/api/extensions/scannerdefinitions?type=name2cpe
+  repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=repo2cpe
+  name_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=name2cpe
   {{- else }}
   repository_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=repo2cpe
   name_to_cpe_url: https://sensor.stackrox.svc/scanner/definitions?type=name2cpe
