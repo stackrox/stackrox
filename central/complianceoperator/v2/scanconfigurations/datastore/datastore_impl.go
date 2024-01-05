@@ -107,7 +107,7 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 	scanConfigName := scanConfig.GetScanName()
 
 	// remove scan data from scan status table first
-	err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, id).ProtoQuery())
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", id)
