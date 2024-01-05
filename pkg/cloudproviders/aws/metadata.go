@@ -65,6 +65,20 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	clusterMetadata := cloudproviders.GetClusterMetadataFromNodeLabels(ctx)
 
+	tags, err := instanceTags(ctx, mdClient)
+	if err != nil {
+		log.Warnf("Could not fetch AWS instance tags: %v", err)
+		errs.AddError(err)
+	}
+	log.Infof("AWS instance tags: %s", tags)
+
+	name, err := clusterName(ctx, mdClient)
+	if err != nil {
+		log.Warnf("Could not fetch AWS cluster name: %v", err)
+		errs.AddError(err)
+	}
+	log.Infof("AWS cluster name: %s", name)
+
 	return &storage.ProviderMetadata{
 		Region: doc.Region,
 		Zone:   doc.AvailabilityZone,
@@ -117,4 +131,20 @@ func plaintextIdentityDoc(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 	}
 
 	return doc, nil
+}
+
+func instanceTags(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (string, error) {
+	tags, err := mdClient.GetMetadataWithContext(ctx, "/")
+	if err != nil {
+		return "", errors.Wrap(err, "retrieving tags")
+	}
+	return tags, nil
+}
+
+func clusterName(ctx context.Context, mdClient *ec2metadata.EC2Metadata) (string, error) {
+	clusterName, err := mdClient.GetMetadataWithContext(ctx, "/tags/instance/eks:cluster-name")
+	if err != nil {
+		return "", errors.Wrap(err, "retrieving cluster name tag")
+	}
+	return clusterName, nil
 }
