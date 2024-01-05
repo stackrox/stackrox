@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/quay/zlog"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/zlog"
 )
 
 func TestFetch(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/zlog"
 )
 
 func TestCVEDefFromUnpatched(t *testing.T) {
