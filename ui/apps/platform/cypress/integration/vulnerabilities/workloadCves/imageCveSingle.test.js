@@ -145,7 +145,7 @@ describe('Workload CVE Image CVE Single page', () => {
         // Test the the deployment links navigate to the correct page
         cy.get(`${selectors.firstTableRow} td[data-label="Deployment"] a`).then(
             ([$deploymentLink]) => {
-                const deploymentName = $deploymentLink.innerText;
+                const deploymentName = $deploymentLink.innerText.replace('\n', '');
                 cy.wrap($deploymentLink).click();
                 cy.get(`h1:contains("${deploymentName}")`);
             }
