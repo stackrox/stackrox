@@ -49,8 +49,10 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         where:
         topResource  | topLevelQuery | topLevelSortOption | topLevelSortOptionDesc | subResource
 
-        "deployment" | "Namespace:stackrox+Deployment:c"       | new SortOption("Deployment", true) | "Sort(Deployment)" | "images"
-        "deployment" | "Namespace:stackrox+Deployment:central" | new SortOption("Deployment", true) | "Sort(Deployment)" | "secrets"
+        "deployment" | "Namespace:stackrox+Deployment:c"       | new SortOption("Deployment", true) \
+            | "Sort(Deployment)" | "images"
+        "deployment" | "Namespace:stackrox+Deployment:central" | new SortOption("Deployment", true) \
+            | "Sort(Deployment)" | "secrets"
 
         "cluster"    | "" | null | "Sort(null)" | "subjects"
         "cluster"    | "" | null | "Sort(null)" | "serviceAccounts"
