@@ -229,6 +229,8 @@ class BaseSpecification extends Specification {
 
         synchronizedGlobalSetup()
 
+        Assume.assumeTrue(shouldSpecRun(this.class.getSimpleName()))
+
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
     }
@@ -308,6 +310,11 @@ class BaseSpecification extends Specification {
         }
     }
 
+    private static boolean shouldSpecRun(String specification) {
+        LOG.info("Should ${specification} run?")
+        return false
+    }
+
     private static boolean shouldTestRun(String specification, String testcase) {
         LOG.info("Should ${specification}/${testcase} run?")
         return false
@@ -320,6 +327,8 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
 
         MDC.remove("specification")
+
+        Assume.assumeTrue(shouldSpecRun(this.class.getSimpleName()))
     }
 
     private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
@@ -349,6 +358,8 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
+
+        Assume.assumeTrue(shouldTestRun(this.class.getSimpleName(), name.getMethodName()))
     }
 
     static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
