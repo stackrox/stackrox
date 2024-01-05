@@ -92,9 +92,9 @@ func BenchmarkSliceAppendWithMutex(b *testing.B) {
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		mutex.Lock()
-		slice = append(slice, i) //nolint:staticcheck // SA4010 slice append without reading is intended
-		mutex.Unlock()
+		WithLock(&mutex, func() {
+			slice = append(slice, i)
+		})
 	}
 }
 
@@ -250,9 +250,9 @@ func BenchmarkSliceReadWithMutex(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		mutex.Lock()
-		slice = slice[1:]
-		mutex.Unlock()
+		WithLock(&mutex, func() {
+			slice = slice[1:]
+		})
 	}
 	require.Empty(b, slice)
 }

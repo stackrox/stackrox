@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 )
@@ -57,9 +58,10 @@ type ProtoEnum interface {
 func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 	dataSliceID := identityOfSlice(data)
 
-	fileDescCacheMutex.RLock()
-	desc := fileDescCache[dataSliceID]
-	fileDescCacheMutex.RUnlock()
+	desc := concurrency.WithRLock1(&fileDescCacheMutex, func() *descriptor.FileDescriptorProto {
+		d := fileDescCache[dataSliceID]
+		return d
+	})
 
 	if desc != nil {
 		return desc, nil
@@ -78,9 +80,9 @@ func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 		return nil, errors.Wrap(err, "unmarshalling file descriptor")
 	}
 
-	fileDescCacheMutex.Lock()
-	fileDescCache[dataSliceID] = desc
-	fileDescCacheMutex.Unlock()
+	concurrency.WithLock(&fileDescCacheMutex, func() {
+		fileDescCache[dataSliceID] = desc
+	})
 
 	return desc, nil
 }

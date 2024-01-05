@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 )
@@ -103,9 +104,9 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			// retry-counting loop
 			go func() {
 				for range umh.RetryCommand() {
-					counterMux.Lock()
-					counter++
-					counterMux.Unlock()
+					concurrency.WithLock(counterMux, func() {
+						counter++
+					})
 				}
 			}()
 			<-time.After(cc.wait)
