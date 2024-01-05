@@ -19,9 +19,13 @@ def get_dates(year, interval):
     # interval should be a factor of 12
     if 12 % interval != 0:
         raise ValueError("Interval must be a factor of 12.")
+    current_date = datetime.now()
 
     for month in range(1, 13, interval):
         start = datetime(year, month, 1)
+        # return if start date is in the future
+        if start > current_date:
+            return
 
         # Handling for months greater than 12 (for intervals like 4, 6 months, etc.)
         end_month = month + interval
