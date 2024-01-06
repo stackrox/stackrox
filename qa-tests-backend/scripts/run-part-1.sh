@@ -107,7 +107,7 @@ test_part_1() {
     # The default is to run stable tests
     SKIP_STABLE_TESTS="${SKIP_STABLE_TESTS:-false}"
     # Export the skip decision via ci-export() for persistence to part-2
-    ci-export SKIP_STABLE_TESTS "${SKIP_STABLE_TESTS}"
+    ci_export SKIP_STABLE_TESTS "${SKIP_STABLE_TESTS}"
 
     update_job_record "test_target" "${test_target}"
 
