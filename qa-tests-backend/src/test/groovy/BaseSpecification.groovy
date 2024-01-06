@@ -35,9 +35,11 @@ import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Specification
 
+@IgnoreIf({ globalSetupDone && !shouldSpecRun(this.class.getSimpleName()) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -229,8 +231,6 @@ class BaseSpecification extends Specification {
 
         synchronizedGlobalSetup()
 
-        Assume.assumeTrue(shouldSpecRun(this.class.getSimpleName()))
-
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
     }
@@ -327,8 +327,6 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
 
         MDC.remove("specification")
-
-        Assume.assumeTrue(shouldSpecRun(this.class.getSimpleName()))
     }
 
     private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
@@ -358,8 +356,6 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
-
-        Assume.assumeTrue(shouldTestRun(this.class.getSimpleName(), name.getMethodName()))
     }
 
     static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
