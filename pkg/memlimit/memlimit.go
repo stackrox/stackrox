@@ -17,6 +17,8 @@ var (
 	setMemoryLimit = debug.SetMemoryLimit
 )
 
+// SetMemoryLimit sets a (soft) memory limit on the Go runtime.
+// See debug.SetMemoryLimit for more information.
 func SetMemoryLimit() {
 	if goLimit := os.Getenv(`GOMEMLIMIT`); goLimit != "" {
 		log.Infof("GOMEMLIMIT set to %s", goLimit)
