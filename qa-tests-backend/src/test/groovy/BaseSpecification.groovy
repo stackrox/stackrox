@@ -73,7 +73,7 @@ class BaseSpecification extends Specification {
 
     public static String coreImageIntegrationId = null
 
-    private static TestMetrics testMetrics = initializeTestMetrics()
+    public static TestMetrics testMetrics = initializeTestMetrics()
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -200,8 +200,8 @@ class BaseSpecification extends Specification {
         globalSetupDone = true
     }
 
-    private static TestMetrics initializeTestMetrics() {
-        if (Env.SKIP_STABLE_TESTS) {
+    static TestMetrics initializeTestMetrics() {
+        if (!Env.SKIP_STABLE_TESTS) {
             return
         }
         LOG.debug("Initializing test metrics DB")
@@ -325,7 +325,6 @@ class BaseSpecification extends Specification {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
-        String specification = this.class.getSimpleName()
         LOG.debug("Should specification ${specification} run?")
         return !testMetrics.isSuiteStable(specification)
     }
