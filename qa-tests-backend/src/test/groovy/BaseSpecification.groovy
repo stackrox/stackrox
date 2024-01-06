@@ -61,7 +61,7 @@ class BaseSpecification extends Specification {
         RUN_ID = idStr
     }
 
-    private static boolean globalSetupDone = false
+    private static final boolean GLOBAL_SETUP_DONE = synchronizedGlobalSetup()
 
     protected static String allAccessToken = null
 
@@ -71,15 +71,16 @@ class BaseSpecification extends Specification {
 
     public static String coreImageIntegrationId = null
 
-    private static synchronizedGlobalSetup() {
+    private static boolean synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
-            globalSetup()
+            return globalSetup()
         }
     }
 
-    private static globalSetup() {
-        if (globalSetupDone) {
-            return
+    private static boolean globalSetup() {
+        if (GLOBAL_SETUP_DONE) {
+            LOG.debug "Global setup already done"
+            return true
         }
 
         LOG.info "Performing global setup"
@@ -193,7 +194,7 @@ class BaseSpecification extends Specification {
             }
         }
 
-        globalSetupDone = true
+        return true
     }
 
     @Rule
@@ -225,8 +226,6 @@ class BaseSpecification extends Specification {
         log.info("Starting testsuite")
 
         testSpecStartTimeMillis = System.currentTimeMillis()
-
-        synchronizedGlobalSetup()
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
