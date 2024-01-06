@@ -1,10 +1,9 @@
 {
-  "id": "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a",
-  "name": "Wget in Image",
-  "description": "Alert on deployments with wget present",
-  "rationale": "Leaving download tools like wget in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
-  "remediation": "Use your package manager's \"remove\" command to remove wget from the image build for production containers.",
-  "disabled": true,
+  "id": "6f15574c-5d76-11ee-8c99-0242ac120002",
+  "name": "Shell Tools in Image",
+  "description": "Alert on deployments with shells (interpreters) present.",
+  "rationale": "Leaving interpreters like bash, sh, tcsh in an image makes it easier for attackers to use compromised containers.",
+  "remediation": "Use your package manager's \"remove\", \"purge\" or \"erase\" command to remove interpreters from the image build for production containers.",
   "categories": [
     "Security Best Practices"
   ],
@@ -21,7 +20,7 @@
           "fieldName": "Image Component",
           "values": [
             {
-              "value": "wget="
+              "value": "bash|sh|tcsh="
             }
           ]
         }

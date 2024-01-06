@@ -49,7 +49,7 @@
           "fieldName": "Image Component",
           "values": [
             {
-              "value": "apk-tools="
+              "value": "apk|apk-tools="
             }
           ]
         }
@@ -58,5 +58,10 @@
   ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true,
-  "isDefault": true
+  "isDefault": true,
+  "risk": {
+    "baseScore": 0.5,
+    "maxScore": 2,
+    "cumulative": true
+  }
 }

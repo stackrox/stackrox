@@ -30,11 +30,11 @@ func NewDeploymentScorer(alertSearcher getters.AlertSearcher, allowlistEvaluator
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []deployment.Multiplier{
 			deployment.NewViolations(alertSearcher),
-			deployment.NewProcessBaselines(allowlistEvaluator),
+			// deployment.NewProcessBaselines(allowlistEvaluator),
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),
-			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
+			//deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
 			deployment.NewImageMultiplier(image.ComponentCountHeading),
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
 		},

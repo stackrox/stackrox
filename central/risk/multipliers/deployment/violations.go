@@ -18,7 +18,7 @@ const (
 	PolicyViolationsHeading = "Policy Violations"
 
 	policySaturation = 50
-	policyMaxValue   = 4
+	policyMaxValue   = 100
 )
 
 var (
@@ -32,7 +32,9 @@ type ViolationsMultiplier struct {
 
 type policyFactor struct {
 	name     string
+	score    float32
 	severity storage.Severity
+	explicit bool
 }
 
 // NewViolations scores the data based on the number and severity of policy violations.
@@ -56,11 +58,30 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	var count int
 	var factors []policyFactor
 	for _, alert := range alerts {
+		var score float32
+		var explicit bool
+
+		// Some alerts have explicit risk set and some do not.
+		if alert.GetPolicy().GetRisk() != nil && alert.GetPolicy().GetRisk().GetBaseScore() != 0 {
+			explicit = true
+			score = alert.GetPolicy().GetRisk().GetBaseScore()
+			if alert.GetPolicy().GetRisk().GetCumulative() {
+				score *= float32(alert.GetViolationCount())
+			}
+			if score > alert.GetPolicy().GetRisk().GetMaxScore() {
+				score = alert.GetPolicy().GetRisk().GetMaxScore()
+			}
+		} else {
+			score = severityImpact(alert.GetPolicy().GetSeverity())
+		}
+
 		count++
-		severitySum += severityImpact(alert.GetPolicy().GetSeverity())
+		severitySum += score
 		factors = append(factors, policyFactor{
 			name:     alert.GetPolicy().GetName(),
+			score:    score,
 			severity: alert.GetPolicy().GetSeverity(),
+			explicit: explicit,
 		})
 	}
 
@@ -98,7 +119,10 @@ func policyFactors(pfs []policyFactor) (factors []*storage.Risk_Result_Factor) {
 	factors = make([]*storage.Risk_Result_Factor, 0, len(pfs))
 	for _, pf := range pfs {
 		factors = append(factors,
-			&storage.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity))})
+			&storage.Risk_Result_Factor{
+				Message: fmt.Sprintf("%s (severity: %s, score: %.2f, explicit: %v)",
+					pf.name, severityString(pf.severity), pf.score, pf.explicit),
+			})
 	}
 	return
 }
