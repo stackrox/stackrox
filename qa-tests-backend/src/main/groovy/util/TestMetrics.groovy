@@ -118,6 +118,7 @@ class TestMetrics {
                 return true
             }
         }
+        log.debug("${suiteName} is not a stable suite")
         return false
     }
 
@@ -129,6 +130,7 @@ class TestMetrics {
                 return true
             }
         }
+        log.debug("${suiteName}/${testName} is not a stable test")
         return false
     }
 }
