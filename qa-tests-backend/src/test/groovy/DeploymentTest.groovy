@@ -41,11 +41,17 @@ class DeploymentTest extends BaseSpecification {
             .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.createDeployment(DEPLOYMENT)
         ImageService.scanImage(DEPLOYMENT_IMAGE_NAME)
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteDeployment(DEPLOYMENT)
         ImageService.deleteImages(RawQuery.newBuilder().setQuery("Image:${DEPLOYMENT_IMAGE_NAME}").build(), true)
     }

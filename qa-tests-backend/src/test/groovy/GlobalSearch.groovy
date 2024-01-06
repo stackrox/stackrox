@@ -25,6 +25,9 @@ class GlobalSearch extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         if (Env.get("ROX_POSTGRES_DATASTORE", null) == "true") {
             EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
                                               SearchServiceOuterClass.SearchCategory.NAMESPACES,
@@ -55,6 +58,9 @@ class GlobalSearch extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteDeployment(DEPLOYMENT)
     }
 
