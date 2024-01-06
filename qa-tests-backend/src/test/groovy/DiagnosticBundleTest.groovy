@@ -38,6 +38,9 @@ class DiagnosticBundleTest extends BaseSpecification {
     private Role noAccessRole
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
         administrationReaderRoleName = UUID.randomUUID()
         RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
@@ -61,6 +64,9 @@ class DiagnosticBundleTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         if (adminToken != null) {
             services.ApiTokenService.revokeToken(adminToken.metadata.id)
         }

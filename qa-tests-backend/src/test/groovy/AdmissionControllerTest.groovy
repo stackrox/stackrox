@@ -76,6 +76,9 @@ class AdmissionControllerTest extends BaseSpecification {
             .addLabel("app", "random-busybox")
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
@@ -112,6 +115,9 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         for (policyID in createdPolicyIds) {

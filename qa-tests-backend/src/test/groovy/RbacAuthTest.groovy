@@ -63,6 +63,9 @@ spec:
     private String basicAuthServiceId
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         BaseService.useBasicAuth()
         AuthproviderService.GetAuthProvidersResponse providers = AuthProviderService.getAuthProviders()
         basicAuthServiceId = providers.authProvidersList.find { it.type == "basic" }?.id

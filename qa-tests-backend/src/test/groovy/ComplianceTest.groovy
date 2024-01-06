@@ -81,6 +81,9 @@ class ComplianceTest extends BaseSpecification {
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         BaseService.useBasicAuth()
 
         // Get cluster ID
@@ -108,6 +111,9 @@ class ComplianceTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         BaseService.useBasicAuth()
         ImageIntegrationService.deleteImageIntegration(gcrId)
         ImageService.clearImageCaches()

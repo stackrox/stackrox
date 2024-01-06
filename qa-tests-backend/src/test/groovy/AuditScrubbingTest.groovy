@@ -24,6 +24,9 @@ class AuditScrubbingTest extends BaseSpecification {
     private Notifier notifier
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         def notifierConfig = NotifierService.getWebhookIntegrationConfig(
                 "audit-${getClass().name}-${UUID.randomUUID()}", false, "", true, true)
         notifier = NotifierService.addNotifier(notifierConfig)
@@ -101,6 +104,9 @@ class AuditScrubbingTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         if (notifier?.id) {
             NotifierService.deleteNotifier(notifier.id)
         }

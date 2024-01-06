@@ -159,6 +159,9 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     static final private Map<String, String> CREATED_SIGNATURE_INTEGRATIONS = [:]
 
     def setupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
         addStackroxImagePullSecret(SIGNATURE_TESTING_NAMESPACE)
 
@@ -229,6 +232,9 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
     }
 
     def cleanupSpec() {
+        if (!shouldSpecRun(this.class.getSimpleName())) {
+            return
+        }
         // Delete all deployments.
         DEPLOYMENTS.each { orchestrator.deleteAndWaitForDeploymentDeletion(it) }
 
