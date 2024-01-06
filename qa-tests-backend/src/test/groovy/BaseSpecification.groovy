@@ -208,6 +208,8 @@ class BaseSpecification extends Specification {
         testMetrics = new TestMetrics()
         testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
         testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
+
+        return testMetrics
     }
 
     @Rule
