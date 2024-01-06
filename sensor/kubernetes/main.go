@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/debug/oomcheck"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -61,11 +62,14 @@ func main() {
 
 	s.Start()
 
+	oomCheckStop := oomcheck.StartPreOomCheck()
+
 	for {
 		select {
 		case sig := <-sigs:
 			log.Infof("Caught %s signal", sig)
 			s.Stop()
+			oomCheckStop.Signal()
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)
