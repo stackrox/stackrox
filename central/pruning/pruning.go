@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	pruneInterval      = 1 * time.Hour
+	pruneInterval      = 5 * time.Minute
 	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
 	clusterGCFreq      = 24 * time.Hour
