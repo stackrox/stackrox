@@ -1902,15 +1902,15 @@ func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
 
 	// Create a map to associate PodIds and PodUids. This is done to assign PodUids since makeRandomPlops
 	// doesn't do that. Also it is used in deleting PLOPs by PodUids.
-	podUidMap := make(map[string]string)
+	podUIDMap := make(map[string]string)
 
 	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
 	for _, plop := range plopObjects {
-		podUid, exists := podUidMap[plop.Process.PodId]
+		podUid, exists := podUIDMap[plop.Process.PodId]
 		if !exists {
 			plop.PodUid = uuid.NewV4().String()
-			podUidMap[plop.Process.PodId] = plop.PodUid
+			podUIDMap[plop.Process.PodId] = plop.PodUid
 		} else {
 			plop.PodUid = podUid
 		}
@@ -1940,7 +1940,7 @@ func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
 	}()
 
 	// The pods are deleted and all PLOPs are deleted by pod
-	for _, podUid := range podUidMap {
+	for _, podUid := range podUIDMap {
 		suite.NoError(suite.datastore.RemovePlopsByPod(suite.hasWriteCtx, podUid))
 		// Sleep a little bit to increase the chance that the PLOPs will be deleted by RemovePlopsByPod at
 		// the same time as they are being deleted by the call to UpsertMany in AddProcessListeningOnPort.
