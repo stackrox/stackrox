@@ -30,18 +30,12 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private SLEEP_INCREMENT = 5000
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
     }
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }

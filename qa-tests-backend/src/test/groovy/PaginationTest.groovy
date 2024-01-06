@@ -63,9 +63,6 @@ class PaginationTest extends BaseSpecification {
             "Image Tag:busybox-1-31,busybox-1-32,busybox-1-27,busybox-1-28,busybox-1-29,busybox-1-30"
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (String secretName : SECRETS.keySet()) {
             SECRETS.put(secretName, orchestrator.createSecret(secretName))
         }
@@ -77,9 +74,6 @@ class PaginationTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }

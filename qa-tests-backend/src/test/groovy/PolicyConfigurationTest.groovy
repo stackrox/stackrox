@@ -133,9 +133,6 @@ class PolicyConfigurationTest extends BaseSpecification {
     private String containerRuntimeVersion
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         NEW_CLUSTER_ROLE.setRules([new K8sPolicyRule(resources: ["nodes"], apiGroups: [""], verbs: ["list"])])
         orchestrator.createServiceAccount(NEW_SA)
         orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
@@ -151,9 +148,6 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }

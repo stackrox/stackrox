@@ -37,9 +37,6 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     private final static String IMAGE_WITH_SCANS = "us.gcr.io/stackrox-ci/nginx:1.12"
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         noImageScansEnforcements = Services.updatePolicyEnforcement(
                 NO_IMAGE_SCANS,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
@@ -55,9 +52,6 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(false)
                 .build()

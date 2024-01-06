@@ -41,9 +41,6 @@ class TLSChallengeTest extends BaseSpecification {
             Paths.get(ASSETS_DIR, "nginx-lb-certs", "ca.pem"))
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         originalCentralEndpoint = orchestrator.getDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT")
         orchestrator.ensureNamespaceExists(PROXY_NAMESPACE)
         addStackroxImagePullSecret(PROXY_NAMESPACE)
@@ -57,9 +54,6 @@ class TLSChallengeTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.deleteNamespace(PROXY_NAMESPACE)
         orchestrator.waitForNamespaceDeletion(PROXY_NAMESPACE)
 

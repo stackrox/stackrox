@@ -92,9 +92,6 @@ class SACTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         // Make sure we scan the image initially to make reprocessing faster.
         def img = ImageService.scanImage(TEST_IMAGE, false)
         assert img.hasScan()
@@ -158,9 +155,6 @@ class SACTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         BaseService.useBasicAuth()
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)

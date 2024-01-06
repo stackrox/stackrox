@@ -22,16 +22,10 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     static final private String CVE_TO_MARK_FP = "CVE-2007-6755"
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.deleteDeployment(CVE_DEPLOYMENT)
     }
 

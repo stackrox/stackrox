@@ -219,9 +219,6 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.createNamespace(OTHER_NAMESPACE)
         orchestrator.createImagePullSecret(
                 "quay",
@@ -255,9 +252,6 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         destroyDeployments()
     }
 

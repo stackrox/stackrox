@@ -62,17 +62,11 @@ class IntegrationsTest extends BaseSpecification {
     Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 

@@ -51,9 +51,6 @@ class K8sRbacTest extends BaseSpecification {
             new K8sRoleBinding(NEW_CLUSTER_ROLE, [new K8sSubject(NEW_SA)])
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.deleteServiceAccount(NEW_SA)
         orchestrator.deleteRole(NEW_ROLE)
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)

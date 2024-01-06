@@ -125,9 +125,6 @@ class ImageScanningTest extends BaseSpecification {
     ]
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         removeGCRImagePullSecret()
         ImageIntegrationService.deleteAutoRegisteredGCRIntegrationIfExists()
@@ -152,9 +149,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         ImageIntegrationService.addStackroxScannerIntegration()

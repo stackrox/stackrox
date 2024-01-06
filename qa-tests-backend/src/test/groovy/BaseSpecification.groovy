@@ -36,9 +36,11 @@ import org.junit.Assume
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Specification
 
+@IgnoreIf({ globalSetupDone && !shouldSpecRun(this.class.getSimpleName()) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -315,7 +317,7 @@ class BaseSpecification extends Specification {
         }
     }
 
-    static boolean shouldSpecRun(String specification) {
+    private static boolean shouldSpecRun(String specification) {
         LOG.debug("Should ${specification} run?")
         if (!Env.SKIP_STABLE_TESTS) {
             return true

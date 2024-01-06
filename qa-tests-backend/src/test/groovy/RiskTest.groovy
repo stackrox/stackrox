@@ -54,9 +54,6 @@ class RiskTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-risk-${UUID.randomUUID()}"
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         clusterId = ClusterService.getClusterId()
 
         // ROX-6260: pre scan the image to avoid different risk scores
@@ -81,9 +78,6 @@ class RiskTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
         }

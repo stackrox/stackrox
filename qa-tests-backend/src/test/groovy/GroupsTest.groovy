@@ -75,9 +75,6 @@ class GroupsTest extends BaseSpecification {
     private static final Map<String, Group> GROUPS_WITH_IDS = [:]
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (def role : ROLES) {
             RoleService.createRole(role)
         }
@@ -107,9 +104,6 @@ class GroupsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         GROUPS_WITH_IDS.values().flatten().each { group ->
             try {
                 GroupService.deleteGroup(group.props)

@@ -36,9 +36,6 @@ class K8sEventDetectionTest extends BaseSpecification {
     static final private String CLONED_KUBECTL_EXEC_POLICY_NAME = "CLONED: Kubernetes Actions: Exec into Pod"
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
             // K8s event detection is not supported on OpenShift.
             return
@@ -64,9 +61,6 @@ class K8sEventDetectionTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
             // K8s event detection is not supported on OpenShift.
             return

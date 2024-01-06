@@ -27,9 +27,6 @@ class ClientCertAuthTest extends BaseSpecification {
     private String[] certTokens = []
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         BaseService.useBasicAuth()
 
         String caPath = Env.mustGetClientCAPath()
@@ -49,9 +46,6 @@ class ClientCertAuthTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         BaseService.useBasicAuth()
         for (String providerID : providerIDs) {
             if (providerID) {

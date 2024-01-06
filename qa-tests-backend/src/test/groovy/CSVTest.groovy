@@ -155,9 +155,6 @@ class CSVTest extends BaseSpecification {
             .addLabel("app", "test")
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
@@ -166,9 +163,6 @@ class CSVTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.deleteDeployment(CVE_DEPLOYMENT)
     }
 

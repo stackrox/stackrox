@@ -128,9 +128,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         // Purposefully add an image (centos7-base) that is not running to check the case
         // where an image is orphaned. The image is actually part of the re-scanned image set.
         // Re-scan the images used in previous test cases to ensure pruning did not leave orphan CVEs.
@@ -146,9 +143,6 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         BaseService.useBasicAuth()
         RoleService.deleteRole(NODE_ROLE)
         RoleService.deleteRole(IMAGE_ROLE)

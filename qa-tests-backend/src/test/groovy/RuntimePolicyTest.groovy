@@ -40,9 +40,6 @@ class RuntimePolicyTest extends BaseSpecification  {
             .setCommand(["sh" , "-c" , "apt -y update || true && sleep 600"])
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deploymentId : DEPLOYMENTS) {
             assert Services.waitForDeployment(deploymentId)
@@ -50,9 +47,6 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }

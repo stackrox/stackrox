@@ -208,9 +208,6 @@ fragment cveFields on ImageVulnerability {
 """
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         ImageService.scanImage(RHEL_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
     }

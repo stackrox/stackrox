@@ -127,9 +127,6 @@ class ProcessBaselinesTest extends BaseSpecification {
     private Policy unauthorizedProcessExecution
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         clusterId = ClusterService.getClusterId()
 
         unauthorizedProcessExecution = PolicyService.clonePolicyAndScopeByNamespace(
@@ -140,9 +137,6 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         PolicyService.deletePolicy(unauthorizedProcessExecution.getId())
         orchestrator.deleteNamespace(TEST_NAMESPACE)
     }

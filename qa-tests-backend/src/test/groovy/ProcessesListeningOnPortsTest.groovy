@@ -64,18 +64,12 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         ]
 
     def setupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         // cleanup after a prior incomplete run
         destroyDeployments()
         destroyNamespace()
     }
 
     def cleanupSpec() {
-        if (!shouldSpecRun(this.class.getSimpleName())) {
-            return
-        }
         destroyDeployments()
         destroyNamespace()
     }
