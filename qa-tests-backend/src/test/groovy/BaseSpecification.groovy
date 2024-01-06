@@ -40,7 +40,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Specification
 
-@IgnoreIf({ !shouldSpecRun(this.class.getSimpleName()) })
+@IgnoreIf({ !shouldSpecRun() })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -323,10 +323,11 @@ class BaseSpecification extends Specification {
         }
     }
 
-    private static boolean shouldSpecRun(String specification) {
+    private static boolean shouldSpecRun() {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
+        String specification = this.class.getSimpleName()
         LOG.debug("Should specification ${specification} run?")
         return !testMetrics.isSuiteStable(specification)
     }
