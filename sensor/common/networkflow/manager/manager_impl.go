@@ -150,6 +150,7 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 		},
 		DeploymentId: i.key.deploymentID,
 		PodUid:       i.podUID,
+		Namespace:    i.namespace,
 	}
 
 	if ts != timestamp.InfiniteFuture {
