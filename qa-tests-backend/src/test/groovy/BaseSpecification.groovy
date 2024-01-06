@@ -327,7 +327,7 @@ class BaseSpecification extends Specification {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
-        LOG.debug("Should specification ${specification} run?")
+        LOG.debug("Should specification ${specification} setup/cleanup?")
         return !testMetrics.isSuiteStable(specification)
     }
 
