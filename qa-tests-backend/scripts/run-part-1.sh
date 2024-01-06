@@ -96,8 +96,7 @@ test_part_1() {
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         test_target="bat-test"
         if ! pr_has_label ci-do-not-skip-stable-tests; then
-            # The default for PRs is to skip tests unless already defined
-            # otherwise
+            # The default for PRs is to skip stable tests
             SKIP_STABLE_TESTS="${SKIP_STABLE_TESTS:-true}"
         fi
     else
@@ -105,7 +104,7 @@ test_part_1() {
         test_target="test"
     fi
 
-    # The default is to not skip tests unless already defined otherwise
+    # The default is to run stable tests
     SKIP_STABLE_TESTS="${SKIP_STABLE_TESTS:-false}"
     # Export the skip decision via ci-export() for persistence to part-2
     ci-export SKIP_STABLE_TESTS "${SKIP_STABLE_TESTS}"
