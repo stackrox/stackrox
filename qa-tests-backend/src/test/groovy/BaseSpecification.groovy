@@ -40,7 +40,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Specification
 
-@IgnoreIf({ globalSetupDone && !shouldSpecRun(this.class.getSimpleName()) })
+@IgnoreIf({ !shouldSpecRun(this.class.getSimpleName()) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
@@ -75,7 +75,7 @@ class BaseSpecification extends Specification {
 
     public static String coreImageIntegrationId = null
 
-    private static TestMetrics testMetrics = null
+    private static TestMetrics testMetrics = initializeTestMetrics()
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -177,10 +177,6 @@ class BaseSpecification extends Specification {
             recordResourcesAtRunStart(orchestrator)
         }
 
-        testMetrics = new TestMetrics()
-        testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
-        testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
-
         addShutdownHook {
             LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
@@ -204,6 +200,16 @@ class BaseSpecification extends Specification {
         }
 
         globalSetupDone = true
+    }
+
+    private static TestMetrics initializeTestMetrics() {
+        if (Env.SKIP_STABLE_TESTS) {
+            return
+        }
+        LOG.debug("Initializing test metrics DB")
+        testMetrics = new TestMetrics()
+        testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
+        testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
     }
 
     @Rule
@@ -318,18 +324,18 @@ class BaseSpecification extends Specification {
     }
 
     private static boolean shouldSpecRun(String specification) {
-        LOG.debug("Should ${specification} run?")
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
+        LOG.debug("Should specification ${specification} run?")
         return !testMetrics.isSuiteStable(specification)
     }
 
     private static boolean shouldTestRun(String specification, String testcase) {
-        LOG.debug("Should ${specification}/${testcase} run?")
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
+        LOG.debug("Should this specification/feature run ?(${specification}/${testcase})")
         return !testMetrics.isTestStable(specification, testcase)
     }
 
