@@ -25,6 +25,7 @@ class Env {
     static final BUILD_TAG = System.getenv("BUILD_TAG")
     static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
     static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
+    static final SKIP_STABLE_TESTS = (System.getenv("SKIP_STABLE_TESTS") == "true")
 
     // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
     // the remote cluster arch can be ppc64le or s390x, default is x86_64

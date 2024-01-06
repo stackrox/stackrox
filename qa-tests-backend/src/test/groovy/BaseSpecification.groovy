@@ -30,6 +30,7 @@ import services.RoleService
 import util.Env
 import util.Helpers
 import util.OnFailure
+import util.TestMetrics
 
 import org.junit.Assume
 import org.junit.Rule
@@ -73,6 +74,8 @@ class BaseSpecification extends Specification {
     private static Map<String, List<String>> resourceRecord = [:]
 
     public static String coreImageIntegrationId = null
+
+    private static TestMetrics testMetrics = null
 
     private static synchronizedGlobalSetup() {
         synchronized(BaseSpecification) {
@@ -173,6 +176,10 @@ class BaseSpecification extends Specification {
         if (orchestrator.isGKE()) {
             recordResourcesAtRunStart(orchestrator)
         }
+
+        testMetrics = new TestMetrics()
+        testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
+        testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
 
         addShutdownHook {
             LOG.info "Performing global shutdown"
@@ -311,13 +318,19 @@ class BaseSpecification extends Specification {
     }
 
     private static boolean shouldSpecRun(String specification) {
-        LOG.info("Should ${specification} run?")
-        return false
+        LOG.debug("Should ${specification} run?")
+        if (!Env.SKIP_STABLE_TESTS) {
+            return true
+        }
+        return !testMetrics.isSuiteStable(specification)
     }
 
     private static boolean shouldTestRun(String specification, String testcase) {
-        LOG.info("Should ${specification}/${testcase} run?")
-        return false
+        LOG.debug("Should ${specification}/${testcase} run?")
+        if (!Env.SKIP_STABLE_TESTS) {
+            return true
+        }
+        return !testMetrics.isTestStable(specification, testcase)
     }
 
     def cleanupSpec() {

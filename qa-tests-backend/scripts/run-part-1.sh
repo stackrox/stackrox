@@ -95,10 +95,20 @@ test_part_1() {
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
         test_target="bat-test"
+        if ! pr_has_label ci-do-not-skip-stable-tests; then
+            # The default for PRs is to skip tests unless already defined
+            # otherwise
+            SKIP_STABLE_TESTS="${SKIP_STABLE_TESTS:-true}"
+        fi
     else
         info "Running all QA tests by default..."
         test_target="test"
     fi
+
+    # The default is to not skip tests unless already defined otherwise
+    SKIP_STABLE_TESTS="${SKIP_STABLE_TESTS:-false}"
+    # Export the skip decision via ci-export() for persistence to part-2
+    ci-export SKIP_STABLE_TESTS "${SKIP_STABLE_TESTS}"
 
     update_job_record "test_target" "${test_target}"
 
