@@ -478,7 +478,7 @@ func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, ti
 	if u == nil {
 		return nil, time.Time{}, errors.New("Fail to initialize updater")
 	}
-	log.Info("Initializing updater")
+	log.Debug("Initializing updater")
 	u.Start()
 	osFile, modTime, err := u.file.Open()
 	if err != nil {
