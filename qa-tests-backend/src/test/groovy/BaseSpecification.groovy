@@ -327,16 +327,24 @@ class BaseSpecification extends Specification {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
-        LOG.debug("Should specification ${specification} setup/cleanup?")
-        return !testMetrics.isSuiteStable(specification)
+        if (!testMetrics.isSuiteStable(specification)) {
+            LOG.debug("Specification ${specification} setup/cleanup will run")
+            return true
+        }
+        LOG.debug("Specification ${specification} setup/cleanup will not run")
+        return false
     }
 
     private static boolean shouldTestRun(String specification, String testcase) {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
-        LOG.debug("Should this specification/feature run ?(${specification}/${testcase})")
-        return !testMetrics.isTestStable(specification, testcase)
+        if (!testMetrics.isTestStable(specification, testcase)) {
+            LOG.debug("This feature will run (${specification}/${testcase})")
+            return true
+        }
+        LOG.debug("This feature will not run (${specification}/${testcase})")
+        return false
     }
 
     def cleanupSpec() {
