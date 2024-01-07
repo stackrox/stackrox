@@ -43,14 +43,19 @@ class TestMetrics {
                             AND
                         -- Last 90 days
                         DATE(Timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
+                            AND
+                        -- initializationError typically indicates a test system failure
+                        -- and can easily mark the suite as unstable e.g. when changing the
+                        -- BaseSpecification.
+                        Name != "initializationError"
                     GROUP BY Classname
                 )
                 WHERE
-                -- Ignore small counts - new suites
-                RunCount > 50
-                    AND
                 -- 'never' fails
                 FailCount = 0
+                    AND
+                -- Ignore small counts - new suites
+                RunCount > 50
                 """)
     }
 
@@ -74,11 +79,11 @@ class TestMetrics {
                     GROUP BY Classname, Name
                 )
                 WHERE
-                -- ignore small counts - tests with variable names, new tests, modified tests
-                RunCount > 50
-                    AND
                 -- 'never' fails
                 FailCount = 0
+                    AND
+                -- ignore small counts - tests with variable names, new tests, modified tests
+                RunCount > 50
                 """)
     }
 
