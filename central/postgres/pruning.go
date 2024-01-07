@@ -44,8 +44,22 @@ const (
 	// This leads to a possible race condition where a listening endpoint reaches the database before the deployment,
 	// and the pruning job happens to run before the deployment information arrives in the database.
 	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
-	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE NOT EXISTS
-		(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id FOR UPDATE)`
+	//deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE NOT EXISTS
+	//	(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id FOR UPDATE)`
+
+	deleteOrphanedPLOPDeployments = `WITH matched_deployments AS (
+		    SELECT Id
+		    FROM deployments
+		    WHERE EXISTS (
+		        SELECT 1
+		        FROM listening_endpoints
+		        WHERE listening_endpoints.deploymentid = deployments.Id
+		        FOR UPDATE
+		    )
+		)
+		DELETE FROM listening_endpoints
+		WHERE deploymentid NOT IN (SELECT Id FROM matched_deployments)`
+
 
 	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
 	// This leads to a possible race condition where a listening endpoint reaches the database before the pod,
