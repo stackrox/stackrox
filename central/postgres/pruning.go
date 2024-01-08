@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 )
 
 const (
@@ -34,31 +35,42 @@ const (
 	// Explain Analyze indicated that 2 statements for PLOP is faster than one.
 	deleteOrphanedPLOPDeploymentsAndPI = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
-		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL) FOR UPDATE)`
+		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
+
+	//deleteOrphanedPLOPDeploymentsAndPI = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
+	//	(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) AND 
+	//	(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL) FOR UPDATE)`
 
 	deleteOrphanedPLOPPods = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
 		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 
-		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL) FOR UPDATE)`
+		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
+
+	//deleteOrphanedPLOPPods = `DELETE FROM listening_endpoints WHERE processindicatorid in (SELECT id from process_indicators pi WHERE NOT EXISTS
+	//	(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 
+	//	(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL) FOR UPDATE)`
 
 	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
 	// This leads to a possible race condition where a listening endpoint reaches the database before the deployment,
 	// and the pruning job happens to run before the deployment information arrives in the database.
 	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
+	deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE NOT EXISTS
+		(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id)`
+
 	//deleteOrphanedPLOPDeployments = `DELETE FROM listening_endpoints WHERE NOT EXISTS
 	//	(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id FOR UPDATE)`
 
-	deleteOrphanedPLOPDeployments = `WITH matched_deployments AS (
-		    SELECT Id
-		    FROM deployments
-		    WHERE EXISTS (
-		        SELECT 1
-		        FROM listening_endpoints
-		        WHERE listening_endpoints.deploymentid = deployments.Id
-		        FOR UPDATE
-		    )
-		)
-		DELETE FROM listening_endpoints
-		WHERE deploymentid NOT IN (SELECT Id FROM matched_deployments)`
+	//deleteOrphanedPLOPDeployments = `WITH matched_deployments AS (
+	//	    SELECT Id
+	//	    FROM deployments
+	//	    WHERE EXISTS (
+	//	        SELECT 1
+	//	        FROM listening_endpoints
+	//	        WHERE listening_endpoints.deploymentid = deployments.Id
+	//	        FOR UPDATE
+	//	    )
+	//	)
+	//	DELETE FROM listening_endpoints
+	//	WHERE deploymentid NOT IN (SELECT Id FROM matched_deployments)`
 
 
 	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
@@ -66,7 +78,10 @@ const (
 	// and the pruning job happens to run before the pod information arrives in the database.
 	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
 	deleteOrphanedPLOPPodsWithPodUID = `DELETE FROM listening_endpoints WHERE poduid IS NOT NULL AND NOT EXISTS
-		(SELECT 1 FROM pods WHERE listening_endpoints.poduid = pods.Id FOR UPDATE)`
+		(SELECT 1 FROM pods WHERE listening_endpoints.poduid = pods.Id)`
+
+	//deleteOrphanedPLOPPodsWithPodUID = `DELETE FROM listening_endpoints WHERE poduid IS NOT NULL AND NOT EXISTS
+	//	(SELECT 1 FROM pods WHERE listening_endpoints.poduid = pods.Id FOR UPDATE)`
 
 	deleteOrphanedProcesses = `WITH orphan_proc AS 
 		(SELECT id FROM process_indicators pi WHERE NOT EXISTS 
@@ -192,6 +207,10 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 
 // PruneOrphanedProcessIndicators prunes orphaned process indicators and process listening on ports.
 func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
+	plopDS := plopDataStore.Singleton()
+
+	plopDS.Lock()
+	defer plopDS.Unlock()
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing deployments
 	query := fmt.Sprintf(deleteOrphanedPLOPDeploymentsAndPI, int(orphanWindow.Minutes()))
@@ -239,6 +258,10 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 
 // PruneOrphanedPLOPs prunes old PLOPs
 func PruneOrphanedPLOPs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
+	plopDS := plopDataStore.Singleton()
+
+	plopDS.Lock()
+	defer plopDS.Unlock()
 	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
 	commandTag, err := pool.Exec(ctx, query)
 	if err != nil {

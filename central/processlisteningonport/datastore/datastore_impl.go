@@ -235,8 +235,10 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
+	//ds.mutex.Lock()
+	//defer ds.mutex.Unlock()
+	ds.Lock()
+	defer ds.Unlock()
 
 	// Now save actual PLOP objects
 	return ds.storage.UpsertMany(ctx, plopObjects)
@@ -518,9 +520,19 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
+	//ds.mutex.Lock()
+	//defer ds.mutex.Unlock()
+	ds.Lock()
+	defer ds.Unlock()
 
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
 	return ds.storage.DeleteByQuery(ctx, q)
+}
+
+func (ds *datastoreImpl) Lock() {
+	ds.mutex.Lock()
+}
+
+func (ds *datastoreImpl) Unlock() {
+	ds.mutex.Unlock()
 }
