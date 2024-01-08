@@ -19,12 +19,13 @@ enum ClusterType {
 
 message ClusterMetadata {
     enum Type {
-        UNSPECIFIED  = 0;
-        AKS          = 1;
-        ARO          = 2;
-        EKS          = 3;
-        GKE          = 4;
-        ROSA         = 5;
+        UNSPECIFIED            = 0;
+        AKS                    = 1;
+        ARO                    = 2;
+        EKS                    = 3;
+        GKE                    = 4;
+        OPENSHIFT_SELF_MANAGED = 5;
+        ROSA                   = 6;
     }
 
     Type type   = 1;
