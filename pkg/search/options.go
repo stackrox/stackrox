@@ -24,6 +24,7 @@ var (
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
+	ClusterType  = newFieldLabel("Cluster Type")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")

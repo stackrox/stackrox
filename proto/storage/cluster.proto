@@ -28,7 +28,7 @@ message ClusterMetadata {
         ROSA                   = 6;
     }
 
-    Type type   = 1;
+    Type type   = 1 [(gogoproto.moretags) = 'search:"Cluster Type"'];
     string name = 2;
     string id   = 3;
 }
