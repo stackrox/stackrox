@@ -138,7 +138,7 @@ function nurse_deployment_until_available() {
   local -r version_tag="$2"
 
   log "Patching image pull secret into ${version_tag} CSV..."
-  retry 50 10 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
+  retry 30 10 kubectl -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
     "rhacs-operator.v${version_tag}" --type json \
     -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
 
