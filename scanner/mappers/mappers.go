@@ -359,8 +359,8 @@ func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
 			break
 		}
 		s.severity = q.Get("severity")
-		// Look for CVSS fields, when at least one vector is found, we consider the CVSS
-		// information exists, but return partial results in case of failures.
+		// Look for CVSS fields. When at least one vector is found, we consider that the
+		// CVSS information exists, but return partial results in the case of failures.
 		errList := errorhelpers.NewErrorList("invalid RHEL CVSS")
 		if s.v2Vector = q.Get("cvss2_vector"); s.v2Vector != "" {
 			if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err == nil {
