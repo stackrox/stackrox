@@ -57,7 +57,7 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 		ScannerSlimImageRemote: "scanner",
 		ScannerImageTag:        "3.0.11-slim",
 
-		CollectionMethod: "EBPF",
+		CollectionMethod: "CORE_BPF",
 
 		ClusterType: "KUBERNETES_CLUSTER",
 
