@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
@@ -97,7 +98,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 		}
 		if err := setCvss(vuln, ccVuln.GetCvss()); err != nil {
-			log.Warnf("CVSS scores of vuln %s were ignored, reason: %s", vuln.GetCve(), err)
+			utils.Should(err)
 		}
 		if ccVuln.GetFixedInVersion() != "" {
 			vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
