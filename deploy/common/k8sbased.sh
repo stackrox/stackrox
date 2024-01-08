@@ -504,46 +504,28 @@ function launch_sensor {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
 
-    local extra_config=()
-    local extra_json_config=''
     local extra_helm_config=()
 
     verify_orch
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
-      extra_config+=("--admission-controller-listen-on-creates=true")
-    	extra_json_config+=', "admissionController": true'
     	extra_helm_config+=(--set "admissionControl.listenOnCreates=true")
     fi
     if [[ "$ADMISSION_CONTROLLER_UPDATES" == "true" ]]; then
-    	extra_config+=("--admission-controller-listen-on-updates=true")
-    	extra_json_config+=', "admissionControllerUpdates": true'
     	extra_helm_config+=(--set "admissionControl.listenOnUpdates=true")
     fi
+
     if [[ -n "$ADMISSION_CONTROLLER_POD_EVENTS" ]]; then
       local bool_val
       bool_val="$(echo "$ADMISSION_CONTROLLER_POD_EVENTS" | tr '[:upper:]' '[:lower:]')"
       if [[ "$bool_val" != "true" ]]; then
         bool_val="false"
       fi
-      extra_config+=("--admission-controller-listen-on-events=${bool_val}")
-    	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
-      extra_config+=("--timeout=$ROXCTL_TIMEOUT")
-    fi
-
-    SUPPORTS_PSP=$(kubectl api-resources | grep "podsecuritypolicies" -c || true)
-    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
-        echo "Pod security policies are not supported on this cluster. Skipping..."
-        POD_SECURITY_POLICIES="false"
-    fi
-
-    if [[ -n "$POD_SECURITY_POLICIES" ]]; then
-        extra_config+=("--enable-pod-security-policies=${POD_SECURITY_POLICIES}")
     fi
 
     # Delete path
@@ -631,30 +613,6 @@ function launch_sensor {
 
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
-    else
-      if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-        [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
-             --collection-method="$COLLECTION_METHOD" \
-             "${ORCH}" \
-             "${extra_config[@]+"${extra_config[@]}"}"
-        mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
-      else
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
-        unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
-        rm "$k8s_dir/sensor-deploy.zip"
-      fi
-
-      namespace=stackrox
-      if [[ -n "$NAMESPACE_OVERRIDE" ]]; then
-        namespace="$NAMESPACE_OVERRIDE"
-        echo "Changing namespace to $NAMESPACE_OVERRIDE"
-        ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
-        sed -itmp.bak 's/set -e//g' $k8s_dir/sensor-deploy/sensor.sh
-      fi
-
-      echo "Deploying Sensor..."
-      NAMESPACE="$namespace" $k8s_dir/sensor-deploy/sensor.sh
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
