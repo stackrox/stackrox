@@ -54,7 +54,7 @@ func NewGenericStoreWithCache[T any, PT clonedUnmarshaler[T]](
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
 		// the underlying database.
-		log.Error("Failed to populate store cache, using direct store access instead")
+		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
 		return underlyingStore
 	}
 	return store
@@ -98,7 +98,7 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT clonedUnmarshaler[T]
 		// Failed to populate the cache, return the store connected to the DB
 		// in order to avoid serving data from a cache not consistent with
 		// the underlying database.
-		log.Error("Failed to populate store cache, using direct store access instead")
+		log.Errorf("Failed to populate store cache, using direct store access instead: %v", err)
 		return underlyingStore
 	}
 	return store
@@ -118,9 +118,9 @@ type cachedStore[T any, PT clonedUnmarshaler[T]] struct {
 
 // Upsert saves the current state of an object in storage.
 func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
-	dbErr := c.underlyingStore.Upsert(ctx, obj)
-	if dbErr != nil {
-		return dbErr
+	err := c.underlyingStore.Upsert(ctx, obj)
+	if err != nil {
+		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.Upsert)
 	c.cacheLock.Lock()
@@ -131,9 +131,9 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
-	dbErr := c.underlyingStore.UpsertMany(ctx, objs)
-	if dbErr != nil {
-		return dbErr
+	err := c.underlyingStore.UpsertMany(ctx, objs)
+	if err != nil {
+		return err
 	}
 	defer c.setCacheOperationDurationTime(time.Now(), ops.UpdateMany)
 	c.cacheLock.Lock()
@@ -328,9 +328,9 @@ func (c *cachedStore[T, PT]) walkCacheNoLock(ctx context.Context, fn func(obj PT
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		fnErr := fn(obj)
-		if fnErr != nil {
-			return fnErr
+		err := fn(obj)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
