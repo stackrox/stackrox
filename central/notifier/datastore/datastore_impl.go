@@ -49,6 +49,29 @@ func (b *datastoreImpl) UpsertNotifier(ctx context.Context, notifier *storage.No
 	return notifier.GetId(), b.storage.Upsert(ctx, notifier)
 }
 
+func (b *datastoreImpl) UpsertManyNotifiers(ctx context.Context, notifiers []*storage.Notifier) error {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	for _, notifier := range notifiers {
+		existing, exists, err := b.GetNotifier(ctx, notifier.GetId())
+		if err != nil {
+			return err
+		}
+		if exists {
+			if err = verifyNotifierOrigin(ctx, existing); err != nil {
+				return errors.Wrap(err, "origin didn't match for existing notifier")
+			}
+		}
+		if err = verifyNotifierOrigin(ctx, notifier); err != nil {
+			return errors.Wrap(err, "origin didn't match for new notifier")
+		}
+	}
+	return b.storage.UpsertMany(ctx, notifiers)
+}
+
 func verifyNotifierOrigin(ctx context.Context, n *storage.Notifier) error {
 	if !declarativeconfig.CanModifyResource(ctx, n) {
 		return errox.NotAuthorized.Newf("notifier %q's origin is %s, "+
