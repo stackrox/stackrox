@@ -46,7 +46,7 @@ class Constants {
     // tests fail.
     static final TEST_FEATURE_TIMEOUT_PAD = 360
     static final String SPLUNK_TEST_NAMESPACE = "qa-splunk"
-    static final String CI_TEST_METRICS_TABLE = "acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view"
+    static final String CI_TEST_METRICS_TABLE = "acs-san-stackroxci.ci_metrics.stackrox_tests__extended_views"
 
     /*
         StackRox Product Feature Flags
