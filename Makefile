@@ -607,13 +607,10 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifeq ($(strip $(kind_available)),)
-else
+ifneq ($(strip $(kind_available)),)
 	@echo "kind installed, loading images"
 	@echo "Loading image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) into kind"
 	kind load docker-image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG)
-	@echo "Loading image stackrox/main:$(TAG) into kind"
-	kind load docker-image stackrox/main:$(TAG)
 endif
 
 .PHONY: docker-build-roxctl-image
