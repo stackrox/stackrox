@@ -74,3 +74,14 @@ func TestTimestampNow(t *testing.T) {
 	timeDelta := timeFromTimestamp.Sub(nowTime)
 	assert.Less(t, timeDelta, 500*time.Millisecond)
 }
+
+func TestDurationFromProto(t *testing.T) {
+	protoDuration := types.Duration{
+		Seconds: 1,
+		Nanos:   5,
+	}
+	expectedDuration := 1000000005 * time.Nanosecond
+	timeDuration, err := DurationFromProto(protoDuration)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDuration, timeDuration)
+}
