@@ -350,7 +350,6 @@ func (s *genericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 					return errors.Wrapf(err, "unable to delete records and rollback failed: %v", rollbackErr)
 				}
 			}
-			s.resetCache(ctx)
 			return errors.Wrap(err, "unable to delete the records")
 		}
 
