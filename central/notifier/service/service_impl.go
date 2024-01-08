@@ -143,7 +143,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if request.GetUpdatePassword() {
-		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
@@ -172,7 +172,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	if err := validation.ValidateNotifierConfig(request, true); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	_, err := notifierUtils.SecureNotifier(request, s.cryptoKey)
+	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
 		// Don't send out error from crypto lib
 		return nil, errors.New("Error securing notifier")
@@ -211,7 +211,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		return nil, err
 	}
 	if request.GetUpdatePassword() {
-		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
