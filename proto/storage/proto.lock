@@ -4522,6 +4522,11 @@
                     "value": "sql:\"ignore_labels(User ID)\""
                   }
                 ]
+              },
+              {
+                "id": 15,
+                "name": "description",
+                "type": "string"
               }
             ],
             "maps": [
@@ -7113,12 +7118,6 @@
               7,
               8,
               9
-            ],
-            "options": [
-              {
-                "name": "(gogoproto.goproto_unrecognized)",
-                "value": "false"
-              }
             ]
           },
           {
@@ -10696,46 +10695,6 @@
                     "is_repeated": true
                   }
                 ]
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
-      "protopath": "license.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "StoredLicenseKey",
-            "fields": [
-              {
-                "id": 1,
-                "name": "license_key",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "license_id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "selected",
-                "type": "bool"
               }
             ]
           }
@@ -15600,10 +15559,6 @@
           {
             "name": "java_package",
             "value": "io.stackrox.proto.storage"
-          },
-          {
-            "name": "(gogoproto.equal_all)",
-            "value": "true"
           }
         ]
       }
@@ -18203,6 +18158,18 @@
               {
                 "name": "ADMISSION_CONTROL_SERVICE",
                 "integer": 11
+              },
+              {
+                "name": "SCANNER_V4_INDEXER_SERVICE",
+                "integer": 13
+              },
+              {
+                "name": "SCANNER_V4_MATCHER_SERVICE",
+                "integer": 14
+              },
+              {
+                "name": "SCANNER_V4_DB_SERVICE",
+                "integer": 15
               }
             ]
           }
