@@ -93,7 +93,6 @@ func init() {
 		&storage.ServiceIdentity{}:                              resources.Administration,
 		&storage.SignatureIntegration{}:                         resources.Integration,
 		&storage.SimpleAccessScope{}:                            resources.Access,
-		&storage.StoredLicenseKey{}:                             resources.Access,
 		&storage.SystemInfo{}:                                   resources.Administration,
 		&storage.TelemetryConfiguration{}:                       resources.Administration,
 		&storage.TokenMetadata{}:                                resources.Integration,

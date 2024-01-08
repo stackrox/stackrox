@@ -111,7 +111,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ServiceIdentity{}, resourceType: globallyScoped},
 		{typ: &storage.SignatureIntegration{}, resourceType: globallyScoped},
 		{typ: &storage.SimpleAccessScope{}, resourceType: globallyScoped},
-		{typ: &storage.StoredLicenseKey{}, resourceType: globallyScoped},
 		{typ: &storage.TelemetryConfiguration{}, resourceType: globallyScoped},
 		{typ: &storage.TokenMetadata{}, resourceType: globallyScoped},
 		{typ: &storage.User{}, resourceType: globallyScoped},
