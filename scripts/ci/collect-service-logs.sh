@@ -93,7 +93,8 @@ main() {
         done
 
         # Save the count of objects found in order to couple this script with
-        # other functionality that expects filenames in these directories to follow a certain pattern.
+        # other functionality that expects filenames in these directories to
+        # follow a certain pattern.
         echo "${item_count}" > "${log_dir}/${object}/ITEM_COUNT.txt"
     done
 
