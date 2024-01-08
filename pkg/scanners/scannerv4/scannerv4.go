@@ -17,10 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 )
 
-const (
-	typeString = "scannerv4"
-)
-
 var (
 	_ types.Scanner = (*scannerv4)(nil)
 
@@ -35,7 +31,7 @@ var (
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.ScannerV4, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -159,5 +155,5 @@ func (s *scannerv4) Test() error {
 }
 
 func (s *scannerv4) Type() string {
-	return typeString
+	return types.ScannerV4
 }

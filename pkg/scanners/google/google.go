@@ -30,8 +30,6 @@ const (
 	requestTimeout = 10 * time.Second
 
 	maxOccurrenceResults = 1000
-
-	typeString = "google"
 )
 
 var (
@@ -40,7 +38,7 @@ var (
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Google, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -262,7 +260,7 @@ func (c *googleScanner) Match(image *storage.ImageName) bool {
 }
 
 func (c *googleScanner) Type() string {
-	return typeString
+	return types.Google
 }
 
 func (c *googleScanner) Name() string {

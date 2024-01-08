@@ -4,6 +4,7 @@ import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/imageintegration"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -36,7 +37,10 @@ func initialize() {
 		ranking.ComponentRanker(),
 		ranking.NodeComponentRanker(),
 
-		acUpdater.Singleton())
+		acUpdater.Singleton(),
+
+		imageintegration.Set(),
+	)
 }
 
 // Singleton provides the singleton Manager to use.
