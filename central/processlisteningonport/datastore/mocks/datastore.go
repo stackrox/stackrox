@@ -75,6 +75,18 @@ func (mr *MockDataStoreMockRecorder) GetProcessListeningOnPort(ctx, deployment a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).GetProcessListeningOnPort), ctx, deployment)
 }
 
+// Lock mocks base method.
+func (m *MockDataStore) Lock() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Lock")
+}
+
+// Lock indicates an expected call of Lock.
+func (mr *MockDataStoreMockRecorder) Lock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lock", reflect.TypeOf((*MockDataStore)(nil).Lock))
+}
+
 // RemovePlopsByPod mocks base method.
 func (m *MockDataStore) RemovePlopsByPod(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
@@ -101,6 +113,18 @@ func (m *MockDataStore) RemoveProcessListeningOnPort(ctx context.Context, ids []
 func (mr *MockDataStoreMockRecorder) RemoveProcessListeningOnPort(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessListeningOnPort", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessListeningOnPort), ctx, ids)
+}
+
+// Unlock mocks base method.
+func (m *MockDataStore) Unlock() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Unlock")
+}
+
+// Unlock indicates an expected call of Unlock.
+func (mr *MockDataStoreMockRecorder) Unlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unlock", reflect.TypeOf((*MockDataStore)(nil).Unlock))
 }
 
 // WalkAll mocks base method.
