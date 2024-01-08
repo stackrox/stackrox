@@ -292,16 +292,17 @@ function launch_central {
     ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
       ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
 
-    if [[ -f "$unzip_dir/values-public.yaml" ]]; then
+    # Install Central via Helm
+    if [[ -f "$unzip_dir/helm/values-public.yaml" ]]; then
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
-        $unzip_dir/scripts/setup.sh
+        $unzip_dir/helm/scripts/setup.sh
       fi
-      central_scripts_dir="$unzip_dir/scripts"
+      central_scripts_dir="$unzip_dir/helm/scripts"
 
       # New helm setup flavor
       helm_args=(
-        -f "$unzip_dir/values-public.yaml"
-        -f "$unzip_dir/values-private.yaml"
+        -f "$unzip_dir/helm/values-public.yaml"
+        -f "$unzip_dir/helm/values-private.yaml"
         --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
       )
 
@@ -364,7 +365,7 @@ function launch_central {
         )
       fi
 
-      local helm_chart="$unzip_dir/chart"
+      local helm_chart="$unzip_dir/helm/chart"
 
       if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
         echo "Using override central helm chart from ${CENTRAL_CHART_DIR_OVERRIDE}"
@@ -380,6 +381,7 @@ function launch_central {
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
     else
+      echo "legacy manifest install"
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
       fi
