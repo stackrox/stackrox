@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -68,11 +69,11 @@ type connStatus struct {
 	firstSeen timestamp.MicroTS
 	lastSeen  timestamp.MicroTS
 	// used keeps track of if an endpoint has been used by the the networkgraph path.
+	used bool
 	// usedProcess keeps track of if an endpoint has been used by the processes listening on
 	// ports path. If processes listening on ports is used, both must be true to delete the
 	// endpoint. Otherwise the endpoint will not be available to process listening on ports
 	// and it won't report endpoints that it doesn't have access to.
-	used        bool
 	usedProcess bool
 	// rotten implies we expected to correlate the flow with a container, but were unable to
 	rotten bool
@@ -208,12 +209,17 @@ func NewManager(
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
-		sensorUpdates:     make(chan *message.ExpiringMessage),
 		publicIPs:         newPublicIPsManager(),
 		externalSrcs:      externalSrcs,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		finished:          &sync.WaitGroup{},
+	}
+
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
+	} else {
+		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
 	}
 
 	return mgr
@@ -268,16 +274,18 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
-	switch e {
-	case common.SensorComponentEventCentralReachable:
-		m.resetContext()
-		m.resetLastSentState()
-		m.centralReady.Signal()
-		m.enricherTicker.Reset(tickerTime)
-	case common.SensorComponentEventOfflineMode:
-		m.centralReady.Reset()
-		m.enricherTicker.Stop()
+	if !features.SensorCapturesIntermediateEvents.Enabled() {
+		log.Info(common.LogSensorComponentEvent(e))
+		switch e {
+		case common.SensorComponentEventCentralReachable:
+			m.resetContext()
+			m.resetLastSentState()
+			m.centralReady.Signal()
+			m.enricherTicker.Reset(tickerTime)
+		case common.SensorComponentEventOfflineMode:
+			m.centralReady.Reset()
+			m.enricherTicker.Stop()
+		}
 	}
 }
 
@@ -294,13 +302,29 @@ func (m *networkFlowManager) resetContext() {
 	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
 }
 
-func (m *networkFlowManager) sendToCentral(msg *message.ExpiringMessage) bool {
-	select {
-	case <-m.done.Done():
-		return false
-	case m.sensorUpdates <- msg:
-		return true
+func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		select {
+		case <-m.done.Done():
+			return false
+		case m.sensorUpdates <- message.New(msg):
+			return true
+		default:
+			// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
+			// They will still be processed by the detection engine for newer entities, but
+			// sensor will not keep ordered updates indefinitely in memory.
+			return false
+		}
+	} else {
+		ctx := m.getCurrentContext()
+		select {
+		case <-m.done.Done():
+			return false
+		case m.sensorUpdates <- message.NewExpiring(ctx, msg):
+			return true
+		}
 	}
+
 }
 
 func (m *networkFlowManager) resetLastSentState() {
@@ -332,14 +356,13 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.done.WaitC():
 			return
 		case <-tickerC:
-			if !m.centralReady.IsDone() {
+			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
 			}
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
-
 			if env.ProcessesListeningOnPort.BooleanSetting() {
 				m.enrichAndSendProcesses()
 			}
@@ -354,7 +377,6 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
-	ctx := m.getCurrentContext()
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
@@ -370,29 +392,31 @@ func (m *networkFlowManager) enrichAndSend() {
 		Time:             types.TimestampNow(),
 	}
 
-	// Before sending, run the flows through policies asynchronously
-	func() {
-		m.ctxMutex.Lock()
-		defer m.ctxMutex.Unlock()
-		for _, flow := range updatedConns {
-			m.policyDetector.ProcessNetworkFlow(m.pipelineCtx, flow)
-		}
-	}()
+	var detectionContext context.Context
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		detectionContext = context.Background()
+	} else {
+		detectionContext = m.getCurrentContext()
+	}
+	// Before sending, run the flows through policies asynchronously (ProcessNetworkFlow creates a new goroutine for each call)
+	for _, flow := range updatedConns {
+		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
+	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
+	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
-	})) {
+	}) {
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
 
 func (m *networkFlowManager) enrichAndSendProcesses() {
-	ctx := m.getCurrentContext()
 	currentProcesses := m.currentEnrichedProcesses()
 
 	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
@@ -406,11 +430,11 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 		Time:                      types.TimestampNow(),
 	}
 
-	if m.sendToCentral(message.NewExpiring(ctx, &central.MsgFromSensor{
+	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
 			ProcessListeningOnPortUpdate: processesToSend,
 		},
-	})) {
+	}) {
 		m.updateProcessesState(currentProcesses)
 		metrics.IncrementTotalProcessesSentCounter(len(processesToSend.ProcessesListeningOnPorts))
 	}
