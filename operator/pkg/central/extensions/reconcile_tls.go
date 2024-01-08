@@ -161,10 +161,10 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDat
 }
 
 func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {
-	if r.centralObj.Spec.Central.IsExternalDB() {
-		return r.DeleteSecret(ctx, "central-db-tls")
+	if !r.centralObj.Spec.Central.IsExternalDB() {
+		return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
 	}
-	return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
+	return r.DeleteSecret(ctx, "central-db-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerTLSSecret(ctx context.Context) error {
