@@ -589,9 +589,9 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 main-image: all-builds
 	make docker-build-main-image
 
-kind_available := $(shell command -v "kind")
+kind_available := $(shell kind get clusters | grep -v "No kind clusters found.")
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir central-db-image
+docker-build-main-image:
 	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
