@@ -10,6 +10,6 @@ var (
 		images.ScannerDB:        "scanner.dbImage.fullRef",
 		images.ScannerV4DB:      "scannerV4.db.image.fullRef",
 		images.ScannerV4Indexer: "scannerV4.indexer.image.fullRef",
-		images.ScannerV4Matcher: "scannerV4.indexer.image.fullRef",
+		images.ScannerV4Matcher: "scannerV4.matcher.image.fullRef",
 	}
 )

@@ -53,7 +53,7 @@ func (r *reconcileScannerV4DBPasswordExtensionRun) Execute(ctx context.Context) 
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) validateScannerV4DBPasswordData(data types.SecretDataMap, _ bool) error {
 	if len(data[scannerV4DBPasswordKey]) == 0 {
-		return errors.Errorf("%s secret must contain a non-empty %q entry", r.passwordResourceName, scannerDBPasswordKey)
+		return errors.Errorf("%s secret must contain a non-empty %q entry", r.passwordResourceName, scannerV4DBPasswordKey)
 	}
 	return nil
 }

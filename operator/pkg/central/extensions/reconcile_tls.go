@@ -78,17 +78,17 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-tls secret")
 	}
 	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-db-tls secret")
+		return errors.Wrap(err, "reconciling scanner-tls secret")
 	}
+
 	if features.ScannerV4.Enabled() {
-		scannerV4Enabled := r.centralObj.Spec.ScannerV4.IsEnabled()
-		if err := r.ReconcileSecret(ctx, "scanner-v4-indexer-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, true); err != nil {
+		if err := r.reconcileScannerV4IndexerTLSSecret(ctx); err != nil {
 			return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
 		}
-		if err := r.ReconcileSecret(ctx, "scanner-v4-matcher-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, true); err != nil {
+		if err := r.reconcileScannerV4MatcherTLSSecret(ctx); err != nil {
 			return errors.Wrap(err, "reconciling scanner-v4-matcher-tls secret")
 		}
-		if err := r.ReconcileSecret(ctx, "scanner-v4-db-tls", scannerV4Enabled && !shouldDelete, r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, true); err != nil {
+		if err := r.reconcileScannerV4DBTLSSecret(ctx); err != nil {
 			return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
 		}
 	}
@@ -193,6 +193,27 @@ func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.C
 		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, true)
 	}
 	return r.DeleteSecret(ctx, "scanner-db-tls")
+}
+
+func (r *createCentralTLSExtensionRun) reconcileScannerV4IndexerTLSSecret(ctx context.Context) error {
+	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "scanner-v4-indexer-tls")
+}
+
+func (r *createCentralTLSExtensionRun) reconcileScannerV4MatcherTLSSecret(ctx context.Context) error {
+	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "scanner-v4-matcher-tls")
+}
+
+func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context.Context) error {
+	if r.centralObj.Spec.ScannerV4.IsEnabled() {
+		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "scanner-v4-db-tls")
 }
 
 func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {

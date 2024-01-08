@@ -124,8 +124,8 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	return &globalMonitoring
 }
 
-// SetScannerComponentDisabledValue sets the disabled values for scanner configurations
-func SetScannerComponentDisabledValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
+// SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values
+func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
 	if scannerComponent != nil {
 		switch *scannerComponent {
 		case platform.ScannerComponentDisabled:
@@ -193,10 +193,11 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.Persiste
 
 	if pvc != nil {
 		// Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
-		// The operator creates this PVC through the helm chart. The difference is
+		// The operator creates this PVC through the helm chart. This means it is managed
+		// by the default helm lifecycle, instead of the operator extension. The difference is
 		// that the extension prevents central DB's PVC deletion on deletion of the CR.
-		// Since scanner V4's DB contains data which recovers by itself
-		// in case of a new CR creation, it is safe to remove the PVC.
+		// Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
+		// through the helm uninstall if a CR is deleted.
 		pvcBuilder := NewValuesBuilder()
 		pvcBuilder.SetString("claimName", pvc.ClaimName)
 		pvcBuilder.SetBool("createClaim", pointer.Bool(true))

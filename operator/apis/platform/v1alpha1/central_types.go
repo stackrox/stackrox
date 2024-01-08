@@ -514,7 +514,7 @@ type ScannerComponentSpec struct {
 
 // ScannerV4ComponentSpec defines settings for the central "scanner V4" component.
 type ScannerV4ComponentSpec struct {
-	// If you don't want to deploy the Red Hat Advanced Cluster Security ScannerV4, you can disable it here
+	// If you don't want to deploy the Red Hat Advanced Cluster Security Scanner V4, you can disable it here
 	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 Component"
 	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
@@ -531,8 +531,8 @@ type ScannerV4ComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
 	DB *ScannerV4DB `json:"db,omitempty"`
 
-	// Configures monitoring endpoint for Scanner. The monitoring endpoint
-	// allows other services to collect metrics from Scanner, provided in
+	// Configures monitoring endpoint for Scanner V4. The monitoring endpoint
+	// allows other services to collect metrics from Scanner V4, provided in
 	// Prometheus compatible format.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	Monitoring *Monitoring `json:"monitoring,omitempty"`

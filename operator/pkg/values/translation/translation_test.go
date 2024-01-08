@@ -182,7 +182,7 @@ func TestGetTLSConfigValues(t *testing.T) {
 	}
 }
 
-func TestSetScannerComponentDisabled(t *testing.T) {
+func TestSetScannerComponentDisableValue(t *testing.T) {
 	tests := map[string]struct {
 		scannerComponent platform.ScannerComponentPolicy
 		want             chartutil.Values
@@ -211,7 +211,7 @@ func TestSetScannerComponentDisabled(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
 			scannerComponent := tt.scannerComponent
-			SetScannerComponentDisabledValue(&vb, &scannerComponent)
+			SetScannerComponentDisableValue(&vb, &scannerComponent)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)
@@ -228,7 +228,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 	// using local copies to be able to create references to those constants
 	autoscalingEnabled := platform.ScannerAutoScalingEnabled
 	autoscalingDisabled := platform.ScannerAutoScalingDisabled
-	var autoscalingInvalid platform.AutoScalingPolicy = "invalid"
+	autoscalingInvalid := platform.AutoScalingPolicy("invalid")
 
 	tests := map[string]struct {
 		component    *platform.ScannerV4Component

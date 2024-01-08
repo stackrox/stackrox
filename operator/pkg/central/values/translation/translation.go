@@ -358,7 +358,7 @@ func getDeclarativeConfigurationValues(c *platform.DeclarativeConfiguration) *tr
 func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	translation.SetScannerComponentDisabledValue(&sv, s.ScannerComponent)
+	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerAnalyzerValues(&sv, s.GetAnalyzer())
 	translation.SetScannerDBValues(&sv, s.DB)
 
@@ -370,7 +370,7 @@ func getCentralScannerComponentValues(s *platform.ScannerComponentSpec) *transla
 func getCentralScannerV4ComponentValues(s *platform.ScannerV4ComponentSpec) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
-	translation.SetScannerComponentDisabledValue(&sv, s.ScannerComponent)
+	translation.SetScannerComponentDisableValue(&sv, s.ScannerComponent)
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
 	translation.SetScannerV4ComponentValues(&sv, "matcher", s.Matcher)
 	translation.SetScannerV4DBValues(&sv, s.DB)
