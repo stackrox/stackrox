@@ -65,7 +65,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 
 	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
 	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
-	if err := r.ReconcileSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
+	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
@@ -103,7 +103,7 @@ func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Co
 		generateFunc := func() (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.ReconcileSecret(ctx, secretName, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret", secretName)
 		}
 	}
@@ -164,19 +164,19 @@ func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.C
 	if r.centralObj.Spec.Central.IsExternalDB() {
 		return r.DeleteSecret(ctx, "central-db-tls")
 	}
-	return r.ReconcileSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
+	return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.ReconcileSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData, true)
+		return r.EnsureSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData, true)
 	}
 	return r.DeleteSecret(ctx, "scanner-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.Scanner.IsEnabled() {
-		return r.ReconcileSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, true)
+		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, true)
 	}
 	return r.DeleteSecret(ctx, "scanner-db-tls")
 }

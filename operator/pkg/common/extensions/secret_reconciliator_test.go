@@ -128,7 +128,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateS
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret(s.ctx, "absent-secret", validateFn, generateFn, false)
+	err := s.reconciliator.EnsureSecret(s.ctx, "absent-secret", validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.NotEmpty(markerID, "generate function has not been called")
 
@@ -161,7 +161,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_PassingVa
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, false)
+	err = s.reconciliator.EnsureSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -186,7 +186,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, false)
+	err := s.reconciliator.EnsureSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}
@@ -211,7 +211,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		}, nil
 	}
 
-	err := s.reconciliator.ReconcileSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, true)
+	err := s.reconciliator.EnsureSecret(s.ctx, "existing-managed-secret", validateFn, generateFn, true)
 	s.NoError(err)
 
 	secret := &v1.Secret{}
@@ -241,7 +241,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Passing
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-secret", validateFn, generateFn, false)
+	err = s.reconciliator.EnsureSecret(s.ctx, "existing-secret", validateFn, generateFn, false)
 	s.Require().NoError(err)
 	s.True(validated)
 
@@ -269,7 +269,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 		panic("unexpected")
 	}
 
-	err = s.reconciliator.ReconcileSecret(s.ctx, "existing-secret", validateFn, generateFn, false)
+	err = s.reconciliator.EnsureSecret(s.ctx, "existing-secret", validateFn, generateFn, false)
 	s.ErrorIs(err, failValidationErr)
 
 	secret := &v1.Secret{}

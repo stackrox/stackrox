@@ -58,13 +58,13 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 	return nil
 }
 
-// ReconcileSecret reconciles a secret with the given name, by making sure it exists.
+// EnsureSecret makes sure a secret with the given name exists.
 // If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
 // If fixExisting is set to false, an already existing secret will never be overwritten. This is useful only when
 // changing an invalid secret can bring more harm than good.
 // In this case this function will return an error if "validate" rejects the secret.
 // Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) ReconcileSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
 	if err := r.Client().Get(ctx, key, secret); err != nil {
