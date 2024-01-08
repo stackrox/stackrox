@@ -9,7 +9,7 @@ import {
     typeAndSelectCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
-import { clearSearchFilters } from '../vulnerabilities.helpers';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image Single page', () => {
     withAuth();
@@ -27,7 +27,7 @@ describe('Workload CVE Image Single page', () => {
 
         // Clear any filters that may be applied to increase the likelihood of finding valid data
         if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            clearSearchFilters();
+            cy.get(vulnSelectors.clearFiltersButton).click();
         }
 
         // If unified deferrals are not enabled, there is a good chance none of the visible images will

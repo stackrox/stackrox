@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
-import { clearSearchFilters } from '../vulnerabilities.helpers';
 
 import {
     applyLocalSeverityFilters,
@@ -8,6 +7,7 @@ import {
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
     withAuth();
@@ -23,7 +23,7 @@ describe('Workload CVE Deployment Single page', () => {
 
         // Clear any filters that may be applied to increase the likelihood of finding a deployment
         if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            clearSearchFilters;
+            cy.get(vulnSelectors.clearFiltersButton).click();
         }
 
         selectEntityTab('Deployment');

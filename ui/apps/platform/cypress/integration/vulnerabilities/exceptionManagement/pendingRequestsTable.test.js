@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
-import { clearSearchFilters } from '../vulnerabilities.helpers';
 import {
     cancelAllCveExceptions,
     fillAndSubmitExceptionForm,
@@ -12,6 +11,7 @@ import {
 } from '../workloadCves/WorkloadCves.helpers';
 import { visitExceptionManagement } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Exception Management Pending Requests Page', () => {
     withAuth();
@@ -48,7 +48,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view deferred pending requests', () => {
         visitWorkloadCveOverview();
-        clearSearchFilters();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -75,7 +75,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to view false positive pending requests', () => {
         visitWorkloadCveOverview();
-        clearSearchFilters();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // mark a single cve as false positive
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
@@ -98,7 +98,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to navigate to the Request Details page by clicking on the request name', () => {
         visitWorkloadCveOverview();
-        clearSearchFilters();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('FALSE_POSITIVE')
             // mark a single cve as false positive
@@ -245,7 +245,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to filter by "Request name"', () => {
         visitWorkloadCveOverview();
-        clearSearchFilters();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -273,7 +273,7 @@ describe('Exception Management Pending Requests Page', () => {
 
     it('should be able to filter by "Requester"', () => {
         visitWorkloadCveOverview();
-        clearSearchFilters();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         // defer a single cve
         selectSingleCveForException('DEFERRAL').then((cveName) => {
@@ -293,7 +293,7 @@ describe('Exception Management Pending Requests Page', () => {
 
             typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
             cy.get('table td[data-label="Request name"] a').should('exist');
-            clearSearchFilters();
+            cy.get(vulnSelectors.clearFiltersButton).click();
             typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
             cy.get('table td[data-label="Request name"] a').should('not.exist');
         });
