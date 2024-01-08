@@ -203,7 +203,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				Return([]*storage.ComplianceOperatorScanConfigurationV2{
 					{
 						Id:                     uuid.NewDummy().String(),
-						ScanName:               "test-scan",
+						ScanConfigName:         "test-scan",
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
@@ -305,7 +305,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 				s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, tc.scanID).
 					Return(&storage.ComplianceOperatorScanConfigurationV2{
 						Id:                     uuid.NewDummy().String(),
-						ScanName:               "test-scan",
+						ScanConfigName:         "test-scan",
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,

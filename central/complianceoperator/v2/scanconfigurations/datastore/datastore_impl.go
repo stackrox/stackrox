@@ -50,7 +50,7 @@ func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName s
 	}
 
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, scanName).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanName).ProtoQuery())
 	if err != nil {
 		return false, err
 	}
@@ -104,7 +104,7 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 	if !found {
 		return "", errors.Errorf("Scan configuration id %q not found", id)
 	}
-	scanConfigName := scanConfig.GetScanName()
+	scanConfigName := scanConfig.GetScanConfigName()
 
 	// remove scan data from scan status table first
 	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
