@@ -24,8 +24,6 @@ const (
 
 	htpasswdKey = `htpasswd`
 
-	shouldNotExist = false
-
 	defaultPasswordSecretName = `central-htpasswd`
 )
 
@@ -79,11 +77,11 @@ func (r *reconcileAdminPasswordExtensionRun) readPasswordFromReferencedSecret(ct
 
 func (r *reconcileAdminPasswordExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret(ctx, defaultPasswordSecretName, shouldNotExist, nil, nil, false)
+		return r.DeleteSecret(ctx, defaultPasswordSecretName)
 	}
 
 	if r.centralObj.Spec.Central.GetAdminPasswordGenerationDisabled() && r.centralObj.Spec.Central.GetAdminPasswordSecret() == nil {
-		err := r.ReconcileSecret(ctx, defaultPasswordSecretName, shouldNotExist, nil, nil, false)
+		err := r.DeleteSecret(ctx, defaultPasswordSecretName)
 		if err != nil {
 			return err
 		}
@@ -97,7 +95,7 @@ func (r *reconcileAdminPasswordExtensionRun) Execute(ctx context.Context) error 
 		return err
 	}
 
-	if err := r.ReconcileSecret(ctx, defaultPasswordSecretName, true, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
+	if err := r.EnsureSecret(ctx, defaultPasswordSecretName, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
 		return errors.Wrap(err, "reconciling central-htpasswd secret")
 	}
 
@@ -199,5 +197,5 @@ func (r *reconcileAdminPasswordExtensionRun) viewPasswordInstructionsMessage() s
 		"A password for the 'admin' user has been automatically generated and stored in the %q entry of the central-htpasswd secret.\n"+
 			"To view the password see the secret reference field or run\n"+
 			`  oc -n %s get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}'`,
-		adminPasswordKey, r.Namespace())
+		adminPasswordKey, r.centralObj.GetNamespace())
 }

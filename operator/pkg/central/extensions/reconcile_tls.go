@@ -53,25 +53,30 @@ type createCentralTLSExtensionRun struct {
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
-	shouldDelete := r.centralObj.DeletionTimestamp != nil
+	if r.centralObj.DeletionTimestamp != nil {
+		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db"} {
+			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
+				return errors.Wrapf(err, "reconciling %s-tls secret", prefix)
+			}
+		}
+		return nil
+		// reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+	}
 
 	// If we find a broken central-tls secret, do NOT try to auto-fix it. Doing so would invalidate all previously issued certificates
 	// (including sensor certificates and init bundles), and is very unlikely to result in a working state.
-	if err := r.ReconcileSecret(ctx, "central-tls", !shouldDelete, r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
+	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData, false); err != nil {
 		return errors.Wrap(err, "reconciling central-tls secret")
 	}
 
-	isInternalCentralDB := !r.centralObj.Spec.Central.IsExternalDB()
-	if err := r.ReconcileSecret(ctx, "central-db-tls", isInternalCentralDB && !shouldDelete, r.validateCentralDBTLSData, r.generateCentralDBTLSData, true); err != nil {
+	if err := r.reconcileCentralDBTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling central-db-tls secret")
 	}
 
-	// scanner and scanner-db certs can be re-issued without a problem.
-	scannerEnabled := r.centralObj.Spec.Scanner.IsEnabled()
-	if err := r.ReconcileSecret(ctx, "scanner-tls", scannerEnabled && !shouldDelete, r.validateScannerTLSData, r.generateScannerTLSData, true); err != nil {
+	if err := r.reconcileScannerTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling scanner-tls secret")
 	}
-	if err := r.ReconcileSecret(ctx, "scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
+	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db-tls secret")
 	}
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
@@ -86,13 +91,19 @@ func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Co
 	for _, serviceType := range centralsensor.AllSecuredClusterServices {
 		slugCaseService := services.ServiceTypeToSlugName(serviceType)
 		secretName := slugCaseService + "-tls"
+		if !bundleSecretShouldExist {
+			if err := r.DeleteSecret(ctx, secretName); err != nil {
+				return errors.Wrapf(err, "deleting %s secret", secretName)
+			}
+			continue
+		}
 		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
 			return r.validateInitBundleTLSData(serviceType, slugCaseService+"-", fileMap)
 		}
 		generateFunc := func() (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
-		if err := r.ReconcileSecret(ctx, secretName, bundleSecretShouldExist, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
+		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
 			return errors.Wrapf(err, "reconciling %s secret", secretName)
 		}
 	}
@@ -136,7 +147,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDat
 	fileMap := make(types.SecretDataMap)
 	certgen.AddCAToFileMap(fileMap, r.ca)
 
-	if err := certgen.IssueCentralCert(fileMap, r.ca, mtls.WithNamespace(r.Namespace())); err != nil {
+	if err := certgen.IssueCentralCert(fileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
 		return nil, errors.Wrap(err, "issuing central service certificate")
 	}
 
@@ -147,6 +158,27 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDat
 	certgen.AddJWTSigningKeyToFileMap(fileMap, jwtKey)
 
 	return fileMap, nil
+}
+
+func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {
+	if !r.centralObj.Spec.Central.IsExternalDB() {
+		return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "central-db-tls")
+}
+
+func (r *createCentralTLSExtensionRun) reconcileScannerTLSSecret(ctx context.Context) error {
+	if r.centralObj.Spec.Scanner.IsEnabled() {
+		return r.EnsureSecret(ctx, "scanner-tls", r.validateScannerTLSData, r.generateScannerTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "scanner-tls")
+}
+
+func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.Context) error {
+	if r.centralObj.Spec.Scanner.IsEnabled() {
+		return r.EnsureSecret(ctx, "scanner-db-tls", r.validateScannerDBTLSData, r.generateScannerDBTLSData, true)
+	}
+	return r.DeleteSecret(ctx, "scanner-db-tls")
 }
 
 func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
@@ -195,7 +227,7 @@ func checkInitBundleCertRenewal(certificate *x509.Certificate, currentTime time.
 }
 
 func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject, fileNamePrefix string, fileMap types.SecretDataMap, opts ...mtls.IssueCertOption) error {
-	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.Namespace())}, opts...)
+	allOpts := append([]mtls.IssueCertOption{mtls.WithNamespace(r.centralObj.GetNamespace())}, opts...)
 	if err := certgen.IssueServiceCert(fileMap, r.ca, subj, fileNamePrefix, allOpts...); err != nil {
 		return err
 	}
