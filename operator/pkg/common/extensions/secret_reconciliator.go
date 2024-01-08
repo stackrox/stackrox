@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils"
-	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,56 +37,55 @@ func (r *SecretReconciliator) Client() ctrlClient.Client {
 	return r.client
 }
 
-// Namespace returns the namespace of the object the secret is owned by
-func (r *SecretReconciliator) Namespace() string {
-	return r.obj.GetNamespace()
-}
-
-// ReconcileSecret reconciles a secret with the given name, by making sure its existence matches "shouldExist" value.
-// If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
-// If fixExisting is set to false, an already existing secret will never be overwritten. This is useful only when
-// changing an invalid secret can bring more harm than good.
-// In this case this function will return an error if "validate" rejects the secret.
-// Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) ReconcileSecret(ctx context.Context, name string, shouldExist bool, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+// DeleteSecret makes sure a secret with the given name does NOT exist.
+// NOTE that this function will never touch a secret which is not owned by the object passed to the constructor.
+func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) error {
 	secret := &coreV1.Secret{}
-	key := ctrlClient.ObjectKey{Namespace: r.Namespace(), Name: name}
+	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
 	if err := r.Client().Get(ctx, key, secret); err != nil {
 		if !apiErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "checking existence of %s secret", name)
 		}
 		secret = nil
 	}
-	if !shouldExist {
-		if secret == nil || !metav1.IsControlledBy(secret, r.obj) {
-			return nil
-		}
-
-		if err := utils.DeleteExact(ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
-			return errors.Wrapf(err, "deleting %s secret", name)
-		}
+	if secret == nil || !metav1.IsControlledBy(secret, r.obj) {
 		return nil
+	}
+
+	if err := utils.DeleteExact(ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
+		return errors.Wrapf(err, "deleting secret %s", key)
+	}
+	return nil
+}
+
+// EnsureSecret makes sure a secret with the given name exists.
+// If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
+// If fixExisting is set to false, an already existing secret will never be overwritten. This is useful only when
+// changing an invalid secret can bring more harm than good.
+// In this case this function will return an error if "validate" rejects the secret.
+// Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
+func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+	secret := &coreV1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
+	if err := r.Client().Get(ctx, key, secret); err != nil {
+		if !apiErrors.IsNotFound(err) {
+			return errors.Wrapf(err, "checking existence of %s secret", name)
+		}
+		secret = nil
 	}
 
 	if secret != nil {
 		isManaged := metav1.IsControlledBy(secret, r.obj)
-		var validateErr error
-		if validate != nil {
-			validateErr = validate(secret.Data, isManaged)
-		}
+		validateErr := validate(secret.Data, isManaged)
 
 		if validateErr == nil {
 			return nil // validation of existing secret successful - no reconciliation needed
 		}
-		// If the secret is unmanaged, we cannot fix it, so we should fail. The same applies if there is no
-		// generate function specified, or if the caller told us not to attempt to fix it.
-		if !isManaged || generate == nil || !fixExisting {
+		// If the secret is unmanaged, we cannot fix it, so we should fail. The same applies if
+		// the caller told us not to attempt to fix it.
+		if !isManaged || !fixExisting {
 			return errors.Wrapf(validateErr, "existing %s secret is invalid, please delete the secret to allow fixing the issue", name)
 		}
-	}
-
-	if generate == nil {
-		return pkgUtils.ShouldErr(errors.Errorf("secret %s should exist, but no generation logic has been specified", name))
 	}
 
 	// Try to generate the secret, in order to fix it.
@@ -98,7 +96,7 @@ func (r *SecretReconciliator) ReconcileSecret(ctx context.Context, name string, 
 	newSecret := &coreV1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: r.Namespace(),
+			Namespace: r.obj.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(r.obj, r.obj.GroupVersionKind()),
 			},
