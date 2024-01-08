@@ -144,7 +144,7 @@ export type ViolationState = 'ACTIVE' | 'SNOOZED' | 'RESOLVED' | 'ATTEMPTED';
 
 export type ListAlert = DeploymentListAlert | ResourceListAlert;
 
-type DeploymentListAlert = {
+export type DeploymentListAlert = {
     commonEntityInfo: CommonEntityInfo & {
         resourceType: 'DEPLOYMENT';
     };

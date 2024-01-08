@@ -4,7 +4,6 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Dropdown,
@@ -252,7 +251,7 @@ function PolicyDetail({
                 <AlertGroup isToast isLiveRegion>
                     {toasts.map(({ key, variant, title, children }: Toast) => (
                         <Alert
-                            variant={AlertVariant[variant]}
+                            variant={variant}
                             title={title}
                             timeout={4000}
                             onTimeout={() => removeToast(key)}

@@ -11,7 +11,6 @@ import {
     ToolbarItem,
     AlertGroup,
     Alert,
-    AlertVariant,
     AlertActionCloseButton,
 } from '@patternfly/react-core';
 
@@ -116,7 +115,7 @@ function PolicyCategoriesPage(): React.ReactElement {
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
-                        variant={AlertVariant[variant]}
+                        variant={variant}
                         title={title}
                         component="div"
                         timeout={4000}

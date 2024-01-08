@@ -1,13 +1,16 @@
 import React, { useState, ReactElement } from 'react';
 import {
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    Divider,
     Flex,
     FlexItem,
-    Divider,
-    PageSection,
-    Title,
-    Pagination,
     Select,
     SelectOption,
+    Title,
+    PageSection,
+    Pagination,
     pluralize,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
@@ -20,10 +23,13 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { GetSortParams } from 'hooks/useURLSort';
+import useRestMutation from 'hooks/useRestMutation';
+import useToasts from 'hooks/patternfly/useToasts';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
@@ -83,6 +89,25 @@ function ViolationsTablePanel({
         getSelectedIds,
     } = useTableSelection(violations);
 
+    const { toasts, addToast, removeToast } = useToasts();
+
+    const excludeDeploymentMutation = useRestMutation(
+        ({ policyId, deploymentNames }: { policyId: string; deploymentNames: string[] }) =>
+            excludeDeployments(policyId, deploymentNames),
+        {
+            onSuccess: () => {
+                addToast('Deployment excluded from policy', 'success');
+            },
+            onError: (err: unknown) => {
+                addToast(
+                    'There was an error excluding the deployment',
+                    'danger',
+                    getAxiosErrorMessage(err)
+                );
+            },
+        }
+    );
+
     function onToggleSelect(toggleOpen) {
         setIsSelectOpen(toggleOpen);
     }
@@ -141,6 +166,26 @@ function ViolationsTablePanel({
 
     return (
         <>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout={variant === 'success'}
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
             <Flex
                 className="pf-u-pb-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
@@ -251,7 +296,10 @@ function ViolationsTablePanel({
                                 actionItems.push({
                                     title: 'Exclude deployment from policy',
                                     onClick: () =>
-                                        excludeDeployments(policy.id, [violation.deployment.name]),
+                                        excludeDeploymentMutation.mutate({
+                                            policyId: policy.id,
+                                            deploymentNames: [violation.deployment.name],
+                                        }),
                                 });
                             }
                             return (
