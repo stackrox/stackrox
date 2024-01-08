@@ -3,6 +3,7 @@ package protocompat
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/assert"
@@ -60,4 +61,20 @@ func TestMarshalTextString(t *testing.T) {
 ` + `cluster_name: "Cluster 1"
 `
 	assert.Equal(t, expectedString, asString)
+}
+
+func TestUnmarshal(t *testing.T) {
+	msg := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		Name:        "Namespace A",
+		ClusterId:   testconsts.Cluster1,
+		ClusterName: "Cluster 1",
+	}
+	data, err := proto.Marshal(msg)
+	assert.NoError(t, err)
+
+	decoded := &storage.NamespaceMetadata{}
+	err = Unmarshal(data, decoded)
+	assert.NoError(t, err)
+	assert.Equal(t, msg, decoded)
 }
