@@ -207,7 +207,7 @@ central:
 #      # client_encoding=UTF8 is required in any connection string and the only supported encoding
 #      # statementTimeoutMs is ignored for external database connections
 #      # If using a connection that supports "statement_timeout" it is recommended to include "statement_timeout=1200000"
-#      # Do NOT use a connection string with a password field. Instead specify the value below in the password section/
+#      # Do NOT use a connection string with a password field. Instead specify the value below in the password section.
 #      connectionString: null
 #      minConns: 10
 #      maxConns: 90
