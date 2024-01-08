@@ -16,6 +16,8 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/cvss/cvssv2"
+	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -363,14 +365,18 @@ func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
 		// CVSS information exists, but return partial results in the case of failures.
 		errList := errorhelpers.NewErrorList("invalid RHEL CVSS")
 		if s.v2Vector = q.Get("cvss2_vector"); s.v2Vector != "" {
-			if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err == nil {
-				s.v2Score = float32(f)
-			} else {
+			if _, err := cvssv2.ParseCVSSV2(s.v2Vector); err != nil {
+				errList.AddError(fmt.Errorf("v2 vector: %w", err))
+			} else if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err != nil {
 				errList.AddError(fmt.Errorf("v2 score: %w", err))
+			} else {
+				s.v2Score = float32(f)
 			}
 		}
 		if s.v3Vector = q.Get("cvss3_vector"); s.v3Vector != "" {
-			if f, err := strconv.ParseFloat(q.Get("cvss3_score"), 32); err == nil {
+			if _, err := cvssv3.ParseCVSSV3(s.v3Vector); err != nil {
+				errList.AddError(fmt.Errorf("v3 vector: %w", err))
+			} else if f, err := strconv.ParseFloat(q.Get("cvss3_score"), 32); err == nil {
 				s.v3Score = float32(f)
 			} else {
 				errList.AddError(fmt.Errorf("v3 score: %w", err))

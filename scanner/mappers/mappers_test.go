@@ -726,7 +726,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued: now,
 					Severity: url.Values{
 						"severity":     []string{"sample severity"},
-						"cvss3_vector": []string{"sample cvss3 vector"},
+						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
 						"cvss3_score":  []string{"9.9"},
 					}.Encode(),
 					Dist: &claircore.Distribution{DID: "rhel"},
@@ -739,7 +739,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							BaseScore: 9.9,
-							Vector:    "sample cvss3 vector",
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 						},
 					},
 				},
@@ -751,7 +751,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued: now,
 					Severity: url.Values{
 						"severity":     []string{"sample severity"},
-						"cvss2_vector": []string{"sample cvss2 vector"},
+						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
 						"cvss2_score":  []string{"1.1"},
 					}.Encode(),
 					Dist: &claircore.Distribution{DID: "rhel"},
@@ -764,7 +764,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 							BaseScore: 1.1,
-							Vector:    "sample cvss2 vector",
+							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
 						},
 					},
 				},
@@ -776,9 +776,9 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued: now,
 					Severity: url.Values{
 						"severity":     []string{"sample severity"},
-						"cvss2_vector": []string{"sample cvss2 vector"},
+						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
 						"cvss2_score":  []string{"1.1"},
-						"cvss3_vector": []string{"sample cvss3 vector"},
+						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
 						"cvss3_score":  []string{"9.9"},
 					}.Encode(),
 					Dist: &claircore.Distribution{DID: "rhel"},
@@ -791,15 +791,41 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							BaseScore: 9.9,
-							Vector:    "sample cvss3 vector",
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 						},
 						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 							BaseScore: 1.1,
-							Vector:    "sample cvss2 vector",
+							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
 						},
 					},
 				},
 			},
+		},
+		"when severity with CVSSv2 is invalid then return error": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"invalid cvss2 vector"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			wantErr: "invalid RHEL CVSS error: v2 vector",
+		},
+		"when severity with CVSSv3 is invalid then return error": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss3_vector": []string{"invalid cvss3 vector"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			wantErr: "invalid RHEL CVSS error: v3 vector",
 		},
 	}
 	ctx := context.Background()
