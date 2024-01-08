@@ -23,13 +23,11 @@ import (
 
 const (
 	requestTimeout = 60 * time.Second
-
-	typeString = "quay"
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Quay, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -143,7 +141,7 @@ func (q *quay) Match(image *storage.ImageName) bool {
 }
 
 func (q *quay) Type() string {
-	return typeString
+	return types.Quay
 }
 
 func (q *quay) Name() string {

@@ -2,6 +2,7 @@ package scannerclient
 
 import (
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -10,7 +11,7 @@ var (
 	once          sync.Once
 	scannerClient ScannerClient
 
-	isScannerV4Enabled = env.ScannerV4Enabled.BooleanSetting()
+	isScannerV4Enabled = features.ScannerV4Enabled.Enabled()
 )
 
 // GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
