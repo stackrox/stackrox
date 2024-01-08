@@ -1,0 +1,12 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        resources:
+          limits:
+            cpu: null
+            memory: 4Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi

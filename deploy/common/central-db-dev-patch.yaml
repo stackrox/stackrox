@@ -1,0 +1,21 @@
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: init-db
+        resources:
+          limits:
+            cpu: null
+            memory: 4Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi
+      containers:
+      - name: central-db
+        resources:
+          limits:
+            cpu: null
+            memory: 4Gi
+          requests:
+            cpu: 100m
+            memory: 1Gi
