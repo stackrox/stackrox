@@ -9,12 +9,16 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -68,6 +72,10 @@ var (
 			ProcessArgs:         "port: 80",
 		},
 	}
+)
+
+const (
+	waitTimeout = 20 * time.Millisecond
 )
 
 func TestNetworkFlowManager(t *testing.T) {
@@ -695,6 +703,182 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 		s.Assert().True(msg.IsExpired(), "the message should be expired")
 	}
 	m.Stop(nil)
+}
+
+func TestSendNetworkFlows(t *testing.T) {
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	suite.Run(t, new(sendNetflowsSuite))
+}
+
+type sendNetflowsSuite struct {
+	suite.Suite
+	mockCtrl     *gomock.Controller
+	mockEntity   *mocksManager.MockEntityStore
+	m            *networkFlowManager
+	mockDetector *mocksDetector.MockDetector
+	fakeTicker   chan time.Time
+}
+
+const (
+	srcID = "src-id"
+	dstID = "dst-id"
+)
+
+func (b *sendNetflowsSuite) SetupTest() {
+	b.mockCtrl = gomock.NewController(b.T())
+	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl)
+
+	b.fakeTicker = make(chan time.Time)
+	go b.m.enrichConnections(b.fakeTicker)
+}
+
+func (b *sendNetflowsSuite) TeardownTest() {
+	b.m.done.Signal()
+}
+
+func (b *sendNetflowsSuite) updateConn(pair *connectionPair) {
+	addHostConnection(b.m, createHostnameConnections("hostname").withConnectionPair(pair))
+}
+
+func (b *sendNetflowsSuite) expectLookups(n int) {
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
+	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
+		DeploymentID: srcID,
+	}, true)()
+	expectEntityLookupEndpointHelper(b.mockEntity, n, []clusterentities.LookupResult{
+		{
+			Entity:         networkgraph.Entity{ID: dstID},
+			ContainerPorts: []uint16{80},
+		},
+	})()
+}
+
+func (b *sendNetflowsSuite) expectDetections(n int) {
+	expectDetectorHelper(b.mockDetector, n)()
+}
+
+func (b *sendNetflowsSuite) TestUpdateConnectionGeneratesNetflow() {
+	b.expectLookups(1)
+	b.expectDetections(1)
+
+	b.updateConn(createConnectionPair())
+	b.thenTickerTicks()
+	b.assertOneUpdatedConnection()
+}
+
+func (b *sendNetflowsSuite) TestUnchangedConnection() {
+	b.expectLookups(2)
+	b.expectDetections(1)
+
+	pair := createConnectionPair()
+	pair.status.lastSeen = timestamp.InfiniteFuture
+	b.updateConn(pair)
+	b.thenTickerTicks()
+	b.assertOneUpdatedConnection()
+
+	// There should be no second update, the connection did not change
+	b.thenTickerTicks()
+	mustNotRead(b.T(), b.m.sensorUpdates)
+}
+
+func (b *sendNetflowsSuite) TestSendTwoUpdatesOnConnectionChanged() {
+	b.expectLookups(2)
+	b.expectDetections(2)
+
+	pair := createConnectionPair()
+	oneHourAgo := timestamp.NowMinus(time.Hour)
+	pair.status.lastSeen = timestamp.FromProtobuf(oneHourAgo)
+	b.updateConn(pair)
+	b.thenTickerTicks()
+	b.assertOneUpdatedConnection()
+
+	pair.status.lastSeen = timestamp.Now()
+	b.updateConn(pair)
+	b.thenTickerTicks()
+	b.assertOneUpdatedConnection()
+}
+
+func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
+	b.expectLookups(4)
+	b.expectDetections(4)
+
+	// four times without reading
+	for i := 0; i < 4; i++ {
+		ts := timestamp.NowMinus(time.Duration(4-i) * time.Hour)
+		pair := createConnectionPair()
+		pair.status.lastSeen = timestamp.FromProtobuf(ts)
+		b.updateConn(pair)
+		b.thenTickerTicks()
+		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
+	}
+
+	// should be able to read four buffered updates in sequence
+	for i := 0; i < 4; i++ {
+		b.assertOneUpdatedConnection()
+	}
+}
+
+func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
+	b.expectLookups(6)
+	b.expectDetections(6)
+
+	for i := 0; i < 6; i++ {
+		ts := timestamp.NowMinus(time.Duration(6-i) * time.Hour)
+		pair := createConnectionPair()
+		pair.status.lastSeen = timestamp.FromProtobuf(ts)
+		b.updateConn(pair)
+		b.thenTickerTicks()
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
+	for i := 0; i < 5; i++ {
+		b.assertOneUpdatedConnection()
+	}
+
+	mustNotRead(b.T(), b.m.sensorUpdates)
+}
+
+func (b *sendNetflowsSuite) thenTickerTicks() {
+	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
+}
+
+func (b *sendNetflowsSuite) assertOneUpdatedConnection() {
+	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+	b.Require().True(ok, "message is NetworkFlowUpdate")
+	b.Assert().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
+}
+
+func mustNotRead[T any](t *testing.T, ch chan T) {
+	select {
+	case <-ch:
+		t.Fatal("should not receive in channel")
+	case <-time.After(waitTimeout):
+	}
+}
+
+func mustReadTimeout[T any](t *testing.T, ch chan T) T {
+	var result T
+	select {
+	case v, more := <-ch:
+		if !more {
+			require.True(t, more, "channel should never close")
+		}
+		result = v
+	case <-time.After(waitTimeout):
+		t.Fatal("blocked on reading from channel")
+	}
+	return result
+}
+
+func mustSendWithoutBlock[T any](t *testing.T, ch chan T, v T) {
+	select {
+	case ch <- v:
+		return
+	case <-time.After(waitTimeout):
+		t.Fatal("blocked on sending to channel")
+	}
 }
 
 // endregion
