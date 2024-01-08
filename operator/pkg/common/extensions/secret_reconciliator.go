@@ -53,7 +53,7 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 	}
 
 	if err := utils.DeleteExact(ctx, r.Client(), secret); err != nil && !apiErrors.IsNotFound(err) {
-		return errors.Wrapf(err, "deleting %s secret", name)
+		return errors.Wrapf(err, "deleting secret %s", key)
 	}
 	return nil
 }
