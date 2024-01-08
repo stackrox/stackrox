@@ -4,12 +4,13 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetMemoryLimit_ROX_MEMLIMIT(t *testing.T) {
 	// 4Gi
-	total := 4 * 1024 * 1024 * 1024
+	total := 4 * size.GB
 	// ~3.8Gi
 	expected := int64(4_080_218_932)
 
