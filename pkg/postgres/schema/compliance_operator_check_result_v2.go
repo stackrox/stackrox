@@ -63,7 +63,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	Severity       storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	CreatedTime    *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
 	Standard       string                                              `gorm:"column:standard;type:varchar"`
-	ScanID         string                                              `gorm:"column:scanid;type:varchar"`
+	ScanName       string                                              `gorm:"column:scanname;type:varchar"`
 	ScanConfigName string                                              `gorm:"column:scanconfigname;type:varchar"`
 	Serialized     []byte                                              `gorm:"column:serialized;type:bytea"`
 }

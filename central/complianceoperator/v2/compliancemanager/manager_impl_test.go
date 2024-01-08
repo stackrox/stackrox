@@ -271,7 +271,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     mockScanID,
-		ScanName:               mockScanName,
+		ScanConfigName:         mockScanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,

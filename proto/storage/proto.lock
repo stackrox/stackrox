@@ -4456,12 +4456,12 @@
               },
               {
                 "id": 2,
-                "name": "scan_name",
+                "name": "scan_config_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Name,store\"sql:\"unique\""
+                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"unique\""
                   }
                 ]
               },
@@ -4721,12 +4721,12 @@
               },
               {
                 "id": 14,
-                "name": "scan_id",
+                "name": "scan_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanV2:id),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Name,hidden\"sql:\"fk(ComplianceOperatorScanV2:scan_name),no-fk-constraint\""
                   }
                 ]
               },
@@ -4737,7 +4737,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Name,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
@@ -4819,7 +4819,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint\""
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
