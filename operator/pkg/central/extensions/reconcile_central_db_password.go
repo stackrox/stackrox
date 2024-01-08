@@ -74,8 +74,8 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 	if centralSpec != nil && centralSpec.DB != nil {
 		dbSpec := centralSpec.DB
 		dbPasswordSecret := dbSpec.PasswordSecret
-		if dbSpec.IsExternal() && dbPasswordSecret == nil {
-			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
+		if dbSpec.ConnectionStringOverride != nil && dbPasswordSecret == nil {
+			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an DB not managed by the operator")
 		}
 
 		if dbPasswordSecret != nil {
