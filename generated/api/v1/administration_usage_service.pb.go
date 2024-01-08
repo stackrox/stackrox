@@ -316,8 +316,6 @@ type AdministrationUsageServiceClient interface {
 	// GetCurrentSecuredUnitsUsage returns the current secured units usage
 	// metrics values.
 	//
-	// Experimental API, feature in tech preview.
-	//
 	// The secured units metrics are collected from all connected clusters every
 	// 5 minutes, so the returned result includes data for the connected
 	// clusters accurate to about these 5 minutes, and potentially some outdated
@@ -326,8 +324,6 @@ type AdministrationUsageServiceClient interface {
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
-	//
-	// Experimental API, feature in tech preview.
 	//
 	// The usage metrics are continuously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,
@@ -367,8 +363,6 @@ type AdministrationUsageServiceServer interface {
 	// GetCurrentSecuredUnitsUsage returns the current secured units usage
 	// metrics values.
 	//
-	// Experimental API, feature in tech preview.
-	//
 	// The secured units metrics are collected from all connected clusters every
 	// 5 minutes, so the returned result includes data for the connected
 	// clusters accurate to about these 5 minutes, and potentially some outdated
@@ -377,8 +371,6 @@ type AdministrationUsageServiceServer interface {
 	// GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units
 	// usage observed during a given time range, together with the time when
 	// this maximum was aggregated and stored.
-	//
-	// Experimental API, feature in tech preview.
 	//
 	// The usage metrics are continuously collected from all the connected
 	// clusters. The maximum values are kept for some period of time in memory,

@@ -23,13 +23,10 @@ func init() {
 func clusterIsCompliant(ctx framework.ComplianceContext) {
 	// Map deployments to flows where it is the destination.
 	deploymentIDToIncomingFlows := make(map[string][]*storage.NetworkFlow)
-	for _, flow := range ctx.Data().NetworkFlows() {
+	for _, flow := range ctx.Data().NetworkFlowsWithDeploymentDst() {
 		dst := flow.GetProps().GetDstEntity()
-		if flow.GetProps().GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-			deploymentIDToIncomingFlows[dst.GetId()] = append(deploymentIDToIncomingFlows[dst.GetId()], flow)
-		}
+		deploymentIDToIncomingFlows[dst.GetId()] = append(deploymentIDToIncomingFlows[dst.GetId()], flow)
 	}
-
 	// Map enabled ports
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		deploymentIsCompliant(ctx, deployment, deploymentIDToIncomingFlows[deployment.GetId()])

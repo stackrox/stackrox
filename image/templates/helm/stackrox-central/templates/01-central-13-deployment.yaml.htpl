@@ -279,7 +279,6 @@ spec:
       - name: monitoring-tls
         secret:
           secretName: central-monitoring-tls
-          optional: true
       {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}

@@ -15,5 +15,6 @@ type Store interface {
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.Notifier, []int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Upsert(ctx context.Context, obj *storage.Notifier) error
+	UpsertMany(ctx context.Context, objs []*storage.Notifier) error
 	Delete(ctx context.Context, id string) error
 }

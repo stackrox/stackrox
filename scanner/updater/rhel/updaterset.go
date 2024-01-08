@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/quay/zlog"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/rhel/internal/pulp"
 )
 

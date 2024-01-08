@@ -94,9 +94,9 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
 				return &storage.ComplianceIntegration{
-					Version:   "22",
-					ClusterId: fixtureconsts.Cluster1,
-					Namespace: fixtureconsts.Namespace1,
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
 				}
 			},
 			isErrorTest: true,
@@ -110,17 +110,17 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 				suite.integrationDS.EXPECT().GetComplianceIntegrations(gomock.Any(), query).Return(nil, nil).Times(1)
 
 				expectedInfo := &storage.ComplianceIntegration{
-					Version:   "22",
-					ClusterId: fixtureconsts.Cluster1,
-					Namespace: fixtureconsts.Namespace1,
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
 				}
 				suite.integrationDS.EXPECT().AddComplianceIntegration(gomock.Any(), expectedInfo).Return(uuid.NewV4().String(), nil).Times(1)
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
 				return &storage.ComplianceIntegration{
-					Version:   "22",
-					ClusterId: fixtureconsts.Cluster1,
-					Namespace: fixtureconsts.Namespace1,
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
 				}
 			},
 			isErrorTest: false,
@@ -132,10 +132,10 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 					AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 
 				expectedInfo := &storage.ComplianceIntegration{
-					Id:        uuid.NewV4().String(),
-					Version:   "22",
-					ClusterId: fixtureconsts.Cluster1,
-					Namespace: fixtureconsts.Namespace1,
+					Id:                  uuid.NewV4().String(),
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
 				}
 
 				suite.integrationDS.EXPECT().GetComplianceIntegrations(gomock.Any(), query).Return([]*storage.ComplianceIntegration{expectedInfo}, nil).Times(1)
@@ -144,9 +144,9 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
 				return &storage.ComplianceIntegration{
-					Version:   "22",
-					ClusterId: fixtureconsts.Cluster1,
-					Namespace: fixtureconsts.Namespace1,
+					Version:             "22",
+					ClusterId:           fixtureconsts.Cluster1,
+					ComplianceNamespace: fixtureconsts.Namespace1,
 				}
 			},
 			isErrorTest: false,
@@ -271,7 +271,7 @@ func (suite *complianceManagerTestSuite) TestDeleteScanConfiguration() {
 func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		Id:                     mockScanID,
-		ScanName:               mockScanName,
+		ScanConfigName:         mockScanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,

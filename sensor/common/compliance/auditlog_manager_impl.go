@@ -181,9 +181,9 @@ func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[strin
 // If the feature is enabled, then the node will automatically be sent a message to start collection upon a successful add
 func (a *auditLogCollectionManagerImpl) AddEligibleComplianceNode(node string, connection sensor.ComplianceService_CommunicateServer) {
 	log.Infof("Adding node `%s` as an eligible compliance node for audit log collection", node)
-	a.connectionLock.Lock()
-	a.eligibleComplianceNodes[node] = connection
-	a.connectionLock.Unlock()
+	concurrency.WithLock(&a.connectionLock, func() {
+		a.eligibleComplianceNodes[node] = connection
+	})
 
 	if a.enabled.Get() {
 		a.fileStateLock.RLock() // Will read the state when sending start message.

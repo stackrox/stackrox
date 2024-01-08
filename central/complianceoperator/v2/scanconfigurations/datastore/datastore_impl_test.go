@@ -60,15 +60,15 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ComplianceOperator, resources.Cluster)))
+			sac.ResourceScopeKeys(resources.Compliance, resources.Cluster)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ComplianceOperator, resources.Cluster)))
+			sac.ResourceScopeKeys(resources.Compliance, resources.Cluster)))
 	s.hasWriteNoClusterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ComplianceOperator)))
+			sac.ResourceScopeKeys(resources.Compliance)))
 	s.noAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
 	s.mockCtrl = gomock.NewController(s.T())
@@ -137,13 +137,13 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
 
 	scanConfigs, err := s.dataStore.GetScanConfigurations(s.hasReadCtx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, mockScanName).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanConfigName, mockScanName).ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(scanConfigs))
 	s.Require().Equal(scanConfig, scanConfigs[0])
 
 	scanConfigs, err = s.dataStore.GetScanConfigurations(s.hasReadCtx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, "DOESNOTEXIST").ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanConfigName, "DOESNOTEXIST").ProtoQuery())
 	s.Require().NoError(err)
 	s.Require().Equal(0, len(scanConfigs))
 }
@@ -157,7 +157,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount(
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanName, mockScanName).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, mockScanName).ProtoQuery()
 	count, err := s.dataStore.CountScanConfigurations(s.hasReadCtx, q)
 	s.Require().NoError(err)
 	s.Require().Equal(1, count)
@@ -278,7 +278,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 
 func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
 	return &storage.ComplianceOperatorScanConfigurationV2{
-		ScanName:               scanName,
+		ScanConfigName:         scanName,
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,

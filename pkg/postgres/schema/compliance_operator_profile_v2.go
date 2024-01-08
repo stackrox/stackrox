@@ -43,7 +43,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_PROFILES, "complianceoperatorprofilev2", (*storage.ComplianceOperatorProfileV2)(nil)))
-		schema.ScopingResource = resources.ComplianceOperator
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorProfileV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_PROFILES, schema)
 		return schema
@@ -60,6 +60,7 @@ const (
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
 type ComplianceOperatorProfileV2 struct {
 	ID             string `gorm:"column:id;type:varchar;primaryKey"`
+	ProfileID      string `gorm:"column:profileid;type:varchar"`
 	Name           string `gorm:"column:name;type:varchar;uniqueIndex:profile_unique_indicator"`
 	ProfileVersion string `gorm:"column:profileversion;type:varchar;uniqueIndex:profile_unique_indicator"`
 	ProductType    string `gorm:"column:producttype;type:varchar"`

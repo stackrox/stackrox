@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -83,7 +82,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 		scanner := imageScanner.GetScanner()
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
 			// Clairify is the only supported ImageVulnerabilityGetter at this time.
-			if scanner.Type() != clairify.TypeString {
+			if scanner.Type() != scannerTypes.Clairify {
 				log.Errorf("unexpected image vulnerability getter: %s [%s]", scanner.Name(), scanner.Type())
 				continue
 			}

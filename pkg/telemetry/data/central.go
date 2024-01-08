@@ -1,12 +1,8 @@
 package data
 
 import (
-	"bytes"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/jsonutil"
 	"google.golang.org/grpc/codes"
 )
 
@@ -90,23 +86,6 @@ type StorageInfo struct {
 	StorageType       string           `json:"storageType,omitempty"`
 	Databases         []*DatabaseStats `json:"dbs,omitempty"`
 	Errors            []string         `json:"errors,omitempty"`
-}
-
-// LicenseJSON type encapsulates the License type and adds Marshal/Unmarshal methods
-type LicenseJSON licenseproto.License
-
-// MarshalJSON marshals license data to bytes, following jsonpb rules.
-func (l *LicenseJSON) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := (&jsonpb.Marshaler{}).Marshal(&buf, (*licenseproto.License)(l)); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-// UnmarshalJSON unmarshals license JSON bytes into a License object, following jsonpb rules.
-func (l *LicenseJSON) UnmarshalJSON(data []byte) error {
-	return jsonutil.JSONBytesToProto(data, (*licenseproto.License)(l))
 }
 
 // CentralInfo contains telemetry data specific to StackRox' Central deployment

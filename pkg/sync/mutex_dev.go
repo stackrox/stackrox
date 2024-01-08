@@ -86,7 +86,7 @@ func (m *Mutex) TryLock() bool {
 // Unlock releases an acquired lock on the mutex.
 func (m *Mutex) Unlock() {
 	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
-	m.Mutex.Unlock()
+	defer m.Mutex.Unlock() // suppress the roxvet error for calling Unlock()
 }
 
 // RWMutex is a watchdog-enabled version of sync.RWMutex.
@@ -127,5 +127,5 @@ func (m *RWMutex) TryLock() bool {
 // Unlock releases an acquired writer (exclusive) lock on the mutex.
 func (m *RWMutex) Unlock() {
 	panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
-	m.RWMutex.Unlock()
+	defer m.RWMutex.Unlock() // suppress the roxvet error for calling Unlock()
 }

@@ -3678,25 +3678,8 @@
               },
               {
                 "id": 4,
-                "name": "namespace",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace,store\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "namespace_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)\""
-                  }
-                ]
+                "name": "compliance_namespace",
+                "type": "string"
               },
               {
                 "id": 5,
@@ -4473,12 +4456,12 @@
               },
               {
                 "id": 2,
-                "name": "scan_name",
+                "name": "scan_config_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Name,store\"sql:\"unique\""
+                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"unique\""
                   }
                 ]
               },
@@ -4539,6 +4522,11 @@
                     "value": "sql:\"ignore_labels(User ID)\""
                   }
                 ]
+              },
+              {
+                "id": 15,
+                "name": "description",
+                "type": "string"
               }
             ],
             "maps": [
@@ -4733,12 +4721,12 @@
               },
               {
                 "id": 14,
-                "name": "scan_id",
+                "name": "scan_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanV2:id),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Name,hidden\"sql:\"fk(ComplianceOperatorScanV2:scan_name),no-fk-constraint\""
                   }
                 ]
               },
@@ -4749,7 +4737,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Name,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_name),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Config Name,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
@@ -4806,8 +4794,7 @@
               {
                 "id": 3,
                 "name": "warnings",
-                "type": "string",
-                "is_repeated": true
+                "type": "string"
               }
             ]
           },
@@ -4827,17 +4814,17 @@
               },
               {
                 "id": 2,
-                "name": "scan_config_id",
+                "name": "scan_config_name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint\""
                   }
                 ]
               },
               {
-                "id": 14,
+                "id": 13,
                 "name": "scan_name",
                 "type": "string"
               },
@@ -4853,21 +4840,19 @@
                 ]
               },
               {
-                "id": 13,
-                "name": "cluster_name",
+                "id": 14,
+                "name": "warnings",
                 "type": "string"
               },
               {
                 "id": 4,
                 "name": "errors",
-                "type": "string",
-                "is_repeated": true
+                "type": "string"
               },
               {
                 "id": 5,
                 "name": "profile",
-                "type": "ProfileShim",
-                "is_repeated": true
+                "type": "ProfileShim"
               },
               {
                 "id": 8,
@@ -7133,12 +7118,6 @@
               7,
               8,
               9
-            ],
-            "options": [
-              {
-                "name": "(gogoproto.goproto_unrecognized)",
-                "value": "false"
-              }
             ]
           },
           {
@@ -10716,46 +10695,6 @@
                     "is_repeated": true
                   }
                 ]
-              }
-            ]
-          }
-        ],
-        "package": {
-          "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
-      }
-    },
-    {
-      "protopath": "license.proto",
-      "def": {
-        "messages": [
-          {
-            "name": "StoredLicenseKey",
-            "fields": [
-              {
-                "id": 1,
-                "name": "license_key",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "license_id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "selected",
-                "type": "bool"
               }
             ]
           }
@@ -15620,10 +15559,6 @@
           {
             "name": "java_package",
             "value": "io.stackrox.proto.storage"
-          },
-          {
-            "name": "(gogoproto.equal_all)",
-            "value": "true"
           }
         ]
       }
@@ -18223,6 +18158,18 @@
               {
                 "name": "ADMISSION_CONTROL_SERVICE",
                 "integer": 11
+              },
+              {
+                "name": "SCANNER_V4_INDEXER_SERVICE",
+                "integer": 13
+              },
+              {
+                "name": "SCANNER_V4_MATCHER_SERVICE",
+                "integer": 14
+              },
+              {
+                "name": "SCANNER_V4_DB_SERVICE",
+                "integer": 15
               }
             ]
           }

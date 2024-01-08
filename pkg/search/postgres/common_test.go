@@ -404,3 +404,325 @@ func TestSelectQueries(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteQueries(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		ctx           context.Context
+		q             *v1.Query
+		expectedError string
+		expectedQuery string
+	}{
+		{
+			desc: "base schema; delete 1",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments where deployments.Name = $1",
+		},
+		{
+			desc: "base schema; delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
+			expectedQuery: "delete from deployments",
+		},
+		{
+			desc: "base schema; delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments where deployments.Name = $1",
+		},
+		{
+			desc: "child schema; multiple delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1",
+		},
+		{
+			desc: "base schema and child schema; delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id",
+		},
+		{
+			desc: "base schema and child schema conjunction query; delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
+			desc: "derived field delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).ProtoQuery(),
+			expectedQuery: "delete from deployments",
+		},
+		{
+			desc: "derived field delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)",
+		},
+		{
+			desc:          "nil query",
+			expectedQuery: "delete from deployments",
+		},
+		{
+			desc: "base schema; delete w/ conjunction",
+			q: func() *v1.Query {
+				q := search.ConjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.DeploymentName, "dep").ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
+				)
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				return q
+			}(),
+			expectedQuery: "delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2)",
+		},
+		{
+			desc: "base schema; delete w/ where; image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "fake-image",
+				Level: v1.SearchCategory_IMAGES,
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"where deployments.Name = $1",
+		},
+		{
+			desc: "base schema; delete w/ multiple scopes",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    uuid.NewV4().String(),
+				Level: v1.SearchCategory_NAMESPACES,
+				Parent: &scoped.Scope{
+					ID:    uuid.NewV4().String(),
+					Level: v1.SearchCategory_CLUSTERS,
+				},
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"where deployments.Name = $1",
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := c.ctx
+			if c.ctx == nil {
+				ctx = context.Background()
+			}
+
+			sacCtx := sac.WithAllAccess(ctx)
+			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema, DELETE)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			actual := actualQ.AsSQL()
+			assert.Equal(t, c.expectedQuery, actual)
+		})
+	}
+}
+
+func TestDeleteReturningIDsQueries(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		ctx           context.Context
+		q             *v1.Query
+		expectedError string
+		expectedQuery string
+	}{
+		{
+			desc: "base schema; delete 1",
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments where deployments.Name = $1 " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "base schema; delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "base schema; delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments where deployments.Name = $1 " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "child schema; multiple delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.Privileged),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where deployments_containers.Image_Name_FullName = $1 " +
+				"returning distinct(deployments.Id::text) as Deployment_ID",
+		},
+		{
+			desc: "base schema and child schema; delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id " +
+				"returning distinct(deployments.Id::text) as Deployment_ID",
+		},
+		{
+			desc: "base schema and child schema conjunction query; delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName),
+					search.NewQuerySelect(search.ImageName),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2) " +
+				"returning distinct(deployments.Id::text) as Deployment_ID",
+		},
+		{
+			desc: "derived field delete",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "derived field delete w/ where",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.DeploymentName).AggrFunc(aggregatefunc.Count).Distinct(),
+				).
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete " +
+				"from deployments inner join deployments_containers " +
+				"on deployments.Id = deployments_containers.deployments_Id " +
+				"where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2) " +
+				"returning distinct(deployments.Id::text) as Deployment_ID",
+		},
+		{
+			desc: "nil query",
+			expectedQuery: "delete from deployments " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "base schema; delete w/ conjunction",
+			q: func() *v1.Query {
+				q := search.ConjunctionQuery(
+					search.NewQueryBuilder().
+						AddExactMatches(search.DeploymentName, "dep").ProtoQuery(),
+					search.NewQueryBuilder().
+						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
+				)
+				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				return q
+			}(),
+			expectedQuery: "delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2) " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "base schema; delete w/ where; image scope",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    "fake-image",
+				Level: v1.SearchCategory_IMAGES,
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"where deployments.Name = $1 " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+		{
+			desc: "base schema; delete w/ multiple scopes",
+			ctx: scoped.Context(context.Background(), scoped.Scope{
+				ID:    uuid.NewV4().String(),
+				Level: v1.SearchCategory_NAMESPACES,
+				Parent: &scoped.Scope{
+					ID:    uuid.NewV4().String(),
+					Level: v1.SearchCategory_CLUSTERS,
+				},
+			}),
+			q: search.NewQueryBuilder().
+				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			expectedQuery: "delete from deployments " +
+				"where deployments.Name = $1 " +
+				"returning deployments.Id::text as Deployment_ID",
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := c.ctx
+			if c.ctx == nil {
+				ctx = context.Background()
+			}
+
+			sacCtx := sac.WithAllAccess(ctx)
+			actualQ, err := standardizeQueryAndPopulatePath(sacCtx, c.q, schema.DeploymentsSchema, DELETERETURNINGIDS)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			actual := actualQ.AsSQL()
+			assert.Equal(t, c.expectedQuery, actual)
+		})
+	}
+}

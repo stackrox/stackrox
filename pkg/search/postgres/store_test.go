@@ -359,7 +359,7 @@ func TestDeleteByQuery(t *testing.T) {
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
@@ -370,8 +370,51 @@ func TestDeleteByQuery(t *testing.T) {
 		assert.NoError(t, errBefore)
 	}
 
-	deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
+
+	for idx, obj := range testObjects {
+		objAfter, fetchedAfter, errAfter := store.Get(ctx, pkGetter(obj))
+		assert.NoError(t, errAfter)
+		if idx == 1 || idx == 3 {
+			assert.Nil(t, objAfter)
+			assert.False(t, fetchedAfter)
+		} else {
+			assert.Equal(t, obj, objAfter)
+			assert.True(t, fetchedAfter)
+		}
+	}
+}
+
+func TestDeleteByQueryReturningIDs(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+
+	testObjects := sampleTestSingleKeyStructArray("DeleteByQuery")
+	query2 := getMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
+	query4 := getMatchFieldQuery("Test Key", "TestDeleteByQuery4")
+	query := getDisjunctionQuery(query2, query4)
+
+	queriedObjectsFromEmpty, errQueryFromEmpty := store.GetByQuery(ctx, query)
+	assert.NoError(t, errQueryFromEmpty)
+	assert.Empty(t, queriedObjectsFromEmpty)
+
+	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	assert.NoError(t, deleteFromEmptyErr)
+	assert.Empty(t, deletedIDsFromEmpty)
+
+	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	for _, obj := range testObjects {
+		objBefore, fetchedBefore, errBefore := store.Get(ctx, pkGetter(obj))
+		assert.Equal(t, obj, objBefore)
+		assert.True(t, fetchedBefore)
+		assert.NoError(t, errBefore)
+	}
+
+	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	assert.NoError(t, deleteFromPopulatedErr)
+	expectedIDs := []string{pkGetter(testObjects[1]), pkGetter(testObjects[3])}
+	assert.ElementsMatch(t, deletedIDsFromPopulated, expectedIDs)
 
 	for idx, obj := range testObjects {
 		objAfter, fetchedAfter, errAfter := store.Get(ctx, pkGetter(obj))

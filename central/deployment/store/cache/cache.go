@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -102,9 +103,11 @@ func (c *cacheImpl) Exists(_ context.Context, id string) (bool, error) {
 }
 
 func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Deployment, bool, error) {
-	c.lock.RLock()
-	deployment, ok := c.cache[id]
-	c.lock.RUnlock()
+	deployment, ok := concurrency.WithRLock2(&c.lock, func() (*storage.Deployment, bool) {
+		d, ok := c.cache[id]
+		return d, ok
+	})
+
 	if !ok {
 		return nil, false, nil
 	}

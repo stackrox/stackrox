@@ -42,10 +42,11 @@ func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *m
 }
 
 func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetVulnerabilities")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+	ctx = zlog.ContextWithValues(ctx, "hash_id", req.GetHashId())
 	// Get an index report to enrich: either using the indexer, or provided in the request.
 	var ir *claircore.IndexReport
 	var err error
@@ -66,10 +67,12 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	zlog.Info(ctx).Msg("getting vulnerabilities")
 	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
 	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
 	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
 	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
 		return nil, err
 	}
 	report.HashId = req.GetHashId()

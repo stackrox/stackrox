@@ -112,7 +112,7 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
 export_test_environment() {
     ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
     ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
-    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-core_bpf}"
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-lb}"
@@ -374,6 +374,7 @@ install_the_compliance_operator() {
         info "Reusing existing compliance operator deployment from $csv subscription"
     fi
 
+    wait_for_profile_bundles_to_be_ready
     oc get csv -n openshift-compliance
 }
 
@@ -635,6 +636,24 @@ remove_existing_stackrox_resources() {
         kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
     # (prefix output to avoid triggering prow log focus)
     ) 2>&1 | sed -e 's/^/out: /' || true
+}
+
+remove_compliance_operator_resources() {
+    info "Will remove any existing compliance operator resources"
+    if kubectl get crd compliancecheckresults.compliance.openshift.io; then
+        (
+            kubectl -n openshift-compliance delete ssb --all --wait --ignore-not-found=true
+            # The profilebundles must be deleted before the csv. If not, the finalizers
+            # will prevent the profilebundles from deleting because the CRDs are gone.
+            kubectl -n openshift-compliance delete pb --all --wait --ignore-not-found=true
+            kubectl -n openshift-compliance delete sub --all  --ignore-not-found=true
+            kubectl -n openshift-compliance delete csv --all  --ignore-not-found=true
+            kubectl -n openshift-compliance delete operatorgroup --all  --ignore-not-found=true
+            kubectl -n openshift-marketplace delete catalogsource compliance-operator  --ignore-not-found=true
+            kubectl delete namespace openshift-compliance --wait --ignore-not-found=true
+        # (prefix output to avoid triggering prow log focus)
+        ) 2>&1 | sed -e 's/^/out: /' || true
+    fi
 }
 
 wait_for_api() {
@@ -936,6 +955,28 @@ wait_for_object_to_appear() {
     done
 
     return 0
+}
+
+wait_for_profile_bundles_to_be_ready() {
+    wait_for_object_to_appear openshift-compliance profilebundle/ocp4
+    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4
+    for pb in $(oc get pb -n openshift-compliance -o jsonpath="{.items[*].metadata.name}"); do
+        local delay="300"
+        local waitInterval=10
+        local tries=$(( delay / waitInterval ))
+        local count=0
+        until [ "$(oc get pb "$pb" -n openshift-compliance -o jsonpath="{.status.dataStreamStatus}")" = "VALID" ]; do
+            count=$((count + 1))
+            if [[ $count -ge "$tries" ]]; then
+                info "Failed to validate $pb profilebundle after $count tries"
+                oc get pb "$pb" -n openshift-compliance
+                return 1
+            fi
+            info "Validating $pb profilebundle"
+            sleep "$waitInterval"
+        done
+        info "Validated $pb profilebundle"
+    done
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

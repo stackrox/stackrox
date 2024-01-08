@@ -478,7 +478,7 @@ func CheckSecretsInEnv(ctx framework.ComplianceContext) {
 // CheckRuntimeSupportInCluster checks if runtime is enabled and collector
 // is sending process and network data.
 func CheckRuntimeSupportInCluster(ctx framework.ComplianceContext) {
-	if ctx.Data().Cluster().GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION && ctx.Data().HasProcessIndicators() && len(ctx.Data().NetworkFlows()) > 0 {
+	if ctx.Data().Cluster().GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION && ctx.Data().HasProcessIndicators() && len(ctx.Data().NetworkFlowsWithDeploymentDst()) > 0 {
 		framework.PassNowf(ctx, "Runtime support is enabled (or collector service is running) for cluster %s. Network visualization for active network connections is possible.", ctx.Data().Cluster().GetName())
 	}
 	framework.Failf(ctx, "Runtime support is not enabled (or collector service is not running) for cluster %s. Network visualization for active network connections is not possible.", ctx.Data().Cluster().GetName())

@@ -24,6 +24,7 @@ type DataStore interface {
 	AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error)
 	UpdateNotifier(ctx context.Context, notifier *storage.Notifier) error
 	UpsertNotifier(ctx context.Context, notifier *storage.Notifier) (string, error)
+	UpsertManyNotifiers(ctx context.Context, notifiers []*storage.Notifier) error
 	RemoveNotifier(ctx context.Context, id string) error
 }
 

@@ -106,7 +106,7 @@ get_spec_log_url() {
     else
         url="${url}/logs"
     fi
-    url="${url}/${JOB_NAME}/${BUILD_ID}/artifacts/${JOB_NAME_SAFE}/stackrox-e2e/artifacts"
+    url="${url}/${JOB_NAME}/${BUILD_ID}/artifacts/${JOB_NAME_SAFE}/${OPENSHIFT_CI_STEP_NAME}/artifacts"
     url="${url}/${log##"${ARTIFACT_DIR}"/}"
 
     echo "${url}"

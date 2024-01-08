@@ -76,6 +76,13 @@ var (
 		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
 	})
 
+	networkFlowBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_buffer_size",
+		Help:      "A gauge of the current size of the Network Flow buffer in Sensor (updated every 30s)",
+	})
+
 	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -254,6 +261,11 @@ func IncrementTotalResourcesSyncSent(value int) {
 // SetResourcesSyncedSize sets the latest resources synced message size transmitted to central.
 func SetResourcesSyncedSize(size int) {
 	resourcesSyncedMessageSize.Set(float64(size))
+}
+
+// SetNetworkFlowBufferSizeGauge set network flow buffer size gauge.
+func SetNetworkFlowBufferSizeGauge(v int) {
+	networkFlowBufferGauge.Set(float64(v))
 }
 
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed

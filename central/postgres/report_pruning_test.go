@@ -90,7 +90,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobOneDownloa
 		newReportSnapshot(config3, "r3", 100*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config4, "r4", 100*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	s.pruneAndAssert(fakeIDToActualID, set.NewStringSet())
 }
 
@@ -102,7 +102,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobOneEmail()
 		newReportSnapshot(config3, "r3", 100*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config4, "r4", 100*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	s.pruneAndAssert(fakeIDToActualID, set.NewStringSet())
 }
 
@@ -119,7 +119,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobMixedMetho
 		newReportSnapshot(config3, "r7", 90*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config4, "r8", 90*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet("r1", "r2", "r3", "r4")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -137,7 +137,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobMixedMetho
 		newReportSnapshot(config3, "r7", 90*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_FAILURE),
 		newReportSnapshot(config4, "r8", 90*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_FAILURE),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet("r5", "r6", "r7", "r8")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -164,7 +164,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobMixedMetho
 	for _, onDemandEmail := range onDemandEmails {
 		onDemandEmail.ReportStatus.ReportRequestType = storage.ReportStatus_ON_DEMAND
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet("r2", "r4", "r5", "r7", "r9", "r11")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -182,7 +182,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobMultipleEm
 		newReportSnapshot(config3, "r7", 90*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config4, "r8", 90*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet("r1", "r2", "r3", "r4")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -195,8 +195,24 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteUnfinishedOldJobs() {
 		newReportSnapshot(config3, "r3", 100*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_PREPARING),
 		newReportSnapshot(config4, "r4", 100*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_WAITING),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet()
+	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
+}
+
+func (s *ReportHistoryPruningSuite) TestMustDeleteOldScheduledJobBlob() {
+	// Older than retention window; delivered and blob
+	snapshots := []*storage.ReportSnapshot{
+		newReportSnapshot(config1, "r1", 10*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
+		newReportSnapshot(config1, "r2", 2*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
+		newReportSnapshot(config1, "r3", 20*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
+	}
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
+	blobs := []*storage.Blob{
+		newBlob(common.GetReportBlobPath(config1, fakeIDToActualID["r3"]), []byte("test-blob")),
+	}
+	s.prepareDataStoresBlob(blobs)
+	expectedDeletions := set.NewStringSet("r1")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
 
@@ -209,7 +225,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteUnfinishedJobsInRetentionWi
 		newReportSnapshot(config4, "r41", 4*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_WAITING),
 		newReportSnapshot(config1, "r42", 2*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_GENERATED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet()
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -222,7 +238,7 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteDeliveredJobsInRetentionWin
 		newReportSnapshot(config3, "r3", 3*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config4, "r4", 4*24*time.Hour, storage.ReportStatus_EMAIL, storage.ReportStatus_DELIVERED),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, nil)
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	expectedDeletions := set.NewStringSet()
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
@@ -235,18 +251,20 @@ func (s *ReportHistoryPruningSuite) TestMustNotDeleteIfBlobsExist() {
 		newReportSnapshot(config3, "r31", 64*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 		newReportSnapshot(config2, "r32", 32*24*time.Hour, storage.ReportStatus_DOWNLOAD, storage.ReportStatus_DELIVERED),
 	}
+
+	fakeIDToActualID := s.prepareDataStoresSnapshots(snapshots)
 	blobs := []*storage.Blob{
-		newBlob(common.GetReportBlobPath(config2, "r21"), []byte("test-blob")),
-		newBlob(common.GetReportBlobPath(config2, "r22"), []byte("test-blob")),
-		newBlob(common.GetReportBlobPath(config3, "r31"), []byte("test-blob")),
-		newBlob(common.GetReportBlobPath(config3, "r32"), []byte("test-blob")),
+		newBlob(common.GetReportBlobPath(config2, fakeIDToActualID["r21"]), []byte("test-blob")),
+		newBlob(common.GetReportBlobPath(config2, fakeIDToActualID["r22"]), []byte("test-blob")),
+		newBlob(common.GetReportBlobPath(config3, fakeIDToActualID["r31"]), []byte("test-blob")),
+		newBlob(common.GetReportBlobPath(config3, fakeIDToActualID["r32"]), []byte("test-blob")),
 	}
-	fakeIDToActualID := s.prepareDataStores(snapshots, blobs)
+	s.prepareDataStoresBlob(blobs)
 	expectedDeletions := set.NewStringSet("r5", "r6", "r7", "r8")
 	s.pruneAndAssert(fakeIDToActualID, expectedDeletions)
 }
 
-func (s *ReportHistoryPruningSuite) prepareDataStores(snapshots []*storage.ReportSnapshot, blobs []*storage.Blob) map[string]string {
+func (s *ReportHistoryPruningSuite) prepareDataStoresSnapshots(snapshots []*storage.ReportSnapshot) map[string]string {
 	fakeIDToActualID := make(map[string]string)
 	for _, snapshot := range snapshots {
 		fakeID := snapshot.GetReportId()
@@ -255,12 +273,14 @@ func (s *ReportHistoryPruningSuite) prepareDataStores(snapshots []*storage.Repor
 		fakeIDToActualID[fakeID] = actualID
 	}
 
+	return fakeIDToActualID
+}
+
+func (s *ReportHistoryPruningSuite) prepareDataStoresBlob(blobs []*storage.Blob) {
 	for _, blob := range blobs {
 		data := bytes.NewBuffer([]byte("test-blob"))
 		s.Nil(s.blobDS.Upsert(s.ctx, blob, data))
 	}
-
-	return fakeIDToActualID
 }
 
 func (s *ReportHistoryPruningSuite) storeSnapshots(snapshot *storage.ReportSnapshot) string {

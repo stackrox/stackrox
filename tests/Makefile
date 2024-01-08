@@ -22,9 +22,9 @@ external-backup-tests:
 	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -v -run TestGCSExternalBackup 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=external-backup-tests-results
 
-.PHONY: compliance-tests
-compliance-tests:
-	../scripts/go-test.sh -cover -v -run compliance_operator_test.go 2>&1 | tee test.log
-	@$(MAKE) report JUNIT_OUT=compliance-tests-results
+.PHONY: compliance-v2-tests
+compliance-v2-tests:
+	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -cover -v -run TestComplianceV2 2>&1 | tee test.log
+	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
 include ../make/stackrox.mk

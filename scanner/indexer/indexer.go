@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"crypto/sha512"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
@@ -62,6 +64,18 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
 
+	indexer, err := newLibindex(ctx, cfg, store, locker)
+	if err != nil {
+		return nil, err
+	}
+
+	return &localIndexer{
+		libIndex:        indexer,
+		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
+	}, nil
+}
+
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
 	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
@@ -84,15 +98,19 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
 
+	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`{"repo2cpe_mapping_url": "%s"}`, indexerCfg.RepositoryToCPEURL))),
+	}
+	opts.ScannerConfig.Package = map[string]func(interface{}) error{
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`{"name2repos_mapping_url": "%s"}`, indexerCfg.NameToCPEURL))),
+	}
+
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
 
-	return &localIndexer{
-		libIndex:        indexer,
-		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
-	}, nil
+	return indexer, nil
 }
 
 // Close closes the indexer.
@@ -110,7 +128,7 @@ func (i *localIndexer) IndexContainerImage(
 	imageURL string,
 	opts ...Option,
 ) (*claircore.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, err
@@ -255,7 +273,7 @@ func getContainerImageLayers(ctx context.Context, ref name.Reference, o options)
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
 	// We expect input was sanitized, so all errors here are considered internal errors.
 	if imageURL == "" {
-		return nil, errors.New("invalid URL")
+		return nil, errors.New("invalid URL: empty")
 	}
 	// Parse image reference to ensure it is valid.
 	parsedURL, err := url.Parse(imageURL)
@@ -269,7 +287,7 @@ func parseContainerImageURL(imageURL string) (name.Reference, error) {
 		parseOpts = append(parseOpts, name.Insecure)
 	case "https":
 	default:
-		return nil, errors.New("invalid URL")
+		return nil, fmt.Errorf("invalid URL scheme %q", parsedURL.Scheme)
 	}
 	// Strip the URL scheme:// and parse host/path as an image reference.
 	imageRef := strings.TrimPrefix(imageURL, parsedURL.Scheme+"://")
@@ -311,4 +329,10 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
+}
+
+func deserializeFunc(jsonData []byte) func(interface{}) error {
+	return func(v interface{}) error {
+		return json.Unmarshal(jsonData, v)
+	}
 }

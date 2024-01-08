@@ -1,9 +1,7 @@
 import React from 'react';
-import { Router } from 'react-router-dom';
-import { ApolloProvider } from '@apollo/client';
-import { createBrowserHistory } from 'history';
 
-import configureApolloClient from 'configureApolloClient';
+import ComponentTestProviders from 'test-utils/ComponentProviders';
+import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import AgingImages from './AgingImages';
 
@@ -27,16 +25,12 @@ const mock = {
 };
 
 function setup() {
-    const history = createBrowserHistory();
-
-    cy.intercept('POST', '/api/graphql?opname=agingImagesQuery', (req) => req.reply(mock));
+    cy.intercept('POST', graphqlUrl('agingImagesQuery'), (req) => req.reply(mock));
 
     cy.mount(
-        <Router history={history}>
-            <ApolloProvider client={configureApolloClient()}>
-                <AgingImages />
-            </ApolloProvider>
-        </Router>
+        <ComponentTestProviders>
+            <AgingImages />
+        </ComponentTestProviders>
     );
 }
 

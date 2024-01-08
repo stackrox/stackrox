@@ -3,17 +3,9 @@ package internaltostorage
 import (
 	"fmt"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-)
-
-const (
-	ocpComplianceLabelsKey = "compliance.openshift.io/"
-)
-
-var (
-	productKey     = ocpComplianceLabelsKey + "product"
-	productTypeKey = ocpComplianceLabelsKey + "product-type"
 )
 
 // ComplianceOperatorProfileV2 converts internal api profiles to V2 storage profiles
@@ -36,12 +28,12 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		ProfileId:      internalMsg.GetProfileId(),
 		Name:           internalMsg.GetName(),
 		ProfileVersion: internalMsg.GetProfileVersion(),
-		ProductType:    internalMsg.GetAnnotations()[productTypeKey],
+		ProductType:    internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation],
 		Labels:         internalMsg.GetLabels(),
 		Annotations:    internalMsg.GetAnnotations(),
 		Description:    internalMsg.GetDescription(),
 		Rules:          rules,
-		Product:        internalMsg.GetAnnotations()[productKey],
+		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
 		Title:          internalMsg.GetTitle(),
 		Values:         internalMsg.GetValues(),
 	}

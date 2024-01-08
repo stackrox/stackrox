@@ -4,9 +4,11 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
@@ -28,7 +31,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ComplianceIntegrationsSchema
-	targetResource = resources.Integration
+	targetResource = resources.Compliance
 )
 
 type storeType = storage.ComplianceIntegration
@@ -38,7 +41,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
@@ -62,7 +65,7 @@ func New(db postgres.DB) Store {
 		copyFromComplianceIntegrations,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		isUpsertAllowed,
 		targetResource,
 	)
 }
@@ -80,6 +83,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceIntegrations with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
+}
 
 func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceIntegration) error {
 
@@ -93,12 +113,10 @@ func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceI
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetVersion(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		obj.GetNamespace(),
-		pgutils.NilOrUUID(obj.GetNamespaceId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, Namespace, NamespaceId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -119,8 +137,6 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		"id",
 		"version",
 		"clusterid",
-		"namespace",
-		"namespaceid",
 		"serialized",
 	}
 
@@ -139,8 +155,6 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetVersion(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetNamespace(),
-			pgutils.NilOrUUID(obj.GetNamespaceId()),
 			serialized,
 		})
 

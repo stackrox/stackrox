@@ -29,7 +29,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		policyDetector:    mockDetector,
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
-		sensorUpdates:     make(chan *message.ExpiringMessage),
+		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,

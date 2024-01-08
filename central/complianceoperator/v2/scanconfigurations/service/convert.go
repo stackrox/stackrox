@@ -51,7 +51,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}
 
 	return &v2.ComplianceScanConfiguration{
-		ScanName: scanConfig.GetScanName(),
+		ScanName: scanConfig.GetScanConfigName(),
 		Clusters: clusters,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
@@ -75,7 +75,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 	}
 
 	return &storage.ComplianceOperatorScanConfigurationV2{
-		ScanName:               scanConfig.GetScanName(),
+		ScanConfigName:         scanConfig.GetScanName(),
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
@@ -158,7 +158,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanName(),
+		ScanName: scanConfig.GetScanConfigName(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
@@ -195,7 +195,7 @@ func convertStorageScanConfigToV2ScanStatuses(ctx context.Context, scanConfigs [
 	for _, scanConfig := range scanConfigs {
 		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanName())
+			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanConfigName())
 		}
 
 		scanStatuses = append(scanStatuses, converted)

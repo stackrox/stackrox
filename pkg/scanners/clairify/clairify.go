@@ -37,9 +37,6 @@ import (
 )
 
 const (
-	// TypeString is the name of the Clairify scanner.
-	TypeString = "clairify"
-
 	// defaultClientTimeout default timeout for scanner calls.
 	defaultClientTimeout = 5 * time.Minute
 
@@ -65,14 +62,14 @@ func GetScannerEndpoint() string {
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
-	return TypeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
 		return newScanner(integration, set)
 	}
 }
 
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
 func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
-	return TypeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
 		return newNodeScanner(integration)
 	}
 }
@@ -483,7 +480,7 @@ func (c *clairify) Match(image *storage.ImageName) bool {
 
 // Type returns the stringified type of this scanner
 func (c *clairify) Type() string {
-	return TypeString
+	return scannerTypes.Clairify
 }
 
 // Name returns the integration's name
@@ -505,7 +502,7 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner
 func OrchestratorScannerCreator() (string, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error)) {
-	return TypeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
 		return newOrchestratorScanner(integration)
 	}
 }

@@ -465,9 +465,9 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		go a.serveBlocking(srvAndLis, errC)
 	}
 
-	a.listenersLock.Lock()
-	a.listeners = allSrvAndLiss
-	a.listenersLock.Unlock()
+	concurrency.WithLock(&a.listenersLock, func() {
+		a.listeners = allSrvAndLiss
+	})
 
 	if startedSig != nil {
 		startedSig.Signal()

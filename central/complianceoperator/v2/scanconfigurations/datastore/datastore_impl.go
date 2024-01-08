@@ -18,9 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// TODO(ROX-19742):  Figure out SAC for the configurations
 var (
-	scanConfigurationsSAC = sac.ForResource(resources.ComplianceOperator)
+	scanConfigurationsSAC = sac.ForResource(resources.Compliance)
 )
 
 type datastoreImpl struct {
@@ -51,7 +50,7 @@ func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName s
 	}
 
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, scanName).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scanName).ProtoQuery())
 	if err != nil {
 		return false, err
 	}
@@ -105,10 +104,10 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 	if !found {
 		return "", errors.Errorf("Scan configuration id %q not found", id)
 	}
-	scanConfigName := scanConfig.GetScanName()
+	scanConfigName := scanConfig.GetScanConfigName()
 
 	// remove scan data from scan status table first
-	err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, id).ProtoQuery())
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", id)

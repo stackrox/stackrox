@@ -166,10 +166,6 @@ func (c *configuration) getCredentials() (*storage.AWSSecurityHub_Credentials, e
 		return c.descriptor.GetAwsSecurityHub().GetCredentials(), nil
 	}
 
-	if c.descriptor.GetNotifierSecret() == "" {
-		return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", c.descriptor.GetName())
-	}
-
 	decCredsStr, err := c.cryptoCodec.Decrypt(c.cryptoKey, c.descriptor.GetNotifierSecret())
 	if err != nil {
 		return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())

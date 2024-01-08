@@ -216,6 +216,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Annotations:    nil,
 		CreatedTime:    createdTime,
 		ScanConfigName: mockSuiteName,
+		ScanName:       mockScanName,
 		Rationale:      "test rationale",
 		ValuesUsed:     []string{"var1", "var2"},
 		Warnings:       []string{"warning1", "warning2"},
