@@ -225,7 +225,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUseCloudBackupIntegrations)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanDisplayDeclarativeConfigHealth)
-			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanUpdateCert)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUpdateCert)
 		})
 	}
 }
