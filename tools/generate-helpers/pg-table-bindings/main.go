@@ -100,19 +100,19 @@ type properties struct {
 	// Indicates the directory in which the generated schema file must go.
 	SchemaDirectory string
 
-	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores
+	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores.
 	GetAll bool
 
-	// Indicates that we should just generate the singleton store
+	// Indicates that we should just generate the singleton store.
 	SingletonStore bool
 
-	// Migration root
+	// Migration root.
 	MigrateRoot string
 
-	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"")
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"").
 	MigrateFrom string
 
-	// The unique sequence number to migrate all tables to Postgres
+	// The unique sequence number to migrate all tables to Postgres.
 	MigrateSeq int
 
 	// Indicates the scope of search. Set this field to limit search to only some categories in case of overlapping
@@ -122,19 +122,19 @@ type properties struct {
 	// Indicates whether stores should use Postgres copyFrom operation or not.
 	NoCopyFrom bool
 
-	// Generate conversion functions with schema
+	// Generate conversion functions with schema.
 	ConversionFuncs bool
 
-	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>
+	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>.
 	Cycle string
 
 	// Indicates the batch size for migrating records.
 	MigrationBatchSize int
 
-	// The feature flag that specifies if the schema should be registered
+	// The feature flag that specifies if the schema should be registered.
 	FeatureFlag string
 
-	// Indicates the store should be mirrored in memory
+	// Indicates the store should be mirrored in memory.
 	CachedStore bool
 }
 
