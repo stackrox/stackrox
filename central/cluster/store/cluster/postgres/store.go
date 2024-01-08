@@ -113,10 +113,11 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
+		obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, Status_ProviderMetadata_Cluster_Type, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
