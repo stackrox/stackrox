@@ -435,16 +435,3 @@ func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout
 		Transport: transport,
 	}, nil
 }
-
-// Parameters for keep alive.
-func keepAliveDialOption() grpc.DialOption {
-	// Since we are holding open a GRPC stream, enable keep alive.
-	// Ping every minute of inactivity, and wait 30 seconds. Do this even when no streams are open (though
-	// one should always be open with central.)
-	params := keepalive.ClientParameters{
-		Time:                10 * time.Second,
-		Timeout:             30 * time.Second,
-		PermitWithoutStream: true,
-	}
-	return grpc.WithKeepaliveParams(params)
-}
