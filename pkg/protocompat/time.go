@@ -41,3 +41,8 @@ func CompareTimestamps(t1 *gogoTimestamp.Timestamp, t2 *gogoTimestamp.Timestamp)
 func DurationFromProto(d *gogoTimestamp.Duration) (time.Duration, error) {
 	return gogoTimestamp.DurationFromProto(d)
 }
+
+// DurationProto converts a time.Duration to a proto Duration.
+func DurationProto(d time.Duration) *gogoTimestamp.Duration {
+	return gogoTimestamp.DurationProto(d)
+}

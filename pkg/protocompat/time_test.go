@@ -85,3 +85,13 @@ func TestDurationFromProto(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedDuration, timeDuration)
 }
+
+func TestDurationProto(t *testing.T) {
+	timeDuration := 1000000005 * time.Nanosecond
+	expectedProtoDuration := &types.Duration{
+		Seconds: 1,
+		Nanos:   5,
+	}
+	protoDuration := DurationProto(timeDuration)
+	assert.Equal(t, expectedProtoDuration, protoDuration)
+}
