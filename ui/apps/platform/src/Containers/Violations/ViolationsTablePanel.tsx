@@ -277,6 +277,7 @@ function ViolationsTablePanel({
                                     {hasActions && (
                                         <Td>
                                             <ActionsColumn
+                                                menuAppendTo={() => document.body}
                                                 isDisabled={actionItems.length === 0}
                                                 items={actionItems}
                                             />
