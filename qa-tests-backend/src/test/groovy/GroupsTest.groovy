@@ -242,7 +242,7 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProviderName         | key   | id        | getIfFromGroup       | value | expectGroup | expectGroups
+        authProviderName         | key   | id        | getIdFromGroup       | value | expectGroup | expectGroups
         "groups-test-provider-1" | null  | null      | "QAGroupTest-Group1" | null  | "Group1"   | ["Group1", "Group2"]
         null                     | "foo" | "some-id" | null                 | "bar" | null       | ["Group2", "Group3"]
         "groups-test-provider-1" | "foo" | null      | "QAGroupTest-Group2" | "bar" | "Group2"    | ["Group2"]
