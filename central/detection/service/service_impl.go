@@ -171,7 +171,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 
 		enrichmentContext.ClusterID = clusterID
-
 	}
 
 	enrichmentContext.FetchOpt = fetchOpt
@@ -229,10 +228,10 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
-		log.Warnf("Could not determine applied network policies for deployment %s. Continuing with deployment enrichment.", deployment.GetName())
+		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment.", deployment.GetName())
+	} else {
+		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
 	}
-
-	log.Debugf("Determined applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
@@ -257,7 +256,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
 	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
 	if err != nil {
-		return nil, errox.InvalidArgs.New("failed to look up network policies for deployment").CausedBy(err)
+		return nil, errox.InvalidArgs.New("failed to find network policies for deployment").CausedBy(err)
 	}
 	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
@@ -359,6 +358,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 		Delegable:       true,
+		Namespace:       "default",
 	}
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
@@ -376,8 +376,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.ClusterID = clusterID
 	}
 
-	ns := req.GetNamespace()
-	if ns != "" {
+	if ns := req.GetNamespace(); ns != "" {
 		eCtx.Namespace = ns
 	}
 
