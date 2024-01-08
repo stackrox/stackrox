@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -34,7 +35,7 @@ func getRolesToUpdate(db *gorocksdb.DB) ([]*storage.Role, error) {
 	var roles []*storage.Role
 	for it.Seek(rolesBucket); it.ValidForPrefix(rolesBucket); it.Next() {
 		role := &storage.Role{}
-		if err := proto.Unmarshal(it.Value().Data(), role); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), role); err != nil {
 			return nil, errors.Wrapf(err, "Failed to unmarshal role data for key %v", it.Key().Data())
 		}
 

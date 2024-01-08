@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -43,7 +44,7 @@ func updateVulnSnoozePermissions(databases *types.Databases) error {
 		key := it.Key().Copy()
 
 		var permSet storage.PermissionSet
-		if err := proto.Unmarshal(it.Value().Data(), &permSet); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), &permSet); err != nil {
 			return errors.Wrapf(err, "unmarshaling permission set %s", key)
 		}
 		accessMap := permSet.GetResourceToAccess()

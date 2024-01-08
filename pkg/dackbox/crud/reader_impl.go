@@ -28,7 +28,7 @@ func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]
 	err := dackTxn.BucketForEach(prefix, false, func(k, v []byte) error {
 		// Read in the base data to the result.
 		msg := rc.allocFunc()
-		err := proto.Unmarshal(v, msg)
+		err := protocompat.Unmarshal(v, msg)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (protocom
 	}
 
 	result := rc.allocFunc()
-	if err := proto.Unmarshal(value, result); err != nil {
+	if err := protocompat.Unmarshal(value, result); err != nil {
 		return nil, err
 	}
 	return result, nil

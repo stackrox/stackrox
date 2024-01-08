@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	bolt "go.etcd.io/bbolt"
@@ -60,7 +61,7 @@ func fetchGroupsToMigrate(db *bolt.DB) (groupsStoredByCompositeKey []groupStored
 		return bucket.ForEach(func(k, v []byte) error {
 			// 1. Try to unmarshal the stored value to the group proto. If it can be successfully unmarshalled, then
 			// 	  it is stored using the ID as key instead of the serialized key.
-			if err = proto.Unmarshal(v, &storage.Group{}); err == nil {
+			if err = protocompat.Unmarshal(v, &storage.Group{}); err == nil {
 				return nil
 			}
 

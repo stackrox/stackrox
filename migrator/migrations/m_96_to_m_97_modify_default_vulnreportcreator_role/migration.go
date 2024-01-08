@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -38,7 +39,7 @@ func getPermissionSet(db *gorocksdb.DB) (*storage.PermissionSet, error) {
 	var err error
 	for it.Seek(rolesBucket); it.ValidForPrefix(rolesBucket); it.Next() {
 		r := &storage.Role{}
-		if err := proto.Unmarshal(it.Value().Data(), r); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), r); err != nil {
 			return nil, errors.Wrapf(err, "Failed to unmarshal role data for key %v", it.Key().Data())
 		}
 
@@ -46,7 +47,7 @@ func getPermissionSet(db *gorocksdb.DB) (*storage.PermissionSet, error) {
 			pit := db.NewIterator(gorocksdb.NewDefaultReadOptions())
 			for pit.Seek(permissionsBucket); pit.ValidForPrefix(permissionsBucket); pit.Next() {
 				p := &storage.PermissionSet{}
-				if err := proto.Unmarshal(pit.Value().Data(), p); err != nil {
+				if err := protocompat.Unmarshal(pit.Value().Data(), p); err != nil {
 					return nil, errors.Wrapf(err, "Failed to unmarshal permission data for key %v", pit.Key().Data())
 				}
 				if p.Id == r.PermissionSetId {

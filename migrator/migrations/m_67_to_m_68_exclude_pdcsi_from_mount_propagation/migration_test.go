@@ -11,6 +11,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
@@ -60,7 +61,7 @@ func TestPolicyMigration(t *testing.T) {
 		}
 		return bucket.ForEach(func(_, obj []byte) error {
 			policy := &storage.Policy{}
-			if err := proto.Unmarshal(obj, policy); err != nil {
+			if err := protocompat.Unmarshal(obj, policy); err != nil {
 				return err
 			}
 			migratedPolicies[policy.GetId()] = policy

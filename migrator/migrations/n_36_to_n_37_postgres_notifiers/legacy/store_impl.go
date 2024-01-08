@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	bolt "go.etcd.io/bbolt"
 )
@@ -37,7 +38,7 @@ func (b *storeImpl) GetAll(_ context.Context) ([]*storage.Notifier, error) {
 		b := tx.Bucket(notifierBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var notifier storage.Notifier
-			if err := proto.Unmarshal(v, &notifier); err != nil {
+			if err := protocompat.Unmarshal(v, &notifier); err != nil {
 				return err
 			}
 			notifiers = append(notifiers, &notifier)

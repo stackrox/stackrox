@@ -6,7 +6,6 @@ package postgres
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
@@ -570,7 +569,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	var image storage.Image
-	if err := proto.Unmarshal(data, &image); err != nil {
+	if err := protocompat.Unmarshal(data, &image); err != nil {
 		return nil, false, err
 	}
 
@@ -658,7 +657,7 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -679,7 +678,7 @@ func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -700,7 +699,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []str
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -721,7 +720,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -742,7 +741,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
+		if err := protocompat.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

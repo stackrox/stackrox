@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 )
@@ -60,7 +61,7 @@ func migrateScanner(db *bolt.DB) error {
 		}
 		return bucket.ForEach(func(k, v []byte) error {
 			var imageIntegration storage.ImageIntegration
-			if err := proto.Unmarshal(v, &imageIntegration); err != nil {
+			if err := protocompat.Unmarshal(v, &imageIntegration); err != nil {
 				return err
 			}
 			if imageIntegration.GetType() != "clairify" {

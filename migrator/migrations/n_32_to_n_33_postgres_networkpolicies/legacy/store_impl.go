@@ -8,6 +8,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -20,7 +21,7 @@ func (b *storeImpl) Walk(_ context.Context, fn func(np *storage.NetworkPolicy) e
 		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicy
-			if err := proto.Unmarshal(v, &np); err != nil {
+			if err := protocompat.Unmarshal(v, &np); err != nil {
 				return err
 			}
 			return fn(&np)

@@ -180,7 +180,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 		pbType := reflect.TypeOf(pbInterface)
 		value := reflect.New(pbType.Elem()).Interface()
 		pb, _ := value.(protocompat.Message)
-		err = proto.Unmarshal(it.Value().Data(), pb)
+		err = protocompat.Unmarshal(it.Value().Data(), pb)
 		if err != nil {
 			log.Printf("An object cannot be unmarshalled. Bucket: %s, possible ID: %s", bucketName, possibleObjectID)
 			log.Println(err)

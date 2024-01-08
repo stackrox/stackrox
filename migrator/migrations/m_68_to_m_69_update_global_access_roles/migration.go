@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"go.etcd.io/bbolt"
 )
 
@@ -85,7 +86,7 @@ func migrateRoles(db *bbolt.DB) error {
 		}
 		return bucket.ForEach(func(k, v []byte) error {
 			role := &storage.Role{}
-			if err := proto.Unmarshal(v, role); err != nil {
+			if err := protocompat.Unmarshal(v, role); err != nil {
 				log.WriteToStderrf("Failed to unmarshal role data for key %s: %v", k, err)
 				return nil
 			}

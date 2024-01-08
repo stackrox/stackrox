@@ -47,7 +47,7 @@ func ReadFromRocksDB(db *gorocksdb.DB, opts *gorocksdb.ReadOptions, msg protocom
 	if !slice.Exists() {
 		return nil, false, nil
 	}
-	if err := proto.Unmarshal(slice.Data(), msg); err != nil {
+	if err := protocompat.Unmarshal(slice.Data(), msg); err != nil {
 		return nil, false, errors.Wrapf(err, "deserializing object with key %s", key)
 	}
 	return msg, true, nil

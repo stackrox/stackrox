@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
@@ -108,7 +109,7 @@ func (suite *disableAuditLogTestSuite) TestMigrateClusters() {
 	prefix := getPrefix()
 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		cluster := &storage.Cluster{}
-		if err := proto.Unmarshal(it.Value().Data(), cluster); err != nil {
+		if err := protocompat.Unmarshal(it.Value().Data(), cluster); err != nil {
 			suite.NoError(err)
 		}
 		migratedClusters = append(migratedClusters, cluster)

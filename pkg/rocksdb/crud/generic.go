@@ -19,7 +19,7 @@ type KeyFunc func(msg protocompat.Message) []byte
 func deserializerFunc(alloc AllocFunc) Deserializer {
 	return func(v []byte) (protocompat.Message, error) {
 		t := alloc()
-		if err := proto.Unmarshal(v, t); err != nil {
+		if err := protocompat.Unmarshal(v, t); err != nil {
 			return nil, err
 		}
 		return t, nil

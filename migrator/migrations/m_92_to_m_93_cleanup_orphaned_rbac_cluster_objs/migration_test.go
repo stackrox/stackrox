@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -67,17 +68,17 @@ func (s *cleanupAfterClusterTestSuite) TestMigrationRemovesOrphanedClusterObject
 
 	s.validateObjectsRemoved(serviceAccountBucket, validSAs, toRemoveSAs, func(data []byte) string {
 		sa := &storage.ServiceAccount{}
-		s.NoError(proto.Unmarshal(data, sa))
+		s.NoError(protocompat.Unmarshal(data, sa))
 		return sa.GetId()
 	})
 	s.validateObjectsRemoved(k8sRoleBucket, validRoles, toRemoveRoles, func(data []byte) string {
 		sa := &storage.ServiceAccount{}
-		s.NoError(proto.Unmarshal(data, sa))
+		s.NoError(protocompat.Unmarshal(data, sa))
 		return sa.GetId()
 	})
 	s.validateObjectsRemoved(roleBindingsBucket, validBindings, toRemoveBindings, func(data []byte) string {
 		sa := &storage.ServiceAccount{}
-		s.NoError(proto.Unmarshal(data, sa))
+		s.NoError(protocompat.Unmarshal(data, sa))
 		return sa.GetId()
 	})
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -43,7 +44,7 @@ func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 		return 0, errors.New("INVALID STATE: a version bucket existed, but no version was found")
 	}
 	version := new(storage.Version)
-	err = proto.Unmarshal(versionBytes, version)
+	err = protocompat.Unmarshal(versionBytes, version)
 	if err != nil {
 		return 0, errors.Wrap(err, "unmarshaling version proto")
 	}
@@ -61,7 +62,7 @@ func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 		return 0, errors.Wrap(err, "getting RocksDB version")
 	}
 	defer slice.Free()
-	if err := proto.Unmarshal(slice.Data(), &version); err != nil {
+	if err := protocompat.Unmarshal(slice.Data(), &version); err != nil {
 		return 0, errors.Wrap(err, "unmarshaling RocksDB version")
 	}
 	return int(version.GetSeqNum()), nil
