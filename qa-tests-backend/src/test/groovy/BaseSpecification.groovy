@@ -202,12 +202,17 @@ class BaseSpecification extends Specification {
 
     static TestMetrics initializeTestMetrics() {
         if (!Env.SKIP_STABLE_TESTS) {
-            return
+            return null
         }
         LOG.debug("Initializing test metrics DB")
-        testMetrics = new TestMetrics()
-        testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
-        testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
+        try {
+            testMetrics = new TestMetrics()
+            testMetrics.loadStableSuiteHistory(Env.CI_JOB_NAME)
+            testMetrics.loadStableTestHistory(Env.CI_JOB_NAME)
+        } catch (Exception e) {
+            LOG.warn("Could not load test metrics data", e)
+            testMetrics = null
+        }
 
         return testMetrics
     }
@@ -327,6 +332,10 @@ class BaseSpecification extends Specification {
         if (!Env.SKIP_STABLE_TESTS) {
             return true
         }
+        if (!testMetrics) {
+            LOG.debug("Test metrics were not loaded, all specification setup/cleanup will run")
+            return true
+        }
         if (!testMetrics.isSuiteStable(specification)) {
             LOG.debug("Specification ${specification} setup/cleanup will run")
             return true
@@ -337,6 +346,10 @@ class BaseSpecification extends Specification {
 
     private static boolean shouldTestRun(String specification, String testcase) {
         if (!Env.SKIP_STABLE_TESTS) {
+            return true
+        }
+        if (!testMetrics) {
+            LOG.debug("Test metrics were not loaded, all features will run")
             return true
         }
         if (!testMetrics.isTestStable(specification, testcase)) {
