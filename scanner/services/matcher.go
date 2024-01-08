@@ -9,8 +9,12 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
@@ -19,6 +23,19 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var matcherAuth = func() authz.Authorizer {
+	if buildinfo.ReleaseBuild {
+		return perrpc.FromMap(map[authz.Authorizer][]string{
+			idcheck.CentralOnly(): {
+				"/scanner.v4.Matcher/GetVulnerabilities",
+				"/scanner.v4.Matcher/GetMetadata",
+			},
+		})
+	}
+	// Allow direct contact with Matcher in dev environments.
+	return allow.Anonymous()
+}()
 
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
@@ -112,8 +129,7 @@ func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// TODO: Setup permissions for matcher.
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, matcherAuth.Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
