@@ -76,7 +76,7 @@ func TestTimestampNow(t *testing.T) {
 }
 
 func TestDurationFromProto(t *testing.T) {
-	protoDuration := types.Duration{
+	protoDuration := &types.Duration{
 		Seconds: 1,
 		Nanos:   5,
 	}
