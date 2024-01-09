@@ -92,7 +92,7 @@
         {{- $_ := set $._rox.scannerV4.indexer.serviceTLS "generate" true -}}
       {{- end -}}
     {{- end }}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4-indexer" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -112,7 +112,7 @@
         {{- $_ := set $._rox.scannerV4.matcher.serviceTLS "generate" true -}}
       {{- end -}}
     {{- end }}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4-matcher" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -146,7 +146,7 @@
 
   {{- if eq $.Chart.Name "stackrox-central-services" -}}
     {{/* Only generate certificate when installing central-services. */}}
-    {{ $cryptoSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_V4_DB_SERVICE: Scanner V4 DB" "dnsBase" "scanner-v4-db" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
