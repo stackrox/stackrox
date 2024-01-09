@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
-import { PageSection, Popover } from '@patternfly/react-core';
+import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
     SelectionEventListener,
