@@ -3,12 +3,13 @@ import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     applyLocalSeverityFilters,
-    typeAndSelectResourceFilterValue,
+    typeAndSelectSearchFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
-    typeAndSelectCustomResourceFilterValue,
+    typeAndSelectCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image Single page', () => {
     withAuth();
@@ -26,13 +27,13 @@ describe('Workload CVE Image Single page', () => {
 
         // Clear any filters that may be applied to increase the likelihood of finding valid data
         if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            cy.get(selectors.clearFiltersButton).click();
+            cy.get(vulnSelectors.clearFiltersButton).click();
         }
 
         // If unified deferrals are not enabled, there is a good chance none of the visible images will
         // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
         if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            typeAndSelectCustomResourceFilterValue('CVE', '*');
+            typeAndSelectCustomSearchFilterValue('CVE', '*');
         }
 
         // Ensure the data in the table has settled
@@ -140,7 +141,7 @@ describe('Workload CVE Image Single page', () => {
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
-                typeAndSelectResourceFilterValue('CVE', cveName);
+                typeAndSelectSearchFilterValue('CVE', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name
