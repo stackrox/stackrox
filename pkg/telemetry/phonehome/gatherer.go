@@ -75,6 +75,8 @@ func (g *gatherer) gather() map[string]any {
 }
 
 func (g *gatherer) identify() {
+	defer g.procs.Done()
+
 	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
@@ -87,26 +89,25 @@ func (g *gatherer) identify() {
 		g.telemeter.Track(g.clientType+" Heartbeat", nil, g.opts...)
 	}
 	g.lastData = data
-	g.procs.Done()
 }
 
 func (g *gatherer) loop() {
+	defer g.procs.Done()
+
 	// Send initial data on start:
 	g.procs.Add(1)
 	g.identify()
 	ticker := time.NewTicker(g.period)
-for_loop:
+	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
 		select {
 		case <-ticker.C:
 			g.procs.Add(1)
 			go g.identify()
 		case <-g.stopSig.Done():
-			break for_loop
+			return
 		}
 	}
-	ticker.Stop()
-	g.procs.Done()
 }
 
 func (g *gatherer) Start(opts ...telemeter.Option) {
