@@ -591,7 +591,7 @@ main-image: all-builds
 
 kind_available := $(shell command -v kind && kind get clusters | grep -v "No kind clusters found.")
 .PHONY: docker-build-main-image
-docker-build-main-image:
+docker-build-main-image: copy-binaries-to-image-dir central-db-image
 	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
