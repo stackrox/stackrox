@@ -92,7 +92,7 @@
         {{- $_ := set $._rox.scannerV4.indexer.serviceTLS "generate" true -}}
       {{- end -}}
     {{- end }}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Indexer" "dnsBase" "scanner-v4-indexer" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
@@ -112,7 +112,7 @@
         {{- $_ := set $._rox.scannerV4.matcher.serviceTLS "generate" true -}}
       {{- end -}}
     {{- end }}
-    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4" }}
+    {{ $cryptoSpec := dict "CN" "SCANNER_SERVICE: Scanner V4 Matcher" "dnsBase" "scanner-v4-matcher" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $cryptoSpec) }}
   {{- end -}}
 {{ end }}
