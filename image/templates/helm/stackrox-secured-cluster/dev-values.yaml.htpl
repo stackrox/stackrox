@@ -63,5 +63,5 @@ scannerV4:
         memory: "512Mi"
       limits:
         cpu: "500m"
-        memory: "512Gi"
+        memory: "500Gi"
 [<- end >]
