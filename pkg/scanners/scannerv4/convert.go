@@ -1,13 +1,18 @@
 package scannerv4
 
 import (
+	"fmt"
 	"strings"
 
 	gogotypes "github.com/gogo/protobuf/types"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
+	"github.com/stackrox/rox/pkg/cvss/cvssv2"
+	"github.com/stackrox/rox/pkg/cvss/cvssv3"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
@@ -82,21 +87,19 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			continue
 		}
 
-		// TODO(ROX-21373): Populate fields commented below (dep. API net yet avail)
+		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
-			Cve: ccVuln.GetName(),
-			// Cvss: ,
-			Summary: ccVuln.GetDescription(),
-			Link:    link(ccVuln.GetLink()),
-			// ScoreVersion: ,
-			// CvssV2: ,
-			// CvssV3: ,
+			Cve:         ccVuln.GetName(),
+			Summary:     ccVuln.GetDescription(),
+			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 		}
-
+		if err := setCvss(vuln, ccVuln.GetCvss()); err != nil {
+			utils.Should(err)
+		}
 		if ccVuln.GetFixedInVersion() != "" {
 			vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: ccVuln.GetFixedInVersion(),
@@ -107,6 +110,43 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	}
 
 	return vulns
+}
+
+func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_Vulnerability_CVSS) error {
+	if cvss == nil {
+		return nil
+	}
+	errList := errorhelpers.NewErrorList("failed to parse vector")
+	if v2 := cvss.GetV2(); v2 != nil {
+		if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
+			c.ExploitabilityScore = 0.0 // TODO cvssv2.ExploitabilityScore(v2.GetVector())
+			c.ImpactScore = 0.0         // TODO cvssv2.ImpactScore(v2.GetVector())
+			c.Score = v2.GetBaseScore()
+			c.Severity = cvssv2.Severity(v2.GetBaseScore())
+			vuln.CvssV2 = c
+			// This sets the top level score for use in policies. It will be overwritten if
+			// v3 exists.
+			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
+			vuln.Cvss = v2.GetBaseScore()
+		} else {
+			errList.AddError(fmt.Errorf("v2: %w", err))
+		}
+	}
+	if v3 := cvss.GetV3(); v3 != nil {
+		if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
+			c.ExploitabilityScore = 0.0 // TODO cvssv3.ExploitabilityScore(v3.GetVector())
+			c.ImpactScore = 0.0         // TODO cvssv3.ImpactScore(v3.GetVector())
+			c.Score = v3.GetBaseScore()
+			c.Severity = cvssv3.Severity(v3.GetBaseScore())
+			vuln.CvssV3 = c
+			// Overwrite V2 if set.
+			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
+			vuln.Cvss = v3.GetBaseScore()
+		} else {
+			errList.AddError(fmt.Errorf("v3: %w", err))
+		}
+	}
+	return errList.ToError()
 }
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).

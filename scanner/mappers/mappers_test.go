@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"net/url"
 	"testing"
 	"time"
 
@@ -705,11 +706,132 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when severity and unknown distribution then populate the proto": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:   now,
+					Severity: "sample severity",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+				},
+			},
+		},
+		"when severity with CVSSv3 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+						"cvss3_score":  []string{"9.9"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.9,
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+						},
+					},
+				},
+			},
+		},
+		"when severity with CVSSv2 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
+						"cvss2_score":  []string{"1.1"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 1.1,
+							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+						},
+					},
+				},
+			},
+		},
+		"when severity with CVSSv2 and CVSSv3 and RHEL then find encoded CVSS scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
+						"cvss2_score":  []string{"1.1"},
+						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+						"cvss3_score":  []string{"9.9"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:   protoNow,
+					Severity: "sample severity",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.9,
+							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+						},
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 1.1,
+							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+						},
+					},
+				},
+			},
+		},
+		"when severity with CVSSv2 is invalid then return error": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss2_vector": []string{"invalid cvss2 vector"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			wantErr: "invalid RHEL CVSS error: v2 vector",
+		},
+		"when severity with CVSSv3 is invalid then return error": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued: now,
+					Severity: url.Values{
+						"severity":     []string{"sample severity"},
+						"cvss3_vector": []string{"invalid cvss3 vector"},
+					}.Encode(),
+					Dist: &claircore.Distribution{DID: "rhel"},
+				},
+			},
+			wantErr: "invalid RHEL CVSS error: v3 vector",
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, nil)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
