@@ -97,8 +97,10 @@ func (g *gatherer) loop() {
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
 		select {
-		case <-ticker.C:
-			go g.identify()
+		case _, ok := <-ticker.C:
+			if ok {
+				go g.identify()
+			}
 		case <-g.stopSig.Done():
 			return
 		}

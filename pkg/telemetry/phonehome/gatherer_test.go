@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter/mocks"
 	"github.com/stretchr/testify/suite"
@@ -64,29 +65,39 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	t.EXPECT().Track("Updated Test Identity", nil,
 		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1)
 	t.EXPECT().Track("Test Heartbeat", nil,
-		matchOptions(telemeter.WithTraits(nil))).Times(3)
+		matchOptions(telemeter.WithTraits(nil))).Times(2)
+
+	lastTrack := concurrency.Signal{}
+	defer lastTrack.Wait()
+	// Stop gathering after 3rd heartbeat:
+	t.EXPECT().Track("Test Heartbeat", nil,
+		matchOptions(telemeter.WithTraits(nil))).Times(1).
+		Do(func(any, any, ...any) {
+			lastTrack.Signal()
+		})
 
 	g := newGatherer("Test", t, 24*time.Hour)
+	defer g.Stop()
 	tickChan := make(chan time.Time)
+	defer close(tickChan)
 	g.tickerFactory = func(time.Duration) *time.Ticker {
 		return &time.Ticker{C: tickChan}
 	}
 	n := make(chan int64)
+	defer close(n)
 	var i atomic.Int64
 	g.AddGatherer(func(context.Context) (map[string]any, error) {
 		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
 	g.Start()
-	s.Equal(int64(1), <-n)
+	s.Equal(int64(1), <-n, "gathering should be called once on start")
 	tickChan <- time.Now()
-	s.Equal(int64(2), <-n)
+	s.Equal(int64(2), <-n, "gathering should be called on tick")
 	tickChan <- time.Now()
 	tickChan <- time.Now()
-	g.Stop()
 	s.Equal(int64(3), <-n)
-	s.Equal(int64(4), <-n)
-	close(n)
+	s.Equal(int64(4), <-n, "there should have been 4 gathering calls")
 }
 
 func (s *gathererTestSuite) TestAddTotal() {
