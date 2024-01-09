@@ -87,7 +87,10 @@ for test_tuple in test_tuples:
     os.environ["CENTRAL_CHART_VERSION_OVERRIDE"] = test_tuple.central_version
     os.environ["SENSOR_CHART_VERSION_OVERRIDE"] = test_tuple.sensor_version
     try:
-        make_compatibility_test_runner(cluster=gkecluster).run()
+        make_compatibility_test_runner(
+            cluster=gkecluster,
+            test_versions=f'{test_tuple.central_version}--{test_tuple.sensor_version}',
+        ).run()
     except Exception as e:
         print(
             f'Exception "{str(e)}" raised in compatibility test for '
