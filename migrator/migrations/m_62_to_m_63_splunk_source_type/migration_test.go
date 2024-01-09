@@ -66,11 +66,11 @@ func (suite *migrateSplunkSourceTypeTestSuite) TestMigration() {
 	err := suite.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(notifiersBucket)
 
-		data, err := proto.Marshal(noDerivedField)
+		data, err := protocompat.Marshal(noDerivedField)
 		suite.NoError(err)
 		suite.NoError(bucket.Put([]byte(noDerivedField.GetId()), data))
 
-		data, err = proto.Marshal(derivedField)
+		data, err = protocompat.Marshal(derivedField)
 		suite.NoError(err)
 		suite.NoError(bucket.Put([]byte(derivedField.GetId()), data))
 		return nil

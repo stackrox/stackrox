@@ -97,7 +97,7 @@ func addIDsToGroups(db *bolt.DB, groupsStoredByCompositeKey []groupStoredByCompo
 			}
 
 			// 2. Marshal the group proto.
-			groupData, err := proto.Marshal(grp)
+			groupData, err := protocompat.Marshal(grp)
 			if err != nil {
 				return err
 			}

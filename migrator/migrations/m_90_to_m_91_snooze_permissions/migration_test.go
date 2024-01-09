@@ -3,11 +3,11 @@ package m90tom91
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	dbTypes "github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -83,7 +83,7 @@ func (suite *vulnMgmtPermisssionTestSuite) TestMigrationToVulnMgmtPermission() {
 
 	for _, obj := range permissionSets {
 		key := rocksdbmigration.GetPrefixedKey(permissionSetPrefix, []byte(obj.GetId()))
-		value, err := proto.Marshal(obj)
+		value, err := protocompat.Marshal(obj)
 		suite.NoError(err)
 		suite.NoError(suite.databases.RocksDB.Put(writeOpts, key, value))
 	}

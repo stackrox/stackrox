@@ -88,7 +88,7 @@ func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider
 				return err
 			}
 		}
-		bytes, err := proto.Marshal(authProvider)
+		bytes, err := protocompat.Marshal(authProvider)
 		if err != nil {
 			return err
 		}

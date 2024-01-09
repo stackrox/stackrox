@@ -54,7 +54,7 @@ func migrateCVEs(db *gorocksdb.DB) error {
 		cve.Types = []storage.CVE_CVEType{cve.GetType()}
 		cve.Type = storage.CVE_UNKNOWN_CVE
 
-		data, err := proto.Marshal(&cve)
+		data, err := protocompat.Marshal(&cve)
 		if err != nil {
 			return errors.Wrapf(err, "marshaling %s", cveID)
 		}

@@ -78,7 +78,7 @@ func updateDefaultPermissionsForVulnCreatorRole(db *gorocksdb.DB) error {
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
 
-	bytes, err := proto.Marshal(ps)
+	bytes, err := protocompat.Marshal(ps)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal permission data for id %q", ps.Id)
 	}

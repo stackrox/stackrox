@@ -62,7 +62,7 @@ func updateImageCVEEdgesWithVulnState(databases *types.Databases) error {
 		}
 		imageCVEEdge.State = storage.VulnerabilityState_DEFERRED
 
-		newData, err := proto.Marshal(imageCVEEdge)
+		newData, err := protocompat.Marshal(imageCVEEdge)
 		if err != nil {
 			return errors.Wrapf(err, "marshaling image-cve edge %s", key)
 		}

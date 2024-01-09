@@ -70,7 +70,7 @@ func migrateDefaultRuntimeEventSource(db *bolt.DB) error {
 			}
 
 			policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
-			obj, err := proto.Marshal(policy)
+			obj, err := protocompat.Marshal(policy)
 			if err != nil {
 				// Unclear how to recover from marshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to marshal migrated policy %q for key %q", policy.GetName(), policy.GetId())

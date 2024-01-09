@@ -32,7 +32,7 @@ func TestPolicyMigration(t *testing.T) {
 				Name:       testName,
 				Categories: append(policyChange.removeCategories, someOtherCategory),
 			}
-			bytes, err := proto.Marshal(testPolicy)
+			bytes, err := protocompat.Marshal(testPolicy)
 			if err != nil {
 				return err
 			}

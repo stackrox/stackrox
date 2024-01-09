@@ -34,7 +34,7 @@ func addClusterIDToNetworkPolicyApplicationUndoRecord(db *bolt.DB) error {
 				return err
 			}
 			np.ClusterId = string(k)
-			data, err := proto.Marshal(&np)
+			data, err := protocompat.Marshal(&np)
 			if err != nil {
 				return err
 			}

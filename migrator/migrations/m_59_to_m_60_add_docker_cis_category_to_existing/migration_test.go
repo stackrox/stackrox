@@ -33,7 +33,7 @@ func TestPolicyMigration(t *testing.T) {
 			if i == 0 {
 				testPolicy.Categories = append(testPolicy.Categories, dockerCIS)
 			}
-			bytes, err := proto.Marshal(testPolicy)
+			bytes, err := protocompat.Marshal(testPolicy)
 			if err != nil {
 				return err
 			}

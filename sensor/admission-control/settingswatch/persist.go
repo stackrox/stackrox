@@ -98,7 +98,7 @@ func (p *persister) persistCurrent() error {
 		return nil
 	}
 
-	bytes, err := proto.Marshal(settings)
+	bytes, err := protocompat.Marshal(settings)
 	if err != nil {
 		return errors.Wrap(err, "marshaling settings proto")
 	}

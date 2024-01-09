@@ -72,7 +72,7 @@ func migrateScanner(db *bolt.DB) error {
 
 			imageIntegration.Categories = append(imageIntegration.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
 
-			newValue, err := proto.Marshal(&imageIntegration)
+			newValue, err := protocompat.Marshal(&imageIntegration)
 			if err != nil {
 				return errors.Wrapf(err, "error marshalling external backup %s", k)
 			}

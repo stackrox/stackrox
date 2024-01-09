@@ -60,7 +60,7 @@ func migrateRoles(boltdb *bbolt.DB, rocksdb *gorocksdb.DB) error {
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
 	for roleName, ps := range permissionSets {
-		bytes, err := proto.Marshal(ps)
+		bytes, err := protocompat.Marshal(ps)
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal permission set for role %q", roleName)
 		}
@@ -101,7 +101,7 @@ func updateRoles(tx *bbolt.Tx, rolesToMigrate map[string]*storage.Role) error {
 		return errors.Errorf("bucket %s not found", rolesBucket)
 	}
 	for id, role := range rolesToMigrate {
-		bytes, err := proto.Marshal(role)
+		bytes, err := protocompat.Marshal(role)
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal migrated role for key %q", id)
 		}

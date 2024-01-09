@@ -78,7 +78,7 @@ func NewMessageCrudForBucket(
 	serializeFunc := func(x interface{}) ([]byte, []byte, error) {
 		msg := x.(protocompat.Message)
 		key := keyFunc(msg)
-		bytes, err := proto.Marshal(msg)
+		bytes, err := protocompat.Marshal(msg)
 		return key, bytes, err
 	}
 

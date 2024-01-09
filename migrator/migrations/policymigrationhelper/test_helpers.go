@@ -24,7 +24,7 @@ import (
 
 func insertPolicy(t *testing.T, bucket bolthelpers.BucketRef, policy *storage.Policy) {
 	require.NoError(t, bucket.Update(func(b *bolt.Bucket) error {
-		policyBytes, err := proto.Marshal(policy)
+		policyBytes, err := protocompat.Marshal(policy)
 		if err != nil {
 			return err
 		}

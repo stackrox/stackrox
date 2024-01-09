@@ -109,7 +109,7 @@ func migrateReplacedResourcesInPermissionSets(db *gorocksdb.DB) error {
 			newPermissionSet.ResourceToAccess[resource] =
 				propagateAccessForPermission(resource, accessLevel, newPermissionSet.ResourceToAccess)
 		}
-		data, err := proto.Marshal(newPermissionSet)
+		data, err := protocompat.Marshal(newPermissionSet)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal permission set")
 		}

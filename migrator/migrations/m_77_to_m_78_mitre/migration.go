@@ -66,7 +66,7 @@ func updatePoliciesWithMitre(db *bolt.DB) error {
 			storedPolicy.MitreAttackVectors = policy.MitreAttackVectors
 			storedPolicy.MitreVectorsLocked = policy.MitreVectorsLocked
 
-			data, err := proto.Marshal(storedPolicy)
+			data, err := protocompat.Marshal(storedPolicy)
 			if err != nil {
 				return errors.Wrapf(err, "marshalling policy %s", key)
 			}

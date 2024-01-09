@@ -73,7 +73,7 @@ func (suite *rolesRocksDBMigrationTestSuite) TestRolesMigrationToRocksDB() {
 	suite.NoError(boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(rolesBucket)
 		for _, role := range rolesToUpsert {
-			bytes, err := proto.Marshal(role)
+			bytes, err := protocompat.Marshal(role)
 			if err != nil {
 				return err
 			}

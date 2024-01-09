@@ -81,7 +81,7 @@ func TestRolesGlobalAccessMigration(t *testing.T) {
 		}
 
 		for _, role := range rolesToUpsert {
-			bytes, err := proto.Marshal(role)
+			bytes, err := protocompat.Marshal(role)
 			if err != nil {
 				return err
 			}

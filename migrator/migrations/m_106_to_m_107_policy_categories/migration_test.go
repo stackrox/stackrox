@@ -192,7 +192,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithNonDefaultCatego
 	// Insert policy
 	suite.NoError(boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policiesBucket)
-		bytes, err := proto.Marshal(policyWithNonDefaultCategories)
+		bytes, err := protocompat.Marshal(policyWithNonDefaultCategories)
 		if err != nil {
 			return err
 		}
@@ -227,7 +227,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithDefaultCategorie
 	// Insert policy
 	suite.NoError(boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policiesBucket)
-		bytes, err := proto.Marshal(policyWithOnlyDefaultCategories)
+		bytes, err := protocompat.Marshal(policyWithOnlyDefaultCategories)
 		if err != nil {
 			return err
 		}
@@ -261,7 +261,7 @@ func (suite *categoriesRocksDBMigrationTestSuite) TestPolicyWithBothCategoryType
 	// Insert policy
 	suite.NoError(boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policiesBucket)
-		bytes, err := proto.Marshal(policyWithBothCategoryTypes)
+		bytes, err := protocompat.Marshal(policyWithBothCategoryTypes)
 		if err != nil {
 			return err
 		}

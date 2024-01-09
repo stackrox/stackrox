@@ -60,7 +60,7 @@ func (s *flowStoreImpl) UpsertFlows(_ context.Context, flows []*storage.NetworkF
 	batch.Put(s.getFullKey(updatedTSKey), tsData)
 	for _, flow := range flows {
 		k := s.getID(flow.GetProps())
-		v, err := proto.Marshal(flow)
+		v, err := protocompat.Marshal(flow)
 		if err != nil {
 			return err
 		}

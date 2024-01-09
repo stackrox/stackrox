@@ -56,7 +56,7 @@ func (suite *openshift4ClusterTypeMigrationTestSuite) TestMigrateClustersWithExe
 
 	wb := gorocksdb.NewWriteBatch()
 	for _, c := range clusters {
-		bytes, err := proto.Marshal(c)
+		bytes, err := protocompat.Marshal(c)
 		suite.NoError(err)
 
 		wb.Put(rocksdbmigration.GetPrefixedKey(clustersPrefix, []byte(c.Id)), bytes)

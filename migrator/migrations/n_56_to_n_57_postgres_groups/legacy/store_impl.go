@@ -86,7 +86,7 @@ func upsertInTransaction(tx *bolt.Tx, groups ...*storage.Group) error {
 	bucket := tx.Bucket(groupsBucket)
 
 	for _, group := range groups {
-		bytes, err := proto.Marshal(group)
+		bytes, err := protocompat.Marshal(group)
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal group %v", group)
 		}

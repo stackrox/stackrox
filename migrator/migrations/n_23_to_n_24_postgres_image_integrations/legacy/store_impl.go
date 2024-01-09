@@ -65,7 +65,7 @@ func (b *storeImpl) Upsert(_ context.Context, integration *storage.ImageIntegrat
 				return err
 			}
 		}
-		bytes, err := proto.Marshal(integration)
+		bytes, err := protocompat.Marshal(integration)
 		if err != nil {
 			return err
 		}

@@ -66,7 +66,7 @@ func (suite *policyUpdatesTestSuite) TearDownTest() {
 
 func insertPolicy(bucket bolthelpers.BucketRef, id string, pb protocompat.Message) error {
 	return bucket.Update(func(b *bolt.Bucket) error {
-		policyBytes, err := proto.Marshal(pb)
+		policyBytes, err := protocompat.Marshal(pb)
 		if err != nil {
 			return err
 		}

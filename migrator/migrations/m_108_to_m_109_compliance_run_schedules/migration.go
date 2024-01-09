@@ -39,7 +39,7 @@ func removeComplianceRunScheduleFromPermissionSets(db *gorocksdb.DB) error {
 			continue
 		}
 		delete(ps.ResourceToAccess, permissionName)
-		data, err := proto.Marshal(ps)
+		data, err := protocompat.Marshal(ps)
 		if err != nil {
 			return errors.Wrap(err, "unable to marshal permission set")
 		}

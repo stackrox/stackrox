@@ -70,7 +70,7 @@ func copyAlertScopingInformationToRoot(db *types.Databases) error {
 			alert.NamespaceId = ""
 		}
 
-		data, err := proto.Marshal(&alert)
+		data, err := protocompat.Marshal(&alert)
 		if err != nil {
 			return err
 		}

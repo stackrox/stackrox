@@ -48,7 +48,7 @@ func migratePS(db *gorocksdb.DB) error {
 		}
 		if _, ok := ps.ResourceToAccess[authPluginResourceName]; ok {
 			delete(ps.ResourceToAccess, authPluginResourceName)
-			data, err := proto.Marshal(ps)
+			data, err := protocompat.Marshal(ps)
 			if err != nil {
 				return errors.Wrap(err, "unable to marshal permission set")
 			}

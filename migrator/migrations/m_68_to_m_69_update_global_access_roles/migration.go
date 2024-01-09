@@ -115,7 +115,7 @@ func migrateRoles(db *bbolt.DB) error {
 			return errors.Errorf("bucket %s not found", rolesBucket)
 		}
 		for id, role := range rolesToMigrate {
-			bytes, err := proto.Marshal(role)
+			bytes, err := protocompat.Marshal(role)
 			if err != nil {
 				log.WriteToStderrf("failed to marshal migrated role for key %s: %v", id, err)
 				continue

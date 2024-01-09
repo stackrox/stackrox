@@ -38,7 +38,7 @@ func TestPolicyMigration(t *testing.T) {
 			policy, ok := beforeMigrationPolicies[policyID]
 			require.True(t, ok)
 
-			policyBytes, err := proto.Marshal(policy)
+			policyBytes, err := protocompat.Marshal(policy)
 			if err != nil {
 				return err
 			}

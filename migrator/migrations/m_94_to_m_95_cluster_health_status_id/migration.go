@@ -51,7 +51,7 @@ func addIDToClusterHealthStatus(db *types.Databases) error {
 
 		healthStatus.Id = string(rocksdbmigration.GetPrefixedKey(prefix, key))
 
-		data, err := proto.Marshal(&healthStatus)
+		data, err := protocompat.Marshal(&healthStatus)
 		if err != nil {
 			return err
 		}

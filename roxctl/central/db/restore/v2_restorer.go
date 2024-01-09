@@ -15,12 +15,12 @@ import (
 	"time"
 
 	"github.com/VividCortex/ewma"
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -352,7 +352,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		},
 	}
 
-	headerBytes, err := proto.Marshal(header)
+	headerBytes, err := protocompat.Marshal(header)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal restore header")
 	}

@@ -53,7 +53,7 @@ func migrateRoles(boltdb *bbolt.DB, rocksdb *gorocksdb.DB) error {
 	defer rocksWriteBatch.Destroy()
 	for _, role := range rolesToMigrate {
 		name := role.GetName()
-		bytes, err := proto.Marshal(role)
+		bytes, err := protocompat.Marshal(role)
 		if err != nil {
 			return errors.Wrapf(err, "failed to marshal role data for name %q", name)
 		}

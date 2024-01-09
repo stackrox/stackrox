@@ -80,7 +80,7 @@ func (s *storeImpl) Upsert(_ context.Context, policy *storage.Policy) error {
 			}
 		}
 
-		bytes, err := proto.Marshal(policy)
+		bytes, err := protocompat.Marshal(policy)
 		if err != nil {
 			return err
 		}

@@ -79,7 +79,7 @@ func (b *storeImpl) Upsert(_ context.Context, notifier *storage.Notifier) error 
 			}
 		}
 
-		bytes, err := proto.Marshal(notifier)
+		bytes, err := protocompat.Marshal(notifier)
 		if err != nil {
 			return err
 		}

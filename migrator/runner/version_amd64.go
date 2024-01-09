@@ -128,7 +128,7 @@ func updateVersion(ctx context.Context, databases *types.Databases, newVersion *
 		return nil
 	}
 
-	versionBytes, err := proto.Marshal(newVersion)
+	versionBytes, err := protocompat.Marshal(newVersion)
 	if err != nil {
 		return errors.Wrap(err, "marshalling version")
 	}
