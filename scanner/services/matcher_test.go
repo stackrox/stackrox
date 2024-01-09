@@ -7,7 +7,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	indexerMocks "github.com/stackrox/rox/scanner/indexer/mocks"
 	matcherMocks "github.com/stackrox/rox/scanner/matcher/mocks"
@@ -38,9 +37,7 @@ func (s *matcherServiceTestSuite) TearDownTest() {
 }
 
 func (s *matcherServiceTestSuite) TestAuthz() {
-	if buildinfo.ReleaseBuild {
-		testutils.AssertAuthzWorks(s.T(), &matcherService{})
-	}
+	testutils.AssertAuthzWorks(s.T(), &matcherService{})
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {

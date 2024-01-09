@@ -7,7 +7,6 @@ import (
 
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
@@ -62,9 +61,7 @@ func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report 
 }
 
 func (s *indexerServiceTestSuite) TestAuthz() {
-	if buildinfo.ReleaseBuild {
-		testutils.AssertAuthzWorks(s.T(), &indexerService{})
-	}
+	testutils.AssertAuthzWorks(s.T(), &indexerService{})
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {

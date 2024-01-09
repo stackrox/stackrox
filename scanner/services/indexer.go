@@ -21,19 +21,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-var indexerAuth = func() authz.Authorizer {
-	if buildinfo.ReleaseBuild {
-		return perrpc.FromMap(map[authz.Authorizer][]string{
-			or.SensorOr(idcheck.CentralOnly()): {
-				"/scanner.v4.Indexer/CreateIndexReport",
-				"/scanner.v4.Indexer/GetIndexReport",
-				"/scanner.v4.Indexer/HasIndexReport",
-			},
-		})
-	}
-	// Allow direct contact with Indexer in dev environments.
-	return allow.Anonymous()
-}()
+var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
+	or.SensorOr(idcheck.CentralOnly()): {
+		"/scanner.v4.Indexer/CreateIndexReport",
+		"/scanner.v4.Indexer/GetIndexReport",
+		"/scanner.v4.Indexer/HasIndexReport",
+	},
+})
 
 type indexerService struct {
 	v4.UnimplementedIndexerServer
@@ -148,7 +142,11 @@ func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, indexerAuth.Authorized(ctx, fullMethodName)
+	auth := indexerAuth
+	if !buildinfo.ReleaseBuild {
+		auth = allow.Anonymous()
+	}
+	return ctx, auth.Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.

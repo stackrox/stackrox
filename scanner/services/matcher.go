@@ -24,18 +24,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var matcherAuth = func() authz.Authorizer {
-	if buildinfo.ReleaseBuild {
-		return perrpc.FromMap(map[authz.Authorizer][]string{
-			idcheck.CentralOnly(): {
-				"/scanner.v4.Matcher/GetVulnerabilities",
-				"/scanner.v4.Matcher/GetMetadata",
-			},
-		})
-	}
-	// Allow direct contact with Matcher in dev environments.
-	return allow.Anonymous()
-}()
+var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
+	idcheck.CentralOnly(): {
+		"/scanner.v4.Matcher/GetVulnerabilities",
+		"/scanner.v4.Matcher/GetMetadata",
+	},
+})
 
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
@@ -129,7 +123,11 @@ func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, matcherAuth.Authorized(ctx, fullMethodName)
+	auth := matcherAuth
+	if !buildinfo.ReleaseBuild {
+		auth = allow.Anonymous()
+	}
+	return ctx, auth.Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
