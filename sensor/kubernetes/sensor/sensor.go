@@ -125,7 +125,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
-	indicators := make(chan *message.ExpiringMessage)
+	indicators := make(chan *message.ExpiringMessage, env.ProcessIndicatorBufferSize.IntegerSetting())
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=
