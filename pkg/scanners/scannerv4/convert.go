@@ -87,7 +87,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			continue
 		}
 
-		// TODO(ROX-21373): Populate fields commented below (dep. API net yet avail)
+		// TODO(ROX-20355): Populate last modified once the API is available.
 		vuln := &storage.EmbeddedVulnerability{
 			Cve:         ccVuln.GetName(),
 			Summary:     ccVuln.GetDescription(),
