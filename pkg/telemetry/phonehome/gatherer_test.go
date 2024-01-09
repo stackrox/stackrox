@@ -31,32 +31,31 @@ func (s *gathererTestSuite) TestNilGatherer() {
 
 func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
+	g := newGatherer("Test", t, 24*time.Hour)
 
 	t.EXPECT().Track("Updated Test Identity", nil,
-		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1)
+		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+		Times(1).Do(func(any, any, ...any) { g.Stop() })
 	t.EXPECT().Track("Test Heartbeat", nil,
-		matchOptions(telemeter.WithTraits(nil))).Times(1)
+		matchOptions(telemeter.WithTraits(nil))).
+		Times(1).Do(func(any, any, ...any) { g.Stop() })
 
 	props := make(map[string]any)
-	var i int64
+	var i atomic.Int64
 
-	g := newGatherer("Test", t, 24*time.Hour)
 	g.AddGatherer(func(context.Context) (map[string]any, error) {
-		atomic.AddInt64(&i, 1)
+		i.Add(1)
 		props["key"] = "value"
-		g.Stop()
 		return props, nil
 	})
 	g.Start()
 	<-g.ctx.Done()
-	g.procs.Wait()
 	s.Equal("value", props["key"], "the gathering function should have been called")
-	s.Equal(int64(1), i)
+	s.Equal(int64(1), i.Load())
 	g.Start()
 	<-g.ctx.Done()
-	g.procs.Wait()
 	s.Equal("value", props["key"], "the gathering function should have been called")
-	s.Equal(int64(2), i)
+	s.Equal(int64(2), i.Load())
 }
 
 func (s *gathererTestSuite) TestGathererTicker() {
@@ -67,24 +66,27 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	t.EXPECT().Track("Test Heartbeat", nil,
 		matchOptions(telemeter.WithTraits(nil))).Times(3)
 
-	var i int64
-
 	g := newGatherer("Test", t, 24*time.Hour)
 	tickChan := make(chan time.Time)
 	g.tickerFactory = func(time.Duration) *time.Ticker {
 		return &time.Ticker{C: tickChan}
 	}
+	n := make(chan int64)
+	var i atomic.Int64
 	g.AddGatherer(func(context.Context) (map[string]any, error) {
-		atomic.AddInt64(&i, 1)
+		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
 	g.Start()
+	s.Equal(int64(1), <-n)
 	tickChan <- time.Now()
+	s.Equal(int64(2), <-n)
 	tickChan <- time.Now()
 	tickChan <- time.Now()
 	g.Stop()
-	g.procs.Wait()
-	s.Equal(int64(4), i)
+	s.Equal(int64(3), <-n)
+	s.Equal(int64(4), <-n)
+	close(n)
 }
 
 func (s *gathererTestSuite) TestAddTotal() {
