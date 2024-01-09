@@ -38,6 +38,10 @@ type gatherer struct {
 	gatherFuncs []GatherFunc
 	lastData    map[string]any
 	opts        []telemeter.Option
+
+	// procs groups the goroutines, launched by the gatherer,
+	// allowing tests to wait for their termination.
+	procs sync.WaitGroup
 }
 
 func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
@@ -83,21 +87,26 @@ func (g *gatherer) identify() {
 		g.telemeter.Track(g.clientType+" Heartbeat", nil, g.opts...)
 	}
 	g.lastData = data
+	g.procs.Done()
 }
 
 func (g *gatherer) loop() {
 	// Send initial data on start:
+	g.procs.Add(1)
 	g.identify()
 	ticker := time.NewTicker(g.period)
+for_loop:
 	for !g.stopSig.IsDone() {
 		select {
 		case <-ticker.C:
+			g.procs.Add(1)
 			go g.identify()
 		case <-g.stopSig.Done():
-			ticker.Stop()
-			return
+			break for_loop
 		}
 	}
+	ticker.Stop()
+	g.procs.Done()
 }
 
 func (g *gatherer) Start(opts ...telemeter.Option) {
@@ -111,6 +120,7 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 		concurrency.WithLock(&g.gathering, func() {
 			g.opts = opts
 		})
+		g.procs.Add(1)
 		go g.loop()
 	}
 }
