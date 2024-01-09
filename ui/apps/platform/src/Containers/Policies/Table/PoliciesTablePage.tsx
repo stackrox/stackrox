@@ -7,7 +7,6 @@ import {
     Spinner,
     AlertGroup,
     AlertActionCloseButton,
-    AlertVariant,
     Divider,
     Button,
 } from '@patternfly/react-core';
@@ -241,7 +240,7 @@ function PoliciesTablePage({
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
-                        variant={AlertVariant[variant]}
+                        variant={variant}
                         title={title}
                         timeout={4000}
                         onTimeout={() => removeToast(key)}
