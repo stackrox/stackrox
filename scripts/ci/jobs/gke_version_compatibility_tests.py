@@ -86,6 +86,7 @@ failing_tuples = []
 for test_tuple in test_tuples:
     os.environ["CENTRAL_CHART_VERSION_OVERRIDE"] = test_tuple.central_version
     os.environ["SENSOR_CHART_VERSION_OVERRIDE"] = test_tuple.sensor_version
+    os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     try:
         make_compatibility_test_runner(
             cluster=gkecluster,
