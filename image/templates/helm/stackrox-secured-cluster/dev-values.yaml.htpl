@@ -1,0 +1,44 @@
+# Recommended resource helm values for a dev environment setup of ACS
+
+sensor:
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+
+admissionControl:
+  resources:
+    requests:
+      memory: "200Mi"
+      cpu: "200m"
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+
+collector:
+  resources:
+    requests:
+      memory: "320Mi"
+      cpu: "100m"
+    limits:
+      memory: "320Mi"
+      cpu: "300m"
+
+  complianceResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  nodeScanningResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "250Mi"
+      cpu: "500m"

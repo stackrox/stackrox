@@ -12,9 +12,9 @@ spec:
     resources:
       requests:
         memory: 1Gi
-        cpu: 500m
+        cpu: 300m
       limits:
-        memory: 4Gi
+        memory: 2Gi
         cpu: 1
     db:
       resources:
@@ -22,8 +22,8 @@ spec:
           memory: 1Gi
           cpu: 500m
         limits:
-          memory: 4Gi
-          cpu: 1
+          memory: 2Gi
+          cpu: 700m
     telemetry:
       enabled: false
   scanner:
@@ -34,18 +34,20 @@ spec:
       resources:
         requests:
           memory: 500Mi
-          cpu: 500m
+          cpu: 300m
         limits:
-          memory: 2500Mi
-          cpu: 2000m
+          memory: 2Gi
+          cpu: 1
     db:
       resources:
         requests:
           cpu: 400m
           memory: 512Mi
         limits:
-          cpu: 2000m
-          memory: 4Gi
+          cpu: 1000m
+          memory: 1Gi
+# TODO(ROX-19051): Copy Scanner V4 values once CRD supports them 
+# from /image/templates/helm/stackrox-central/dev-values.yaml.htpl
 ---
 apiVersion: v1
 kind: Secret

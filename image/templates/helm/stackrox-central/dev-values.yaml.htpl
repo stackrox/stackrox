@@ -1,6 +1,9 @@
-# Reduced resource overrides for the stackrox-central-services Helm chart that allow deploying
-# on Docker for Desktop on a typical developer box.
-
+# Recommended resource helm values for a dev environment setup of ACS
+[< if false >] # hide this comment in official helm charts
+# Please keep in sync:
+# - /operator/tests/*/*/*central-cr.yaml 
+# - /deploy/common/local-dev-values.yaml
+[< end >]
 central:
   resources:
     requests:
@@ -17,9 +20,6 @@ central:
       limits:
         cpu: 700m
         memory: 2Gi
-  telemetry:
-    enabled: false
-
 scanner:
   replicas: 1
   autoscaling:
@@ -38,6 +38,7 @@ scanner:
     limits:
       cpu: 1
       memory: "1Gi"
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4:
   matcher:
     replicas: 1
@@ -71,3 +72,4 @@ scannerV4:
       limits:
         cpu: "500m"
         memory: "512Gi"
+[<- end >]
