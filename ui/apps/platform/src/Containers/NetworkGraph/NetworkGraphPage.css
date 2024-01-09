@@ -11,11 +11,6 @@
     height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 3));
 }
 
-/* Similar to above, but for the simulation drawer when the secondary header is not visible */
-.cluster-simulation-drawer-panel {
-    height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 2));
-}
-
 /* simple solution to prevent user from making sidebar too narrow */
 .pf-c-drawer__panel.pf-m-resizable {
     min-width: 430px !important;
@@ -37,6 +32,7 @@
 [data-testid="network-graph-toolbar"] {
     z-index: 250;
 }
+
 [data-testid="network-graph-toolbar"] .pf-search-shim,
 [data-testid="network-graph-toolbar"] .react-select__menu {
     z-index: 250;
@@ -59,7 +55,8 @@ div#topology-resize-panel table td {
     fill: #6853ae;
 }
 
-.related-namespace.pf-m-selected text, .related-namespace.pf-m-selected .pf-topology__node__action-icon svg {
+.related-namespace.pf-m-selected text,
+.related-namespace.pf-m-selected .pf-topology__node__action-icon svg {
     fill: #ffffff;
 }
 
