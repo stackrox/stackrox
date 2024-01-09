@@ -1505,10 +1505,14 @@ slack_workflow_failure() {
 }
 '
 
-    jq --null-input \
+    local payload
+    payload="$(jq --null-input \
        --arg workflow_name "${workflow_name}" \
-       "$body" | \
-    curl --location --silent --show-error --fail \
+       "$body")"
+
+    echo -e "About to post:\n$payload"
+
+    echo "$payload" | curl --location --silent --show-error --fail \
          --data @- --header 'Content-Type: application/json' \
          "$webhook_url"
 }
