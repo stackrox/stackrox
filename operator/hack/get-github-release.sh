@@ -2,7 +2,7 @@
 
 set -eou pipefail
 
-SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 function usage() {
   echo "
