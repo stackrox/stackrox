@@ -1,19 +1,17 @@
 package fixtures
 
 import (
+	_ "embed"
 	"encoding/json"
-	"os"
 
 	"github.com/google/go-containerregistry/pkg/name"
 )
 
+//go:embed images.json
+var contents []byte
+
 // References returns the image references stored in images.json.
 func References() ([]name.Reference, error) {
-	contents, err := os.ReadFile("images.json")
-	if err != nil {
-		return nil, err
-	}
-
 	var images []string
 	if err := json.Unmarshal(contents, &images); err != nil {
 		return nil, err

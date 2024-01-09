@@ -9,5 +9,5 @@ import (
 func TestReferences(t *testing.T) {
 	refs, err := References()
 	assert.NoError(t, err)
-	assert.Equal(t, 1876, len(refs))
+	assert.Equal(t, 2181, len(refs))
 }

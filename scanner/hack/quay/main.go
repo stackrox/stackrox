@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
@@ -65,16 +66,20 @@ func fetchImages() []string {
 			panic(err)
 		}
 
-		tags := make([]string, 0, 20)
+		tags := make([]string, 0, 10)
 		for i := 0; i < len(tagsResp.Tags) && i < cap(tags); i++ {
-			tags = append(tags, tagsResp.Tags[i].Name)
+			tag := tagsResp.Tags[i].Name
+			if strings.HasSuffix(tag, ".sig") {
+				continue
+			}
+			tags = append(tags, tag)
 		}
 
 		return tags
 	}
 
 	images := make([]string, 0, 2000)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 25; i++ {
 		repos := fetchRepos(i)
 		for _, repo := range repos {
 			tags := fetchTags(repo)
