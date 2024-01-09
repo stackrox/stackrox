@@ -10,7 +10,7 @@ Central Services Configuration Summary:
   Kubernetes Namespace:                        {{ .Release.Namespace }}
   Helm Release Name:                           {{ .Release.Name }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
-[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   Scanner V4 Installation Method:              {{ ._rox.scannerV4._installMode }}
 {{- if ._rox._scannerV4Volume }}
   Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}

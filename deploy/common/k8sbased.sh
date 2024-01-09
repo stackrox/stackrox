@@ -354,9 +354,9 @@ function launch_central {
         )
       fi
 
-      if [[ -n "$ROX_SCANNER_V4_ENABLED" ]]; then
+      if [[ -n "$ROX_SCANNER_V4" ]]; then
         local _disable=true
-        if [[ "$ROX_SCANNER_V4_ENABLED" == "true" ]]; then
+        if [[ "$ROX_SCANNER_V4" == "true" ]]; then
           _disable=false
         fi
         helm_args+=(

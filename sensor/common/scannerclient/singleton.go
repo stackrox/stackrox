@@ -11,7 +11,7 @@ var (
 	once          sync.Once
 	scannerClient ScannerClient
 
-	isScannerV4Enabled = features.ScannerV4Enabled.Enabled()
+	isScannerV4Enabled = features.ScannerV4.Enabled()
 )
 
 // GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
