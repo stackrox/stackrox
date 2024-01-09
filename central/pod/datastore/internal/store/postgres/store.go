@@ -57,7 +57,10 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -65,6 +68,8 @@ func New(db postgres.DB) Store {
 		copyFromPods,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
+
 		isUpsertAllowed,
 		targetResource,
 	)
@@ -83,6 +88,11 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if scopeChecker.IsAllowed() {

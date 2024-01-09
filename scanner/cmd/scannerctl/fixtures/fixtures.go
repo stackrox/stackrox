@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 )
 
+// References returns the image references stored in images.json.
 func References() ([]name.Reference, error) {
 	contents, err := os.ReadFile("images.json")
 	if err != nil {

@@ -49,16 +49,19 @@ scanner:
 [<- if .FeatureFlags.ROX_SCANNER_V4 >]
 scannerV4:
   indexer:
+    nodeSelector: true
     resources: true
     serviceTLS:
       cert: true
       key: true
   matcher:
+    nodeSelector: true
     resources: true
     serviceTLS:
       cert: true
       key: true
   db:
+    nodeSelector: true
     resources: true
     postgresConfig: true
     hbaConfig: true

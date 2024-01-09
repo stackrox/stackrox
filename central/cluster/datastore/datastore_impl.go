@@ -949,7 +949,7 @@ func addDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set, or set
 	// to KERNEL_MODULE (which is unsupported) then honor defaults for runtime support
 	if collectionMethod == storage.CollectionMethod_UNSET_COLLECTION || collectionMethod == storage.CollectionMethod_KERNEL_MODULE {
-		cluster.CollectionMethod = storage.CollectionMethod_EBPF
+		cluster.CollectionMethod = storage.CollectionMethod_CORE_BPF
 	}
 	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
 

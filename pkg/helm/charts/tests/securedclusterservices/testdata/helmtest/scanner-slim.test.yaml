@@ -135,8 +135,8 @@ tests:
     customize:
       envVars:
         FOO: bar
-    expect: |
-      envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
+  expect: |
+    envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
 
 - name: "Installation fails in full mode"
   values:

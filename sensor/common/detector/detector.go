@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -42,6 +43,9 @@ import (
 var (
 	log                             = logging.LoggerForModule()
 	_   common.CentralGRPCConnAware = (*detectorImpl)(nil)
+
+	deploymentNotFoundErr     = errors.Wrap(errox.NotFound, "deployment entity")
+	externalEntityNotFoundErr = errors.Wrap(errox.NotFound, "external entity")
 )
 
 // Detector is the sensor component that syncs policies from Central and runs detection
@@ -554,7 +558,7 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 		deployment := d.deploymentStore.Get(info.GetId())
 		if deployment == nil {
 			// Maybe the deployment is already removed. Don't run the flow through policy anymore
-			return networkEntityDetails{}, errors.Errorf("Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
+			return networkEntityDetails{}, errors.Wrapf(deploymentNotFoundErr, "Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
 		return networkEntityDetails{
 			name:                deployment.GetName(),
@@ -564,7 +568,7 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		extsrc := d.extSrcsStore.LookupByID(info.GetId())
 		if extsrc == nil {
-			return networkEntityDetails{}, errors.Errorf("External source with ID: %q not found while trying to run network flow policy", info.GetId())
+			return networkEntityDetails{}, errors.Wrapf(externalEntityNotFoundErr, "External source with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
 		return networkEntityDetails{
 			name: extsrc.GetExternalSource().GetName(),
@@ -618,6 +622,24 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 	}
 }
 
+func (d *detectorImpl) notFoundErrorToEntityKind(err error) string {
+	if errors.Is(err, deploymentNotFoundErr) {
+		return "deployment"
+	} else if errors.Is(err, externalEntityNotFoundErr) {
+		return "external_entity"
+	}
+	return ""
+}
+
+func (d *detectorImpl) handleEntityNotFound(err error, orientation string) {
+	if errors.Is(err, errox.NotFound) {
+		log.Debugf("Error looking up %s entity details while running network flow policy: %v", orientation, err)
+		metrics.IncrementEntityNotFound(d.notFoundErrorToEntityKind(err), orientation)
+		return
+	}
+	log.Errorf("Error looking up %s entity details while running network flow policy: %v", orientation, err)
+}
+
 func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
 	// Only run the flows through policies if the entity types are supported
 	_, srcTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetSrcEntity().GetType()]
@@ -629,12 +651,12 @@ func (d *detectorImpl) processNetworkFlow(ctx context.Context, flow *storage.Net
 	// First extract more information of the flow. Mainly entity names
 	srcDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetSrcEntity())
 	if err != nil {
-		log.Errorf("Error looking up source entity details while running network flow policy: %v", err)
+		d.handleEntityNotFound(err, "source")
 		return
 	}
 	dstDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetDstEntity())
 	if err != nil {
-		log.Errorf("Error looking up destination entity details while running network flow policy: %v", err)
+		d.handleEntityNotFound(err, "destination")
 		return
 	}
 	// Check if flow is anomalous

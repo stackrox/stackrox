@@ -83,6 +83,13 @@ var (
 		Help:      "A gauge of the current size of the Network Flow buffer in Sensor (updated every 30s)",
 	})
 
+	entitiesNotFound = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_network_flow_entity_not_found",
+		Help:      "Total number of entities not found when processing Network Flows",
+	}, []string{"kind", "orientation"})
+
 	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -236,6 +243,14 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
+
+// IncrementEntityNotFound increments an instance of entity not found
+func IncrementEntityNotFound(kind, orientation string) {
+	entitiesNotFound.With(prometheus.Labels{
+		"kind":        kind,
+		"orientation": orientation,
+	}).Inc()
+}
 
 // IncrementDetectorCacheHit increments the number of deployments deduped by the detector
 func IncrementDetectorCacheHit() {

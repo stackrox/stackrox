@@ -285,7 +285,14 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 	}
 
 	var dialOpts []grpc.DialOption
-	dialOpts = append(dialOpts, keepAliveDialOption())
+	// To avoid getting 'Client received GoAway with error code ENHANCE_YOUR_CALM and debug data equal to ASCII "too_many_pings"'
+	// from Sensor in Compliance, we must match the client and server settings for keepalive
+	// See: https://github.com/grpc/grpc/blob/master/doc/keepalive.md#faq
+	dialOpts = append(dialOpts, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                10 * time.Second,
+		Timeout:             40 * time.Second,
+		PermitWithoutStream: false,
+	}))
 	if clientConnOpts.MaxMsgRecvSize > 0 {
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
 	}
@@ -427,17 +434,4 @@ func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout
 		Timeout:   timeout,
 		Transport: transport,
 	}, nil
-}
-
-// Parameters for keep alive.
-func keepAliveDialOption() grpc.DialOption {
-	// Since we are holding open a GRPC stream, enable keep alive.
-	// Ping every minute of inactivity, and wait 30 seconds. Do this even when no streams are open (though
-	// one should always be open with central.)
-	params := keepalive.ClientParameters{
-		Time:                10 * time.Second,
-		Timeout:             30 * time.Second,
-		PermitWithoutStream: true,
-	}
-	return grpc.WithKeepaliveParams(params)
 }

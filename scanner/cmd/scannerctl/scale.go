@@ -75,7 +75,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		// Create scanner client.
 		scanner, err := factory.Create(ctx)
 		if err != nil {
-			return fmt.Errorf("create client: %w", err)
+			return fmt.Errorf("creating client: %w", err)
 		}
 
 		var refs []name.Reference
@@ -83,6 +83,9 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			refs, err = references(ctx, auth, *repository, *images)
 		} else {
 			refs, err = fixtures.References()
+		}
+		if err != nil {
+			return fmt.Errorf("fetching image references: %w", err)
 		}
 
 		log.Printf("scale testing with %d images", len(refs))
@@ -149,15 +152,15 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 func references(ctx context.Context, auth pkgauthn.Authenticator, repository string, n int) ([]name.Reference, error) {
 	repo, err := name.NewRepository(repository, name.StrictValidation)
 	if err != nil {
-		panic("programmer error")
+		return nil, fmt.Errorf("validating repository: %w", err)
 	}
 	puller, err := remote.NewPuller(remote.WithAuth(auth))
 	if err != nil {
-		log.Fatalf("creating puller: %v", err)
+		return nil, fmt.Errorf("creating puller: %w", err)
 	}
 	lister, err := puller.Lister(ctx, repo)
 	if err != nil {
-		log.Fatalf("creating lister: %v", err)
+		return nil, fmt.Errorf("creating lister: %w", err)
 	}
 
 	refs := make([]name.Reference, 0, n)
@@ -165,7 +168,7 @@ ListTags:
 	for lister.HasNext() {
 		ts, err := lister.Next(ctx)
 		if err != nil {
-			log.Fatalf("listing tags: %v", err)
+			return nil, fmt.Errorf("listing tags: %w", err)
 		}
 
 		for _, tag := range ts.Tags {

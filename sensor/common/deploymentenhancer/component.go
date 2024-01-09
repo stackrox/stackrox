@@ -45,6 +45,9 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	toEnhance := msg.GetDeploymentEnhancementRequest()
 	if toEnhance == nil {
+		return nil
+	}
+	if toEnhance.GetMsg() == nil {
 		return errox.ReferencedObjectNotFound.New("received empty message")
 	}
 	log.Debugf("Received message to process in DeploymentEnhancer: %+v", toEnhance)

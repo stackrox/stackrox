@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
-	podStore "github.com/stackrox/rox/central/pod/store"
+	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"

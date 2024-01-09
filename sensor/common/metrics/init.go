@@ -17,6 +17,7 @@ func init() {
 		processEnrichmentLRUCacheSize,
 		sensorIndicatorChannelFullCounter,
 		networkFlowBufferGauge,
+		entitiesNotFound,
 		totalNetworkFlowsSentCounter,
 		totalNetworkFlowsReceivedCounter,
 		totalNetworkEndpointsSentCounter,
