@@ -4,18 +4,19 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // NewMapCache takes a db crud and key func and generates a fully in memory cache that wraps the crud interface
 // NOTE: This cache expects AT MOST one writer per key. This assumption allows us to avoid taking a lock around the
 // cache and the database. Instead, we simply need to lock map operations
-func NewMapCache(db db.Crud, keyFunc func(msg proto.Message) []byte) (db.Crud, error) {
+func NewMapCache(db db.Crud, keyFunc func(msg protocompat.Message) []byte) (db.Crud, error) {
 	impl := &cacheImpl{
 		db:      db,
 		keyFunc: keyFunc,
 
-		cache: make(map[string]proto.Message),
+		cache: make(map[string]protocompat.Message),
 	}
 
 	if err := impl.populate(); err != nil {
@@ -27,12 +28,12 @@ func NewMapCache(db db.Crud, keyFunc func(msg proto.Message) []byte) (db.Crud, e
 type cacheImpl struct {
 	db db.Crud
 
-	keyFunc func(msg proto.Message) []byte
-	cache   map[string]proto.Message
+	keyFunc func(msg protocompat.Message) []byte
+	cache   map[string]protocompat.Message
 	lock    sync.RWMutex
 }
 
-func (c *cacheImpl) addNoLock(msg proto.Message) {
+func (c *cacheImpl) addNoLock(msg protocompat.Message) {
 	c.cache[string(c.keyFunc(msg))] = proto.Clone(msg)
 }
 
@@ -41,7 +42,7 @@ func (c *cacheImpl) populate() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	return c.db.WalkAllWithID(func(id []byte, msg proto.Message) error {
+	return c.db.WalkAllWithID(func(id []byte, msg protocompat.Message) error {
 		// No need to clone objects pulled directly from the DB
 		c.cache[string(id)] = msg
 		return nil
@@ -74,7 +75,7 @@ func (c *cacheImpl) GetKeys() ([]string, error) {
 	return keys, nil
 }
 
-func (c *cacheImpl) Get(id string) (proto.Message, bool, error) {
+func (c *cacheImpl) Get(id string) (protocompat.Message, bool, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -85,11 +86,11 @@ func (c *cacheImpl) Get(id string) (proto.Message, bool, error) {
 	return proto.Clone(msg), true, nil
 }
 
-func (c *cacheImpl) GetMany(ids []string) ([]proto.Message, []int, error) {
+func (c *cacheImpl) GetMany(ids []string) ([]protocompat.Message, []int, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	msgs := make([]proto.Message, 0, len(ids))
+	msgs := make([]protocompat.Message, 0, len(ids))
 	var missingIndices []int
 	for i, id := range ids {
 		msg, ok := c.cache[id]
@@ -102,7 +103,7 @@ func (c *cacheImpl) GetMany(ids []string) ([]proto.Message, []int, error) {
 	return msgs, missingIndices, nil
 }
 
-func (c *cacheImpl) Walk(fn func(msg proto.Message) error) error {
+func (c *cacheImpl) Walk(fn func(msg protocompat.Message) error) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -114,7 +115,7 @@ func (c *cacheImpl) Walk(fn func(msg proto.Message) error) error {
 	return nil
 }
 
-func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) error {
+func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg protocompat.Message) error) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
@@ -126,7 +127,7 @@ func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) e
 	return nil
 }
 
-func (c *cacheImpl) Upsert(msg proto.Message) error {
+func (c *cacheImpl) Upsert(msg protocompat.Message) error {
 	if err := c.db.Upsert(msg); err != nil {
 		return err
 	}
@@ -137,7 +138,7 @@ func (c *cacheImpl) Upsert(msg proto.Message) error {
 	return nil
 }
 
-func (c *cacheImpl) UpsertMany(msgs []proto.Message) error {
+func (c *cacheImpl) UpsertMany(msgs []protocompat.Message) error {
 	if err := c.db.UpsertMany(msgs); err != nil {
 		return err
 	}
@@ -150,7 +151,7 @@ func (c *cacheImpl) UpsertMany(msgs []proto.Message) error {
 	return nil
 }
 
-func (c *cacheImpl) UpsertWithID(id string, msg proto.Message) error {
+func (c *cacheImpl) UpsertWithID(id string, msg protocompat.Message) error {
 	if err := c.db.UpsertWithID(id, msg); err != nil {
 		return err
 	}
@@ -161,7 +162,7 @@ func (c *cacheImpl) UpsertWithID(id string, msg proto.Message) error {
 	return nil
 }
 
-func (c *cacheImpl) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+func (c *cacheImpl) UpsertManyWithIDs(ids []string, msgs []protocompat.Message) error {
 	if len(ids) != len(msgs) {
 		return errors.Errorf("length(ids) %d does not match len(msgs) %d", len(ids), len(msgs))
 	}

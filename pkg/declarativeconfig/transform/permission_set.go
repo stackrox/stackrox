@@ -3,10 +3,10 @@ package transform
 import (
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var _ Transformer = (*permissionSetTransform)(nil)
@@ -21,7 +21,7 @@ func newPermissionSetTransform() *permissionSetTransform {
 	return &permissionSetTransform{}
 }
 
-func (p *permissionSetTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]proto.Message, error) {
+func (p *permissionSetTransform) Transform(configuration declarativeconfig.Configuration) (map[reflect.Type][]protocompat.Message, error) {
 	permissionSetConfig, ok := configuration.(*declarativeconfig.PermissionSet)
 	if !ok {
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for permission set: %T", configuration)
@@ -35,7 +35,7 @@ func (p *permissionSetTransform) Transform(configuration declarativeconfig.Confi
 		Traits:           &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
 
-	return map[reflect.Type][]proto.Message{
+	return map[reflect.Type][]protocompat.Message{
 		permissionSetType: {permissionSetProto},
 	}, nil
 }

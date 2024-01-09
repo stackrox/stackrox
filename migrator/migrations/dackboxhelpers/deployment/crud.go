@@ -4,10 +4,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -52,23 +52,23 @@ var (
 )
 
 // Alloc allocates a new deployment.
-func Alloc() proto.Message {
+func Alloc() protocompat.Message {
 	return &storage.Deployment{}
 }
 
 // ListAlloc allocates a new list deployment.
-func ListAlloc() proto.Message {
+func ListAlloc() protocompat.Message {
 	return &storage.ListDeployment{}
 }
 
 // KeyFunc returns the key for a deployment.
-func KeyFunc(msg proto.Message) []byte {
+func KeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
 	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // ListKeyFunc returns the key for a list deployment.
-func ListKeyFunc(msg proto.Message) []byte {
+func ListKeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
 	return dbhelper.GetBucketKey(ListBucket, unPrefixed)
 }

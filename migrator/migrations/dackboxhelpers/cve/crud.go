@@ -4,10 +4,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -36,12 +36,12 @@ var (
 )
 
 // KeyFunc returns the key for a CVE.
-func KeyFunc(msg proto.Message) []byte {
+func KeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
 	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // Alloc allocates a CVE.
-func Alloc() proto.Message {
+func Alloc() protocompat.Message {
 	return &storage.CVE{}
 }

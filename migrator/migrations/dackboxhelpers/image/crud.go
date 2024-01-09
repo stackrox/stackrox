@@ -4,10 +4,10 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -51,21 +51,21 @@ var (
 )
 
 // KeyFunc returns the key for an image object
-func KeyFunc(msg proto.Message) []byte {
+func KeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
 	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // ListKeyFunc returns the key for a list image.
-func ListKeyFunc(msg proto.Message) []byte {
+func ListKeyFunc(msg protocompat.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
 	return dbhelper.GetBucketKey(ListBucket, unPrefixed)
 }
 
-func alloc() proto.Message {
+func alloc() protocompat.Message {
 	return &storage.Image{}
 }
 
-func listAlloc() proto.Message {
+func listAlloc() protocompat.Message {
 	return &storage.ListImage{}
 }

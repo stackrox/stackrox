@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	proto "github.com/gogo/protobuf/proto"
+	protocompat "github.com/stackrox/rox/pkg/protocompat"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,7 +40,7 @@ func (m *MockWrapper) EXPECT() *MockWrapperMockRecorder {
 }
 
 // Wrap mocks base method.
-func (m *MockWrapper) Wrap(key []byte, msg proto.Message) (string, any) {
+func (m *MockWrapper) Wrap(key []byte, msg protocompat.Message) (string, any) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Wrap", key, msg)
 	ret0, _ := ret[0].(string)

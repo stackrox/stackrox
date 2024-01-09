@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -65,7 +66,7 @@ func (suite *policyUpdatesTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func insertPolicy(bucket bolthelpers.BucketRef, id string, pb proto.Message) error {
+func insertPolicy(bucket bolthelpers.BucketRef, id string, pb protocompat.Message) error {
 	return bucket.Update(func(b *bolt.Bucket) error {
 		bytes, err := proto.Marshal(pb)
 		if err != nil {

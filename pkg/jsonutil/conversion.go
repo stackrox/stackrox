@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -34,23 +34,23 @@ func JSONUnmarshaler() *jsonpb.Unmarshaler {
 }
 
 // JSONToProto converts a string containing JSON into a proto message.
-func JSONToProto(json string, m proto.Message) error {
+func JSONToProto(json string, m protocompat.Message) error {
 	return JSONReaderToProto(strings.NewReader(json), m)
 }
 
 // JSONBytesToProto converts bytes containing JSON into a proto message.
-func JSONBytesToProto(contents []byte, m proto.Message) error {
+func JSONBytesToProto(contents []byte, m protocompat.Message) error {
 	return JSONReaderToProto(bytes.NewReader(contents), m)
 }
 
 // JSONReaderToProto converts bytes from a reader containing JSON into a proto message.
-func JSONReaderToProto(reader io.Reader, m proto.Message) error {
+func JSONReaderToProto(reader io.Reader, m protocompat.Message) error {
 	return JSONUnmarshaler().Unmarshal(reader, m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
 // If compact is true, the result is compact (one-line) JSON.
-func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
+func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, error) {
 	if m == nil {
 		return "", nil
 	}

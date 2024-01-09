@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -62,7 +63,7 @@ func requestToAny(req interface{}) *types.Any {
 	if req == nil {
 		return nil
 	}
-	msg, ok := req.(proto.Message)
+	msg, ok := req.(protocompat.Message)
 	if !ok {
 		return nil
 	}

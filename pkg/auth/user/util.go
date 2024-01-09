@@ -3,11 +3,11 @@ package user
 import (
 	"sort"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var log = logging.LoggerForModule()
@@ -38,7 +38,7 @@ type loggableAuthProvider struct {
 	Type string
 }
 
-func protoToJSON(message proto.Message) string {
+func protoToJSON(message protocompat.Message) string {
 	result, err := jsonutil.ProtoToJSON(message, jsonutil.OptCompact, jsonutil.OptUnEscape)
 	if err != nil {
 		log.Error("Failed to convert proto to JSON: ", err)

@@ -3,17 +3,17 @@ package types
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 // IDExtractor extracts the ID from proto messages.
-type IDExtractor func(m proto.Message) string
+type IDExtractor func(m protocompat.Message) string
 
 // NameExtractor extracts the name from proto messages.
-type NameExtractor func(m proto.Message) string
+type NameExtractor func(m protocompat.Message) string
 
 // UniversalIDExtractor provides a way to extract the ID from proto messages.
 func UniversalIDExtractor() IDExtractor {
@@ -25,7 +25,7 @@ func UniversalNameExtractor() NameExtractor {
 	return extractNameFromProtoMessage
 }
 
-func extractIDFromProtoMessage(message proto.Message) string {
+func extractIDFromProtoMessage(message protocompat.Message) string {
 	// Special case, as the group specifies the ID nested within the groups properties.
 	if group, ok := message.(*storage.Group); ok {
 		return group.GetProps().GetId()
@@ -48,7 +48,7 @@ func extractIDFromProtoMessage(message proto.Message) string {
 	return messageWithID.GetId()
 }
 
-func extractNameFromProtoMessage(message proto.Message) string {
+func extractNameFromProtoMessage(message protocompat.Message) string {
 	// Special case, as the group specifies no name we will use a combination of multiple values to identify it.
 	if group, ok := message.(*storage.Group); ok {
 		return fmt.Sprintf("group %s:%s:%s for auth provider ID %s",

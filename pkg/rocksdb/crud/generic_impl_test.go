@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,11 +25,11 @@ var (
 	alerts = []*storage.Alert{alert1, alert2}
 )
 
-func alloc() proto.Message {
+func alloc() protocompat.Message {
 	return &storage.Alert{}
 }
 
-func alertKeyFunc(msg proto.Message) []byte {
+func alertKeyFunc(msg protocompat.Message) []byte {
 	return []byte(msg.(*storage.Alert).GetId())
 }
 
@@ -64,7 +64,7 @@ func (s *CRUDTestSuite) TearDownTest() {
 func (s *CRUDTestSuite) TestWalkAllWithID() {
 	var ids []string
 	var alerts []*storage.Alert
-	do := func(id []byte, msg proto.Message) error {
+	do := func(id []byte, msg protocompat.Message) error {
 		if bytes.Equal(id, []byte(alert3ID)) {
 			return nil
 		}
@@ -73,7 +73,7 @@ func (s *CRUDTestSuite) TestWalkAllWithID() {
 		return nil
 	}
 
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2, alert3}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2, alert3}))
 
 	err := s.crud.WalkAllWithID(do)
 	s.NoError(err)
@@ -129,7 +129,7 @@ func (s *CRUDTestSuite) TestReadMany() {
 	s.Equal([]int{0, 1}, indices)
 	s.Len(msgs, 0)
 
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2}))
 
 	msgs, indices, err = s.crud.GetMany([]string{alert1ID, "3", alert2ID})
 	s.NoError(err)
@@ -152,8 +152,8 @@ func (s *CRUDTestSuite) TestUpsert() {
 }
 
 func (s *CRUDTestSuite) TestUpsertMany() {
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1}))
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2}))
 
 	localAlert1 := alert1.Clone()
 	localAlert1.State = storage.ViolationState_RESOLVED
@@ -161,7 +161,7 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	localAlert2 := alert2.Clone()
 	localAlert2.State = storage.ViolationState_RESOLVED
 
-	s.NoError(s.crud.UpsertMany([]proto.Message{localAlert1, localAlert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{localAlert1, localAlert2}))
 }
 
 func (s *CRUDTestSuite) TestUpsertWithID() {
@@ -179,8 +179,8 @@ func (s *CRUDTestSuite) TestUpsertWithID() {
 }
 
 func (s *CRUDTestSuite) TestUpsertManyWithIDs() {
-	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID}, []proto.Message{alert1}))
-	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID}, []protocompat.Message{alert1}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []protocompat.Message{alert1, alert2}))
 
 	localAlert1 := alert1.Clone()
 	localAlert1.State = storage.ViolationState_RESOLVED
@@ -188,7 +188,7 @@ func (s *CRUDTestSuite) TestUpsertManyWithIDs() {
 	localAlert2 := alert2.Clone()
 	localAlert2.State = storage.ViolationState_RESOLVED
 
-	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{localAlert1, localAlert2}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []protocompat.Message{localAlert1, localAlert2}))
 }
 
 func (s *CRUDTestSuite) TestDelete() {
@@ -201,7 +201,7 @@ func (s *CRUDTestSuite) TestDelete() {
 }
 
 func (s *CRUDTestSuite) TestDeleteMany() {
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2}))
 	s.NoError(s.crud.DeleteMany([]string{alert1ID, alert2ID}))
 
 	_, exists, err := s.crud.Get(alert1ID)
@@ -214,7 +214,7 @@ func (s *CRUDTestSuite) TestDeleteMany() {
 }
 
 func (s *CRUDTestSuite) TestGetIDs() {
-	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.NoError(s.crud.UpsertMany([]protocompat.Message{alert1, alert2}))
 
 	ids, err := s.crud.GetKeys()
 	s.NoError(err)

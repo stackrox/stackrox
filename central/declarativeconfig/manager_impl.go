@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -40,7 +40,7 @@ const (
 	consecutiveReconciliationErrorThreshold = 3
 )
 
-type protoMessagesByType = map[reflect.Type][]proto.Message
+type protoMessagesByType = map[reflect.Type][]protocompat.Message
 
 type managerImpl struct {
 	once sync.Once
@@ -182,7 +182,7 @@ func (m *managerImpl) UpdateDeclarativeConfigContents(handlerID string, contents
 		return
 	}
 
-	transformedConfigurations := make(map[reflect.Type][]proto.Message, len(configurations))
+	transformedConfigurations := make(map[reflect.Type][]protocompat.Message, len(configurations))
 	var transformationErrors *multierror.Error
 	for _, configuration := range configurations {
 		transformedConfig, err := m.universalTransformer.Transform(configuration)
@@ -327,7 +327,7 @@ func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMe
 // In case err == nil, the health status will be set to healthy.
 // In case err != nil _and_ the number of errors for this message is >= the given threshold, the health
 // status will be set to unhealthy.
-func (m *managerImpl) updateHealthForMessage(handler string, message proto.Message, err error, threshold int32) {
+func (m *managerImpl) updateHealthForMessage(handler string, message protocompat.Message, err error, threshold int32) {
 	messageID := m.idExtractor(message)
 	healthStatus := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, err, m.idExtractor, m.nameExtractor)
 
@@ -344,7 +344,7 @@ func (m *managerImpl) updateHealthForMessage(handler string, message proto.Messa
 	}
 }
 
-func (m *managerImpl) registerHealthForMessages(handler string, messages ...proto.Message) {
+func (m *managerImpl) registerHealthForMessages(handler string, messages ...protocompat.Message) {
 	for _, message := range messages {
 		health := declarativeConfigUtils.HealthStatusForProtoMessage(message, handler, nil, m.idExtractor, m.nameExtractor)
 		m.registerDeclarativeConfigHealth(health)

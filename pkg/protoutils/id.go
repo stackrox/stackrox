@@ -1,11 +1,11 @@
 package protoutils
 
 import (
-	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type protoMessageWithID interface {
-	proto.Message
+	protocompat.Message
 	GetId() string
 }
 

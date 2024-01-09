@@ -1,7 +1,7 @@
 package indexer
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -40,7 +40,7 @@ func (ir *wrapperRegistryImpl) Matches(key []byte) bool {
 	return longestMatch != nil
 }
 
-func (ir *wrapperRegistryImpl) Wrap(key []byte, msg proto.Message) (string, interface{}) {
+func (ir *wrapperRegistryImpl) Wrap(key []byte, msg protocompat.Message) (string, interface{}) {
 	ir.lock.RLock()
 	defer ir.lock.RUnlock()
 
