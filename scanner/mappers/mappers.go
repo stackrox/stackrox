@@ -364,7 +364,8 @@ func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
 		// Look for CVSS fields. When at least one vector is found, we consider that the
 		// CVSS information exists, but return partial results in the case of failures.
 		errList := errorhelpers.NewErrorList("invalid RHEL CVSS")
-		if s.v2Vector = q.Get("cvss2_vector"); s.v2Vector != "" {
+		s.v2Vector = q.Get("cvss2_vector")
+		if s.v2Vector != "" {
 			if _, err := cvssv2.ParseCVSSV2(s.v2Vector); err != nil {
 				errList.AddError(fmt.Errorf("v2 vector: %w", err))
 			} else if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err != nil {
@@ -373,7 +374,8 @@ func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
 				s.v2Score = float32(f)
 			}
 		}
-		if s.v3Vector = q.Get("cvss3_vector"); s.v3Vector != "" {
+		s.v3Vector = q.Get("cvss3_vector")
+		if s.v3Vector != "" {
 			if _, err := cvssv3.ParseCVSSV3(s.v3Vector); err != nil {
 				errList.AddError(fmt.Errorf("v3 vector: %w", err))
 			} else if f, err := strconv.ParseFloat(q.Get("cvss3_score"), 32); err == nil {
