@@ -54,42 +54,43 @@ export function applyLocalSeverityFilters(...severities) {
 }
 
 /**
- * Select a resource filter type from the resource filter dropdown.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Select a search option from the search options dropdown.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectResourceFilterType(entityType) {
+export function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
-    cy.get(selectors.searchOptionsMenuItem(entityType)).click();
+    cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
 }
 
 /**
- * Type a value into the resource filter typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Type a value into the filter autocomplete typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  * @param {string} value
  */
-export function typeAndSelectResourceFilterValue(entityType, value) {
-    selectResourceFilterType(entityType);
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(entityType))
+export function typeAndSelectSearchFilterValue(searchOption, value) {
+    selectSearchOption(searchOption);
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
         .contains(new RegExp(`^${value}$`))
         .click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**
- * Type a value into the resource filter typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Type a value into the search filter typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  * @param {string} value
  */
-export function typeAndSelectCustomResourceFilterValue(entityType, value) {
-    selectResourceFilterType(entityType);
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(entityType)).contains(`Add "${value}"`).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+export function typeAndSelectCustomSearchFilterValue(searchOption, value) {
+    selectSearchOption(searchOption);
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(searchOption)).contains(`Add "${value}"`).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
+
 /**
  * View a specific entity tab for a Workload CVE table
  *
