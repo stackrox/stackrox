@@ -692,9 +692,10 @@ func TestFetchOptionFromRequest(t *testing.T) {
 }
 
 func TestGetAppliedNetpolsForDeployment(t *testing.T) {
+	mockClusterID := uuid.NewV4().String()
 	mockCtrl := gomock.NewController(t)
 	mockNetpolDS := networkPolicyMockStore.NewMockDataStore(mockCtrl)
-	mockNetpolDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+	mockNetpolDS.EXPECT().GetNetworkPolicies(gomock.Any(), mockClusterID, "ns").Return(
 		[]*storage.NetworkPolicy{
 			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "match"}}}},
 			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"nomatch": "nomatch"}}}},
@@ -702,7 +703,7 @@ func TestGetAppliedNetpolsForDeployment(t *testing.T) {
 	s := serviceImpl{
 		netpols: mockNetpolDS,
 	}
-	eCtx := enricher.EnrichmentContext{Namespace: "ns", ClusterID: uuid.NewV4().String()}
+	eCtx := enricher.EnrichmentContext{Namespace: "ns", ClusterID: mockClusterID}
 	d := storage.Deployment{Id: uuid.NewV4().String(), PodLabels: map[string]string{"app": "match"}}
 
 	actual, err := s.getAppliedNetpolsForDeployment(context.Background(), eCtx, &d)
