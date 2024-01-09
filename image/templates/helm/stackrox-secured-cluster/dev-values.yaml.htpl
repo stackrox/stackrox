@@ -42,3 +42,26 @@ collector:
     limits:
       memory: "250Mi"
       cpu: "500m"
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+scannerV4:
+  indexer:
+    replicas: 1
+    autoscaling:
+      minReplicas: 1
+      maxReplicas: 3
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  db:
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Gi"
+[<- end >]
