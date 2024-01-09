@@ -577,28 +577,145 @@ check_for_errors_in_stackrox_logs() {
         die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
     fi
 
-    local dir="$1"
+    local dir="$1/stackrox/pods"
 
-    if [[ ! -d "$dir/stackrox/pods" ]]; then
+    if [[ ! -d "${dir}" ]]; then
         die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
-    local logs
-    logs=$(ls "$dir"/stackrox/pods/*.log)
+    local pod_objects=()
+    _get_pod_objects "${dir}"
+    _verify_item_count "${dir}" "${#pod_objects[*]}"
+
+    declare -A podnames_by_app
+    _group_pods_by_app_label
+
+    # Check the logs for each app separately
+    local app logs check_out summary
+    local failure_found="false"
+    LOGCHECK_SCRIPT="${LOGCHECK_SCRIPT:-scripts/ci/logcheck/check.sh}"
+    for app in "${!podnames_by_app[@]}"; do
+        logs="$(_get_logs_for_app "${app}")"
+        # shellcheck disable=SC2086
+        if [[ -n "${logs}" ]] && ! check_out="$(${LOGCHECK_SCRIPT} ${logs})"; then
+            summary="$(summarize_check_output "${check_out}")"
+            save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
+            failure_found="true"
+        else
+            save_junit_success "SuspiciousLog-${app}" "Suspicious entries in log file(s)"
+        fi
+    done
+    if [[ "${failure_found}" == "true" ]]; then
+        die "ERROR: Found at least one suspicious log file entry."
+    fi
+}
+
+_get_pod_objects() {
+    local dir="$1"
+
+    local nullglob_setting
+    nullglob_setting="$(shopt nullglob || true)"
+    if [[ "${nullglob_setting}" =~ off ]]; then
+        shopt -s nullglob
+    fi
+
+    local pod
+    for pod in "${dir}"/*_object.json; do
+        pod_objects[${#pod_objects[*]}]="${pod}"
+    done
+
+    if [[ "${nullglob_setting}" =~ off ]]; then
+        shopt -u nullglob
+    fi
+}
+
+_verify_item_count() {
+    local dir="$1"
+    local pod_object_count="$2"
+
+    # ITEM_COUNT.txt is used to keep this function in sync with the file output
+    # used by ./scripts/ci/collect-service-logs.sh
+
+    if [[ ! -f "${dir}/ITEM_COUNT.txt" ]]; then
+        die "ITEM_COUNT.txt is missing. (Check output from ./scripts/ci/collect-service-logs.sh"
+    fi
+
+    local item_count
+    item_count="$(cat "${dir}/ITEM_COUNT.txt")"
+
+    if [[ "${item_count}" != "${pod_object_count}" ]]; then
+        die "The recorded number of items (${item_count}) differs from the objects found (${pod_object_count})"
+    fi
+}
+
+_group_pods_by_app_label() {
+    local pod_object app podname
+    for pod_object in "${pod_objects[@]}"; do
+        podname="$(jq -r '.metadata.name' < "${pod_object}")"
+        if [[ -z "${podname}" || "${podname}" == "null" ]]; then
+            die "ERROR: All pods should have a name! (check ${podname})"
+        fi
+        app="$(jq -r '.metadata.labels.app' < "${pod_object}")"
+        if [[ -z "${app}" || "${app}" == "null" ]]; then
+            info "Warning: All Stackrox pods should have an app label (check ${podname})"
+            app="unknown"
+        fi
+        podnames_by_app[${app}]="${podnames_by_app[${app}]:-} ${podname}"
+    done
+}
+
+_get_logs_for_app() {
+    local app="$1"
+    local logs=""
+    for podname in ${podnames_by_app[${app}]}; do
+        if this_logs="$(ls "${dir}/${podname}"*.log)"; then
+            if [[ -z "${logs}" ]]; then
+                logs="${this_logs}"
+            else
+                logs="${logs} ${this_logs}"
+            fi
+        fi
+    done
+
     local filtered
     # shellcheck disable=SC2010,SC2086
     filtered=$(ls $logs | grep -Ev "(previous|_describe).log$" || true)
-    if [[ -n "$filtered" ]]; then
-        local check_out=""
-        # shellcheck disable=SC2086
-        if ! check_out="$(scripts/ci/logcheck/check.sh $filtered)"; then
-            local last_log="${check_out##*.log:}"
-            save_junit_failure "SuspiciousLog" "${last_log##*: }" "$check_out"
-            die "ERROR: Found at least one suspicious log file entry."
-        else
-            save_junit_success "SuspiciousLog" "Suspicious entries in log file(s)"
-        fi
+
+    echo "${filtered}"
+}
+
+summarize_check_output() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: summarize_check_output <output>"
     fi
+
+    local MAX_SUMMARY_LENGTH=128
+    local output="$1"
+
+    output="$(
+        echo "${output}" | \
+        # The first line from check.sh is the first suspicious log found
+        head -1 | \
+        # Remove dates
+        sed -r -e 's/[[:digit:]]{4}[/-][[:digit:]]{2}[/-][[:digit:]]{2}//g' | \
+        # Remove time
+        sed -r -e 's/[[:digit:]]{2}\:[[:digit:]]{2}\:[[:digit:]]{2}\.?[[:digit:]]*//g' | \
+        # Replace images
+        sed -r -e 's/(image ").*?"/\1__image__"/g' | \
+        # Replace IDs
+        sed -r -e 's/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/__ID__/g' | \
+        # Replace pointers
+        sed -r -e 's/0x[0-9a-f]+\??/_addr_/g' | \
+        # Replace IPs + Ports
+        sed -r -e 's/[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\:?[[:digit:]]*/__ip[:port]__"/g' \
+        || true
+    )"
+
+    if [[ "${#output}" -gt ${MAX_SUMMARY_LENGTH} ]]; then
+        output="${output:0:${MAX_SUMMARY_LENGTH}}..."
+    fi
+
+    echo "${output}"
 }
 
 collect_and_check_stackrox_logs() {
