@@ -20,7 +20,7 @@ type scanNameGetter interface {
 
 func validateScanName(req scanNameGetter) error {
 	if req == nil {
-		return errors.New("scan name getter is nil")
+		return errors.New("apply scan configuration request is empty")
 	}
 	if req.GetScanName() == "" {
 		return errors.New("no name provided for the scan")
