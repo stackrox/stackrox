@@ -104,7 +104,7 @@ function approve_install_plan() {
   local -r version_tag="$2"
 
   log "Waiting for an install plan to be created"
-  if ! retry 10 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
+  if ! retry 15 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
     log "Install plan failed to materialize."
     log "Dumping pod descriptions..."
     kubectl -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
