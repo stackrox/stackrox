@@ -122,23 +122,18 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 	// If the ECR configuration provides Authorization Data, we do not initialize an
 	// ECR client, but instead, we create the registry immediately since the
 	// Authorization Data payload provides the credentials statically.
-	var cfg *docker.Config
+	cfg := &docker.Config{
+		Endpoint:        endpoint,
+		DisableRepoList: disableRepoList,
+	}
 	if authData := conf.GetAuthorizationData(); authData != nil {
-		cfg = &docker.Config{
-			Username:        authData.GetUsername(),
-			Password:        authData.GetPassword(),
-			Endpoint:        endpoint,
-			DisableRepoList: disableRepoList,
-		}
+		cfg.Username = authData.GetUsername()
+		cfg.Password = authData.GetPassword()
 	} else {
 		client, err := createECRClient(conf)
 		if err != nil {
-			log.Error("Failed to create client: ", err)
+			log.Error("Failed to create ECR client: ", err)
 			return nil, err
-		}
-		cfg = &docker.Config{
-			Endpoint:        endpoint,
-			DisableRepoList: disableRepoList,
 		}
 		cfg.Transport = newAWSTransport(cfg, client)
 	}
