@@ -171,6 +171,9 @@ test_upgrade_paths() {
 
     wait_for_central_reconciliation
 
+    rm -f FAIL
+    remove_qa_test_results
+
     info "Running smoke tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
     store_qa_test_results "upgrade-paths-smoke-tests"
@@ -197,7 +200,7 @@ helm_upgrade_to_latest_postgres() {
 
 
     local root_certificate_path="$(mktemp -d)/root_certs_values.yaml"
-    create_certificate_values_file $root_certificate_path
+    create_certificate_values_file "$root_certificate_path"
 
     ########################################################################################
     # Use helm to upgrade to current Postgres release.                                     #

@@ -69,6 +69,9 @@ compatibility_test() {
         get_ECR_docker_pull_password
     fi
 
+    rm -f FAIL
+    remove_qa_test_results
+
     info "Running compatibility tests"
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
