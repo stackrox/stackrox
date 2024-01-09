@@ -1472,6 +1472,47 @@ _slack_check_env() {
     )
 }
 
+slack_workflow_failure() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: slack_workflow_failure <github context>"
+    fi
+    local github_context="$1"
+
+    # local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    # if is_in_PR_context; then
+    #     # Send to #acs-slack-ci-integration-testing when testing.
+    #     webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    # fi
+    local webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+
+    local workflow_name
+    workflow_name="$(jq -r <<<"${github_context}" '.workflow')"
+
+    # shellcheck disable=SC2016
+    local body='
+{
+    "text": "\($workflow_name) failed.",
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "\($workflow_name) failed."
+            }
+        }
+    ]
+}
+'
+
+    jq --null-input \
+       --arg workflow_name "${workflow_name}" \
+       "$body" | \
+    curl --location --silent --show-error --fail \
+         --data @- --header 'Content-Type: application/json' \
+         "$webhook_url"
+}
+
 junit_wrap() {
     if [[ "$#" -lt 4 ]]; then
         die "missing args. usage: junit_wrap <class> <description> <failure_message> <command> [ args ]"
