@@ -25,6 +25,12 @@ func Equal(a proto.Message, b proto.Message) bool {
 	return proto.Equal(a, b)
 }
 
+// Marshal takes a protocol buffer message and encodes it into
+// the wire format, returning the data. This is the main entry point.
+func Marshal(msg proto.Message) ([]byte, error) {
+	return proto.Marshal(msg)
+}
+
 // MarshalTextString writes a given protocol buffer in text format,
 // returning the string directly..
 func MarshalTextString(msg proto.Message) string {
