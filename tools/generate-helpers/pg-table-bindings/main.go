@@ -100,19 +100,19 @@ type properties struct {
 	// Indicates the directory in which the generated schema file must go.
 	SchemaDirectory string
 
-	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores
+	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores.
 	GetAll bool
 
-	// Indicates that we should just generate the singleton store
+	// Indicates that we should just generate the singleton store.
 	SingletonStore bool
 
-	// Migration root
+	// Migration root.
 	MigrateRoot string
 
-	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"")
+	// Where the data are migrated from in the format of "database:bucket", eg, \"rocksdb\", \"dackbox\" or \"boltdb\"").
 	MigrateFrom string
 
-	// The unique sequence number to migrate all tables to Postgres
+	// The unique sequence number to migrate all tables to Postgres.
 	MigrateSeq int
 
 	// Indicates the scope of search. Set this field to limit search to only some categories in case of overlapping
@@ -122,17 +122,20 @@ type properties struct {
 	// Indicates whether stores should use Postgres copyFrom operation or not.
 	NoCopyFrom bool
 
-	// Generate conversion functions with schema
+	// Generate conversion functions with schema.
 	ConversionFuncs bool
 
-	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>
+	// Indicates that there is a foreign key cycle relationship. Should be defined as <Embedded FK Field>:<Referenced Field>.
 	Cycle string
 
 	// Indicates the batch size for migrating records.
 	MigrationBatchSize int
 
-	// The feature flag that specifies if the schema should be registered
+	// The feature flag that specifies if the schema should be registered.
 	FeatureFlag string
+
+	// Indicates the store should be mirrored in memory.
+	CachedStore bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -200,10 +203,11 @@ func main() {
 	c.Flags().BoolVar(&props.JoinTable, "read-only-store", false, "if set to true, creates read-only store")
 	c.Flags().BoolVar(&props.NoCopyFrom, "no-copy-from", false, "if true, indicates that the store should not use Postgres copyFrom operation")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
-	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function")
+	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function (can be dangerous on high cardinality stores, use with care)")
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
+	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache (can be dangerous on high cardinality stores, use with care)")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	/**
@@ -318,6 +322,7 @@ func main() {
 			"SearchScope":    searchScope,
 			"RegisterSchema": !props.ConversionFuncs,
 			"FeatureFlag":    props.FeatureFlag,
+			"CachedStore":    props.CachedStore,
 		}
 
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

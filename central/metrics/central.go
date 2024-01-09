@@ -21,6 +21,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	storeCacheOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cache_op_duration",
+		Help:      "Time taken to perform a cache operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -193,40 +202,46 @@ func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
 }
 
-// SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource
+// SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource.
+func SetCacheOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	storeCacheOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
+}
+
+// SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource.
 func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
 		Observe(startTimeToMS(start))
 }
 
-// SetAcquireDBConnDuration times how long it took the database pool to acquire a connection
+// SetAcquireDBConnDuration times how long it took the database pool to acquire a connection.
 func SetAcquireDBConnDuration(start time.Time, op metrics.Op, t string) {
 	acquireDBConnHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
-// SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource
+// SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource.
 func SetGraphQLOperationDurationTime(start time.Time, resolver metrics.Resolver, op string) {
 	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).
 		Observe(startTimeToMS(start))
 }
 
-// SetGraphQLQueryDurationTime times how long a particular graphql API took on a particular resource
+// SetGraphQLQueryDurationTime times how long a particular graphql API took on a particular resource.
 func SetGraphQLQueryDurationTime(start time.Time, query string) {
 	graphQLQueryHistogramVec.With(prometheus.Labels{"Query": query}).Observe(startTimeToMS(start))
 }
 
-// SetSensorEventRunDuration times how long a particular sensor event operation took on a particular resource
+// SetSensorEventRunDuration times how long a particular sensor event operation took on a particular resource.
 func SetSensorEventRunDuration(start time.Time, t, action string) {
 	sensorEventDurationHistogramVec.With(prometheus.Labels{"Type": t, "Action": action}).Observe(startTimeToMS(start))
 }
 
-// SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
+// SetIndexOperationDurationTime times how long a particular index operation took on a particular resource.
 func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
 		Observe(startTimeToMS(start))
 }
 
-// IncrementPipelinePanics increments the counter tracking the panics in pipeline processing
+// IncrementPipelinePanics increments the counter tracking the panics in pipeline processing.
 func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 	resource := reflectutils.Type(msg.GetMsg())
 	if event := msg.GetEvent(); event != nil {
@@ -236,7 +251,7 @@ func IncrementPipelinePanics(msg *central.MsgFromSensor) {
 	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
 }
 
-// IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
+// IncrementSensorConnect increments the counter for times that a new Sensor connection was observed.
 func IncrementSensorConnect(clusterID, state string) {
 	sensorConnectedCounter.With(prometheus.Labels{
 		"ClusterID":        clusterID,
@@ -244,22 +259,22 @@ func IncrementSensorConnect(clusterID, state string) {
 	}).Inc()
 }
 
-// IncrementSensorEventQueueCounter increments the counter for the passed operation
+// IncrementSensorEventQueueCounter increments the counter for the passed operation.
 func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
 }
 
-// IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central
+// IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central.
 func IncrementResourceProcessedCounter(op metrics.Op, resource metrics.Resource) {
 	resourceProcessedCounterVec.With(prometheus.Labels{"Operation": op.String(), "Resource": resource.String()}).Inc()
 }
 
-// IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
+// IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received.
 func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
 }
 
-// IncrementTotalNetworkEndpointsReceivedCounter registers the total number of endpoints received
+// IncrementTotalNetworkEndpointsReceivedCounter registers the total number of endpoints received.
 func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEndpoints int) {
 	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
@@ -270,18 +285,18 @@ func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
 		Observe(startTimeToMS(startTime))
 }
 
-// SetDatastoreFunctionDuration is a histogram for datastore function timing
+// SetDatastoreFunctionDuration is a histogram for datastore function timing.
 func SetDatastoreFunctionDuration(start time.Time, resourceType, function string) {
 	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).
 		Observe(startTimeToMS(start))
 }
 
-// SetFunctionSegmentDuration times a specific segment within a function
+// SetFunctionSegmentDuration times a specific segment within a function.
 func SetFunctionSegmentDuration(start time.Time, segment string) {
 	functionSegmentDurationHistogramVec.With(prometheus.Labels{"Segment": segment}).Observe(startTimeToMS(start))
 }
 
-// SetResourceProcessingDuration is the duration from sensor ingestion to Central processing
+// SetResourceProcessingDuration is the duration from sensor ingestion to Central processing.
 func SetResourceProcessingDuration(event *central.SensorEvent) {
 	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
 }
@@ -302,12 +317,12 @@ func IncrementOrphanedPLOPCounter(clusterID string) {
 	totalOrphanedPLOPCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
 }
 
-// ModifyProcessQueueLength modifies the metric for the number of processes that have not been flushed
+// ModifyProcessQueueLength modifies the metric for the number of processes that have not been flushed.
 func ModifyProcessQueueLength(delta int) {
 	processQueueLengthGauge.Add(float64(delta))
 }
 
-// IncSensorEventsDeduper increments the sensor events deduper on whether or not it was deduped or not
+// IncSensorEventsDeduper increments the sensor events deduper on whether or not it was deduped or not.
 func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 	if msg.GetEvent() == nil {
 		return
