@@ -57,6 +57,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
 
+	// TODO: ensure all expected matchers are used!
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
