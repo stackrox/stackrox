@@ -94,7 +94,7 @@ function fetch_opm() {
   local -r arch=$(go env GOARCH) || true
 
   OPM="${BASE_DIR}/bin/opm-${OPM_VERSION}"
-  "${SCRIPT_DIR}/../scripts/retry.sh" 3 5 "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
 function fetch_yq() {
@@ -103,7 +103,7 @@ function fetch_yq() {
   local -r yq_version=$(cd "${SCRIPT_DIR}/../tools/" && go list -m github.com/mikefarah/yq/v4 | awk '{print substr($2,2)}')
 
   YQ="${BASE_DIR}/bin/yq-${yq_version}"
-  "${SCRIPT_DIR}/../scripts/retry.sh" 3 5 "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${yq_version}/yq_${os_name}_${arch}"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${yq_version}/yq_${os_name}_${arch}"
 }
 
 # Script body
