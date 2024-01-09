@@ -109,7 +109,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 					if err != nil {
 						stats.preFailure.Add(1)
 						log.Printf("could not get digest for image %v: %v", ref, err)
-						return
+						continue
 					}
 					err = doWithTimeout(ctx, 5*time.Minute, func(ctx context.Context) error {
 						log.Printf("indexing image %v", ref)
