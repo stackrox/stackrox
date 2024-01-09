@@ -1512,9 +1512,11 @@ slack_workflow_failure() {
 
     echo -e "About to post:\n$payload"
 
+    curl "${webhook_url}"
+
     echo "$payload" | curl --location --silent --show-error --fail \
          --data @- --header 'Content-Type: application/json' \
-         "$webhook_url"
+         "${webhook_url}"
 }
 
 junit_wrap() {
