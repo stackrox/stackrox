@@ -33,6 +33,15 @@
               "value": "systemctl"
             }
           ]
+        },
+        {
+          "fieldName": "Process Arguments",
+          "negate": true,
+          "values": [
+            {
+              "value": "--version"
+            }
+          ]
         }
       ]
     }
