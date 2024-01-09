@@ -136,6 +136,6 @@ class TestMetrics {
             }
         }
         log.debug("${suiteName}/${testName} is not a stable test")
-        return false
+        return true
     }
 }
