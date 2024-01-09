@@ -656,7 +656,8 @@ _group_pods_by_app_label() {
         fi
         app="$(jq -r '.metadata.labels.app' < "${pod_object}")"
         if [[ -z "${app}" || "${app}" == "null" ]]; then
-            die "ERROR: All Stackrox pods should have an app label (check ${podname})"
+            info "Warning: All Stackrox pods should have an app label (check ${podname})"
+            app="unknown"
         fi
         podnames_by_app[${app}]="${podnames_by_app[${app}]:-} ${podname}"
     done
