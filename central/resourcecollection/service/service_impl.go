@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -54,6 +55,7 @@ var (
 		Field:    search.DeploymentName.String(),
 		Reversed: false,
 	}
+	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
 type collectionRequest interface {
@@ -102,6 +104,7 @@ func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*
 
 // GetCollection returns a collection for the given request
 func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollectionRequest) (*v1.GetCollectionResponse, error) {
+	log.Info("GET COLLECTION CALL")
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Id should be set when requesting a collection")
 	}
@@ -166,6 +169,7 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 
 // CreateCollection creates a new collection from the given request
 func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCollectionRequest) (*v1.CreateCollectionResponse, error) {
+	log.Info("CREATE COLLECTION")
 	collection, err := collectionRequestToCollection(ctx, request, "")
 	if err != nil {
 		return nil, err
@@ -180,6 +184,8 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 }
 
 func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
+	log.Info("UPDATE COLLECTION")
+
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Non empty collection id must be specified to update a collection")
 	}
@@ -269,6 +275,7 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 }
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
+	log.Infof("DRY RUN TO COLLECTION HAPPEND")
 	collection, err := collectionRequestToCollection(ctx, request, request.GetId())
 	if err != nil {
 		return nil, err
