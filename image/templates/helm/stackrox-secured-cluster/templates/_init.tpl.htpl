@@ -272,9 +272,6 @@
 {{/* Disable scanner v4 always in kubectl outputs */}}
 
 {{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
-{{ if ._rox.scannerV4._dbEnabled }}
-  {{ include "srox.scannerV4Volume" $ }}
-{{ end }}
 
 {{ if ._rox.scannerV4._indexerEnabled }}
   {{/* Disable scanner V4 indexer in case a central deployment exists. */}}
@@ -284,7 +281,12 @@
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
     {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
     {{ $_ := set $._rox.scannerV4 "_indexerEnabled" false }}
+    {{ $_ := set $._rox.scannerV4 "_dbEnabled" false }}
   {{ end }}
+{{ end }}
+
+{{ if ._rox.scannerV4._dbEnabled }}
+  {{ include "srox.scannerV4Volume" $ }}
 {{ end }}
 
 {{ if ._rox.scannerV4._indexerEnabled }}
