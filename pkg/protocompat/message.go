@@ -4,6 +4,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+type Message = proto.Message
+
 // Equal returns true iff protocol buffers a and b are equal. The arguments must both be pointers to protocol buffer structs.
 //
 // Equality is defined in this way:
