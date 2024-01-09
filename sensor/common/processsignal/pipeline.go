@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -33,6 +35,7 @@ type Pipeline struct {
 	processFilter      filter.Filter
 	detector           detector.Detector
 	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
+	stopper            concurrency.Stopper
 	// enricher context
 	cancelEnricherCtx context.CancelCauseFunc
 	// message context
@@ -65,6 +68,7 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 		msgCtxMux:          &sync.Mutex{},
 		msgCtx:             msgCtx,
 		msgCtxCancel:       cancelMsgCtx,
+		stopper:            concurrency.NewStopper(),
 	}
 	go p.sendIndicatorEvent()
 	return p
@@ -83,11 +87,20 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 // Shutdown closes all communication channels and shutdowns the enricher
 func (p *Pipeline) Shutdown() {
 	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
-	defer close(p.enrichedIndicators)
+	defer func() {
+		close(p.enrichedIndicators)
+		_ = p.enricher.Stopped().Wait()
+		_ = p.stopper.Client().Stopped().Wait()
+	}()
+	p.stopper.Client().Stop()
 }
 
 // Notify allows the component state to be propagated to the pipeline
 func (p *Pipeline) Notify(e common.SensorComponentEvent) {
+	// Do not cancel the context if we are in offline v3.
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		return
+	}
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
@@ -104,6 +117,10 @@ func (p *Pipeline) createNewContext() {
 }
 
 func (p *Pipeline) getCurrentContext() context.Context {
+	// If we are in offline v3 the context won't be cancelled on disconnect, so we can just return Background here.
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		return context.Background()
+	}
 	p.msgCtxMux.Lock()
 	defer p.msgCtxMux.Unlock()
 	return p.msgCtx
@@ -137,21 +154,47 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 }
 
 func (p *Pipeline) sendIndicatorEvent() {
+	defer p.stopper.Flow().ReportStopped()
 	for indicator := range p.cm.GetOutput() {
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
 		p.detector.ProcessIndicator(p.getCurrentContext(), indicator)
-		p.indicators <- message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id:     indicator.GetId(),
-					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_ProcessIndicator{
-						ProcessIndicator: indicator,
+		p.sendToCentral(
+			message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id:     indicator.GetId(),
+						Action: central.ResourceAction_CREATE_RESOURCE,
+						Resource: &central.SensorEvent_ProcessIndicator{
+							ProcessIndicator: indicator,
+						},
 					},
 				},
-			},
-		})
+			}),
+		)
+		metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
+	}
+}
+
+func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		select {
+		case p.indicators <- msg:
+		case <-p.stopper.Flow().StopRequested():
+			return
+		default:
+			metrics.IncrementProcessSignalDroppedCount()
+			log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
+				msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
+				msg.GetEvent().GetProcessIndicator().GetId(),
+				msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
+		}
+	} else {
+		select {
+		case p.indicators <- msg:
+		case <-p.stopper.Flow().StopRequested():
+			return
+		}
 	}
 }

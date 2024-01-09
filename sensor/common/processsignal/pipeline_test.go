@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -13,10 +14,166 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
-func TestProcessPipelineOffline(t *testing.T) {
+const (
+	containerID1      = "1e43ac4f61f9"
+	containerID2      = "2e43ac4f61f9"
+	containerID3      = "3e43ac4f61f9"
+	deploymentID1     = "mock-deployment-1"
+	deploymentID2     = "mock-deployment-2"
+	deploymentID3     = "mock-deployment-3"
+	outputChannelSize = 2
+)
+
+func TestProcessPipelineOfflineV3(t *testing.T) {
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
+	// In v3 going from online to offline and vice-versa won't do anything.
+	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
+	cases := map[string]struct {
+		entities []clusterentities.ContainerMetadata
+		events   []func(*testing.T, *Pipeline)
+	}{
+		"Online -> signal -> read -> offline -> signal -> online -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+			},
+			events: []func(*testing.T, *Pipeline){
+				online,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				assertSize(1),
+				read(containerID1, deploymentID1),
+				assertSize(0),
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				assertSize(1),
+				online,
+				read(containerID2, deploymentID2),
+				assertSize(0),
+			},
+		},
+		"Offline -> signal -> signal -> online -> read -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+			},
+			events: []func(*testing.T, *Pipeline){
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				assertSize(2),
+				online,
+				read(containerID1, deploymentID1),
+				read(containerID2, deploymentID2),
+				assertSize(0),
+			},
+		},
+		"Offline -> signal -> signal -> signal -> Online -> read -> read": {
+			entities: []clusterentities.ContainerMetadata{
+				newEntity(containerID1, deploymentID1),
+				newEntity(containerID2, deploymentID2),
+				newEntity(containerID3, deploymentID3),
+			},
+			events: []func(*testing.T, *Pipeline){
+				offline,
+				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				signal(&storage.ProcessSignal{ContainerId: containerID3}, true),
+				assertSize(2), // The third signal should be dropped
+				online,
+				read(containerID1, deploymentID1),
+				read(containerID2, deploymentID2),
+				assertSize(0), // The buffer should be empty at this point
+			},
+		},
+	}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
+			mockStore := clusterentities.NewStore()
+			mockDetector := mocks.NewMockDetector(mockCtrl)
+			pipeline := NewProcessPipeline(sensorEvents, mockStore,
+				filter.NewFilter(5, 5, []int{3, 3, 3}),
+				mockDetector)
+			t.Cleanup(func() {
+				pipeline.Shutdown()
+				for _, entity := range tc.entities {
+					deleteStore(entity.DeploymentID, mockStore)
+				}
+				close(sensorEvents)
+			})
+			mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).AnyTimes()
+			for _, entity := range tc.entities {
+				updateStore(entity.ContainerID, entity.DeploymentID, entity, mockStore)
+			}
+			for _, fn := range tc.events {
+				fn(t, pipeline)
+			}
+		})
+	}
+}
+
+func newEntity(containerID, deploymentID string) clusterentities.ContainerMetadata {
+	return clusterentities.ContainerMetadata{
+		DeploymentID: deploymentID,
+		ContainerID:  containerID,
+	}
+}
+
+func online(_ *testing.T, pipeline *Pipeline) {
+	pipeline.Notify(common.SensorComponentEventCentralReachable)
+}
+
+func offline(_ *testing.T, pipeline *Pipeline) {
+	pipeline.Notify(common.SensorComponentEventOfflineMode)
+}
+
+func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		previousLen := len(pipeline.indicators)
+		pipeline.Process(signal)
+		if shouldBeDropped {
+			assert.Never(t, func() bool {
+				return previousLen < len(pipeline.indicators)
+			}, 500*time.Millisecond, 10*time.Millisecond, "the indicator should be dropped")
+		} else {
+			assert.Eventually(t, func() bool {
+				return previousLen < len(pipeline.indicators)
+			}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for indicator")
+		}
+	}
+}
+
+func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		select {
+		case msg, ok := <-pipeline.indicators:
+			if !ok {
+				t.Error("The indicators channel should not be closed")
+			}
+			assert.False(t, msg.IsExpired())
+			require.NotNil(t, msg.GetEvent().GetProcessIndicator())
+			assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
+			assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("Timeout waiting for indicator")
+		}
+	}
+}
+
+func assertSize(size int) func(*testing.T, *Pipeline) {
+	return func(t *testing.T, pipeline *Pipeline) {
+		assert.Len(t, pipeline.indicators, size)
+	}
+}
+
+func TestProcessPipelineOfflineV1(t *testing.T) {
+	t.Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "false")
 	containerMetadata1 := clusterentities.ContainerMetadata{
 		DeploymentID: "mock-deployment-1",
 		ContainerID:  "1e43ac4f61f9",
@@ -133,7 +290,7 @@ func TestProcessPipelineOffline(t *testing.T) {
 		},
 	}
 
-	sensorEvents := make(chan *message.ExpiringMessage)
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
 	defer close(sensorEvents)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -166,11 +323,22 @@ func TestProcessPipelineOffline(t *testing.T) {
 			defer p.Shutdown()
 
 			metadataWg := &sync.WaitGroup{}
-			metadataWg.Add(2)
+			metadataWg.Add(1)
 
 			p.Notify(tc.initialState)
 			tc.initialSignal.signalProcessingRoutine(p, tc.initialSignal.signal, mockStore, containerMetadata1, metadataWg)
+			// Wait for metadata to arrive - either directly or through the ticker
+			metadataWg.Wait()
 
+			events := collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
+
+			// At this point we should have only one message
+			assert.Len(t, events, 1)
+			assert.Equal(t, events[0].GetEvent().GetProcessIndicator().GetDeploymentId(), containerMetadata1.DeploymentID)
+			tc.initialSignal.expectContextCancel(t, events[0].Context.Err())
+
+			// Process second part of the test
+			metadataWg.Add(1)
 			p.Notify(tc.laterState)
 			tc.laterSignal.signalProcessingRoutine(p, tc.laterSignal.signal, mockStore, containerMetadata2, metadataWg)
 
@@ -178,15 +346,12 @@ func TestProcessPipelineOffline(t *testing.T) {
 			metadataWg.Wait()
 
 			// Events contains processed signals. They may arrive in any order
-			events := collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
-			// These tests always use two signals that should be processed
-			assert.Len(t, events, 2)
+			events = collectEventsFor(caseCtx, actualEvents, 500*time.Millisecond)
 
-			for _, e := range events {
-				assert.Contains(t,
-					[]string{containerMetadata1.DeploymentID, containerMetadata2.DeploymentID},
-					e.GetEvent().GetProcessIndicator().GetDeploymentId())
-			}
+			// At this point we should have only one message
+			assert.Len(t, events, 1)
+			assert.Equal(t, events[0].GetEvent().GetProcessIndicator().GetDeploymentId(), containerMetadata2.DeploymentID)
+			tc.laterSignal.expectContextCancel(t, events[0].Context.Err())
 		})
 	}
 }
