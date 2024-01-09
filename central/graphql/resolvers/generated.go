@@ -15,6 +15,19 @@ import (
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Label", []string{"key: String!", "value: String!"}))
+	utils.Must(builder.AddType("AWSProviderMetadata", []string{
+		"accountId: String!",
+	}))
+	utils.Must(builder.AddType("AWSSecurityHub", []string{
+		"accountId: String!",
+		"credentials: AWSSecurityHub_Credentials",
+		"region: String!",
+	}))
+	utils.Must(builder.AddType("AWSSecurityHub_Credentials", []string{
+		"accessKeyId: String!",
+		"secretAccessKey: String!",
+		"stsEnabled: Boolean!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("ActiveComponent_ActiveContext", []string{
 		"containerName: String!",
@@ -37,19 +50,45 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert", []string{
 		"clusterId: String!",
 		"clusterName: String!",
+		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
+		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
 		"namespace: String!",
 		"namespaceId: String!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
+		"resource: Alert_Resource",
 		"snoozeTill: Time",
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
+		"entity: AlertEntity",
+	}))
+	utils.Must(builder.AddUnionType("AlertEntity", []string{
+		"Alert_Deployment",
+		"ContainerImage",
+		"Alert_Resource",
+	}))
+	utils.Must(builder.AddType("Alert_Deployment", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"containers: [Alert_Deployment_Container]!",
+		"id: ID!",
+		"inactive: Boolean!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"type: String!",
+	}))
+	utils.Must(builder.AddType("Alert_Deployment_Container", []string{
+		"image: ContainerImage",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Alert_Enforcement", []string{
 		"action: EnforcementAction!",
@@ -59,13 +98,56 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 		"processes: [ProcessIndicator]!",
 	}))
+	utils.Must(builder.AddType("Alert_Resource", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"resourceType: Alert_Resource_ResourceType!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Resource_ResourceType(0)))
 	utils.Must(builder.AddType("Alert_Violation", []string{
+		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
+		"networkFlowInfo: Alert_Violation_NetworkFlowInfo",
 		"time: Time",
 		"type: Alert_Violation_Type!",
+		"messageAttributes: Alert_ViolationMessageAttributes",
+	}))
+	utils.Must(builder.AddUnionType("Alert_ViolationMessageAttributes", []string{
+		"Alert_Violation_KeyValueAttrs",
+		"Alert_Violation_NetworkFlowInfo",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs", []string{
+		"attrs: [Alert_Violation_KeyValueAttrs_KeyValueAttr]!",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs_KeyValueAttr", []string{
+		"key: String!",
+		"value: String!",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_NetworkFlowInfo", []string{
+		"destination: Alert_Violation_NetworkFlowInfo_Entity",
+		"protocol: L4Protocol!",
+		"source: Alert_Violation_NetworkFlowInfo_Entity",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_NetworkFlowInfo_Entity", []string{
+		"deploymentNamespace: String!",
+		"deploymentType: String!",
+		"entityType: NetworkEntityInfo_Type!",
+		"name: String!",
+		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
+	utils.Must(builder.AddType("AzureProviderMetadata", []string{
+		"subscriptionId: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
+	utils.Must(builder.AddType("CSCC", []string{
+		"serviceAccount: String!",
+		"sourceId: String!",
+		"wifEnabled: Boolean!",
+	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
 		"id: ID!",
@@ -146,6 +228,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Scope(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_Severity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV3_UserInteraction(0)))
+	utils.Must(builder.AddType("Cert", []string{
+		"algorithm: String!",
+		"endDate: Time",
+		"issuer: CertName",
+		"sans: [String!]!",
+		"startDate: Time",
+		"subject: CertName",
+	}))
+	utils.Must(builder.AddType("CertName", []string{
+		"commonName: String!",
+		"country: String!",
+		"locality: String!",
+		"names: [String!]!",
+		"organization: String!",
+		"organizationUnit: String!",
+		"postalCode: String!",
+		"province: String!",
+		"streetAddress: String!",
+	}))
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
@@ -304,6 +405,32 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("ComplianceResource", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"deployment: ComplianceResource_DeploymentName",
+		"image: ImageName",
+		"node: ComplianceResource_NodeName",
+		"resource: ComplianceResourceResource",
+	}))
+	utils.Must(builder.AddUnionType("ComplianceResourceResource", []string{
+		"ComplianceResource_ClusterName",
+		"ComplianceResource_DeploymentName",
+		"ComplianceResource_NodeName",
+		"ImageName",
+	}))
+	utils.Must(builder.AddType("ComplianceResource_ClusterName", []string{
+		"id: ID!",
+		"name: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceResource_DeploymentName", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"id: ID!",
+		"name: String!",
+		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceResource_NodeName", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"id: ID!",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("ComplianceResultValue", []string{
 		"evidence: [ComplianceResultValue_Evidence]!",
@@ -405,6 +532,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
+	utils.Must(builder.AddType("CosignSignature", []string{
+	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"mirror: String!",
@@ -446,6 +575,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
 	}))
+	utils.Must(builder.AddType("Email", []string{
+		"allowUnauthenticatedSmtp: Boolean!",
+		"disableTLS: Boolean!",
+		"from: String!",
+		"password: String!",
+		"sender: String!",
+		"server: String!",
+		"startTLSAuthMethod: Email_AuthMethod!",
+		"username: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Email_AuthMethod(0)))
 	utils.Must(builder.AddType("EmbeddedImageScanComponent_Executable", []string{
 		"dependencies: [String!]!",
 		"path: String!",
@@ -482,11 +622,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"metadata: TokenMetadata",
 		"token: String!",
 	}))
+	utils.Must(builder.AddType("Generic", []string{
+		"auditLoggingEnabled: Boolean!",
+		"caCert: String!",
+		"endpoint: String!",
+		"extraFields: [KeyValuePair]!",
+		"headers: [KeyValuePair]!",
+		"password: String!",
+		"skipTLSVerify: Boolean!",
+		"username: String!",
+	}))
 	utils.Must(builder.AddType("GetComplianceRunStatusesResponse", []string{
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
 	}))
 	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+	}))
+	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
+		"clusterName: String!",
+		"project: String!",
 	}))
 	utils.Must(builder.AddType("Group", []string{
 		"props: GroupProperties",
@@ -554,6 +708,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"remote: String!",
 		"tag: String!",
 	}))
+	utils.Must(builder.AddType("ImagePullSecret", []string{
+		"registries: [ImagePullSecret_Registry]!",
+	}))
+	utils.Must(builder.AddType("ImagePullSecret_Registry", []string{
+		"name: String!",
+		"username: String!",
+	}))
 	utils.Must(builder.AddType("ImageScan", []string{
 		"dataSource: DataSource",
 		"notes: [ImageScan_Note!]!",
@@ -616,6 +777,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"roleId: String!",
 		"subjects: [Subject]!",
 	}))
+	utils.Must(builder.AddType("KeyValuePair", []string{
+		"key: String!",
+		"value: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.L4Protocol(0)))
 	utils.Must(builder.AddType("LabelSelector", []string{
 		"matchLabels: [Label!]!",
@@ -676,8 +841,29 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"priority: Int!",
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo", []string{
+		"deployment: NetworkEntityInfo_Deployment",
+		"externalSource: NetworkEntityInfo_ExternalSource",
 		"id: ID!",
 		"type: NetworkEntityInfo_Type!",
+		"desc: NetworkEntityInfoDesc",
+	}))
+	utils.Must(builder.AddUnionType("NetworkEntityInfoDesc", []string{
+		"NetworkEntityInfo_Deployment",
+		"NetworkEntityInfo_ExternalSource",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_Deployment", []string{
+		"cluster: String!",
+		"listenPorts: [NetworkEntityInfo_Deployment_ListenPort]!",
+		"name: String!",
+		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_Deployment_ListenPort", []string{
+		"l4Protocol: L4Protocol!",
+		"port: Int!",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
+		"default: Boolean!",
+		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
@@ -742,19 +928,43 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
+		"awsSecurityHub: AWSSecurityHub",
+		"cscc: CSCC",
+		"email: Email",
+		"generic: Generic",
 		"id: ID!",
+		"jira: Jira",
 		"labelDefault: String!",
 		"labelKey: String!",
 		"name: String!",
 		"notifierSecret: String!",
+		"pagerduty: PagerDuty",
+		"splunk: Splunk",
+		"sumologic: SumoLogic",
+		"syslog: Syslog",
 		"traits: Traits",
 		"type: String!",
 		"uiEndpoint: String!",
+		"config: NotifierConfig",
+	}))
+	utils.Must(builder.AddUnionType("NotifierConfig", []string{
+		"Jira",
+		"Email",
+		"CSCC",
+		"Splunk",
+		"PagerDuty",
+		"Generic",
+		"SumoLogic",
+		"AWSSecurityHub",
+		"Syslog",
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
 		"buildDate: Time",
 		"version: String!",
+	}))
+	utils.Must(builder.AddType("PagerDuty", []string{
+		"apiKey: String!",
 	}))
 	utils.Must(builder.AddInput("Pagination", []string{
 		"limit: Int",
@@ -904,6 +1114,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"region: String!",
 		"verified: Boolean!",
 		"zone: String!",
+		"provider: ProviderMetadataProvider",
+	}))
+	utils.Must(builder.AddUnionType("ProviderMetadataProvider", []string{
+		"GoogleProviderMetadata",
+		"AWSProviderMetadata",
+		"AzureProviderMetadata",
 	}))
 	utils.Must(builder.AddType("ReadinessProbe", []string{
 		"defined: Boolean!",
@@ -988,8 +1204,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"path: String!",
 	}))
 	utils.Must(builder.AddType("SecretDataFile", []string{
+		"cert: Cert",
+		"imagePullSecret: ImagePullSecret",
 		"name: String!",
 		"type: SecretType!",
+		"metadata: SecretDataFileMetadata",
+	}))
+	utils.Must(builder.AddUnionType("SecretDataFileMetadata", []string{
+		"Cert",
+		"ImagePullSecret",
 	}))
 	utils.Must(builder.AddType("SecretDeploymentRelationship", []string{
 		"id: ID!",
@@ -1053,6 +1276,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
 	utils.Must(builder.AddType("Signature", []string{
+		"cosign: CosignSignature",
+		"signature: SignatureSignature",
+	}))
+	utils.Must(builder.AddUnionType("SignatureSignature", []string{
+		"CosignSignature",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope", []string{
 		"description: String!",
@@ -1081,6 +1309,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"reversed: Boolean",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
+	utils.Must(builder.AddType("Splunk", []string{
+		"auditLoggingEnabled: Boolean!",
+		"httpEndpoint: String!",
+		"httpToken: String!",
+		"insecure: Boolean!",
+		"sourceTypes: [Label!]!",
+		"truncate: Int!",
+	}))
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
@@ -1102,6 +1338,28 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SubjectKind(0)))
+	utils.Must(builder.AddType("SumoLogic", []string{
+		"httpSourceAddress: String!",
+		"skipTLSVerify: Boolean!",
+	}))
+	utils.Must(builder.AddType("Syslog", []string{
+		"extraFields: [KeyValuePair]!",
+		"localFacility: Syslog_LocalFacility!",
+		"messageFormat: Syslog_MessageFormat!",
+		"tcpConfig: Syslog_TCPConfig",
+		"endpoint: SyslogEndpoint",
+	}))
+	utils.Must(builder.AddUnionType("SyslogEndpoint", []string{
+		"Syslog_TCPConfig",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_LocalFacility(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_MessageFormat(0)))
+	utils.Must(builder.AddType("Syslog_TCPConfig", []string{
+		"hostname: String!",
+		"port: Int!",
+		"skipTlsVerify: Boolean!",
+		"useTls: Boolean!",
+	}))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
 		"taintEffect: TaintEffect!",
@@ -1181,9 +1439,184 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cves: [String!]!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope", []string{
+		"globalScope: VulnerabilityRequest_Scope_Global",
+		"imageScope: VulnerabilityRequest_Scope_Image",
+		"info: VulnerabilityRequest_ScopeInfo",
+	}))
+	utils.Must(builder.AddUnionType("VulnerabilityRequest_ScopeInfo", []string{
+		"VulnerabilityRequest_Scope_Image",
+		"VulnerabilityRequest_Scope_Global",
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+	}))
+	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
+		"registry: String!",
+		"remote: String!",
+		"tag: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilitySeverity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.VulnerabilityState(0)))
+}
+
+type aWSProviderMetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AWSProviderMetadata
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadata(value *storage.AWSProviderMetadata, ok bool, err error) (*aWSProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSProviderMetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProviderMetadata, err error) ([]*aWSProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSProviderMetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadataWithContext(ctx context.Context, value *storage.AWSProviderMetadata, ok bool, err error) (*aWSProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSProviderMetadataResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadatasWithContext(ctx context.Context, values []*storage.AWSProviderMetadata, err error) ([]*aWSProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSProviderMetadataResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSProviderMetadataResolver) AccountId(ctx context.Context) string {
+	value := resolver.data.GetAccountId()
+	return value
+}
+
+type aWSSecurityHubResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AWSSecurityHub
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub(value *storage.AWSSecurityHub, ok bool, err error) (*aWSSecurityHubResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHubResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHubs(values []*storage.AWSSecurityHub, err error) ([]*aWSSecurityHubResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHubResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHubResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHubWithContext(ctx context.Context, value *storage.AWSSecurityHub, ok bool, err error) (*aWSSecurityHubResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHubResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHubsWithContext(ctx context.Context, values []*storage.AWSSecurityHub, err error) ([]*aWSSecurityHubResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHubResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHubResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSSecurityHubResolver) AccountId(ctx context.Context) string {
+	value := resolver.data.GetAccountId()
+	return value
+}
+
+func (resolver *aWSSecurityHubResolver) Credentials(ctx context.Context) (*aWSSecurityHub_CredentialsResolver, error) {
+	value := resolver.data.GetCredentials()
+	return resolver.root.wrapAWSSecurityHub_Credentials(value, true, nil)
+}
+
+func (resolver *aWSSecurityHubResolver) Region(ctx context.Context) string {
+	value := resolver.data.GetRegion()
+	return value
+}
+
+type aWSSecurityHub_CredentialsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AWSSecurityHub_Credentials
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_Credentials(value *storage.AWSSecurityHub_Credentials, ok bool, err error) (*aWSSecurityHub_CredentialsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHub_CredentialsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_Credentialses(values []*storage.AWSSecurityHub_Credentials, err error) ([]*aWSSecurityHub_CredentialsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHub_CredentialsResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHub_CredentialsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_CredentialsWithContext(ctx context.Context, value *storage.AWSSecurityHub_Credentials, ok bool, err error) (*aWSSecurityHub_CredentialsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHub_CredentialsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_CredentialsesWithContext(ctx context.Context, values []*storage.AWSSecurityHub_Credentials, err error) ([]*aWSSecurityHub_CredentialsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHub_CredentialsResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHub_CredentialsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) AccessKeyId(ctx context.Context) string {
+	value := resolver.data.GetAccessKeyId()
+	return value
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) SecretAccessKey(ctx context.Context) string {
+	value := resolver.data.GetSecretAccessKey()
+	return value
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) StsEnabled(ctx context.Context) bool {
+	value := resolver.data.GetStsEnabled()
+	return value
 }
 
 func toAccess(value *string) storage.Access {
@@ -1442,6 +1875,12 @@ func (resolver *alertResolver) ClusterName(ctx context.Context) string {
 	return value
 }
 
+func (resolver *alertResolver) Deployment(ctx context.Context) (*alert_DeploymentResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapAlert_Deployment(value, true, nil)
+}
+
 func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_EnforcementResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetEnforcement()
@@ -1460,6 +1899,12 @@ func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
 		value = resolver.list.GetId()
 	}
 	return graphql.ID(value)
+}
+
+func (resolver *alertResolver) Image(ctx context.Context) (*containerImageResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetImage()
+	return resolver.root.wrapContainerImage(value, true, nil)
 }
 
 func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
@@ -1500,6 +1945,12 @@ func (resolver *alertResolver) ResolvedAt(ctx context.Context) (*graphql.Time, e
 	return timestamp(value)
 }
 
+func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetResource()
+	return resolver.root.wrapAlert_Resource(value, true, nil)
+}
+
 func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSnoozeTill()
@@ -1526,6 +1977,193 @@ func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_Violati
 	resolver.ensureData(ctx)
 	value := resolver.data.GetViolations()
 	return resolver.root.wrapAlert_Violations(value, nil)
+}
+
+type alertEntityResolver struct {
+	resolver interface{}
+}
+
+func (resolver *alertResolver) Entity() *alertEntityResolver {
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &alertEntityResolver{
+			resolver: &alert_DeploymentResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetImage(); val != nil {
+		return &alertEntityResolver{
+			resolver: &containerImageResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetResource(); val != nil {
+		return &alertEntityResolver{
+			resolver: &alert_ResourceResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *alertEntityResolver) ToAlert_Deployment() (*alert_DeploymentResolver, bool) {
+	res, ok := resolver.resolver.(*alert_DeploymentResolver)
+	return res, ok
+}
+
+func (resolver *alertEntityResolver) ToContainerImage() (*containerImageResolver, bool) {
+	res, ok := resolver.resolver.(*containerImageResolver)
+	return res, ok
+}
+
+func (resolver *alertEntityResolver) ToAlert_Resource() (*alert_ResourceResolver, bool) {
+	res, ok := resolver.resolver.(*alert_ResourceResolver)
+	return res, ok
+}
+
+type alert_DeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Deployment
+}
+
+func (resolver *Resolver) wrapAlert_Deployment(value *storage.Alert_Deployment, ok bool, err error) (*alert_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_DeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployments(values []*storage.Alert_Deployment, err error) ([]*alert_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_DeploymentWithContext(ctx context.Context, value *storage.Alert_Deployment, ok bool, err error) (*alert_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_DeploymentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_DeploymentsWithContext(ctx context.Context, values []*storage.Alert_Deployment, err error) ([]*alert_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_DeploymentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_DeploymentResolver) Annotations(ctx context.Context) labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *alert_DeploymentResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Containers(ctx context.Context) ([]*alert_Deployment_ContainerResolver, error) {
+	value := resolver.data.GetContainers()
+	return resolver.root.wrapAlert_Deployment_Containers(value, nil)
+}
+
+func (resolver *alert_DeploymentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *alert_DeploymentResolver) Inactive(ctx context.Context) bool {
+	value := resolver.data.GetInactive()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Labels(ctx context.Context) labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *alert_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *alert_DeploymentResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
+}
+
+type alert_Deployment_ContainerResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Deployment_Container
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_Container(value *storage.Alert_Deployment_Container, ok bool, err error) (*alert_Deployment_ContainerResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Deployment_ContainerResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_Containers(values []*storage.Alert_Deployment_Container, err error) ([]*alert_Deployment_ContainerResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Deployment_ContainerResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Deployment_ContainerResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_ContainerWithContext(ctx context.Context, value *storage.Alert_Deployment_Container, ok bool, err error) (*alert_Deployment_ContainerResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Deployment_ContainerResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Deployment_ContainersWithContext(ctx context.Context, values []*storage.Alert_Deployment_Container, err error) ([]*alert_Deployment_ContainerResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Deployment_ContainerResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Deployment_ContainerResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Deployment_ContainerResolver) Image(ctx context.Context) (*containerImageResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapContainerImage(value, true, nil)
+}
+
+func (resolver *alert_Deployment_ContainerResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type alert_EnforcementResolver struct {
@@ -1632,6 +2270,96 @@ func (resolver *alert_ProcessViolationResolver) Processes(ctx context.Context) (
 	return resolver.root.wrapProcessIndicators(value, nil)
 }
 
+type alert_ResourceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Resource
+}
+
+func (resolver *Resolver) wrapAlert_Resource(value *storage.Alert_Resource, ok bool, err error) (*alert_ResourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_ResourceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Resources(values []*storage.Alert_Resource, err error) ([]*alert_ResourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_ResourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_ResourceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_ResourceWithContext(ctx context.Context, value *storage.Alert_Resource, ok bool, err error) (*alert_ResourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_ResourceResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_ResourcesWithContext(ctx context.Context, values []*storage.Alert_Resource, err error) ([]*alert_ResourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_ResourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_ResourceResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_ResourceResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *alert_ResourceResolver) ResourceType(ctx context.Context) string {
+	value := resolver.data.GetResourceType()
+	return value.String()
+}
+
+func toAlert_Resource_ResourceType(value *string) storage.Alert_Resource_ResourceType {
+	if value != nil {
+		return storage.Alert_Resource_ResourceType(storage.Alert_Resource_ResourceType_value[*value])
+	}
+	return storage.Alert_Resource_ResourceType(0)
+}
+
+func toAlert_Resource_ResourceTypes(values *[]string) []storage.Alert_Resource_ResourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_Resource_ResourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_Resource_ResourceType(&v)
+	}
+	return output
+}
+
 type alert_ViolationResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -1674,9 +2402,19 @@ func (resolver *Resolver) wrapAlert_ViolationsWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *alert_ViolationResolver) KeyValueAttrs(ctx context.Context) (*alert_Violation_KeyValueAttrsResolver, error) {
+	value := resolver.data.GetKeyValueAttrs()
+	return resolver.root.wrapAlert_Violation_KeyValueAttrs(value, true, nil)
+}
+
 func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
+}
+
+func (resolver *alert_ViolationResolver) NetworkFlowInfo(ctx context.Context) (*alert_Violation_NetworkFlowInfoResolver, error) {
+	value := resolver.data.GetNetworkFlowInfo()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo(value, true, nil)
 }
 
 func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Time, error) {
@@ -1687,6 +2425,257 @@ func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Tim
 func (resolver *alert_ViolationResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
+}
+
+type alert_ViolationMessageAttributesResolver struct {
+	resolver interface{}
+}
+
+func (resolver *alert_ViolationResolver) MessageAttributes() *alert_ViolationMessageAttributesResolver {
+	if val := resolver.data.GetKeyValueAttrs(); val != nil {
+		return &alert_ViolationMessageAttributesResolver{
+			resolver: &alert_Violation_KeyValueAttrsResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetNetworkFlowInfo(); val != nil {
+		return &alert_ViolationMessageAttributesResolver{
+			resolver: &alert_Violation_NetworkFlowInfoResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_KeyValueAttrs() (*alert_Violation_KeyValueAttrsResolver, bool) {
+	res, ok := resolver.resolver.(*alert_Violation_KeyValueAttrsResolver)
+	return res, ok
+}
+
+func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_NetworkFlowInfo() (*alert_Violation_NetworkFlowInfoResolver, bool) {
+	res, ok := resolver.resolver.(*alert_Violation_NetworkFlowInfoResolver)
+	return res, ok
+}
+
+type alert_Violation_KeyValueAttrsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_KeyValueAttrs
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs(value *storage.Alert_Violation_KeyValueAttrs, ok bool, err error) (*alert_Violation_KeyValueAttrsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrses(values []*storage.Alert_Violation_KeyValueAttrs, err error) ([]*alert_Violation_KeyValueAttrsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrsResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrsWithContext(ctx context.Context, value *storage.Alert_Violation_KeyValueAttrs, ok bool, err error) (*alert_Violation_KeyValueAttrsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrsesWithContext(ctx context.Context, values []*storage.Alert_Violation_KeyValueAttrs, err error) ([]*alert_Violation_KeyValueAttrsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrsResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_KeyValueAttrsResolver) Attrs(ctx context.Context) ([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	value := resolver.data.GetAttrs()
+	return resolver.root.wrapAlert_Violation_KeyValueAttrs_KeyValueAttrs(value, nil)
+}
+
+type alert_Violation_KeyValueAttrs_KeyValueAttrResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttr(value *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, ok bool, err error) (*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttrs(values []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, err error) ([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttrWithContext(ctx context.Context, value *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, ok bool, err error) (*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttrsWithContext(ctx context.Context, values []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, err error) ([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Key(ctx context.Context) string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Value(ctx context.Context) string {
+	value := resolver.data.GetValue()
+	return value
+}
+
+type alert_Violation_NetworkFlowInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_NetworkFlowInfo
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo(value *storage.Alert_Violation_NetworkFlowInfo, ok bool, err error) (*alert_Violation_NetworkFlowInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfos(values []*storage.Alert_Violation_NetworkFlowInfo, err error) ([]*alert_Violation_NetworkFlowInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfoWithContext(ctx context.Context, value *storage.Alert_Violation_NetworkFlowInfo, ok bool, err error) (*alert_Violation_NetworkFlowInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfoResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfosWithContext(ctx context.Context, values []*storage.Alert_Violation_NetworkFlowInfo, err error) ([]*alert_Violation_NetworkFlowInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfoResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Destination(ctx context.Context) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	value := resolver.data.GetDestination()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo_Entity(value, true, nil)
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Protocol(ctx context.Context) string {
+	value := resolver.data.GetProtocol()
+	return value.String()
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Source(ctx context.Context) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	value := resolver.data.GetSource()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo_Entity(value, true, nil)
+}
+
+type alert_Violation_NetworkFlowInfo_EntityResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_NetworkFlowInfo_Entity
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_Entity(value *storage.Alert_Violation_NetworkFlowInfo_Entity, ok bool, err error) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfo_EntityResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_Entities(values []*storage.Alert_Violation_NetworkFlowInfo_Entity, err error) ([]*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfo_EntityResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfo_EntityResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_EntityWithContext(ctx context.Context, value *storage.Alert_Violation_NetworkFlowInfo_Entity, ok bool, err error) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfo_EntityResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_EntitiesWithContext(ctx context.Context, values []*storage.Alert_Violation_NetworkFlowInfo_Entity, err error) ([]*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfo_EntityResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfo_EntityResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) DeploymentNamespace(ctx context.Context) string {
+	value := resolver.data.GetDeploymentNamespace()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) DeploymentType(ctx context.Context) string {
+	value := resolver.data.GetDeploymentType()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) EntityType(ctx context.Context) string {
+	value := resolver.data.GetEntityType()
+	return value.String()
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
+	return value
 }
 
 func toAlert_Violation_Type(value *string) storage.Alert_Violation_Type {
@@ -1707,6 +2696,53 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 	return output
 }
 
+type azureProviderMetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AzureProviderMetadata
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadata(value *storage.AzureProviderMetadata, ok bool, err error) (*azureProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &azureProviderMetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProviderMetadata, err error) ([]*azureProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*azureProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &azureProviderMetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadataWithContext(ctx context.Context, value *storage.AzureProviderMetadata, ok bool, err error) (*azureProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &azureProviderMetadataResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadatasWithContext(ctx context.Context, values []*storage.AzureProviderMetadata, err error) ([]*azureProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*azureProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &azureProviderMetadataResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Context) string {
+	value := resolver.data.GetSubscriptionId()
+	return value
+}
+
 func toBooleanOperator(value *string) storage.BooleanOperator {
 	if value != nil {
 		return storage.BooleanOperator(storage.BooleanOperator_value[*value])
@@ -1723,6 +2759,63 @@ func toBooleanOperators(values *[]string) []storage.BooleanOperator {
 		output[i] = toBooleanOperator(&v)
 	}
 	return output
+}
+
+type cSCCResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CSCC
+}
+
+func (resolver *Resolver) wrapCSCC(value *storage.CSCC, ok bool, err error) (*cSCCResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cSCCResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cSCCResolver, len(values))
+	for i, v := range values {
+		output[i] = &cSCCResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCSCCWithContext(ctx context.Context, value *storage.CSCC, ok bool, err error) (*cSCCResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cSCCResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCSCCsWithContext(ctx context.Context, values []*storage.CSCC, err error) ([]*cSCCResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cSCCResolver, len(values))
+	for i, v := range values {
+		output[i] = &cSCCResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cSCCResolver) ServiceAccount(ctx context.Context) string {
+	value := resolver.data.GetServiceAccount()
+	return value
+}
+
+func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
+	value := resolver.data.GetSourceId()
+	return value
+}
+
+func (resolver *cSCCResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
+	return value
 }
 
 type cVEResolver struct {
@@ -2510,6 +3603,165 @@ func toCVSSV3_UserInteractions(values *[]string) []storage.CVSSV3_UserInteractio
 		output[i] = toCVSSV3_UserInteraction(&v)
 	}
 	return output
+}
+
+type certResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Cert
+}
+
+func (resolver *Resolver) wrapCert(value *storage.Cert, ok bool, err error) (*certResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &certResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCerts(values []*storage.Cert, err error) ([]*certResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*certResolver, len(values))
+	for i, v := range values {
+		output[i] = &certResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCertWithContext(ctx context.Context, value *storage.Cert, ok bool, err error) (*certResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &certResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCertsWithContext(ctx context.Context, values []*storage.Cert, err error) ([]*certResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*certResolver, len(values))
+	for i, v := range values {
+		output[i] = &certResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *certResolver) Algorithm(ctx context.Context) string {
+	value := resolver.data.GetAlgorithm()
+	return value
+}
+
+func (resolver *certResolver) EndDate(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetEndDate()
+	return timestamp(value)
+}
+
+func (resolver *certResolver) Issuer(ctx context.Context) (*certNameResolver, error) {
+	value := resolver.data.GetIssuer()
+	return resolver.root.wrapCertName(value, true, nil)
+}
+
+func (resolver *certResolver) Sans(ctx context.Context) []string {
+	value := resolver.data.GetSans()
+	return value
+}
+
+func (resolver *certResolver) StartDate(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetStartDate()
+	return timestamp(value)
+}
+
+func (resolver *certResolver) Subject(ctx context.Context) (*certNameResolver, error) {
+	value := resolver.data.GetSubject()
+	return resolver.root.wrapCertName(value, true, nil)
+}
+
+type certNameResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CertName
+}
+
+func (resolver *Resolver) wrapCertName(value *storage.CertName, ok bool, err error) (*certNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &certNameResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCertNames(values []*storage.CertName, err error) ([]*certNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*certNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &certNameResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCertNameWithContext(ctx context.Context, value *storage.CertName, ok bool, err error) (*certNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &certNameResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCertNamesWithContext(ctx context.Context, values []*storage.CertName, err error) ([]*certNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*certNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &certNameResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *certNameResolver) CommonName(ctx context.Context) string {
+	value := resolver.data.GetCommonName()
+	return value
+}
+
+func (resolver *certNameResolver) Country(ctx context.Context) string {
+	value := resolver.data.GetCountry()
+	return value
+}
+
+func (resolver *certNameResolver) Locality(ctx context.Context) string {
+	value := resolver.data.GetLocality()
+	return value
+}
+
+func (resolver *certNameResolver) Names(ctx context.Context) []string {
+	value := resolver.data.GetNames()
+	return value
+}
+
+func (resolver *certNameResolver) Organization(ctx context.Context) string {
+	value := resolver.data.GetOrganization()
+	return value
+}
+
+func (resolver *certNameResolver) OrganizationUnit(ctx context.Context) string {
+	value := resolver.data.GetOrganizationUnit()
+	return value
+}
+
+func (resolver *certNameResolver) PostalCode(ctx context.Context) string {
+	value := resolver.data.GetPostalCode()
+	return value
+}
+
+func (resolver *certNameResolver) Province(ctx context.Context) string {
+	value := resolver.data.GetProvince()
+	return value
+}
+
+func (resolver *certNameResolver) StreetAddress(ctx context.Context) string {
+	value := resolver.data.GetStreetAddress()
+	return value
 }
 
 type clusterResolver struct {
@@ -4070,6 +5322,245 @@ func (resolver *Resolver) wrapComplianceResourcesWithContext(ctx context.Context
 	return output, nil
 }
 
+func (resolver *complianceResourceResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Deployment(ctx context.Context) (*complianceResource_DeploymentNameResolver, error) {
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapComplianceResource_DeploymentName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Image(ctx context.Context) (*imageNameResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Node(ctx context.Context) (*complianceResource_NodeNameResolver, error) {
+	value := resolver.data.GetNode()
+	return resolver.root.wrapComplianceResource_NodeName(value, true, nil)
+}
+
+type complianceResourceResourceResolver struct {
+	resolver interface{}
+}
+
+func (resolver *complianceResourceResolver) Resource() *complianceResourceResourceResolver {
+	if val := resolver.data.GetCluster(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_ClusterNameResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_DeploymentNameResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetNode(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &complianceResource_NodeNameResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetImage(); val != nil {
+		return &complianceResourceResourceResolver{
+			resolver: &imageNameResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_ClusterName() (*complianceResource_ClusterNameResolver, bool) {
+	res, ok := resolver.resolver.(*complianceResource_ClusterNameResolver)
+	return res, ok
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_DeploymentName() (*complianceResource_DeploymentNameResolver, bool) {
+	res, ok := resolver.resolver.(*complianceResource_DeploymentNameResolver)
+	return res, ok
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_NodeName() (*complianceResource_NodeNameResolver, bool) {
+	res, ok := resolver.resolver.(*complianceResource_NodeNameResolver)
+	return res, ok
+}
+
+func (resolver *complianceResourceResourceResolver) ToImageName() (*imageNameResolver, bool) {
+	res, ok := resolver.resolver.(*imageNameResolver)
+	return res, ok
+}
+
+type complianceResource_ClusterNameResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceResource_ClusterName
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterName(value *storage.ComplianceResource_ClusterName, ok bool, err error) (*complianceResource_ClusterNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_ClusterNameResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterNames(values []*storage.ComplianceResource_ClusterName, err error) ([]*complianceResource_ClusterNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_ClusterNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_ClusterNameResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterNameWithContext(ctx context.Context, value *storage.ComplianceResource_ClusterName, ok bool, err error) (*complianceResource_ClusterNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_ClusterNameResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterNamesWithContext(ctx context.Context, values []*storage.ComplianceResource_ClusterName, err error) ([]*complianceResource_ClusterNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_ClusterNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_ClusterNameResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_ClusterNameResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_ClusterNameResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type complianceResource_DeploymentNameResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceResource_DeploymentName
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentName(value *storage.ComplianceResource_DeploymentName, ok bool, err error) (*complianceResource_DeploymentNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_DeploymentNameResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentNames(values []*storage.ComplianceResource_DeploymentName, err error) ([]*complianceResource_DeploymentNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_DeploymentNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_DeploymentNameResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentNameWithContext(ctx context.Context, value *storage.ComplianceResource_DeploymentName, ok bool, err error) (*complianceResource_DeploymentNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_DeploymentNameResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentNamesWithContext(ctx context.Context, values []*storage.ComplianceResource_DeploymentName, err error) ([]*complianceResource_DeploymentNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_DeploymentNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_DeploymentNameResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+type complianceResource_NodeNameResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceResource_NodeName
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeName(value *storage.ComplianceResource_NodeName, ok bool, err error) (*complianceResource_NodeNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_NodeNameResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeNames(values []*storage.ComplianceResource_NodeName, err error) ([]*complianceResource_NodeNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_NodeNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_NodeNameResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeNameWithContext(ctx context.Context, value *storage.ComplianceResource_NodeName, ok bool, err error) (*complianceResource_NodeNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_NodeNameResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeNamesWithContext(ctx context.Context, values []*storage.ComplianceResource_NodeName, err error) ([]*complianceResource_NodeNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_NodeNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_NodeNameResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_NodeNameResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResource_NodeNameResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_NodeNameResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 type complianceResultValueResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5051,6 +6542,58 @@ func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) strin
 	return value
 }
 
+type cosignSignatureResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CosignSignature
+}
+
+func (resolver *Resolver) wrapCosignSignature(value *storage.CosignSignature, ok bool, err error) (*cosignSignatureResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cosignSignatureResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCosignSignatures(values []*storage.CosignSignature, err error) ([]*cosignSignatureResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cosignSignatureResolver, len(values))
+	for i, v := range values {
+		output[i] = &cosignSignatureResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCosignSignatureWithContext(ctx context.Context, value *storage.CosignSignature, ok bool, err error) (*cosignSignatureResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cosignSignatureResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, values []*storage.CosignSignature, err error) ([]*cosignSignatureResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cosignSignatureResolver, len(values))
+	for i, v := range values {
+		output[i] = &cosignSignatureResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+	value := resolver.data.GetRawSignature()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+	value := resolver.data.GetSignaturePayload()
+	return value
+}
+
 type dataSourceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5409,6 +6952,106 @@ func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Conte
 func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
 	value := resolver.data.GetRegistryOverride()
 	return value
+}
+
+type emailResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Email
+}
+
+func (resolver *Resolver) wrapEmail(value *storage.Email, ok bool, err error) (*emailResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &emailResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*emailResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*emailResolver, len(values))
+	for i, v := range values {
+		output[i] = &emailResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapEmailWithContext(ctx context.Context, value *storage.Email, ok bool, err error) (*emailResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &emailResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEmailsWithContext(ctx context.Context, values []*storage.Email, err error) ([]*emailResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*emailResolver, len(values))
+	for i, v := range values {
+		output[i] = &emailResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *emailResolver) AllowUnauthenticatedSmtp(ctx context.Context) bool {
+	value := resolver.data.GetAllowUnauthenticatedSmtp()
+	return value
+}
+
+func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {
+	value := resolver.data.GetDisableTLS()
+	return value
+}
+
+func (resolver *emailResolver) From(ctx context.Context) string {
+	value := resolver.data.GetFrom()
+	return value
+}
+
+func (resolver *emailResolver) Password(ctx context.Context) string {
+	value := resolver.data.GetPassword()
+	return value
+}
+
+func (resolver *emailResolver) Sender(ctx context.Context) string {
+	value := resolver.data.GetSender()
+	return value
+}
+
+func (resolver *emailResolver) Server(ctx context.Context) string {
+	value := resolver.data.GetServer()
+	return value
+}
+
+func (resolver *emailResolver) StartTLSAuthMethod(ctx context.Context) string {
+	value := resolver.data.GetStartTLSAuthMethod()
+	return value.String()
+}
+
+func (resolver *emailResolver) Username(ctx context.Context) string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
+func toEmail_AuthMethod(value *string) storage.Email_AuthMethod {
+	if value != nil {
+		return storage.Email_AuthMethod(storage.Email_AuthMethod_value[*value])
+	}
+	return storage.Email_AuthMethod(0)
+}
+
+func toEmail_AuthMethods(values *[]string) []storage.Email_AuthMethod {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Email_AuthMethod, len(*values))
+	for i, v := range *values {
+		output[i] = toEmail_AuthMethod(&v)
+	}
+	return output
 }
 
 type embeddedImageScanComponent_ExecutableResolver struct {
@@ -5842,6 +7485,88 @@ func (resolver *generateTokenResponseResolver) Token(ctx context.Context) string
 	return value
 }
 
+type genericResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Generic
+}
+
+func (resolver *Resolver) wrapGeneric(value *storage.Generic, ok bool, err error) (*genericResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &genericResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]*genericResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*genericResolver, len(values))
+	for i, v := range values {
+		output[i] = &genericResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapGenericWithContext(ctx context.Context, value *storage.Generic, ok bool, err error) (*genericResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &genericResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapGenericsWithContext(ctx context.Context, values []*storage.Generic, err error) ([]*genericResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*genericResolver, len(values))
+	for i, v := range values {
+		output[i] = &genericResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *genericResolver) AuditLoggingEnabled(ctx context.Context) bool {
+	value := resolver.data.GetAuditLoggingEnabled()
+	return value
+}
+
+func (resolver *genericResolver) CaCert(ctx context.Context) string {
+	value := resolver.data.GetCaCert()
+	return value
+}
+
+func (resolver *genericResolver) Endpoint(ctx context.Context) string {
+	value := resolver.data.GetEndpoint()
+	return value
+}
+
+func (resolver *genericResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
+func (resolver *genericResolver) Headers(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetHeaders()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
+func (resolver *genericResolver) Password(ctx context.Context) string {
+	value := resolver.data.GetPassword()
+	return value
+}
+
+func (resolver *genericResolver) SkipTLSVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTLSVerify()
+	return value
+}
+
+func (resolver *genericResolver) Username(ctx context.Context) string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
 type getComplianceRunStatusesResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -5934,6 +7659,58 @@ func (resolver *Resolver) wrapGetPermissionsResponsesWithContext(ctx context.Con
 		output[i] = &getPermissionsResponseResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+type googleProviderMetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.GoogleProviderMetadata
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadata(value *storage.GoogleProviderMetadata, ok bool, err error) (*googleProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &googleProviderMetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadatas(values []*storage.GoogleProviderMetadata, err error) ([]*googleProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*googleProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &googleProviderMetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadataWithContext(ctx context.Context, value *storage.GoogleProviderMetadata, ok bool, err error) (*googleProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &googleProviderMetadataResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadatasWithContext(ctx context.Context, values []*storage.GoogleProviderMetadata, err error) ([]*googleProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*googleProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &googleProviderMetadataResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *googleProviderMetadataResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *googleProviderMetadataResolver) Project(ctx context.Context) string {
+	value := resolver.data.GetProject()
+	return value
 }
 
 type groupResolver struct {
@@ -6558,6 +8335,105 @@ func (resolver *imageNameResolver) Tag(ctx context.Context) string {
 	return value
 }
 
+type imagePullSecretResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImagePullSecret
+}
+
+func (resolver *Resolver) wrapImagePullSecret(value *storage.ImagePullSecret, ok bool, err error) (*imagePullSecretResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecretResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecrets(values []*storage.ImagePullSecret, err error) ([]*imagePullSecretResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecretResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecretResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecretWithContext(ctx context.Context, value *storage.ImagePullSecret, ok bool, err error) (*imagePullSecretResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecretResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecretsWithContext(ctx context.Context, values []*storage.ImagePullSecret, err error) ([]*imagePullSecretResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecretResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecretResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imagePullSecretResolver) Registries(ctx context.Context) ([]*imagePullSecret_RegistryResolver, error) {
+	value := resolver.data.GetRegistries()
+	return resolver.root.wrapImagePullSecret_Registries(value, nil)
+}
+
+type imagePullSecret_RegistryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImagePullSecret_Registry
+}
+
+func (resolver *Resolver) wrapImagePullSecret_Registry(value *storage.ImagePullSecret_Registry, ok bool, err error) (*imagePullSecret_RegistryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecret_RegistryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecret_Registries(values []*storage.ImagePullSecret_Registry, err error) ([]*imagePullSecret_RegistryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecret_RegistryResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecret_RegistryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecret_RegistryWithContext(ctx context.Context, value *storage.ImagePullSecret_Registry, ok bool, err error) (*imagePullSecret_RegistryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecret_RegistryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecret_RegistriesWithContext(ctx context.Context, values []*storage.ImagePullSecret_Registry, err error) ([]*imagePullSecret_RegistryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecret_RegistryResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecret_RegistryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imagePullSecret_RegistryResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imagePullSecret_RegistryResolver) Username(ctx context.Context) string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
 type imageScanResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7161,6 +9037,58 @@ func (resolver *k8SRoleBindingResolver) RoleId(ctx context.Context) string {
 func (resolver *k8SRoleBindingResolver) Subjects(ctx context.Context) ([]*subjectResolver, error) {
 	value := resolver.data.GetSubjects()
 	return resolver.root.wrapSubjects(value, nil)
+}
+
+type keyValuePairResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.KeyValuePair
+}
+
+func (resolver *Resolver) wrapKeyValuePair(value *storage.KeyValuePair, ok bool, err error) (*keyValuePairResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &keyValuePairResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapKeyValuePairs(values []*storage.KeyValuePair, err error) ([]*keyValuePairResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*keyValuePairResolver, len(values))
+	for i, v := range values {
+		output[i] = &keyValuePairResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapKeyValuePairWithContext(ctx context.Context, value *storage.KeyValuePair, ok bool, err error) (*keyValuePairResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &keyValuePairResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapKeyValuePairsWithContext(ctx context.Context, values []*storage.KeyValuePair, err error) ([]*keyValuePairResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*keyValuePairResolver, len(values))
+	for i, v := range values {
+		output[i] = &keyValuePairResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *keyValuePairResolver) Key(ctx context.Context) string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *keyValuePairResolver) Value(ctx context.Context) string {
+	value := resolver.data.GetValue()
+	return value
 }
 
 func toL4Protocol(value *string) storage.L4Protocol {
@@ -7898,6 +9826,16 @@ func (resolver *Resolver) wrapNetworkEntityInfosWithContext(ctx context.Context,
 	return output, nil
 }
 
+func (resolver *networkEntityInfoResolver) Deployment(ctx context.Context) (*networkEntityInfo_DeploymentResolver, error) {
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapNetworkEntityInfo_Deployment(value, true, nil)
+}
+
+func (resolver *networkEntityInfoResolver) ExternalSource(ctx context.Context) (*networkEntityInfo_ExternalSourceResolver, error) {
+	value := resolver.data.GetExternalSource()
+	return resolver.root.wrapNetworkEntityInfo_ExternalSource(value, true, nil)
+}
+
 func (resolver *networkEntityInfoResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -7906,6 +9844,200 @@ func (resolver *networkEntityInfoResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *networkEntityInfoResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
+}
+
+type networkEntityInfoDescResolver struct {
+	resolver interface{}
+}
+
+func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver {
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &networkEntityInfoDescResolver{
+			resolver: &networkEntityInfo_DeploymentResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetExternalSource(); val != nil {
+		return &networkEntityInfoDescResolver{
+			resolver: &networkEntityInfo_ExternalSourceResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() (*networkEntityInfo_DeploymentResolver, bool) {
+	res, ok := resolver.resolver.(*networkEntityInfo_DeploymentResolver)
+	return res, ok
+}
+
+func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_ExternalSource() (*networkEntityInfo_ExternalSourceResolver, bool) {
+	res, ok := resolver.resolver.(*networkEntityInfo_ExternalSourceResolver)
+	return res, ok
+}
+
+type networkEntityInfo_DeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_Deployment
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment(value *storage.NetworkEntityInfo_Deployment, ok bool, err error) (*networkEntityInfo_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_DeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*storage.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_DeploymentWithContext(ctx context.Context, value *storage.NetworkEntityInfo_Deployment, ok bool, err error) (*networkEntityInfo_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_DeploymentResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_DeploymentsWithContext(ctx context.Context, values []*storage.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_DeploymentResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Cluster(ctx context.Context) string {
+	value := resolver.data.GetCluster()
+	return value
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) ListenPorts(ctx context.Context) ([]*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	value := resolver.data.GetListenPorts()
+	return resolver.root.wrapNetworkEntityInfo_Deployment_ListenPorts(value, nil)
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+type networkEntityInfo_Deployment_ListenPortResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_Deployment_ListenPort
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPort(value *storage.NetworkEntityInfo_Deployment_ListenPort, ok bool, err error) (*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_Deployment_ListenPortResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPorts(values []*storage.NetworkEntityInfo_Deployment_ListenPort, err error) ([]*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_Deployment_ListenPortResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_Deployment_ListenPortResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPortWithContext(ctx context.Context, value *storage.NetworkEntityInfo_Deployment_ListenPort, ok bool, err error) (*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_Deployment_ListenPortResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPortsWithContext(ctx context.Context, values []*storage.NetworkEntityInfo_Deployment_ListenPort, err error) ([]*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_Deployment_ListenPortResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_Deployment_ListenPortResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_Deployment_ListenPortResolver) L4Protocol(ctx context.Context) string {
+	value := resolver.data.GetL4Protocol()
+	return value.String()
+}
+
+func (resolver *networkEntityInfo_Deployment_ListenPortResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
+	return int32(value)
+}
+
+type networkEntityInfo_ExternalSourceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_ExternalSource
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSource(value *storage.NetworkEntityInfo_ExternalSource, ok bool, err error) (*networkEntityInfo_ExternalSourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_ExternalSourceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSources(values []*storage.NetworkEntityInfo_ExternalSource, err error) ([]*networkEntityInfo_ExternalSourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_ExternalSourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_ExternalSourceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSourceWithContext(ctx context.Context, value *storage.NetworkEntityInfo_ExternalSource, ok bool, err error) (*networkEntityInfo_ExternalSourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_ExternalSourceResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSourcesWithContext(ctx context.Context, values []*storage.NetworkEntityInfo_ExternalSource, err error) ([]*networkEntityInfo_ExternalSourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_ExternalSourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_ExternalSourceResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Context) bool {
+	value := resolver.data.GetDefault()
+	return value
+}
+
+func (resolver *networkEntityInfo_ExternalSourceResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 func toNetworkEntityInfo_Type(value *string) storage.NetworkEntityInfo_Type {
@@ -8491,9 +10623,34 @@ func (resolver *Resolver) wrapNotifiersWithContext(ctx context.Context, values [
 	return output, nil
 }
 
+func (resolver *notifierResolver) AwsSecurityHub(ctx context.Context) (*aWSSecurityHubResolver, error) {
+	value := resolver.data.GetAwsSecurityHub()
+	return resolver.root.wrapAWSSecurityHub(value, true, nil)
+}
+
+func (resolver *notifierResolver) Cscc(ctx context.Context) (*cSCCResolver, error) {
+	value := resolver.data.GetCscc()
+	return resolver.root.wrapCSCC(value, true, nil)
+}
+
+func (resolver *notifierResolver) Email(ctx context.Context) (*emailResolver, error) {
+	value := resolver.data.GetEmail()
+	return resolver.root.wrapEmail(value, true, nil)
+}
+
+func (resolver *notifierResolver) Generic(ctx context.Context) (*genericResolver, error) {
+	value := resolver.data.GetGeneric()
+	return resolver.root.wrapGeneric(value, true, nil)
+}
+
 func (resolver *notifierResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *notifierResolver) Jira(ctx context.Context) (*jiraResolver, error) {
+	value := resolver.data.GetJira()
+	return resolver.root.wrapJira(value, true, nil)
 }
 
 func (resolver *notifierResolver) LabelDefault(ctx context.Context) string {
@@ -8516,6 +10673,26 @@ func (resolver *notifierResolver) NotifierSecret(ctx context.Context) string {
 	return value
 }
 
+func (resolver *notifierResolver) Pagerduty(ctx context.Context) (*pagerDutyResolver, error) {
+	value := resolver.data.GetPagerduty()
+	return resolver.root.wrapPagerDuty(value, true, nil)
+}
+
+func (resolver *notifierResolver) Splunk(ctx context.Context) (*splunkResolver, error) {
+	value := resolver.data.GetSplunk()
+	return resolver.root.wrapSplunk(value, true, nil)
+}
+
+func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicResolver, error) {
+	value := resolver.data.GetSumologic()
+	return resolver.root.wrapSumoLogic(value, true, nil)
+}
+
+func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
+	value := resolver.data.GetSyslog()
+	return resolver.root.wrapSyslog(value, true, nil)
+}
+
 func (resolver *notifierResolver) Traits(ctx context.Context) (*traitsResolver, error) {
 	value := resolver.data.GetTraits()
 	return resolver.root.wrapTraits(value, true, nil)
@@ -8529,6 +10706,104 @@ func (resolver *notifierResolver) Type(ctx context.Context) string {
 func (resolver *notifierResolver) UiEndpoint(ctx context.Context) string {
 	value := resolver.data.GetUiEndpoint()
 	return value
+}
+
+type notifierConfigResolver struct {
+	resolver interface{}
+}
+
+func (resolver *notifierResolver) Config() *notifierConfigResolver {
+	if val := resolver.data.GetJira(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &jiraResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetEmail(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &emailResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetCscc(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &cSCCResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetSplunk(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &splunkResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetPagerduty(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &pagerDutyResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetGeneric(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &genericResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetSumologic(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &sumoLogicResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetAwsSecurityHub(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &aWSSecurityHubResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetSyslog(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &syslogResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *notifierConfigResolver) ToJira() (*jiraResolver, bool) {
+	res, ok := resolver.resolver.(*jiraResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToEmail() (*emailResolver, bool) {
+	res, ok := resolver.resolver.(*emailResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToCSCC() (*cSCCResolver, bool) {
+	res, ok := resolver.resolver.(*cSCCResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToSplunk() (*splunkResolver, bool) {
+	res, ok := resolver.resolver.(*splunkResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToPagerDuty() (*pagerDutyResolver, bool) {
+	res, ok := resolver.resolver.(*pagerDutyResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToGeneric() (*genericResolver, bool) {
+	res, ok := resolver.resolver.(*genericResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool) {
+	res, ok := resolver.resolver.(*sumoLogicResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResolver, bool) {
+	res, ok := resolver.resolver.(*aWSSecurityHubResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
+	res, ok := resolver.resolver.(*syslogResolver)
+	return res, ok
 }
 
 type orchestratorMetadataResolver struct {
@@ -8585,6 +10860,53 @@ func (resolver *orchestratorMetadataResolver) BuildDate(ctx context.Context) (*g
 
 func (resolver *orchestratorMetadataResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
+	return value
+}
+
+type pagerDutyResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.PagerDuty
+}
+
+func (resolver *Resolver) wrapPagerDuty(value *storage.PagerDuty, ok bool, err error) (*pagerDutyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &pagerDutyResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPagerDuties(values []*storage.PagerDuty, err error) ([]*pagerDutyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*pagerDutyResolver, len(values))
+	for i, v := range values {
+		output[i] = &pagerDutyResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapPagerDutyWithContext(ctx context.Context, value *storage.PagerDuty, ok bool, err error) (*pagerDutyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &pagerDutyResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPagerDutiesWithContext(ctx context.Context, values []*storage.PagerDuty, err error) ([]*pagerDutyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*pagerDutyResolver, len(values))
+	for i, v := range values {
+		output[i] = &pagerDutyResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *pagerDutyResolver) ApiKey(ctx context.Context) string {
+	value := resolver.data.GetApiKey()
 	return value
 }
 
@@ -9843,6 +12165,44 @@ func (resolver *providerMetadataResolver) Zone(ctx context.Context) string {
 	return value
 }
 
+type providerMetadataProviderResolver struct {
+	resolver interface{}
+}
+
+func (resolver *providerMetadataResolver) Provider() *providerMetadataProviderResolver {
+	if val := resolver.data.GetGoogle(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &googleProviderMetadataResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetAws(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &aWSProviderMetadataResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetAzure(); val != nil {
+		return &providerMetadataProviderResolver{
+			resolver: &azureProviderMetadataResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *providerMetadataProviderResolver) ToGoogleProviderMetadata() (*googleProviderMetadataResolver, bool) {
+	res, ok := resolver.resolver.(*googleProviderMetadataResolver)
+	return res, ok
+}
+
+func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSProviderMetadataResolver, bool) {
+	res, ok := resolver.resolver.(*aWSProviderMetadataResolver)
+	return res, ok
+}
+
+func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
+	res, ok := resolver.resolver.(*azureProviderMetadataResolver)
+	return res, ok
+}
+
 type readinessProbeResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10810,6 +13170,16 @@ func (resolver *Resolver) wrapSecretDataFilesWithContext(ctx context.Context, va
 	return output, nil
 }
 
+func (resolver *secretDataFileResolver) Cert(ctx context.Context) (*certResolver, error) {
+	value := resolver.data.GetCert()
+	return resolver.root.wrapCert(value, true, nil)
+}
+
+func (resolver *secretDataFileResolver) ImagePullSecret(ctx context.Context) (*imagePullSecretResolver, error) {
+	value := resolver.data.GetImagePullSecret()
+	return resolver.root.wrapImagePullSecret(value, true, nil)
+}
+
 func (resolver *secretDataFileResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -10818,6 +13188,34 @@ func (resolver *secretDataFileResolver) Name(ctx context.Context) string {
 func (resolver *secretDataFileResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
+}
+
+type secretDataFileMetadataResolver struct {
+	resolver interface{}
+}
+
+func (resolver *secretDataFileResolver) Metadata() *secretDataFileMetadataResolver {
+	if val := resolver.data.GetCert(); val != nil {
+		return &secretDataFileMetadataResolver{
+			resolver: &certResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetImagePullSecret(); val != nil {
+		return &secretDataFileMetadataResolver{
+			resolver: &imagePullSecretResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *secretDataFileMetadataResolver) ToCert() (*certResolver, bool) {
+	res, ok := resolver.resolver.(*certResolver)
+	return res, ok
+}
+
+func (resolver *secretDataFileMetadataResolver) ToImagePullSecret() (*imagePullSecretResolver, bool) {
+	res, ok := resolver.resolver.(*imagePullSecretResolver)
+	return res, ok
 }
 
 type secretDeploymentRelationshipResolver struct {
@@ -11507,6 +13905,29 @@ func (resolver *Resolver) wrapSignaturesWithContext(ctx context.Context, values 
 	return output, nil
 }
 
+func (resolver *signatureResolver) Cosign(ctx context.Context) (*cosignSignatureResolver, error) {
+	value := resolver.data.GetCosign()
+	return resolver.root.wrapCosignSignature(value, true, nil)
+}
+
+type signatureSignatureResolver struct {
+	resolver interface{}
+}
+
+func (resolver *signatureResolver) Signature() *signatureSignatureResolver {
+	if val := resolver.data.GetCosign(); val != nil {
+		return &signatureSignatureResolver{
+			resolver: &cosignSignatureResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *signatureSignatureResolver) ToCosignSignature() (*cosignSignatureResolver, bool) {
+	res, ok := resolver.resolver.(*cosignSignatureResolver)
+	return res, ok
+}
+
 type simpleAccessScopeResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11758,6 +14179,78 @@ func toSourceTypes(values *[]string) []storage.SourceType {
 	return output
 }
 
+type splunkResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Splunk
+}
+
+func (resolver *Resolver) wrapSplunk(value *storage.Splunk, ok bool, err error) (*splunkResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &splunkResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*splunkResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*splunkResolver, len(values))
+	for i, v := range values {
+		output[i] = &splunkResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapSplunkWithContext(ctx context.Context, value *storage.Splunk, ok bool, err error) (*splunkResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &splunkResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSplunksWithContext(ctx context.Context, values []*storage.Splunk, err error) ([]*splunkResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*splunkResolver, len(values))
+	for i, v := range values {
+		output[i] = &splunkResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *splunkResolver) AuditLoggingEnabled(ctx context.Context) bool {
+	value := resolver.data.GetAuditLoggingEnabled()
+	return value
+}
+
+func (resolver *splunkResolver) HttpEndpoint(ctx context.Context) string {
+	value := resolver.data.GetHttpEndpoint()
+	return value
+}
+
+func (resolver *splunkResolver) HttpToken(ctx context.Context) string {
+	value := resolver.data.GetHttpToken()
+	return value
+}
+
+func (resolver *splunkResolver) Insecure(ctx context.Context) bool {
+	value := resolver.data.GetInsecure()
+	return value
+}
+
+func (resolver *splunkResolver) SourceTypes(ctx context.Context) labels {
+	value := resolver.data.GetSourceTypes()
+	return labelsResolver(value)
+}
+
+func (resolver *splunkResolver) Truncate(ctx context.Context) int32 {
+	value := resolver.data.GetTruncate()
+	return int32(value)
+}
+
 type staticClusterConfigResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11938,6 +14431,236 @@ func toSubjectKinds(values *[]string) []storage.SubjectKind {
 		output[i] = toSubjectKind(&v)
 	}
 	return output
+}
+
+type sumoLogicResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SumoLogic
+}
+
+func (resolver *Resolver) wrapSumoLogic(value *storage.SumoLogic, ok bool, err error) (*sumoLogicResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sumoLogicResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSumoLogics(values []*storage.SumoLogic, err error) ([]*sumoLogicResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sumoLogicResolver, len(values))
+	for i, v := range values {
+		output[i] = &sumoLogicResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapSumoLogicWithContext(ctx context.Context, value *storage.SumoLogic, ok bool, err error) (*sumoLogicResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sumoLogicResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSumoLogicsWithContext(ctx context.Context, values []*storage.SumoLogic, err error) ([]*sumoLogicResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sumoLogicResolver, len(values))
+	for i, v := range values {
+		output[i] = &sumoLogicResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *sumoLogicResolver) HttpSourceAddress(ctx context.Context) string {
+	value := resolver.data.GetHttpSourceAddress()
+	return value
+}
+
+func (resolver *sumoLogicResolver) SkipTLSVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTLSVerify()
+	return value
+}
+
+type syslogResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Syslog
+}
+
+func (resolver *Resolver) wrapSyslog(value *storage.Syslog, ok bool, err error) (*syslogResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslogResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslogs(values []*storage.Syslog, err error) ([]*syslogResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslogResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslogResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapSyslogWithContext(ctx context.Context, value *storage.Syslog, ok bool, err error) (*syslogResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslogResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslogsWithContext(ctx context.Context, values []*storage.Syslog, err error) ([]*syslogResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslogResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslogResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
+func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
+	value := resolver.data.GetLocalFacility()
+	return value.String()
+}
+
+func (resolver *syslogResolver) MessageFormat(ctx context.Context) string {
+	value := resolver.data.GetMessageFormat()
+	return value.String()
+}
+
+func (resolver *syslogResolver) TcpConfig(ctx context.Context) (*syslog_TCPConfigResolver, error) {
+	value := resolver.data.GetTcpConfig()
+	return resolver.root.wrapSyslog_TCPConfig(value, true, nil)
+}
+
+type syslogEndpointResolver struct {
+	resolver interface{}
+}
+
+func (resolver *syslogResolver) Endpoint() *syslogEndpointResolver {
+	if val := resolver.data.GetTcpConfig(); val != nil {
+		return &syslogEndpointResolver{
+			resolver: &syslog_TCPConfigResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *syslogEndpointResolver) ToSyslog_TCPConfig() (*syslog_TCPConfigResolver, bool) {
+	res, ok := resolver.resolver.(*syslog_TCPConfigResolver)
+	return res, ok
+}
+
+func toSyslog_LocalFacility(value *string) storage.Syslog_LocalFacility {
+	if value != nil {
+		return storage.Syslog_LocalFacility(storage.Syslog_LocalFacility_value[*value])
+	}
+	return storage.Syslog_LocalFacility(0)
+}
+
+func toSyslog_LocalFacilities(values *[]string) []storage.Syslog_LocalFacility {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_LocalFacility, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_LocalFacility(&v)
+	}
+	return output
+}
+
+func toSyslog_MessageFormat(value *string) storage.Syslog_MessageFormat {
+	if value != nil {
+		return storage.Syslog_MessageFormat(storage.Syslog_MessageFormat_value[*value])
+	}
+	return storage.Syslog_MessageFormat(0)
+}
+
+func toSyslog_MessageFormats(values *[]string) []storage.Syslog_MessageFormat {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_MessageFormat, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_MessageFormat(&v)
+	}
+	return output
+}
+
+type syslog_TCPConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Syslog_TCPConfig
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfig(value *storage.Syslog_TCPConfig, ok bool, err error) (*syslog_TCPConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslog_TCPConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfigs(values []*storage.Syslog_TCPConfig, err error) ([]*syslog_TCPConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslog_TCPConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslog_TCPConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfigWithContext(ctx context.Context, value *storage.Syslog_TCPConfig, ok bool, err error) (*syslog_TCPConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslog_TCPConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfigsWithContext(ctx context.Context, values []*storage.Syslog_TCPConfig, err error) ([]*syslog_TCPConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslog_TCPConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslog_TCPConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *syslog_TCPConfigResolver) Hostname(ctx context.Context) string {
+	value := resolver.data.GetHostname()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) SkipTlsVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTlsVerify()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) UseTls(ctx context.Context) bool {
+	value := resolver.data.GetUseTls()
+	return value
 }
 
 type taintResolver struct {
@@ -12734,6 +15457,143 @@ func (resolver *Resolver) wrapVulnerabilityRequest_ScopesWithContext(ctx context
 		output[i] = &vulnerabilityRequest_ScopeResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) GlobalScope(ctx context.Context) (*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	value := resolver.data.GetGlobalScope()
+	return resolver.root.wrapVulnerabilityRequest_Scope_Global(value, true, nil)
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) ImageScope(ctx context.Context) (*vulnerabilityRequest_Scope_ImageResolver, error) {
+	value := resolver.data.GetImageScope()
+	return resolver.root.wrapVulnerabilityRequest_Scope_Image(value, true, nil)
+}
+
+type vulnerabilityRequest_ScopeInfoResolver struct {
+	resolver interface{}
+}
+
+func (resolver *vulnerabilityRequest_ScopeResolver) Info() *vulnerabilityRequest_ScopeInfoResolver {
+	if val := resolver.data.GetImageScope(); val != nil {
+		return &vulnerabilityRequest_ScopeInfoResolver{
+			resolver: &vulnerabilityRequest_Scope_ImageResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetGlobalScope(); val != nil {
+		return &vulnerabilityRequest_ScopeInfoResolver{
+			resolver: &vulnerabilityRequest_Scope_GlobalResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *vulnerabilityRequest_ScopeInfoResolver) ToVulnerabilityRequest_Scope_Image() (*vulnerabilityRequest_Scope_ImageResolver, bool) {
+	res, ok := resolver.resolver.(*vulnerabilityRequest_Scope_ImageResolver)
+	return res, ok
+}
+
+func (resolver *vulnerabilityRequest_ScopeInfoResolver) ToVulnerabilityRequest_Scope_Global() (*vulnerabilityRequest_Scope_GlobalResolver, bool) {
+	res, ok := resolver.resolver.(*vulnerabilityRequest_Scope_GlobalResolver)
+	return res, ok
+}
+
+type vulnerabilityRequest_Scope_GlobalResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_Scope_Global
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Global(value *storage.VulnerabilityRequest_Scope_Global, ok bool, err error) (*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_GlobalResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Globals(values []*storage.VulnerabilityRequest_Scope_Global, err error) ([]*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_GlobalResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalWithContext(ctx context.Context, value *storage.VulnerabilityRequest_Scope_Global, ok bool, err error) (*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx context.Context, values []*storage.VulnerabilityRequest_Scope_Global, err error) ([]*vulnerabilityRequest_Scope_GlobalResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_GlobalResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+type vulnerabilityRequest_Scope_ImageResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.VulnerabilityRequest_Scope_Image
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Image(value *storage.VulnerabilityRequest_Scope_Image, ok bool, err error) (*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_ImageResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_Images(values []*storage.VulnerabilityRequest_Scope_Image, err error) ([]*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_ImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_ImageResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_ImageWithContext(ctx context.Context, value *storage.VulnerabilityRequest_Scope_Image, ok bool, err error) (*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &vulnerabilityRequest_Scope_ImageResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapVulnerabilityRequest_Scope_ImagesWithContext(ctx context.Context, values []*storage.VulnerabilityRequest_Scope_Image, err error) ([]*vulnerabilityRequest_Scope_ImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*vulnerabilityRequest_Scope_ImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &vulnerabilityRequest_Scope_ImageResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Registry(ctx context.Context) string {
+	value := resolver.data.GetRegistry()
+	return value
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Remote(ctx context.Context) string {
+	value := resolver.data.GetRemote()
+	return value
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Tag(ctx context.Context) string {
+	value := resolver.data.GetTag()
+	return value
 }
 
 func toVulnerabilitySeverity(value *string) storage.VulnerabilitySeverity {
