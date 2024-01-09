@@ -116,20 +116,20 @@ image:
 # TODO(ROX-9261): Add support for image pull policy to scanner slim
 image:
   main:
-    fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
   collector:
-    fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
   scanner:
-    fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
   [<- if not .KubectlOutput >]
   scannerDb:
-    fullRef: {{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
   [<- end >]
   [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 >]
   scannerV4:
-    fullRef: {{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
   scannerV4DB:
-    fullRef: {{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}"
   [<- end >]
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
