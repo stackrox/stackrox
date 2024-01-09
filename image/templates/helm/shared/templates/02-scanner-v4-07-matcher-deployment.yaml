@@ -42,7 +42,7 @@ spec:
       - name: matcher
         image: {{ ._rox.scannerV4.matcher.image.fullRef | quote }}
         env:
-        - name: GOMEMLIMIT
+        - name: ROX_MEMLIMIT
           valueFrom:
             resourceFieldRef:
               resource: limits.memory
