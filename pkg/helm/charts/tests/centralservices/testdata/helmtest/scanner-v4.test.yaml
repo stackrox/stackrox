@@ -224,3 +224,10 @@ tests:
     .serviceaccounts["scanner-v4"] | assertThat(. != null)
     .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox")
     .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
+
+- name: "indexer should be using central endpoints when deployed as part of central-services"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_cpe_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
