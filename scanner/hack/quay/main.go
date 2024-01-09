@@ -69,7 +69,7 @@ func fetchImages() []string {
 		tags := make([]string, 0, 10)
 		for i := 0; i < len(tagsResp.Tags) && i < cap(tags); i++ {
 			tag := tagsResp.Tags[i].Name
-			if strings.HasSuffix(tag, ".sig") {
+			if strings.HasSuffix(tag, ".sig") || strings.HasSuffix(tag, ".sbom") {
 				continue
 			}
 			tags = append(tags, tag)
@@ -78,7 +78,7 @@ func fetchImages() []string {
 		return tags
 	}
 
-	images := make([]string, 0, 2000)
+	images := make([]string, 0, 2200)
 	for i := 0; i < 25; i++ {
 		repos := fetchRepos(i)
 		for _, repo := range repos {

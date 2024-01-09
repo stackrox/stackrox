@@ -148,7 +148,7 @@ func DeferralUpdate(update *v2.DeferralUpdate) *storage.DeferralUpdate {
 // FalsePositiveUpdate converts *v2.FalsePositiveUpdate object to  *storage.FalsePositiveUpdate.
 func FalsePositiveUpdate(update *v2.FalsePositiveUpdate) *storage.FalsePositiveUpdate {
 	return &storage.FalsePositiveUpdate{
-		CVEs: update.GetCVEs(),
+		CVEs: update.GetCves(),
 	}
 }
 

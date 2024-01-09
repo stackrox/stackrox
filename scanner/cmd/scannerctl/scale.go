@@ -12,11 +12,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/authn"
 	"github.com/stackrox/rox/scanner/cmd/scannerctl/fixtures"
 	"github.com/stackrox/rox/scanner/indexer"
 )
+
+var scanTimeout = env.ScanTimeout.DurationSetting()
 
 // scaleStats specifies the stats we want to track when performing scale tests.
 type scaleStats struct {
@@ -65,6 +68,10 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 		"workers",
 		15,
 		"Specify the number of parallel scans")
+	indexOnly := flags.Bool(
+		"index-only",
+		false,
+		"Only index the specified image")
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Extract basic auth username and password.
 		auth, err := authn.ParseBasic(*basicAuth)
@@ -88,7 +95,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			return fmt.Errorf("fetching image references: %w", err)
 		}
 
-		log.Printf("scale testing with %d images", len(refs))
+		log.Printf("scale testing with %d images with timeout %v (can be changed with ROX_SCAN_TIMEOUT)", len(refs), scanTimeout)
 
 		refsC := make(chan name.Reference)
 		go func() {
@@ -111,14 +118,18 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						log.Printf("could not get digest for image %v: %v", ref, err)
 						continue
 					}
-					err = doWithTimeout(ctx, 5*time.Minute, func(ctx context.Context) error {
+					err = doWithTimeout(ctx, scanTimeout, func(ctx context.Context) error {
 						log.Printf("indexing image %v", ref)
 						_, err := scanner.GetOrCreateImageIndex(ctx, d, auth)
 						if err != nil {
 							stats.indexFailure.Add(1)
-							return fmt.Errorf("indexing image %v: %w", ref, err)
+							return fmt.Errorf("indexing: %w", err)
 						}
 						stats.indexSuccess.Add(1)
+
+						if *indexOnly {
+							return nil
+						}
 
 						log.Printf("matching image %v", ref)
 						// Though this method both indexes and matches, we know the indexing has already completed,
@@ -127,7 +138,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 						_, err = scanner.IndexAndScanImage(ctx, d, auth)
 						if err != nil {
 							stats.matchFailure.Add(1)
-							return fmt.Errorf("matching image %v: %w", ref, err)
+							return fmt.Errorf("matching: %w", err)
 						}
 						stats.matchSuccess.Add(1)
 

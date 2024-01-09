@@ -1,0 +1,22 @@
+common/clusterid: 2023/11/16 06:07:58.438015 cluster_id.go:58: Panic: Invalid dynamic cluster ID value "": no concrete cluster ID was specified in conjunction with wildcard ID "00000000-0000-0000-0000-000000000000". This may be caused by Central data not being persisted between restarts; you may try deploying Central with STORAGE=pvc. For other potential solutions reffer to https://access.redhat.com/solutions/6972449
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413478 notifiable.go:26: Info: Component 'Kernel object cache' runs now in Online mode
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413573 central_communication_impl.go:151: Info: Sensor has client reconciliation disabled
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.413723 central_communication_impl.go:163: Info: Re-using cluster ID 85260c0c-22c0-4a49-a31b-8c41730f0b1d of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/clusterid: 2023/11/16 06:07:58.415049 cluster_id.go:35: Info: Certificate has wildcard subject 00000000-0000-0000-0000-000000000000. Waiting to receive cluster ID from central...
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/sensor: 2023/11/16 06:07:58.437549 central_communication_impl.go:241: Warn: Central is running a legacy version that might not support all current features
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:common/clusterid: 2023/11/16 06:07:58.438015 cluster_id.go:58: Panic: Invalid dynamic cluster ID value "": no concrete cluster ID was specified in conjunction with wildcard ID "00000000-0000-0000-0000-000000000000". This may be caused by Central data not being persisted between restarts; you may try deploying Central with STORAGE=pvc. For other potential solutions reffer to https://access.redhat.com/solutions/6972449
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:panic: Invalid dynamic cluster ID value "": no concrete cluster ID was specified in conjunction with wildcard ID "00000000-0000-0000-0000-000000000000". This may be caused by Central data not being persisted between restarts; you may try deploying Central with STORAGE=pvc. For other potential solutions reffer to https://access.redhat.com/solutions/6972449
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:goroutine 242 [running]:
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:go.uber.org/zap/zapcore.(*CheckedEntry).Write(0xc0007166e0, {0x0, 0x0, 0x0})
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	go.uber.org/zap@v1.26.0/zapcore/entry.go:230 +0x486
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:go.uber.org/zap.(*SugaredLogger).log(0xc00074be88, 0x4, {0x3c19e36?, 0x419b87?}, {0xc00138a7a0?, 0x3439900?, 0xc0019b3a01?}, {0x0, 0x0, 0x0})
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	go.uber.org/zap@v1.26.0/sugar.go:234 +0x13b
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:go.uber.org/zap.(*SugaredLogger).Panicf(...)
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	go.uber.org/zap@v1.26.0/sugar.go:159
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:github.com/stackrox/rox/pkg/logging.(*LoggerImpl).Panicf(0x0?, {0x3c19e36?, 0xc0009a2650?}, {0xc00138a7a0?, 0xc0007166e0?, 0xc0019b3b18?})
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	github.com/stackrox/rox/pkg/logging/logger.go:109 +0x48
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:github.com/stackrox/rox/sensor/common/clusterid.Set({0x0, 0x0})
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	github.com/stackrox/rox/sensor/common/clusterid/cluster_id.go:58 +0x153
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:github.com/stackrox/rox/sensor/common/sensor.(*centralCommunicationImpl).initialSync(0x43eb020?, {0x43faf38, 0xc001ba5400}, 0xc000f4cd20, {0x43fc860, 0xc000876770}, {0x4408990, 0xc000a21b80})
+hits/sensor-b5d5fb4bc-74qxq-sensor.log:	github.com/stackrox/rox/sensor/common/sensor/central_communication_impl.go:245 +0x2c5
