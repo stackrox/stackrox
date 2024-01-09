@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
-	podStore "github.com/stackrox/rox/central/pod/store/postgres"
+	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store/postgres"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"

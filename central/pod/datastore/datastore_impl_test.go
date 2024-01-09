@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
-	storeMocks "github.com/stackrox/rox/central/pod/store/mocks"
+	storeMocks "github.com/stackrox/rox/central/pod/datastore/internal/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	plopMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
