@@ -1,15 +1,14 @@
 {{- $_ := include "srox.init" . -}}
 
-StackRox {{.Chart.AppVersion}} has been installed.
+StackRox Central Services has been installed.
 
 [< if not .Operator >]
 Central Services Configuration Summary:
 
-  Name:                                        {{ ._rox.clusterName }}
+  Stackrox Version:                            {{ .Chart.AppVersion }}
   Kubernetes Version:                          {{ ._rox._apiServer.version }}
   Kubernetes Namespace:                        {{ .Release.Namespace }}
   Helm Release Name:                           {{ .Release.Name }}
-  Central Endpoint:                            {{ ._rox.centralEndpoint }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
 [<- if .FeatureFlags.ROX_SCANNER_V4 >]
   Scanner V4 Installation Method:              {{ ._rox.scannerV4._installMode }}
