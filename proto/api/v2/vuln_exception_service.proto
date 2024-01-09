@@ -111,7 +111,7 @@ message DeferralUpdate {
 
 message FalsePositiveUpdate {
     // Use this field to update the CVEs of a false-positive exception.
-    repeated string CVEs = 1;
+    repeated string cves = 1;
 }
 
 message GetVulnerabilityExceptionResponse {
