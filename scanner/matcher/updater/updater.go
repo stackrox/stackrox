@@ -200,17 +200,24 @@ func (u *Updater) Start() error {
 	}
 }
 
-// update runs a vulnerability data update, once.
+// update runs the full vulnerability update process.
 func (u *Updater) update(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.update")
+	if err := u.runUpdate(ctx); err != nil {
+		return err
+	}
+	if !u.skipGC {
+		u.runGC(ctx)
+	}
+	return nil
+}
+
+// runUpdate updates the vulnerability data.
+func (u *Updater) runUpdate(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runUpdate")
 
 	ctx, done := u.locker.TryLock(ctx, name)
 	defer done()
 	if err := ctx.Err(); err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Str("updater", name).
-			Msg("lock context canceled, excluding from run")
 		zlog.Info(ctx).
 			Str("updater", name).
 			Msg("did not obtain lock, skipping update run")
@@ -262,11 +269,6 @@ func (u *Updater) update(ctx context.Context) error {
 	zlog.Info(ctx).
 		Str("timestamp", timestamp.Format(http.TimeFormat)).
 		Msg("new vuln update")
-
-	if !u.skipGC {
-		// Run garbage collection in the background.
-		go u.runGC(ctx)
-	}
 
 	return nil
 }
