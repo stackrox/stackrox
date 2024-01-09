@@ -21,22 +21,23 @@ import (
 )
 
 var (
-	ctx = sac.WithAllAccess(context.Background())
+	cachedStoreCtx = sac.WithAllAccess(context.Background())
 )
 
-func TestNewStore(t *testing.T) {
+func TestNewCachedStore(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	assert.NotNil(t, newStore(testDB))
+	assert.NotNil(t, newCachedStore(testDB))
 }
 
-func TestNewGenericStore(t *testing.T) {
+func TestNewGenericCachedStore(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	assert.NotNil(t, NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
+	assert.NotNil(t, NewGenericStoreWithCache[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
 		pkgSchema.TestSingleKeyStructsSchema,
-		pkGetter,
-		insertIntoTestSingleKeyStructs,
-		copyFromTestSingleKeyStructs,
+		pkGetterForCache,
+		insertIntoTestSingleKeyStructsWithCache,
+		copyFromTestSingleKeyStructsWithCache,
+		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
@@ -44,101 +45,101 @@ func TestNewGenericStore(t *testing.T) {
 	))
 }
 
-func TestUpsert(t *testing.T) {
+func TestCachedUpsert(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	key := "TestUpsert"
 	name := "Test Upsert"
-	testObject := newTestSingleKeyStruct(key, name, int64(1))
+	testObject := newCachedTestSingleKeyStruct(key, name, int64(1))
 
-	objBefore, foundBefore, errBefore := store.Get(ctx, key)
+	objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, key)
 	assert.Nil(t, objBefore)
 	assert.False(t, foundBefore)
 	assert.NoError(t, errBefore)
 
-	assert.NoError(t, store.Upsert(ctx, testObject))
+	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
-	objAfter, foundAfter, errAfter := store.Get(ctx, key)
+	objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, key)
 	assert.Equal(t, testObject, objAfter)
 	assert.True(t, foundAfter)
 	assert.NoError(t, errAfter)
 }
 
-func TestUpsertMany(t *testing.T) {
+func TestCachedUpsertMany(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 
-	testObjects := sampleTestSingleKeyStructArray("UpsertMany")
+	testObjects := sampleCachedTestSingleKeyStructArray("UpsertMany")
 
 	for _, obj := range testObjects {
-		objBefore, foundBefore, errBefore := store.Get(ctx, pkGetter(obj))
+		objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.Nil(t, objBefore)
 		assert.False(t, foundBefore)
 		assert.NoError(t, errBefore)
 	}
 
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
 	for _, obj := range testObjects {
-		objAfter, foundAfter, errAfter := store.Get(ctx, pkGetter(obj))
+		objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.Equal(t, obj, objAfter)
 		assert.True(t, foundAfter)
 		assert.NoError(t, errAfter)
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestCachedDelete(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
 	key := "TestDelete"
 	name := "Test Delete"
-	testObject := newTestSingleKeyStruct(key, name, int64(1))
-	require.NoError(t, store.Upsert(ctx, testObject))
+	testObject := newCachedTestSingleKeyStruct(key, name, int64(1))
+	require.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
-	objBefore, foundBefore, errBefore := store.Get(ctx, key)
+	objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, key)
 	require.Equal(t, testObject, objBefore)
 	require.True(t, foundBefore)
 	require.NoError(t, errBefore)
 
-	assert.NoError(t, store.Delete(ctx, key))
+	assert.NoError(t, store.Delete(cachedStoreCtx, key))
 
-	objAfter, foundAfter, errAfter := store.Get(ctx, key)
+	objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, key)
 	require.Nil(t, objAfter)
 	require.False(t, foundAfter)
 	require.NoError(t, errAfter)
 
 	missingKey := "TestDeleteMissingKey"
 
-	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(ctx, missingKey)
+	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(cachedStoreCtx, missingKey)
 	require.Nil(t, missingObjBefore)
 	require.False(t, missingFoundBefore)
 	require.NoError(t, missingErrBefore)
 
-	assert.NoError(t, store.Delete(ctx, missingKey))
+	assert.NoError(t, store.Delete(cachedStoreCtx, missingKey))
 
-	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(ctx, missingKey)
+	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(cachedStoreCtx, missingKey)
 	require.Nil(t, missingObjAfter)
 	require.False(t, missingFoundAfter)
 	require.NoError(t, missingErrAfter)
 
 }
 
-func TestDeleteMany(t *testing.T) {
+func TestCachedDeleteMany(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	objectBatch := sampleTestSingleKeyStructArray("DeleteMany")
-	require.NoError(t, store.UpsertMany(ctx, objectBatch))
+	objectBatch := sampleCachedTestSingleKeyStructArray("DeleteMany")
+	require.NoError(t, store.UpsertMany(cachedStoreCtx, objectBatch))
 
 	identifiersToRemove := make([]string, 0, len(objectBatch)+1)
 	for _, obj := range objectBatch {
-		key := pkGetter(obj)
+		key := pkGetterForCache(obj)
 		identifiersToRemove = append(identifiersToRemove, key)
 		// ensure object is in DB before call to remove
-		objBefore, foundBefore, errBefore := store.Get(ctx, key)
+		objBefore, foundBefore, errBefore := store.Get(cachedStoreCtx, key)
 		assert.Equal(t, obj, objBefore)
 		assert.True(t, foundBefore)
 		assert.NoError(t, errBefore)
@@ -146,81 +147,81 @@ func TestDeleteMany(t *testing.T) {
 
 	missingKey := "TestDeleteManyMissingKey"
 	identifiersToRemove = append(identifiersToRemove, missingKey)
-	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(ctx, missingKey)
+	missingObjBefore, missingFoundBefore, missingErrBefore := store.Get(cachedStoreCtx, missingKey)
 	assert.Nil(t, missingObjBefore)
 	assert.False(t, missingFoundBefore)
 	assert.NoError(t, missingErrBefore)
 
-	assert.NoError(t, store.DeleteMany(ctx, identifiersToRemove))
+	assert.NoError(t, store.DeleteMany(cachedStoreCtx, identifiersToRemove))
 
 	for _, obj := range objectBatch {
-		key := pkGetter(obj)
+		key := pkGetterForCache(obj)
 		// ensure object is NOT in DB after call to remove
-		objAfter, foundAfter, errAfter := store.Get(ctx, key)
+		objAfter, foundAfter, errAfter := store.Get(cachedStoreCtx, key)
 		assert.Nil(t, objAfter)
 		assert.False(t, foundAfter)
 		assert.NoError(t, errAfter)
 	}
 
-	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(ctx, missingKey)
+	missingObjAfter, missingFoundAfter, missingErrAfter := store.Get(cachedStoreCtx, missingKey)
 	assert.Nil(t, missingObjAfter)
 	assert.False(t, missingFoundAfter)
 	assert.NoError(t, missingErrAfter)
 }
 
-func TestExists(t *testing.T) {
+func TestCachedExists(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
 	key := "TestExists"
 	name := "Test Exists"
-	testObject := newTestSingleKeyStruct(key, name, int64(9))
+	testObject := newCachedTestSingleKeyStruct(key, name, int64(9))
 
-	require.NoError(t, store.Upsert(ctx, testObject))
+	require.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
 	missingKey := "TestExistsMissingKey"
 
-	foundExisting, errExisting := store.Exists(ctx, key)
+	foundExisting, errExisting := store.Exists(cachedStoreCtx, key)
 	assert.True(t, foundExisting)
 	assert.NoError(t, errExisting)
 
-	foundMissing, errMissing := store.Exists(ctx, missingKey)
+	foundMissing, errMissing := store.Exists(cachedStoreCtx, missingKey)
 	assert.False(t, foundMissing)
 	assert.NoError(t, errMissing)
 }
 
-func TestCount(t *testing.T) {
+func TestCachedCount(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	firstCount, err1 := store.Count(ctx)
+	firstCount, err1 := store.Count(cachedStoreCtx)
 	assert.Equal(t, 0, firstCount)
 	assert.NoError(t, err1)
 
-	testObject1 := newTestSingleKeyStruct("TestCount", "Test Count", int64(256))
-	assert.NoError(t, store.Upsert(ctx, testObject1))
+	testObject1 := newCachedTestSingleKeyStruct("TestCount", "Test Count", int64(256))
+	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject1))
 
-	secondCount, err2 := store.Count(ctx)
+	secondCount, err2 := store.Count(cachedStoreCtx)
 	assert.Equal(t, 1, secondCount)
 	assert.NoError(t, err2)
 
-	supplementaryObjects := sampleTestSingleKeyStructArray("Count")
-	assert.NoError(t, store.UpsertMany(ctx, supplementaryObjects))
+	supplementaryObjects := sampleCachedTestSingleKeyStructArray("Count")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, supplementaryObjects))
 
-	thirdCount, err3 := store.Count(ctx)
+	thirdCount, err3 := store.Count(cachedStoreCtx)
 	assert.Equal(t, 1+len(supplementaryObjects), thirdCount)
 	assert.NoError(t, err3)
 }
 
-func TestWalk(t *testing.T) {
+func TestCachedWalk(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	testObjects := sampleTestSingleKeyStructArray("Walk")
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	testObjects := sampleCachedTestSingleKeyStructArray("Walk")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
 	injectedNames := make([]string, 0, len(testObjects))
 	for _, obj := range testObjects {
@@ -236,74 +237,74 @@ func TestWalk(t *testing.T) {
 		return nil
 	}
 
-	assert.NoError(t, store.Walk(ctx, walkFn))
+	assert.NoError(t, store.Walk(cachedStoreCtx, walkFn))
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
 	assert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
-func TestGetAll(t *testing.T) {
+func TestCachedGetAll(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	testObjects := sampleTestSingleKeyStructArray("GetAll")
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	testObjects := sampleCachedTestSingleKeyStructArray("GetAll")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
-	fetchedObjects, err := store.GetAll(ctx)
+	fetchedObjects, err := store.GetAll(cachedStoreCtx)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, fetchedObjects, testObjects)
 }
 
-func TestGetIDs(t *testing.T) {
+func TestCachedGetIDs(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	require.NotNil(t, store)
 
-	testObjects := sampleTestSingleKeyStructArray("GetIDs")
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	testObjects := sampleCachedTestSingleKeyStructArray("GetIDs")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
 	expectedIDs := make([]string, 0, len(testObjects))
 	for _, obj := range testObjects {
-		expectedIDs = append(expectedIDs, pkGetter(obj))
+		expectedIDs = append(expectedIDs, pkGetterForCache(obj))
 	}
 
-	fetchedIDs, err := store.GetIDs(ctx)
+	fetchedIDs, err := store.GetIDs(cachedStoreCtx)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, fetchedIDs, expectedIDs)
 }
 
-func TestGet(t *testing.T) {
+func TestCachedGet(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 	key := "TestGet"
 	name := "Test Get"
-	testObject := newTestSingleKeyStruct(key, name, int64(15))
+	testObject := newCachedTestSingleKeyStruct(key, name, int64(15))
 
 	missingKey := "TestGetMissing"
 
-	assert.NoError(t, store.Upsert(ctx, testObject))
+	assert.NoError(t, store.Upsert(cachedStoreCtx, testObject))
 
 	// Object with ID "TestGet" is in DB
-	obj, found, err := store.Get(ctx, key)
+	obj, found, err := store.Get(cachedStoreCtx, key)
 	assert.Equal(t, testObject, obj)
 	assert.True(t, found)
 	assert.NoError(t, err)
 
 	// Object with ID "TestGetMissing" is NOT in DB
-	missingObj, missingFound, missingErr := store.Get(ctx, missingKey)
+	missingObj, missingFound, missingErr := store.Get(cachedStoreCtx, missingKey)
 	assert.Nil(t, missingObj)
 	assert.False(t, missingFound)
 	assert.NoError(t, missingErr)
 }
 
-func TestGetMany(t *testing.T) {
+func TestCachedGetMany(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 
 	missingKey := "TestGetManyMissing"
-	testObjects := sampleTestSingleKeyStructArray("GetMany")
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	testObjects := sampleCachedTestSingleKeyStructArray("GetMany")
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
 	identifiersToFetch := make([]string, 0, len(testObjects)+1)
 	expectedObjects := make([]*storage.TestSingleKeyStruct, 0, len(testObjects))
@@ -312,32 +313,32 @@ func TestGetMany(t *testing.T) {
 		if ix%2 == 1 {
 			continue
 		}
-		identifiersToFetch = append(identifiersToFetch, pkGetter(obj))
+		identifiersToFetch = append(identifiersToFetch, pkGetterForCache(obj))
 		expectedObjects = append(expectedObjects, obj)
 	}
 
-	fetchedObjects, missingIndices, err := store.GetMany(ctx, identifiersToFetch)
+	fetchedObjects, missingIndices, err := store.GetMany(cachedStoreCtx, identifiersToFetch)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, fetchedObjects, expectedObjects)
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
-func TestGetByQuery(t *testing.T) {
+func TestCachedGetByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 
-	testObjects := sampleTestSingleKeyStructArray("GetByQuery")
-	query2 := getMatchFieldQuery("Test Name", "Test GetByQuery 2")
-	query4 := getMatchFieldQuery("Test Key", "TestGetByQuery4")
-	query := getDisjunctionQuery(query2, query4)
+	testObjects := sampleCachedTestSingleKeyStructArray("GetByQuery")
+	query2 := getCachedMatchFieldQuery("Test Name", "Test GetByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestGetByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
 
-	objectsBefore, errBefore := store.GetByQuery(ctx, query)
+	objectsBefore, errBefore := store.GetByQuery(cachedStoreCtx, query)
 	assert.NoError(t, errBefore)
 	assert.Empty(t, objectsBefore)
 
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 
-	objectsAfter, errAfter := store.GetByQuery(ctx, query)
+	objectsAfter, errAfter := store.GetByQuery(cachedStoreCtx, query)
 	assert.NoError(t, errAfter)
 	expectedObjectsAfter := []*storage.TestSingleKeyStruct{
 		testObjects[1],
@@ -346,35 +347,35 @@ func TestGetByQuery(t *testing.T) {
 	assert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
-func TestDeleteByQuery(t *testing.T) {
+func TestCachedDeleteByQuery(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 
-	testObjects := sampleTestSingleKeyStructArray("DeleteByQuery")
-	query2 := getMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
-	query4 := getMatchFieldQuery("Test Key", "TestDeleteByQuery4")
-	query := getDisjunctionQuery(query2, query4)
+	testObjects := sampleCachedTestSingleKeyStructArray("DeleteByQuery")
+	query2 := getCachedMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestDeleteByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
 
-	queriedObjectsFromEmpty, errQueryFromEmpty := store.GetByQuery(ctx, query)
+	queriedObjectsFromEmpty, errQueryFromEmpty := store.GetByQuery(cachedStoreCtx, query)
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	_, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromEmptyErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 	for _, obj := range testObjects {
-		objBefore, fetchedBefore, errBefore := store.Get(ctx, pkGetter(obj))
+		objBefore, fetchedBefore, errBefore := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
 
-	_, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	_, deleteFromPopulatedErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
 
 	for idx, obj := range testObjects {
-		objAfter, fetchedAfter, errAfter := store.Get(ctx, pkGetter(obj))
+		objAfter, fetchedAfter, errAfter := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.NoError(t, errAfter)
 		if idx == 1 || idx == 3 {
 			assert.Nil(t, objAfter)
@@ -386,38 +387,38 @@ func TestDeleteByQuery(t *testing.T) {
 	}
 }
 
-func TestDeleteByQueryReturningIDs(t *testing.T) {
+func TestCachedDeleteByQueryReturningIDs(t *testing.T) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := newCachedStore(testDB)
 
-	testObjects := sampleTestSingleKeyStructArray("DeleteByQuery")
-	query2 := getMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
-	query4 := getMatchFieldQuery("Test Key", "TestDeleteByQuery4")
-	query := getDisjunctionQuery(query2, query4)
+	testObjects := sampleCachedTestSingleKeyStructArray("DeleteByQuery")
+	query2 := getCachedMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
+	query4 := getCachedMatchFieldQuery("Test Key", "TestDeleteByQuery4")
+	query := getCachedDisjunctionQuery(query2, query4)
 
-	queriedObjectsFromEmpty, errQueryFromEmpty := store.GetByQuery(ctx, query)
+	queriedObjectsFromEmpty, errQueryFromEmpty := store.GetByQuery(cachedStoreCtx, query)
 	assert.NoError(t, errQueryFromEmpty)
 	assert.Empty(t, queriedObjectsFromEmpty)
 
-	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromEmpty, deleteFromEmptyErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromEmptyErr)
 	assert.Empty(t, deletedIDsFromEmpty)
 
-	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+	assert.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
 	for _, obj := range testObjects {
-		objBefore, fetchedBefore, errBefore := store.Get(ctx, pkGetter(obj))
+		objBefore, fetchedBefore, errBefore := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.Equal(t, obj, objBefore)
 		assert.True(t, fetchedBefore)
 		assert.NoError(t, errBefore)
 	}
 
-	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(ctx, query)
+	deletedIDsFromPopulated, deleteFromPopulatedErr := store.DeleteByQuery(cachedStoreCtx, query)
 	assert.NoError(t, deleteFromPopulatedErr)
-	expectedIDs := []string{pkGetter(testObjects[1]), pkGetter(testObjects[3])}
+	expectedIDs := []string{pkGetterForCache(testObjects[1]), pkGetterForCache(testObjects[3])}
 	assert.ElementsMatch(t, deletedIDsFromPopulated, expectedIDs)
 
 	for idx, obj := range testObjects {
-		objAfter, fetchedAfter, errAfter := store.Get(ctx, pkGetter(obj))
+		objAfter, fetchedAfter, errAfter := store.Get(cachedStoreCtx, pkGetterForCache(obj))
 		assert.NoError(t, errAfter)
 		if idx == 1 || idx == 3 {
 			assert.Nil(t, objAfter)
@@ -431,13 +432,14 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 
 // region Helper Functions
 
-func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
-	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
+func newCachedStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
+	return NewGenericStoreWithCache[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
 		pkgSchema.TestSingleKeyStructsSchema,
-		pkGetter,
-		insertIntoTestSingleKeyStructs,
-		copyFromTestSingleKeyStructs,
+		pkGetterForCache,
+		insertIntoTestSingleKeyStructsWithCache,
+		copyFromTestSingleKeyStructsWithCache,
+		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		GloballyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
@@ -445,7 +447,7 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 	)
 }
 
-func newTestSingleKeyStruct(key string, name string, intVal int64) *storage.TestSingleKeyStruct {
+func newCachedTestSingleKeyStruct(key string, name string, intVal int64) *storage.TestSingleKeyStruct {
 	return &storage.TestSingleKeyStruct{
 		Key:   key,
 		Name:  name,
@@ -453,7 +455,7 @@ func newTestSingleKeyStruct(key string, name string, intVal int64) *storage.Test
 	}
 }
 
-func sampleTestSingleKeyStructArray(pattern string) []*storage.TestSingleKeyStruct {
+func sampleCachedTestSingleKeyStructArray(pattern string) []*storage.TestSingleKeyStruct {
 	output := make([]*storage.TestSingleKeyStruct, 0, 5)
 	for i := 1; i <= 5; i++ {
 		key := fmt.Sprintf("Test%s%d", pattern, i)
@@ -463,7 +465,7 @@ func sampleTestSingleKeyStructArray(pattern string) []*storage.TestSingleKeyStru
 	return output
 }
 
-func getMatchFieldQuery(fieldName string, value string) *v1.Query {
+func getCachedMatchFieldQuery(fieldName string, value string) *v1.Query {
 	return &v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{
@@ -479,7 +481,7 @@ func getMatchFieldQuery(fieldName string, value string) *v1.Query {
 	}
 }
 
-func getDisjunctionQuery(q1 *v1.Query, q2 *v1.Query) *v1.Query {
+func getCachedDisjunctionQuery(q1 *v1.Query, q2 *v1.Query) *v1.Query {
 	if q1 == nil && q2 == nil {
 		return nil
 	}
@@ -499,12 +501,12 @@ func getDisjunctionQuery(q1 *v1.Query, q2 *v1.Query) *v1.Query {
 }
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
-func pkGetter(obj *storage.TestSingleKeyStruct) string {
+func pkGetterForCache(obj *storage.TestSingleKeyStruct) string {
 	return obj.GetKey()
 }
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
-func insertIntoTestSingleKeyStructs(batch *pgx.Batch, obj *storage.TestSingleKeyStruct) error {
+func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.TestSingleKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -534,7 +536,7 @@ func insertIntoTestSingleKeyStructs(batch *pgx.Batch, obj *storage.TestSingleKey
 }
 
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
-func copyFromTestSingleKeyStructs(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
+func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
 	batchSize := MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
