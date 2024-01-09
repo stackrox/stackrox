@@ -239,7 +239,7 @@ describe('Notifier Integrations', () => {
             // Test does not delete, because it did not create.
         });
 
-        it.skip('should create a new Google Cloud SCC integration', () => {
+        it('should create a new Google Cloud SCC integration', () => {
             const integrationName = generateNameWithDate('Nova Google Cloud SCC');
             const integrationType = 'cscc';
 
