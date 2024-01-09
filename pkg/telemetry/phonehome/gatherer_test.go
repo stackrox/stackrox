@@ -48,10 +48,12 @@ func (s *gathererTestSuite) TestGatherer() {
 	})
 	g.Start()
 	<-g.ctx.Done()
+	g.procs.Wait()
 	s.Equal("value", props["key"], "the gathering function should have been called")
 	s.Equal(int64(1), i)
 	g.Start()
 	<-g.ctx.Done()
+	g.procs.Wait()
 	s.Equal("value", props["key"], "the gathering function should have been called")
 	s.Equal(int64(2), i)
 }
