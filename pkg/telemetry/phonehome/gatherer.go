@@ -42,6 +42,8 @@ type gatherer struct {
 	// procs groups the goroutines, launched by the gatherer,
 	// allowing tests to wait for their termination.
 	procs sync.WaitGroup
+	// tickerFactory allows for setting a custom ticker for ad-hoc gathering.
+	tickerFactory func(time.Duration) *time.Ticker
 }
 
 func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
@@ -49,6 +51,8 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 		clientType: clientType,
 		telemeter:  t,
 		period:     p,
+
+		tickerFactory: time.NewTicker,
 	}
 }
 
@@ -97,7 +101,7 @@ func (g *gatherer) loop() {
 	// Send initial data on start:
 	g.procs.Add(1)
 	g.identify()
-	ticker := time.NewTicker(g.period)
+	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
 		select {
