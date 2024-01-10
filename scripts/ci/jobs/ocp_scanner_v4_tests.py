@@ -22,9 +22,3 @@ ClusterTestRunner(
     post_test=NullPostTest(),
     final_post=FinalPost(),
 ).run()
-
-
-# At the moment this is just here for letting CI pass when a new CI test step has been added
-# to the openshift/release repo.
-
-print("UNIMPLEMENTED")
