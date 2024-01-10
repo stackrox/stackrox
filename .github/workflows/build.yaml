@@ -666,7 +666,15 @@ jobs:
           ./release/scripts/scan-images-with-roxctl.sh
 
   slack-on-build-failure:
-    if: github.event_name == 'push' && failure()
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+      TEST_FAILURES_NOTIFY_WEBHOOK: ${{ secrets.TEST_FAILURES_NOTIFY_WEBHOOK }}
+    if: |
+      failure() && (
+          github.event_name == 'push' || 
+          contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
+      )
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
@@ -681,10 +689,10 @@ jobs:
     permissions:
       actions: read
     steps:
-      - name: Slack Workflow Notification
-        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
-        with:
-          include_commit_message: true
-          include_jobs: on-failure
-          repo_token: ${{secrets.GITHUB_TOKEN}}
-          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Slack message
+        run: |
+          source scripts/ci/lib.sh
+          slack_workflow_failure '${{ toJson(github) }}'
