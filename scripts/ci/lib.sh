@@ -1503,7 +1503,7 @@ slack_workflow_failure() {
     # shellcheck disable=SC2016
     local body='
 {
-    "text": "\($workflow_name) failed.",
+    "text": "\($workflow_name) failed.\nCommit: \($commit_msg)\nAuthor: \($author_name)\($slack_mention)",
     "blocks": [
         {
             "type": "header",
