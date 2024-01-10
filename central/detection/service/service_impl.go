@@ -228,7 +228,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
-		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment.", deployment.GetName())
+		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
 	} else {
 		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
 	}
@@ -256,7 +256,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
 	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
 	if err != nil {
-		return nil, errox.InvalidArgs.New("failed to find network policies for deployment").CausedBy(err)
+		return nil, errors.Wrapf(err, "failed to find network policies for cluster %s and namespace %s", enrichmentContext.ClusterID, enrichmentContext.Namespace)
 	}
 	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil

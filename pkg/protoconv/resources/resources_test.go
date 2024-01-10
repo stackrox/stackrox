@@ -152,7 +152,8 @@ func TestNewDeploymentFromStaticResourcePopulatesPodLabels(t *testing.T) {
 			},
 		},
 	}
-	d, _ := NewDeploymentFromStaticResource(deployment, "Deployment", "", "")
+	d, err := NewDeploymentFromStaticResource(deployment, "Deployment", "", "")
+	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"app": "nginx"}, d.GetPodLabels())
 }
 
