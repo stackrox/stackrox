@@ -72,7 +72,7 @@ func (r *reconcileScannerDBPasswordExtensionRun) validateScannerDBPasswordData(d
 	return nil
 }
 
-func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData() (types.SecretDataMap, error) {
+func (r *reconcileScannerDBPasswordExtensionRun) generateScannerDBPasswordData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	data := types.SecretDataMap{
 		scannerDBPasswordKey: []byte(renderer.CreatePassword()),
 	}
