@@ -170,14 +170,19 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
-	objects := make([]PT, 0, len(identifiers))
-	for _, identifier := range identifiers {
-		obj, found := c.cache[identifier]
-		if !found {
-			continue
-		}
-		objects = append(objects, obj)
+	if len(identifiers) == 0 {
+		return nil
 	}
+	objects := make([]PT, 0, len(identifiers))
+	concurrency.WithRLock(&c.cacheLock, func() {
+		for _, identifier := range identifiers {
+			obj, found := c.cache[identifier]
+			if !found {
+				continue
+			}
+			objects = append(objects, obj)
+		}
+	})
 	filteredIDs := make([]string, 0, len(objects))
 	for _, obj := range objects {
 		if !c.isWriteAllowed(ctx, obj) {
