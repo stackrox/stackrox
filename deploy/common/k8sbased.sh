@@ -388,9 +388,9 @@ function launch_central {
       echo
 
       if [[ "${is_local_dev}" == "true" ]]; then
-        ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-dev-patch.yaml")"
+        ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-local-patch.yaml")"
         if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-dev-patch.yaml")"
+          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
         fi
       elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
         ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
