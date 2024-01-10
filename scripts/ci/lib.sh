@@ -1411,13 +1411,15 @@ _make_slack_failure_attachments() {
     slack_attachments=""
     if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
         if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
-            slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
+            slack_attachments+="$(_make_slack_failure_plain_text_block \
+                "Could not parse junit in main test step. Check build logs for more information.")"
         fi
     else
         slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
     fi
     if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in final test step. Check build logs for more information.")"
+        slack_attachments+="$(_make_slack_failure_plain_text_block \
+            "Could not parse junit in final test step. Check build logs for more information.")"
     else
         slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
     fi
@@ -1428,7 +1430,7 @@ _make_slack_failure_attachments() {
         msg="No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
 issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
-        slack_attachments="$(_make_slack_failure_block "${msg}")"
+        slack_attachments="$(_make_slack_failure_plain_text_block "${msg}")"
     fi
 }
 
@@ -1442,30 +1444,7 @@ _make_slack_failure_block() {
       {
         "type": "section",
         "text": {
-          "type": "plain_text",
-          "text": "\($msg)"
-        }
-      }
-    ]
-  }
-]
-'
-    jq --null-input \
-       --arg msg "$1" \
-       "$body"
-}
-
-_make_slack_failure_mrkdwn_block() {
-    # shellcheck disable=SC2016
-    local body='
-[
-  {
-    "color": "#bb2124",
-    "blocks": [
-      {
-        "type": "section",
-        "text": {
-          "type": "mrkdwn",
+          "type": "\($section_type)",
           "text": "\($content)"
         }
       }
@@ -1474,8 +1453,17 @@ _make_slack_failure_mrkdwn_block() {
 ]
 '
     jq --null-input \
-       --arg content "$1" \
+       --arg section_type "$1" \
+       --arg content "$2" \
        "$body"
+}
+
+_make_slack_failure_plain_text_block() {
+    _make_slack_failure_block "plain_text" "$1"
+}
+
+_make_slack_failure_markdown_block() {
+    _make_slack_failure_block "mrkdwn" "$1"
 }
 
 _send_slack_error() {
@@ -1534,8 +1522,7 @@ slack_workflow_failure() {
     do
         job_name=$(jq -r <<<"${job}" '.name')
         job_url=$(jq -r <<<"${job}" '.url')
-        # echo ">>${job}<<"
-        attachments+="$(_make_slack_failure_mrkdwn_block "<${job_url}|${job_name}>)")"
+        attachments+="$(_make_slack_failure_markdown_block ":cs-x: job: <${job_url}|${job_name}>")"
     done
     attachments="$(echo "${attachments}" | jq '.[]' | jq -s '.')"
 
