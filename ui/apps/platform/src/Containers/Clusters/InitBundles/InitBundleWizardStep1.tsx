@@ -90,8 +90,8 @@ function InitBundleWizardStep1({ formik }: InitBundleWizardStep1Props): ReactEle
                 >
                     <Select
                         variant="single"
-                        toggleAriaLabel="Search entity selection menu toggle"
-                        aria-label="Select an entity to filter by"
+                        toggleAriaLabel="Installation method menu toggle"
+                        aria-label="Select an installation method"
                         isDisabled={values.platform !== 'OpenShift'}
                         onToggle={installationToggle.onToggle}
                         onSelect={(_event, value) => {
