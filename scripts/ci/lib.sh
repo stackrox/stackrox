@@ -1501,6 +1501,8 @@ slack_workflow_failure() {
         fi
     fi
 
+    jq <<<"${github_context}" '.'
+
     local workflow_name commit_msg commit_url repo author_name author_login repo_url run_id
     workflow_name=$(jq -r <<<"${github_context}" '.workflow')
     commit_msg=$(jq -r <<<"${github_context}" '.event.head_commit.message')
