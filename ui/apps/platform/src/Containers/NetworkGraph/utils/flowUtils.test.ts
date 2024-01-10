@@ -57,7 +57,7 @@ describe('flowUtils', () => {
 
             const uniquePorts = getAllUniquePorts(flows);
 
-            expect(uniquePorts).toEqual(['8443', '8080']);
+            expect(uniquePorts).toEqual(['8443', '8090']);
         });
     });
 
