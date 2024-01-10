@@ -121,7 +121,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnNonExisting_ShouldCreateS
 	}
 	// this ensures that we check for the existence of a unique created secret
 	var markerID string
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		markerID = uuid.NewV4().String()
 		return types.SecretDataMap{
 			"generated": []byte(markerID),
@@ -156,7 +156,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_PassingVa
 		return nil
 	}
 
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -180,7 +180,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		return failValidationErr
 	}
 
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		return types.SecretDataMap{
 			"new-secret-data": []byte("foo"),
 		}, nil
@@ -205,7 +205,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingVa
 		return failValidationErr
 	}
 
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		return types.SecretDataMap{
 			"new-secret-data": []byte("foo"),
 		}, nil
@@ -236,7 +236,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Passing
 		return nil
 	}
 
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
@@ -264,7 +264,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 		return failValidationErr
 	}
 
-	generateFn := func() (types.SecretDataMap, error) {
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 		s.Require().Fail("this function should not be called")
 		panic("unexpected")
 	}
