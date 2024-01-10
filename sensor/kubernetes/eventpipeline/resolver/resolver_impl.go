@@ -95,7 +95,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				}
 
 				// Remove actions are done at the handler level. This is not ideal but for now it allows us to be able to fetch deployments from the store
-				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdate here.
+				// in the resolver instead of sending a copy. We still manage OnDeploymentCreateOrUpdateByID here.
 				r.storeProvider.EndpointManager().OnDeploymentCreateOrUpdateByID(id)
 
 				localImages := set.NewStringSet()
