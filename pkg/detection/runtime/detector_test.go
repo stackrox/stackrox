@@ -64,7 +64,7 @@ func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
 		FieldName: "Kubernetes Resource Name",
 		Values: []*storage.PolicyValue{
 			{
-				Value: "r/config-.*",
+				Value: "config-.*",
 			},
 		},
 	})
