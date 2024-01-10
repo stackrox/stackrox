@@ -9,11 +9,14 @@ set -eu
 #   sensor-wait.sh
 #
 # Example:
-# $ ./scripts/ci/sensor-wait.sh
+# $ ./scripts/ci/sensor-wait.sh <optional namespace>
 #
 
 sensor_wait() {
-    echo "Waiting for sensor to start"
+    local namespace=${1:-stackrox}
+
+    echo "Waiting for sensor to start in namespace $namespace"
+
     start_time="$(date '+%s')"
     while true; do
       sensor_json="$(kubectl -n stackrox get deploy/sensor -o json)"

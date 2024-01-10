@@ -95,7 +95,8 @@ function local_dev {
 # Checks if central already exists in this cluster.
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
-    if "${ORCH_CMD}" -n stackrox get deployment central 2>&1; then
+    local namespace=${1:-stackrox}
+    if "${ORCH_CMD}" -n "$namespace" get deployment central 2>&1; then
         yes_no_prompt "Detected there is already a central running on this cluster. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
@@ -121,11 +122,12 @@ function yes_no_prompt() {
 
 function launch_central {
     local k8s_dir="$1"
+    local namespace=${2:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
     if [[ -z "$CI" ]]; then
-        prompt_if_central_exists
+        prompt_if_central_exists "$namespace"
     fi
 
     echo "Generating central config..."
@@ -514,8 +516,8 @@ function launch_central {
 
 function launch_sensor {
     local k8s_dir="$1"
+    local namespace=${2:-stackrox}
     local common_dir="${k8s_dir}/../common"
-
     local extra_config=()
     local extra_json_config=''
     local extra_helm_config=()

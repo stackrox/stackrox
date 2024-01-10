@@ -2,6 +2,7 @@
 # shellcheck disable=SC1091
 set -e
 
+NAMESPACE=${1:-stackrox}
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../common && pwd)"
 
@@ -28,4 +29,4 @@ if [[ -z "$ROX_ADMIN_PASSWORD" && -f "${K8S_DIR}/central-deploy/password" ]]; th
 	export ROX_ADMIN_PASSWORD
 fi
 
-launch_sensor "$K8S_DIR"
+launch_sensor "$K8S_DIR" "$NAMESPACE"

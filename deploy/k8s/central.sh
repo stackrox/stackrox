@@ -2,6 +2,7 @@
 # shellcheck disable=SC1091
 set -e
 
+NAMESPACE=${1:-stackrox}
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../common && pwd)"
 
@@ -14,4 +15,4 @@ source "$COMMON_DIR"/k8sbased.sh
 # shellcheck source=./env.sh
 source "$K8S_DIR"/env.sh
 
-launch_central "$K8S_DIR"
+launch_central "$K8S_DIR" "$NAMESPACE"

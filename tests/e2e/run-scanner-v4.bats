@@ -153,10 +153,46 @@ teardown() {
     verify_scannerV4_deployed "stackrox"
 }
 
+@test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
+    MAIN_IMAGE_TAG=""
+    local central_namespace="stackrox"
+    local sensor_namespace="stackrox-sc"
+    info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
+    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
+    fi
+    (
+        # shellcheck disable=SC2030,SC2031
+        export MAIN_IMAGE_TAG
+        # shellcheck disable=SC2030,SC2031
+        export ROX_SCANNER_V4_ENABLED=true
+        # shellcheck disable=SC2030,SC2031
+        export OUTPUT_FORMAT=helm
+        deploy_stackrox "" "$central_namespace" "$sensor_namespace" >&3
+    )
+    verify_scannerV2_deployed "$central_namespace"
+    verify_scannerV4_deployed "$central_namespace"
+    # Doesn't work yet, since blocked by ROX-19050.
+    # verify_scannerV4_indexer_deployed "$sensor_namespace"
+}
+
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
+    verify_no_scannerV4_indexer_deployed "$namespace"
+    verify_no_scannerV4_matcher_deployed "$namespace"
+}
+
+verify_no_scannerV4_indexer_deployed() {
+    local namespace=${1:-stackrox}
     run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-    refute_output --regexp "scanner-v4"
+    refute_output --regexp "scanner-v4-indexer"
+}
+
+verify_no_scannerV4_matcher_deployed() {
+    local namespace=${1:-stackrox}
+    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    refute_output --regexp "scanner-v4-matcher"
 }
 
 # TODO: For now, Scanner v2 is expected to run in parallel.
@@ -169,7 +205,18 @@ verify_scannerV2_deployed() {
 
 verify_scannerV4_deployed() {
     local namespace=${1:-stackrox}
+    verify_scannerV4_indexer_deployed "$namespace"
+    verify_scannerV4_matcher_deployed "$namespace"
+}
+
+verify_scannerV4_indexer_deployed() {
+    local namespace=${1:-stackrox}
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
+}
+
+verify_scannerV4_matcher_deployed() {
+    local namespace=${1:-stackrox}
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
 }

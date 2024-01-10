@@ -18,7 +18,7 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
-SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
+SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" "$DIR/../../deploy/k8s/sensor.sh" "$namespace"
 
 # This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/central-db > /dev/null; then
