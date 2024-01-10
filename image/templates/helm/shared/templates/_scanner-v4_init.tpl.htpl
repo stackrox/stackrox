@@ -163,7 +163,22 @@
 
 {{- end -}}
 
+{{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
+  {{/* Special handling for the secured-cluster-services chart in case it gets deployed
+       to the same namespace as central-services. */}}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $components "indexer" false }}
+    {{/* Matcher on secured-cluster is unsupported, but just in case make sure it is disabled. */}}
+    {{ $_ := set $components "matcher" false }}
+  {{ end }}
+{{- end }}
+
 {{/* Propagate information about Scanner V4 setup. */}}
+{{- $_ := set $._rox "_scannerV4Enabled" (not $scannerV4Cfg.disable) -}}
 {{- $_ := set $._rox.scannerV4 "_indexerEnabled" (get $components "indexer") -}}
 {{- $_ := set $._rox.scannerV4 "_matcherEnabled" (get $components "matcher") -}}
 {{- if or (get $components "indexer") (get $components "matcher") -}}
