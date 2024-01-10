@@ -7,6 +7,7 @@ import {
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
     withAuth();
@@ -22,7 +23,7 @@ describe('Workload CVE Deployment Single page', () => {
 
         // Clear any filters that may be applied to increase the likelihood of finding a deployment
         if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            cy.get(selectors.clearFiltersButton).click();
+            cy.get(vulnSelectors.clearFiltersButton).click();
         }
 
         selectEntityTab('Deployment');

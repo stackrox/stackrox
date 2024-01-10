@@ -2,11 +2,12 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
-    typeAndSelectResourceFilterValue,
-    typeAndSelectCustomResourceFilterValue as typeAndCreateResourceFilterValue,
+    typeAndSelectSearchFilterValue,
+    typeAndSelectCustomSearchFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image CVE Single page', () => {
     withAuth();
@@ -22,7 +23,7 @@ describe('Workload CVE Image CVE Single page', () => {
 
         // Clear any filters that may be applied to increase the likelihood of finding valid data
         if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
-            cy.get(selectors.clearFiltersButton).click();
+            cy.get(vulnSelectors.clearFiltersButton).click();
         }
 
         // Ensure the data in the table has settled
@@ -68,7 +69,7 @@ describe('Workload CVE Image CVE Single page', () => {
                 ).should('not.exist');
 
                 // Clear the filters
-                cy.get(selectors.clearFiltersButton).click();
+                cy.get(vulnSelectors.clearFiltersButton).click();
 
                 // Apply the filter that _does_ match the value extracted from the first row to ensure all data
                 // in the table only contains that severity value. Since this value was pulled from the first row
@@ -103,9 +104,9 @@ describe('Workload CVE Image CVE Single page', () => {
                 'not.exist'
             );
 
-            cy.get(selectors.clearFiltersButton).click();
+            cy.get(vulnSelectors.clearFiltersButton).click();
 
-            typeAndSelectResourceFilterValue('Namespace', namespace);
+            typeAndSelectSearchFilterValue('Namespace', namespace);
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`
