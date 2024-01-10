@@ -1,6 +1,8 @@
 # Reduced resource overrides for the stackrox-central-services Helm chart that allow deploying
 # on Docker for Desktop on a typical developer box.
-
+# Please keep in sync:
+# - /operator/tests/*/*/*central-cr.yaml 
+# - /image/templates/stackrox-central/dev-values.yaml.htpl
 central:
   resources:
     requests:

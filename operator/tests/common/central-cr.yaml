@@ -5,7 +5,9 @@ metadata:
 spec:
   imagePullSecrets:
   - name: e2e-test-pull-secret
-  # Resource settings should be in sync with /deploy/common/local-dev-values.yaml
+  # Please keep resource setting in sync with:
+  # - /image/templates/stackrox-central/dev-values.yaml.htpl
+  # - /deploy/common/local-dev-values.yaml
   central:
     adminPasswordSecret:
       name: admin-pass
@@ -46,7 +48,7 @@ spec:
         limits:
           cpu: 1000m
           memory: 1Gi
-# TODO(ROX-19051): Copy Scanner V4 values once CRD supports them 
+# TODO(ROX-19051): Copy Scanner V4 values once CRD supports them
 # from /image/templates/helm/stackrox-central/dev-values.yaml.htpl
 ---
 apiVersion: v1
