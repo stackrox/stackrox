@@ -1508,10 +1508,10 @@ Commit: \($commit_msg).
 Author: \($author_name)\($slack_mention).",
     "blocks": [
         {
-            "type": "header",
+            "type": "section",
             "text": {
-                "type": "plain_text",
-                "text": "\($workflow_name) failed."
+                "type": "mrkdwn",
+                "text": "*\($workflow_name) failed.*"
             }
         },
         {
