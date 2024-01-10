@@ -272,7 +272,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				},
 			},
 		},
-		"uses componentKey as toplevel key": {
+		"uses given input componentKey as toplevel key": {
 			component: &platform.ScannerV4Component{
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: &corev1.ResourceRequirements{
@@ -314,7 +314,7 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 				},
 			},
 		},
-		"disables autoscaling if disabled": {
+		"autoscaling can be disabled": {
 			component: &platform.ScannerV4Component{
 				Scaling: &platform.ScannerComponentScaling{
 					AutoScaling: &autoscalingDisabled,
@@ -484,7 +484,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 		},
-		"set persistence.PersistentVolumeClaim": {
+		"set persistence.persistentVolumeClaim": {
 			db: &platform.ScannerV4DB{
 				Persistence: &platform.Persistence{
 					PersistentVolumeClaim: &platform.PersistentVolumeClaim{
@@ -507,7 +507,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 				},
 			},
 		},
-		"set persistence.HostPath": {
+		"set persistence.hostPath": {
 			db: &platform.ScannerV4DB{
 				Persistence: &platform.Persistence{
 					HostPath: &platform.HostPathSpec{

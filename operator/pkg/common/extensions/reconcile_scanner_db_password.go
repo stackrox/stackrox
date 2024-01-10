@@ -48,7 +48,7 @@ type reconcileScannerDBPasswordExtensionRun struct {
 }
 
 func (r *reconcileScannerDBPasswordExtensionRun) Execute(ctx context.Context) error {
-	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
+	// Delete any scanner-v4-db password only if the CR is being deleted, or scanner V4 is not enabled.
 	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerEnabled()
 
 	if err := r.reconcilePasswordSecret(ctx, shouldExist); err != nil {

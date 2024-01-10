@@ -3,6 +3,7 @@ package extensions
 import (
 	"testing"
 
+	"github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ import (
 )
 
 func verifyScannerV4DBPassword(t *testing.T, data types.SecretDataMap) {
-	assert.NotEmpty(t, data[scannerV4DBPasswordKey])
+	assert.NotEmpty(t, data[extensions.ScannerV4DBPasswordKey])
 }
 
 func TestReconcileScannerV4DBPassword(t *testing.T) {
@@ -80,7 +81,7 @@ func TestReconcileScannerV4DBPassword(t *testing.T) {
 			ExpectedCreatedSecrets: nil,
 		},
 		"When a malformed unmanaged secret exists, and the CR is being deleted, no error is expected": {
-			Spec:                   basicSpecWithScanner(true, false),
+			Spec:                   basicSpecWithScanner(false, true),
 			Deleted:                true,
 			Existing:               []*v1.Secret{existingMalformedScannerV4DBPassword},
 			ExpectedCreatedSecrets: nil,

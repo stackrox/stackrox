@@ -14,10 +14,6 @@ var (
 	_ commonExtensions.ScannerV4BearingCustomResource = (*platform.Central)(nil)
 )
 
-const (
-	scannerV4DBPasswordKey = `password`
-)
-
 // ReconcileScannerV4DBPasswordExtension returns an extension that takes care of creating the scanner-v4-db-password
 // secret ahead of time.
 func ReconcileScannerV4DBPasswordExtension(client ctrlClient.Client) extensions.ReconcileExtension {

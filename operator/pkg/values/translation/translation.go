@@ -126,15 +126,17 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 
 // SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values
 func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
-	if scannerComponent != nil {
-		switch *scannerComponent {
-		case platform.ScannerComponentDisabled:
-			sv.SetBoolValue("disable", true)
-		case platform.ScannerComponentEnabled:
-			sv.SetBoolValue("disable", false)
-		default:
-			sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *scannerComponent))
-		}
+	if scannerComponent == nil {
+		return
+	}
+
+	switch *scannerComponent {
+	case platform.ScannerComponentDisabled:
+		sv.SetBoolValue("disable", true)
+	case platform.ScannerComponentEnabled:
+		sv.SetBoolValue("disable", false)
+	default:
+		sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *scannerComponent))
 	}
 }
 

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	scannerV4DBPasswordKey          = `password`
+	ScannerV4DBPasswordKey          = `password`
 	scannerV4DBPasswordResourceName = "scanner-v4-db-password" // #nosec G101
 )
 
@@ -20,7 +20,7 @@ type ScannerV4BearingCustomResource interface {
 	IsScannerV4Enabled() bool
 }
 
-// ReconcileScannerV4DBPassword reconciles a scanner db password
+// ReconcileScannerV4DBPassword reconciles a scanner v4 db password
 func ReconcileScannerV4DBPassword(ctx context.Context, obj ScannerV4BearingCustomResource, client ctrlClient.Client) error {
 	return reconcileScannerV4DBPassword(ctx, obj, client)
 }
@@ -59,15 +59,15 @@ func (r *reconcileScannerV4DBPasswordExtensionRun) reconcilePasswordSecret(ctx c
 }
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) validateScannerV4DBPasswordData(data types.SecretDataMap, _ bool) error {
-	if len(data[scannerV4DBPasswordKey]) == 0 {
-		return errors.Errorf("%s secret must contain a non-empty %q entry", r.passwordResourceName, scannerV4DBPasswordKey)
+	if len(data[ScannerV4DBPasswordKey]) == 0 {
+		return errors.Errorf("%s secret must contain a non-empty %q entry", r.passwordResourceName, ScannerV4DBPasswordKey)
 	}
 	return nil
 }
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) generateScannerV4DBPasswordData() (types.SecretDataMap, error) {
 	data := types.SecretDataMap{
-		scannerV4DBPasswordKey: []byte(renderer.CreatePassword()),
+		ScannerV4DBPasswordKey: []byte(renderer.CreatePassword()),
 	}
 	return data, nil
 }
