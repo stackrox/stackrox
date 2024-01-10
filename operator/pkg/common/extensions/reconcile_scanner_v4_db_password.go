@@ -44,11 +44,18 @@ func (r *reconcileScannerV4DBPasswordExtensionRun) Execute(ctx context.Context) 
 	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
 	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerV4Enabled()
 
-	if err := r.ReconcileSecret(ctx, r.passwordResourceName, shouldExist, r.validateScannerV4DBPasswordData, r.generateScannerV4DBPasswordData, true); err != nil {
+	if err := r.reconcilePasswordSecret(ctx, shouldExist); err != nil {
 		return errors.Wrapf(err, "reconciling %q secret", r.passwordResourceName)
 	}
 
 	return nil
+}
+
+func (r *reconcileScannerV4DBPasswordExtensionRun) reconcilePasswordSecret(ctx context.Context, shouldExist bool) error {
+	if shouldExist {
+		return r.EnsureSecret(ctx, r.passwordResourceName, r.validateScannerV4DBPasswordData, r.generateScannerV4DBPasswordData, true)
+	}
+	return r.DeleteSecret(ctx, r.passwordResourceName)
 }
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) validateScannerV4DBPasswordData(data types.SecretDataMap, _ bool) error {
