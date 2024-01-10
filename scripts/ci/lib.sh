@@ -1486,8 +1486,19 @@ slack_workflow_failure() {
     # fi
     local webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
 
-    local workflow_name
-    workflow_name="$(jq -r <<<"${github_context}" '.workflow')"
+    local workflow_name commit_msg commit_url repo author_name author_login repo_url run_id
+    workflow_name=$(jq -r <<<"${github_context}" '.workflow')
+    commit_msg=$(jq -r <<<"${github_context}" '.event.head_commit.message')
+    commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
+    commit_url=$(jq -r <<<"${github_context}" '.event.head_commit.url')
+    repo=$(jq -r <<<"${github_context}" '.repository')
+    author_name=$(jq -r <<<"${github_context}" '.event.head_commit.author.name')
+    author_login=$(jq -r <<<"${github_context}" '.event.head_commit.author.username')
+    repo_url=$(jq -r <<<"${github_context}" '.event.repository.url')
+    run_id=$(jq -r <<<"${github_context}" '.run_id')
+
+    local slack_mention=""
+    _make_slack_mention
 
     # shellcheck disable=SC2016
     local body='
@@ -1500,6 +1511,13 @@ slack_workflow_failure() {
                 "type": "plain_text",
                 "text": "\($workflow_name) failed."
             }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Workflow:* \($repo_url)/actions/runs/\($run_id))"
+            }
         }
     ]
 }
@@ -1507,12 +1525,17 @@ slack_workflow_failure() {
 
     local payload
     payload="$(jq --null-input \
-       --arg workflow_name "${workflow_name}" \
+        --arg workflow_name "${workflow_name}" \
+        --arg commit_url "$commit_url" \
+        --arg commit_msg "$commit_msg" \
+        --arg repo "$repo" \
+        --arg author_name "$author_name" \
+        --arg slack_mention "$slack_mention" \
+        --arg repo_url "$repo_url" \
+        --arg run_id "$run_id" \
        "$body")"
 
     echo -e "About to post:\n$payload"
-
-    curl "${webhook_url}"
 
     echo "$payload" | curl --location --silent --show-error --fail \
          --data @- --header 'Content-Type: application/json' \
