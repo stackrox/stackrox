@@ -355,7 +355,7 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 				dataPromise = scrapeBasedPromise
 			} else {
 				if scrapeLessPromise == nil {
-					scrapeLessPromise = newFixedDataPromise(elevatedCtx, perClusterDataRepoOnce, domain)
+					scrapeLessPromise = newFixedDataPromise(perClusterDataRepoOnce, domain)
 				}
 				dataPromise = scrapeLessPromise
 			}
