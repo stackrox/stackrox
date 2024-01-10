@@ -20,11 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-const (
-	// Daily at midnight
-	defaultScanSchedule = "0 0 * * *"
-)
-
 var (
 	log = logging.LoggerForModule()
 )
@@ -96,11 +91,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
 	}
 
-	// Convert and validate schedule
-	// TODO(ROX-19818):  remove default schedule
-	// For MVP a schedule is required.  If one is not present use daily at midnight.  As it evolves
-	// it may be as simple as no schedule means a one time scan.
-	cron := defaultScanSchedule
+	var cron string
 	var err error
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())

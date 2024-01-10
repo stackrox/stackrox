@@ -131,8 +131,6 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 		}
 
 		switch r := request.GetScanRequest().(type) {
-		case *central.ApplyComplianceScanConfigRequest_OneTimeScan_:
-			return m.processOneTimeScanRequest(request.GetId(), r.OneTimeScan)
 		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
 			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
 		case *central.ApplyComplianceScanConfigRequest_RerunScan:
@@ -141,29 +139,6 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
 		}
 	}
-}
-
-func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_OneTimeScan) bool {
-	if err := validateApplyOneTimeScanConfigRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	// TODO: Check if default ACS scan setting CR exists. If it doesn't exist, create one.
-
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
-	}
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
 func (m *handlerImpl) processScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) bool {

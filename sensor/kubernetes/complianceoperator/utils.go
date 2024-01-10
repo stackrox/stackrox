@@ -69,20 +69,6 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	}
 }
 
-func validateApplyOneTimeScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_OneTimeScan) error {
-	if req == nil {
-		return errors.New("apply scan configuration request is empty")
-	}
-	var errList errorhelpers.ErrorList
-	if req.GetScanSettings().GetScanName() == "" {
-		errList.AddStrings("no name provided for the scan")
-	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
-	}
-	return errList.ToError()
-}
-
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
 	if req == nil {
 		return errors.New("apply scan configuration request is empty")
@@ -94,9 +80,7 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	if len(req.GetScanSettings().GetProfiles()) == 0 {
 		errList.AddStrings("compliance profiles not specified")
 	}
-	if req.GetCron() == "" {
-		errList.AddStrings("schedule not specified")
-	} else {
+	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
