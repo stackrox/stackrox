@@ -8,5 +8,5 @@ spec:
             cpu: null
             memory: 4Gi
           requests:
-            cpu: 100m
+            cpu: 250m
             memory: 1Gi
