@@ -1518,7 +1518,11 @@ Author: \($author_name)\($slack_mention).",
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "*Commit:* <\($commit_url)|\($commit_msg)>\n*Repo:* \($repo)\n*Author:* \($author_name)\($slack_mention)\n*Workflow:* \($repo_url)/actions/runs/\($run_id))"
+                "text": "
+*Commit:* <\($commit_url)|\($commit_msg)>\n
+*Repo:* \($repo)\n
+*Author:* \($author_name)\($slack_mention)\n
+*Workflow:* \($repo_url)/actions/runs/\($run_id))"
             }
         }
     ]
