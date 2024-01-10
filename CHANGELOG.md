@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 - Customer-provided PostgreSQL databases are now GA
 - ROX-21235: `/api/extensions/certs/backup` added to provide external database consumers a means to backup certs. `--certs-only` flag added to `roxctl central backup` to exercise that endpoint.
+- The "Kubernetes Resource Name" policy criteria now supports regex values. Note: the value must be prefixed with "r/" to activate regex matching.
 
 ### Removed Features
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
