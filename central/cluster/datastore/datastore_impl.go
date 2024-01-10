@@ -252,23 +252,22 @@ func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Clus
 	ok, err := clusterSAC.ReadAllowed(ctx)
 	if err != nil {
 		return nil, err
-	} else if ok {
-		var clusters []*storage.Cluster
-		walkFn := func() error {
-			clusters = clusters[:0]
-			return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-				clusters = append(clusters, cluster)
-				return nil
-			})
-		}
-		if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-			return nil, err
-		}
-
-		return clusters, nil
+	} else if !ok {
+		return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+	}
+	var clusters []*storage.Cluster
+	walkFn := func() error {
+		clusters = clusters[:0]
+		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
+			clusters = append(clusters, cluster)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
 	}
 
-	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
