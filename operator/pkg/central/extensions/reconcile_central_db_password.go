@@ -100,7 +100,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, _ bool) error {
 	password, err := passwordFromSecretData(data)
 	if err != nil {
-		return errors.Wrap(err, "validating existing secret data")
+		return errors.Wrap(err, "error validating existing secret data")
 	}
 	if r.password != "" && r.password != password {
 		return errors.New("existing password does not match expected one")
@@ -111,7 +111,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.S
 	return nil
 }
 
-func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword() (types.SecretDataMap, error) {
+func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	if r.password == "" {
 		r.password = renderer.CreatePassword()
 	}
