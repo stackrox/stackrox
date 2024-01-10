@@ -1557,7 +1557,7 @@ Author: \($author_name)\($slack_mention).",
 *Commit:* <\($commit_url)|\($commit_msg)>.
 *Repo:* \($repo).
 *Author:* \($author_name)\($slack_mention).
-*Workflow:* \($repo_url)/actions/runs/\($run_id))"
+*Workflow:* \($repo_url)/actions/runs/\($run_id)"
             }
         },
         {
