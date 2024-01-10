@@ -353,8 +353,8 @@ func getTestOneTimeScanRequestMsg(name string, profiles ...string) *central.MsgT
 				Request: &central.ComplianceRequest_ApplyScanConfig{
 					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
 						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_OneTimeScan_{
-							OneTimeScan: &central.ApplyComplianceScanConfigRequest_OneTimeScan{
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
+							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
 								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 									ScanName:       name,
 									StrictNodeScan: true,

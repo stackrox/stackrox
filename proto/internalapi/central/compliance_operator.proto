@@ -57,9 +57,8 @@ message ApplyComplianceScanConfigRequest {
 
     string                  id              = 1;
     oneof scan_request {
-        OneTimeScan         one_time_scan   = 2;
-        ScheduledScan       scheduled_scan  = 3;
-        RerunScheduledScan  rerun_scan      = 4;
+        ScheduledScan       scheduled_scan  = 2;
+        RerunScheduledScan  rerun_scan      = 3;
     }
 }
 
