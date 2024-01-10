@@ -1501,13 +1501,17 @@ slack_workflow_failure() {
     fi
     local github_context="$1"
 
-    # local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
-    # if is_in_PR_context; then
-    #     # Send to #acs-slack-ci-integration-testing when testing.
-    #     webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
-    # fi
-    local webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    if is_in_PR_context; then
+        if pr_has_label "ci-test-github-action-slack-messages"; then
+            # Send to #acs-slack-ci-integration-testing when testing.
+            webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+        else
+            info "Skipping slack message for PRs"
+            return 0
+        fi
+    fi
 
     local workflow_name commit_msg commit_url repo author_name author_login repo_url run_id
     workflow_name=$(jq -r <<<"${github_context}" '.workflow')
