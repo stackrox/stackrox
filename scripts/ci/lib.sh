@@ -1487,7 +1487,7 @@ slack_workflow_failure() {
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: slack_workflow_failure <github context>"
     fi
-    local github_context=$1
+    local github_context="$1"
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
