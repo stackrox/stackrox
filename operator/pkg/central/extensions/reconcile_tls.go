@@ -55,7 +55,7 @@ type createCentralTLSExtensionRun struct {
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db"} {
+		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
 				return errors.Wrapf(err, "reconciling %s-tls secret", prefix)
 			}
@@ -78,7 +78,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-tls secret")
 	}
 	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-tls secret")
+		return errors.Wrap(err, "reconciling scanner-db-tls secret")
 	}
 
 	if features.ScannerV4.Enabled() {
