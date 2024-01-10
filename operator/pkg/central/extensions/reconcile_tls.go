@@ -27,7 +27,6 @@ const (
 	// It must be sufficient to renew an ephemeral init bundle certificate which has relatively short lifetime (within a matter of hours).
 	// NB: keep in sync with crypto.ephemeralProfileWithExpirationInHoursCertLifetime
 	InitBundleReconcilePeriod = 1 * time.Hour
-	initBundleGracePeriod     = 90 * time.Minute // half of cert validity period
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
@@ -55,7 +54,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
 		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
-				return errors.Wrapf(err, "reconciling %s-tls secret", prefix)
+				return errors.Wrapf(err, "reconciling %s-tls secret failed", prefix)
 			}
 		}
 		return nil
@@ -63,18 +62,18 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	}
 
 	if err := r.EnsureSecret(ctx, "central-tls", r.validateAndConsumeCentralTLSData, r.generateCentralTLSData); err != nil {
-		return errors.Wrap(err, "error reconciling central-tls secret")
+		return errors.Wrap(err, "reconciling central-tls secret failed")
 	}
 
 	if err := r.reconcileCentralDBTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling central-db-tls secret")
+		return errors.Wrap(err, "reconciling central-db-tls secret failed")
 	}
 
 	if err := r.reconcileScannerTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-tls secret")
+		return errors.Wrap(err, "reconciling scanner-tls secret failed")
 	}
 	if err := r.reconcileScannerDBTLSSecret(ctx); err != nil {
-		return errors.Wrap(err, "reconciling scanner-db-tls secret")
+		return errors.Wrap(err, "reconciling scanner-db-tls secret failed")
 	}
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 }
@@ -90,18 +89,18 @@ func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Co
 		secretName := slugCaseService + "-tls"
 		if !bundleSecretShouldExist {
 			if err := r.DeleteSecret(ctx, secretName); err != nil {
-				return errors.Wrapf(err, "deleting %s secret", secretName)
+				return errors.Wrapf(err, "deleting %s secret failed", secretName)
 			}
 			continue
 		}
 		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
-			return r.validateInitBundleTLSData(serviceType, slugCaseService+"-", fileMap)
+			return r.validateServiceTLSData(serviceType, slugCaseService+"-", fileMap)
 		}
 		generateFunc := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
 		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc); err != nil {
-			return errors.Wrapf(err, "reconciling %s secret", secretName)
+			return errors.Wrapf(err, "reconciling %s secret failed", secretName)
 		}
 	}
 	return nil
@@ -123,13 +122,13 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	var err error
 	r.ca, err = certgen.LoadCAFromFileMap(fileMap)
 	if err != nil {
-		return errors.Wrap(err, "loading CA")
+		return errors.Wrap(err, "loading CA failed")
 	}
 	if err := r.ca.CheckProperties(); err != nil {
 		return errors.Wrap(err, "loaded service CA certificate is invalid")
 	}
-	if err := certgen.VerifyServiceCert(fileMap, r.ca, storage.ServiceType_CENTRAL_SERVICE, ""); err != nil {
-		return errors.Wrap(err, "verifying existing central CA")
+	if err := r.validateServiceTLSData(storage.ServiceType_CENTRAL_SERVICE, "", fileMap); err != nil {
+		return errors.Wrap(err, "verifying existing central service TLS certificate failed")
 	}
 	return nil
 }
@@ -145,7 +144,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 	}
 
 	if err := certgen.IssueCentralCert(newFileMap, r.ca, mtls.WithNamespace(r.centralObj.GetNamespace())); err != nil {
-		return nil, errors.Wrap(err, "error issuing central service certificate")
+		return nil, errors.Wrap(err, "issuing central service certificate failed")
 	}
 
 	if oldJWTKey, oldJWTKeyOK := old[certgen.JWTKeyPEMFileName]; oldJWTKeyOK {
@@ -156,7 +155,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 	} else {
 		jwtKey, err := certgen.GenerateJWTSigningKey()
 		if err != nil {
-			return nil, errors.Wrap(err, "generating JWT signing key")
+			return nil, errors.Wrap(err, "generating JWT signing key failed")
 		}
 		certgen.AddJWTSigningKeyToFileMap(newFileMap, jwtKey)
 	}
@@ -192,7 +191,7 @@ func validateOrGenerateCA(oldCA mtls.CA, oldFileMap types.SecretDataMap) (mtls.C
 	} else if !caCertPresent && !caKeyPresent {
 		ca, err := certgen.GenerateCA()
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "error creating new CA")
+			return nil, nil, errors.Wrap(err, "creating new CA failed")
 		}
 		certgen.AddCAToFileMap(newFileMap, ca)
 		return ca, newFileMap, nil
@@ -226,7 +225,7 @@ func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.C
 }
 
 func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
-	if err := certgen.VerifyServiceCert(fileMap, r.ca, serviceType, fileNamePrefix); err != nil {
+	if err := certgen.VerifyCert(fileMap, fileNamePrefix, r.getValidateCert(serviceType)); err != nil {
 		return err
 	}
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
@@ -235,37 +234,36 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) validateInitBundleTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
-	if err := certgen.VerifyCert(fileMap, fileNamePrefix, r.getValidateInitBundleCert(serviceType)); err != nil {
-		return err
-	}
-	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *createCentralTLSExtensionRun) getValidateInitBundleCert(serviceType storage.ServiceType) certgen.ValidateCertFunc {
+func (r *createCentralTLSExtensionRun) getValidateCert(serviceType storage.ServiceType) certgen.ValidateCertFunc {
 	validateService := certgen.GetValidateServiceCertFunc(r.ca, serviceType)
 	return func(certificate *x509.Certificate) error {
 		if err := validateService(certificate); err != nil {
 			return err
 		}
-		if err := checkInitBundleCertRenewal(certificate, time.Now()); err != nil {
+		if err := checkCertRenewal(certificate, time.Now()); err != nil {
 			return err
 		}
 		return nil
 	}
 }
 
-func checkInitBundleCertRenewal(certificate *x509.Certificate, currentTime time.Time) error {
+func checkCertRenewal(certificate *x509.Certificate, currentTime time.Time) error {
 	startTime := certificate.NotBefore
-	if currentTime.Before(startTime) {
-		return fmt.Errorf("init bundle secret requires update, certificate lifetime starts in the future, not before: %s", startTime)
+	endTime := certificate.NotAfter
+	if !endTime.After(startTime) {
+		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
 	}
-	refreshTime := certificate.NotAfter.Add(-initBundleGracePeriod)
+	if currentTime.Before(startTime) {
+		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
+	}
+	if currentTime.After(endTime) {
+		return fmt.Errorf("certificate expired at %s", endTime)
+	}
+	validityDuration := endTime.Sub(startTime)
+	halfOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/2) * time.Nanosecond
+	refreshTime := startTime.Add(halfOfValidityDuration)
 	if currentTime.After(refreshTime) {
-		return fmt.Errorf("init bundle secret requires update, certificate is expired (or going to expire soon), not after: %s, renew threshold: %s", certificate.NotAfter, refreshTime)
+		return fmt.Errorf("certificate is past half of its validity, %s", refreshTime)
 	}
 	return nil
 }
