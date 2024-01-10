@@ -769,7 +769,7 @@ func initializeFieldMetadata() FieldMetadata {
 
 	f.registerFieldMetadata(
 		fieldnames.KubeResourceName,
-		querybuilders.ForFieldLabelRegex(augmentedobjs.KubernetesResourceNameCustomTag), nil,
+		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceNameCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
