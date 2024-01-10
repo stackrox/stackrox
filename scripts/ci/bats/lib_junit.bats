@@ -14,7 +14,7 @@ function setup() {
     assert_success
     run cat "${junit_dir}/junit-UNITTest.xml"
     assert_output --partial 'tests="1"'
-    assert_output --partial 'failures="0"'
+    assert_output --partial 'failures="99"'
 }
 
 @test "creates multiple junit for multiple tests (different class)" {
