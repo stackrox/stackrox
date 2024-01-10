@@ -70,7 +70,7 @@ func (c *ClusterGatherer) getOrchestrator(ctx context.Context) (*data.Orchestrat
 		err           error
 	)
 	// The default API client we use does not have a global timeout set and the discovery API does not respect context
-	// cancellation, hence need to wrap this with concurrency.DoWithinContext.
+	// cancellation, hence need to wrap this with concurrency.DoInWaitable.
 	if ctxErr := concurrency.DoInWaitable(ctx, func() {
 		serverVersion, err = c.k8sClient.Discovery().ServerVersion()
 	}); ctxErr != nil {

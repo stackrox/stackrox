@@ -1,7 +1,6 @@
 package service
 
 import (
-	"archive/zip"
 	"context"
 	"fmt"
 	"path"
@@ -32,7 +31,7 @@ type gatherResult struct {
 	files []k8sintrospect.File
 }
 
-func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
+func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
 	gatherPool := concPool.NewWithResults[[]k8sintrospect.File]().WithContext(ctx)
 
 	clusterNameMap, err := s.getClusterNameMap(ctx)
@@ -81,7 +80,7 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 	return writeGatherResultsToZIP(ctx, zipWriter, "kubernetes", gatherResults)
 }
 
-func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
+func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
 	gatherPool := concPool.NewWithResults[[]k8sintrospect.File]().WithContext(ctx)
 
 	clusterNameMap, err := s.getClusterNameMap(ctx)
@@ -269,7 +268,7 @@ func getClusterNameForSensorConnection(conn connection.SensorConnection, usedClu
 
 // writeGatherResultsToZIP writes the given gather results to the ZIP with the defined prefix.
 // This respects context cancellation during writing the ZIP.
-func writeGatherResultsToZIP(ctx context.Context, zipWriter *zip.Writer, zipPrefix string,
+func writeGatherResultsToZIP(ctx context.Context, zipWriter *zipWriter, zipPrefix string,
 	gatherResults [][]k8sintrospect.File) error {
 	for _, files := range gatherResults {
 		for _, file := range files {
@@ -277,7 +276,7 @@ func writeGatherResultsToZIP(ctx context.Context, zipWriter *zip.Writer, zipPref
 			case <-ctx.Done():
 				return ctx.Err()
 			default:
-				err := writePrefixedFileToZip(zipWriter, zipPrefix, file)
+				err := zipWriter.writePrefixedFileToZip(zipPrefix, file)
 				if err != nil {
 					return err
 				}

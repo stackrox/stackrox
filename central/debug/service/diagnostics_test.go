@@ -33,7 +33,7 @@ func TestSanitizeClusterName(t *testing.T) {
 
 func TestGetK8sDiagnostics(t *testing.T) {
 	buf := &bytes.Buffer{}
-	writer := zip.NewWriter(buf)
+	writer := newZipWriter(buf)
 
 	ctrl := gomock.NewController(t)
 	connMgr := connectionMocks.NewMockManager(ctrl)
@@ -86,7 +86,7 @@ func TestGetK8sDiagnostics(t *testing.T) {
 
 func TestPullSensorMetrics(t *testing.T) {
 	buf := &bytes.Buffer{}
-	writer := zip.NewWriter(buf)
+	writer := newZipWriter(buf)
 
 	ctrl := gomock.NewController(t)
 	connMgr := connectionMocks.NewMockManager(ctrl)

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -284,7 +284,7 @@ func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_Stre
 	}
 }
 
-func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zip.Writer, fileName string,
+func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zipWriter, fileName string,
 	fetchData func(ctx context.Context) (interface{}, error)) {
 	jsonObj, errFetchData := fetchData(ctx)
 	if errFetchData != nil {
@@ -298,10 +298,10 @@ func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zip.Writer, fileName s
 	}
 }
 
-func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, fileName)
+func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj interface{}) error {
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to create zip file %q", fileName)
 	}
@@ -312,34 +312,39 @@ func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) e
 	return jsonEnc.Encode(jsonObj)
 }
 
-func zipPrometheusMetrics(ctx context.Context, zipWriter *zip.Writer, name string) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
+func zipPrometheusMetrics(ctx context.Context, zipWriter *zipWriter, name string) error {
+	buf := &bytes.Buffer{}
+	if err := prometheusutil.ExportText(ctx, buf); err != nil {
+		return err
+	}
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	metricsWriter, err := zipWriter.writerWithCurrentTimestampNoLock(name)
 	if err != nil {
 		return err
 	}
-	return prometheusutil.ExportText(ctx, metricsWriter)
+	_, err = io.Copy(metricsWriter, buf)
+	return err
 }
 
-func getMemory(zipWriter *zip.Writer) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "heap.pb.gz")
+func getMemory(zipWriter *zipWriter) error {
+	buf := &bytes.Buffer{}
+	if err := pprof.WriteHeapProfile(buf); err != nil {
+		return err
+	}
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock("heap.pb.gz")
 	if err != nil {
 		return err
 	}
-	return pprof.WriteHeapProfile(w)
+	_, err = io.Copy(w, buf)
+	return err
 }
 
-func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "cpu.pb.gz")
-	if err != nil {
-		return err
-	}
-	if err := pprof.StartCPUProfile(w); err != nil {
+func getCPU(ctx context.Context, zipWriter *zipWriter, duration time.Duration) error {
+	buf := &bytes.Buffer{}
+	if err := pprof.StartCPUProfile(buf); err != nil {
 		return err
 	}
 	select {
@@ -347,47 +352,69 @@ func getCPU(ctx context.Context, zipWriter *zip.Writer, duration time.Duration) 
 	case <-ctx.Done():
 	}
 	pprof.StopCPUProfile()
-	return nil
-}
+	if concurrency.IsDone(ctx) {
+		return nil
+	}
 
-func getMutex(zipWriter *zip.Writer) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "mutex.pb.gz")
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock("cpu.pb.gz")
 	if err != nil {
 		return err
 	}
+	_, err = io.Copy(w, buf)
+	return err
+}
+
+func getMutex(zipWriter *zipWriter) error {
+	buf := &bytes.Buffer{}
 	p := pprof.Lookup("mutex")
-	return p.WriteTo(w, 0)
-}
+	if err := p.WriteTo(buf, 0); err != nil {
+		return err
+	}
 
-func getGoroutines(zipWriter *zip.Writer) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "goroutine.txt")
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock("mutex.pb.gz")
 	if err != nil {
 		return err
 	}
-	p := pprof.Lookup("goroutine")
-	return p.WriteTo(w, 2)
+	_, err = io.Copy(w, buf)
+	return err
 }
 
-func getLogs(zipWriter *zip.Writer) error {
+func getGoroutines(zipWriter *zipWriter) error {
+	buf := &bytes.Buffer{}
+	p := pprof.Lookup("goroutine")
+	if err := p.WriteTo(buf, 2); err != nil {
+		return err
+	}
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock("goroutine.txt")
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, buf)
+	return err
+}
+
+func getLogs(zipWriter *zipWriter) error {
 	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, targetPath)
+func getLogFile(zipWriter *zipWriter, targetPath string, sourcePath string) error {
+	logFile, err := os.Open(sourcePath)
 	if err != nil {
 		return err
 	}
 
-	logFile, err := os.Open(sourcePath)
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock(targetPath)
 	if err != nil {
 		return err
 	}
@@ -396,13 +423,13 @@ func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) err
 	return err
 }
 
-func getVersion(ctx context.Context, zipWriter *zip.Writer) error {
+func getVersion(ctx context.Context, zipWriter *zipWriter) error {
 	versions := buildVersions(ctx)
 
 	return addJSONToZip(zipWriter, "versions.json", versions)
 }
 
-func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData) error {
+func writeTelemetryData(zipWriter *zipWriter, telemetryInfo *data.TelemetryData) error {
 	if telemetryInfo == nil {
 		return errors.New("no telemetry data provided")
 	}
@@ -425,7 +452,7 @@ type centralDBDiagnosticData struct {
 	DatabaseConnectString string        `json:"DatabaseConnectString,omitempty"`
 }
 
-func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
+func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 	_, dbConfig, err := pgconfig.GetPostgresConfig()
 	if err != nil {
 		log.Warnw("Could not parse postgres config", logging.Err(err))
@@ -444,19 +471,20 @@ func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
 	return addJSONToZip(zipWriter, "central-db-pg-stats.json", statements)
 }
 
-func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
-	zipWriterMutex.Lock()
-	defer zipWriterMutex.Unlock()
-	w, err := zipWriterWithCurrentTimestamp(zipWriter, "logimbue-data.json")
-	if err != nil {
-		return err
-	}
+func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zipWriter) error {
 	logs, err := s.store.GetAll(ctx)
 	if err != nil {
 		return err
 	}
-	err = writer.WriteLogs(w, logs)
-	return err
+
+	zipWriter.LockWrite()
+	defer zipWriter.UnlockWrite()
+	w, err := zipWriter.writerWithCurrentTimestampNoLock("logimbue-data.json")
+	if err != nil {
+		return err
+	}
+
+	return writer.WriteLogs(w, logs)
 }
 
 func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
@@ -580,7 +608,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-	zipWriter := zip.NewWriter(w)
+	zipWriter := newZipWriter(w)
+
 	// Defer closing the zip writer since we short-circuit in case of context cancellations.
 	defer func() {
 		if err := zipWriter.Close(); err != nil {

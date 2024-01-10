@@ -52,6 +52,7 @@ var (
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	ProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_PROCESS_INDICATOR_BUFFER_SIZE", 1000)
 
+<<<<<<< HEAD
 	// DetectorProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline in the detector.
 	DetectorProcessIndicatorBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_PROCESS_INDICATOR_BUFFER_SIZE", 1000)
 
@@ -60,4 +61,9 @@ var (
 
 	// DiagnosticBundleTimeout defines the timeout for the diagnostic bundle creation on Sensor side.
 	DiagnosticBundleTimeout = registerDurationSetting("ROX_DIAG_BUNDLE_TIMEOUT", 2*time.Minute)
+=======
+	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
+	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
+		2*time.Minute)
+>>>>>>> 27d04cb4e5 (Address review comments.)
 )

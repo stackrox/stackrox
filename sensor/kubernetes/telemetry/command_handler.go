@@ -38,7 +38,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	diagnosticBundleTimeout = env.DiagnosticBundleTimeout.DurationSetting()
+	diagnosticBundleTimeout = env.DiagnosticDataCollectionTimeout.DurationSetting()
 )
 
 type commandHandler struct {
@@ -152,6 +152,7 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 	if !h.centralReachable.Load() {
 		log.Debugf("Sending telemetry response called while in offline mode, Telemetry response %s discarded",
 			resp.GetRequestId())
+		return nil
 	}
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_TelemetryDataResponse{
@@ -273,8 +274,7 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
 
-	err = k8sintrospect.Collect(subCtx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
-	return err
+	return k8sintrospect.Collect(subCtx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
