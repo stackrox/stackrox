@@ -244,6 +244,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CLOUD_CREDENTIALS'
+    customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
