@@ -143,6 +143,7 @@ func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := indexerAuth
+	// If this a dev build, allow anonymous traffic for testing purposes.
 	if !buildinfo.ReleaseBuild {
 		auth = allow.Anonymous()
 	}

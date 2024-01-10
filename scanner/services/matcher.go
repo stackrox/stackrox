@@ -124,6 +124,7 @@ func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := matcherAuth
+	// If this a dev build, allow anonymous traffic for testing purposes.
 	if !buildinfo.ReleaseBuild {
 		auth = allow.Anonymous()
 	}
