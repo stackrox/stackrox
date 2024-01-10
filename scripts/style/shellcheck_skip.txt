@@ -4,7 +4,6 @@ deploy/openshift/deploy-local.sh
 dev-tools/add-host-alias.sh
 dev-tools/roxctl.sh
 image/assets/docker-auth.sh
-image/postgres/download.sh
 image/postgres/scripts/docker-entrypoint.sh
 image/rhel/static-bin/central-entrypoint.sh
 image/templates/common/ca-setup.sh
@@ -31,22 +30,16 @@ scale/launch_workload.sh
 scale/profiler/launch-profiler.sh
 scale/profiler/port-forward.sh
 scale/signatures/deploy.sh
-scanner/image/db/download.sh
 scanner/image/db/scripts/docker-entrypoint.sh
 scripts/certification/run.sh
-scripts/check-log-query-data.sh
-scripts/check-todos.sh
-scripts/ci/collect-collector-metrics.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
-scripts/ci/gke.sh
 scripts/ci/logcheck/check-restart-logs.sh
 scripts/ci/logcheck/check.sh
 scripts/ci/sensorbundle-label/list-resources.sh
 scripts/connect-ui.sh
 scripts/ensure_image.sh
 scripts/grab-data-from-central.sh
-scripts/k8s/cleanup.sh
 scripts/k8s/kill-pod.sh
 scripts/k8s/local-port-forward.sh
 scripts/mergeswag.sh
@@ -55,7 +48,6 @@ scripts/offline-bundle/image-collector-bundle/import.sh
 scripts/port-forward-ui.sh
 scripts/reference/build-quay-operator-bundles.sh
 scripts/sync-release-branch.sh
-tests/e2e/lib.sh
 tests/performance/scale/utilities/create-infra.sh
 tests/performance/scale/utilities/examples/env_3.73.x-130-g1ead7d6745.sh
 tests/performance/scale/utilities/examples/env_3_73.sh
@@ -78,7 +70,6 @@ tools/check-service-protos/run.sh
 tools/detect-large-files.sh
 tools/fix-blanks.sh
 tools/githooks/install-hooks.sh
-tools/local-sensor/scripts/local-sensor.sh
 ui/apps/platform/scripts/cypress.sh
 ui/apps/platform/scripts/get-auth-token.sh
 ui/apps/platform/scripts/get-demo-auth-token.sh
