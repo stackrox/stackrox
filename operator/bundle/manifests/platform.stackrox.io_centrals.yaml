@@ -74,10 +74,10 @@ spec:
                         type: object
                       connectionString:
                         description: Specify a connection string that corresponds
-                          to an external database. If set, the operator will not manage
-                          Central DB. When using this option, you must explicitly
-                          set a password secret; automatically generating a password
-                          will not be supported.
+                          to a database managed elsewhere. If set, the operator will
+                          not manage the Central DB. When using this option, you must
+                          explicitly set a password secret; automatically generating
+                          a password will not be supported.
                         type: string
                       isEnabled:
                         default: Default
