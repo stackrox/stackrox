@@ -83,7 +83,7 @@ teardown() {
         # shellcheck disable=SC2030,SC2031
         export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=true
+        export ROX_SCANNER_V4=true
         # shellcheck disable=SC2030,SC2031
         export CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}"
         # shellcheck disable=SC2030,SC2031
@@ -102,7 +102,7 @@ teardown() {
         # shellcheck disable=SC2030,SC2031
         export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=true
+        export ROX_SCANNER_V4=true
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
         deploy_stackrox >&3 # This is doing an `helm upgrade --install ...` under the hood.
@@ -124,7 +124,7 @@ teardown() {
         # shellcheck disable=SC2030,SC2031
         export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=false
+        export ROX_SCANNER_V4=false
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
         deploy_stackrox >&3
@@ -144,7 +144,7 @@ teardown() {
         # shellcheck disable=SC2030,SC2031
         export MAIN_IMAGE_TAG
         # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4_ENABLED=true
+        export ROX_SCANNER_V4=true
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
         deploy_stackrox >&3

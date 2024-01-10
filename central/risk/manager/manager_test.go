@@ -122,7 +122,7 @@ func TestSkipImageUpsert(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4Enabled, tc.featureEnabled)
+			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4, tc.featureEnabled)
 			ctrl := gomock.NewController(t)
 
 			var imageDS *imageDSMocks.MockDataStore

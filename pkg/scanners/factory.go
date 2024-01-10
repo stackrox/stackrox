@@ -44,7 +44,7 @@ func NewFactory(set registries.Set) Factory {
 	reg.creators[quayScannerType] = quayScannerCreator
 
 	// Only allow creation of the Scanner V4 scanner if installed/enabled.
-	if features.ScannerV4Enabled.Enabled() {
+	if features.ScannerV4.Enabled() {
 		scannerV4Type, scannerV4Creator := scannerv4.Creator(set)
 		reg.creators[scannerV4Type] = scannerV4Creator
 	}

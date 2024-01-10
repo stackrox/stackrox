@@ -11,7 +11,7 @@ import (
 func configureMetaValues(metaValues *charts.MetaValues) {
 	// Activate certain feature flags.
 	// This allows us to execute tests for features which are currenly disabled by default.
-	metaValues.FeatureFlags["ROX_SCANNER_V4"] = "true"
+	metaValues.FeatureFlags["ROX_SCANNER_V4_SUPPORT"] = "true"
 }
 
 func TestWithHelmtest(t *testing.T) {
