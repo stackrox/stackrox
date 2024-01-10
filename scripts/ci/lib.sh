@@ -1522,7 +1522,7 @@ slack_workflow_failure() {
     do
         job_name=$(jq -r <<<"${job}" '.name')
         job_url=$(jq -r <<<"${job}" '.url')
-        attachments+="$(_make_slack_failure_markdown_block ":cs-x: job: <${job_url}|${job_name}>")"
+        attachments+="$(_make_slack_failure_markdown_block "Job: <${job_url}|${job_name}>")"
     done
     attachments="$(echo "${attachments}" | jq '.[]' | jq -s '.')"
 
