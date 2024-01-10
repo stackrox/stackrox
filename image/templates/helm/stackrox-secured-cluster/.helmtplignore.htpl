@@ -27,7 +27,7 @@ config-templates/scanner/
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
 [<- end >]
-[<- if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4) >]
+[<- if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4_SUPPORT) >]
 templates/*scanner-v4*
 internal/*scanner-v4*
 internal/defaults/*scanner-v4*

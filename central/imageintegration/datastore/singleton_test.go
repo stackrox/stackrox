@@ -88,14 +88,14 @@ func TestSetupScannerV4Integration(t *testing.T) {
 	}
 
 	t.Run("do nothing if no scanner v4 integrations", func(t *testing.T) {
-		testutils.MustUpdateFeature(t, features.ScannerV4Enabled, false)
+		testutils.MustUpdateFeature(t, features.ScannerV4, false)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		setupScannerV4Integration(ctx, s, iis[:1])
 	})
 
 	t.Run("delete scanner v4 integrations if the feature is disabled", func(t *testing.T) {
-		testutils.MustUpdateFeature(t, features.ScannerV4Enabled, false)
+		testutils.MustUpdateFeature(t, features.ScannerV4, false)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		s.EXPECT().Delete(ctx, "ID-Other-ScannerV4")
@@ -104,7 +104,7 @@ func TestSetupScannerV4Integration(t *testing.T) {
 	})
 
 	t.Run("delete non default scanner v4 integrations and upsert default integration if feature enabled", func(t *testing.T) {
-		testutils.MustUpdateFeature(t, features.ScannerV4Enabled, true)
+		testutils.MustUpdateFeature(t, features.ScannerV4, true)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		s.EXPECT().Get(ctx, defID).Return(nil, false, nil)
@@ -114,7 +114,7 @@ func TestSetupScannerV4Integration(t *testing.T) {
 	})
 
 	t.Run("do not try upsert if error getting default integration", func(t *testing.T) {
-		testutils.MustUpdateFeature(t, features.ScannerV4Enabled, true)
+		testutils.MustUpdateFeature(t, features.ScannerV4, true)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		s.EXPECT().Get(ctx, defID).Return(nil, false, errors.New("fake"))
@@ -128,7 +128,7 @@ func TestSetupScannerV4Integration(t *testing.T) {
 	})
 
 	t.Run("do not try upsert if default integration exists", func(t *testing.T) {
-		testutils.MustUpdateFeature(t, features.ScannerV4Enabled, true)
+		testutils.MustUpdateFeature(t, features.ScannerV4, true)
 		s := mockIIStore.NewMockStore(gomock.NewController(t))
 
 		s.EXPECT().Get(ctx, defID).Return(nil, true, nil)
