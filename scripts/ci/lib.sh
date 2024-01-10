@@ -1491,7 +1491,6 @@ slack_workflow_failure() {
 
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
-    set -x
     if is_in_PR_context; then
         if pr_has_label "ci-test-github-action-slack-messages"; then
             # Send to #acs-slack-ci-integration-testing when testing.
@@ -1582,7 +1581,6 @@ Author: \($author_name)\($slack_mention).",
         --argjson attachments "$attachments" \
        "$body")"
 
-    set +x
     echo -e "About to post:\n$payload"
 
     echo "$payload" | curl --location --silent --show-error --fail \
