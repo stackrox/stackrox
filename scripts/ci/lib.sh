@@ -1500,6 +1500,12 @@ slack_workflow_failure() {
     local slack_mention=""
     _make_slack_mention
 
+    IFS=$'\n'
+    for job in $(gh run view --jq '.jobs[] | select(.conclusion == "failure")' --json 'jobs' -R "${repo}" "${run_id}" | jq -sc '.[]')
+    do
+        echo ">>${job}<<"
+    done
+
     # shellcheck disable=SC2016
     local body='
 {
