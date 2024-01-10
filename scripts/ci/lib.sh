@@ -1455,6 +1455,29 @@ _make_slack_failure_block() {
        "$body"
 }
 
+_make_slack_failure_mrkdwn_block() {
+    # shellcheck disable=SC2016
+    local body='
+[
+  {
+    "color": "#bb2124",
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "type": "mrkdwn",
+          "text": "\($content)"
+        }
+      }
+    ]
+  }
+]
+'
+    jq --null-input \
+       --arg content "$1" \
+       "$body"
+}
+
 _send_slack_error() {
     echo "ERROR: $1"
     curl -XPOST -d @- -H 'Content-Type: application/json' "${webhook_url}" << __EOM__
@@ -1500,11 +1523,17 @@ slack_workflow_failure() {
     local slack_mention=""
     _make_slack_mention
 
+    local attachments=""
+    local job_name job_url
     IFS=$'\n'
     for job in $(gh run view --jq '.jobs[] | select(.conclusion == "failure")' --json 'jobs' -R "${repo}" "${run_id}" | jq -sc '.[]')
     do
-        echo ">>${job}<<"
+        job_name=$(jq -r <<<"${job}" '.name')
+        job_url=$(jq -r <<<"${job}" '.url')
+        # echo ">>${job}<<"
+        attachments+="$(_make_slack_failure_mrkdwn_block "<${job_url}|${job_name}>)")"
     done
+    attachments="$(echo "${attachments}" | jq '.[]' | jq -s '.')"
 
     # shellcheck disable=SC2016
     local body='
@@ -1535,7 +1564,7 @@ Author: \($author_name)\($slack_mention).",
             "type": "divider"
         }
     ],
-    "attachments": []
+    "attachments": $attachments
 }
 '
 
@@ -1549,6 +1578,7 @@ Author: \($author_name)\($slack_mention).",
         --arg slack_mention "$slack_mention" \
         --arg repo_url "$repo_url" \
         --arg run_id "$run_id" \
+        --argjson attachments "$attachments" \
        "$body")"
 
     echo -e "About to post:\n$payload"
