@@ -176,9 +176,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolDeref(c.AdminPasswordGenerationDisabled, false)
 }
 
-// IsExternalDB returns true if central DB is not managed by the Operator
-func (c *CentralComponentSpec) IsExternalDB() bool {
-	return c != nil && c.DB.IsExternal()
+// ShouldManageDB returns true if central DB should be managed by the Operator.
+func (c *CentralComponentSpec) ShouldManageDB() bool {
+	return c == nil || c.DB == nil || c.DB.ConnectionStringOverride == nil
 }
 
 // GetNotifierSecretsEncryptionEnabled provides a way to retrieve the NotifierSecretsEncryption.Enabled setting that is safe to use on a nil receiver object.
@@ -229,7 +229,7 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// Specify a connection string that corresponds to an external database. If set, the operator will not manage Central DB.
+	// Specify a connection string that corresponds to a database managed elsewhere. If set, the operator will not manage the Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String"
@@ -275,14 +275,6 @@ func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
 		return nil
 	}
 	return c.PasswordSecret
-}
-
-// IsExternal specifies that the database should not be managed by the Operator
-func (c *CentralDBSpec) IsExternal() bool {
-	if c == nil {
-		return false
-	}
-	return c.ConnectionStringOverride != nil
 }
 
 // GetPersistence returns the persistence for Central DB

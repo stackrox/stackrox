@@ -203,7 +203,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			Existing:      []*v1.Secret{canonicalPWSecretWithNoPassword},
 			ExpectedError: "secret must contain a non-empty",
 		},
-		"When using an external DB with specified password secret, that secret should be left untouched": {
+		"When not managing central DB, with specified password secret, that secret should be left untouched": {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
@@ -216,7 +216,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			},
 			Existing: []*v1.Secret{customPWSecretWithPW1, canonicalPWSecretWithPW1},
 		},
-		"When using an external DB, and no password secret is specified, an error should be raised": {
+		"When not managing central DB, and no password secret is specified, an error should be raised": {
 			Spec: v1alpha1.CentralSpec{
 				Central: &v1alpha1.CentralComponentSpec{
 					DB: &v1alpha1.CentralDBSpec{
@@ -224,7 +224,7 @@ func TestReconcileDBPassword(t *testing.T) {
 					},
 				},
 			},
-			ExpectedError: "setting spec.central.db.passwordSecret is mandatory when using an external DB",
+			ExpectedError: "setting spec.central.db.passwordSecret is mandatory when using an DB not managed by the operator",
 		},
 	}
 
