@@ -383,6 +383,13 @@ function launch_central {
         helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
+      if [[ -n "$ROX_TELEMETRY_STORAGE_KEY_V1" ]]; then
+        helm_args+=(
+          --set central.telemetry.enabled=true
+          --set central.telemetry.storage.key="${ROX_TELEMETRY_STORAGE_KEY_V1}"
+        )
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n stackrox
