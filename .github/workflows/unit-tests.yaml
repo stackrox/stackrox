@@ -257,6 +257,8 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Slack message
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
       run: |
         source scripts/ci/lib.sh
-        slack_workflow_failure '${{ toJson(github) }}'
+        slack_workflow_failure
