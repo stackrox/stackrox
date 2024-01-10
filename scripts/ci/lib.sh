@@ -1525,7 +1525,12 @@ Author: \($author_name)\($slack_mention).",
 *Workflow:* \($repo_url)/actions/runs/\($run_id))"
             }
         }
-    ]
+    ],
+        {
+            "type": "divider"
+        }
+    ],
+    "attachments": []
 }
 '
 
