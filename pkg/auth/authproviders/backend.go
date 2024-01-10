@@ -11,9 +11,10 @@ import (
 
 // AuthResponse is the response by an auth provider backend that leads to a token issuance.
 type AuthResponse struct {
-	Claims     *tokens.ExternalUserClaim
-	Expiration time.Time
-	ExtraOpts  []tokens.Option
+	Claims          *tokens.ExternalUserClaim
+	Expiration      time.Time
+	ExtraOpts       []tokens.Option
+	UnderlyingToken string
 
 	RefreshTokenData
 }

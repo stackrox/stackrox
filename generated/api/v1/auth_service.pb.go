@@ -138,6 +138,7 @@ type AuthStatus struct {
 	AuthProvider         *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
 	UserInfo             *storage.UserInfo     `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
 	UserAttributes       []*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
+	UnderlyingToken      string                `protobuf:"bytes,8,opt,name=underlying_token,json=underlyingToken,proto3" json:"underlying_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -266,6 +267,13 @@ func (m *AuthStatus) GetUserAttributes() []*UserAttribute {
 		return m.UserAttributes
 	}
 	return nil
+}
+
+func (m *AuthStatus) GetUnderlyingToken() string {
+	if m != nil {
+		return m.UnderlyingToken
+	}
+	return ""
 }
 
 // XXX_OneofWrappers is for the internal use of the proto package.
@@ -1409,6 +1417,13 @@ func (m *AuthStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.UnderlyingToken) > 0 {
+		i -= len(m.UnderlyingToken)
+		copy(dAtA[i:], m.UnderlyingToken)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.UnderlyingToken)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if len(m.UserAttributes) > 0 {
 		for iNdEx := len(m.UserAttributes) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -1956,6 +1971,10 @@ func (m *AuthStatus) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovAuthService(uint64(l))
 		}
+	}
+	l = len(m.UnderlyingToken)
+	if l > 0 {
+		n += 1 + l + sovAuthService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2546,6 +2565,38 @@ func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 			if err := m.UserAttributes[len(m.UserAttributes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UnderlyingToken", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAuthService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAuthService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UnderlyingToken = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

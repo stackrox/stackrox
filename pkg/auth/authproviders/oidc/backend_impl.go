@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -230,8 +231,9 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 	}
 
 	return &authproviders.AuthResponse{
-		Claims:     externalClaims,
-		Expiration: idToken.GetExpiry(),
+		Claims:          externalClaims,
+		Expiration:      idToken.GetExpiry(),
+		UnderlyingToken: rawIDToken,
 	}, nil
 }
 
@@ -254,9 +256,16 @@ func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken strin
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching userinfo claims")
 	}
+
+	rawUserInfo, err := claimsAsString(userInfoFromEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting raw user info from userinfo endpoint response")
+	}
+
 	return &authproviders.AuthResponse{
-		Claims:     externalClaims,
-		Expiration: time.Now().Add(userInfoExpiration),
+		Claims:          externalClaims,
+		Expiration:      time.Now().Add(userInfoExpiration),
+		UnderlyingToken: rawUserInfo,
 	}, nil
 }
 
@@ -697,6 +706,18 @@ func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[s
 		}
 	}
 	return nil
+}
+
+func claimsAsString(claimExtractor claimExtractor) (string, error) {
+	claims := make(map[string]interface{}, 0)
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return "", errors.Wrap(err, "failed to extract claims from IdP's token")
+	}
+	byteClaims, err := json.Marshal(claims)
+	if err != nil {
+		return "", err
+	}
+	return string(byteClaims), nil
 }
 
 func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {

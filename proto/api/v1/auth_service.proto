@@ -28,6 +28,7 @@ message AuthStatus {
   storage.AuthProvider auth_provider = 5;
   storage.UserInfo user_info = 6;
   repeated UserAttribute user_attributes = 7;
+    string underlying_token = 8;
 }
 
 // AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with

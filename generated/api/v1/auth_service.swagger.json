@@ -577,6 +577,9 @@
           "items": {
             "$ref": "#/definitions/v1UserAttribute"
           }
+        },
+        "underlyingToken": {
+          "type": "string"
         }
       }
     },

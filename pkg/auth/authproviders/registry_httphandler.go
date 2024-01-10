@@ -309,6 +309,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	if testMode {
+		user.UnderlyingToken = authResp.UnderlyingToken
 		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
