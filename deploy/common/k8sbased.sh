@@ -130,6 +130,15 @@ function launch_central {
 
     echo "Generating central config..."
 
+
+    if [[ -z "$CI" && -z "${CENTRAL_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
+      echo >&2 "================================================================================================"
+      echo >&2 "NOTE: Based on your environment, you are using the Helm-based deployment method."
+      echo >&2 "      To disable the Helm based installation set CENTRAL_HELM_DEPLOY=false"
+      echo >&2 "================================================================================================"
+      OUTPUT_FORMAT="helm"
+    fi
+
     local EXTRA_ARGS=()
     local EXTRA_DOCKER_ARGS=()
     local STORAGE_ARGS=()
