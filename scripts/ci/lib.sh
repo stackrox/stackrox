@@ -1501,17 +1501,24 @@ slack_workflow_failure() {
         fi
     fi
 
-    jq <<<"${github_context}" '.'
-
     local workflow_name commit_msg commit_url repo author_name author_login repo_url run_id
     workflow_name=$(jq -r <<<"${github_context}" '.workflow')
-    commit_msg=$(jq -r <<<"${github_context}" '.event.head_commit.message')
-    commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
-    commit_url=$(jq -r <<<"${github_context}" '.event.head_commit.url')
+    event_name=$(jq -r <<<"${github_context}" '.event_name')
+    if [[ "${event_name}" == "push" ]]; then
+        commit_msg=$(jq -r <<<"${github_context}" '.event.head_commit.message')
+        commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
+        commit_url=$(jq -r <<<"${github_context}" '.event.head_commit.url')
+        author_name=$(jq -r <<<"${github_context}" '.event.head_commit.author.name')
+        author_login=$(jq -r <<<"${github_context}" '.event.head_commit.author.username')
+        repo_url=$(jq -r <<<"${github_context}" '.event.repository.url')
+    else
+        commit_msg="This is a test slack message"
+        commit_url=$(jq -r <<<"${github_context}" '.event.pull_request.diff_url')
+        author_name=$(jq -r <<<"${github_context}" '.actor')
+        author_login=$(jq -r <<<"${github_context}" '.actor')
+        repo_url=$(jq -r <<<"${github_context}" '.event.pull_request.base.repo.html_url')
+    fi
     repo=$(jq -r <<<"${github_context}" '.repository')
-    author_name=$(jq -r <<<"${github_context}" '.event.head_commit.author.name')
-    author_login=$(jq -r <<<"${github_context}" '.event.head_commit.author.username')
-    repo_url=$(jq -r <<<"${github_context}" '.event.repository.url')
     run_id=$(jq -r <<<"${github_context}" '.run_id')
 
     local slack_mention=""
