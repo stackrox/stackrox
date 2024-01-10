@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -146,7 +147,10 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 
 // Delete removes the object associated to the specified ID from the store.
 func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
-	obj, found := c.cache[id]
+	obj, found := concurrency.WithRLock2[PT, bool](&c.cacheLock, func() (PT, bool) {
+		obj, found := c.cache[id]
+		return obj, found
+	})
 	if !found {
 		return nil
 	}
