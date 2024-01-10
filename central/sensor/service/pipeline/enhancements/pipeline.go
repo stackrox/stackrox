@@ -36,7 +36,6 @@ func GetPipeline() pipeline.Fragment {
 
 func (p pipelineImpl) OnFinish(_ string) {}
 
-// TODO(ROX-21202): Add capabilities
 func (p pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return nil
 }
