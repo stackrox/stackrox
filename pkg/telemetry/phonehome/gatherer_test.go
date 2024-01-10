@@ -34,12 +34,13 @@ func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 	g := newGatherer("Test", t, 24*time.Hour)
 
-	t.EXPECT().Track("Updated Test Identity", nil,
-		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
-		Times(1).Do(func(any, any, ...any) { g.Stop() })
-	t.EXPECT().Track("Test Heartbeat", nil,
-		matchOptions(telemeter.WithTraits(nil))).
-		Times(1).Do(func(any, any, ...any) { g.Stop() })
+	gomock.InOrder(
+		t.EXPECT().Track("Updated Test Identity", nil,
+			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+			Times(1).Do(func(any, any, ...any) { g.Stop() }),
+		t.EXPECT().Track("Test Heartbeat", nil,
+			matchOptions(telemeter.WithTraits(nil))).
+			Times(1).Do(func(any, any, ...any) { g.Stop() }))
 
 	props := make(map[string]any)
 	var i atomic.Int64
@@ -62,20 +63,19 @@ func (s *gathererTestSuite) TestGatherer() {
 func (s *gathererTestSuite) TestGathererTicker() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
 
-	t.EXPECT().Track("Updated Test Identity", nil,
-		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1)
-	t.EXPECT().Track("Test Heartbeat", nil,
-		matchOptions(telemeter.WithTraits(nil))).Times(2)
-
-	lastTrack := concurrency.Signal{}
+	lastTrack := concurrency.NewSignal()
 	defer lastTrack.Wait()
-	// Stop gathering after 3rd heartbeat:
-	t.EXPECT().Track("Test Heartbeat", nil,
-		matchOptions(telemeter.WithTraits(nil))).Times(1).
-		Do(func(any, any, ...any) {
-			lastTrack.Signal()
-		})
-
+	gomock.InOrder(
+		t.EXPECT().Track("Updated Test Identity", nil,
+			matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).Times(1),
+		t.EXPECT().Track("Test Heartbeat", nil,
+			matchOptions(telemeter.WithTraits(nil))).Times(2),
+		// Stop gathering after 3rd heartbeat:
+		t.EXPECT().Track("Test Heartbeat", nil,
+			matchOptions(telemeter.WithTraits(nil))).Times(1).
+			Do(func(any, any, ...any) {
+				lastTrack.Signal()
+			}))
 	g := newGatherer("Test", t, 24*time.Hour)
 	defer g.Stop()
 	tickChan := make(chan time.Time)
