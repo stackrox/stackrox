@@ -255,7 +255,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Slack message
       run: |
         source scripts/ci/lib.sh
