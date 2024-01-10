@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"

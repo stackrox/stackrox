@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentTypes "github.com/stackrox/rox/central/deployment/store/types"
+	deploymentTypes "github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
