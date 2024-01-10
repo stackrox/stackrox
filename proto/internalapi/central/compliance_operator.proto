@@ -56,9 +56,10 @@ message ApplyComplianceScanConfigRequest {
     }
 
     string                  id              = 1;
+    reserved 2; // previously OneTimeScan
     oneof scan_request {
-        ScheduledScan       scheduled_scan  = 2;
-        RerunScheduledScan  rerun_scan      = 3;
+        ScheduledScan       scheduled_scan  = 3;
+        RerunScheduledScan  rerun_scan      = 4;
     }
 }
 
