@@ -106,6 +106,12 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 
 // GetNamespacesForSAC retrieves namespaces matching the request
 func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	ok, err := namespaceSAC.ReadAllowed(ctx)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return b.SearchNamespaces(ctx, search.EmptyQuery())
+	}
 	var allowedNamespaces []*storage.NamespaceMetadata
 	walkFn := func() error {
 		allowedNamespaces = allowedNamespaces[:0]
