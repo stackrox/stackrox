@@ -1508,10 +1508,10 @@ Commit: \($commit_msg).
 Author: \($author_name)\($slack_mention).",
     "blocks": [
         {
-            "type": "section",
+            "type": "header",
             "text": {
-                "type": "mrkdwn",
-                "text": "*\($workflow_name) failed.*"
+                "type": "plain_text",
+                "text": "\($workflow_name) failed."
             }
         },
         {
@@ -1519,9 +1519,9 @@ Author: \($author_name)\($slack_mention).",
             "text": {
                 "type": "mrkdwn",
                 "text": "
-*Commit:* <\($commit_url)|\($commit_msg)>\n
-*Repo:* \($repo)\n
-*Author:* \($author_name)\($slack_mention)\n
+*Commit:* <\($commit_url)|\($commit_msg)>.
+*Repo:* \($repo).
+*Author:* \($author_name)\($slack_mention).
 *Workflow:* \($repo_url)/actions/runs/\($run_id))"
             }
         }
