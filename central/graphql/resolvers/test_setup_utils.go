@@ -25,7 +25,6 @@ import (
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -200,12 +199,18 @@ func CreateTestImageCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) 
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
 func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
-	ctx := context.Background()
-	deploymentPostgres.Destroy(ctx, testDB.DB)
-
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
-	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
-	ds, err := deploymentDatastore.NewTestDataStore(t, deploymentStore, testDB.DB, imageDatastore, nil, nil, mockRisk, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ds, err := deploymentDatastore.NewTestDataStore(
+		t,
+		testDB,
+		&deploymentDatastore.DeploymentTestStoreParams{
+			ImagesDataStore:  imageDatastore,
+			RisksDataStore:   mockRisk,
+			ClusterRanker:    ranking.ClusterRanker(),
+			NamespaceRanker:  ranking.NamespaceRanker(),
+			DeploymentRanker: ranking.DeploymentRanker(),
+		},
+	)
 	assert.NoError(t, err)
 	return ds
 }

@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/central/deployment/store/types"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"gorm.io/gorm"
 )
 
 // NewFullStore augments the generated store with ListDeployment functions.
@@ -51,7 +53,8 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 }
 
 // NewFullTestStore is used for testing.
-func NewFullTestStore(_ testing.TB, store Store) store.Store {
+func NewFullTestStore(ctx context.Context, _ testing.TB, store Store, gormDB *gorm.DB) store.Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return &fullStoreImpl{
 		Store: store,
 	}
