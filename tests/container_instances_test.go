@@ -52,7 +52,7 @@ func TestContainerInstances(testT *testing.T) {
 			require.Len(retryEventsT, groupedContainers[1].Events, 3)
 			secondContainerEvents :=
 				sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
-			require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+			require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/dash", "/bin/date", "/bin/sleep"})
 
 			// Verify the container group's timestamp is no later than the timestamp of the first event
 			require.False(retryEventsT, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
