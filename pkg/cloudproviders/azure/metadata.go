@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -92,21 +93,34 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 func getClusterMetadata(ctx context.Context) *storage.ClusterMetadata {
 	k8sClient, err := k8sutil.GetK8sInClusterClient()
 	if err != nil {
-		log.Error("Failed to kubernetes client: ", err)
-		return &storage.ClusterMetadata{}
+		log.Error("Failed to create kubernetes client: ", err)
+		return nil
 	}
 	return getClusterMetadataFromNodeLabels(ctx, k8sClient)
 }
 
 func getClusterMetadataFromNodeLabels(ctx context.Context, k8sClient kubernetes.Interface) *storage.ClusterMetadata {
-	nodeLabels, err := k8sutil.GetAnyNodeLabels(ctx, k8sClient)
+	nodeLabels, err := getAnyNodeLabels(ctx, k8sClient)
 	if err != nil {
 		log.Error("Failed to get node labels: ", err)
-		return &storage.ClusterMetadata{}
+		return nil
 	}
 
 	if name, ok := nodeLabels[aksClusterNameLabel]; ok {
 		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: name}
 	}
-	return &storage.ClusterMetadata{}
+	return nil
+}
+
+// getAnyNodeLabels returns the labels of an arbitrary node. This is useful
+// to extract global labels such as the cluster name.
+func getAnyNodeLabels(ctx context.Context, client kubernetes.Interface) (map[string]string, error) {
+	nodeList, err := client.CoreV1().Nodes().List(ctx, v1.ListOptions{Limit: 1})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing nodes")
+	}
+	if nodeList.Size() == 0 {
+		return nil, errors.New("no nodes found")
+	}
+	return nodeList.Items[0].GetLabels(), nil
 }
