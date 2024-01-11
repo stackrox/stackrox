@@ -318,7 +318,7 @@ func (r *createCentralTLSExtensionRun) generateCentralDBTLSData(_ types.SecretDa
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerV4IndexerTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateScannerV4IndexerTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerV4IndexerSubject, "", fileMap); err != nil {
 		return nil, err
@@ -326,7 +326,7 @@ func (r *createCentralTLSExtensionRun) generateScannerV4IndexerTLSData() (types.
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerV4MatcherTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateScannerV4MatcherTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerV4MatcherSubject, "", fileMap); err != nil {
 		return nil, err
@@ -334,7 +334,7 @@ func (r *createCentralTLSExtensionRun) generateScannerV4MatcherTLSData() (types.
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerV4DBTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateScannerV4DBTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerV4DBSubject, "", fileMap); err != nil {
 		return nil, err
