@@ -431,7 +431,7 @@ require (
 // The `go mod tidy` takes care of normalizing the symbol version information (e.g. branch name) which is required
 // for Go build tools to accept the `go.mod`.
 replace (
-	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56
+	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	// we need https://github.com/fullsailor/pkcs7/pull/42 to be merged
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
