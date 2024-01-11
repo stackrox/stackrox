@@ -187,6 +187,23 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 	}, nil
 }
 
+// versionID returns the distribution version ID.
+//
+// TODO(ROX-21678): `VersionId` is currently not populated for Alpine[1],
+//                  temporarily falling back to the version.
+//
+// [1]: https://github.com/quay/claircore/blob/88ccfbecee88d7b326b9a2fb3ab5b5f4cfa0b610/alpine/distributionscanner.go#L110-L113
+func versionID(d *claircore.Distribution) string {
+	vID := d.VersionID
+	if vID == "" {
+		switch d.DID {
+		case "alpine":
+			vID = d.Version
+		}
+	}
+	return vID
+}
+
 func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 	if d == nil {
 		return nil
@@ -197,7 +214,7 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Name:            d.Name,
 		Version:         d.Version,
 		VersionCodeName: d.VersionCodeName,
-		VersionId:       d.VersionID,
+		VersionId:       versionID(d),
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,
