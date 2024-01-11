@@ -33,6 +33,7 @@ import {
     namespaceBadgeColor,
     namespaceBadgeText,
 } from './common/NetworkGraphIcons';
+import useNetworkPolicySimulator from './hooks/useNetworkPolicySimulator';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 
 export type Models = {
@@ -272,6 +273,7 @@ function fadeOutUnconnectedNodes(
 }
 
 type NetworkGraphContainerProps = {
+    isReadyForVisualization: boolean;
     models: Models;
     edgeState: EdgeState;
     displayOptions: DisplayOption[];
@@ -289,6 +291,7 @@ type NetworkGraphContainerProps = {
 //
 // 1 (edgeState) -> 2 (selectedNode/edgeState) -> 3 (displayOptions)
 function NetworkGraphContainer({
+    isReadyForVisualization,
     models,
     edgeState,
     displayOptions,
@@ -296,6 +299,11 @@ function NetworkGraphContainer({
     clusterDeploymentCount,
     scopeHierarchy,
 }: NetworkGraphContainerProps) {
+    const { simulator, setNetworkPolicyModification } = useNetworkPolicySimulator({
+        simulation,
+        scopeHierarchy,
+    });
+
     // these are the unfiltered, unmodified data models
     const { activeModel, extraneousModel } = models;
 
@@ -353,13 +361,23 @@ function NetworkGraphContainer({
         edges: modifiedEdges,
     };
 
+    const isSimulating =
+        simulator.state === 'GENERATED' ||
+        simulator.state === 'UNDO' ||
+        simulator.state === 'UPLOAD' ||
+        (simulation.isOn && simulation.type === 'baseline');
+
     return (
         <NetworkGraph
+            isReadyForVisualization={isReadyForVisualization}
             model={updatedModel}
             simulation={simulation}
+            simulator={simulator}
+            setNetworkPolicyModification={setNetworkPolicyModification}
             selectedNode={selectedNode}
             edgeState={edgeState}
             scopeHierarchy={scopeHierarchy}
+            isSimulating={isSimulating}
         />
     );
 }
