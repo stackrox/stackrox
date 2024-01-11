@@ -124,7 +124,7 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build CLI
-        run: make click
+        run: make cli
 
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
