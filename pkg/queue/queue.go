@@ -38,6 +38,13 @@ func WithCounterVec[T comparable](vec *prometheus.CounterVec) OptionFunc[T] {
 	}
 }
 
+// WithDroppedMetric provides a counter which tracks number of items dropped.
+func WithDroppedMetric[T comparable](metric prometheus.Counter) OptionFunc[T] {
+	return func(q *Queue[T]) {
+		q.droppedMetric = metric
+	}
+}
+
 // WithMaxSize provides a limit to the size of the queue. By default, no size limit is set so the queue is
 // unbounded.
 func WithMaxSize[T comparable](size int) OptionFunc[T] {
@@ -120,4 +127,11 @@ func (q *Queue[T]) Push(item T) {
 		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
 	}
 	q.queue.PushBack(item)
+}
+
+// Len returns the number of elements in the queue.
+func (q *Queue[T]) Len() int {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return q.queue.Len()
 }

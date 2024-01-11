@@ -7,50 +7,51 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 )
 
-// PausableQueue defines a queue that can be paused.
-type PausableQueue[T comparable] interface {
+// InternalQueue defines the pkg/queue that holds the items.
+type InternalQueue[T comparable] interface {
 	Push(T)
 	PullBlocking(concurrency.Waitable) T
-	Pause()
-	Resume()
+	Len() int
 }
 
-// Queue wraps a PausableQueue to make it pullable with a channel.
+// Queue wraps a InternalQueue to make it pullable with a channel.
 type Queue[T comparable] struct {
-	queue   PausableQueue[T]
-	outputC chan T
-	stopper concurrency.Stopper
+	queue     InternalQueue[T]
+	outputC   chan T
+	stopper   concurrency.Stopper
+	isRunning concurrency.Signal
 }
 
 // NewQueue creates a new Queue.
 func NewQueue[T comparable](stopper concurrency.Stopper, size int, counter *prometheus.CounterVec, dropped prometheus.Counter) *Queue[T] {
-	var opts []queue.PausableQueueOption[T]
+	var opts []queue.OptionFunc[T]
 	if size > 0 {
-		opts = append(opts, queue.WithPausableMaxSize[T](size))
+		opts = append(opts, queue.WithMaxSize[T](size))
 	}
 	if counter != nil {
-		opts = append(opts, queue.WithPausableQueueMetric[T](counter))
+		opts = append(opts, queue.WithCounterVec[T](counter))
 	}
 	if dropped != nil {
-		opts = append(opts, queue.WithPausableQueueDroppedMetric[T](dropped))
+		opts = append(opts, queue.WithDroppedMetric[T](dropped))
 	}
 	return &Queue[T]{
-		queue:   queue.NewPausableQueue[T](opts...),
-		outputC: make(chan T),
-		stopper: stopper,
+		queue:     queue.NewQueue[T](opts...),
+		outputC:   make(chan T),
+		stopper:   stopper,
+		isRunning: concurrency.NewSignal(),
 	}
 }
 
 // Start the queue.
 func (q *Queue[T]) Start() {
-	// If v3 is not enabled we need to start the queue here.
+	// If v3 is not enabled we need to trigger isRunning here.
 	if !features.SensorCapturesIntermediateEvents.Enabled() {
-		q.queue.Resume()
+		q.isRunning.Signal()
 	}
 	go q.run()
 }
 
-// Push an item to the queue
+// Push an item to the queue.
 func (q *Queue[T]) Push(item T) {
 	q.queue.Push(item)
 }
@@ -61,20 +62,24 @@ func (q *Queue[T]) run() {
 		select {
 		case <-q.stopper.Flow().StopRequested():
 			return
-		default:
-			q.outputC <- q.queue.PullBlocking(q.stopper.LowLevel().GetStopRequestSignal())
+		case <-q.isRunning.Done():
+			select {
+			case <-q.stopper.Flow().StopRequested():
+				return
+			case q.outputC <- q.queue.PullBlocking(q.stopper.LowLevel().GetStopRequestSignal()):
+			}
 		}
 	}
 }
 
 // Pause the queue.
 func (q *Queue[T]) Pause() {
-	q.queue.Pause()
+	q.isRunning.Reset()
 }
 
 // Resume the queue.
 func (q *Queue[T]) Resume() {
-	q.queue.Resume()
+	q.isRunning.Signal()
 }
 
 // Pull returns the channel where run writes the front of the queue.
