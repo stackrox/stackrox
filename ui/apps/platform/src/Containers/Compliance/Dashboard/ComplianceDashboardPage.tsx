@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { useApolloClient } from '@apollo/client';
+import { Alert } from '@patternfly/react-core';
 
 import Button from 'Components/Button';
 import ExportButton from 'Components/ExportButton';
@@ -22,6 +23,8 @@ import StandardsAcrossEntity from '../widgets/StandardsAcrossEntity';
 import ManageStandardsError from './ManageStandardsError';
 import ManageStandardsModal from './ManageStandardsModal';
 import ComplianceDashboardTile from './ComplianceDashboardTile';
+import ComplianceScanProgress from './ComplianceScanProgress';
+import { isCurrentScanIncomplete, useComplianceRunStatuses } from './useComplianceRunStatuses';
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
@@ -40,6 +43,8 @@ function ComplianceDashboardPage(): ReactElement {
     const darkModeClasses = `${
         isDarkMode ? 'text-base-600 hover:bg-primary-200' : 'text-base-100 hover:bg-primary-800'
     }`;
+
+    const { runs, error, restartPolling, inProgressScanDetected } = useComplianceRunStatuses();
 
     function clickManageStandardsButton() {
         setIsFetchingStandards(true);
@@ -95,6 +100,8 @@ function ComplianceDashboardPage(): ReactElement {
                                 textCondensed="Scan all"
                                 clusterId="*"
                                 standardId="*"
+                                onScanTriggered={restartPolling}
+                                scanInProgress={isCurrentScanIncomplete(runs)}
                             />
                         )}
                         {hasWriteAccessForCompliance && (
@@ -123,6 +130,21 @@ function ComplianceDashboardPage(): ReactElement {
                 </div>
             </PageHeader>
             <div className="flex-1 relative p-6 xxxl:p-8 bg-base-200" id="capture-dashboard">
+                {(inProgressScanDetected || error) && (
+                    <div className="pf-u-pb-lg">
+                        {error ? (
+                            <Alert
+                                variant="danger"
+                                title="There was an error fetching compliance scan status, data below may be out of date"
+                                component="p"
+                            >
+                                {getAxiosErrorMessage(error)}
+                            </Alert>
+                        ) : (
+                            <ComplianceScanProgress runs={runs} />
+                        )}
+                    </div>
+                )}
                 <div
                     className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense pf-u-pb-lg"
                     // style={{ '--min-tile-height': '160px' }}
