@@ -1485,7 +1485,6 @@ _slack_check_env() {
 
 slack_workflow_failure() {
     local github_context="${GITHUB_CONTEXT}"
-
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
     if is_in_PR_context; then
