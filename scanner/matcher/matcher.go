@@ -10,12 +10,58 @@ import (
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
+	"github.com/stackrox/rox/scanner/updater/rhel"
 )
+
+var (
+	// updaterSets specifies the ClairCore updaters to use.
+	updaterSets = []string{
+		"alpine",
+		"aws",
+		"debian",
+		"oracle",
+		"osv",
+		"photon",
+		"rhcc",
+		"suse",
+		"ubuntu",
+	}
+
+	// matcherNames specifies the ClairCore matchers to use.
+	// TODO: add NodeJS once implemented.
+	matcherNames = []string{
+		"alpine-matcher",
+		"aws-matcher",
+		"debian-matcher",
+		"gobin",
+		"java-maven",
+		"oracle",
+		"photon",
+		"python",
+		"rhel-container-matcher",
+		"rhel",
+		"ruby-gem",
+		"suse",
+		"ubuntu-matcher",
+	}
+)
+
+// updaters specifies the out-of-tree updaters to use.
+func updaters(ctx context.Context, c *http.Client) ([]driver.Updater, error) {
+	zlog.Info(ctx).Msg("creating out-of-tree RHEL updaters")
+	rhelUpdaters, err := rhel.Updaters(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("out-of-tree RHEL updaters: %w", err)
+	}
+
+	return rhelUpdaters, nil
+}
 
 // Matcher represents a vulnerability matcher.
 //
@@ -57,15 +103,22 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
 
-	// TODO: ensure all expected matchers are used!
+	ootUpdaters, err := updaters(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("creating out-of-tree updaters: %w", err)
+	}
+
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:                    store,
-		Locker:                   locker,
-		DisableBackgroundUpdates: true,
-		UpdateRetention:          libvuln.DefaultUpdateRetention,
-		Client:                   c,
+		Store:        store,
+		Locker:       locker,
+		UpdaterSets:  updaterSets,
+		Updaters:     ootUpdaters,
+		MatcherNames: matcherNames,
 		// TODO(ROX-21264): Replace with our own enricher(s).
-		Enrichers: nil,
+		Enrichers:                nil,
+		UpdateRetention:          libvuln.DefaultUpdateRetention,
+		DisableBackgroundUpdates: true,
+		Client:                   c,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
