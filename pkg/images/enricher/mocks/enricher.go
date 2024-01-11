@@ -73,7 +73,7 @@ func (mr *MockImageEnricherMockRecorder) EnrichWithSignatureVerificationData(ctx
 }
 
 // EnrichWithVulnerabilities mocks base method.
-func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
+func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components any, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", image, components, notes)
 	ret0, _ := ret[0].(enricher.EnrichmentResult)

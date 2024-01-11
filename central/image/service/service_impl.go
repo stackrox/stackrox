@@ -522,7 +522,7 @@ func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.
 		return err
 	}
 
-	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), request.GetNotes())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), nil)
 	return err
 }
 

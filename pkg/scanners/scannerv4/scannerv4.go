@@ -161,7 +161,7 @@ func (s *scannerv4) Type() string {
 	return types.ScannerV4
 }
 
-func (s *scannerv4) GetVulnerabilities(image *storage.Image, contents any, notes []scannerV1.Note) (*storage.ImageScan, error) {
+func (s *scannerv4) GetVulnerabilities(image *storage.Image, contents any, _ []scannerV1.Note) (*storage.ImageScan, error) {
 	v4Contents, ok := contents.(*v4.Contents)
 	if !ok {
 		return nil, fmt.Errorf("invalid contents type: %T", contents)

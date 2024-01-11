@@ -217,8 +217,22 @@ func (m *MockImageVulnerabilityGetter) EXPECT() *MockImageVulnerabilityGetterMoc
 	return m.recorder
 }
 
+// CanHandle mocks base method.
+func (m *MockImageVulnerabilityGetter) CanHandle(components any) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanHandle", components)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanHandle indicates an expected call of CanHandle.
+func (mr *MockImageVulnerabilityGetterMockRecorder) CanHandle(components any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanHandle", reflect.TypeOf((*MockImageVulnerabilityGetter)(nil).CanHandle), components)
+}
+
 // GetVulnerabilities mocks base method.
-func (m *MockImageVulnerabilityGetter) GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error) {
+func (m *MockImageVulnerabilityGetter) GetVulnerabilities(image *storage.Image, components any, notes []scannerV1.Note) (*storage.ImageScan, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVulnerabilities", image, components, notes)
 	ret0, _ := ret[0].(*storage.ImageScan)

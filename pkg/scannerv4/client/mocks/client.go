@@ -71,6 +71,21 @@ func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth)
 }
 
+// GetVulnerabilities mocks base method.
+func (m *MockScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVulnerabilities", ctx, ref, contents)
+	ret0, _ := ret[0].(*v4.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVulnerabilities indicates an expected call of GetVulnerabilities.
+func (mr *MockScannerMockRecorder) GetVulnerabilities(ctx, ref, contents any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockScanner)(nil).GetVulnerabilities), ctx, ref, contents)
+}
+
 // IndexAndScanImage mocks base method.
 func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
