@@ -156,6 +156,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		Components:     scannerResp.GetComponents(),
 		V4Contents:     scannerResp.GetContents(),
 		Notes:          scannerResp.GetNotes(),
+		IndexerVersion: scannerResp.GetIndexerVersion(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
 		Error:          errorList.String(),

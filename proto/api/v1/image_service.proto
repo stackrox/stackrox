@@ -74,6 +74,7 @@ message EnrichLocalImageInternalRequest {
     string                      request_id       = 9;
     bool                        force            = 10;
     scanner.v4.Contents         v4_contents      = 11;
+    string                      indexer_version  = 12;
 }
 
 message UpdateLocalScanStatusInternalRequest {
