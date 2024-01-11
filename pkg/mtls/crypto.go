@@ -51,7 +51,7 @@ const (
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
 
 	// To account for clock skew, set certificates to be valid some time in the past.
-	beforeGracePeriod = 1 * time.Hour
+	beforeGracePeriod = 1 * time.Minute
 
 	certLifetime = 30 * time.Minute
 
