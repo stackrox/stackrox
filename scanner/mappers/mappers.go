@@ -481,8 +481,6 @@ func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN)
 // urlencoded string or expected to be extracted from Range.Upper.
 func fixedInVersion(v *claircore.Vulnerability) string {
 	fixedIn := v.FixedInVersion
-	// Instead of matching the updater name, we simply attempt to retrieve from the
-	// severity.
 	if fixedIn == "" && v.Range != nil {
 		// If fixed in is empty but range is provided, use that.
 		fixedIn = v.Range.Upper.String()
