@@ -4,6 +4,9 @@
 # Lines starting with a `#` as well as blank lines are ignored, but a `#` in the middle of a line is matched as-is.
 # If you want to match on a pattern starting with `#`, write `\#`.
 
+# DO NOTR MERGE: force one of the compat tests to fail
+Running StackRox Version.*4\.3\.2
+
 unexpected(?! EOF)
 panic
 fatal
