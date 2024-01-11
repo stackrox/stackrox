@@ -49,6 +49,9 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
           deploy_stackrox_with_custom_central_and_sensor_versions: \
           deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
+    local central_version="$1"
+    local sensor_version="$2"
+
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
 
