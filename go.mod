@@ -87,7 +87,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.45.0
-	github.com/quay/claircore v1.5.21-0.20240101031448-07ae3f012feb
+	github.com/quay/claircore v1.5.21-0.20240111045502-7247afed01d0
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.8
@@ -120,8 +120,8 @@ require (
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 	golang.org/x/net v0.19.0
 	golang.org/x/oauth2 v0.15.0
-	golang.org/x/sync v0.5.0
-	golang.org/x/sys v0.15.0
+	golang.org/x/sync v0.6.0
+	golang.org/x/sys v0.16.0
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.16.1
