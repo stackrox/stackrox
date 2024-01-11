@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -581,6 +582,13 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				})
 			}
 			errorList.AddError(err)
+
+			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
+				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
+				// Per sorting logic in pkg/scanners this would result in the Clairify scanners being skipping.
+				log.Debugf("Scanner V4 encountered an error scanning image %q, skipping remaining scanners", image.GetName().GetFullName())
+				break
+			}
 			continue
 		}
 		if result != ScanNotDone {
