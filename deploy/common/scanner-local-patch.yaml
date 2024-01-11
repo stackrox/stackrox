@@ -6,8 +6,8 @@ spec:
       - name: scanner
         resources:
           requests:
+            cpu: "250m"
             memory: "500Mi"
-            cpu: "500m"
           limits:
+            cpu: null
             memory: "2500Mi"
-            cpu: "2000m"

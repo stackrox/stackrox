@@ -85,7 +85,7 @@ function verify_orch {
 }
 
 function local_dev {
-      is_local_dev="false"
+      is_local_dev="${LOCAL_DEPLOYMENT}"
       if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
         is_local_dev="true"
       fi
@@ -408,12 +408,12 @@ function launch_central {
       echo
 
       if [[ "${is_local_dev}" == "true" ]]; then
-          kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          fi
+        ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-local-patch.yaml")"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
+        fi
       elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
+        ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
