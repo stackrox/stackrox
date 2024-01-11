@@ -226,3 +226,7 @@ updates:
     commit-message:
       include: scope
       prefix: chore
+    groups:
+      actions:
+        patterns:
+          - "actions/*"
