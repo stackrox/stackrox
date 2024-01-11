@@ -12,7 +12,6 @@ import { selectors as workloadCVESelectors } from '../workloadCves/WorkloadCves.
 import { selectors } from './ExceptionManagement.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { visit } from '../../../helpers/visit';
-import { getClipboardText } from './ExceptionManagement.helpers';
 
 const deferralComment = 'Defer me';
 const deferralExpiry = 'When all CVEs are fixable';
