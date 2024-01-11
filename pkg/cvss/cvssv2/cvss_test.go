@@ -1,10 +1,13 @@
 package cvssv2
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseCVSSV2(t *testing.T) {
@@ -47,4 +50,30 @@ func TestParseCVSSV2(t *testing.T) {
 			assert.Error(t, err)
 		})
 	}
+}
+
+func Test_CalculateScores(t *testing.T) {
+	f, err := os.Open("testdata/cvss.v2.samples")
+	require.NoError(t, err)
+	defer func() {
+		_ = f.Close()
+	}()
+	s := bufio.NewScanner(f)
+	var bS, eS, iS float32
+	var vec string
+	for n := 1; s.Scan(); n++ {
+		l := s.Text()
+		_, err = fmt.Sscanf(l, "%f %f %f %s\n", &bS, &eS, &iS, &vec)
+		require.NoError(t, err)
+		t.Run(fmt.Sprintf("#%d/%s", n, l), func(t *testing.T) {
+			cvssV2, err := ParseCVSSV2(vec)
+			assert.NoError(t, err)
+			err = CalculateScores(cvssV2)
+			assert.NoError(t, err)
+			assert.InEpsilon(t, bS, cvssV2.Score, 0.09)
+			assert.InEpsilon(t, eS, cvssV2.ExploitabilityScore, 0.09)
+			assert.InEpsilon(t, iS, cvssV2.ImpactScore, 0.09)
+		})
+	}
+	require.NoError(t, s.Err())
 }
