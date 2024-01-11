@@ -165,16 +165,15 @@ copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 ## Integration ##
 #################
 
-integration-d       := matcher/metadata/postgres
-# Did not use "integration" in case it collides with
-# the "integration" build tag used outside this directory.
-integration-go-tag  := scanner_integration
 integration-timeout := 20m
 
-.PHONY: integration-test
-integration-test: $(build-deps-t)
+db-integration-d := datastore/postgres
+db-integration-go-tag  := scanner_db_integration
+
+.PHONY: db-integration-test
+db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##
