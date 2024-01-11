@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -429,8 +430,6 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
 		}
-		// This is safe even if img is nil.
-		scanTime := existingImg.GetScan().GetScanTime()
 
 		// Check whether too much time has passed, if yes we have to do a signature verification update via the
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
@@ -444,8 +443,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				Add(reprocessInterval).After(timestamp.Now())
 		}
 
-		// If the scan exists and not too much time has passed, we don't need to update scans.
-		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+		forceScanUpdate = shouldUpdateExistingScan(imgExists, existingImg, request)
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
@@ -506,6 +504,36 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
+}
+
+// shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
+func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, request *v1.EnrichLocalImageInternalRequest) bool {
+	if !imgExists {
+		return true
+	}
+
+	scanTime := existingImg.GetScan().GetScanTime()
+	trueIfScanExpired := !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+
+	if !features.ScannerV4Enabled.Enabled() {
+		// No special handling needed if Scanner V4 is disabled.
+		return trueIfScanExpired
+	}
+
+	if scannerV4MatchRequest(request) {
+		// Request is for a Scanner V4 index, no special handling needed.
+		return trueIfScanExpired
+	}
+
+	if existingImg.GetScan().GetDataSource().GetId() != iiStore.DefaultScannerV4Integration.GetId() {
+		// Existing scan is NOT from Scanner V4, no special handling needed..
+		return trueIfScanExpired
+	}
+
+	// Do not update an existing Scanner V4 scan if the request is from the Clairify Scanner (even if it's expired).
+	// This avoids an edge case that could cause scan results to alternate between Scanner V4 and Clairify
+	// when the reprocessing interval has elapsed.
+	return false
 }
 
 // scannerV4MatchRequest will return true if the request is for matching vulnerabilities to
