@@ -497,7 +497,7 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 // returns a mapping of vulnerability IDs to CVSS Scores V3.
 func nvdScoresMap(enrichments map[string][]json.RawMessage) (map[string]nvdschema.CVSSV30, error) {
 	cvss := enrichments[cvss.Type]
-	if len(cvss) <= 0 {
+	if len(cvss) == 0 {
 		return nil, nil
 	}
 	// TODO(ROX-21264): ClairCore only supports CVSS v3.1, so we assume CVSSV30 --
