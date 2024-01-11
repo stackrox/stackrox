@@ -250,6 +250,11 @@ func (g *generic) AuditLoggingEnabled() bool {
 }
 
 func (g *generic) getPassword() (string, error) {
+	if g.GetGeneric().GetUsername() == "" && g.GetGeneric().GetPassword() == "" {
+		// Both username and password are empty for unauthenticated generic notifiers
+		return "", nil
+	}
+
 	if g.creds != "" {
 		return g.creds, nil
 	}

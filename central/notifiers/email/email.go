@@ -536,6 +536,10 @@ func (e *email) tlsConfig() *tls.Config {
 }
 
 func (e *email) getPassword() (string, error) {
+	if e.config.GetAllowUnauthenticatedSmtp() {
+		return "", nil
+	}
+
 	if e.creds != "" {
 		return e.creds, nil
 	}
