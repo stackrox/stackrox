@@ -513,7 +513,7 @@ func nvdScoresMap(enrichments map[string][]json.RawMessage) (map[string]nvdschem
 	}
 	ret := make(map[string]nvdschema.CVSSV30)
 	for id, l := range scores {
-		// There not criteria for selecting more than one enrichment record, assume the
+		// There is no criteria for selecting more than one enrichment record, assume the
 		// first is the right one.
 		ret[id] = l[0]
 	}
