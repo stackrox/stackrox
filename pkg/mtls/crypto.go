@@ -53,7 +53,7 @@ const (
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
 
-	certLifetime = 365 * 24 * time.Hour
+	certLifetime = 30 * time.Minute
 
 	ephemeralProfileWithExpirationInHours             = "ephemeralWithExpirationInHours"
 	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour // NB: keep in sync with operator's InitBundleReconcilePeriod
