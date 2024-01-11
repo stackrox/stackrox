@@ -585,7 +585,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 
 			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
 				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
-				// Per sorting logic in pkg/scanners this would result in the Clairify scanners being skipping.
+				// This would result in Clairify scanners being skipped per sorting logic in `GetAll` of
+				// `pkg/scanners/set_impl.go`.
 				log.Debugf("Scanner V4 encountered an error scanning image %q, skipping remaining scanners", image.GetName().GetFullName())
 				break
 			}

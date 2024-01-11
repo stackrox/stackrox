@@ -19,6 +19,10 @@ var (
 	// scannerSortPriority determines the order in which to sort scanners
 	// based on scanner type. Types not included will default to 0 and
 	// be sorted to the top.
+	//
+	// Changing this priority may affect image enrichment logic, refer to
+	// `enrichWithScan` in `pkg/images/enricher/enricher_impl.go` for more
+	// details.
 	scannerSortPriority = map[string]int{
 		types.Clair:     1,
 		types.ScannerV4: 2,
