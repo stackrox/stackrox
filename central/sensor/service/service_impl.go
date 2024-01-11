@@ -111,6 +111,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.ComplianceEnhancements.Enabled() {
 			capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
 		}
+		if features.ScannerV4Enabled.Enabled() {
+			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
+		}
 
 		preferences := s.manager.GetConnectionPreference(cluster.GetId())
 

@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
 
@@ -210,6 +211,10 @@ func (s *Sensor) Start() {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
 		customRoutes = append(customRoutes, *route)
+
+		// Listen to Central connectivity state changes so that scannerclient
+		// can be reset if central capabilities change.
+		s.AddNotifiable(scannerclient.ResetNotifiableSingleton())
 	}
 
 	// Create grpc server with custom routes
