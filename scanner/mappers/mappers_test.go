@@ -917,7 +917,7 @@ func Test_getVulnName(t *testing.T) {
 
 }
 
-func Test_toClairCoreDistribution(t *testing.T) {
+func Test_versionID(t *testing.T) {
 	tests := map[string]struct {
 		d         *claircore.Distribution
 		versionID string
