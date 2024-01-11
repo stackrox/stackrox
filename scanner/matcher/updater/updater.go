@@ -21,7 +21,7 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/matcher/metadata/postgres"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
 
 const (
@@ -32,9 +32,9 @@ const (
 
 	updateFilePattern = `updates-*.json.zst`
 
-	defaultUpdateInterval = 5*time.Minute
+	defaultUpdateInterval  = 5 * time.Minute
 	defaultUpdateRetention = libvuln.DefaultUpdateRetention
-	defaultFullGCInterval = 24*time.Hour
+	defaultFullGCInterval  = 24 * time.Hour
 )
 
 var (
@@ -52,7 +52,7 @@ type Opts struct {
 	Store         datastore.MatcherStore
 	Locker        *ctxlock.Locker
 	Pool          *pgxpool.Pool
-	MetadataStore postgres.MetadataStore
+	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client
 	URL            string
@@ -71,7 +71,7 @@ type Updater struct {
 	store         datastore.MatcherStore
 	locker        updates.LockSource
 	pool          *pgxpool.Pool
-	metadataStore postgres.MetadataStore
+	metadataStore postgres.MatcherMetadataStore
 
 	client         *http.Client
 	url            string

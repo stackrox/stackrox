@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/datastore/postgres"
+	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
-	metadatapostgres "github.com/stackrox/rox/scanner/matcher/metadata/postgres"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
 )
 
@@ -29,7 +29,7 @@ type Matcher interface {
 // matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
-	metadataStore metadatapostgres.MetadataStore
+	metadataStore postgres.MatcherMetadataStore
 
 	updater *updater.Updater
 }
@@ -37,15 +37,15 @@ type matcherImpl struct {
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
-	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
+	pool, err := ccpostgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
-	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
+	store, err := ccpostgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
-	metadataStore, err := metadatapostgres.InitPostgresMetadataStore(ctx, pool, true)
+	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
 	}

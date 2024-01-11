@@ -16,7 +16,7 @@ const lastVulnUpdateKey = `last-vuln-update`
 // GetLastVulnerabilityUpdate retrieves the last vulnerability update from the database.
 //
 // The returned time will be in the form of http.TimeFormat.
-func (m *metadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
+func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	const selectTimestamp = `SELECT timestamp FROM last_vuln_update WHERE key = $1`
 
 	var t string
@@ -38,7 +38,7 @@ func (m *metadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (time.Ti
 }
 
 // SetLastVulnerabilityUpdate sets the last vulnerability update timestamp.
-func (m *metadataStore) SetLastVulnerabilityUpdate(ctx context.Context, timestamp time.Time) error {
+func (m *matcherMetadataStore) SetLastVulnerabilityUpdate(ctx context.Context, timestamp time.Time) error {
 	const insertTimestamp = `INSERT INTO last_vuln_update(key, timestamp) VALUES($1, $2) ON CONFLICT (key) DO UPDATE SET timestamp = $2`
 
 	_, err := m.pool.Exec(ctx, insertTimestamp, lastVulnUpdateKey, timestamp.Format(http.TimeFormat))
