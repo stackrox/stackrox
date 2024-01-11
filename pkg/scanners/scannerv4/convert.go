@@ -187,18 +187,10 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
 	dists := report.GetContents().GetDistributions()
-	if len(dists) == 1 {
-		for _, dist := range dists {
-			version := dist.VersionId
-			// If the version ID is not populated, the fallback to the version.
-			// This is required for Alpine-based images at this time.
-			if version == "" {
-				version = dist.Version
-			}
-			//nolint:staticcheck SA4004 Need to fetch the one and only element in the map.
-			return dist.Did + ":" + version
-		}
+	if len(dists) != 1 {
+		return "unknown"
 	}
 
-	return "unknown"
+	dist := dists[0]
+	return dist.Did + ":" + dist.VersionId
 }

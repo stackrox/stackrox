@@ -101,7 +101,7 @@ func TestConvert(t *testing.T) {
 }
 
 func TestOS(t *testing.T) {
-	testcases := []struct{
+	testcases := []struct {
 		expected string
 		report   *v4.VulnerabilityReport
 	}{
@@ -154,7 +154,7 @@ func TestOS(t *testing.T) {
 					Distributions: []*v4.Distribution{
 						{
 							Did:       "alpine",
-							VersionId: "",
+							VersionId: "3.18",
 							Version:   "3.18",
 						},
 					},
@@ -168,7 +168,7 @@ func TestOS(t *testing.T) {
 					Distributions: []*v4.Distribution{
 						{
 							Did:       "alpine",
-							VersionId: "",
+							VersionId: "3.18",
 							Version:   "3.18",
 						},
 						{
