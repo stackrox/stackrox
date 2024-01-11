@@ -469,7 +469,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	if !hasErrors {
 		if forceScanUpdate {
-			if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
+			if err := s.enrichWithVulnerabilities(img, request); err != nil && imgExists {
 				// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 				// central, since it could lead to us overriding an enriched image with a non-enriched image.
 				s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -506,6 +506,24 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
+}
+
+// scannerV4MatchRequest will return true if the request is for matching vulnerabilities to
+// components produced by the Scanner V4 indexer, false otherwise.
+func scannerV4MatchRequest(request *v1.EnrichLocalImageInternalRequest) bool {
+	// If indexer version is NOT empty, then assume the components are from the
+	// Scanner V4 indexer.
+	return request.GetIndexerVersion() != ""
+}
+
+func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.EnrichLocalImageInternalRequest) error {
+	if !scannerV4MatchRequest(request) {
+		_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+		return err
+	}
+
+	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), request.GetNotes())
+	return err
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.

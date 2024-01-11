@@ -70,7 +70,7 @@ type enricherImpl struct {
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
-func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
+func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components any, notes []scannerV1.Note) (EnrichmentResult, error) {
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
@@ -81,9 +81,8 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	for _, imageScanner := range scanners.GetAll() {
 		scanner := imageScanner.GetScanner()
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
-			// Clairify is the only supported ImageVulnerabilityGetter at this time.
-			if scanner.Type() != scannerTypes.Clairify {
-				log.Errorf("unexpected image vulnerability getter: %s [%s]", scanner.Name(), scanner.Type())
+			if !vulnScanner.CanHandle(components) {
+				log.Debugf("Scanner %q cannot handle components of type %T, skipping this scanner for image: %q", scanner.Name(), components, image.GetName().GetFullName())
 				continue
 			}
 
@@ -107,7 +106,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 }
 
 func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
-	image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (ScanResult, error) {
+	image *storage.Image, components any, notes []scannerV1.Note) (ScanResult, error) {
 	scanStartTime := time.Now()
 	scan, err := scanner.GetVulnerabilities(image, components, notes)
 	e.metrics.SetImageVulnerabilityRetrievalTime(scanStartTime, scannerName, err)
