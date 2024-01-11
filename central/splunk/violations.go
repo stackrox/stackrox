@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -106,14 +108,6 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 	if err != nil {
 		return nil, err
 	}
-	fromTimestamp, err := types.TimestampProto(checkpoint.fromTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	toTimestamp, err := types.TimestampProto(checkpoint.toTimestamp)
-	if err != nil {
-		return nil, err
-	}
 
 	response := integrations.SplunkViolationsResponse{}
 
@@ -126,7 +120,7 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 		lastAlertID := ""
 
 		for _, alert := range alerts {
-			violations, err := extractViolations(alert, fromTimestamp, toTimestamp)
+			violations, err := extractViolations(alert, checkpoint.fromTimestamp, checkpoint.toTimestamp)
 			if err != nil {
 				return nil, err
 			}
@@ -203,7 +197,7 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint sp
 	return alertDS.SearchRawAlerts(ctx, pq)
 }
 
-func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {
+func extractViolations(alert *storage.Alert, fromTimestamp time.Time, toTimestamp time.Time) ([]*integrations.SplunkViolation, error) {
 	var result []*integrations.SplunkViolation
 	seenViolations := false
 
@@ -305,12 +299,12 @@ func generateViolationID(alertID string, v *storage.Alert_Violation) (string, er
 	return uuid.NewV5(alertUUID, hex.Dump(data)).String(), nil
 }
 
-func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *types.Timestamp {
-	timestamp := fromProcIndicator.GetSignal().GetTime()
-	if timestamp == nil {
+func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) time.Time {
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(fromProcIndicator.GetSignal().GetTime())
+	if err != nil || timestamp.IsZero() {
 		// As a fallback when process violation does not have own time on the record take Alert's last seen time to
 		// provide at least some value.
-		timestamp = fromAlert.GetTime()
+		timestamp, _ = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
 	}
 	return timestamp
 }
@@ -323,11 +317,12 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	// and so on. Here's another example
 	//   Binaries '/usr/bin/apt' and '/usr/bin/dpkg' executed with 5 different arguments under 2 different user IDs
 	// We still map it as best effort.
+	violationTime := getProcessViolationTime(fromAlert, fromProcIndicator)
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:        fromProcIndicator.GetId(),
 		ViolationMessage:   fromProcViolation.GetMessage(),
 		ViolationType:      integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
-		ViolationTime:      getProcessViolationTime(fromAlert, fromProcIndicator),
+		ViolationTime:      protoconv.ConvertTimeToTimestamp(violationTime),
 		PodId:              fromProcIndicator.GetPodId(),
 		PodUid:             fromProcIndicator.GetPodUid(),
 		ContainerName:      fromProcIndicator.GetContainerName(),
@@ -336,11 +331,11 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	}
 }
 
-func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *types.Timestamp {
-	timestamp := fromViolation.GetTime()
-	if timestamp == nil {
+func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) time.Time {
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(fromViolation.GetTime())
+	if err != nil || timestamp.IsZero() {
 		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.
-		timestamp = fromAlert.GetTime()
+		timestamp, _ = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
 	}
 	return timestamp
 }
@@ -373,12 +368,13 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
 	}
 
+	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:                id,
 		ViolationMessage:           fromViolation.GetMessage(),
 		ViolationMessageAttributes: msgAttrs,
 		ViolationType:              typ,
-		ViolationTime:              getNonProcessViolationTime(fromAlert, fromViolation),
+		ViolationTime:              protoconv.ConvertTimeToTimestamp(violationTime),
 		PodId:                      podID,
 		ContainerName:              containerName,
 	}, nil
@@ -462,21 +458,20 @@ func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integra
 }
 
 func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkViolation_ViolationInfo) *integrations.SplunkViolation_AlertInfo {
-	var firstOccurred *types.Timestamp
+	alertInfo := &integrations.SplunkViolation_AlertInfo{
+		AlertId:        from.GetId(),
+		LifecycleStage: from.GetLifecycleStage(),
+	}
 	if violationInfo.GetViolationType() == integrations.SplunkViolation_ViolationInfo_GENERIC {
 		// Generic violations don't have own timestamp and so we assign Alert's last seen time to violation time.
 		// That is not accurate and therefore here we add Alert's first seen time as an additional information element.
-		firstOccurred = from.GetFirstOccurred()
+		alertInfo.AlertFirstOccurred = from.GetFirstOccurred()
 		// We're NOT doing the same for other violation types because the user can get confused thinking that Alert's
 		// first occurred time applies to the _specific_ violation. I.e. external users don't necessarily know
 		// relationship between Alerts anv Violations is 1:n in StackRox.
 	}
 
-	return &integrations.SplunkViolation_AlertInfo{
-		AlertId:            from.GetId(),
-		LifecycleStage:     from.GetLifecycleStage(),
-		AlertFirstOccurred: firstOccurred,
-	}
+	return alertInfo
 	// from.State and from.SnoozeTill are ignored because they might change over time.
 }
 

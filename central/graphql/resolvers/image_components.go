@@ -398,8 +398,8 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 	}
 
 	// Short path. Full image is embedded when image scan resolver is called.
-	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); scanTime != nil {
-		return timestamp(scanTime)
+	if scanTime := embeddedobjs.LastScannedFromContext(resolver.ctx); !scanTime.IsZero() {
+		return &graphql.Time{Time: scanTime}, nil
 	}
 
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)

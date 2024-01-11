@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
@@ -18,9 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -255,8 +255,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 
 func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
-	createdTime := timestamp.Now().GogoProtobuf()
-	lastUpdatedTime := timestamp.Now().GogoProtobuf()
+	createdTime := time.Now().Truncate(time.Microsecond)
+	lastUpdatedTime := time.Now().Truncate(time.Microsecond)
 
 	testCases := []struct {
 		desc      string
@@ -307,8 +307,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						},
 						StrictNodeScan:  false,
 						Schedule:        defaultStorageSchedule,
-						CreatedTime:     createdTime,
-						LastUpdatedTime: lastUpdatedTime,
+						CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
+						LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 					},
@@ -403,8 +403,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurat
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
-	createdTime := timestamp.Now().GogoProtobuf()
-	lastUpdatedTime := timestamp.Now().GogoProtobuf()
+	createdTime := time.Now().Truncate(time.Microsecond)
+	lastUpdatedTime := time.Now().Truncate(time.Microsecond)
 
 	testCases := []struct {
 		desc         string
@@ -446,8 +446,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						},
 						StrictNodeScan:  false,
 						Schedule:        defaultStorageSchedule,
-						CreatedTime:     createdTime,
-						LastUpdatedTime: lastUpdatedTime,
+						CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
+						LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 						ModifiedBy:      storageRequester,
 						Description:     "test-description",
 					}, true, nil).Times(1)
@@ -534,7 +534,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfiguratio
 	s.Require().Error(err)
 }
 
-func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.ComplianceScanConfigurationStatus {
+func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.ComplianceScanConfigurationStatus {
 	return &apiV2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
 		ScanName: "test-scan",
@@ -556,8 +556,8 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.C
 				},
 			},
 		},
-		CreatedTime:     createdTime,
-		LastUpdatedTime: lastUpdatedTime,
+		CreatedTime:     protoconv.ConvertTimeToTimestamp(createdTime),
+		LastUpdatedTime: protoconv.ConvertTimeToTimestamp(lastUpdatedTime),
 		ModifiedBy:      apiRequester,
 	}
 }

@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -101,27 +101,13 @@ func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTi
 	configID3, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig3)
 	s.NoError(err)
 
-	// time1 is the most recent, time6 is the least recent
-	time1, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
-	s.NoError(err)
-	time2, err := types.TimestampProto(time.Now().Add(-2 * time.Hour))
-	s.NoError(err)
-	time3, err := types.TimestampProto(time.Now().Add(-3 * time.Hour))
-	s.NoError(err)
-	time4, err := types.TimestampProto(time.Now().Add(-4 * time.Hour))
-	s.NoError(err)
-	time5, err := types.TimestampProto(time.Now().Add(-5 * time.Hour))
-	s.NoError(err)
-	time6, err := types.TimestampProto(time.Now().Add(-6 * time.Hour))
-	s.NoError(err)
-
 	reportSnapshots := []*storage.ReportSnapshot{
-		generateReportSnapshot(configID3, time1),
-		generateReportSnapshot(configID2, time2),
-		generateReportSnapshot(configID2, time3),
-		generateReportSnapshot(configID1, time4),
-		generateReportSnapshot(configID3, time5),
-		generateReportSnapshot(configID1, time6),
+		generateReportSnapshot(configID3, time.Now().Add(-1*time.Hour)),
+		generateReportSnapshot(configID2, time.Now().Add(-2*time.Hour)),
+		generateReportSnapshot(configID2, time.Now().Add(-3*time.Hour)),
+		generateReportSnapshot(configID1, time.Now().Add(-4*time.Hour)),
+		generateReportSnapshot(configID3, time.Now().Add(-5*time.Hour)),
+		generateReportSnapshot(configID1, time.Now().Add(-6*time.Hour)),
 	}
 
 	for _, snap := range reportSnapshots {
@@ -173,9 +159,9 @@ func (s *ReportConfigurationDatastoreV2Tests) storeNotifier(name string) *storag
 	return &storage.NotifierConfiguration_Id{Id: id}
 }
 
-func generateReportSnapshot(configID string, completionTime *types.Timestamp) *storage.ReportSnapshot {
+func generateReportSnapshot(configID string, completionTime time.Time) *storage.ReportSnapshot {
 	metadata := fixtures.GetReportSnapshot()
-	metadata.ReportStatus.CompletedAt = completionTime
+	metadata.ReportStatus.CompletedAt = protoconv.ConvertTimeToTimestamp(completionTime)
 	metadata.ReportConfigurationId = configID
 
 	return metadata

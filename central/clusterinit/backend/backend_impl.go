@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -61,16 +63,12 @@ func extractUserIdentity(ctx context.Context) *storage.User {
 	}
 }
 
-func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error) {
+func extractExpiryDate(certBundle clusters.CertBundle) (time.Time, error) {
 	sensorCert := certBundle[storage.ServiceType_SENSOR_SERVICE]
 	if sensorCert == nil {
-		return nil, errors.New("no sensor certificate in init bundle")
+		return time.Time{}, errors.New("no sensor certificate in init bundle")
 	}
-	timestamp, err := types.TimestampProto(sensorCert.X509Cert.NotAfter)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting expiry date to timestamp")
-	}
-	return timestamp, nil
+	return sensorCert.X509Cert.NotAfter, nil
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
@@ -98,12 +96,17 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		return nil, errors.Wrap(err, "extracting expiry date of certificate bundle")
 	}
 
+	expiresAt, err := protocompat.ConvertTimeToTimestampOrError(expiryDate)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting expiry date of certificate bundle")
+	}
+
 	meta := &storage.InitBundleMeta{
 		Id:        id.String(),
 		Name:      name,
 		CreatedAt: types.TimestampNow(),
 		CreatedBy: user,
-		ExpiresAt: expiryDate,
+		ExpiresAt: expiresAt,
 	}
 
 	if err := b.store.Add(ctx, meta); err != nil {

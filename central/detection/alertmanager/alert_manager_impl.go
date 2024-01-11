@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -167,11 +168,11 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 }
 
 // It is the caller's responsibility to not call this with an empty slice.
-func lastTimestamp(processes []*storage.ProcessIndicator) (*ptypes.Timestamp, error) {
+func lastTimestamp(processes []*storage.ProcessIndicator) (time.Time, error) {
 	if len(processes) == 0 {
-		return nil, errors.New("Unexpected: no processes found in the alert")
+		return time.Time{}, errors.New("Unexpected: no processes found in the alert")
 	}
-	return processes[len(processes)-1].GetSignal().GetTime(), nil
+	return protocompat.ConvertTimestampToTimeOrError(processes[len(processes)-1].GetSignal().GetTime())
 }
 
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
@@ -206,7 +207,11 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	}
 
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
-		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
+		processTime, err := protocompat.ConvertTimestampToTimeOrError(process.GetSignal().GetTime())
+		if err != nil {
+			continue
+		}
+		if processTime.After(timestamp) {
 			newAlertHasNewProcesses = true
 			newProcessesSlice = append(newProcessesSlice, process)
 		}

@@ -1,10 +1,13 @@
 package common
 
 import (
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 var (
@@ -12,12 +15,13 @@ var (
 )
 
 // SuppressCVEReqToVulnReq builds a `storage.VulnerabilityRequest` (added in v2 CVE deferral workflow) from `v1.SuppressCVERequest` (legacy CVE deferral workflow).
-func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Timestamp) *storage.VulnerabilityRequest {
+func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt time.Time) *storage.VulnerabilityRequest {
 	d, err := types.DurationFromProto(request.GetDuration())
 	if err != nil {
 		log.Errorf("could not create vulnerability request for CVE(s) %v", request.GetCves())
 		return nil
 	}
+	expiresOn := createdAt.Add(d).Truncate(time.Second)
 
 	return &storage.VulnerabilityRequest{
 		Expired:     false,
@@ -37,7 +41,7 @@ func SuppressCVEReqToVulnReq(request *v1.SuppressCVERequest, createdAt *types.Ti
 			DeferralReq: &storage.DeferralRequest{
 				Expiry: &storage.RequestExpiry{
 					Expiry: &storage.RequestExpiry_ExpiresOn{
-						ExpiresOn: &types.Timestamp{Seconds: createdAt.GetSeconds() + int64(d.Seconds())},
+						ExpiresOn: protoconv.ConvertTimeToTimestamp(expiresOn),
 					},
 				},
 			},

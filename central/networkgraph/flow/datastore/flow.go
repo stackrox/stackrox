@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -13,8 +12,8 @@ import (
 //
 //go:generate mockgen-wrapper
 type FlowDataStore interface {
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
+	GetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error)
 

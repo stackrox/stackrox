@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -429,7 +430,12 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		}
 	}
 
-	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, request.GetSince())
+	since, err := protocompat.ConvertTimestampToTimeOrError(request.GetSince())
+	if err != nil {
+		return err
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
 	if err != nil {
 		return err
 	}

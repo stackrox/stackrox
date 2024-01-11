@@ -3,9 +3,9 @@ package processbaseline
 import (
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,18 +25,26 @@ const (
 )
 
 // locked checks whether a timestamp represents a locked process baseline true = locked, false = unlocked
-func locked(lockTime *types.Timestamp) bool {
-	return lockTime != nil && types.TimestampNow().Compare(lockTime) >= 0
+func locked(lockTime time.Time) bool {
+	return !lockTime.IsZero() && time.Now().Compare(lockTime) >= 0
 }
 
 // IsRoxLocked checks whether a process baseline is StackRox locked.
 func IsRoxLocked(baseline *storage.ProcessBaseline) bool {
-	return locked(baseline.GetStackRoxLockedTimestamp())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetStackRoxLockedTimestamp())
+	if err != nil {
+		return false
+	}
+	return locked(timestamp)
 }
 
 // IsUserLocked checks whether a process baseline is user locked.
 func IsUserLocked(baseline *storage.ProcessBaseline) bool {
-	return locked(baseline.GetUserLockedTimestamp())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetUserLockedTimestamp())
+	if err != nil {
+		return false
+	}
+	return locked(timestamp)
 }
 
 // LockedUnderMode checks whether a process baseline is locked under the given evaluation mode.

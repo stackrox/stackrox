@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -92,25 +94,21 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error) {
+func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (time.Time, error) {
 	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, tlsConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
+		return time.Time{}, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
 	}
 	defer utils.IgnoreError(conn.Close)
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, errors.Errorf("%q at %s returned no peer certs", subject.Identifier, endpoint)
+		return time.Time{}, errors.Errorf("%q at %s returned no peer certs", subject.Identifier, endpoint)
 	}
 	leafCert := certs[0]
 	if cn := leafCert.Subject.CommonName; cn != subject.CN() {
-		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", subject.Identifier, endpoint, cn)
+		return time.Time{}, errors.Errorf("common name of %q at %s (%s) is not as expected", subject.Identifier, endpoint, cn)
 	}
-	expiry, err := types.TimestampProto(leafCert.NotAfter)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting timestamp")
-	}
-	return expiry, nil
+	return leafCert.NotAfter, nil
 }
 
 func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
@@ -133,7 +131,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
 	}
 	errC := make(chan error, len(clairifyEndpoints))
-	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))
+	expiryC := make(chan time.Time, len(clairifyEndpoints))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -165,7 +163,13 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 				return nil, errorList.ToError()
 			}
 		case expiry := <-expiryC:
-			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+			protoExpiry, err := protocompat.ConvertTimeToTimestampOrError(expiry)
+			if err != nil {
+				return nil, errors.Wrap(err, "converting timestamp")
+			}
+			return &v1.GetCertExpiry_Response{
+				Expiry: protoExpiry,
+			}, nil
 		}
 	}
 }

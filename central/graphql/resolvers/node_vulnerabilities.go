@@ -331,8 +331,8 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 	}
 
 	// Short path. Full node is embedded when node scan resolver is called.
-	if scanTime := embeddedobjs.NodeComponentLastScannedFromContext(resolver.ctx); scanTime != nil {
-		return timestamp(scanTime)
+	if scanTime := embeddedobjs.NodeComponentLastScannedFromContext(resolver.ctx); !scanTime.IsZero() {
+		return &graphql.Time{Time: scanTime}, nil
 	}
 
 	nodeLoader, err := loaders.GetNodeLoader(resolver.ctx)

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -140,8 +141,13 @@ func (s *syslog) auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Not
 	// There will be 8+len(extra fields) different key/value pairs in this message.
 	extensionList := make([]string, 0, 8+len(notifier.GetSyslog().GetExtraFields()))
 
+	auditTime, err := protocompat.ConvertTimestampToTimeOrError(auditLog.GetTime())
+	if err != nil {
+		return ""
+	}
+
 	// deviceReciptTime is allowed to be ms since epoch, seems easier than converting it to a time string
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLog.GetTime())...)
+	extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, auditTime)...)
 	extensionList = append(extensionList, makeExtensionPair(sourceUserPrivileges, joinRoleNames(auditLog.GetUser().GetRoles())))
 	extensionList = append(extensionList, makeExtensionPair(sourceUserName, auditLog.GetUser().GetUsername()))
 	extensionList = append(extensionList, makeExtensionPair(requestURL, auditLog.GetRequest().GetEndpoint()))
@@ -172,11 +178,20 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 	// There will be  (4 or 5)+(2 namespace)+len(extra fields) different key/value pairs in this message.
 	extensionList := make([]string, 0, 5+2+len(s.Notifier.GetSyslog().GetExtraFields()))
 
+	alertFirstOccurred, err := protocompat.ConvertTimestampToTimeOrError(alert.GetFirstOccurred())
+	if err != nil {
+		return ""
+	}
+	alertTime, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+	if err != nil {
+		return ""
+	}
+
 	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
-	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alert.GetFirstOccurred())...)
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, alert.GetTime())...)
+	extensionList = append(extensionList, makeTimeExtensionPair(startTime, alertFirstOccurred)...)
+	extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, alertTime)...)
 	if alert.GetState() == storage.ViolationState_RESOLVED {
-		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
+		extensionList = append(extensionList, makeTimeExtensionPair(endTime, alertTime)...)
 	}
 
 	if features.SyslogNamespaceLabels.Enabled() {
@@ -245,13 +260,13 @@ func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	return makeExtensionPair(key, string(value))
 }
 
-func makeTimestampExtensionPair(key string, timestamp *types.Timestamp) []string {
+func makeTimeExtensionPair(key string, timestamp time.Time) []string {
 	// string(seconds) + string(milliseconds) should result in the string representation of a millisecond timestamp
-	if timestamp == nil {
+	if timestamp.IsZero() {
 		return nil
 	}
-	msts := strconv.Itoa(int((timestamp.Seconds)*1000 + int64(timestamp.Nanos/1000000)))
-	return []string{makeExtensionPair(key, msts)}
+	millisecondtimestamp := strconv.Itoa(timestamp.Second()*1000 + (timestamp.Nanosecond()/1000000)%1000)
+	return []string{makeExtensionPair(key, millisecondtimestamp)}
 }
 
 func makeExtensionFromPairs(pairs []string) string {

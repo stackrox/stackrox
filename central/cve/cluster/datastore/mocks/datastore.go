@@ -12,8 +12,8 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
-	types "github.com/gogo/protobuf/types"
 	converter "github.com/stackrox/rox/central/cve/converter/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -165,7 +165,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q any) *gomock.Call {
 }
 
 // Suppress mocks base method.
-func (m *MockDataStore) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error {
+func (m *MockDataStore) Suppress(ctx context.Context, start time.Time, duration time.Duration, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, start, duration}
 	for _, a := range cves {

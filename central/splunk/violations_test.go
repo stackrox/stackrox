@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil/mock"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,9 @@ var (
 	// storage.Severity_HIGH_SEVERITY) instead of integer values (e.g. 3) and made timestamps look human-friendly by
 	// means of makeTimestamp() calls.
 
-	deployAlert = storage.Alert{
+	deployAlertTime          = mustParseTime("2021-02-01T16:09:02.193352817Z")
+	deployAlertFirstOccurred = mustParseTime("2021-02-01T16:09:02.128791072Z")
+	deployAlert              = storage.Alert{
 		Id: "f56ffae8-adf9-4983-8e56-e260f1ab3dc9",
 		Policy: &storage.Policy{
 			Id:          "2db9a279-2aec-4618-a85d-7f1bdf4911b1",
@@ -140,11 +143,17 @@ var (
 		}, {
 			Message: "Container 'telegraf-proxy' has image created at 2020-09-28 17:03:00 (UTC)",
 		}},
-		Time:          makeTimestamp("2021-02-01T16:09:02.193352817Z"),
-		FirstOccurred: makeTimestamp("2021-02-01T16:09:02.128791072Z"),
+		Time:          protoconv.MustConvertTimeToTimestamp(deployAlertTime),
+		FirstOccurred: protoconv.MustConvertTimeToTimestamp(deployAlertFirstOccurred),
 	}
 
-	processAlert = storage.Alert{
+	processAlertTime                    = mustParseTime("2021-02-01T17:18:49.439085673Z")
+	processAlertFirstOccurred           = mustParseTime("2021-02-01T17:15:56.474524288Z")
+	processAlertViolation1ProcessTime   = mustParseTime("2021-02-01T17:18:49.421852357Z")
+	processAlertViolation1ContainerTime = mustParseTime("2021-02-01T16:17:32Z")
+	processAlertViolation2ProcessTime   = mustParseTime("2021-02-01T17:15:56.457252Z")
+	processAlertViolation2ContainerTime = mustParseTime("2021-02-01T16:17:32Z")
+	processAlert                        = storage.Alert{
 		Id: "f2d0efaa-2c54-402c-aeed-5b88ed5ccb8a",
 		Policy: &storage.Policy{
 			Id:          "f0bacecd-87be-4f51-89a5-8f86ad523620",
@@ -211,7 +220,7 @@ var (
 				Signal: &storage.ProcessSignal{
 					Id:           "2569b112-64b1-11eb-9541-f65aedf20953",
 					ContainerId:  "111bf6d5e461",
-					Time:         makeTimestamp("2021-02-01T17:18:49.421852357Z"),
+					Time:         protoconv.MustConvertTimeToTimestamp(processAlertViolation1ProcessTime),
 					Name:         "nmap",
 					Args:         "-v -A localhost",
 					ExecFilePath: "/usr/bin/nmap",
@@ -221,7 +230,7 @@ var (
 					}},
 				},
 				Namespace:          "stackrox",
-				ContainerStartTime: makeTimestamp("2021-02-01T16:17:32Z"),
+				ContainerStartTime: protoconv.MustConvertTimeToTimestamp(processAlertViolation1ContainerTime),
 			}, {
 				Id:            "cfc994d5-11bd-4471-a82e-b1735ad94e06",
 				DeploymentId:  "0f709d63-f2cc-4825-a984-b9cfd25b02cd",
@@ -231,7 +240,7 @@ var (
 				Signal: &storage.ProcessSignal{
 					Id:           "8c84d098-64b1-11eb-9541-f65aedf20953",
 					ContainerId:  "111bf6d5e461",
-					Time:         makeTimestamp("2021-02-01T17:15:56.457252Z"),
+					Time:         protoconv.MustConvertTimeToTimestamp(processAlertViolation2ProcessTime),
 					Name:         "nmap",
 					Args:         "-v -A localhost",
 					ExecFilePath: "/usr/bin/nmap",
@@ -241,14 +250,19 @@ var (
 					}},
 				},
 				Namespace:          "stackrox",
-				ContainerStartTime: makeTimestamp("2021-02-01T16:17:32Z"),
+				ContainerStartTime: protoconv.MustConvertTimeToTimestamp(processAlertViolation2ContainerTime),
 			}},
 		},
-		Time:          makeTimestamp("2021-02-01T17:18:49.439085673Z"),
-		FirstOccurred: makeTimestamp("2021-02-01T17:15:56.474524288Z"),
+		Time:          protoconv.MustConvertTimeToTimestamp(processAlertTime),
+		FirstOccurred: protoconv.MustConvertTimeToTimestamp(processAlertFirstOccurred),
 	}
 
-	k8sAlert = storage.Alert{
+	k8sAlertTime           = mustParseTime("2021-02-15T19:04:36.843516328Z")
+	k8sAlertFirstOccurred  = mustParseTime("2021-02-15T19:04:36.662294945Z")
+	k8sAlertViolation1Time = mustParseTime("2021-02-15T19:04:36.843302212Z")
+	k8sAlertViolation2Time = mustParseTime("2021-02-15T19:04:36.659410153Z")
+	k8sAlertViolation3Time = mustParseTime("2021-02-15T19:04:36.712345678Z")
+	k8sAlert               = storage.Alert{
 		Id: "90e0feed-662c-4593-b414-e55d1eaff017",
 		Policy: &storage.Policy{
 			Id:          "8ab0f199-4904-4808-9461-3501da1d1b77",
@@ -332,7 +346,7 @@ var (
 				},
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
-			Time: makeTimestamp("2021-02-15T19:04:36.843302212Z"),
+			Time: protoconv.MustConvertTimeToTimestamp(k8sAlertViolation1Time),
 		}, {
 			Message: "Kubernetes API received exec '/bin/sh -c [ -e /proc/sys/kernel/yama/ptrace_scope ] && cat /proc/sys/kernel/yama/ptrace_scope || echo 0' request into pod 'central-6c8f4d4d8d-9hxpt' container 'central'",
 			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
@@ -350,7 +364,7 @@ var (
 				},
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
-			Time: makeTimestamp("2021-02-15T19:04:36.659410153Z"),
+			Time: protoconv.MustConvertTimeToTimestamp(k8sAlertViolation2Time),
 		}, {
 			// Port forward violation is triggered by a different policy and will be in a separate Alert, but for the
 			// sake of these tests it is sufficient to keep it also here.
@@ -364,13 +378,17 @@ var (
 				},
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
-			Time: makeTimestamp("2021-02-15T19:04:36.712345678Z"),
+			Time: protoconv.MustConvertTimeToTimestamp(k8sAlertViolation3Time),
 		}},
-		Time:          makeTimestamp("2021-02-15T19:04:36.843516328Z"),
-		FirstOccurred: makeTimestamp("2021-02-15T19:04:36.662294945Z"),
+		Time:          protoconv.MustConvertTimeToTimestamp(k8sAlertTime),
+		FirstOccurred: protoconv.MustConvertTimeToTimestamp(k8sAlertFirstOccurred),
 	}
 
-	networkAlert = storage.Alert{
+	networkAlertTime           = mustParseTime("2021-03-21T21:50:46.741586331Z")
+	networkAlertFirstOccurred  = mustParseTime("2021-03-21T21:50:46.210811055Z")
+	networkAlertViolation1Time = mustParseTime("2021-03-21T21:50:46.600080752Z")
+	networkAlertViolation2Time = mustParseTime("2021-03-21T21:50:46.741573591Z")
+	networkAlert               = storage.Alert{
 		Id: "86a55daa-de0d-4649-a7a9-ad71eeebfb6a",
 		Policy: &storage.Policy{
 			Id:          "1b74ffdd-8e67-444c-9814-1c23863c8ccb",
@@ -457,7 +475,7 @@ var (
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-21T21:50:46.600080752Z"),
+				Time: protoconv.MustConvertTimeToTimestamp(networkAlertViolation1Time),
 			},
 			{
 				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
@@ -480,14 +498,18 @@ var (
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-21T21:50:46.741573591Z"),
+				Time: protoconv.MustConvertTimeToTimestamp(networkAlertViolation2Time),
 			},
 		},
-		Time:          makeTimestamp("2021-03-21T21:50:46.741586331Z"),
-		FirstOccurred: makeTimestamp("2021-03-21T21:50:46.210811055Z"),
+		Time:          protoconv.MustConvertTimeToTimestamp(networkAlertTime),
+		FirstOccurred: protoconv.MustConvertTimeToTimestamp(networkAlertFirstOccurred),
 	}
 
-	resourceAlert = storage.Alert{
+	resourceAlertTime           = mustParseTime("2021-07-15T17:36:35.115310605Z")
+	resourceAlertFirstOccurred  = mustParseTime("2021-07-15T17:26:35.115310605Z")
+	resourceAlertViolation1Time = mustParseTime("2021-07-15T17:26:35.115310605Z")
+	resourceAlertViolation2Time = mustParseTime("2021-07-15T17:36:35.115310605Z")
+	resourceAlert               = storage.Alert{
 		Id: "9f3cb534-5374-44f2-b661-83a8eec8dbdb",
 		Policy: &storage.Policy{
 			Id:          "18cbcb62-7d18-4a6c-b2ca-dd1242746943",
@@ -578,7 +600,7 @@ var (
 				},
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
-			Time: makeTimestamp("2021-07-15T17:26:35.115310605Z"),
+			Time: protoconv.MustConvertTimeToTimestamp(resourceAlertViolation1Time),
 		}, {
 			Message: "Access to secret \"kubeadmin\" in \"kube-system\"",
 			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
@@ -605,10 +627,10 @@ var (
 				},
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
-			Time: makeTimestamp("2021-07-15T17:36:35.115310605Z"),
+			Time: protoconv.MustConvertTimeToTimestamp(resourceAlertViolation2Time),
 		}},
-		Time:          makeTimestamp("2021-07-15T17:36:35.115310605Z"),
-		FirstOccurred: makeTimestamp("2021-07-15T17:26:35.115310605Z"),
+		Time:          protoconv.MustConvertTimeToTimestamp(resourceAlertTime),
+		FirstOccurred: protoconv.MustConvertTimeToTimestamp(resourceAlertFirstOccurred),
 	}
 )
 
@@ -1168,10 +1190,10 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 
 			if sample.expectedCount > 0 {
 				// Check that all violations fall within the expected range.
-				fromTs := makeTimestamp(sample.violationsNotBefore)
-				toTs := makeTimestamp(sample.violationsNotAfter)
+				fromTs := mustParseTime(sample.violationsNotBefore)
+				toTs := mustParseTime(sample.violationsNotAfter)
 				for _, v := range vs {
-					ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
+					ts := mustParseTime(s.extr(v, ".violationInfo.violationTime").(string))
 					s.True(ts.Compare(fromTs) >= 0, "Violation timestamp is earlier than expected", v)
 					s.True(ts.Compare(toTs) <= 0, "Violation timestamp is later than expected", v)
 				}

@@ -2,12 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	utils "github.com/stackrox/rox/pkg/utils"
@@ -65,7 +66,7 @@ func (resolver *nodeScanResolver) ComponentCount(ctx context.Context, args RawQu
 type EmbeddedNodeScanComponentResolver struct {
 	os          string
 	root        *Resolver
-	lastScanned *protoTypes.Timestamp
+	lastScanned time.Time
 	data        *storage.EmbeddedNodeScanComponent
 }
 
@@ -101,7 +102,7 @@ func (encr *EmbeddedNodeScanComponentResolver) RiskScore(_ context.Context) floa
 
 // LastScanned is the last time the component was scanned in an node.
 func (encr *EmbeddedNodeScanComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	return timestamp(encr.lastScanned)
+	return &graphql.Time{Time: encr.lastScanned}, nil
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -188,8 +189,12 @@ func mapNodesToComponentResolvers(root *Resolver, nodes []*storage.Node, query *
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || node.GetScan().GetScanTime().Compare(latestTime) > 0 {
-				idToComponent[thisComponentID].lastScanned = node.GetScan().GetScanTime()
+			if latestTime.IsZero() || node.GetScan().GetScanTime().Compare(latestTime) > 0 {
+				scanTime, err := protocompat.ConvertTimestampToTimeOrError(node.GetScan().GetScanTime())
+				if err != nil {
+					scanTime = time.Time{}
+				}
+				idToComponent[thisComponentID].lastScanned = scanTime
 			}
 		}
 	}

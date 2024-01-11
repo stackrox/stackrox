@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	datastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	probeSourcesMocks "github.com/stackrox/rox/central/probesources/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
@@ -106,7 +106,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Labels: map[string]string{"k1": "v2"},
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(10),
+					LastContact:        protoconv.MustConvertTimeToTimestamp(daysAgo(10)),
 				},
 			},
 			config:   suite.getTestSystemConfig(60, 30, 7),
@@ -118,7 +118,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Labels: map[string]string{"k1": "v2"},
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(80),
+					LastContact:        protoconv.MustConvertTimeToTimestamp(daysAgo(80)),
 				},
 			},
 			config:   suite.getTestSystemConfig(60, 30, 7),
@@ -129,7 +129,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 				Id: "UNHEALTHY CLUSTER",
 				HealthStatus: &storage.ClusterHealthStatus{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-					LastContact:        suite.timeBeforeDays(10),
+					LastContact:        protoconv.MustConvertTimeToTimestamp(daysAgo(10)),
 				},
 			},
 			config:   suite.getTestSystemConfig(0, 30, 7),
@@ -178,7 +178,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 			Labels: map[string]string{"k1": "v2"},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-				LastContact:        suite.timeBeforeDays(10),
+				LastContact:        protoconv.MustConvertTimeToTimestamp(daysAgo(10)),
 			},
 		},
 		{
@@ -186,7 +186,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 			Labels: map[string]string{"k1": "v2"},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-				LastContact:        suite.timeBeforeDays(80),
+				LastContact:        protoconv.MustConvertTimeToTimestamp(daysAgo(80)),
 			},
 		},
 	}
@@ -214,10 +214,8 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	}
 }
 
-func (suite *ClusterServiceTestSuite) timeBeforeDays(days int) *types.Timestamp {
-	result, err := types.TimestampProto(time.Now().Add(-24 * time.Duration(days) * time.Hour))
-	suite.NoError(err)
-	return result
+func daysAgo(days int) time.Time {
+	return time.Now().Add(-24 * time.Hour * time.Duration(days))
 }
 
 func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, createdBeforeDays, lastUpdatedBeforeDays int) *storage.Config {
@@ -230,8 +228,8 @@ func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, created
 					"k2": "v2",
 					"k3": "v3",
 				},
-				LastUpdated: suite.timeBeforeDays(lastUpdatedBeforeDays),
-				CreatedAt:   suite.timeBeforeDays(createdBeforeDays),
+				LastUpdated: protoconv.MustConvertTimeToTimestamp(daysAgo(lastUpdatedBeforeDays)),
+				CreatedAt:   protoconv.MustConvertTimeToTimestamp(daysAgo(createdBeforeDays)),
 			},
 		},
 	}

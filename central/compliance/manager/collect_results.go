@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -160,45 +161,43 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	var startTS, finishTS *types.Timestamp
-	var err error
+	runMetadata := &storage.ComplianceRunMetadata{
+		RunId:      r.id,
+		ClusterId:  r.domain.Cluster().Cluster().GetId(),
+		StandardId: r.standard.Standard.ID,
+		Success:    r.status == v1.ComplianceRun_FINISHED && r.err == nil,
+		DomainId:   r.domain.ID(),
+	}
+
 	if !r.startTime.IsZero() {
-		startTS, err = types.TimestampProto(r.startTime)
+		startTS, err := types.TimestampProto(r.startTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run start timestamp to proto: %v", err)
 		}
+		runMetadata.StartTimestamp = startTS
 	}
 
 	if !r.finishTime.IsZero() {
-		finishTS, err = types.TimestampProto(r.finishTime)
+		finishTS, err := types.TimestampProto(r.finishTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run finish timestamp to proto: %v", err)
 		}
+		runMetadata.FinishTimestamp = finishTS
 	}
 
 	if fixTimestamps {
-		if startTS == nil {
-			startTS = types.TimestampNow()
+		if runMetadata.StartTimestamp == nil {
+			runMetadata.StartTimestamp = protocompat.TimestampNow()
 		}
-		if finishTS == nil {
-			finishTS = types.TimestampNow()
+		if runMetadata.FinishTimestamp == nil {
+			runMetadata.FinishTimestamp = protocompat.TimestampNow()
 		}
 	}
-	var errMsg string
 	if r.err != nil {
-		errMsg = r.err.Error()
+		runMetadata.ErrorMessage = r.err.Error()
 	}
 
-	return &storage.ComplianceRunMetadata{
-		RunId:           r.id,
-		ClusterId:       r.domain.Cluster().Cluster().GetId(),
-		StandardId:      r.standard.Standard.ID,
-		StartTimestamp:  startTS,
-		FinishTimestamp: finishTS,
-		Success:         r.status == v1.ComplianceRun_FINISHED && r.err == nil,
-		ErrorMessage:    errMsg,
-		DomainId:        r.domain.ID(),
-	}
+	return runMetadata
 }
 
 func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults map[string]map[string]*compliance.ComplianceStandardResult) *storage.ComplianceRunResults {

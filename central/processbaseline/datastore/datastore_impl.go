@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -77,7 +78,7 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	baseline.Id = id
 	baseline.Created = types.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+	baseline.StackRoxLockedTimestamp = protoconv.ConvertTimeToTimestamp(ds.generateLockTimestamp())
 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
@@ -450,18 +451,19 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 		baseline.ElementGraveyard = nil
 
 		// We need to extend the stackrox lock timestamp to re-observe the processes.
-		baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+		baseline.StackRoxLockedTimestamp = protoconv.ConvertTimeToTimestamp(ds.generateLockTimestamp())
 		baseline.LastUpdate = types.TimestampNow()
 	}
 	return ds.storage.UpsertMany(ctx, baselines)
 }
 
-func (ds *datastoreImpl) generateLockTimestamp() *types.Timestamp {
-	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+func (ds *datastoreImpl) generateLockTimestamp() time.Time {
+	lockTimestamp := time.Now().Add(genDuration)
+	_, err := types.TimestampProto(lockTimestamp)
 	// This should not occur unless genDuration is in a bad state.  If that happens just
 	// set it to one hour in the future.
 	if err != nil {
-		lockTimestamp, _ = types.TimestampProto(time.Now().Add(1 * time.Hour))
+		lockTimestamp = time.Now().Add(1 * time.Hour)
 	}
 	return lockTimestamp
 }

@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -876,40 +876,29 @@ func (s *clusterCVEDatastoreSACSuite) TestSearchRawClusterCVEs() {
 	}
 }
 
-func addDurationToTimestamp(ts *types.Timestamp, duration *types.Duration) *types.Timestamp {
-	nanos := ts.GetNanos() + duration.GetNanos()
-	seconds := ts.GetSeconds() + duration.GetSeconds()
-	nanosInSecond := int32(1000 * 1000 * 1000)
-	if nanos >= nanosInSecond {
-		seconds += int64(nanos / nanosInSecond)
-	}
-	return &types.Timestamp{
-		Seconds: seconds,
-		Nanos:   int32(0),
-	}
-}
-
 func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
-	snoozeStart *types.Timestamp,
-	snoozeDuration *types.Duration,
+	snoozeStart time.Time,
+	snoozeDuration time.Duration,
 	shouldBeSnoozed bool) {
 	var err error
 	var found bool
 	var objSnoozed bool
-	var objSnoozeStart *types.Timestamp
-	var objSnoozeExpiry *types.Timestamp
-	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
+	var objSnoozeStart time.Time
+	var objSnoozeExpiry time.Time
+	expectedSnoozeExpire := snoozeStart.Add(snoozeDuration)
 
 	var obj *storage.ClusterCVE
 	obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
 	if found {
 		objSnoozed = obj.GetSnoozed()
-		objSnoozeStart = obj.GetSnoozeStart()
-		objSnoozeExpiry = obj.GetSnoozeExpiry()
+		objSnoozeStart, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeStart())
+		s.NoError(err)
+		objSnoozeExpiry, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeExpiry())
+		s.NoError(err)
 	} else {
 		objSnoozed = false
-		objSnoozeStart = nil
-		objSnoozeExpiry = nil
+		objSnoozeStart = time.Time{}
+		objSnoozeExpiry = time.Time{}
 	}
 
 	s.NoError(err)
@@ -924,23 +913,25 @@ func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
 }
 
 func (s *clusterCVEDatastoreSACSuite) checkCVEUnsnoozed(targetCVE string,
-	snoozeStart *types.Timestamp,
-	snoozeDuration *types.Duration,
+	snoozeStart time.Time,
+	snoozeDuration time.Duration,
 	shouldBeUnsnoozed bool) {
 
 	var objSnoozed bool
-	var objSnoozeStart *types.Timestamp
-	var objSnoozeExpiry *types.Timestamp
-	expectedSnoozeExpire := addDurationToTimestamp(snoozeStart, snoozeDuration)
+	var objSnoozeStart time.Time
+	var objSnoozeExpiry time.Time
+	expectedSnoozeExpire := snoozeStart.Add(snoozeDuration)
 	obj, found, err := s.pgStore.Get(allAccessCtx, targetCVE)
 	if found {
 		objSnoozed = obj.GetSnoozed()
-		objSnoozeStart = obj.GetSnoozeStart()
-		objSnoozeExpiry = obj.GetSnoozeExpiry()
+		objSnoozeStart, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeStart())
+		s.NoError(err)
+		objSnoozeExpiry, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeExpiry())
+		s.NoError(err)
 	} else {
 		objSnoozed = false
-		objSnoozeStart = nil
-		objSnoozeExpiry = nil
+		objSnoozeStart = time.Time{}
+		objSnoozeExpiry = time.Time{}
 	}
 
 	s.NoError(err)
@@ -964,9 +955,8 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 	for _, c := range getClusterCVESuppressUnsuppressTestCases(s.T(), validClusters[0], validClusters[1]) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			snoozeStart := types.TimestampNow()
-			snoozeStart.Nanos = 0
-			snoozeDuration := types.DurationProto(10 * time.Minute)
+			snoozeStart := time.Now().Truncate(time.Second)
+			snoozeDuration := 10 * time.Minute
 
 			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)
 			if c.visibleCVE[targetCVE] {

@@ -3,8 +3,8 @@ package generator
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -106,7 +107,7 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *types.Timestamp, includePorts bool) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since time.Time, includePorts bool) (map[networkgraph.Entity]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -276,7 +277,12 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "could not parse query")
 	}
 
-	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, req.GetNetworkDataSince(), req.GetIncludePorts())
+	since, err := protocompat.ConvertTimestampToTimeOrError(req.GetNetworkDataSince())
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not extract timestamp from query")
+	}
+
+	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, since, req.GetIncludePorts())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}

@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -28,12 +27,6 @@ type violationsTestSuite struct {
 	suite.Suite
 	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert *storage.Alert
 	allowCtx                                                         context.Context
-}
-
-func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, err := types.TimestampProto(mustParseTime(timeStr))
-	utils.CrashOnError(err)
-	return ts
 }
 
 func mustParseTime(timeStr string) time.Time {

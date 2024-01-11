@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -54,12 +53,12 @@ func (s *blobTestSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime *timestamp.Timestamp) []*storage.Blob {
+func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime time.Time) []*storage.Blob {
 	var blobs []*storage.Blob
 	for i := 0; i < n; i++ {
 		blob := &storage.Blob{
 			Name:         fmt.Sprintf("%s/test/%d", prefix, i),
-			ModifiedTime: modTime,
+			ModifiedTime: protoconv.MustConvertTimeToTimestamp(modTime),
 			Length:       int64(size),
 		}
 
@@ -76,9 +75,10 @@ func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime *tim
 }
 
 func (s *blobTestSuite) TestSearch() {
-	searchTime := protoconv.MustConvertTimeToTimestamp(timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z"))
+	searchTime := timeutil.MustParse(time.RFC3339, "2020-03-09T12:00:00Z")
+	now := time.Now()
 	blobs1 := s.createBlobs("/path1", 10, 2, searchTime)
-	blobs2 := s.createBlobs("/path2", 20, 3, timestamp.TimestampNow())
+	blobs2 := s.createBlobs("/path2", 20, 3, now)
 
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddDocIDs(blobs2[0].GetName()).ProtoQuery(), []*storage.Blob{blobs2[0]}, nil)
 	s.testQuery(s.ctx, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.BlobLength, "20").ProtoQuery(), blobs2, nil)

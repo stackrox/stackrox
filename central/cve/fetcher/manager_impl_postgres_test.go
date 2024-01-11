@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/gogo/protobuf/types"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -530,8 +529,8 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	s.Len(results, 10)
 
 	// Suppress CVEs
-	start := types.TimestampNow()
-	duration := types.DurationProto(10 * time.Minute)
+	start := time.Now()
+	duration := 10 * time.Minute
 	clusterCVE := utils.EmbeddedVulnerabilityToClusterCVE(storage.CVE_K8S_CVE, vulns[0])
 	err = s.clusterCVEDatastore.Suppress(s.ctx, start, duration, vulns[0].GetCve())
 	s.NoError(err)

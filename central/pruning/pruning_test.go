@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertDatastoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -963,7 +962,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
 	return &storage.ClusterHealthStatus{
 		SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-		LastContact:        timeBeforeDays(daysSinceLastContact),
+		LastContact:        protoconv.ConvertTimeToTimestamp(daysAgo(daysSinceLastContact)),
 	}
 }
 
@@ -976,8 +975,8 @@ func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpda
 				"k2": "v2",
 				"k3": "v3",
 			},
-			LastUpdated: timeBeforeHours(lastUpdatedBeforeHours),
-			CreatedAt:   timeBeforeDays(createdBeforeDays),
+			LastUpdated: protoconv.ConvertTimeToTimestamp(hoursAgo(lastUpdatedBeforeHours)),
+			CreatedAt:   protoconv.ConvertTimeToTimestamp(daysAgo(createdBeforeDays)),
 		}}
 }
 
@@ -1154,13 +1153,9 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 }
 
-func timeBeforeDays(days int) *protoTypes.Timestamp {
-	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
-}
+func daysAgo(days int) time.Time { return time.Now().Add(-24 * time.Duration(days) * time.Hour) }
 
-func timeBeforeHours(hours int) *protoTypes.Timestamp {
-	return timestampNowMinus(time.Duration(hours) * time.Hour)
-}
+func hoursAgo(hours int) time.Time { return time.Now().Add(-time.Duration(hours) * time.Hour) }
 
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
 	return &storage.ListAlert{
@@ -1170,7 +1165,7 @@ func newListAlertWithDeployment(id string, age time.Duration, deploymentID strin
 		},
 		State:          state,
 		LifecycleStage: stage,
-		Time:           timestampNowMinus(age),
+		Time:           protoconv.ConvertTimeToTimestamp(time.Now().Add(-age)),
 	}
 }
 
@@ -1181,7 +1176,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestampNowMinus(age),
+			Time: protoconv.ConvertTimeToTimestamp(time.Now().Add(-age)),
 		},
 	}
 }
@@ -1347,7 +1342,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					Id:                 plopID1,
 					Port:               1234,
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:     timestampNowMinus(1 * time.Second),
+					CloseTimestamp:     protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Second)),
 					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
@@ -1370,7 +1365,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					Id:                 plopID1,
 					Port:               1234,
 					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
-					CloseTimestamp:     timestampNowMinus(1 * time.Hour),
+					CloseTimestamp:     protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
 					Closed:             true,
 					Process: &storage.ProcessIndicatorUniqueKey{
@@ -1597,7 +1592,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - remove all flows",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1617,7 +1612,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - but no flows with deployments",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_INTERNET,
@@ -1637,7 +1632,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "no deployments - but flows too recent",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(20 * time.Minute),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-20 * time.Minute)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1657,7 +1652,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching flows",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1677,7 +1672,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching src",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1697,7 +1692,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			name: "some deployments with matching dst",
 			flows: []*storage.NetworkFlow{
 				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
+					LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-time.Hour)),
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -2027,11 +2022,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			name:        "remove Log Imbues that are old",
 			recentlyRun: false,
 			logImbues: []*storage.LogImbue{
-				{Id: "log-1", Timestamp: timestampNowMinus(0)},
-				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
-				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
-				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
-				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+				{Id: "log-1", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now())},
+				{Id: "log-2", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour))},
+				{Id: "log-3", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 6 * time.Hour))},
+				{Id: "log-4", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 7 * time.Hour))},
+				{Id: "log-5", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 8 * time.Hour))},
 			},
 			expectedLogDeletions: set.NewFrozenStringSet("log-4", "log-5"),
 		},
@@ -2039,11 +2034,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 			name:        "recently run, nothing pruned",
 			recentlyRun: true,
 			logImbues: []*storage.LogImbue{
-				{Id: "log-1", Timestamp: timestampNowMinus(0)},
-				{Id: "log-2", Timestamp: timestampNowMinus(24 * time.Hour)},
-				{Id: "log-3", Timestamp: timestampNowMinus(24 * 6 * time.Hour)},
-				{Id: "log-4", Timestamp: timestampNowMinus(24 * 7 * time.Hour)},
-				{Id: "log-5", Timestamp: timestampNowMinus(24 * 8 * time.Hour)},
+				{Id: "log-1", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now())},
+				{Id: "log-2", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour))},
+				{Id: "log-3", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 6 * time.Hour))},
+				{Id: "log-4", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 7 * time.Hour))},
+				{Id: "log-5", Timestamp: protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * 8 * time.Hour))},
 			},
 			expectedLogDeletions: set.NewFrozenStringSet(),
 		},

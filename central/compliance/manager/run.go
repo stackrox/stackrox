@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -12,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -118,14 +118,6 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, m
 	return run, data.NodeResults(), nil
 }
 
-func timeToProto(t time.Time) *types.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	tspb, _ := types.TimestampProto(t)
-	return tspb
-}
-
 func (r *runInstance) standardID() string {
 	return r.standard.Standard.ID
 }
@@ -143,12 +135,15 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		errorMessage = r.err.Error()
 	}
 
+	startTime, _ := protocompat.ConvertTimeToTimestampOrError(r.startTime)
+	finishTime, _ := protocompat.ConvertTimeToTimestampOrError(r.finishTime)
+
 	proto := &v1.ComplianceRun{
 		Id:           r.id,
 		ClusterId:    r.domain.Cluster().Cluster().GetId(),
 		StandardId:   r.standardID(),
-		StartTime:    timeToProto(r.startTime),
-		FinishTime:   timeToProto(r.finishTime),
+		StartTime:    startTime,
+		FinishTime:   finishTime,
 		State:        r.status,
 		ErrorMessage: errorMessage,
 	}

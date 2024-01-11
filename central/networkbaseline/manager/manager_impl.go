@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -26,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -66,8 +64,8 @@ type manager struct {
 	baselineFlushTicker        *time.Ticker
 }
 
-func getNewObservationPeriodEnd() timestamp.MicroTS {
-	return timestamp.Now().Add(observationDuration)
+func getNewObservationPeriodEnd() time.Time {
+	return time.Now().Add(observationDuration).Truncate(time.Microsecond)
 }
 
 // shouldUpdate -- looks at the baselines and flows to determine if the flow should be added to the baseline.
@@ -302,7 +300,7 @@ func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 		&queue.DeploymentObservation{
 			DeploymentID:   deploymentID,
 			InObservation:  true,
-			ObservationEnd: getNewObservationPeriodEnd().GogoProtobuf(),
+			ObservationEnd: getNewObservationPeriodEnd(),
 		})
 
 	return nil
@@ -561,10 +559,10 @@ func (m *manager) processNetworkPolicyUpdate(
 				&queue.DeploymentObservation{
 					DeploymentID:   deployment.GetId(),
 					InObservation:  true,
-					ObservationEnd: newObservationPeriodEnd.GogoProtobuf(),
+					ObservationEnd: newObservationPeriodEnd,
 				})
 		} else {
-			baseline.ObservationPeriodEnd = newObservationPeriodEnd
+			baseline.ObservationPeriodEnd = timestamp.FromGoTime(newObservationPeriodEnd)
 		}
 
 		modifiedDeploymentIDs.Add(deployment.GetId())
@@ -774,7 +772,7 @@ func (m *manager) flushBaselineQueue() {
 	for {
 		// ObservationEnd is in the future so we have nothing to do at this time
 		head := m.deploymentObservationQueue.Peek()
-		if head == nil || protoutils.After(head.ObservationEnd, types.TimestampNow()) {
+		if head == nil || head.ObservationEnd.After(time.Now()) {
 			return
 		}
 
@@ -793,7 +791,7 @@ func (m *manager) flushBaselineQueue() {
 			continue
 		}
 
-		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), timestamp.FromProtobuf(observedDep.ObservationEnd))
+		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), observedDep.ObservationEnd)
 		if err != nil {
 			log.Error(err)
 		}
@@ -818,7 +816,7 @@ func (m *manager) getFlowStore(ctx context.Context, clusterID string) (networkFl
 	return flowStore, nil
 }
 
-func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace string, observationEnd timestamp.MicroTS) error {
+func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace string, observationEnd time.Time) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -837,7 +835,7 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		ClusterID:            clusterID,
 		Namespace:            namespace,
 		DeploymentName:       deploymentName,
-		ObservationPeriodEnd: observationEnd,
+		ObservationPeriodEnd: timestamp.FromGoTime(observationEnd),
 		UserLocked:           false,
 		BaselinePeers:        make(map[networkbaseline.Peer]struct{}),
 		ForbiddenPeers:       make(map[networkbaseline.Peer]struct{}),
@@ -895,11 +893,11 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 
 	// Need the details from the Observation Queue to grab the proper Observation Time
 	depDetails := m.deploymentObservationQueue.GetObservationDetails(deploymentID)
-	var t timestamp.MicroTS
+	var t time.Time
 	if depDetails == nil {
 		t = getNewObservationPeriodEnd()
 	} else {
-		t = timestamp.FromProtobuf(depDetails.ObservationEnd)
+		t = depDetails.ObservationEnd
 	}
 
 	// Now build the baseline

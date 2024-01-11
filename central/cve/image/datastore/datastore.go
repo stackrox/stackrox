@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store"
@@ -29,12 +29,12 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start time.Time, duration time.Duration, cves ...string) error
 	Unsuppress(ctx context.Context, cves ...string) error
 
 	// Deprecated: ApplyException and RevertException are used for database backward compatibility purpose only.
 	// Those functions can be removed after a few releases.
-	ApplyException(ctx context.Context, start *types.Timestamp, expiry *types.Timestamp, cves ...string) error
+	ApplyException(ctx context.Context, start time.Time, expiry time.Time, cves ...string) error
 	RevertException(ctx context.Context, cves ...string) error
 
 	EnrichImageWithSuppressedCVEs(image *storage.Image)

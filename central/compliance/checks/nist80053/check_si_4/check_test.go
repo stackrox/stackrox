@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -13,24 +12,27 @@ import (
 
 func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
 	for _, testCase := range []struct {
-		desc               string
-		clusterContactTime *types.Timestamp
-		shouldPass         bool
+		desc                  string
+		hasClusterContactTime bool
+		clusterContactTime    time.Time
+		shouldPass            bool
 	}{
 		{
-			desc:               "never checked in",
-			clusterContactTime: nil,
-			shouldPass:         false,
+			desc:                  "never checked in",
+			hasClusterContactTime: false,
+			shouldPass:            false,
 		},
 		{
-			desc:               "checked in recently",
-			clusterContactTime: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-30 * time.Minute)),
-			shouldPass:         true,
+			desc:                  "checked in recently",
+			hasClusterContactTime: true,
+			clusterContactTime:    time.Now().Add(-30 * time.Minute),
+			shouldPass:            true,
 		},
 		{
-			desc:               "checked in a long time ago",
-			clusterContactTime: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Hour)),
-			shouldPass:         false,
+			desc:                  "checked in a long time ago",
+			hasClusterContactTime: true,
+			clusterContactTime:    time.Now().Add(-2 * time.Hour),
+			shouldPass:            false,
 		},
 	} {
 		c := testCase
@@ -38,7 +40,13 @@ func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
-			mockData.EXPECT().Cluster().Return(&storage.Cluster{HealthStatus: &storage.ClusterHealthStatus{LastContact: c.clusterContactTime}})
+			returnedCluster := &storage.Cluster{HealthStatus: &storage.ClusterHealthStatus{}}
+			if c.hasClusterContactTime {
+				returnedCluster.HealthStatus.LastContact = protoconv.MustConvertTimeToTimestamp(c.clusterContactTime)
+			} else {
+				returnedCluster.HealthStatus.LastContact = nil
+			}
+			mockData.EXPECT().Cluster().Return(returnedCluster)
 			checkClusterCheckedInInThePastHour(mockCtx)
 			records.AssertExpectedResult(c.shouldPass, t)
 		})

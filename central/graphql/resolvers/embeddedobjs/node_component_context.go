@@ -2,8 +2,8 @@ package embeddedobjs
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -14,11 +14,11 @@ type nodeComponentContextKey struct{}
 // nodeComponentContextValue holds the value of the distro in the context.
 type nodeComponentContextValue struct {
 	component   *storage.EmbeddedNodeScanComponent
-	lastScanned *types.Timestamp
+	lastScanned time.Time
 }
 
 // NodeComponentContext returns a new context with the component attached.
-func NodeComponentContext(ctx context.Context, lastScanned *types.Timestamp, component *storage.EmbeddedNodeScanComponent) context.Context {
+func NodeComponentContext(ctx context.Context, lastScanned time.Time, component *storage.EmbeddedNodeScanComponent) context.Context {
 	return context.WithValue(ctx, nodeComponentContextKey{}, &nodeComponentContextValue{
 		component:   component,
 		lastScanned: lastScanned,
@@ -38,13 +38,13 @@ func NodeComponentFromContext(context context.Context) *storage.EmbeddedNodeScan
 }
 
 // NodeComponentLastScannedFromContext returns the last scanned time of the component, scoped to embedding node, from the input context.
-func NodeComponentLastScannedFromContext(context context.Context) *types.Timestamp {
+func NodeComponentLastScannedFromContext(context context.Context) time.Time {
 	if context == nil {
-		return nil
+		return time.Time{}
 	}
 	value := context.Value(nodeComponentContextKey{})
 	if value == nil {
-		return nil
+		return time.Time{}
 	}
 	return value.(*nodeComponentContextValue).lastScanned
 }

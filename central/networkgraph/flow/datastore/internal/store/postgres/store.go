@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -111,8 +110,8 @@ var (
 // FlowStore stores all of the flows for a single cluster.
 type FlowStore interface {
 	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error)
+	GetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
@@ -334,11 +333,6 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
-		var ts *types.Timestamp
-		if lastTime != nil {
-			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
-		}
-
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity: &storage.NetworkEntityInfo{
@@ -352,8 +346,11 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
-			LastSeenTimestamp: ts,
-			ClusterId:         clusterID,
+			ClusterId: clusterID,
+		}
+
+		if lastTime != nil {
+			flow.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(*lastTime)
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
@@ -416,80 +413,80 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
-func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, time.Time, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := types.TimestampNow()
+	lastUpdateTs := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
 
-	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
-	if since == nil {
+	// handling case when since is zero.  Assumption is we want everything in that case vs when date is not zero
+	if since.IsZero() {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, &since)
 	}
 	if err != nil {
-		return nil, nil, pgutils.ErrNilIfNoRows(err)
+		return nil, time.Time{}, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, nil)
 	if err != nil {
-		return nil, nil, pgutils.ErrNilIfNoRows(err)
+		return nil, time.Time{}, pgutils.ErrNilIfNoRows(err)
 	}
 
-	return flows, lastUpdateTS, nil
+	return flows, lastUpdateTs, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
-func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *types.Timestamp, error) {
+	return pgutils.Retry3(func() ([]*storage.NetworkFlow, time.Time, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
 
-func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
+func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
 	var rows pgx.Rows
 	var err error
 
 	// Default to Now as that is when we are reading them
-	lastUpdateTS := types.TimestampNow()
+	lastUpdateTS := time.Now()
 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
 
-	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
-	if since == nil {
+	// handling case when since is zero.  Assumption is we want everything in that case vs when date is not zero
+	if since.IsZero() {
 		partitionWalkStmt := fmt.Sprintf(walkStmt, s.partitionName, s.partitionName)
 		rows, err = s.db.Query(ctx, partitionWalkStmt)
 	} else {
 		partitionSinceStmt := fmt.Sprintf(getSinceStmt, s.partitionName, s.partitionName)
-		rows, err = s.db.Query(ctx, partitionSinceStmt, pgutils.NilOrTime(since))
+		rows, err = s.db.Query(ctx, partitionSinceStmt, &since)
 	}
 
 	if err != nil {
-		return nil, nil, pgutils.ErrNilIfNoRows(err)
+		return nil, time.Time{}, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
 	if err != nil {
-		return nil, nil, err
+		return nil, time.Time{}, err
 	}
 
 	return flows, lastUpdateTS, nil

@@ -2,8 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -49,7 +50,7 @@ func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQ
 type EmbeddedImageScanComponentResolver struct {
 	os          string
 	root        *Resolver
-	lastScanned *protoTypes.Timestamp
+	lastScanned time.Time
 	data        *storage.EmbeddedImageScanComponent
 }
 
@@ -116,7 +117,7 @@ func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (*int32, error) {
 
 // LastScanned is the last time the component was scanned in an image.
 func (eicr *EmbeddedImageScanComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	return timestamp(eicr.lastScanned)
+	return &graphql.Time{Time: eicr.lastScanned}, nil
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -400,8 +401,9 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime == nil || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
-				idToComponent[thisComponentID].lastScanned = image.GetScan().GetScanTime()
+			if latestTime.IsZero() || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
+				t, _ := protocompat.ConvertTimestampToTimeOrError(image.GetScan().GetScanTime())
+				idToComponent[thisComponentID].lastScanned = t
 			}
 		}
 	}

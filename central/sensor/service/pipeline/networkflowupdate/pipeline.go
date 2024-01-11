@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -66,7 +67,11 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
-	if err = s.storeUpdater.update(ctx, allUpdatedFlows, update.Time); err != nil {
+	updateTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)
+	if err != nil {
+		return err
+	}
+	if err = s.storeUpdater.update(ctx, allUpdatedFlows, updateTime); err != nil {
 		return err
 	}
 	return nil

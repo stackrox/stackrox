@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/node/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -73,7 +74,11 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 			if err != nil {
 				return nil, err
 			}
-			resolver.ctx = embeddedobjs.NodeComponentContext(ctx, nodeScan.GetScanTime(), embeddedComponent)
+			scanTime, err := protocompat.ConvertTimestampToTimeOrError(nodeScan.GetScanTime())
+			if err != nil {
+				return nil, err
+			}
+			resolver.ctx = embeddedobjs.NodeComponentContext(ctx, scanTime, embeddedComponent)
 			idToComponent[id] = resolver
 		}
 	}

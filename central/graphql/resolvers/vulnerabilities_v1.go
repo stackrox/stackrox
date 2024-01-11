@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter/utils"
@@ -37,7 +36,7 @@ func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulne
 type EmbeddedVulnerabilityResolver struct {
 	ctx         context.Context
 	root        *Resolver
-	lastScanned *protoTypes.Timestamp
+	lastScanned time.Time
 	data        *storage.EmbeddedVulnerability
 }
 
@@ -114,12 +113,12 @@ func (evr *EmbeddedVulnerabilityResolver) IsFixable(_ context.Context, _ RawQuer
 
 // LastScanned is the last time the vulnerability was scanned in an image.
 func (evr *EmbeddedVulnerabilityResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.lastScanned)
+	return &graphql.Time{Time: evr.lastScanned}, nil
 }
 
 // CreatedAt is the firsts time the vulnerability was scanned in an image. Unavailable in an image context.
 func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
-	return timestamp(evr.lastScanned)
+	return &graphql.Time{Time: evr.lastScanned}, nil
 }
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.

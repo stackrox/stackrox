@@ -5,11 +5,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -145,8 +145,9 @@ func (resolver *podResolver) containerRestartEvents() []*ContainerRestartEventRe
 
 		// The first terminated instance could not have been created from a restart.
 		for i := 1; i < len(terminatedInstances); i++ {
-			timestamp, ok := convertTimestamp(terminatedInstances[i].GetContainerName(), "container instance", terminatedInstances[i].GetStarted())
-			if !ok {
+			timestamp, err := protocompat.ConvertTimestampToTimeOrError(terminatedInstances[i].GetStarted())
+			if err != nil {
+				logTimestampConversionError(terminatedInstances[i].GetContainerName(), "container instance", err)
 				continue
 			}
 			events = append(events, &ContainerRestartEventResolver{
@@ -159,8 +160,9 @@ func (resolver *podResolver) containerRestartEvents() []*ContainerRestartEventRe
 		// A current live instance can be due to a restart.
 		containerName := terminatedInstances[0].GetContainerName()
 		if instance, exists := liveInstancesByName[containerName]; exists {
-			timestamp, ok := convertTimestamp(instance.GetContainerName(), "container instance", instance.GetStarted())
-			if !ok {
+			timestamp, err := protocompat.ConvertTimestampToTimeOrError(instance.GetStarted())
+			if err != nil {
+				logTimestampConversionError(instance.GetContainerName(), "container instance", err)
 				continue
 			}
 			events = append(events, &ContainerRestartEventResolver{
@@ -181,8 +183,9 @@ func (resolver *podResolver) containerTerminationEvents() []*ContainerTerminatio
 	var events []*ContainerTerminationEventResolver
 	for _, instances := range resolver.data.GetTerminatedInstances() {
 		for _, instance := range instances.GetInstances() {
-			timestamp, ok := convertTimestamp(instance.GetContainerName(), "container instance", instance.GetFinished())
-			if !ok {
+			timestamp, err := protocompat.ConvertTimestampToTimeOrError(instance.GetFinished())
+			if err != nil {
+				logTimestampConversionError(instance.GetContainerName(), "container instance", err)
 				continue
 			}
 			events = append(events, &ContainerTerminationEventResolver{
@@ -237,18 +240,6 @@ func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventReso
 	return events, nil
 }
 
-// convertTimestamp is a thin wrapper over types.TimestampFromProto.
-// That function is used often and, if it errors, we log errors each time.
-// This function just saves the need to write so much repeat code.
-// The second return value must be checked upon each call to ensure the returned time is valid.
-func convertTimestamp(name, resource string, t *types.Timestamp) (time.Time, bool) {
-	if t == nil {
-		return time.Time{}, false
-	}
-
-	timestamp, err := types.TimestampFromProto(t)
-	if err != nil {
-		log.Errorf("unable to convert timestamp for %s %s: %v", resource, name, err)
-	}
-	return timestamp, err == nil
+func logTimestampConversionError(name, resource string, err error) {
+	log.Errorf("unable to convert timestamp for %s %s: %v", resource, name, err)
 }
