@@ -45,7 +45,9 @@ deploy_stackrox() {
 # shellcheck disable=SC2120
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
-        die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
+        die "expected central chart version and sensor chart version as parameters in \
+          deploy_stackrox_with_custom_central_and_sensor_versions: \
+          deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
@@ -58,8 +60,8 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     current_tag="$(make tag --quiet --no-print-directory)"
 
     helm_charts="$(helm search repo "${helm_repo_name}" -l)"
-    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${central_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${sensor_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
 
@@ -68,10 +70,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if  [[ $helm_charts =~ $central_regex ]]; then
         central_chart="${helm_repo_name}/${chart_name}"
         ci_export CENTRAL_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        helm pull "${central_chart}" --version "${central_version}" --untar --untardir "${charts_dir}"
         echo "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
-        echo >&2 "${chart_name} helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the current tag."
+    elif [[ "$current_tag" != "${central_version}" ]]; then
+        echo >&2 "${chart_name} helm chart for version ${central_version} not found in ${helm_repo_name} repo nor is it the current tag."
         exit 1
     fi
 
@@ -82,18 +84,18 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ $helm_charts =~ $sensor_regex ]]; then
         sensor_chart="${helm_repo_name}/${chart_name}"
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        helm pull "${sensor_chart}" --version "${sensor_version}" --untar --untardir "${charts_dir}"
         echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
+    elif [[ "$current_tag" == "${sensor_version}" ]]; then
         if [[ $(roxctl version) != "$current_tag" ]]; then
             echo >&2 "Reported roxctl version $(roxctl version) is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
             exit 1
         fi
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
         roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
+        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE}"
     else
-        echo >&2 "${chart_name} helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
+        echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
     fi
 
