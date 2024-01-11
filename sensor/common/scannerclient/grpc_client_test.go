@@ -67,8 +67,9 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 				cfg: &types.Config{},
 			},
 			want: &ImageAnalysis{
-				ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
-				V4Contents: &v4.Contents{},
+				ScanStatus:     scannerV1.ScanStatus_SUCCEEDED,
+				V4Contents:     &v4.Contents{},
+				IndexerVersion: v4IndexerVersion,
 			},
 		},
 	}
