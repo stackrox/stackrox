@@ -549,7 +549,7 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 			break
 		}
 		// ClairCore has no CVSS version indicator for OSV data, assuming CVSS V2 if
-		// prefixed with a V3 version.
+		// not prefixed with a V3 version.
 		if strings.HasPrefix(vuln.Severity, "CVSS:3") {
 			if _, err := cvss3.VectorFromString(vuln.Severity); err != nil {
 				errList.AddError(err)
