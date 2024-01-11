@@ -97,22 +97,13 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
-	err = sanityCheckURL(indexerCfg.RepositoryToCPEURL)
-	if err == nil {
-		opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-			"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`{"repo2cpe_mapping_url": "%s"}`, indexerCfg.RepositoryToCPEURL)))}
-		opts.ScannerConfig.Package = map[string]func(interface{}) error{
-			"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`{"name2repos_mapping_url": "%s"}`, indexerCfg.NameToCPEURL)))}
-	} else { // if central or sensor is not available
-		zlog.Info(ctx).Err(err).Msg("Mapping file endpoints are currently unavailable")
-		opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-			"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(
-				`{"repo2cpe_mapping_url": "%s","repo2cpe_mapping_file": "%s"}`, indexerCfg.RepositoryToCPEURL, "mappingfiles/repository-to-cpe.json"))),
-		}
-		opts.ScannerConfig.Package = map[string]func(interface{}) error{
-			"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(
-				`{"name2repos_mapping_url": "%s", "name2repos_mapping_file": "%s"}`, indexerCfg.NameToCPEURL, "mappingfiles/container-name-repos-map.json"))),
-		}
+	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(
+			`{"repo2cpe_mapping_url": "%s","repo2cpe_mapping_file": "%s"}`, indexerCfg.RepositoryToCPEURL, "mappings/reposiroty-to-cpe.json"))),
+	}
+	opts.ScannerConfig.Package = map[string]func(interface{}) error{
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(
+			`{"name2repos_mapping_url": "%s", "name2repos_mapping_file": "%s"}`, indexerCfg.NameToCPEURL, "mappings/container-name-repos-map.json"))),
 	}
 
 	indexer, err := libindex.New(ctx, &opts, c)
@@ -345,36 +336,4 @@ func deserializeFunc(jsonData []byte) func(interface{}) error {
 	return func(v interface{}) error {
 		return json.Unmarshal(jsonData, v)
 	}
-}
-
-func sanityCheckURL(url string) error {
-	retryDelays := []time.Duration{
-		30 * time.Second,
-		60 * time.Second,
-		120 * time.Second,
-	}
-
-	var lastErr error
-	for _, delay := range retryDelays {
-		resp, err := http.Get(url)
-		if err == nil {
-			resp.Body.Close()
-
-			if resp.StatusCode == http.StatusOK {
-				return nil
-			}
-			// Non-OK
-			lastErr = fmt.Errorf("URL %s returned non-OK status: %d", url, resp.StatusCode)
-		} else {
-			lastErr = err
-		}
-
-		time.Sleep(delay)
-	}
-
-	if lastErr != nil {
-		return fmt.Errorf("failed to reach URL %s after retries: %v", url, lastErr)
-	}
-
-	return fmt.Errorf("unexpected error in sanityCheckURL for %s", url)
 }
