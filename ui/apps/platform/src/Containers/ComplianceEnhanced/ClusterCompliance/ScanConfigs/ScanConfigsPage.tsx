@@ -3,10 +3,14 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import {
+    complianceEnhancedScanConfigsPath,
+    complianceEnhancedScanConfigDetailPath,
+} from 'routePaths';
 
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
 import CreateScanConfigPage from './CreateScanConfigPage';
+import ScanConfigDetailPage from './ScanConfigDetailPage';
 
 type PageActions = 'create' | 'edit' | 'clone';
 
@@ -39,6 +43,17 @@ function ScanConfigsPage() {
                         );
                     }
                     return <Redirect to={complianceEnhancedScanConfigsPath} />;
+                }}
+            />
+            <Route
+                exact
+                path={complianceEnhancedScanConfigDetailPath}
+                render={() => {
+                    return (
+                        <ScanConfigDetailPage
+                            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                        />
+                    );
                 }}
             />
         </Switch>

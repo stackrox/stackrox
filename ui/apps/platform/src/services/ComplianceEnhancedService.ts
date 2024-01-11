@@ -43,9 +43,10 @@ type BaseComplianceScanConfigurationSettings = {
     oneTimeScan: boolean;
     profiles: string[];
     scanSchedule: Schedule;
+    description?: string;
 };
 
-type ClusterScanStatus = {
+export type ClusterScanStatus = {
     clusterId: string;
     errors: string[];
     clusterName: string;
@@ -210,10 +211,16 @@ export function getComplianceClusterScanStats(
 /*
  * Get a Scan Schedule.
  */
-export function getScanConfig(scanConfigId: string): Promise<ComplianceScanConfigurationStatus> {
-    return axios
-        .get<ComplianceScanConfigurationStatus>(`${scanScheduleUrl}/${scanConfigId}`)
-        .then((response) => response.data);
+export function getScanConfig(
+    scanConfigId: string
+): CancellableRequest<ComplianceScanConfigurationStatus> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<ComplianceScanConfigurationStatus>(`${scanScheduleUrl}/${scanConfigId}`, {
+                signal,
+            })
+            .then((response) => response.data)
+    );
 }
 
 /*

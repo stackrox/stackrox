@@ -35,7 +35,7 @@ export default function useRestQuery<ReturnType>(
             })
             .catch((err) => {
                 if (isMounted) {
-                    setLoading(true);
+                    setLoading(false);
                     setError(err);
                 }
             });
