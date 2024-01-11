@@ -7,16 +7,16 @@ import (
 	"github.com/remind101/migrate"
 )
 
-const MigrationTable = "last_vuln_update_migrations"
+const MatcherMigrationTable = "matcher_migrations"
 
-var Migrations = []migrate.Migration{
+var MatcherMigrations = []migrate.Migration{
 	{
 		ID: 1,
-		Up: runFile("01-init.sql"),
+		Up: runFile("matcher/01-init.sql"),
 	},
 }
 
-//go:embed *.sql
+//go:embed */*.sql
 var fs embed.FS
 
 func runFile(n string) func(*sql.Tx) error {
