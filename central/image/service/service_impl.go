@@ -518,10 +518,12 @@ func scannerV4MatchRequest(request *v1.EnrichLocalImageInternalRequest) bool {
 
 func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.EnrichLocalImageInternalRequest) error {
 	if !scannerV4MatchRequest(request) {
+		log.Debugf("Matching vulns for Clairify index report for image %q", img.GetName().GetFullName())
 		_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
 		return err
 	}
 
+	log.Debugf("Matching vulns for Scanner V4 index report (ver: %s) for image %q", request.GetIndexerVersion(), img.GetName().GetFullName())
 	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), nil)
 	return err
 }

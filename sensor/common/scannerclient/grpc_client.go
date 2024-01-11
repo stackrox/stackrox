@@ -197,7 +197,7 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Scanner for image %s", imgName)
+	log.Debugf("Received image components from local Clairify scanner for image: %q", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),
@@ -248,6 +248,9 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
+
+	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
+
 	return convertIndexReportToAnalysis(ir), nil
 }
 
