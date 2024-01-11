@@ -95,7 +95,7 @@ for test_tuple in test_tuples:
             ),
         },
     )
-sets[0].pre_test = PreSystemTests()
+sets[0]["pre_test"] = PreSystemTests()
 
 ClusterTestSetsRunner(
     cluster=GKECluster("compat-test",
