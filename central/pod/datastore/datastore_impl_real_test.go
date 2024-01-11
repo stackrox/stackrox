@@ -115,7 +115,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject1, openPlopObject2, openPlopObject3}
 	s.NoError(s.datastore.plops.AddProcessListeningOnPort(
-		s.plopAndPiCtx, plopObjects...))
+		s.plopAndPiCtx, fixtureconsts.Cluster1, plopObjects...))
 
 	// Fetch inserted PLOP
 	newPlops, err := s.datastore.plops.GetProcessListeningOnPort(

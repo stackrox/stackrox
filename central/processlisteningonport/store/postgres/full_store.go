@@ -93,6 +93,8 @@ func (s *fullStoreImpl) readRows(
 		var procSerialized []byte
 		var podID string
 		var podUID string
+		var clusterID string
+		var namespace string
 		var containerName string
 		var name string
 		var args string
@@ -130,6 +132,18 @@ func (s *fullStoreImpl) readRows(
 			execFilePath = msg.GetProcess().GetProcessExecFilePath()
 		}
 
+		if procMsg.GetClusterId() != "" {
+			clusterID = procMsg.GetClusterId()
+		} else {
+			clusterID = msg.GetClusterId()
+		}
+
+		if procMsg.GetNamespace() != "" {
+			namespace = procMsg.GetNamespace()
+		} else {
+			namespace = msg.GetNamespace()
+		}
+
 		// If we don't have any of this information from either the process indicator side or
 		// processes listening on ports side, the process indicator has been deleted and the
 		// port has been closed. Central just hasn't gotten the message yet.
@@ -160,8 +174,8 @@ func (s *fullStoreImpl) readRows(
 				Scraped:      procMsg.GetSignal().GetScraped(),
 				LineageInfo:  procMsg.GetSignal().GetLineageInfo(),
 			},
-			ClusterId:          procMsg.GetClusterId(),
-			Namespace:          procMsg.GetNamespace(),
+			ClusterId:          clusterID,
+			Namespace:          namespace,
 			ContainerStartTime: procMsg.GetContainerStartTime(),
 			ImageId:            procMsg.GetImageId(),
 		}
