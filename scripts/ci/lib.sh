@@ -1411,13 +1411,15 @@ _make_slack_failure_attachments() {
     slack_attachments=""
     if [[ ! -f "${JOB_SLACK_FAILURE_ATTACHMENTS}" ]]; then
         if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
-            slack_attachments+="$(_make_slack_failure_block "Could not parse junit in main test step. Check build logs for more information.")"
+            slack_attachments+="$(_make_slack_failure_plain_text_block \
+                "Could not parse junit in main test step. Check build logs for more information.")"
         fi
     else
         slack_attachments+="$(cat "${JOB_SLACK_FAILURE_ATTACHMENTS}")"
     fi
     if [[ ! -f "${END_SLACK_FAILURE_ATTACHMENTS}" ]]; then
-        slack_attachments+="$(_make_slack_failure_block "Could not parse junit in final test step. Check build logs for more information.")"
+        slack_attachments+="$(_make_slack_failure_plain_text_block \
+            "Could not parse junit in final test step. Check build logs for more information.")"
     else
         slack_attachments+="$(cat "${END_SLACK_FAILURE_ATTACHMENTS}")"
     fi
@@ -1428,7 +1430,7 @@ _make_slack_failure_attachments() {
         msg="No junit records were found for this failure. Check build logs \
 and artifacts for more information. Consider adding an \
 issue to improve CI to detect this failure pattern. (Add a CI_Fail_Better label)."
-        slack_attachments="$(_make_slack_failure_block "${msg}")"
+        slack_attachments="$(_make_slack_failure_plain_text_block "${msg}")"
     fi
 }
 
@@ -1442,8 +1444,8 @@ _make_slack_failure_block() {
       {
         "type": "section",
         "text": {
-          "type": "plain_text",
-          "text": "\($msg)"
+          "type": "\($section_type)",
+          "text": "\($content)"
         }
       }
     ]
@@ -1451,8 +1453,17 @@ _make_slack_failure_block() {
 ]
 '
     jq --null-input \
-       --arg msg "$1" \
+       --arg section_type "$1" \
+       --arg content "$2" \
        "$body"
+}
+
+_make_slack_failure_plain_text_block() {
+    _make_slack_failure_block "plain_text" "$1"
+}
+
+_make_slack_failure_markdown_block() {
+    _make_slack_failure_block "mrkdwn" "$1"
 }
 
 _send_slack_error() {
@@ -1470,6 +1481,108 @@ _slack_check_env() {
             return 1
         fi
     )
+}
+
+slack_workflow_failure() {
+    # shellcheck disable=SC2153
+    local github_context="${GITHUB_CONTEXT}"
+    local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
+
+    if is_in_PR_context; then
+        if pr_has_label "ci-test-github-action-slack-messages"; then
+            # Send to #acs-slack-ci-integration-testing when testing.
+            webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+        else
+            info "Skipping slack message for PRs"
+            return 0
+        fi
+    fi
+
+    local workflow_name commit_msg commit_url repo author_name author_login repo_url run_id
+    workflow_name=$(jq -r <<<"${github_context}" '.workflow')
+    event_name=$(jq -r <<<"${github_context}" '.event_name')
+    if [[ "${event_name}" == "push" ]]; then
+        commit_msg=$(jq -r <<<"${github_context}" '.event.head_commit.message')
+        commit_msg="${commit_msg%%$'\n'*}" # use first line of commit msg
+        commit_url=$(jq -r <<<"${github_context}" '.event.head_commit.url')
+        author_name=$(jq -r <<<"${github_context}" '.event.head_commit.author.name')
+        author_login=$(jq -r <<<"${github_context}" '.event.head_commit.author.username')
+        repo_url=$(jq -r <<<"${github_context}" '.event.repository.url')
+    else
+        commit_msg="This is a test slack message"
+        commit_url=$(jq -r <<<"${github_context}" '.event.pull_request.diff_url')
+        author_name=$(jq -r <<<"${github_context}" '.actor')
+        author_login=$(jq -r <<<"${github_context}" '.actor')
+        repo_url=$(jq -r <<<"${github_context}" '.event.pull_request.base.repo.html_url')
+    fi
+    repo=$(jq -r <<<"${github_context}" '.repository')
+    run_id=$(jq -r <<<"${github_context}" '.run_id')
+
+    local slack_mention=""
+    _make_slack_mention
+
+    local attachments=""
+    local job_name job_url
+    IFS=$'\n'
+    for job in $(gh run view --jq '.jobs[] | select(.conclusion == "failure")' --json 'jobs' -R "${repo}" "${run_id}" | jq -sc '.[]')
+    do
+        job_name=$(jq -r <<<"${job}" '.name')
+        job_url=$(jq -r <<<"${job}" '.url')
+        attachments+="$(_make_slack_failure_markdown_block "Job: <${job_url}|${job_name}>")"
+    done
+    attachments="$(echo "${attachments}" | jq '.[]' | jq -s '.')"
+
+    # shellcheck disable=SC2016
+    local body='
+{
+    "text": "\($workflow_name) failed.
+Commit: \($commit_msg).
+Author: \($author_name)\($slack_mention).",
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "\($workflow_name) failed."
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "
+*Commit:* <\($commit_url)|\($commit_msg)>.
+*Repo:* \($repo).
+*Author:* \($author_name)\($slack_mention).
+*Workflow:* \($repo_url)/actions/runs/\($run_id)"
+            }
+        },
+        {
+            "type": "divider"
+        }
+    ],
+    "attachments": $attachments
+}
+'
+
+    local payload
+    payload="$(jq --null-input \
+        --arg workflow_name "${workflow_name}" \
+        --arg commit_url "$commit_url" \
+        --arg commit_msg "$commit_msg" \
+        --arg repo "$repo" \
+        --arg author_name "$author_name" \
+        --arg slack_mention "$slack_mention" \
+        --arg repo_url "$repo_url" \
+        --arg run_id "$run_id" \
+        --argjson attachments "$attachments" \
+       "$body")"
+
+    echo -e "About to post:\n$payload"
+
+    echo "$payload" | curl --location --silent --show-error --fail \
+         --data @- --header 'Content-Type: application/json' \
+         "${webhook_url}"
 }
 
 junit_wrap() {
