@@ -12,12 +12,12 @@ import {
 
 type CredentialExpiryProps = {
     component: CertExpiryComponent;
-    hasAdministrationWritePermission: boolean;
+    showCertGenerateAction: boolean;
 };
 
 function CredentialExpiryBanner({
     component,
-    hasAdministrationWritePermission,
+    showCertGenerateAction,
 }: CredentialExpiryProps): ReactElement | null {
     const [expirationDate, setExpirationDate] = useState('');
     useEffect(() => {
@@ -52,7 +52,7 @@ function CredentialExpiryBanner({
     const message = (
         <span className="flex-1 text-center">
             {`${name} certificate ${getCredentialExpiryPhrase(expirationDate, now)}. `}
-            {hasAdministrationWritePermission ? (
+            {showCertGenerateAction ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
             ) : (
                 'Contact your administrator.'
