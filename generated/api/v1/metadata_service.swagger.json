@@ -247,6 +247,10 @@
         "centralCanDisplayDeclarativeConfigHealth": {
           "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
           "description": "Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission\nsets, notifiers) to the user."
+        },
+        "centralCanUpdateCert": {
+          "$ref": "#/definitions/CentralServicesCapabilitiesCapabilityStatus",
+          "title": "Ability to trigger generation of new certificates"
         }
       },
       "description": "Provides availability of certain functionality of Central Services in the current configuration.\nThe initial intended use is to disable certain functionality that does not make sense in the Cloud Service context."

@@ -96,6 +96,9 @@ message CentralServicesCapabilities {
     // Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
     // sets, notifiers) to the user.
     CapabilityStatus central_can_display_declarative_config_health = 3;
+
+    // Ability to trigger generation of new certificates
+    CapabilityStatus central_can_update_cert = 4;
 }
 
 service MetadataService {
