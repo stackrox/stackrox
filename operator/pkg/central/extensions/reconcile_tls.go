@@ -81,7 +81,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-db-tls secret")
 	}
 
-	if features.ScannerV4.Enabled() {
+	if features.ScannerV4Support.Enabled() {
 		if err := r.reconcileScannerV4IndexerTLSSecret(ctx); err != nil {
 			return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
 		}

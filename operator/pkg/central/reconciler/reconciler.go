@@ -45,7 +45,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
 
-	if features.ScannerV4.Enabled() {
+	if features.ScannerV4Support.Enabled() {
 		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4DBPasswordExtension(mgr.GetClient())))
 	}
 

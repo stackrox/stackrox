@@ -104,7 +104,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 		v.AddChild("scanner", getCentralScannerComponentValues(c.Spec.Scanner))
 	}
 
-	if c.Spec.ScannerV4 != nil && features.ScannerV4.Enabled() {
+	if c.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
 		v.AddChild("scannerV4", getCentralScannerV4ComponentValues(c.Spec.ScannerV4))
 	}
 
