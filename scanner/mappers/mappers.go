@@ -508,7 +508,7 @@ func nvdScoresMap(enrichments map[string][]json.RawMessage) (map[string]nvdschem
 	if err != nil {
 		return nil, err
 	}
-	if len(scores) <= 0 {
+	if len(scores) == 0 {
 		return nil, nil
 	}
 	ret := make(map[string]nvdschema.CVSSV30)
@@ -602,8 +602,8 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 		if nvd, ok := nvdScores[vuln.ID]; ok {
 			switch {
 			case strings.HasPrefix(nvd.Version, "2"):
-				values.v3Score = float32(nvd.BaseScore)
-				values.v3Vector = nvd.VectorString
+				values.v2Score = float32(nvd.BaseScore)
+				values.v2Vector = nvd.VectorString
 			case strings.HasPrefix(nvd.Version, "3"):
 				values.v3Score = float32(nvd.BaseScore)
 				values.v3Vector = nvd.VectorString
