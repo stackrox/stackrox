@@ -178,20 +178,17 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 	// There will be  (4 or 5)+(2 namespace)+len(extra fields) different key/value pairs in this message.
 	extensionList := make([]string, 0, 5+2+len(s.Notifier.GetSyslog().GetExtraFields()))
 
+	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
 	alertFirstOccurred, err := protocompat.ConvertTimestampToTimeOrError(alert.GetFirstOccurred())
-	if err != nil {
-		return ""
+	if err == nil {
+		extensionList = append(extensionList, makeTimeExtensionPair(startTime, alertFirstOccurred)...)
 	}
 	alertTime, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
-	if err != nil {
-		return ""
-	}
-
-	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
-	extensionList = append(extensionList, makeTimeExtensionPair(startTime, alertFirstOccurred)...)
-	extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, alertTime)...)
-	if alert.GetState() == storage.ViolationState_RESOLVED {
-		extensionList = append(extensionList, makeTimeExtensionPair(endTime, alertTime)...)
+	if err == nil {
+		extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, alertTime)...)
+		if alert.GetState() == storage.ViolationState_RESOLVED {
+			extensionList = append(extensionList, makeTimeExtensionPair(endTime, alertTime)...)
+		}
 	}
 
 	if features.SyslogNamespaceLabels.Enabled() {

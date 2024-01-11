@@ -955,7 +955,7 @@ func (s *clusterCVEDatastoreSACSuite) runTestSuppressUnsuppressCVE(targetCVE str
 	for _, c := range getClusterCVESuppressUnsuppressTestCases(s.T(), validClusters[0], validClusters[1]) {
 		s.Run(c.name, func() {
 			ctx := c.ctx
-			snoozeStart := time.Now().Truncate(time.Second)
+			snoozeStart := time.Now().Truncate(time.Second).UTC()
 			snoozeDuration := 10 * time.Minute
 
 			err = s.pgStore.Suppress(ctx, snoozeStart, snoozeDuration, targetCVE)

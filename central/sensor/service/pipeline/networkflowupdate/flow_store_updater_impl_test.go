@@ -57,7 +57,7 @@ func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
-	firstTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
+	firstTimestamp := time.Now()
 	storedFlows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -66,7 +66,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: firstTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(firstTimestamp),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -83,7 +83,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: firstTimestamp,
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(firstTimestamp),
 		},
 	}
 

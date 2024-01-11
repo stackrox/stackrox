@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -191,14 +192,14 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				},
 			}))
 
-	ts := types.TimestampNow()
+	ts := time.Now()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
 		Scope: &v1.NetworkGraphScope{
 			Query: "Orchestrator Component:false",
 		},
-		Since: ts,
+		Since: protoconv.ConvertTimeToTimestamp(ts),
 	}
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
@@ -790,14 +791,14 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 				},
 			}))
 
-	ts := types.TimestampNow()
+	ts := time.Now()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
 		Scope: &v1.NetworkGraphScope{
 			Query: "Orchestrator Component:false",
 		},
-		Since: ts,
+		Since: protoconv.ConvertTimeToTimestamp(ts),
 	}
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b, es1c, es2, es3})
@@ -905,11 +906,11 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	ts := types.TimestampNow()
+	ts := time.Now()
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
-		Since:     ts,
+		Since:     protoconv.ConvertTimeToTimestamp(ts),
 	}
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
