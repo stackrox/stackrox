@@ -916,3 +916,25 @@ func Test_getVulnName(t *testing.T) {
 	}
 
 }
+
+func Test_versionID(t *testing.T) {
+	tests := map[string]struct {
+		d         *claircore.Distribution
+		versionID string
+	}{
+		"when version ID is empty and distribution is Alpine then use version": {
+			d:         &claircore.Distribution{Version: "sample alpine version ID", DID: "alpine"},
+			versionID: "sample alpine version ID",
+		},
+		"when version is not empty and distribution is Alpine then use version ID": {
+			d:         &claircore.Distribution{Version: "sample alpine version", DID: "alpine"},
+			versionID: "sample alpine version",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			versionID := versionID(tt.d)
+			assert.Equal(t, tt.versionID, versionID)
+		})
+	}
+}
