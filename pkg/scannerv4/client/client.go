@@ -31,6 +31,9 @@ type Scanner interface {
 	// image and return the generated index report if successful, or error.
 	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error)
 
+	// GetVulnerabilities will match vulnerabilities to the contents provided.
+	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error)
+
 	// IndexAndScanImage scans an image for vulnerabilities. If the index report
 	// for that image does not exist, it is created. It returns the vulnerability
 	// report.
@@ -174,6 +177,22 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	if err != nil {
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
+	return vr, nil
+}
+
+func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetVulnerabilities")
+
+	req := &v4.GetVulnerabilitiesRequest{HashId: getImageManifestID(ref), Contents: contents}
+	var vr *v4.VulnerabilityReport
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
+		vr, err = c.matcher.GetVulnerabilities(ctx, req)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get vulns: %w", err)
+	}
+
 	return vr, nil
 }
 
