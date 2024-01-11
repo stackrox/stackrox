@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"

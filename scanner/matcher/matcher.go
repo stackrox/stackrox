@@ -8,14 +8,68 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+<<<<<<< HEAD
 	"github.com/quay/claircore/datastore/postgres"
+=======
+	ccpostgres "github.com/quay/claircore/datastore/postgres"
+>>>>>>> ross/scanner-updater
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
+<<<<<<< HEAD
 	metadatapostgres "github.com/stackrox/rox/scanner/matcher/metadata/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
+=======
+	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/matcher/updater"
+	"github.com/stackrox/rox/scanner/updater/rhel"
+>>>>>>> ross/scanner-updater
 )
+
+var (
+	// updaterSets specifies the ClairCore updaters to use.
+	updaterSets = []string{
+		"alpine",
+		"aws",
+		"debian",
+		"oracle",
+		"osv",
+		"photon",
+		"rhcc",
+		"suse",
+		"ubuntu",
+	}
+
+	// matcherNames specifies the ClairCore matchers to use.
+	// TODO: add NodeJS once implemented.
+	matcherNames = []string{
+		"alpine-matcher",
+		"aws-matcher",
+		"debian-matcher",
+		"gobin",
+		"java-maven",
+		"oracle",
+		"photon",
+		"python",
+		"rhel-container-matcher",
+		"rhel",
+		"ruby-gem",
+		"suse",
+		"ubuntu-matcher",
+	}
+)
+
+// updaters specifies the out-of-tree updaters to use.
+func updaters(ctx context.Context, c *http.Client) ([]driver.Updater, error) {
+	zlog.Info(ctx).Msg("creating out-of-tree RHEL updaters")
+	rhelUpdaters, err := rhel.Updaters(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("out-of-tree RHEL updaters: %w", err)
+	}
+
+	return rhelUpdaters, nil
+}
 
 // Matcher represents a vulnerability matcher.
 //
@@ -29,7 +83,11 @@ type Matcher interface {
 // matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
+<<<<<<< HEAD
 	metadataStore metadatapostgres.MetadataStore
+=======
+	metadataStore postgres.MatcherMetadataStore
+>>>>>>> ross/scanner-updater
 
 	updater *updater.Updater
 }
@@ -37,15 +95,19 @@ type matcherImpl struct {
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
-	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
+	pool, err := ccpostgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
-	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
+	store, err := ccpostgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+<<<<<<< HEAD
 	metadataStore, err := metadatapostgres.InitPostgresMetadataStore(ctx, pool, true)
+=======
+	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
+>>>>>>> ross/scanner-updater
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
 	}
@@ -57,14 +119,34 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// TODO: Update HTTP client.
 	c := http.DefaultClient
 
+<<<<<<< HEAD
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
 		DisableBackgroundUpdates: true,
+=======
+	ootUpdaters, err := updaters(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("creating out-of-tree updaters: %w", err)
+	}
+
+	libVuln, err := libvuln.New(ctx, &libvuln.Options{
+		Store:        store,
+		Locker:       locker,
+		UpdaterSets:  updaterSets,
+		Updaters:     ootUpdaters,
+		MatcherNames: matcherNames,
+		// TODO(ROX-21264): Replace with our own enricher(s).
+		Enrichers:                nil,
+>>>>>>> ross/scanner-updater
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
+		DisableBackgroundUpdates: true,
 		Client:                   c,
+<<<<<<< HEAD
 		// TODO(ROX-21264): Replace with our own enricher(s).
 		Enrichers: nil,
+=======
+>>>>>>> ross/scanner-updater
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
