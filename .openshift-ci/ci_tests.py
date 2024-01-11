@@ -132,11 +132,17 @@ class QaE2eTestPart2(BaseTest):
 class QaE2eTestCompatibility(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
+    def __init__(self, central_version, sensor_version):
+        super().__init__()
+        self._central_version = central_version
+        self._sensor_version = sensor_version
+
     def run(self):
         print("Executing qa-tests-compatibility tests")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-compatibility.sh"],
+            ["qa-tests-backend/scripts/run-compatibility.sh",
+             self._central_version, self._sensor_version],
             QaE2eTestCompatibility.TEST_TIMEOUT,
         )
 
