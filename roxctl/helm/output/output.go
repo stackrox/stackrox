@@ -156,7 +156,7 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 
 	// For testing purposes, running a non-release roxctl version, provide
 	// TelemetryStorageKey with the test value and set --enable-telemetry=true
-	// for to enable telemetry.
+	// to get telemetry enabled by default in the resulting chart.
 	if cfg.telemetry && (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
 		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
 		values.TelemetryEnabled = true
