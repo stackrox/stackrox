@@ -28,9 +28,13 @@ const (
 	ifModifiedSince = `If-Modified-Since`
 	lastModified    = `Last-Modified`
 
-	name = `scanner-v4-updater`
+	updateName = `scanner-v4-updater`
 
 	updateFilePattern = `updates-*.json.zst`
+
+	defaultUpdateInterval = 5*time.Minute
+	defaultUpdateRetention = libvuln.DefaultUpdateRetention
+	defaultFullGCInterval = 24*time.Hour
 )
 
 var (
@@ -57,6 +61,7 @@ type Opts struct {
 
 	SkipGC          bool
 	UpdateRetention int
+	FullGCInterval  time.Duration
 }
 
 type Updater struct {
@@ -75,6 +80,7 @@ type Updater struct {
 
 	skipGC          bool
 	updateRetention int
+	fullGCInterval  time.Duration
 
 	importVulns func(ctx context.Context, reader io.Reader) error
 }
@@ -101,12 +107,17 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 		skipGC:          opts.SkipGC,
 		updateRetention: opts.UpdateRetention,
+		fullGCInterval:  opts.FullGCInterval,
 	}
 	u.importVulns = func(ctx context.Context, reader io.Reader) error {
 		return libvuln.OfflineImport(ctx, u.pool, reader)
 	}
 
 	u.tryRemoveExiting()
+
+	if !u.skipGC {
+		go u.runGCFullPeriodic(ctx)
+	}
 
 	return u, nil
 }
@@ -125,11 +136,14 @@ func fillOpts(opts *Opts) error {
 	if opts.Root == "" {
 		opts.Root = os.TempDir()
 	}
-	if opts.UpdateRetention <= 1 {
-		opts.UpdateRetention = libvuln.DefaultUpdateRetention
-	}
 	if opts.UpdateInterval < time.Minute {
-		opts.UpdateInterval = 5 * time.Minute
+		opts.UpdateInterval = defaultUpdateInterval
+	}
+	if opts.UpdateRetention <= 1 {
+		opts.UpdateRetention = defaultUpdateRetention
+	}
+	if opts.FullGCInterval < 3*time.Hour {
+		opts.FullGCInterval = defaultFullGCInterval
 	}
 
 	return nil
@@ -215,11 +229,11 @@ func (u *Updater) update(ctx context.Context) error {
 func (u *Updater) runUpdate(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runUpdate")
 
-	ctx, done := u.locker.TryLock(ctx, name)
+	ctx, done := u.locker.TryLock(ctx, updateName)
 	defer done()
 	if err := ctx.Err(); err != nil {
 		zlog.Info(ctx).
-			Str("updater", name).
+			Str("updater", updateName).
 			Msg("did not obtain lock, skipping update run")
 		return nil
 	}
@@ -335,32 +349,6 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	}
 	succeeded = true
 	return f, timestamp, nil
-}
-
-// runGC runs a garbage collection cycle.
-// This is heavily copied from https://github.com/quay/claircore/blob/v1.5.20/libvuln/updates/manager.go#L233.
-func (u *Updater) runGC(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runGC")
-
-	ctx, done := u.locker.TryLock(ctx, "garbage-collection")
-	defer done()
-	if err := ctx.Err(); err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("lock context canceled, garbage collection already running")
-		return
-	}
-
-	zlog.Info(ctx).Int("retention", u.updateRetention).Msg("GC started")
-	i, err := u.store.GC(ctx, u.updateRetention)
-	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("performing GC")
-		return
-	}
-	zlog.Info(ctx).
-		Int64("remaining_ops", i).
-		Int("retention", u.updateRetention).
-		Msg("GC completed")
 }
 
 func jitter() time.Duration {
