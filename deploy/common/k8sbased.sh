@@ -383,10 +383,18 @@ function launch_central {
         helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
 
+
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n stackrox
         helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
+      fi
+
+      # Add a custom values file to Helm
+      if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
+        helm_args+=(
+          -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+        )
       fi
 
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
@@ -583,13 +591,15 @@ function launch_sensor {
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
 
+      init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
       helm_args=(
-        -f "$k8s_dir/sensor-deploy/init-bundle.yaml"
+        -f "$init_bundle_path"
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
       )
+
       if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
@@ -620,6 +630,13 @@ function launch_sensor {
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+
+      # Add a custom values file to Helm
+      if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
+        helm_args+=(
+          -f "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE"
         )
       fi
 
