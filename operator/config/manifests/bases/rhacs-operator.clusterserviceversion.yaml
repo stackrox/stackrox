@@ -574,7 +574,7 @@ spec:
           collecting process and networking activity at the host level.
         displayName: Collector Settings
         path: perNode.collector
-      - description: The method for system-level data collection. EBPF is recommended.
+      - description: The method for system-level data collection. CORE_BPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
           these section will not have any effect.
