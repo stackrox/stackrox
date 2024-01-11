@@ -44,7 +44,9 @@ func checkIfShouldUpdate(
 	newPLOP *storage.ProcessListeningOnPortFromSensor) bool {
 
 	return existingPLOP.CloseTimestamp != newPLOP.CloseTimestamp ||
-		(existingPLOP.PodUid == "" && newPLOP.PodUid != "")
+		(existingPLOP.PodUid == "" && newPLOP.PodUid != "") ||
+		(existingPLOP.ClusterId == "" && newPLOP.ClusterId != "") ||
+		(existingPLOP.Namespace == "" && newPLOP.Namespace != "")
 }
 
 func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
@@ -102,6 +104,7 @@ func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) s
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
+	clusterID string,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) error {
 	defer metrics.SetDatastoreFunctionDuration(
@@ -140,6 +143,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
+		val.ClusterId = clusterID
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -176,6 +180,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
 			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
+			existingPLOP.Namespace = val.Namespace
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -191,6 +197,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
+		val.ClusterId = clusterID
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -220,6 +227,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
 			}
 			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
+			existingPLOP.Namespace = val.Namespace
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -499,6 +508,8 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
 		PodUid:             value.PodUid,
+		ClusterId:          value.ClusterId,
+		Namespace:          value.Namespace,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
