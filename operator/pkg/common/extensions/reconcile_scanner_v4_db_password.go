@@ -14,7 +14,7 @@ const (
 	scannerV4DBPasswordResourceName = "scanner-v4-db-password" // #nosec G101
 )
 
-// ScannerV4BearingCustomResource interface exposes details about the Scanner resource from the kubernetes object.
+// ScannerV4BearingCustomResource interface exposes details about the Scanner V4 resource from the kubernetes object.
 type ScannerV4BearingCustomResource interface {
 	types.K8sObject
 	IsScannerV4Enabled() bool
@@ -41,7 +41,7 @@ type reconcileScannerV4DBPasswordExtensionRun struct {
 }
 
 func (r *reconcileScannerV4DBPasswordExtensionRun) Execute(ctx context.Context) error {
-	// Delete any scanner-db password only if the CR is being deleted, or scanner is not enabled.
+	// Delete any scanner-v4-db password only if the CR is being deleted, or scanner V4 is not enabled.
 	shouldExist := r.obj.GetDeletionTimestamp() == nil && r.obj.IsScannerV4Enabled()
 
 	if err := r.reconcilePasswordSecret(ctx, shouldExist); err != nil {

@@ -184,7 +184,7 @@ spec:
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
       - description: If you don't want to deploy the Red Hat Advanced Cluster Security
-          ScannerV4, you can disable it here
+          Scanner V4, you can disable it here
         displayName: Scanner V4 Component
         path: scannerV4.scannerComponent
       - description: Specify a connection string that corresponds to an external database.
@@ -399,9 +399,9 @@ spec:
           and a host path.
         displayName: Persistence
         path: central.persistence
-      - description: Configures monitoring endpoint for Scanner. The monitoring endpoint
-          allows other services to collect metrics from Scanner, provided in Prometheus
-          compatible format.
+      - description: Configures monitoring endpoint for Scanner V4. The monitoring
+          endpoint allows other services to collect metrics from Scanner V4, provided
+          in Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
       - description: Allows you to specify additional trusted Root CAs.
@@ -432,21 +432,15 @@ spec:
         path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Deprecated field. This field will be removed in a future release.
-          Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Configures the encryption of notifier secrets stored in the Central
           DB.
         displayName: Notifier Secrets Encryption
         path: central.notifierSecretsEncryption
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Overlays
-        displayName: Overlays
-        path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
@@ -656,6 +650,12 @@ spec:
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Deprecated field. This field will be removed in a future release.
+          Miscellaneous settings.
+        displayName: Miscellaneous
+        path: misc
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
