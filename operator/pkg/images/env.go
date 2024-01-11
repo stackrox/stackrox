@@ -13,6 +13,6 @@ var (
 	CollectorSlim    = env.RegisterSetting("RELATED_IMAGE_COLLECTOR_SLIM")
 	CollectorFull    = env.RegisterSetting("RELATED_IMAGE_COLLECTOR_FULL")
 	ScannerV4DB      = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4_DB")
-	ScannerV4Indexer = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4")
-	ScannerV4Matcher = ScannerV4Indexer
+	ScannerV4Indexer = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4_INDEXER")
+	ScannerV4Matcher = env.RegisterSetting("RELATED_IMAGE_SCANNER_V4_MATCHER")
 )
