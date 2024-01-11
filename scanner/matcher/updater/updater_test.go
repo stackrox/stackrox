@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/stackrox/rox/scanner/matcher/metadata/postgres/mocks"
+	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -32,8 +32,13 @@ func (t *testLocker) TryLock(ctx context.Context, s string) (context.Context, co
 	return t.locker.TryLock(ctx, s)
 }
 
-func (t *testLocker) Lock(_ context.Context, _ string) (context.Context, context.CancelFunc) {
-	panic("unimplemented")
+func (t *testLocker) Lock(ctx context.Context, s string) (context.Context, context.CancelFunc) {
+	if t.fail {
+		ctx, cancel := context.WithCancel(ctx)
+		cancel()
+		return ctx, cancel
+	}
+	return t.locker.Lock(ctx, s)
 }
 
 func testHTTPServer(t *testing.T) (*httptest.Server, time.Time) {
@@ -54,7 +59,7 @@ func TestUpdate(t *testing.T) {
 		locker: updates.NewLocalLockSource(),
 		fail:   true,
 	}
-	metadataStore := mocks.NewMockMetadataStore(gomock.NewController(t))
+	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
 	u := &Updater{
 		locker:        locker,
 		pool:          nil,
