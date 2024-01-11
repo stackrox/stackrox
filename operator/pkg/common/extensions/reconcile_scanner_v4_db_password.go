@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// ScannerV4DBPasswordKey is the key used in the secret data for scanner V4 db password
 	ScannerV4DBPasswordKey          = `password`
 	scannerV4DBPasswordResourceName = "scanner-v4-db-password" // #nosec G101
 )
