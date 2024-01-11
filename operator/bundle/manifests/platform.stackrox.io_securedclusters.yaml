@@ -464,10 +464,10 @@ spec:
                       for collecting process and networking activity at the host level.
                     properties:
                       collection:
-                        default: EBPF
+                        default: CORE_BPF
                         description: The method for system-level data collection.
-                          EBPF is recommended. If you select "NoCollection", you will
-                          not be able to see any information about network activity
+                          CORE_BPF is recommended. If you select "NoCollection", you
+                          will not be able to see any information about network activity
                           and process executions. The remaining settings in these
                           section will not have any effect.
                         enum:
