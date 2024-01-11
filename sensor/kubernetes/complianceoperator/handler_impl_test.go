@@ -304,6 +304,62 @@ func (s *HandlerTestSuite) TestProcessRerunScanNotFound() {
 	s.assert(expected, actual)
 }
 
+func (s *HandlerTestSuite) TestProcessSuspendingScanNotFound() {
+	msg := getTestSuspendScanMsg("midnight")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "namespaces/ns/scansettings/midnight not found",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessSuspendResumingScanSuccess() {
+	// create a scheduled scan
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	// suspend
+	msg = getTestSuspendScanMsg("midnight")
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	// resume
+	msg = getTestResumeScanMsg("midnight")
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessResumingScanNotFound() {
+	msg := getTestResumeScanMsg("midnight")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "namespaces/ns/scansettings/midnight not found",
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
@@ -431,6 +487,44 @@ func getTestRerunScanMsg(name string) *central.MsgToSensor {
 						Id: uuid.NewV4().String(),
 						ScanRequest: &central.ApplyComplianceScanConfigRequest_RerunScan{
 							RerunScan: &central.ApplyComplianceScanConfigRequest_RerunScheduledScan{
+								ScanName: name,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestSuspendScanMsg(name string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_SuspendScan{
+							SuspendScan: &central.ApplyComplianceScanConfigRequest_SuspendScheduledScan{
+								ScanName: name,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestResumeScanMsg(name string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_ResumeScan{
+							ResumeScan: &central.ApplyComplianceScanConfigRequest_ResumeScheduledScan{
 								ScanName: name,
 							},
 						},

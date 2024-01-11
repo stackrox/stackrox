@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -405,8 +406,8 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
-	// If a cluster is provided, enhance deployments with additional info from Sensor
-	if eCtx.ClusterID != "" {
+	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
+	if eCtx.ClusterID != "" && s.connManager.GetConnection(eCtx.ClusterID).HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
 		if conn == nil {
 			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")

@@ -85,7 +85,7 @@ function verify_orch {
 }
 
 function local_dev {
-      is_local_dev="false"
+      is_local_dev="${LOCAL_DEPLOYMENT}"
       if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
         is_local_dev="true"
       fi
@@ -396,6 +396,13 @@ function launch_central {
         helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
       fi
 
+      # Add a custom values file to Helm
+      if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
+        helm_args+=(
+          -f "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+        )
+      fi
+
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
     else
@@ -407,12 +414,12 @@ function launch_central {
       echo
 
       if [[ "${is_local_dev}" == "true" ]]; then
-          kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-            kubectl -n stackrox patch deploy/central-db --patch '{"spec":{"template":{"spec":{"initContainers":[{"name":"init-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":1,"memory":"1Gi"}}}],"containers":[{"name":"central-db","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-          fi
+        ${ORCH_CMD} -n stackrox patch deploy/central --patch "$(cat "${common_dir}/central-local-patch.yaml")"
+        if [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
+          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-local-patch.yaml")"
+        fi
       elif [[ "${ROX_POSTGRES_DATASTORE}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
+        ${ORCH_CMD} -n stackrox patch deploy/central-db --patch "$(cat "${common_dir}/central-db-patch.yaml")"
       fi
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
@@ -590,13 +597,15 @@ function launch_sensor {
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
 
+      init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
       helm_args=(
-        -f "$k8s_dir/sensor-deploy/init-bundle.yaml"
+        -f "$init_bundle_path"
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
       )
+
       if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
@@ -627,6 +636,13 @@ function launch_sensor {
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+
+      # Add a custom values file to Helm
+      if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
+        helm_args+=(
+          -f "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE"
         )
       fi
 
