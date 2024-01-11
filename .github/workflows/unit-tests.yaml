@@ -239,7 +239,7 @@ jobs:
       TEST_FAILURES_NOTIFY_WEBHOOK: ${{ secrets.TEST_FAILURES_NOTIFY_WEBHOOK }}
     if: |
       failure() && (
-          github.event_name == 'push' || 
+          github.event_name == 'push' ||
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack

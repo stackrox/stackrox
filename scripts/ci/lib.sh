@@ -1484,6 +1484,7 @@ _slack_check_env() {
 }
 
 slack_workflow_failure() {
+    # shellcheck disable=SC2153
     local github_context="${GITHUB_CONTEXT}"
     local webhook_url="${TEST_FAILURES_NOTIFY_WEBHOOK}"
 
