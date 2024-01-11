@@ -244,7 +244,7 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 
 // skipImageUpsert will return true if an image should not be upserted into the store.
 func (e *managerImpl) skipImageUpsert(img *storage.Image) (bool, error) {
-	if features.ScannerV4Enabled.Enabled() && !scannedByScannerV4(img) && e.scannedByClairify(img) {
+	if features.ScannerV4.Enabled() && !scannedByScannerV4(img) && e.scannedByClairify(img) {
 		// This image was scanned by the old Clairify scanner, we do not want to
 		// overwrite an existing Scanner V4 scan in the database (if it exists).
 		existingImg, exists, err := e.imageStorage.GetImage(riskReprocessorCtx, img.GetId())

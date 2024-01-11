@@ -86,7 +86,7 @@ func setupScannerV4Integration(ctx context.Context, iiStore store.Store, iis []*
 	keepDefault := true // for readability.
 
 	// If Scanner V4 is not installed delete the associated integration(s).
-	if !features.ScannerV4Enabled.Enabled() {
+	if !features.ScannerV4.Enabled() {
 		deleteScannerV4Integrations(ctx, iiStore, iis, !keepDefault)
 		return
 	}

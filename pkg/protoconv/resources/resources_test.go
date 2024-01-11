@@ -141,6 +141,22 @@ func TestCronJobPopulateSpec(t *testing.T) {
 	assert.Equal(t, deploymentWrap.Containers[0].Name, "container2")
 }
 
+func TestNewDeploymentFromStaticResourcePopulatesPodLabels(t *testing.T) {
+	deployment := &appsV1.Deployment{
+		Spec: appsV1.DeploymentSpec{
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "nginx"},
+				},
+				Spec: v1.PodSpec{Containers: []v1.Container{{Name: "nginx"}}},
+			},
+		},
+	}
+	d, err := NewDeploymentFromStaticResource(deployment, "Deployment", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"app": "nginx"}, d.GetPodLabels())
+}
+
 func TestIsTrackedReference(t *testing.T) {
 	cases := []struct {
 		ref       metav1.OwnerReference

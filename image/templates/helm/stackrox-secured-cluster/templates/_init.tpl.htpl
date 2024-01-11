@@ -42,7 +42,7 @@
   {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
   {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
   {{/* Only merge scanner-v4 config shapes if kubectl output is disabled and feature flag is enabled */}}
-[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
   {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
 [<- end >]
@@ -222,7 +222,7 @@
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
 [<- if not .KubectlOutput >]
 {{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
-[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
 {{ include "srox.configureImage" (list $ ._rox.image.scannerV4) }}
 [<- end >]
 [<- end >]
@@ -264,7 +264,7 @@
   {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner" }}
 {{ end }}
 
-[<- if and .FeatureFlags.ROX_SCANNER_V4 (not .KubectlOutput) >]
+[<- if and .FeatureFlags.ROX_SCANNER_V4_SUPPORT (not .KubectlOutput) >]
 {{/*
    Local Scanner v4 Indexer setup.
   */}}

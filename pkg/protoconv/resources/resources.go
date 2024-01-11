@@ -227,6 +227,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	w.populateReplicas(spec, obj)
 
 	var podSpec v1.PodSpec
+	var podMeta metav1.ObjectMeta
 
 	switch o := obj.(type) {
 	case *openshiftAppsV1.DeploymentConfig:
@@ -253,9 +254,11 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 			return
 		}
 		podSpec = podTemplate.Spec
+		podMeta = podTemplate.ObjectMeta
 	}
 
 	w.PopulateDeploymentFromPodSpec(podSpec)
+	w.PopulateDeploymentFromPodMeta(podMeta)
 }
 
 // PopulateDeploymentFromPodSpec fills in the initialized wrap with data from the passed pod spec
@@ -270,6 +273,11 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.populateImagePullSecrets(podSpec)
 
 	w.populateContainers(podSpec)
+}
+
+// PopulateDeploymentFromPodMeta fills in the initialized wrap with data from the passed pod meta
+func (w *DeploymentWrap) PopulateDeploymentFromPodMeta(podMeta metav1.ObjectMeta) {
+	w.PodLabels = podMeta.GetLabels()
 }
 
 func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {

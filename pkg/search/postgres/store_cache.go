@@ -368,6 +368,8 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 		switch data := interfaceObj.(type) {
 		case *storage.NamespaceMetadata:
 			scopeChecker = scopeChecker.ClusterID(data.GetClusterId()).Namespace(data.GetName())
+		case *storage.ProcessBaseline:
+			scopeChecker = scopeChecker.ClusterID(data.GetKey().GetClusterId()).Namespace(data.GetKey().GetNamespace())
 		case sac.NamespaceScopedObject:
 			scopeChecker = scopeChecker.ForNamespaceScopedObject(data)
 		}

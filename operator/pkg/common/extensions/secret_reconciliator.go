@@ -15,7 +15,11 @@ import (
 // validateSecretDataFunc validates a secret to determine if the generation should run. The boolean parameter is true if the
 // secret is managed by the running operator.
 type validateSecretDataFunc func(types.SecretDataMap, bool) error
-type generateSecretDataFunc func() (types.SecretDataMap, error)
+
+// generateSecretDataFunc generates new content of a secret.
+// The input data map contains the pre-existing secret content (if any) - in rare cases
+// it is needed in order to preserve selected fields rather than regenerate them.
+type generateSecretDataFunc func(types.SecretDataMap) (types.SecretDataMap, error)
 
 // NewSecretReconciliator creates a new SecretReconciliator. It takes a context and controller client.
 // The obj parameter is the owner object (i.e. a custom resource).
@@ -74,6 +78,7 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 		secret = nil
 	}
 
+	var oldData types.SecretDataMap
 	if secret != nil {
 		isManaged := metav1.IsControlledBy(secret, r.obj)
 		validateErr := validate(secret.Data, isManaged)
@@ -86,10 +91,11 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 		if !isManaged || !fixExisting {
 			return errors.Wrapf(validateErr, "existing %s secret is invalid, please delete the secret to allow fixing the issue", name)
 		}
+		oldData = secret.Data
 	}
 
 	// Try to generate the secret, in order to fix it.
-	data, err := generate()
+	data, err := generate(oldData)
 	if err != nil {
 		return errors.Wrapf(err, "generating data for new %s secret", name)
 	}

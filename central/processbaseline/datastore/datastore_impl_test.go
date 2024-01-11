@@ -60,8 +60,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
-	dbStore := postgresStore.New(suite.pool)
-	suite.storage, err = postgresStore.NewWithCache(dbStore)
+	suite.storage = postgresStore.New(suite.pool)
 	require.NoError(suite.T(), err)
 	suite.indexer = postgresStore.NewIndexer(suite.pool)
 

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	indexermocks "github.com/stackrox/rox/scanner/indexer/mocks"
 	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
 	"github.com/stretchr/testify/suite"
@@ -36,6 +36,10 @@ func (s *matcherServiceTestSuite) SetupTest() {
 
 func (s *matcherServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+}
+
+func (s *matcherServiceTestSuite) TestAuthz() {
+	testutils.AssertAuthzWorks(s.T(), &matcherService{})
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {

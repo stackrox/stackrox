@@ -10,7 +10,7 @@ from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 
 
-def make_compatibility_test_runner(cluster):
+def make_compatibility_test_runner(cluster, test_versions):
     return ClusterTestSetsRunner(
         cluster=cluster,
         sets=[
@@ -20,7 +20,7 @@ def make_compatibility_test_runner(cluster):
                 "test": QaE2eTestCompatibility(),
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
-                    artifact_destination_prefix="compatibility",
+                    artifact_destination_prefix=test_versions,
                 ),
             },
         ],

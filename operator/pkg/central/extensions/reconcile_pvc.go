@@ -83,7 +83,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget) *platfo
 		}
 		return persistence
 	case PVCTargetCentralDB:
-		if central.Spec.Central.IsExternalDB() {
+		if !central.Spec.Central.ShouldManageDB() {
 			return nil
 		}
 		dbPersistence := central.Spec.Central.GetDB().GetPersistence()

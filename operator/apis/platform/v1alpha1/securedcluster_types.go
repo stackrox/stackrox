@@ -276,10 +276,10 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
-	// The method for system-level data collection. EBPF is recommended.
+	// The method for system-level data collection. CORE_BPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
-	//+kubebuilder:default=EBPF
+	//+kubebuilder:default=CORE_BPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
