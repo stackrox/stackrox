@@ -5,6 +5,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
+// CentralOnly returns a serviceType authorizer that checks for the Central type.
+func CentralOnly() authz.Authorizer {
+	return Wrap(serviceType(storage.ServiceType_CENTRAL_SERVICE))
+}
+
 // SensorsOnly returns a serviceType authorizer that checks for the Sensor type.
 func SensorsOnly() authz.Authorizer {
 	return Wrap(serviceType(storage.ServiceType_SENSOR_SERVICE))
