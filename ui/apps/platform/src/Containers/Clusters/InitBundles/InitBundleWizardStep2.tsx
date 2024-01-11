@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Alert, Flex, Title } from '@patternfly/react-core';
 
-import { InitBundleWizardFormikProps, nameOfStep2 } from './InitBundleWizard.utils';
+import { InitBundleWizardFormikProps } from './InitBundleWizard.utils';
 
 export type InitBundleWizardStep2Props = {
     errorMessage: string;
@@ -15,7 +15,7 @@ function InitBundleWizardStep2({ errorMessage, formik }: InitBundleWizardStep2Pr
     return (
         <Flex direction={{ default: 'column' }}>
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
-                <Title headingLevel="h2">{nameOfStep2}</Title>
+                <Title headingLevel="h2">Download bundle</Title>
                 <p>
                     {values.installation === 'Operator'
                         ? 'Use this bundle to install secured cluster services on OpenShift with an Operator.'

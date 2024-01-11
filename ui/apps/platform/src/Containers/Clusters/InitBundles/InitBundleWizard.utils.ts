@@ -3,9 +3,6 @@ import { FormikProps } from 'formik';
 
 import { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
-export const nameOfStep1 = 'Select options';
-export const nameOfStep2 = 'Download bundle';
-
 export const installationOptions: Record<string, string> = {
     Operator: 'Operator (recommended)',
     Helm: 'Helm chart',

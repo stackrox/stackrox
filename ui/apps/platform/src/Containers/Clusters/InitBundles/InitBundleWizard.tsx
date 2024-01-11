@@ -8,13 +8,7 @@ import { generateClusterInitBundle } from 'services/ClustersService'; // Cluster
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundlesHeader from './InitBundlesHeader';
-import {
-    InitBundleWizardValues,
-    downloadBundle,
-    initialValues,
-    nameOfStep1,
-    nameOfStep2,
-} from './InitBundleWizard.utils';
+import { InitBundleWizardValues, downloadBundle, initialValues } from './InitBundleWizard.utils';
 import InitBundleWizardStep1 from './InitBundleWizardStep1';
 import InitBundleWizardStep2 from './InitBundleWizardStep2';
 
@@ -78,13 +72,13 @@ function InitBundleWizard(): ReactElement {
                     steps={[
                         {
                             id: 1,
-                            name: nameOfStep1,
+                            name: 'Select options',
                             component: <InitBundleWizardStep1 formik={formik} />,
                             enableNext: isValid,
                         },
                         {
                             id: 2,
-                            name: nameOfStep2,
+                            name: 'Download bundle',
                             component: (
                                 <InitBundleWizardStep2
                                     errorMessage={errorMessage}

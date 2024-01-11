@@ -17,7 +17,6 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import {
     InitBundleWizardFormikProps,
     installationOptions,
-    nameOfStep1,
     platformOptions,
 } from './InitBundleWizard.utils';
 
@@ -35,7 +34,7 @@ function InitBundleWizardStep1({ formik }: InitBundleWizardStep1Props): ReactEle
 
     return (
         <Flex direction={{ default: 'column' }}>
-            <Title headingLevel="h2">{nameOfStep1}</Title>
+            <Title headingLevel="h2">Select options</Title>
             <Form>
                 <FormLabelGroup
                     fieldId="name"
