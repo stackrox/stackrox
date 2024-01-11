@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
@@ -18,6 +17,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -216,11 +216,13 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 }
 
 func (s *generatorTestSuite) TestGenerate() {
-	ts := types.TimestampNow()
+	// The truncation is a trick to strip the timestamp from monotonic
+	// clock information that make the unit tests fail.
+	ts := time.Now().Truncate(time.Nanosecond)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
-		NetworkDataSince: ts,
+		NetworkDataSince: protoconv.ConvertTimeToTimestamp(ts),
 	}
 
 	ctxHasDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
@@ -531,12 +533,14 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 				},
 			}))
 
-	ts := types.TimestampNow()
+	// The truncation is a trick to strip the timestamp from monotonic
+	// clock information that make the unit tests fail.
+	ts := time.Now().Truncate(time.Nanosecond)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		Query:            "Namespace: foo,bar,qux",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
-		NetworkDataSince: ts,
+		NetworkDataSince: protoconv.ConvertTimeToTimestamp(ts),
 	}
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{

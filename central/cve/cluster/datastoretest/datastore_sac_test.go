@@ -891,10 +891,15 @@ func (s *clusterCVEDatastoreSACSuite) checkCVESnoozed(targetCVE string,
 	obj, found, err = s.pgStore.Get(allAccessCtx, targetCVE)
 	if found {
 		objSnoozed = obj.GetSnoozed()
-		objSnoozeStart, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeStart())
-		s.NoError(err)
-		objSnoozeExpiry, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeExpiry())
-		s.NoError(err)
+		if objSnoozed {
+			objSnoozeStart, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeStart())
+			s.NoError(err)
+			objSnoozeExpiry, err = protocompat.ConvertTimestampToTimeOrError(obj.GetSnoozeExpiry())
+			s.NoError(err)
+		} else {
+			objSnoozeStart = time.Time{}
+			objSnoozeExpiry = time.Time{}
+		}
 	} else {
 		objSnoozed = false
 		objSnoozeStart = time.Time{}

@@ -192,7 +192,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				},
 			}))
 
-	ts := time.Now()
+	// The truncation is a trick to strip the timestamp from monotonic
+	// clock information that make the unit tests fail.
+	ts := time.Now().Truncate(time.Nanosecond)
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
@@ -791,7 +793,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 				},
 			}))
 
-	ts := time.Now()
+	// The truncation is a trick to strip the timestamp from monotonic
+	// clock information that make the unit tests fail.
+	ts := time.Now().Truncate(time.Nanosecond)
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
@@ -906,7 +910,9 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	ctx := sac.WithAllAccess(context.Background())
 
-	ts := time.Now()
+	// The truncation is a trick to strip the timestamp from monotonic
+	// clock information that make the unit tests fail.
+	ts := time.Now().Truncate(time.Nanosecond)
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
