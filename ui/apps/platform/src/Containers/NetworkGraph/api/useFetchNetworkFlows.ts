@@ -54,8 +54,9 @@ function useFetchNetworkFlows({
                         const id = getUniqueIdFromPeer(curr.peer);
                         acc[id] = curr.status;
                         return acc;
-                },
-                    {} as Record<string, BaselineStatusType>);
+                    },
+                    {} as Record<string, BaselineStatusType>
+                );
                 const modifiedFlows = flows.map((flow) => {
                     const id = getUniqueIdFromFlow(flow);
                     const modifiedFlow: Flow = {
