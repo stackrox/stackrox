@@ -99,3 +99,91 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
+
+func TestOS(t *testing.T) {
+	testcases := []struct {
+		expected string
+		report   *v4.VulnerabilityReport
+	}{
+		{
+			expected: "rhel:9",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "rhel",
+							VersionId: "9",
+							Version:   "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "ubuntu:22.04",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "ubuntu",
+							VersionId: "22.04",
+							Version:   "22.04 (Jammy)",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "debian:12",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "debian",
+							VersionId: "12",
+							Version:   "12 (bookworm)",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "alpine:3.18",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "alpine",
+							VersionId: "3.18",
+							Version:   "3.18",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "unknown",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "alpine",
+							VersionId: "3.18",
+							Version:   "3.18",
+						},
+						{
+							Did: "idk",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := os(testcase.report)
+			assert.Equal(t, testcase.expected, name)
+		})
+	}
+}
