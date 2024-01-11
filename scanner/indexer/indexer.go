@@ -19,15 +19,45 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/dpkg"
+	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
+	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
+
+// ecosystems specifies the package ecosystems to use for indexing.
+func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
+	es := []*ccindexer.Ecosystem{
+		alpine.NewEcosystem(ctx),
+		dpkg.NewEcosystem(ctx),
+		gobin.NewEcosystem(ctx),
+		java.NewEcosystem(ctx),
+		python.NewEcosystem(ctx),
+		rhcc.NewEcosystem(ctx),
+		rhel.NewEcosystem(ctx),
+		rpm.NewEcosystem(ctx),
+		ruby.NewEcosystem(ctx),
+	}
+	if env.ScannerV4NodeJSSupport.BooleanSetting() {
+		es = append(es, nodejs.NewEcosystem(ctx))
+	}
+	return es
+}
 
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
@@ -96,6 +126,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
+		Ecosystems:           ecosystems(ctx),
 	}
 	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
 		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(` {"repo2cpe_mapping_url": "%s",
