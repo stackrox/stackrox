@@ -78,6 +78,8 @@ test_part_1() {
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+        info "Waiting 10 minutes to ensure the SCC changes have propagated"
+        sleep 600
     fi
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
