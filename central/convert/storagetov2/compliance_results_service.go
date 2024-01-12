@@ -109,7 +109,7 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceCountByResultByC
 			},
 			ScanStats: &v2.ComplianceScanStatsShim{
 				ScanName: resultCount.ScanConfigName,
-				CheckStats: []*v2.ComplianceScanStatsShim_ComplianceCheckStatusCount{
+				CheckStats: []*v2.ComplianceCheckStatusCount{
 					{
 						Count:  int32(resultCount.FailCount),
 						Status: v2.ComplianceCheckStatus_FAIL,

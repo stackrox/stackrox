@@ -53,15 +53,15 @@ message ComplianceScanResult {
     repeated ComplianceCheckResult check_results = 3;
 }
 
+// Group the number of occurrences by status
+message ComplianceCheckStatusCount {
+    int32                  count  = 1;
+    ComplianceCheckStatus  status = 2;
+}
+
 // ComplianceScanStatsShim models statistics of checks for a given scan configuration
 message ComplianceScanStatsShim {
     string                                  scan_name = 1;
-
-    // Group the number of occurrences by status
-    message ComplianceCheckStatusCount {
-        int32                  count  = 1;
-        ComplianceCheckStatus  status = 2;
-    }
     repeated ComplianceCheckStatusCount     check_stats = 2;
     google.protobuf.Timestamp               last_scan   = 3;
 }
@@ -81,6 +81,13 @@ message ComplianceProfileScanStats {
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 message ComplianceClusterScanStats {
+    string compliance_check_name = 1;
+    string compliance_check_description = 2;
+    repeated ComplianceCheckStatusCount     check_stats = 3;
+}
+
+// ComplianceCheckScanStats provides scan stats overview based on compliance check name
+message ComplianceCheckScanStats {
     ComplianceScanStatsShim  scan_stats = 1;
     ComplianceScanCluster    cluster    = 2;
 }
@@ -98,6 +105,11 @@ message ListComplianceProfileScanStatsResponse {
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 message ListComplianceClusterScanStatsResponse {
     repeated ComplianceClusterScanStats scan_stats = 1;
+}
+
+// ListComplianceCheckScanStatsResponse provides stats based on the check names
+message ListComplianceCheckScanStatsResponse {
+    repeated ComplianceCheckScanStats scan_stats = 1;
 }
 
 // ListComplianceScanResultsResponse provides the complete scan results
@@ -156,6 +168,12 @@ service ComplianceResultsService {
     rpc GetComplianceClusterScanStats (RawQuery) returns (ListComplianceClusterScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/cluster"
+        };
+    }
+
+    rpc GetComplianceCheckStats (RawQuery) returns (ListComplianceCheckScanStatsResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/stats/check"
         };
     }
 

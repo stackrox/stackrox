@@ -238,6 +238,81 @@
         ]
       }
     },
+    "/v2/compliance/scan/stats/check": {
+      "get": {
+        "operationId": "ComplianceResultsService_GetComplianceCheckStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceCheckScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
     "/v2/compliance/scan/stats/cluster": {
       "get": {
         "summary": "GetComplianceClusterScanStats lists current scan stats grouped by cluster\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
@@ -408,19 +483,6 @@
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
     },
-    "ComplianceScanStatsShimComplianceCheckStatusCount": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "status": {
-          "$ref": "#/definitions/v2ComplianceCheckStatus"
-        }
-      },
-      "title": "Group the number of occurrences by status"
-    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -520,6 +582,18 @@
       },
       "title": "Next tag: 11\nComplianceCheckResult provides the results of a compliance check against a rule"
     },
+    "v2ComplianceCheckScanStats": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        },
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
+        }
+      },
+      "title": "ComplianceCheckScanStats provides scan stats overview based on compliance check name"
+    },
     "v2ComplianceCheckStatus": {
       "type": "string",
       "enum": [
@@ -534,14 +608,33 @@
       ],
       "default": "UNSET_CHECK_STATUS"
     },
+    "v2ComplianceCheckStatusCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        }
+      },
+      "title": "Group the number of occurrences by status"
+    },
     "v2ComplianceClusterScanStats": {
       "type": "object",
       "properties": {
-        "scanStats": {
-          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        "complianceCheckName": {
+          "type": "string"
         },
-        "cluster": {
-          "$ref": "#/definitions/v2ComplianceScanCluster"
+        "complianceCheckDescription": {
+          "type": "string"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
         }
       },
       "title": "ComplianceClusterScanStats provides scan stats overview based on cluster"
@@ -617,7 +710,7 @@
         "checkStats": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ComplianceScanStatsShimComplianceCheckStatusCount"
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
         },
         "lastScan": {
@@ -636,6 +729,18 @@
         }
       },
       "title": "ComplianceScanResultsCount gives count of scan results"
+    },
+    "v2ListComplianceCheckScanStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckScanStats"
+          }
+        }
+      },
+      "title": "ListComplianceCheckScanStatsResponse provides stats based on the check names"
     },
     "v2ListComplianceClusterScanStatsResponse": {
       "type": "object",

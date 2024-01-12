@@ -27,20 +27,6 @@ type datastoreImpl struct {
 	searcher checkResultSearch.Searcher
 }
 
-// ResourceCountByResultByCluster represents shape of the stats query for compliance operator results
-type ResourceCountByResultByCluster struct {
-	PassCount          int    `db:"pass_count"`
-	FailCount          int    `db:"fail_count"`
-	ErrorCount         int    `db:"error_count"`
-	InfoCount          int    `db:"info_count"`
-	ManualCount        int    `db:"manual_count"`
-	NotApplicableCount int    `db:"not_applicable_count"`
-	InconsistentCount  int    `db:"inconsistent_count"`
-	ClusterID          string `db:"cluster_id"`
-	ClusterName        string `db:"cluster"`
-	ScanConfigName     string `db:"compliance_scan_config_name"`
-}
-
 // UpsertResult adds the result to the database
 func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceSAC.WriteAllowed(ctx); err != nil {
@@ -70,8 +56,8 @@ func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query 
 	return d.store.GetByQuery(ctx, query)
 }
 
-// ComplianceCheckResultStats retrieves the scan results stats specified by query
-func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
+// ComplianceCheckResultClusterAndScanStats retrieves the scan results stats specified by query
+func (d *datastoreImpl) ComplianceCheckResultClusterAndScanStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
@@ -118,6 +104,47 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+// ComplianceCheckResultStats retrieves the scan results stats specified by query
+func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCheckResult, error) {
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckDescription).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ComplianceOperatorCheckName.String(),
+			search.ComplianceOperatorCheckDescription.String(),
+		},
+	}
+
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ComplianceOperatorCheckName.String(),
+			},
+			{
+				Field: search.ComplianceOperatorCheckDescription.String(),
+			},
+		}
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCheckResult](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	return countResults, nil
 }
 
 func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
