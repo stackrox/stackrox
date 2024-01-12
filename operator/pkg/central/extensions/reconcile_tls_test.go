@@ -10,6 +10,7 @@ import (
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/types"
@@ -52,6 +53,24 @@ func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) s
 	}
 }
 
+// Inspired by certgen.GenerateCA.
+func generateInvalidCA() (mtls.CA, error) {
+	serial, err := mtls.RandomSerial()
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate a serial number")
+	}
+	req := csr.CertificateRequest{
+		CN:           mtls.ServiceCACommonName + " this makes it invalid",
+		KeyRequest:   csr.NewKeyRequest(),
+		SerialNumber: serial.String(),
+	}
+	caCert, _, caKey, err := initca.New(&req)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate keypair")
+	}
+	return mtls.LoadCAForSigning(caCert, caKey)
+}
+
 func TestCreateCentralTLS(t *testing.T) {
 	testCA, err := certgen.GenerateCA()
 	require.NoError(t, err)
@@ -69,6 +88,65 @@ func TestCreateCentralTLS(t *testing.T) {
 			Namespace: testutils.TestNamespace,
 		},
 		Data: centralFileMap,
+	}
+
+	centralFileMapWithInvalidLeaf := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidLeaf, testCA)
+	unrelatedTestCA, err := certgen.GenerateCA()
+	require.NoError(t, err)
+	// Resulting cert will not match CA and thus be up for replacement.
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidLeaf, unrelatedTestCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidLeaf, jwtKey)
+
+	existingCentralWithInvalidLeaf := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidLeaf,
+	}
+
+	centralFileMapWithMissingCAKey := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithMissingCAKey, testCA)
+	delete(centralFileMapWithMissingCAKey, mtls.CAKeyFileName)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithMissingCAKey, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithMissingCAKey, jwtKey)
+
+	existingCentralWithMissingCAKey := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithMissingCAKey,
+	}
+
+	centralFileMapWithInvalidCA := make(types.SecretDataMap)
+	invalidCA, err := generateInvalidCA()
+	require.NoError(t, err)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidCA, invalidCA)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidCA, invalidCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidCA, jwtKey)
+
+	existingCentralWithInvalidCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidCA,
+	}
+
+	centralFileMapWithCorruptCA := make(types.SecretDataMap)
+	centralFileMapWithCorruptCA[mtls.CACertFileName] = []byte("corrupt cert")
+	centralFileMapWithCorruptCA[mtls.CAKeyFileName] = []byte("corrupt key")
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithCorruptCA, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMap, jwtKey)
+
+	existingCentralWithCorruptCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithCorruptCA,
 	}
 
 	centralDBFileMap := make(types.SecretDataMap)
@@ -139,6 +217,29 @@ func TestCreateCentralTLS(t *testing.T) {
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
+		},
+		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidLeaf, existingCentralDB},
+			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+			},
+		},
+		"When a managed central-tls secret with missing CA key exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithMissingCAKey, existingCentralDB},
+			ExpectedError:   "malformed secret (ca.pem present but ca-key.pem missing), please delete it",
+		},
+		"When a managed central-tls secret with invalid CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidCA, existingCentralDB},
+			ExpectedError:   "invalid properties of CA in the existing secret, please delete it to allow re-generation: invalid certificate common name",
+		},
+		"When a managed central-tls secret with corrupt CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithCorruptCA, existingCentralDB},
+			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
 			Spec:     basicSpecWithScanner(false),
