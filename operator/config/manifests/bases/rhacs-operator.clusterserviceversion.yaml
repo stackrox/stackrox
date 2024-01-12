@@ -648,6 +648,10 @@ spec:
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
+      - description: Set this to 'true' to prevent translation of the collection method,
+          e.g. to enforce using EBPF as an exception.
+        displayName: Force Collection
+        path: perNode.collector.forceCollection
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings

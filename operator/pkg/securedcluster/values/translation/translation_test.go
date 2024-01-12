@@ -282,7 +282,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						PerNode: &platform.PerNodeSpec{
 							Collector: &platform.CollectorContainerSpec{
 								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
-								Collection:  platform.CollectionEBPF.Pointer(),
+								Collection:  platform.CollectionCOREBPF.Pointer(),
 							},
 							TaintToleration: platform.TaintTolerate.Pointer(),
 							Compliance: &platform.ContainerSpec{
@@ -526,7 +526,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"collector": map[string]interface{}{
-					"collectionMethod":        "EBPF",
+					"collectionMethod":        "CORE_BPF",
 					"disableTaintTolerations": false,
 					"slimMode":                false,
 					"complianceResources": map[string]interface{}{
@@ -545,6 +545,101 @@ func (s *TranslationTestSuite) TestTranslate() {
 					},
 				},
 				"registryOverride": "my.registry.override.com",
+			},
+		},
+		"translate EBPF to CORE_BPF": {
+			args: args{
+				client: newFakeClientWithInitBundle(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+						PerNode: &platform.PerNodeSpec{
+							Collector: &platform.CollectorContainerSpec{
+								ImageFlavor: platform.ImageFlavorRegular.Pointer(),
+								Collection:  platform.CollectionEBPF.Pointer(),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"collector": map[string]interface{}{
+					"collectionMethod": "CORE_BPF",
+					"slimMode":         false,
+				},
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+		"force EBPF": {
+			args: args{
+				client: newFakeClientWithInitBundle(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+						PerNode: &platform.PerNodeSpec{
+							Collector: &platform.CollectorContainerSpec{
+								ImageFlavor:     platform.ImageFlavorRegular.Pointer(),
+								Collection:      platform.CollectionEBPF.Pointer(),
+								ForceCollection: pointer.Bool(true),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"collector": map[string]interface{}{
+					"collectionMethod": "EBPF",
+					"slimMode":         false,
+				},
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
 			},
 		},
 	}

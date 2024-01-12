@@ -283,15 +283,21 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	if c := collectorContainerSpec.Collection; c != nil {
 		switch *c {
 		case platform.CollectionEBPF:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			// EBPF collection has been deprecated, translate it to CORE_BPF if it's not forced
+			if collectorContainerSpec.ForceCollection != nil &&
+				*collectorContainerSpec.ForceCollection {
+				cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			} else {
+				cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
+			}
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		case legacyCollectionKernelModule:
 			// Kernel module collection has been removed, but for the
-			// purposes of upgrades, we translate it to EBPF
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			// purposes of upgrades, we translate it to CORE_BPF
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
 		}
