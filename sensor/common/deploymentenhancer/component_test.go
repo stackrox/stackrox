@@ -105,10 +105,9 @@ func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessages() {
 }
 
 func (s *ComponentTestSuite) TestMsgQueueOverfill() {
-	dQueue := make(chan *central.DeploymentEnhancementRequest, 1)
 	de := DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: dQueue,
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, 1),
 		storeProvider:    s.mockStoreProvider,
 	}
 	s.NoError(de.ProcessMessage(generateMsgToSensor()))
