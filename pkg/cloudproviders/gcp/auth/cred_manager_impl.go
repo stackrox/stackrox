@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 
+	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
+	securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/secretinformer"
 	"github.com/stackrox/rox/pkg/sync"
@@ -99,13 +101,17 @@ func (c *gcpCredentialsManagerImpl) Stop() {
 //     for federated workload identities. Ignored if the secret does not exist.
 //  2. The default GCP credentials chain based on the pod's environment and metadata.
 func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google.Credentials, error) {
+	scopes := []string{storagev1.CloudPlatformScope}
+	scopes = append(scopes, artifactv1.DefaultAuthScopes()...)
+	scopes = append(scopes, securitycenterv1.DefaultAuthScopes()...)
+
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	if len(c.stsConfig) > 0 {
 		// Use a scope to request access to the GCP API. See
 		// https://developers.google.com/identity/protocols/oauth2/scopes
 		// for a list of GCP scopes.
-		return google.CredentialsFromJSON(ctx, c.stsConfig, storagev1.CloudPlatformScope)
+		return google.CredentialsFromJSON(ctx, c.stsConfig, scopes...)
 	}
-	return google.FindDefaultCredentials(ctx, storagev1.CloudPlatformScope)
+	return google.FindDefaultCredentials(ctx, scopes...)
 }
