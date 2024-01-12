@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Alert, Button } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
@@ -22,6 +22,7 @@ import { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
+import { clustersBasePath } from 'routePaths';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -60,7 +61,12 @@ type MessageState = {
     text: string;
 };
 
-function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
+export type ClustersSidePanelProps = {
+    selectedClusterId: string;
+};
+
+function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): ReactElement {
+    const history = useHistory();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
@@ -86,12 +92,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     function unselectCluster() {
         setSubmissionError(null);
-        setSelectedClusterId('');
         setSelectedCluster(defaultCluster);
         setMessageState(null);
         setIsBlocked(false);
         setWizardStep('FORM');
         setPollingDelay(null);
+        history.push(clustersBasePath);
     }
 
     function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
@@ -285,13 +291,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         }
     }
 
-    /**
-     * rendering section
-     */
-    if (!selectedClusterId) {
-        return null;
-    }
-
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
 
     // @TODO: improve error handling when adding support for new clusters
@@ -386,14 +385,5 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         </SidePanelAnimatedArea>
     );
 }
-
-ClustersSidePanel.propTypes = {
-    setSelectedClusterId: PropTypes.func.isRequired,
-    selectedClusterId: PropTypes.string,
-};
-
-ClustersSidePanel.defaultProps = {
-    selectedClusterId: '',
-};
 
 export default ClustersSidePanel;
