@@ -26,7 +26,7 @@ func TestGetClusterMetadata(t *testing.T) {
 	ctx := context.Background()
 	k8sClient := fake.NewSimpleClientset()
 	expectedClusterName := "my-rg_my-cluster"
-	expectedClusterID := "MC_my-rg_my-cluster_eastus"
+	expectedClusterID := "1234_MC_my-rg_my-cluster_eastus"
 
 	_, err := k8sClient.CoreV1().Nodes().Create(ctx, &corev1.Node{
 		ObjectMeta: metav1.ObjectMeta{
@@ -38,7 +38,8 @@ func TestGetClusterMetadata(t *testing.T) {
 
 	metadata := &azureInstanceMetadata{
 		Compute: &computeMetadata{
-			Location: "eastus",
+			Location:       "eastus",
+			SubscriptionID: "1234",
 		},
 	}
 	clusterMetadata := getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)

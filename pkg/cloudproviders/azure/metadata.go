@@ -116,9 +116,10 @@ func getClusterMetadataFromNodeLabels(ctx context.Context,
 	// The label is of the form "MC_<resource-group>_<cluster-name>_<location>.
 	// Since both <resource-group> and <cluster-name> may contain underscores,
 	// we cannot further separate the resource group and cluster name.
-	if clusterID, ok := nodeLabels[aksClusterNameLabel]; ok {
-		clusterName := strings.TrimPrefix(clusterID, "MC_")
+	if value, ok := nodeLabels[aksClusterNameLabel]; ok {
+		clusterName := strings.TrimPrefix(value, "MC_")
 		clusterName = strings.TrimSuffix(clusterName, fmt.Sprintf("_%s", metadata.Compute.Location))
+		clusterID := fmt.Sprintf("%s_%s", metadata.Compute.SubscriptionID, value)
 		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: clusterName, Id: clusterID}
 	}
 	return nil
