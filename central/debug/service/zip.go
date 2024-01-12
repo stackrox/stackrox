@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -35,7 +36,7 @@ func (z *zipWriter) LockWrite() {
 }
 
 func (z *zipWriter) UnlockWrite() {
-	z.mutex.Unlock()
+	concurrency.UnsafeUnlock(&z.mutex)
 }
 
 func (z *zipWriter) writePrefixedFileToZip(prefix string, file k8sintrospect.File) error {
