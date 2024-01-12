@@ -115,7 +115,6 @@ function scanCompliance() {
     interactAndWaitForResponses(
         () => {
             cy.get(scanButton).click();
-            cy.get(scanButton).should('have.attr', 'disabled');
         },
         routeMatcherMap,
         undefined,

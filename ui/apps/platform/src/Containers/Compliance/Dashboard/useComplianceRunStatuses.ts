@@ -6,6 +6,12 @@ import {
     AGGREGATED_RESULTS_ACROSS_ENTITY,
     AGGREGATED_RESULTS_STANDARDS_BY_ENTITY,
 } from 'queries/controls';
+import {
+    CLUSTERS_COUNT,
+    DEPLOYMENTS_COUNT,
+    NAMESPACES_COUNT,
+    NODES_COUNT,
+} from './ComplianceDashboardTile';
 
 export type ComplianceRunStatusResponse = {
     complianceRunStatuses: {
@@ -20,6 +26,10 @@ export function isCurrentScanIncomplete(
 }
 
 const queriesToRefetchOnPollingComplete = [
+    CLUSTERS_COUNT,
+    NODES_COUNT,
+    NAMESPACES_COUNT,
+    DEPLOYMENTS_COUNT,
     AGGREGATED_RESULTS_STANDARDS_BY_ENTITY(resourceTypes.CLUSTER),
     AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.CLUSTER),
     AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.NAMESPACE),
