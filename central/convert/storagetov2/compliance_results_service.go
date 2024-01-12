@@ -145,6 +145,49 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceCountByResultByC
 	return convertedResults
 }
 
+// ComplianceV2CheckNameStats converts the counts to the v2 stats
+func ComplianceV2CheckNameStats(resultCounts []*datastore.ResultStatusCountByCheckResult) []*v2.ComplianceCheckScanStats {
+	var convertedResults []*v2.ComplianceCheckScanStats
+
+	for _, resultCount := range resultCounts {
+		convertedResults = append(convertedResults, &v2.ComplianceCheckScanStats{
+			ComplianceCheckName:        resultCount.CheckName,
+			ComplianceCheckDescription: resultCount.CheckDescription,
+			CheckStats: []*v2.ComplianceCheckStatusCount{
+				{
+					Count:  int32(resultCount.FailCount),
+					Status: v2.ComplianceCheckStatus_FAIL,
+				},
+				{
+					Count:  int32(resultCount.InfoCount),
+					Status: v2.ComplianceCheckStatus_INFO,
+				},
+				{
+					Count:  int32(resultCount.PassCount),
+					Status: v2.ComplianceCheckStatus_PASS,
+				},
+				{
+					Count:  int32(resultCount.ErrorCount),
+					Status: v2.ComplianceCheckStatus_ERROR,
+				},
+				{
+					Count:  int32(resultCount.ManualCount),
+					Status: v2.ComplianceCheckStatus_MANUAL,
+				},
+				{
+					Count:  int32(resultCount.InconsistentCount),
+					Status: v2.ComplianceCheckStatus_INCONSISTENT,
+				},
+				{
+					Count:  int32(resultCount.NotApplicableCount),
+					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
+				},
+			},
+		})
+	}
+	return convertedResults
+}
+
 func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult_ClusterCheckStatus {
 	return &v2.ComplianceCheckResult_ClusterCheckStatus{
 		Cluster: &v2.ComplianceScanCluster{

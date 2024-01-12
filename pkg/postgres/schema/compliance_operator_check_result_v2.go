@@ -60,7 +60,7 @@ type ComplianceOperatorCheckResultV2 struct {
 	CheckName      string                                              `gorm:"column:checkname;type:varchar"`
 	ClusterID      string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:hash"`
 	Status         storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
-	Severity       storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
+	Description    string                                              `gorm:"column:description;type:varchar"`
 	CreatedTime    *time.Time                                          `gorm:"column:createdtime;type:timestamp"`
 	Standard       string                                              `gorm:"column:standard;type:varchar"`
 	ScanName       string                                              `gorm:"column:scanname;type:varchar"`

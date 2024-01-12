@@ -585,11 +585,17 @@
     "v2ComplianceCheckScanStats": {
       "type": "object",
       "properties": {
-        "scanStats": {
-          "$ref": "#/definitions/v2ComplianceScanStatsShim"
+        "complianceCheckName": {
+          "type": "string"
         },
-        "cluster": {
-          "$ref": "#/definitions/v2ComplianceScanCluster"
+        "complianceCheckDescription": {
+          "type": "string"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
         }
       },
       "title": "ComplianceCheckScanStats provides scan stats overview based on compliance check name"
@@ -624,17 +630,11 @@
     "v2ComplianceClusterScanStats": {
       "type": "object",
       "properties": {
-        "complianceCheckName": {
-          "type": "string"
+        "scanStats": {
+          "$ref": "#/definitions/v2ComplianceScanStatsShim"
         },
-        "complianceCheckDescription": {
-          "type": "string"
-        },
-        "checkStats": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
-          }
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
         }
       },
       "title": "ComplianceClusterScanStats provides scan stats overview based on cluster"

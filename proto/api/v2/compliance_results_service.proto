@@ -81,15 +81,15 @@ message ComplianceProfileScanStats {
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 message ComplianceClusterScanStats {
-    string compliance_check_name = 1;
-    string compliance_check_description = 2;
-    repeated ComplianceCheckStatusCount     check_stats = 3;
+    ComplianceScanStatsShim  scan_stats = 1;
+    ComplianceScanCluster    cluster    = 2;
 }
 
 // ComplianceCheckScanStats provides scan stats overview based on compliance check name
 message ComplianceCheckScanStats {
-    ComplianceScanStatsShim  scan_stats = 1;
-    ComplianceScanCluster    cluster    = 2;
+    string compliance_check_name = 1;
+    string compliance_check_description = 2;
+    repeated ComplianceCheckStatusCount     check_stats = 3;
 }
 
 // ListComplianceScanResultsOverviewResponse provides overviews for scans

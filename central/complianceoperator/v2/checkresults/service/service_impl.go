@@ -152,6 +152,6 @@ func (s *serviceImpl) GetComplianceCheckStats(ctx context.Context, query *v2.Raw
 	}
 
 	return &v2.ListComplianceCheckScanStatsResponse{
-		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults),
+		ScanStats: storagetov2.ComplianceV2CheckNameStats(scanResults),
 	}, nil
 }
