@@ -151,8 +151,8 @@ func ComplianceV2CheckNameStats(resultCounts []*datastore.ResultStatusCountByChe
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceCheckScanStats{
-			ComplianceCheckName:        resultCount.CheckName,
-			ComplianceCheckDescription: resultCount.CheckDescription,
+			ComplianceCheckName:      resultCount.CheckName,
+			ComplianceCheckRationale: resultCount.CheckRationale,
 			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  int32(resultCount.FailCount),
