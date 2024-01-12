@@ -6,6 +6,118 @@
 # The 'qatest-anyuid' is augmented in test setup in:
 # //stackrox/qa-tests-backend/src/main/groovy/orchestratormanager/OpenShift.groovy
 
+# Precreate namespaces used in qa-tests-backend to workarround OCPBUGS-25348
+
+# HACK. DO NOT MERGE: This is very brittle - changes to the tests will
+# invalidate it and the namespaces need to be duplicated in the users list. Will
+# need work for production.
+
+# Namespaces from `egrep -hr 'NAMESPACE.*= "' qa-tests-backend/src/`
+# qa
+# qa-admission-controller-test
+# qa-image-management
+# qa-image-scanning-test
+# qa-plop
+# qa-policyfieldstest-c
+# qa-policyfieldstest-d
+# qa-process-baselines
+# qa-risk-${UUID.randomUUID()} <-- need to change this
+# qa-signature-tests
+# qa-splunk
+# qa-test1
+# qa-test2
+# qa-tls-challenge
+# qa2
+# sac-deploymentnginx-qa1
+# sac-deploymentnginx-qa2
+# vulnreport-2nd-namespace
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-admission-controller-test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-image-management
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-image-scanning-test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-plop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-policyfieldstest-c
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-policyfieldstest-d
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-process-baselines
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-signature-tests
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-splunk
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-test1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-test2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-tls-challenge
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sac-deploymentnginx-qa1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sac-deploymentnginx-qa2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vulnreport-2nd-namespace
+---
+
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
@@ -42,7 +154,24 @@ seLinuxContext:
   type: MustRunAs
 supplementalGroups:
   type: RunAsAny
-users: []
+users:
+- system:serviceaccount:qa:default
+- system:serviceaccount:qa-admission-controller-test:default
+- system:serviceaccount:qa-image-management:default
+- system:serviceaccount:qa-image-scanning-test:default
+- system:serviceaccount:qa-plop:default
+- system:serviceaccount:qa-policyfieldstest-c:default
+- system:serviceaccount:qa-policyfieldstest-d:default
+- system:serviceaccount:qa-process-baselines:default
+- system:serviceaccount:qa-signature-tests:default
+- system:serviceaccount:qa-splunk:default
+- system:serviceaccount:qa-test1:default
+- system:serviceaccount:qa-test2:default
+- system:serviceaccount:qa-tls-challenge:default
+- system:serviceaccount:qa2:default
+- system:serviceaccount:sac-deploymentnginx-qa1:default
+- system:serviceaccount:sac-deploymentnginx-qa2:default
+- system:serviceaccount:vulnreport-2nd-namespace:default
 volumes:
 - configMap
 - downwardAPI
