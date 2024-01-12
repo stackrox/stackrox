@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# Compatibility test installation of ACS using CENTRAL_CHART_VERSION_OVERRIDE for central and SENSOR_CHART_VERSION_OVERRIDE for secured cluster
+# Compatibility test installation of ACS using separate version arguments for
+# central and secured cluster.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/gcp.sh
@@ -20,31 +21,31 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 
 set -euo pipefail
 
-shorten_tag() {
-    if [[ "$#" -ne 1 ]]; then
-        die "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
-    fi
-
-    long_tag="$1"
-
-    short_tag_regex='([0-9]+\.[0-9]+\.[0-9xX]+)'
-
-    if [[ $long_tag =~ $short_tag_regex ]]; then
-        echo "${BASH_REMATCH[1]}"
-    else
-        echo "${long_tag}"
-        >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
-        exit 1
-    fi
-}
-
 compatibility_test() {
-    require_environment "CENTRAL_CHART_VERSION_OVERRIDE"
-    require_environment "SENSOR_CHART_VERSION_OVERRIDE"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: compatibility_test <central_version> <sensor_version>"
+    fi
+
+    local central_version="$1"
+    local sensor_version="$2"
+
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
-    info "Starting test (compatibility test Central version - ${CENTRAL_CHART_VERSION_OVERRIDE}, Sensor version - ${SENSOR_CHART_VERSION_OVERRIDE})"
+    short_central_tag="$(shorten_tag "${central_version}")"
+    short_sensor_tag="$(shorten_tag "${sensor_version}")"
+
+    junit_wrap CentralSensorVersionCompatibility "central: ${short_central_tag}, sensor: ${short_sensor_tag}" "" \
+        _compatibility_test "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
+}
+
+_compatibility_test() {
+    info "Starting test (compatibility test Central version - ${central_version}, Sensor version - ${sensor_version})"
+
+    local central_version="$1"
+    local sensor_version="$2"
+    local short_central_tag="$3"
+    local short_sensor_tag="$4"
 
     export_test_environment
 
@@ -60,7 +61,7 @@ compatibility_test() {
         remove_existing_stackrox_resources
         setup_default_TLS_certs
 
-        deploy_stackrox_with_custom_central_and_sensor_versions "${CENTRAL_CHART_VERSION_OVERRIDE}" "${SENSOR_CHART_VERSION_OVERRIDE}"
+        deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
         echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
@@ -82,18 +83,15 @@ compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    update_junit_prefix_with_central_and_sensor_version
-
-    short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
-    short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
+    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}"
 
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
     [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
 }
 
 update_junit_prefix_with_central_and_sensor_version() {
-    short_central_tag="$(shorten_tag "${CENTRAL_CHART_VERSION_OVERRIDE}")"
-    short_sensor_tag="$(shorten_tag "${SENSOR_CHART_VERSION_OVERRIDE}")"
+    local short_central_tag="$1"
+    local short_sensor_tag="$2"
 
     result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
     info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
@@ -102,5 +100,22 @@ update_junit_prefix_with_central_and_sensor_version() {
     done
 }
 
+shorten_tag() {
+    if [[ "$#" -ne 1 ]]; then
+        die "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
+    fi
 
-compatibility_test
+    long_tag="$1"
+
+    short_tag_regex='([0-9]+\.[0-9]+\.[0-9xX]+)'
+
+    if [[ $long_tag =~ $short_tag_regex ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        echo "${long_tag}"
+        >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        exit 1
+    fi
+}
+
+compatibility_test "$@"
