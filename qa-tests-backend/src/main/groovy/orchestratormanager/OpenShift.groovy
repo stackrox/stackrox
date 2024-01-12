@@ -45,39 +45,6 @@ class OpenShift extends Kubernetes {
             }
             log.debug("Namespace ${ns} already exists")
         }
-
-        try {
-            String sccName = "anyuid"
-            log.debug "Using a non default SCC"
-            sccName = "qatest-anyuid"
-            if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
-                log.debug "Using a non default SCC"
-                sccName = "qatest-anyuid"
-            }
-            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
-            if (anyuid != null &&
-                    (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
-                            !anyuid.allowHostNetwork ||
-                            !anyuid.allowHostDirVolumePlugin ||
-                            !anyuid.allowHostPorts
-                    )) {
-                log.debug "Adding system:serviceaccount:${ns}:default to ${sccName} user list"
-                anyuid.with {
-                    // (Note: + string concatenation here to avoid json unmarshal errors
-                    users.addAll(["system:serviceaccount:" + ns + ":default"])
-                    setAllowHostNetwork(true)
-                    setAllowHostDirVolumePlugin(true)
-                    setAllowHostPorts(true)
-                    setAllowPrivilegedContainer(true)
-                    setRequiredDropCapabilities([])
-                    setAllowedCapabilities(["*"])
-                    setAllowedUnsafeSysctls(["*"])
-                }
-                oClient.securityContextConstraints().createOrReplace(anyuid)
-            }
-        } catch (Exception e) {
-            log.warn("could not check if namespace exists", e)
-        }
     }
 
     /*

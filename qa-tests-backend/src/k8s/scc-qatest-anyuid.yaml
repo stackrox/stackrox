@@ -133,12 +133,15 @@ metadata:
     release.openshift.io/create-only: "false"
 allowHostDirVolumePlugin: false
 allowHostIPC: false
-allowHostNetwork: false
+allowHostNetwork: true
 allowHostPID: false
-allowHostPorts: false
+allowHostPorts: true
 allowPrivilegeEscalation: true
-allowPrivilegedContainer: false
-allowedCapabilities: null
+allowPrivilegedContainer: true
+allowedCapabilities:
+- "*"
+allowedUnsafeSysctls:
+- "*"
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
