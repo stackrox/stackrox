@@ -81,11 +81,22 @@ spec:
           value: "scram-sha-256"
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
+        - name: ROX_POSTGRES_DB
+          value: "stackrox"
         command:
         - init-entrypoint.sh
+        args:
+        - -c
+        - config_file=/etc/stackrox.d/config/postgresql.conf
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
+          readOnly: true
+        - name: scanner-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+          readOnly: true
         - name: scanner-v4-db-password
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
@@ -102,6 +113,8 @@ spec:
           value: "/var/lib/postgresql/data/pgdata"
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "scram-sha-256"
+        - name: ROX_POSTGRES_DB
+          value: "stackrox"
         {{- include "srox.envVars" (list . "deployment" "scanner-v4-db" "db") | nindent 8 }}
         ports:
         - name: tcp-postgresql
