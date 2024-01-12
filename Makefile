@@ -589,7 +589,7 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 main-image: all-builds
 	make docker-build-main-image
 
-kind_available := $(shell command -v kind && kind get clusters 2&> /dev/null | grep -v "No kind clusters found.")
+kind_available := $(shell command -v kind)
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
 	$(DOCKERBUILD) \
