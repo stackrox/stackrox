@@ -185,16 +185,52 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: scannerDBFileMap,
 	}
 
+	scannerV4IndexerFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4IndexerFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4IndexerFileMap, testCA, mtls.ScannerV4IndexerSubject, ""))
+
+	existingScannerV4Indexer := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-indexer-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4IndexerFileMap,
+	}
+
+	scannerV4MatcherFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4MatcherFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4MatcherFileMap, testCA, mtls.ScannerV4MatcherSubject, ""))
+
+	existingScannerV4Matcher := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-matcher-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4MatcherFileMap,
+	}
+
+	scannerV4DBFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4DBFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4DBFileMap, testCA, mtls.ScannerV4DBSubject, ""))
+
+	existingScannerV4DB := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-db-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4DBFileMap,
+	}
+
 	cases := map[string]secretReconciliationTestCase{
 		"When no secrets exist and scanner is disabled, a managed central-tls and central-db-tls secrets should be created": {
-			Spec: basicSpecWithScanner(false),
+			Spec: basicSpecWithScanner(false, false),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 			},
 		},
 		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and init bundle secrets should be created": {
-			Spec: basicSpecWithScanner(false),
+			Spec: basicSpecWithScanner(false, false),
 			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secured-cluster-services",
@@ -210,12 +246,15 @@ func TestCreateCentralTLS(t *testing.T) {
 			},
 		},
 		"When no secrets exist and scanner is enabled, all managed secrets should be created": {
-			Spec: basicSpecWithScanner(true),
+			Spec: basicSpecWithScanner(true, true),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"central-tls":    verifyCentralCert,
-				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"central-tls":            verifyCentralCert,
+				"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
+				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 			},
 		},
 		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
@@ -242,64 +281,103 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
-			Spec:     basicSpecWithScanner(false),
+			Spec:     basicSpecWithScanner(false, false),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is enabled, managed secrets should be created for scanner": {
-			Spec:     basicSpecWithScanner(true),
+			Spec:     basicSpecWithScanner(true, true),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
+				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 			},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is disabled, no secrets should be created or deleted": {
-			Spec:     basicSpecWithScanner(false),
-			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
+			Spec: basicSpecWithScanner(false, false),
+			Existing: []*v1.Secret{
+				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
+				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
+			},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is enabled, no secrets should be created or deleted": {
-			Spec:     basicSpecWithScanner(true),
-			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
+			Spec: basicSpecWithScanner(true, true),
+			Existing: []*v1.Secret{
+				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
+				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
+			},
 		},
 		"When creating a new central-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: creatingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When creating a new central-db-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: creatingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When creating a new scanner-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: creatingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When creating a new scanner-db-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: creatingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
+		"When creating a new scanner-v4-indexer-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When creating a new scanner-v4-matcher-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When creating a new scanner-v4-db-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
+		},
 		"When getting an existing central-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: gettingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When getting an existing central-db-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: gettingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When getting an existing scanner-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: gettingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When getting an existing scanner-db-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: gettingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
+		},
+		"When getting an existing scanner-v4-indexer-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When getting an existing scanner-v4-matcher-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When getting an existing scanner-v4-db-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
 		},
 		"When deleting an existing central-tls secret fails, an error should be returned": {
 			Deleted:                true,
@@ -328,6 +406,24 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExistingManaged:        []*v1.Secret{existingScanner},
 			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
+		},
+		"When deleting an existing scanner-v4-indexer-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Indexer},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When deleting an existing scanner-v4-matcher-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Matcher},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When deleting an existing scanner-v4-db-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4DB},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
 		},
 		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
