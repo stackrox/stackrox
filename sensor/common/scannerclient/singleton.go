@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	scannerClient        ScannerClient
-	scannerClientOnce    sync.Once
-	scannerClientRWMutex sync.RWMutex
+	scannerClient      ScannerClient
+	scannerClientMutex sync.Mutex
 
 	isScannerV4Enabled = features.ScannerV4.Enabled()
 )
@@ -20,14 +19,14 @@ var (
 // GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
 // Only one ScannerClient per Sensor is required.
 func GRPCClientSingleton() ScannerClient {
-	scannerClientRWMutex.RLock()
-	defer scannerClientRWMutex.RUnlock()
+	scannerClientMutex.Lock()
+	defer scannerClientMutex.Unlock()
 
-	scannerClientOnce.Do(func() {
+	if scannerClient == nil {
 		if !env.LocalImageScanningEnabled.BooleanSetting() {
 			log.Infof("scanner disabled: %s is false, will not attempt to connect to a local scanner",
 				env.LocalImageScanningEnabled.EnvVar())
-			return
+			return nil
 		}
 		var err error
 		if isScannerV4Enabled && centralcaps.Has(centralsensor.ScannerV4Supported) {
@@ -38,18 +37,19 @@ func GRPCClientSingleton() ScannerClient {
 			scannerClient, err = dialV2()
 		}
 		utils.Should(err)
-	})
+	}
+
 	return scannerClient
 }
 
 // resetGRPCClient resets the current scanner client so that it will be recreated
 // on next retrieval.
 func resetGRPCClient() {
-	scannerClientRWMutex.Lock()
-	defer scannerClientRWMutex.Unlock()
+	scannerClientMutex.Lock()
+	defer scannerClientMutex.Unlock()
 
 	if scannerClient != nil {
 		utils.Should(scannerClient.Close())
+		scannerClient = nil
 	}
-	scannerClientOnce = sync.Once{}
 }
