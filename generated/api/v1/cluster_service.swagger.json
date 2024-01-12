@@ -564,7 +564,8 @@
         "ARO",
         "EKS",
         "GKE",
-        "OPENSHIFT_SELF_MANAGED",
+        "OCP",
+        "OSD",
         "ROSA"
       ],
       "default": "UNSPECIFIED"

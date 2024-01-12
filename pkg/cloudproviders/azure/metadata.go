@@ -3,8 +3,10 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,13 +20,15 @@ import (
 
 const aksClusterNameLabel = "kubernetes.azure.com/cluster"
 
+type computeMetadata struct {
+	Location       string `json:"location"`
+	Zone           string `json:"zone"`
+	SubscriptionID string `json:"subscriptionId"`
+	VMID           string `json:"vmId"`
+}
+
 type azureInstanceMetadata struct {
-	Compute struct {
-		Location       string `json:"location"`
-		Zone           string `json:"zone"`
-		SubscriptionID string `json:"subscriptionId"`
-		VMID           string `json:"vmId"`
-	} `json:"compute"`
+	Compute *computeMetadata `json:"compute"`
 }
 
 var (
@@ -75,7 +79,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 	verified := attestedVMID != "" && attestedVMID == metadata.Compute.VMID
 
-	clusterMetadata := getClusterMetadata(ctx)
+	clusterMetadata := getClusterMetadata(ctx, &metadata)
 
 	return &storage.ProviderMetadata{
 		Region: metadata.Compute.Location,
@@ -90,24 +94,31 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}, nil
 }
 
-func getClusterMetadata(ctx context.Context) *storage.ClusterMetadata {
+func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
 	k8sClient, err := k8sutil.GetK8sInClusterClient()
 	if err != nil {
 		log.Error("Failed to create kubernetes client: ", err)
 		return nil
 	}
-	return getClusterMetadataFromNodeLabels(ctx, k8sClient)
+	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
 }
 
-func getClusterMetadataFromNodeLabels(ctx context.Context, k8sClient kubernetes.Interface) *storage.ClusterMetadata {
+func getClusterMetadataFromNodeLabels(ctx context.Context,
+	k8sClient kubernetes.Interface, metadata *azureInstanceMetadata,
+) *storage.ClusterMetadata {
 	nodeLabels, err := getAnyNodeLabels(ctx, k8sClient)
 	if err != nil {
 		log.Error("Failed to get node labels: ", err)
 		return nil
 	}
 
-	if name, ok := nodeLabels[aksClusterNameLabel]; ok {
-		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: name}
+	// The label is of the form "MC_<resource-group>_<cluster-name>_<location>.
+	// Since both <resource-group> and <cluster-name> may contain underscores,
+	// we cannot further separate the resource group and cluster name.
+	if clusterID, ok := nodeLabels[aksClusterNameLabel]; ok {
+		clusterName := strings.TrimPrefix(clusterID, "MC_")
+		clusterName = strings.TrimSuffix(clusterName, fmt.Sprintf("_%s", metadata.Compute.Location))
+		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: clusterName, Id: clusterID}
 	}
 	return nil
 }
