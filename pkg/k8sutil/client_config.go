@@ -4,10 +4,16 @@ import (
 	"net"
 	"os"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+)
+
+var (
+	clientContentType = stringutils.FirstNonEmpty(env.KubernetesClientContentType.Setting(), "application/vnd.kubernetes.protobuf")
+	log               = logging.LoggerForModule()
 )
 
 // GetK8sInClusterConfig returns a k8s client config that can be used from within cluster.
@@ -18,6 +24,8 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	restCfg.ContentType = clientContentType
+
 	// Replacing raw IP address with kubernetes.default.svc
 	// allows for easier proxy configuration.
 	if env.ManagedCentral.BooleanSetting() {
@@ -27,11 +35,11 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 	return restCfg, nil
 }
 
-// GetK8sInClusterClient returns a k8s client that can be used from within cluster.
-func GetK8sInClusterClient() (*kubernetes.Clientset, error) {
-	restCfg, err := GetK8sInClusterConfig()
+// MustCreateK8sClient creates a k8s client or panics.
+func MustCreateK8sClient(config *rest.Config) kubernetes.Interface {
+	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading K8s client config")
+		log.Panicf("Creating Kubernetes clientset: %v", err)
 	}
-	return kubernetes.NewForConfig(restCfg)
+	return client
 }
