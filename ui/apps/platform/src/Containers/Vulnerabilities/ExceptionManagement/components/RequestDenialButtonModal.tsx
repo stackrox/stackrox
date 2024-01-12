@@ -6,7 +6,6 @@ import {
     Flex,
     Form,
     Modal,
-    Spinner,
     Text,
     TextArea,
 } from '@patternfly/react-core';
@@ -21,7 +20,6 @@ import {
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useRequestCVEsDetails from 'Containers/Vulnerabilities/ExceptionManagement/hooks/useRequestCVEsDetails';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 
@@ -40,8 +38,6 @@ const validationSchema = yup.object().shape({
 
 function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonModalProps) {
     const denyRequestMutation = useRestMutation(denyVulnerabilityException);
-    const { isLoading: isRequestCVEsDetailsLoading, totalAffectedImageCount } =
-        useRequestCVEsDetails(exception);
 
     const { isModalOpen, openModal, closeModal } = useModal();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -112,18 +108,6 @@ function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonM
                         title="Denying the request will return the CVEs to the 'Observed' status."
                     >
                         <Text>CVE count: {exception.cves.length}</Text>
-                        <Text>
-                            Affected images:{' '}
-                            {isRequestCVEsDetailsLoading ? (
-                                <Spinner
-                                    isSVG
-                                    size="md"
-                                    aria-label="Loading affected images count"
-                                />
-                            ) : (
-                                totalAffectedImageCount
-                            )}
-                        </Text>
                     </Alert>
                     <Form>
                         <FormLabelGroup
