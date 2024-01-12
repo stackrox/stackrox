@@ -115,15 +115,15 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetCheckName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetStatus(),
-		obj.GetDescription(),
 		pgutils.NilOrTime(obj.GetCreatedTime()),
 		obj.GetStandard(),
 		obj.GetScanName(),
 		obj.GetScanConfigName(),
+		obj.GetRationale(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Description, CreatedTime, Standard, ScanName, ScanConfigName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Description = EXCLUDED.Description, CreatedTime = EXCLUDED.CreatedTime, Standard = EXCLUDED.Standard, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, CreatedTime, Standard, ScanName, ScanConfigName, Rationale, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, CreatedTime = EXCLUDED.CreatedTime, Standard = EXCLUDED.Standard, ScanName = EXCLUDED.ScanName, ScanConfigName = EXCLUDED.ScanConfigName, Rationale = EXCLUDED.Rationale, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -146,11 +146,11 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"checkname",
 		"clusterid",
 		"status",
-		"description",
 		"createdtime",
 		"standard",
 		"scanname",
 		"scanconfigname",
+		"rationale",
 		"serialized",
 	}
 
@@ -171,11 +171,11 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetCheckName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetStatus(),
-			obj.GetDescription(),
 			pgutils.NilOrTime(obj.GetCreatedTime()),
 			obj.GetStandard(),
 			obj.GetScanName(),
 			obj.GetScanConfigName(),
+			obj.GetRationale(),
 			serialized,
 		})
 

@@ -121,12 +121,12 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	cloned := query.Clone()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
-		search.NewQuerySelect(search.ComplianceOperatorCheckDescription).Proto(),
+		search.NewQuerySelect(search.ComplianceOperatorCheckRationale).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{
 			search.ComplianceOperatorCheckName.String(),
-			search.ComplianceOperatorCheckDescription.String(),
+			search.ComplianceOperatorCheckRationale.String(),
 		},
 	}
 
@@ -137,7 +137,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 				Field: search.ComplianceOperatorCheckName.String(),
 			},
 			{
-				Field: search.ComplianceOperatorCheckDescription.String(),
+				Field: search.ComplianceOperatorCheckRationale.String(),
 			},
 		}
 	}

@@ -25,6 +25,6 @@ type ResultStatusCountByCheckResult struct {
 	ManualCount        int    `db:"manual_count"`
 	NotApplicableCount int    `db:"not_applicable_count"`
 	InconsistentCount  int    `db:"inconsistent_count"`
-	CheckName          string `db:"check_name"`
-	CheckDescription   string `db:"description"`
+	CheckName          string `db:"compliance_check_name"`
+	CheckDescription   string `db:"compliance_check_rationale"`
 }

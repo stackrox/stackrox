@@ -133,7 +133,7 @@ message ComplianceOperatorCheckResultV2 {
     string                    cluster_name     = 15;
     CheckStatus               status           = 5 [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden"'];
     RuleSeverity              severity         = 6;
-    string                    description      = 7 [(gogoproto.moretags) = 'search:"Compliance Check Description,hidden"'];
+    string                    description      = 7;
     string                    instructions     = 8;
     map<string, string>       labels           = 9;
     map<string, string>       annotations      = 10;
@@ -142,7 +142,7 @@ message ComplianceOperatorCheckResultV2 {
     string                    control          = 13;
     string                    scan_name        = 14 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden" sql:"fk(ComplianceOperatorScanV2:scan_name),no-fk-constraint"'];
     string                    scan_config_name = 16 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"'];
-    string                    rationale        = 17;
+    string                    rationale        = 17 [(gogoproto.moretags) = 'search:"Compliance Check Rationale,hidden"'];
     repeated string           valuesUsed       = 18;
     repeated string           warnings         = 19;
 }
