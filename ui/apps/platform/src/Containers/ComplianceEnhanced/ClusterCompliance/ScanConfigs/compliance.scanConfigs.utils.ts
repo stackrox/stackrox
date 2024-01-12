@@ -71,13 +71,14 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
 
 export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
     const { parameters, clusters, profiles } = formikValues;
-    const { name } = parameters;
+    const { name, description } = parameters;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
 
     return {
         scanName: name,
         scanConfig: {
+            description,
             oneTimeScan: false,
             profiles,
             scanSchedule,
