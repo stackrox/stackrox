@@ -21,7 +21,7 @@ var (
 	ScannerSlimGRPCEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT", WithDefault("scanner.stackrox.svc:8443"))
 
 	// ScannerV4GRPCEndpoint is used to communicate with the Scanner V4 endpoint in the same cluster.
-	ScannerV4GRPCEndpoint = RegisterSetting("ROX_SCANNER_V4_GRPC_ENDPOINT", WithDefault("scanner-v4.stackrox.svc:8443"))
+	ScannerV4GRPCEndpoint = RegisterSetting("ROX_SCANNER_V4_GRPC_ENDPOINT", WithDefault("scanner-v4-indexer.stackrox.svc:8443"))
 
 	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
 	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
