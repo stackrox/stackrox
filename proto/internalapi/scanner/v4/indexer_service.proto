@@ -33,7 +33,8 @@ message HasIndexReportRequest {
 }
 
 message HasIndexReportResponse {
-    bool exists = 1;
+    string scanner_version = 1;
+    bool   exists          = 2;
 }
 
 // Indexer service creates manifests and store index reports.

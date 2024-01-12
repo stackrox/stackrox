@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services/validators"
@@ -86,6 +87,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
 		return nil, err
 	}
+	report.ScannerVersion = version.Version
 	report.HashId = req.GetHashId()
 	return report, nil
 }

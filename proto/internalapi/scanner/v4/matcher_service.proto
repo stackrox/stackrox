@@ -15,7 +15,8 @@ message GetVulnerabilitiesRequest {
 }
 
 message Metadata {
-    google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
+    string                    scanner_version           = 1;
+    google.protobuf.Timestamp last_vulnerability_update = 2;
 }
 
 // Matcher finds vulnerabilities in index reports.

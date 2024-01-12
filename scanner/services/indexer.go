@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
@@ -81,6 +82,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
+	indexReport.ScannerVersion = version.Version
 	indexReport.HashId = req.GetHashId()
 	// TODO Define behavior for indexReport.Err != "".
 	return indexReport, nil
@@ -104,6 +106,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
+	indexReport.ScannerVersion = version.Version
 	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
 }
@@ -118,7 +121,8 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		return nil, err
 	}
 	return &v4.HasIndexReportResponse{
-		Exists: exists,
+		ScannerVersion: version.Version,
+		Exists:         exists,
 	}, nil
 }
 
