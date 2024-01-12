@@ -88,6 +88,38 @@ var (
 			"ack_type",
 			"reason",
 		})
+
+	// DetectorProcessIndicatorBufferSize keeps track of the size of the detection process indicator buffer.
+	DetectorProcessIndicatorBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_process_indicator_buffer_size",
+		Help:      "A counter that tracks the size of the detection process indicator buffer",
+	}, []string{"Operation"})
+
+	// DetectorNetworkFlowBufferSize keeps track of the size of the detection network flow buffer.
+	DetectorNetworkFlowBufferSize = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_network_flow_buffer_size",
+		Help:      "A counter that tracks the size of the detection network flow buffer",
+	}, []string{"Operation"})
+
+	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
+	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_process_indicators_dropped_total",
+		Help:      "A counter of the total number of process indicators that were dropped if the detector buffer was full",
+	})
+
+	// DetectorNetworkFlowDroppedCount keeps track of the number of network flows dropped in the detector.
+	DetectorNetworkFlowDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_network_flows_dropped_total",
+		Help:      "A counter of the total number of network flows that were dropped if the detector buffer was full",
+	})
 )
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
@@ -127,5 +159,12 @@ func ObserveNodeInventoryAck(nodeName, ackType string, reason AckReason, origin 
 }
 
 func init() {
-	prometheus.MustRegister(timeSpentInExponentialBackoff, networkPoliciesStored, networkPoliciesStoreEvents, receivedNodeInventory)
+	prometheus.MustRegister(timeSpentInExponentialBackoff,
+		networkPoliciesStored,
+		networkPoliciesStoreEvents,
+		receivedNodeInventory,
+		DetectorNetworkFlowBufferSize,
+		DetectorProcessIndicatorBufferSize,
+		DetectorNetworkFlowDroppedCount,
+		DetectorProcessIndicatorDroppedCount)
 }

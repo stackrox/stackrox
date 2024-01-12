@@ -17,6 +17,7 @@ import (
 type DeploymentStore interface {
 	GetAll() []*storage.Deployment
 	Get(id string) *storage.Deployment
+	GetSnapshot(id string) *storage.Deployment
 	GetBuiltDeployment(id string) (*storage.Deployment, bool)
 	FindDeploymentIDsWithServiceAccount(namespace, sa string) []string
 	FindDeploymentIDsByLabels(namespace string, sel selector.Selector) []string
