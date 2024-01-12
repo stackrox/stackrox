@@ -257,10 +257,11 @@ func (x *HasIndexReportRequest) GetHashId() string {
 }
 
 type HasIndexReportResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Exists        bool                   `protobuf:"varint,1,opt,name=exists,proto3" json:"exists,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Exists         bool                   `protobuf:"varint,1,opt,name=exists,proto3" json:"exists,omitempty"`
+	ScannerVersion string                 `protobuf:"bytes,2,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *HasIndexReportResponse) Reset() {
@@ -298,6 +299,13 @@ func (x *HasIndexReportResponse) GetExists() bool {
 		return x.Exists
 	}
 	return false
+}
+
+func (x *HasIndexReportResponse) GetScannerVersion() string {
+	if x != nil {
+		return x.ScannerVersion
+	}
+	return ""
 }
 
 type GetOrCreateIndexReportRequest struct {
@@ -393,9 +401,10 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x15GetIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\"0\n" +
 	"\x15HasIndexReportRequest\x12\x17\n" +
-	"\ahash_id\x18\x01 \x01(\tR\x06hashId\"0\n" +
+	"\ahash_id\x18\x01 \x01(\tR\x06hashId\"Y\n" +
 	"\x16HasIndexReportResponse\x12\x16\n" +
-	"\x06exists\x18\x01 \x01(\bR\x06exists\"\x9a\x01\n" +
+	"\x06exists\x18\x01 \x01(\bR\x06exists\x12'\n" +
+	"\x0fscanner_version\x18\x02 \x01(\tR\x0escannerVersion\"\x9a\x01\n" +
 	"\x1dGetOrCreateIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12L\n" +
 	"\x0fcontainer_image\x18\x02 \x01(\v2!.scanner.v4.ContainerImageLocatorH\x00R\x0econtainerImageB\x12\n" +
