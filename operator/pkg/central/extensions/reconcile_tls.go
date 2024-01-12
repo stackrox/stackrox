@@ -241,21 +241,21 @@ func (r *createCentralTLSExtensionRun) reconcileScannerDBTLSSecret(ctx context.C
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4IndexerTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData, true)
+		return r.EnsureSecret(ctx, "scanner-v4-indexer-tls", r.validateScannerV4IndexerTLSData, r.generateScannerV4IndexerTLSData)
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-indexer-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4MatcherTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData, true)
+		return r.EnsureSecret(ctx, "scanner-v4-matcher-tls", r.validateScannerV4MatcherTLSData, r.generateScannerV4MatcherTLSData)
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-matcher-tls")
 }
 
 func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context.Context) error {
 	if r.centralObj.Spec.ScannerV4.IsEnabled() {
-		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData, true)
+		return r.EnsureSecret(ctx, "scanner-v4-db-tls", r.validateScannerV4DBTLSData, r.generateScannerV4DBTLSData)
 	}
 	return r.DeleteSecret(ctx, "scanner-v4-db-tls")
 }

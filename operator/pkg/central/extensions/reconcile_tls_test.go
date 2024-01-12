@@ -258,7 +258,7 @@ func TestCreateCentralTLS(t *testing.T) {
 			},
 		},
 		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
-			Spec:            basicSpecWithScanner(false),
+			Spec:            basicSpecWithScanner(false, false),
 			ExistingManaged: []*v1.Secret{existingCentralWithInvalidLeaf, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
@@ -266,17 +266,17 @@ func TestCreateCentralTLS(t *testing.T) {
 			},
 		},
 		"When a managed central-tls secret with missing CA key exists, it should fail": {
-			Spec:            basicSpecWithScanner(false),
+			Spec:            basicSpecWithScanner(false, false),
 			ExistingManaged: []*v1.Secret{existingCentralWithMissingCAKey, existingCentralDB},
 			ExpectedError:   "malformed secret (ca.pem present but ca-key.pem missing), please delete it",
 		},
 		"When a managed central-tls secret with invalid CA exists, it should fail": {
-			Spec:            basicSpecWithScanner(false),
+			Spec:            basicSpecWithScanner(false, false),
 			ExistingManaged: []*v1.Secret{existingCentralWithInvalidCA, existingCentralDB},
 			ExpectedError:   "invalid properties of CA in the existing secret, please delete it to allow re-generation: invalid certificate common name",
 		},
 		"When a managed central-tls secret with corrupt CA exists, it should fail": {
-			Spec:            basicSpecWithScanner(false),
+			Spec:            basicSpecWithScanner(false, false),
 			ExistingManaged: []*v1.Secret{existingCentralWithCorruptCA, existingCentralDB},
 			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
 		},
