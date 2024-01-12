@@ -306,7 +306,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Analyzer: &platform.ScannerAnalyzerComponent{
-								Scaling: &platform.ScannerAnalyzerScaling{
+								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
 									Replicas:    &scannerReplicas,
 									MinReplicas: &scannerMinReplicas,
