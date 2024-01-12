@@ -106,6 +106,26 @@ func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessages() {
 	}
 }
 
+func (s *ComponentTestSuite) TestMsgQueueOverfill() {
+	de := DeploymentEnhancer{
+		responsesC:       make(chan *message.ExpiringMessage),
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, 1),
+		storeProvider:    s.mockStoreProvider,
+	}
+	s.NoError(de.ProcessMessage(generateMsgToSensor()))
+
+	// As there is no reader, the second call has to error out
+	s.ErrorContains(de.ProcessMessage(generateMsgToSensor()), "DeploymentEnhancer queue has reached its limit of")
+}
+
+func generateMsgToSensor() *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
+			DeploymentEnhancementRequest: generateDeploymentMsg(uuid.NewV4().String(), 1),
+		},
+	}
+}
+
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {
 	d := make([]*storage.Deployment, noOfDeployments)
 	for i := 0; i < noOfDeployments; i++ {
