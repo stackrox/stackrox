@@ -524,7 +524,7 @@ func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.
 	}
 
 	log.Debugf("Matching vulns for Scanner V4 index report (ver: %s) for image %q", request.GetIndexerVersion(), img.GetName().GetFullName())
-	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), nil)
+	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), request.GetNotes())
 	return err
 }
 

@@ -176,16 +176,8 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	if err != nil {
 		return nil, fmt.Errorf("get or create index: %w", err)
 	}
-	req := &v4.GetVulnerabilitiesRequest{HashId: ir.GetHashId()}
-	var vr *v4.VulnerabilityReport
-	err = retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
-		vr, err = c.matcher.GetVulnerabilities(ctx, req)
-		return err
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get vulns: %w", err)
-	}
-	return vr, nil
+
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
 }
 
 func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
@@ -195,7 +187,11 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		"image", ref.String(),
 	)
 
-	req := &v4.GetVulnerabilitiesRequest{HashId: getImageManifestID(ref), Contents: contents}
+	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents)
+}
+
+func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashId string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	req := &v4.GetVulnerabilitiesRequest{HashId: hashId, Contents: contents}
 	var vr *v4.VulnerabilityReport
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
 		vr, err = c.matcher.GetVulnerabilities(ctx, req)
