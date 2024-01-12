@@ -190,8 +190,8 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents)
 }
 
-func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashId string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
-	req := &v4.GetVulnerabilitiesRequest{HashId: hashId, Contents: contents}
+func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
 		vr, err = c.matcher.GetVulnerabilities(ctx, req)
