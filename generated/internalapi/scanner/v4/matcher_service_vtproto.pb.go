@@ -87,6 +87,7 @@ func (m *Metadata) CloneVT() *Metadata {
 	}
 	r := new(Metadata)
 	r.LastVulnerabilityUpdate = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastVulnerabilityUpdate).CloneVT())
+	r.ScannerVersion = m.ScannerVersion
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -174,6 +175,9 @@ func (this *Metadata) EqualVT(that *Metadata) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.LastVulnerabilityUpdate).EqualVT((*timestamppb1.Timestamp)(that.LastVulnerabilityUpdate)) {
+		return false
+	}
+	if this.ScannerVersion != that.ScannerVersion {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -370,6 +374,13 @@ func (m *Metadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.ScannerVersion) > 0 {
+		i -= len(m.ScannerVersion)
+		copy(dAtA[i:], m.ScannerVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScannerVersion)))
+		i--
+		dAtA[i] = 0x12
+	}
 	if m.LastVulnerabilityUpdate != nil {
 		size, err := (*timestamppb1.Timestamp)(m.LastVulnerabilityUpdate).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -449,6 +460,10 @@ func (m *Metadata) SizeVT() (n int) {
 	_ = l
 	if m.LastVulnerabilityUpdate != nil {
 		l = (*timestamppb1.Timestamp)(m.LastVulnerabilityUpdate).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ScannerVersion)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -906,6 +921,38 @@ func (m *Metadata) UnmarshalVT(dAtA []byte) error {
 			if err := (*timestamppb1.Timestamp)(m.LastVulnerabilityUpdate).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScannerVersion = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1393,6 +1440,42 @@ func (m *Metadata) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := (*timestamppb1.Timestamp)(m.LastVulnerabilityUpdate).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ScannerVersion = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

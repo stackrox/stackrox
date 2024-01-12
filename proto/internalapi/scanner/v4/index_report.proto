@@ -15,4 +15,5 @@ message IndexReport {
   bool success = 3;
   string err = 4;
   Contents contents = 5;
+  string scanner_version = 6;
 }
