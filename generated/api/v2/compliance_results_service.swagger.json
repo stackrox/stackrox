@@ -588,7 +588,7 @@
         "complianceCheckName": {
           "type": "string"
         },
-        "complianceCheckDescription": {
+        "complianceCheckRationale": {
           "type": "string"
         },
         "checkStats": {

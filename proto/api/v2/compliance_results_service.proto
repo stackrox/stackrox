@@ -88,7 +88,7 @@ message ComplianceClusterScanStats {
 // ComplianceCheckScanStats provides scan stats overview based on compliance check name
 message ComplianceCheckScanStats {
     string compliance_check_name = 1;
-    string compliance_check_description = 2;
+    string compliance_check_rationale = 2;
     repeated ComplianceCheckStatusCount     check_stats = 3;
 }
 
