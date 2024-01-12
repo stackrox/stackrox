@@ -208,6 +208,20 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 	return updater
 }
 
+func (h *httpHandler) handleV4DefsFile(ctx context.Context, filePath, blobName string) error {
+	r, err := os.Open(filePath)
+	if err != nil {
+		return errors.Wrap(err, "opening scanner v4 file")
+	}
+	defer utils.IgnoreError(r.Close())
+	fileInfo, err := r.Stat()
+	if err != nil {
+		return err
+	}
+
+	return h.upsertBlob(ctx, r, fileInfo.Size(), blobName)
+}
+
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
 	r, err := zipF.Open()
 	if err != nil {
@@ -215,18 +229,29 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File)
 	}
 	defer utils.IgnoreError(r.Close)
 
+	return h.upsertBlob(ctx, r, zipF.FileInfo().Size(), offlineScannerDefinitionBlobName)
+}
+
+func (h *httpHandler) upsertBlob(ctx context.Context, r io.Reader, size int64, blobName string) error {
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
-		Name:         offlineScannerDefinitionBlobName,
+		Name:         blobName,
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
-		Length:       zipF.FileInfo().Size(),
+		Length:       size,
 	}
 
 	if err := h.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
-		return errors.Wrap(err, "writing scanner definitions")
+		return errors.Wrap(err, "writing scanner files")
 	}
 
+	return nil
+}
+
+func (h *httpHandler) handleV4Files(ctx context.Context, path, blobName string) error {
+	if err := h.handleV4DefsFile(ctx, path, blobName); err != nil {
+		return errors.Wrap(err, "couldn't handle scanner V4 file")
+	}
 	return nil
 }
 
@@ -256,6 +281,14 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
+	tempFileName := "tempfile.zip"
+	if fileType := r.URL.Query().Get("type"); fileType != "" {
+		if _, exists := v4FileMapping[fileType]; exists {
+			tempFileName = fileType + ".json"
+		} else if fileType == "cvss" {
+			tempFileName = "cvss.tar.gz"
+		}
+	}
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)
 		return
@@ -266,7 +299,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	tempFile := filepath.Join(tempDir, "tempfile.zip")
+	tempFile := filepath.Join(tempDir, tempFileName)
 	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
 		return
