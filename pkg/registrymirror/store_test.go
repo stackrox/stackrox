@@ -327,7 +327,7 @@ func TestPullSources(t *testing.T) {
 		assert.Contains(t, srcs[1], itmsA.Spec.ImageTagMirrors[0].Mirrors[1])
 	})
 
-	t.Run("error when CRs updated to bad state (sync)", func(t *testing.T) {
+	t.Run("no error when ICSP and IDMS objects living at the same time (sync)", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), fileName)
 
 		s := NewFileStore(WithConfigPath(path), WithDelay(0))
@@ -336,7 +336,7 @@ func TestPullSources(t *testing.T) {
 		assert.NoError(t, err)
 
 		err = s.UpsertImageDigestMirrorSet(idmsA)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("no error when CRs are updated to bad state (async)", func(t *testing.T) {
