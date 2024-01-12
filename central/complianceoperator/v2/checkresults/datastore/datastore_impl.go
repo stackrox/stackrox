@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,6 +20,8 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
+
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -111,6 +114,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 
@@ -141,6 +145,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
 	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCheckResult](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 
@@ -220,6 +225,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 func withSACFilter(ctx context.Context, targetResource permissions.ResourceMetadata, query *v1.Query) (*v1.Query, error) {
 	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, targetResource)
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 	return search.FilterQueryByQuery(query, sacQueryFilter), nil
