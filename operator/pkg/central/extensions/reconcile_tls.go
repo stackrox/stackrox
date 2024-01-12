@@ -100,7 +100,7 @@ func (r *createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Co
 		validateFunc := func(fileMap types.SecretDataMap, _ bool) error {
 			return r.validateInitBundleTLSData(serviceType, slugCaseService+"-", fileMap)
 		}
-		generateFunc := func() (types.SecretDataMap, error) {
+		generateFunc := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
 			return r.generateInitBundleTLSData(slugCaseService+"-", serviceType)
 		}
 		if err := r.EnsureSecret(ctx, secretName, validateFunc, generateFunc, fixExistingInitBundleSecret); err != nil {
@@ -137,7 +137,7 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateCentralTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	var err error
 	r.ca, err = certgen.GenerateCA()
 	if err != nil {
@@ -161,7 +161,7 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData() (types.SecretDat
 }
 
 func (r *createCentralTLSExtensionRun) reconcileCentralDBTLSSecret(ctx context.Context) error {
-	if !r.centralObj.Spec.Central.IsExternalDB() {
+	if r.centralObj.Spec.Central.ShouldManageDB() {
 		return r.EnsureSecret(ctx, "central-db-tls", r.validateCentralDBTLSData, r.generateCentralDBTLSData, true)
 	}
 	return r.DeleteSecret(ctx, "central-db-tls")
@@ -239,7 +239,7 @@ func (r *createCentralTLSExtensionRun) validateScannerTLSData(fileMap types.Secr
 	return r.validateServiceTLSData(storage.ServiceType_SCANNER_SERVICE, "", fileMap)
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateScannerTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerSubject, "", fileMap); err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func (r *createCentralTLSExtensionRun) validateCentralDBTLSData(fileMap types.Se
 	return r.validateServiceTLSData(storage.ServiceType_CENTRAL_DB_SERVICE, "", fileMap)
 }
 
-func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateScannerDBTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.ScannerDBSubject, "", fileMap); err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ func (r *createCentralTLSExtensionRun) generateScannerDBTLSData() (types.SecretD
 	return fileMap, nil
 }
 
-func (r *createCentralTLSExtensionRun) generateCentralDBTLSData() (types.SecretDataMap, error) {
+func (r *createCentralTLSExtensionRun) generateCentralDBTLSData(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	fileMap := make(types.SecretDataMap, numServiceCertDataEntries)
 	if err := r.generateServiceTLSData(mtls.CentralDBSubject, "", fileMap); err != nil {
 		return nil, err

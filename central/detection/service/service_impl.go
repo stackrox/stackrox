@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -24,6 +25,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -97,6 +101,8 @@ type serviceImpl struct {
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
 	connManager        connection.Manager
+
+	netpols            networkPolicyDS.DataStore
 	enhancementWatcher EnhancementRequestWatcher
 
 	notifications notifier.Processor
@@ -220,10 +226,19 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
+	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+	if err != nil {
+		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
+	} else {
+		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+	}
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: appliedNetpols,
 	}, filter)
 	if err != nil {
 		return nil, err
@@ -237,6 +252,15 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		Type:   deployment.GetType(),
 		Alerts: alerts,
 	}, nil
+}
+
+func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find network policies for cluster %s and namespace %s", enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	}
+	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
 }
 
 func convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
@@ -335,6 +359,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 		Delegable:       true,
+		Namespace:       "default",
 	}
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
@@ -350,6 +375,10 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 
 		eCtx.ClusterID = clusterID
+	}
+
+	if ns := req.GetNamespace(); ns != "" {
+		eCtx.Namespace = ns
 	}
 
 	var deployments []*storage.Deployment
@@ -377,8 +406,8 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}
 
 	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
-	// If a cluster is provided, enhance deployments with additional info from Sensor
-	if eCtx.ClusterID != "" {
+	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
+	if eCtx.ClusterID != "" && s.connManager.GetConnection(eCtx.ClusterID).HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
 		if conn == nil {
 			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")

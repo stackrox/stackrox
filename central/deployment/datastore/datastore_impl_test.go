@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
+	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
-	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"

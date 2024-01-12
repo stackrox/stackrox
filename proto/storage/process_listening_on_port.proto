@@ -11,6 +11,7 @@ import "storage/process_indicator.proto";
 
 package storage;
 
+// The API returns an array of these
 message ProcessListeningOnPort {
     message Endpoint {
         uint32 port         = 1;
@@ -30,6 +31,7 @@ message ProcessListeningOnPort {
     string image_id                                = 10;
 }
 
+// This is what sensor sends to central
 message ProcessListeningOnPortFromSensor {
     uint32 port                               = 1;
     L4Protocol protocol                       = 2;
@@ -38,8 +40,10 @@ message ProcessListeningOnPortFromSensor {
     string cluster_id                         = 6;
     string deployment_id                      = 7;
     string pod_uid                            = 8;
+    string namespace                          = 9;
 }
 
+// This is what is stored in the database
 message ProcessListeningOnPortStorage {
     // Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
     // bigint with a sequence. Unfortunately at the moment some bits of store
@@ -63,4 +67,8 @@ message ProcessListeningOnPortStorage {
     string deployment_id              = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
 
     string pod_uid                    = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"'];
+
+    string cluster_id                 = 10 [(gogoproto.moretags) = 'search:"Cluster ID" sql:"type(uuid)"'];
+
+    string namespace                  = 11 [(gogoproto.moretags) = 'search:"Namespace"'];
 }

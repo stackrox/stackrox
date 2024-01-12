@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/enhancement"
@@ -42,6 +43,7 @@ func New(
 	clusterSACHelper sachelper.ClusterSacHelper,
 	connManager connection.Manager,
 	broker *enhancement.Broker,
+	netpols networkPolicyDS.DataStore,
 ) Service {
 	return &serviceImpl{
 		clusters:           clusters,
@@ -56,5 +58,6 @@ func New(
 		clusterSACHelper:   clusterSACHelper,
 		connManager:        connManager,
 		enhancementWatcher: broker,
+		netpols:            netpols,
 	}
 }

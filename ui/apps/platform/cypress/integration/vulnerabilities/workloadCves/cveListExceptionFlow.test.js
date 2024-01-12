@@ -13,6 +13,7 @@ import {
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE List deferral and false positive flows', () => {
     withAuth();
@@ -90,7 +91,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should defer a single CVE', () => {
         visitWorkloadCveOverview();
-        cy.get(selectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('DEFERRAL').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
@@ -109,7 +110,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should defer multiple selected CVEs', () => {
         visitWorkloadCveOverview();
-        cy.get(selectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);
@@ -126,7 +127,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should mark a single CVE false positive', () => {
         visitWorkloadCveOverview();
-        cy.get(selectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
             verifySelectedCvesInModal([cveName]);
@@ -141,7 +142,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should mark multiple selected CVEs as false positive', () => {
         visitWorkloadCveOverview();
-        cy.get(selectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
         selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
             verifySelectedCvesInModal(cveNames);

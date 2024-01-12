@@ -7,6 +7,7 @@ import (
 
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -57,6 +58,10 @@ func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report 
 		EXPECT().
 		IndexContainerImage(gomock.Any(), gomock.Eq(hashID), gomock.Eq(imageURL), gomock.Len(optCount)).
 		Return(report, err)
+}
+
+func (s *indexerServiceTestSuite) TestAuthz() {
+	testutils.AssertAuthzWorks(s.T(), &indexerService{})
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {

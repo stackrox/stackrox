@@ -119,9 +119,14 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 	errList := errorhelpers.NewErrorList("failed to parse vector")
 	if v2 := cvss.GetV2(); v2 != nil {
 		if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
-			c.ExploitabilityScore = 0.0 // TODO cvssv2.ExploitabilityScore(v2.GetVector())
-			c.ImpactScore = 0.0         // TODO cvssv2.ImpactScore(v2.GetVector())
-			c.Score = v2.GetBaseScore()
+			err = cvssv2.CalculateScores(c)
+			if err != nil {
+				errList.AddError(fmt.Errorf("calculating CVSS v2 scores: %w", err))
+			}
+			// Use the report's score if it exists.
+			if v2.GetBaseScore() != 0.0 {
+				c.Score = v2.GetBaseScore()
+			}
 			c.Severity = cvssv2.Severity(v2.GetBaseScore())
 			vuln.CvssV2 = c
 			// This sets the top level score for use in policies. It will be overwritten if
@@ -134,9 +139,14 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 	}
 	if v3 := cvss.GetV3(); v3 != nil {
 		if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
-			c.ExploitabilityScore = 0.0 // TODO cvssv3.ExploitabilityScore(v3.GetVector())
-			c.ImpactScore = 0.0         // TODO cvssv3.ImpactScore(v3.GetVector())
-			c.Score = v3.GetBaseScore()
+			err = cvssv3.CalculateScores(c)
+			if err != nil {
+				errList.AddError(fmt.Errorf("calculating CVSS v3 scores: %w", err))
+			}
+			// Use the report's score if it exists.
+			if v3.GetBaseScore() != 0.0 {
+				c.Score = v3.GetBaseScore()
+			}
 			c.Severity = cvssv3.Severity(v3.GetBaseScore())
 			vuln.CvssV3 = c
 			// Overwrite V2 if set.
@@ -176,11 +186,11 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // If there are zero known distributions for the image or if there are multiple distributions,
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
-	if len(report.GetContents().GetDistributions()) == 1 {
-		for _, dist := range report.GetContents().GetDistributions() {
-			return dist.Did + ":" + dist.VersionId
-		}
+	dists := report.GetContents().GetDistributions()
+	if len(dists) != 1 {
+		return "unknown"
 	}
 
-	return "unknown"
+	dist := dists[0]
+	return dist.Did + ":" + dist.VersionId
 }

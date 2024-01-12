@@ -6,8 +6,8 @@ import {
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
-
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE overview page tests', () => {
     withAuth();
@@ -45,7 +45,7 @@ describe('Workload CVE overview page tests', () => {
         visitWorkloadCveOverview();
 
         // We want to manually test filter application, so clear the default filters
-        cy.get(selectors.clearFiltersButton).click();
+        cy.get(vulnSelectors.clearFiltersButton).click();
         cy.get(selectors.isUpdatingTable).should('not.exist');
 
         const entityOpnameMap = {
