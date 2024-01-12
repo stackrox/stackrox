@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -429,8 +430,6 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
 		}
-		// This is safe even if img is nil.
-		scanTime := existingImg.GetScan().GetScanTime()
 
 		// Check whether too much time has passed, if yes we have to do a signature verification update via the
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
@@ -444,8 +443,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				Add(reprocessInterval).After(timestamp.Now())
 		}
 
-		// If the scan exists and not too much time has passed, we don't need to update scans.
-		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+		forceScanUpdate = shouldUpdateExistingScan(imgExists, existingImg, request)
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
@@ -526,6 +524,37 @@ func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.
 	log.Debugf("Matching vulns for Scanner V4 index report (ver: %s) for image %q", request.GetIndexerVersion(), img.GetName().GetFullName())
 	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), nil)
 	return err
+}
+
+// shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
+func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, request *v1.EnrichLocalImageInternalRequest) bool {
+	if !imgExists || existingImg.GetScan() == nil {
+		return true
+	}
+
+	scanTime := existingImg.GetScan().GetScanTime()
+	scanExpired := !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+
+	if !features.ScannerV4.Enabled() {
+		return scanExpired
+	}
+
+	v4MatchRequest := scannerV4MatchRequest(request)
+	v4ExistingScan := existingImg.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
+	if v4ExistingScan && !v4MatchRequest {
+		// Do not overwrite a V4 scan with a Clairify scan regardless of expiration.
+		log.Debugf("Not updating cached Scanner V4 scan with Clairify scan for image %q", request.GetImageName().GetFullName())
+		return false
+	}
+
+	if !v4ExistingScan && v4MatchRequest {
+		// If the existing scan is NOT from Scanner V4 but the request is from Scanner V4,
+		// then scan regardless of expiration.
+		log.Debugf("Forcing overwrite of cached Clairify scan with Scanner V4 scan for image %q", request.GetImageName().GetFullName())
+		return true
+	}
+
+	return scanExpired
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.
