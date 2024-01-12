@@ -11,7 +11,6 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
-import useURLPagination from 'hooks/useURLPagination';
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -129,6 +128,10 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
         columnIndex,
     });
 
+    const startNumber = (page - 1) * perPage;
+    const endNumber = page * perPage;
+    const clustersWindow = sortedClusters.slice(startNumber, endNumber);
+
     return (
         <Card>
             <CardHeader>
@@ -154,7 +157,7 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {sortedClusters.map((cluster) => {
+                        {clustersWindow.map((cluster) => {
                             return (
                                 <Tr key={cluster.clusterId}>
                                     <Td>{cluster.clusterName}</Td>
