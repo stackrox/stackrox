@@ -98,7 +98,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		MetadataStore: metadataStore,
 		Client:        c,
 		// TODO(ROX-19005): replace with a URL related to the desired version.
-		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
+		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/monster-mash-scanner-v4/output.json.zst",
 	})
 	if err != nil {
 		_ = libVuln.Close(ctx)
