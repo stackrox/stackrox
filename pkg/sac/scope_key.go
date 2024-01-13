@@ -21,6 +21,8 @@ const (
 	ClusterScopeKind
 	// NamespaceScopeKind identifies the namespace scope.
 	NamespaceScopeKind
+	// TeamScopeKind identifes the team scope.
+	TeamScopeKind = 5
 )
 
 // ScopeKey is a common superinterface for all access scope keys.
@@ -145,6 +147,25 @@ func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
 	keys := make([]ScopeKey, len(namespaces))
 	for i, namespace := range namespaces {
 		keys[i] = NamespaceScopeKey(namespace)
+	}
+	return keys
+}
+
+// TeamScopeKey is the scope key for the teams scope.
+type TeamScopeKey string
+
+func (TeamScopeKey) isScopeKey() {}
+
+// ScopeKind returns TeamScopeKind.
+func (TeamScopeKey) ScopeKind() ScopeKind { return TeamScopeKind }
+
+func (k TeamScopeKey) String() string { return string(k) }
+
+// TeamScopeKeys wraps the given teams in a scope key slice.
+func TeamScopeKeys(teams ...string) []ScopeKey {
+	keys := make([]ScopeKey, len(teams))
+	for i, team := range teams {
+		keys[i] = TeamScopeKey(team)
 	}
 	return keys
 }

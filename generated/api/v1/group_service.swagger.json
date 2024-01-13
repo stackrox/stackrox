@@ -371,6 +371,13 @@
         "roleName": {
           "type": "string",
           "description": "This is the name of the role that will apply to users in this group."
+        },
+        "teamNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "(dhaus): Referring to one or more teams the group is applying users to.\nIdeally this has a FK constraint to the teams store but skipped for simplicity now.\nAlso, should be part of the unique constraint."
         }
       },
       "description": "Group is a GroupProperties : Role mapping."

@@ -149,6 +149,7 @@ import (
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
+	teamService "github.com/stackrox/rox/central/teams/service"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -421,6 +422,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		signatureIntegrationService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
+		teamService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.

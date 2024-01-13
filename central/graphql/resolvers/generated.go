@@ -639,6 +639,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Group", []string{
 		"props: GroupProperties",
 		"roleName: String!",
+		"teamNames: [String!]!",
 	}))
 	utils.Must(builder.AddType("GroupProperties", []string{
 		"authProviderId: String!",
@@ -1010,6 +1011,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
+		"teams: [String!]!",
 	}))
 	utils.Must(builder.AddType("PolicyGroup", []string{
 		"booleanOperator: BooleanOperator!",
@@ -7682,6 +7684,11 @@ func (resolver *groupResolver) RoleName(ctx context.Context) string {
 	return value
 }
 
+func (resolver *groupResolver) TeamNames(ctx context.Context) []string {
+	value := resolver.data.GetTeamNames()
+	return value
+}
+
 type groupPropertiesResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11191,6 +11198,11 @@ func (resolver *policyResolver) Scope(ctx context.Context) ([]*scopeResolver, er
 func (resolver *policyResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
+}
+
+func (resolver *policyResolver) Teams(ctx context.Context) []string {
+	value := resolver.data.GetTeams()
+	return value
 }
 
 type policyGroupResolver struct {

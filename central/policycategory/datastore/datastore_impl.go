@@ -122,26 +122,16 @@ func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, polic
 
 // Search returns policy category related search results for the provided query
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
 	return ds.searcher.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
 	return ds.searcher.Count(ctx, q)
 }
 
 // GetPolicyCategory get a policy category by id
 func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*storage.PolicyCategory, bool, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, false, err
-	}
-
 	category, exists, err := ds.storage.Get(ctx, id)
 	if err != nil {
 		return nil, false, errorsPkg.Wrapf(err, "policy category with id '%s' cannot be found	", id)
@@ -159,18 +149,12 @@ func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query
 
 // SearchRawPolicyCategories returns policy category objects that match the provided query
 func (ds *datastoreImpl) SearchRawPolicyCategories(ctx context.Context, q *v1.Query) ([]*storage.PolicyCategory, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
 
 	return ds.searcher.SearchRawCategories(ctx, q)
 }
 
 // GetAllPolicyCategories lists all policy categories
 func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage.PolicyCategory, error) {
-	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
 
 	var categories []*storage.PolicyCategory
 	walkFn := func() error {
@@ -188,11 +172,6 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 
 // AddPolicyCategory inserts a policy category into the storage.
 func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storage.PolicyCategory) (*storage.PolicyCategory, error) {
-	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
 	if category.Id == "" {
 		category.Id = uuid.NewV4().String()
 	}
@@ -214,11 +193,6 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 
 // RenamePolicyCategory renames a policy category
 func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName string) (*storage.PolicyCategory, error) {
-	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
@@ -254,11 +228,6 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 
 // DeletePolicyCategory removes a policy from the storage
 func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
-	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()

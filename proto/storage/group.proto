@@ -16,6 +16,11 @@ message Group {
 
     // This is the name of the role that will apply to users in this group.
     string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"'];
+
+    // (dhaus): Referring to one or more teams the group is applying users to.
+    // Ideally this has a FK constraint to the teams store but skipped for simplicity now.
+    // Also, should be part of the unique constraint.
+    repeated string team_names = 4;
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when

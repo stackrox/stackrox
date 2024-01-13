@@ -475,8 +475,8 @@ func (m *tstRoleMapper) registerRoleMapping(mapping map[string][]perm.ResolvedRo
 	m.roleMapping = mapping
 }
 
-func (m *tstRoleMapper) FromUserDescriptor(_ context.Context, u *perm.UserDescriptor) ([]perm.ResolvedRole, error) {
-	return m.roleMapping[u.UserID], nil
+func (m *tstRoleMapper) FromUserDescriptor(_ context.Context, u *perm.UserDescriptor) ([]perm.ResolvedRole, []*storage.Team, error) {
+	return m.roleMapping[u.UserID], nil, nil
 }
 
 var testRoleMapper = &tstRoleMapper{}

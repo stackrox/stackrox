@@ -51,6 +51,10 @@ func (i identity) Service() *storage.ServiceIdentity {
 	return nil
 }
 
+func (i identity) Teams() []*storage.Team {
+	return nil
+}
+
 func (i identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		Username:    i.username,

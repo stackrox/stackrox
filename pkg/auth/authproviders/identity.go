@@ -39,7 +39,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 		authProvider.Config = nil
 	}
 
-	resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
+	resolvedRoles, teams, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 		Expires:        protoconv.ConvertTimeToTimestampOrNil(authResp.Expiration),
 		UserAttributes: user.ConvertAttributes(authResp.Claims.Attributes),
 		UserInfo:       getUserInfo(authResp.Claims, resolvedRoles),
+		Teams:          teams,
 	}, nil
 }
 

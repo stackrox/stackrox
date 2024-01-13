@@ -91,7 +91,7 @@ func (s *MapperTestSuite) TestMapperSuccessForRoleAbsence() {
 		},
 	}
 
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch(nil, roles, "since no role was mapped, no role should be returned")
 }
@@ -145,7 +145,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "since a single role was mapped, that role should be returned")
 }
@@ -199,7 +199,7 @@ func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
 			"email": {"testuser@domain.tld"},
 		},
 	}
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch([]permissions.ResolvedRole{}, roles, "since only the None role was mapped, no role should be returned")
 }
@@ -270,7 +270,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Require().NoError(err, "mapping should have succeeded")
 
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole1, expectedResolvedRole2}, roles, "expected both roles to be present")
@@ -341,7 +341,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "expected None role to be filtered out and the other one to be present")
 }
@@ -396,7 +396,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
 	s.ElementsMatch([]permissions.ResolvedRole{expectedResolvedRole}, roles, "since a single role was mapped, that role should be returned")
 }
@@ -433,7 +433,7 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	_, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	_, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Error(err, "mapping should have succeeded")
 }
 
@@ -484,6 +484,6 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	_, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	_, _, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.Error(err, "mapping should have succeeded")
 }

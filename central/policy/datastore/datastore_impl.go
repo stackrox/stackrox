@@ -26,8 +26,7 @@ import (
 )
 
 var (
-	log                       = logging.LoggerForModule()
-	workflowAdministrationSAC = sac.ForResource(resources.WorkflowAdministration)
+	log = logging.LoggerForModule()
 
 	workflowAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -75,17 +74,11 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
 	return ds.searcher.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return 0, err
-	}
 	return ds.searcher.Count(ctx, q)
 }
 
@@ -114,9 +107,6 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 }
 
 func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, false, err
-	}
 
 	policy, exists, err := ds.storage.Get(ctx, id)
 	if err != nil || !exists {
@@ -144,9 +134,6 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies []*stor
 	return nil
 }
 func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, nil, err
-	}
 
 	policies, missingIndices, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
@@ -161,9 +148,6 @@ func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*stor
 }
 
 func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, err
-	}
 
 	policies, err := ds.storage.GetAll(ctx)
 	if err != nil {
@@ -180,9 +164,6 @@ func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy,
 
 // GetPolicyByName returns policy with given name.
 func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error) {
-	if ok, err := workflowAdministrationSAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, false, err
-	}
 
 	policies, err := ds.GetAllPolicies(ctx)
 	if err != nil {
@@ -203,11 +184,6 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (*sto
 
 // AddPolicy inserts a policy into the storage and the indexer
 func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) (string, error) {
-	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
-		return "", err
-	} else if !ok {
-		return "", sac.ErrResourceAccessDenied
-	}
 
 	if policy.Id == "" {
 		policy.Id = uuid.NewV4().String()
@@ -250,11 +226,6 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 
 // UpdatePolicy updates a policy from the storage and the indexer
 func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
-	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 
 	if policy.Id == "" {
 		return errors.New("policy id not specified")
@@ -276,11 +247,6 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 // RemovePolicy removes a policy from the storage and the indexer
 func (ds *datastoreImpl) RemovePolicy(ctx context.Context, id string) error {
-	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
@@ -293,11 +259,6 @@ func (ds *datastoreImpl) removePolicyNoLock(ctx context.Context, id string) erro
 }
 
 func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
-	if ok, err := workflowAdministrationSAC.WriteAllowed(ctx); err != nil {
-		return nil, false, err
-	} else if !ok {
-		return nil, false, sac.ErrResourceAccessDenied
-	}
 
 	// Remove all cluster scopes and notifiers that can't be applied to this installation
 	changedIndices, err := ds.removeForeignClusterScopesAndNotifiers(ctx, importPolicies...)

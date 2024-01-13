@@ -75,11 +75,12 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 				UserID:     identity.UID(),
 				Attributes: attributes,
 			}
-			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
+			resolvedRoles, teams, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
 				return nil, getExtractorError("failed to resolve user roles", err)
 			}
 			identity.resolvedRoles = resolvedRoles
+			identity.teams = teams
 			return identity, nil
 		}
 	}

@@ -92,10 +92,11 @@ func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) e
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
+		obj.GetTeams(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy_categories (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policy_categories (Id, Name, Teams, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Teams = EXCLUDED.Teams, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -115,6 +116,7 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 	copyCols := []string{
 		"id",
 		"name",
+		"teams",
 		"serialized",
 	}
 
@@ -132,6 +134,7 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetName(),
+			obj.GetTeams(),
 			serialized,
 		})
 

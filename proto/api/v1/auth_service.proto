@@ -11,6 +11,7 @@ import "api/v1/common.proto";
 import "storage/auth_provider.proto";
 import "storage/service_identity.proto";
 import "storage/user.proto";
+import "storage/teams.proto";
 
 package v1;
 
@@ -28,6 +29,7 @@ message AuthStatus {
     string                      refresh_url     = 4;
     storage.AuthProvider        auth_provider   = 5;
     storage.UserInfo            user_info       = 6;
+    repeated storage.Team       teams           = 8;
     repeated UserAttribute      user_attributes = 7;
 }
 

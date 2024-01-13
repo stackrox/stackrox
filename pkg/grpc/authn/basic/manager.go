@@ -34,7 +34,7 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 		return nil, errox.NotAuthorized.CausedBy("invalid username and/or password")
 	}
 
-	resolvedRoles, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
+	resolvedRoles, _, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
 		UserID:     username,
 		Attributes: map[string][]string{},
 	})

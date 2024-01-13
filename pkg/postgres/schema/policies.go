@@ -57,5 +57,6 @@ type Policies struct {
 	SORTName           string           `gorm:"column:sortname;type:varchar"`
 	SORTLifecycleStage string           `gorm:"column:sortlifecyclestage;type:varchar"`
 	SORTEnforcement    bool             `gorm:"column:sortenforcement;type:bool"`
+	Teams              *pq.StringArray  `gorm:"column:teams;type:text[]"`
 	Serialized         []byte           `gorm:"column:serialized;type:bytea"`
 }
