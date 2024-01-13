@@ -3,6 +3,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -38,19 +39,19 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	q := req.URL.Query()
 	q.Add("format", "json")
-	q.Add("api-version", "2018-04-02")
+	q.Add("api-version", "2021-12-13")
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := metadataHTTPClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
 	if err != nil {
-		return nil, nil
+		return nil, errors.Wrap(err, "failed to get instance metadata")
 	}
 
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		return nil, nil
+		return nil, fmt.Errorf("failed to get instance metadata: received HTTP status code %d", resp.StatusCode)
 	}
 
 	contents, err := io.ReadAll(resp.Body)
