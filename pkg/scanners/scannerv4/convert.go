@@ -186,11 +186,11 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // If there are zero known distributions for the image or if there are multiple distributions,
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
-	if len(report.GetContents().GetDistributions()) == 1 {
-		for _, dist := range report.GetContents().GetDistributions() {
-			return dist.Did + ":" + dist.VersionId
-		}
+	dists := report.GetContents().GetDistributions()
+	if len(dists) != 1 {
+		return "unknown"
 	}
 
-	return "unknown"
+	dist := dists[0]
+	return dist.Did + ":" + dist.VersionId
 }

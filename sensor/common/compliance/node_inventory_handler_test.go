@@ -56,6 +56,8 @@ func assertNoGoroutineLeaks(t *testing.T) {
 	goleak.VerifyNone(t,
 		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
 		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
+		// Ignore a known leak caused by importing the GCP cscc SDK.
+		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
 	)
 }
 

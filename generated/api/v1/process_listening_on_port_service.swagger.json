@@ -151,7 +151,8 @@
         "imageId": {
           "type": "string"
         }
-      }
+      },
+      "title": "The API returns an array of these"
     },
     "storageProcessSignal": {
       "type": "object",

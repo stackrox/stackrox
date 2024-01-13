@@ -10,14 +10,15 @@ import (
 	"strconv"
 	"strings"
 
+	nvdschema "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/facebookincubator/nvdtools/cvss2"
+	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/cvss/cvssv2"
-	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -64,7 +65,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, r.Enrichments[cvss.Type])
+	scores, err := nvdScoresMap(r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing nvd scores: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, scores)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -187,6 +192,22 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 	}, nil
 }
 
+// versionID returns the distribution version ID.
+func versionID(d *claircore.Distribution) string {
+	vID := d.VersionID
+	if vID == "" {
+		switch d.DID {
+		// TODO(ROX-21678): `VersionId` is currently not populated for Alpine[1],
+		//                  temporarily falling back to the version.
+		//
+		// [1]: https://github.com/quay/claircore/blob/88ccfbecee88d7b326b9a2fb3ab5b5f4cfa0b610/alpine/distributionscanner.go#L110-L113
+		case "alpine":
+			vID = d.Version
+		}
+	}
+	return vID
+}
+
 func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 	if d == nil {
 		return nil
@@ -197,7 +218,7 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Name:            d.Name,
 		Version:         d.Version,
 		VersionCodeName: d.VersionCodeName,
-		VersionId:       d.VersionID,
+		VersionId:       versionID(d),
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,
@@ -248,7 +269,11 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 	return pkgVulns
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, _ []json.RawMessage) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(
+	ctx context.Context,
+	vulns map[string]*claircore.Vulnerability,
+	nvdScores map[string]nvdschema.CVSSV30,
+) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -277,7 +302,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		sev, err := parseSeverity(v)
+		sev, err := severityAndScores(v, nvdScores)
 		if err != nil {
 			return nil, err
 		}
@@ -302,7 +327,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
-			Name:               getVulnName(v),
+			Name:               vulnerabilityName(v),
 			Description:        v.Description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -316,96 +341,6 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 	}
 	return vulnerabilities, nil
-}
-
-// fixedInVersion returns the string to populate FixedInVersion, typically
-// provided the report's `FixedInVersion` as a plain string, but, in some OSV
-// updaters, it can be an urlencoded string or expected to be extracted from
-// Range.Upper.
-func fixedInVersion(v *claircore.Vulnerability) string {
-	fixedIn := v.FixedInVersion
-	if fixedIn == "" && v.Range != nil {
-		// If fixed in is empty but range is provided, use that.
-		fixedIn = v.Range.Upper.String()
-	} else {
-		// Try to parse url encoded params; if expected values are not found leave it.
-		if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
-			fixedIn = q.Get("fixed")
-		}
-	}
-	return fixedIn
-}
-
-// severityValues contains information that can be encoded in the severity of vulnerabilities.
-type severityValues struct {
-	severity string
-	v2Vector string
-	v2Score  float32
-	v3Vector string
-	v3Score  float32
-}
-
-// parseSeverity parses the severity information encoded in the severity field.
-// The information is distribution dependant.  If errors are found in the
-// encoded information, partial values are returned with an error.
-func parseSeverity(v *claircore.Vulnerability) (s severityValues, err error) {
-	var did string
-	if v.Dist != nil {
-		did = v.Dist.DID
-	}
-	switch did {
-	case "rhel":
-		var q url.Values
-		if q, err = url.ParseQuery(v.Severity); err != nil {
-			err = fmt.Errorf("invalid RHEL severity: %w", err)
-			break
-		}
-		s.severity = q.Get("severity")
-		// Look for CVSS fields. When at least one vector is found, we consider that the
-		// CVSS information exists, but return partial results in the case of failures.
-		errList := errorhelpers.NewErrorList("invalid RHEL CVSS")
-		s.v2Vector = q.Get("cvss2_vector")
-		if s.v2Vector != "" {
-			if _, err := cvssv2.ParseCVSSV2(s.v2Vector); err != nil {
-				errList.AddError(fmt.Errorf("v2 vector: %w", err))
-			} else if f, err := strconv.ParseFloat(q.Get("cvss2_score"), 32); err != nil {
-				errList.AddError(fmt.Errorf("v2 score: %w", err))
-			} else {
-				s.v2Score = float32(f)
-			}
-		}
-		s.v3Vector = q.Get("cvss3_vector")
-		if s.v3Vector != "" {
-			if _, err := cvssv3.ParseCVSSV3(s.v3Vector); err != nil {
-				errList.AddError(fmt.Errorf("v3 vector: %w", err))
-			} else if f, err := strconv.ParseFloat(q.Get("cvss3_score"), 32); err == nil {
-				s.v3Score = float32(f)
-			} else {
-				errList.AddError(fmt.Errorf("v3 score: %w", err))
-			}
-		}
-		err = errList.ToError()
-	default:
-		s.severity = v.Severity
-	}
-	return s, err
-}
-
-// getVulnName returns the first vulnerability name that matches a known
-// vulnerability name pattern from the report, or the original name if none
-// found.
-func getVulnName(vuln *claircore.Vulnerability) string {
-	for _, p := range vulnNamePatterns {
-		v := p.FindString(vuln.Name)
-		if v != "" {
-			return v
-		}
-		v = p.FindString(vuln.Links)
-		if v != "" {
-			return v
-		}
-	}
-	return vuln.Name
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {
@@ -424,15 +359,6 @@ func toCPEString(c cpe.WFN) string {
 
 func toDigestString(digest claircore.Digest) string {
 	return digest.String()
-}
-
-// convertMapToSlice converts generic maps keyed by strings to a slice using a
-// provided conversion function.
-func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN) (out []*OUT) {
-	for _, i := range in {
-		out = append(out, convF(i))
-	}
-	return out
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
@@ -555,4 +481,169 @@ func convertSliceToMap[IN any, OUT any](in []*IN, convF func(*IN) (string, *OUT,
 		m[k] = ccV
 	}
 	return m, nil
+}
+
+// convertMapToSlice converts generic maps keyed by strings to a slice using a
+// provided conversion function.
+func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN) (out []*OUT) {
+	for _, i := range in {
+		out = append(out, convF(i))
+	}
+	return out
+}
+
+// fixedInVersion returns the fixed in string, typically provided the report's
+// `FixedInVersion` as a plain string, but, in some OSV updaters, it can be an
+// urlencoded string or expected to be extracted from Range.Upper.
+func fixedInVersion(v *claircore.Vulnerability) string {
+	fixedIn := v.FixedInVersion
+	if fixedIn == "" && v.Range != nil {
+		// If fixed in is empty but range is provided, use that.
+		fixedIn = v.Range.Upper.String()
+	} else {
+		// Try to parse url encoded params; if expected values are not found leave it.
+		if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
+			fixedIn = q.Get("fixed")
+		}
+	}
+	return fixedIn
+}
+
+// nvdScoresMap look for NVD CVSS in the vulnerability report enrichments and
+// returns a mapping of vulnerability IDs to CVSS Scores V3.
+func nvdScoresMap(enrichments map[string][]json.RawMessage) (map[string]nvdschema.CVSSV30, error) {
+	cvss := enrichments[cvss.Type]
+	if len(cvss) == 0 {
+		return nil, nil
+	}
+	// TODO(ROX-21264): ClairCore only supports CVSS v3.1, so we assume CVSSV30 --
+	//                  need to update this when we start using our own CVSS score enricher.
+	var scores map[string][]nvdschema.CVSSV30
+	// The CVSS enrichment always contains only one element.
+	err := json.Unmarshal(cvss[0], &scores)
+	if err != nil {
+		return nil, err
+	}
+	if len(scores) == 0 {
+		return nil, nil
+	}
+	ret := make(map[string]nvdschema.CVSSV30)
+	for id, l := range scores {
+		// There is no criteria for selecting more than one enrichment record, assume the
+		// first is the right one.
+		ret[id] = l[0]
+	}
+	return ret, nil
+}
+
+// severityValues contains severity information that can retrieved from a
+// ClairCore vulnerability report.
+type severityValues struct {
+	severity string
+	v2Vector string
+	v2Score  float32
+	v3Vector string
+	v3Score  float32
+}
+
+var (
+	osvUpdaterPattern  = regexp.MustCompile(`^osv/.*`)
+	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+)
+
+// severityAndScores returns the severity and scores information out of a
+// ClairCore vulnerability. The returned information is dependent on the
+// underlying updater. If errors are found in the encoded information, partial
+// values might be returned with an error.
+func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdschema.CVSSV30) (severityValues, error) {
+	var values severityValues
+	errList := errorhelpers.NewErrorList("parsing severity and CVSS scores")
+	switch {
+	case osvUpdaterPattern.MatchString(vuln.Updater):
+		if vuln.Severity == "" {
+			errList.AddStrings("severity is empty")
+			break
+		}
+		// ClairCore has no CVSS version indicator for OSV data, assuming CVSS V2 if
+		// not prefixed with a V3 version.
+		if strings.HasPrefix(vuln.Severity, "CVSS:3") {
+			if _, err := cvss3.VectorFromString(vuln.Severity); err != nil {
+				errList.AddError(err)
+			} else {
+				values.v3Vector = vuln.Severity
+			}
+		} else if _, err := cvss2.VectorFromString(vuln.Severity); err != nil {
+			errList.AddError(err)
+		} else {
+			values.v2Vector = vuln.Severity
+		}
+	case rhelUpdaterPattern.MatchString(vuln.Updater):
+		if vuln.Severity == "" {
+			errList.AddStrings("severity is empty")
+			break
+		}
+		q, err := url.ParseQuery(vuln.Severity)
+		if err != nil {
+			errList.AddError(err)
+			break
+		}
+		values.severity = q.Get("severity")
+		// Look for CVSS fields. When at least one vector is found, we consider that the
+		// CVSS information exists, but return partial results in the case of failures.
+		if v := q.Get("cvss2_vector"); v != "" {
+			s := q.Get("cvss2_score")
+			if _, err := cvss2.VectorFromString(v); err != nil {
+				errList.AddError(fmt.Errorf("v2 vector: %w", err))
+			} else if f, err := strconv.ParseFloat(s, 32); err != nil {
+				errList.AddError(fmt.Errorf("v2 score %q: %w", s, err))
+			} else {
+				values.v2Vector = v
+				values.v2Score = float32(f)
+			}
+		}
+		if v := q.Get("cvss3_vector"); v != "" {
+			s := q.Get("cvss3_score")
+			if _, err := cvss3.VectorFromString(v); err != nil {
+				errList.AddError(fmt.Errorf("v3 vector: %w", err))
+			} else if f, err := strconv.ParseFloat(s, 32); err != nil {
+				errList.AddError(fmt.Errorf("v3 score %q: %w", s, err))
+			} else {
+				values.v3Vector = v
+				values.v3Score = float32(f)
+			}
+		}
+	default:
+		// Everything else uses NVD.
+		values.severity = vuln.Severity
+		if nvd, ok := nvdScores[vuln.ID]; ok {
+			switch {
+			case strings.HasPrefix(nvd.Version, "2"):
+				values.v2Score = float32(nvd.BaseScore)
+				values.v2Vector = nvd.VectorString
+			case strings.HasPrefix(nvd.Version, "3"):
+				values.v3Score = float32(nvd.BaseScore)
+				values.v3Vector = nvd.VectorString
+			default:
+				errList.AddError(fmt.Errorf("unsupported CVSS score version: %s", nvd.Version))
+			}
+		}
+	}
+	return values, errList.ToError()
+}
+
+// vulnerabilityName searches the best known candidate for the vulnerability name
+// in the vulnerability details. It works by matching data against well-known
+// name patterns, and defaults to the original name if nothing is found.
+func vulnerabilityName(vuln *claircore.Vulnerability) string {
+	for _, p := range vulnNamePatterns {
+		v := p.FindString(vuln.Name)
+		if v != "" {
+			return v
+		}
+		v = p.FindString(vuln.Links)
+		if v != "" {
+			return v
+		}
+	}
+	return vuln.Name
 }

@@ -52,7 +52,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(
 	ctx context.Context,
-	_ string,
+	clusterID string,
 	msg *central.MsgFromSensor,
 	_ common.MessageInjector,
 ) error {
@@ -64,7 +64,7 @@ func (s *pipelineImpl) Run(
 		portProcesses := update.GetProcessesListeningOnPorts()
 
 		if portProcesses != nil {
-			if err := s.dataStore.AddProcessListeningOnPort(ctx, portProcesses...); err != nil {
+			if err := s.dataStore.AddProcessListeningOnPort(ctx, clusterID, portProcesses...); err != nil {
 				return err
 			}
 		}

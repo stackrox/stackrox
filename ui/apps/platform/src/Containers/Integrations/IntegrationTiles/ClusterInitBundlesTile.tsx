@@ -1,6 +1,8 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { fetchClusterInitBundles } from 'services/ClustersService';
+import { clustersInitBundlesPath } from 'routePaths';
 
 import {
     authenticationTokensSource as source,
@@ -13,6 +15,8 @@ const { image, label, type } = descriptor;
 
 function ClusterInitBundlesTile(): ReactElement {
     const [numIntegrations, setNumIntegrations] = useState(0);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     useEffect(() => {
         fetchClusterInitBundles()
@@ -26,7 +30,11 @@ function ClusterInitBundlesTile(): ReactElement {
         <IntegrationTile
             image={image}
             label={label}
-            linkTo={getIntegrationsListPath(source, type)}
+            linkTo={
+                isMoveInitBundlesEnabled
+                    ? clustersInitBundlesPath
+                    : getIntegrationsListPath(source, type)
+            }
             numIntegrations={numIntegrations}
         />
     );

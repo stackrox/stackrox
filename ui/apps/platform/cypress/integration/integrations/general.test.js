@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
@@ -80,6 +81,7 @@ describe('Integrations Dashboard', () => {
         assertIntegrationsTable(integrationSource, integrationType);
     });
 
+    // Cluster Init Bundle card will be removed in a future version.
     it('should go to the table for clusterInitBundle type of authProviders', () => {
         const integrationSource = 'authProviders';
         const integrationType = 'clusterInitBundle';
@@ -88,6 +90,10 @@ describe('Integrations Dashboard', () => {
 
         clickIntegrationTileOnDashboard(integrationSource, integrationType);
 
-        assertIntegrationsTable(integrationSource, integrationType);
+        if (hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
+            cy.location('pathname').should('eq', '/main/clusters/init-bundles');
+        } else {
+            assertIntegrationsTable(integrationSource, integrationType);
+        }
     });
 });

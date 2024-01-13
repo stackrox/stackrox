@@ -14,11 +14,13 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/registries/types"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 )
 
 const (
@@ -26,9 +28,7 @@ const (
 	globalRegNamePrefix  = "Global"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Store stores cluster-internal registries by namespace.
 type Store struct {
@@ -87,8 +87,8 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		factory:                     regFactory,
 		store:                       make(map[string]registries.Set),
 		checkTLSFunc:                tlscheck.CheckTLS,
-		globalRegistries:            registries.NewSet(regFactory),
-		centralRegistryIntegrations: registries.NewSet(regFactory),
+		globalRegistries:            registries.NewSet(regFactory, registryTypes.WithGCPTokenManager(gcp.Singleton())),
+		centralRegistryIntegrations: registries.NewSet(regFactory, registryTypes.WithGCPTokenManager(gcp.Singleton())),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
 		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
 		knownSecretIDs:              set.NewStringSet(),
@@ -143,7 +143,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 	regs := rs.store[namespace]
 	if regs == nil {
-		regs = registries.NewSet(rs.factory)
+		regs = registries.NewSet(rs.factory, types.WithGCPTokenManager(gcp.Singleton()))
 		rs.store[namespace] = regs
 	}
 

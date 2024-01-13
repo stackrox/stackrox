@@ -1,17 +1,13 @@
 package ecr
 
 import (
-	"encoding/base64"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
-	protobuftypes "github.com/gogo/protobuf/types"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,9 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 var _ types.Registry = (*ecr)(nil)
 
@@ -33,11 +27,6 @@ type ecr struct {
 
 	config      *storage.ECRConfig
 	integration *storage.ImageIntegration
-
-	endpoint        string
-	service         *awsECR.ECR
-	expiryTime      time.Time
-	disableRepoList bool
 }
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
@@ -84,63 +73,9 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 	return errorList.ToError()
 }
 
-func (e *ecr) refreshDockerClient() error {
-	if e.expiryTime.After(time.Now()) {
-		return nil
-	}
-	if e.integration.GetEcr().GetAuthorizationData() != nil {
-		// This integration has static authorization data, and we never refresh the
-		// tokens in central, rather we wait for sensor to update them.
-		return errors.New("failed to refresh the auto-generated integration credentials")
-	}
-	authToken, err := e.service.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
-	if err != nil {
-		return err
-	}
-
-	if len(authToken.AuthorizationData) == 0 {
-		return fmt.Errorf("received empty authorization data in token: %s", authToken)
-	}
-
-	authData := authToken.AuthorizationData[0]
-
-	decoded, err := base64.StdEncoding.DecodeString(*authData.AuthorizationToken)
-	if err != nil {
-		return err
-	}
-	basicAuth := string(decoded)
-	colon := strings.Index(basicAuth, ":")
-	if colon == -1 {
-		return fmt.Errorf("malformed basic auth response from AWS '%s'", basicAuth)
-	}
-	return e.setRegistry(basicAuth[:colon], basicAuth[colon+1:], *authData.ExpiresAt)
-}
-
-// Metadata returns the metadata via this registry's implementation.
-func (e *ecr) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
-	if err := e.refreshDockerClient(); err != nil {
-		return nil, err
-	}
-	return e.Registry.Metadata(image)
-}
-
-// Config returns the config via this registry's implementation.
-func (e *ecr) Config() *types.Config {
-	// TODO(ROX-9868): Return nil-config to caller.
-	if err := e.refreshDockerClient(); err != nil {
-		log.Errorf("Error refreshing docker client for registry %q: %v", e.Name(), err)
-	}
-	return e.Registry.Config()
-}
-
-// Test tests the current registry and makes sure that it is working properly
+// Test tests the current registry and makes sure that it is working properly.
 func (e *ecr) Test() error {
-	if err := e.refreshDockerClient(); err != nil {
-		return err
-	}
-
 	_, err := e.Registry.Client.Repositories()
-
 	// the following code taken from generic Test method
 	if err != nil {
 		log.Errorf("error testing ECR integration: %v", err)
@@ -153,20 +88,22 @@ func (e *ecr) Test() error {
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, false)
-		return reg, err
-	}
+func Creator() (string, types.Creator) {
+	return "ecr",
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := newRegistry(integration, false)
+			return reg, err
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "ecr", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration, true)
-		return reg, err
-	}
+func CreatorWithoutRepoList() (string, types.Creator) {
+	return "ecr",
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := newRegistry(integration, true)
+			return reg, err
+		}
 }
 
 func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*ecr, error) {
@@ -180,51 +117,32 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*
 	reg := &ecr{
 		config:      conf,
 		integration: integration,
-		// docker endpoint
-		endpoint:        fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion()),
-		disableRepoList: disableRepoList,
 	}
+	endpoint := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion())
 	// If the ECR configuration provides Authorization Data, we do not initialize an
 	// ECR client, but instead, we create the registry immediately since the
 	// Authorization Data payload provides the credentials statically.
+	cfg := &docker.Config{
+		Endpoint:        endpoint,
+		DisableRepoList: disableRepoList,
+	}
 	if authData := conf.GetAuthorizationData(); authData != nil {
-		expiresAt, err := protobuftypes.TimestampFromProto(authData.GetExpiresAt())
-		if err != nil {
-			return nil, errors.New("invalid authorization data")
-		}
-		if err = reg.setRegistry(authData.GetUsername(), authData.GetPassword(), expiresAt); err != nil {
-			return nil, errors.Wrap(err, "failed to create registry client")
-		}
+		cfg.Username = authData.GetUsername()
+		cfg.Password = authData.GetPassword()
 	} else {
-		service, err := createECRClient(conf)
+		client, err := createECRClient(conf)
 		if err != nil {
+			log.Error("Failed to create ECR client: ", err)
 			return nil, err
 		}
-		reg.service = service
-		// Refreshing the client will force the creation of the registry client using AWS ECR.
-		if err := reg.refreshDockerClient(); err != nil {
-			return nil, err
-		}
+		cfg.Transport = newAWSTransport(cfg, client)
 	}
-	return reg, nil
-}
-
-// setRegistry creates and sets the docker registry client based on the
-// credentials provided.
-func (e *ecr) setRegistry(username, password string, expiresAt time.Time) error {
-	conf := docker.Config{
-		Endpoint:        e.endpoint,
-		Username:        username,
-		Password:        password,
-		DisableRepoList: e.disableRepoList,
-	}
-	client, err := docker.NewDockerRegistryWithConfig(conf, e.integration)
+	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, reg.integration)
 	if err != nil {
-		return err
+		return nil, errors.Wrap(err, "failed to create docker registry")
 	}
-	e.Registry = client
-	e.expiryTime = expiresAt
-	return err
+	reg.Registry = dockerRegistry
+	return reg, nil
 }
 
 // createECRClient creates an AWS ECR SDK client based on the integration config.
