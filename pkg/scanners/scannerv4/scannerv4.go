@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -26,7 +27,8 @@ var (
 	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
 	defaultMaxConcurrentScans = int64(30)
 
-	scanTimeout = env.ScanTimeout.DurationSetting()
+	scanTimeout     = env.ScanTimeout.DurationSetting()
+	metadataTimeout = 20 * time.Second
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -48,7 +50,7 @@ type scannerv4 struct {
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
-		return nil, errors.New("Scanner V4 configuration required")
+		return nil, errors.New("scanner V4 configuration required")
 	}
 
 	indexerEndpoint := defaultIndexerEndpoint
@@ -136,8 +138,17 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	// TODO(ROX-21040): Implementation dependent on the API existing.
-	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
+	ctx, cancel := context.WithTimeout(context.Background(), metadataTimeout)
+	defer cancel()
+
+	metadata, err := s.scannerClient.GetMatcherMetadata(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pulling metadata from matcher: %w", err)
+	}
+
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: metadata.GetLastVulnerabilityUpdate(),
+	}, nil
 }
 
 func (s *scannerv4) Match(image *storage.ImageName) bool {
