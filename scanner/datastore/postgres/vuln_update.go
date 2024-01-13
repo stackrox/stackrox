@@ -39,7 +39,7 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 
 // SetLastVulnerabilityUpdate sets the last vulnerability update timestamp.
 func (m *matcherMetadataStore) SetLastVulnerabilityUpdate(ctx context.Context, timestamp time.Time) error {
-	const insertTimestamp = `INSERT INTO last_vuln_update(key, timestamp) VALUES($1, $2) ON CONFLICT (key) DO UPDATE SET timestamp = $2`
+	const insertTimestamp = `INSERT INTO last_vuln_update (key, timestamp) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET timestamp = $2`
 
 	_, err := m.pool.Exec(ctx, insertTimestamp, lastVulnUpdateKey, timestamp.Format(http.TimeFormat))
 	if err != nil {
