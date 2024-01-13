@@ -26,6 +26,7 @@ import (
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
+	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
@@ -53,8 +54,7 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 		ruby.NewEcosystem(ctx),
 	}
 	if env.ScannerV4NodeJSSupport.BooleanSetting() {
-		// TODO: fix
-		//es = append(es, nodejs.NewEcosystem(ctx))
+		es = append(es, nodejs.NewEcosystem(ctx))
 	}
 	return es
 }
