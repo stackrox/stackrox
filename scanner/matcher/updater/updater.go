@@ -122,10 +122,6 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 
 	u.tryRemoveExiting()
 
-	if !u.skipGC {
-		go u.runGCFullPeriodic()
-	}
-
 	return u, nil
 }
 
@@ -202,6 +198,10 @@ func (u *Updater) Start() error {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
 	}
 	zlog.Info(ctx).Msg("completed initial update")
+
+	if !u.skipGC {
+		go u.runGCFullPeriodic()
+	}
 
 	timer := time.NewTimer(u.updateInterval + jitter())
 	defer timer.Stop()
