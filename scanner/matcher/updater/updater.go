@@ -48,6 +48,10 @@ var (
 	}
 )
 
+// Opts represents Updater options.
+//
+// Store, Locker, Pool, MetadataStore, and URL are required.
+// The rest are optional.
 type Opts struct {
 	Store         datastore.MatcherStore
 	Locker        *ctxlock.Locker
@@ -64,6 +68,8 @@ type Opts struct {
 	FullGCInterval  time.Duration
 }
 
+// Updater represents a vulnerability updater.
+// An Updater reaches out to a given URL periodically to fetch the latest vulnerability data.
 type Updater struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -85,6 +91,7 @@ type Updater struct {
 	importVulns func(ctx context.Context, reader io.Reader) error
 }
 
+// New creates a new Updater based on the given options.
 func New(ctx context.Context, opts Opts) (*Updater, error) {
 	if err := fillOpts(&opts); err != nil {
 		return nil, fmt.Errorf("invalid updater options: %w", err)
@@ -114,10 +121,6 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 	}
 
 	u.tryRemoveExiting()
-
-	if !u.skipGC {
-		go u.runGCFullPeriodic(ctx)
-	}
 
 	return u, nil
 }
@@ -178,14 +181,14 @@ func (u *Updater) tryRemoveExiting() {
 	}
 }
 
-// Close cancels the updater's context and prevents future update cycles.
+// Stop cancels the updater's context and prevents future update cycles.
 // It does **not** cleanup any other resources. It is the user's responsibility to do so.
-func (u *Updater) Close() error {
+func (u *Updater) Stop() error {
 	u.cancel()
 	return nil
 }
 
-// Start periodically updates the vulnerability data via Update.
+// Start periodically updates the vulnerability data.
 // Each period is adjusted by some amount of jitter.
 func (u *Updater) Start() error {
 	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.Start")
@@ -196,10 +199,16 @@ func (u *Updater) Start() error {
 	}
 	zlog.Info(ctx).Msg("completed initial update")
 
+	if !u.skipGC {
+		go u.runGCFullPeriodic()
+	}
+
 	timer := time.NewTimer(u.updateInterval + jitter())
 	defer timer.Stop()
 	for {
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
 		case <-timer.C:
 			zlog.Info(ctx).Msg("starting update")
 			if err := u.update(ctx); err != nil {
@@ -208,8 +217,6 @@ func (u *Updater) Start() error {
 			zlog.Info(ctx).Msg("completed update")
 
 			timer.Reset(u.updateInterval + jitter())
-		case <-ctx.Done():
-			return ctx.Err()
 		}
 	}
 }
@@ -229,6 +236,7 @@ func (u *Updater) update(ctx context.Context) error {
 func (u *Updater) runUpdate(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runUpdate")
 
+	// Use TryLock instead of Lock to prevent simultaneous updates.
 	ctx, done := u.locker.TryLock(ctx, updateName)
 	defer done()
 	if err := ctx.Err(); err != nil {

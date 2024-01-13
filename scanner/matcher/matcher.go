@@ -8,23 +8,15 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-<<<<<<< HEAD
-	"github.com/quay/claircore/datastore/postgres"
-=======
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
->>>>>>> ross/scanner-updater
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
-<<<<<<< HEAD
-	metadatapostgres "github.com/stackrox/rox/scanner/matcher/metadata/postgres"
-	"github.com/stackrox/rox/scanner/matcher/updater"
-=======
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
 	"github.com/stackrox/rox/scanner/updater/rhel"
->>>>>>> ross/scanner-updater
 )
 
 var (
@@ -42,7 +34,7 @@ var (
 	}
 
 	// matcherNames specifies the ClairCore matchers to use.
-	// TODO: add NodeJS once implemented.
+	// TODO(ROX-14093): add NodeJS once implemented.
 	matcherNames = []string{
 		"alpine-matcher",
 		"aws-matcher",
@@ -83,11 +75,7 @@ type Matcher interface {
 // matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
-<<<<<<< HEAD
-	metadataStore metadatapostgres.MetadataStore
-=======
 	metadataStore postgres.MatcherMetadataStore
->>>>>>> ross/scanner-updater
 
 	updater *updater.Updater
 }
@@ -103,11 +91,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
-<<<<<<< HEAD
-	metadataStore, err := metadatapostgres.InitPostgresMetadataStore(ctx, pool, true)
-=======
 	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
->>>>>>> ross/scanner-updater
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
 	}
@@ -116,15 +100,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
 
-	// TODO: Update HTTP client.
+	// TODO(ROX-18888): Update HTTP client.
 	c := http.DefaultClient
 
-<<<<<<< HEAD
-	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:                    store,
-		Locker:                   locker,
-		DisableBackgroundUpdates: true,
-=======
 	ootUpdaters, err := updaters(ctx, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating out-of-tree updaters: %w", err)
@@ -138,15 +116,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		MatcherNames: matcherNames,
 		// TODO(ROX-21264): Replace with our own enricher(s).
 		Enrichers:                nil,
->>>>>>> ross/scanner-updater
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   c,
-<<<<<<< HEAD
-		// TODO(ROX-21264): Replace with our own enricher(s).
-		Enrichers: nil,
-=======
->>>>>>> ross/scanner-updater
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
@@ -193,5 +165,5 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	return errors.Join(m.updater.Close(), m.libVuln.Close(ctx))
+	return errors.Join(m.updater.Stop(), m.libVuln.Close(ctx))
 }

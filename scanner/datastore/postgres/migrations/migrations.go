@@ -7,8 +7,10 @@ import (
 	"github.com/remind101/migrate"
 )
 
+// MatcherMigrationTable specifies the name of the matcher migration table.
 const MatcherMigrationTable = "matcher_migrations"
 
+// MatcherMigrations lists the matcher migrations, in order.
 var MatcherMigrations = []migrate.Migration{
 	{
 		ID: 1,
