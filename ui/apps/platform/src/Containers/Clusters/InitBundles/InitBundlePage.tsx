@@ -1,4 +1,5 @@
 import React, { ReactElement, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -14,6 +15,7 @@ export type InitBundlePageProps = {
 };
 
 function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProps): ReactElement {
+    const history = useHistory();
     const [isRevoking, setIsRevoking] = useState(false);
     const [errorMessageForRevoke, setErrorMessageForRevoke] = useState('');
 
@@ -33,11 +35,11 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
         revokeClusterInitBundles([id], [])
             .then(() => {
                 setErrorMessageForRevoke('');
+                setIsRevoking(false);
+                history.goBack(); // to table
             })
             .catch((error) => {
                 setErrorMessageForRevoke(getAxiosErrorMessage(error));
-            })
-            .finally(() => {
                 setIsRevoking(false);
             });
     }
