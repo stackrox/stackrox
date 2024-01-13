@@ -7,21 +7,25 @@ import (
 	"github.com/quay/zlog"
 )
 
-var gcName = `garbage-collection`
+const gcName = `garbage-collection`
 
-func (u *Updater) runGCFullPeriodic(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runFullGCPeriodic")
+// runGCFullPeriodic runs garbage collection until completion, periodically.
+func (u *Updater) runGCFullPeriodic() {
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.runFullGCPeriodic")
 
 	zlog.Info(ctx).Str("full_gc_interval", u.fullGCInterval.String()).Msg("starting periodic full GC")
 	t := time.NewTicker(u.fullGCInterval)
 	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		zlog.Info(ctx).Err(ctx.Err()).Msg("stopping periodic full GC")
-	case <-t.C:
-		zlog.Info(ctx).Msg("Full GC started")
-		u.runGCFull(ctx)
-		zlog.Info(ctx).Msg("Full GC completed")
+	for {
+		select {
+		case <-ctx.Done():
+			zlog.Info(ctx).Err(ctx.Err()).Msg("stopping periodic full GC")
+			return
+		case <-t.C:
+			zlog.Info(ctx).Msg("full GC started")
+			u.runGCFull(ctx)
+			zlog.Info(ctx).Msg("full GC completed")
+		}
 	}
 }
 
@@ -29,6 +33,8 @@ func (u *Updater) runGCFullPeriodic(ctx context.Context) {
 func (u *Updater) runGCFull(ctx context.Context) {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runGCFull")
 
+	// Use Lock instead of TryLock to ensure we get the lock
+	// and run a full GC.
 	ctx, done := u.locker.Lock(ctx, gcName)
 	defer done()
 	if err := ctx.Err(); err != nil {
@@ -37,7 +43,6 @@ func (u *Updater) runGCFull(ctx context.Context) {
 	}
 
 	// Set i to any int64 greater than 0 to start the loop.
-	// This prevents copying code.
 	i := int64(1)
 	var err error
 	for i > 0 {
@@ -59,6 +64,7 @@ func (u *Updater) runGCFull(ctx context.Context) {
 func (u *Updater) runGC(ctx context.Context) {
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runGC")
 
+	// Use TryLock instead of Lock because a GC cycle is already happening.
 	ctx, done := u.locker.TryLock(ctx, gcName)
 	defer done()
 	if err := ctx.Err(); err != nil {
