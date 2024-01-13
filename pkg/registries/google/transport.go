@@ -5,6 +5,7 @@ import (
 
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,7 +23,7 @@ type googleTransport struct {
 	config      *docker.Config
 	token       *oauth2.Token
 	tokenSource oauth2.TokenSource
-	mutex       sync.Mutex
+	mutex       sync.RWMutex
 }
 
 func newGoogleTransport(config *docker.Config, tokenSource oauth2.TokenSource) *googleTransport {
@@ -34,14 +35,19 @@ func newGoogleTransport(config *docker.Config, tokenSource oauth2.TokenSource) *
 }
 
 func (t *googleTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	if !t.token.Valid() {
-		if err := t.refreshNoLock(); err != nil {
+	// We perform a TOC-TOU intentionally to optimize the read path.
+	// This is advantageous because...
+	// a) we only need a write lock every hour to refresh the token.
+	// b) refreshing the token multiple times is idempotent.
+	// c) we do not want to block the entire read path for performance reasons.
+	if !concurrency.WithRLock1(&t.mutex, t.token.Valid) {
+		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
 			return nil, err
 		}
 	}
-	return t.Transport.RoundTrip(req)
+	return concurrency.WithRLock2(&t.mutex,
+		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
+	)
 }
 
 func (t *googleTransport) refreshNoLock() error {

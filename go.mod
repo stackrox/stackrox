@@ -87,7 +87,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.45.0
-	github.com/quay/claircore v1.5.21-0.20240110181313-5f8f0e054a3f
+	github.com/quay/claircore v1.5.21-0.20240112165122-6c4f1b56aa63
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.8
