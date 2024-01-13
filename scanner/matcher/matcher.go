@@ -34,7 +34,7 @@ var (
 	}
 
 	// matcherNames specifies the ClairCore matchers to use.
-	// TODO: add NodeJS once implemented.
+	// TODO(ROX-14093): add NodeJS once implemented.
 	matcherNames = []string{
 		"alpine-matcher",
 		"aws-matcher",
@@ -100,7 +100,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
 
-	// TODO: Update HTTP client.
+	// TODO(ROX-18888): Update HTTP client.
 	c := http.DefaultClient
 
 	ootUpdaters, err := updaters(ctx, c)
@@ -165,5 +165,5 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	return errors.Join(m.updater.Close(), m.libVuln.Close(ctx))
+	return errors.Join(m.updater.Stop(), m.libVuln.Close(ctx))
 }
