@@ -230,8 +230,14 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
+export type GenerateClusterInitBundleResponse = {
+    meta?: ClusterInitBundle;
+    helmValuesBundle?: string; // bytes
+    kubectlBundle?: string; // bytes
+};
+
 export function generateClusterInitBundle(data: { name: string }): Promise<{
-    response: { meta?: ClusterInitBundle; helmValuesBundle?: string; kubectlBundle?: string };
+    response: GenerateClusterInitBundleResponse;
 }> {
     return axios
         .post<{ meta: ClusterInitBundle; helmValuesBundle: string; kubectlBundle: string }>(

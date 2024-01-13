@@ -35,13 +35,16 @@ function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): Re
                     <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                 </Breadcrumb>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                    <FlexItem flex={{ default: 'flex_1' }}>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
                         <Title headingLevel="h1">{title}</Title>
                         <Text>
                             Cluster init bundles contain secrets for secured cluster services to
                             authenticate with Central.
                         </Text>
-                    </FlexItem>
+                    </Flex>
                     {headerActions && (
                         <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>
                     )}
