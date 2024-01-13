@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -167,6 +168,9 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 	var allExcludes []string
 	allExcludes = append(allExcludes, c.Excludes...)
 	if !c.OmitDefaultExcludes {
+		k8sHost := os.Getenv("KUBERNETES_SERVICE_HOST")
+		k8sPort := os.Getenv("KUBERNETES_SERVICE_PORT")
+		allExcludes = append(allExcludes, net.JoinHostPort(k8sHost, k8sPort))
 		allExcludes = append(allExcludes, defaultExcludes...)
 	}
 
