@@ -133,7 +133,7 @@ func getAnyNodeLabels(ctx context.Context, client kubernetes.Interface) (map[str
 		return nil, errors.Wrap(err, "listing nodes")
 	}
 	if nodeList.Size() == 0 {
-		return nil, errors.Errorf("no nodes found: %v", err)
+		return nil, errors.New("no nodes found")
 	}
 	return nodeList.Items[0].GetLabels(), nil
 }
