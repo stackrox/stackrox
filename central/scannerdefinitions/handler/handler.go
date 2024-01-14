@@ -122,7 +122,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
-	if fileType := r.URL.Query().Get("type"); fileType != "" {
+	if fileType := r.URL.Query().Get("file"); fileType != "" {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
 			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
 			return
@@ -399,14 +399,14 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 	log.Infof("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(updaterKey)
 	var onlineFile *vulDefFile
-	onlineZipFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
+	openedFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
 	if err != nil {
 		return nil, err
 	}
-	if onlineZipFile == nil {
+	if openedFile == nil {
 		return nil, errors.New("zip file is nil")
 	}
-	log.Infof("Compressed data file is available: %s", onlineZipFile.Name())
+	log.Infof("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
 			utils.IgnoreError(f.Close)
@@ -414,9 +414,9 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 	}
 	switch updaterKey {
 	case cvssUpdaterKey:
-		onlineFile = &vulDefFile{File: onlineZipFile, modTime: onlineTime}
+		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
 	case mappingUpdaterKey:
-		targetFile, err := openFromArchive(onlineZipFile.Name(), fileName)
+		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +426,7 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
 	default:
-		return nil, errors.New("fail to get file")
+		return nil, fmt.Errorf("fail to get updater and file: %s", updaterKey)
 	}
 	defer toClose(onlineFile)
 	file = onlineFile

@@ -84,7 +84,7 @@ func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {
 }
 
 func (s *handlerTestSuite) getRequestWithJSONFile(t *testing.T, file string) *http.Request {
-	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?type=%s", file)
+	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?file=%s", file)
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	require.NoError(t, err)
 
