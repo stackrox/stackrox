@@ -1,7 +1,5 @@
 package datastore
 
-package datastore
-
 // ResourceResultCountByClusterScan represents shape of the stats query for compliance operator results
 type ResourceResultCountByClusterScan struct {
 	PassCount          int    `db:"pass_count"`
