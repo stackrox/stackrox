@@ -116,6 +116,9 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
 		Flatten()
 	if !failFast {
+		// TODO: most errors here are mapped to warnings for this cmd, thus it's not the same semantics.
+		// we define failFast as "fail on the first encountered error", but if all "errors" are actually warnings,
+		// we just end up with partial warnings (first one) in the output, and also partial output?
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
@@ -123,7 +126,7 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 }
 
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
 	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError)
 	if err := errHandler.HandleError(err); err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands

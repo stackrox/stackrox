@@ -38,7 +38,7 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
 	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError)
 	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError)
 	if err := errHandler.HandleErrorPair(err1, err2); err != nil {
