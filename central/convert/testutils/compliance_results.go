@@ -263,8 +263,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 }
 
 // GetComplianceStorageCount returns mock data shaped like count query would return
-func GetComplianceStorageCount(_ *testing.T, clusterID string) *datastore.ResourceCountByResultByCluster {
-	return &datastore.ResourceCountByResultByCluster{
+func GetComplianceStorageCount(_ *testing.T, clusterID string) *datastore.ResourceResultCountByClusterScan {
+	return &datastore.ResourceResultCountByClusterScan{
 		PassCount:          passCount,
 		FailCount:          failCount,
 		ErrorCount:         errorCount,
@@ -287,7 +287,7 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 		},
 		ScanStats: &v2.ComplianceScanStatsShim{
 			ScanName: scanConfigName1,
-			CheckStats: []*v2.ComplianceScanStatsShim_ComplianceCheckStatusCount{
+			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  failCount,
 					Status: v2.ComplianceCheckStatus_FAIL,

@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,26 +20,14 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
+
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
 	store    store.Store
 	db       postgres.DB
 	searcher checkResultSearch.Searcher
-}
-
-// ResourceCountByResultByCluster represents shape of the stats query for compliance operator results
-type ResourceCountByResultByCluster struct {
-	PassCount          int    `db:"pass_count"`
-	FailCount          int    `db:"fail_count"`
-	ErrorCount         int    `db:"error_count"`
-	InfoCount          int    `db:"info_count"`
-	ManualCount        int    `db:"manual_count"`
-	NotApplicableCount int    `db:"not_applicable_count"`
-	InconsistentCount  int    `db:"inconsistent_count"`
-	ClusterID          string `db:"cluster_id"`
-	ClusterName        string `db:"cluster"`
-	ScanConfigName     string `db:"compliance_scan_config_name"`
 }
 
 // UpsertResult adds the result to the database
@@ -71,7 +60,7 @@ func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query 
 }
 
 // ComplianceCheckResultStats retrieves the scan results stats specified by query
-func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error) {
+func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
@@ -108,8 +97,51 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	}
 
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
-	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceCountByResultByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	countResults, err := pgSearch.RunSelectRequestForSchema[ResourceResultCountByClusterScan](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
 	if err != nil {
+		return nil, err
+	}
+
+	return countResults, nil
+}
+
+// ComplianceClusterStats retrieves the scan results stats specified by query
+func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error) {
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		log.Info(err)
+		return nil, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.ClusterID.String(),
+			search.Cluster.String(),
+		},
+	}
+
+	if cloned.Pagination == nil {
+		cloned.Pagination = &v1.QueryPagination{}
+		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
+			{
+				Field: search.ClusterID.String(),
+			},
+			{
+				Field: search.Cluster.String(),
+			},
+		}
+	}
+
+	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 

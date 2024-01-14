@@ -31,6 +31,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceProfileScanStats",
 			"/v2.ComplianceResultsService/GetComplianceClusterScanStats",
 			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
+			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
 		},
 	})
 )
@@ -115,6 +116,27 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 
 	return &v2.ListComplianceClusterScanStatsResponse{
 		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults),
+	}, nil
+}
+
+// GetComplianceClusterStats lists current scan stats grouped by cluster
+func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+	}
+
+	return &v2.ListComplianceClusterOverallStatsResponse{
+		ScanStats: storagetov2.ComplianceV2CheckNameStats(scanResults),
 	}, nil
 }
 

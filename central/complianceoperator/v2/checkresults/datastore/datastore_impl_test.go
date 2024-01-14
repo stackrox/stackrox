@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	expectedClusterCounts = []*ResourceCountByResultByCluster{
+	expectedClusterCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -80,7 +80,7 @@ var (
 		},
 	}
 
-	expectedCluster2And3Counts = []*ResourceCountByResultByCluster{
+	expectedCluster2And3Counts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -119,7 +119,7 @@ var (
 		},
 	}
 
-	expectedCluster2OnlyCounts = []*ResourceCountByResultByCluster{
+	expectedCluster2OnlyCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -390,7 +390,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestResultsStatsSac() {
 		desc            string
 		query           *apiV1.Query
 		scopeKey        string
-		expectedResults []*ResourceCountByResultByCluster
+		expectedResults []*ResourceResultCountByClusterScan
 	}{
 		{
 			desc:            "Empty query - Full access",

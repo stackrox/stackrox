@@ -158,7 +158,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				results := []*datastore.ResourceCountByResultByCluster{
+				results := []*datastore.ResourceResultCountByClusterScan{
 					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster1),
 					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster2),
 					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster3),
@@ -177,7 +177,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
-				results := []*datastore.ResourceCountByResultByCluster{
+				results := []*datastore.ResourceResultCountByClusterScan{
 					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster1),
 				}
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
