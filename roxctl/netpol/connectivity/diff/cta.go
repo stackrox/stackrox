@@ -24,13 +24,15 @@ type diffAnalyzer interface {
 	Errors() []npgdiff.DiffError
 }
 
-func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
+func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
 	b := resource.NewLocalBuilder().
 		Unstructured().
 		FilenameParam(false,
 			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
 		Flatten()
-	if !failFast {
+	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
+	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
+	if !(failFast && treatWarningsAsErrors) {
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
@@ -39,8 +41,8 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
 	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
-	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError)
-	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError)
+	info1, err1 := getInfoObj(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	info2, err2 := getInfoObj(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	if err := errHandler.HandleErrorPair(err1, err2); err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err
