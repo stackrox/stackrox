@@ -34,7 +34,7 @@ type clusterDatastoreSACSuite struct {
 	datastore DataStore
 
 	// Elements for postgres mode
-	pgtestbase *pgtest.TestPostgres
+	pgTestBase *pgtest.TestPostgres
 
 	optionsMap searchPkg.OptionsMap
 
@@ -44,16 +44,16 @@ type clusterDatastoreSACSuite struct {
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
 	var err error
-	s.pgtestbase = pgtest.ForT(s.T())
-	s.NotNil(s.pgtestbase)
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.pgTestBase = pgtest.ForT(s.T())
+	s.NotNil(s.pgTestBase)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgTestBase.DB)
 	s.Require().NoError(err)
 	s.optionsMap = schema.ClustersSchema.OptionsMap
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Cluster)
 }
 
 func (s *clusterDatastoreSACSuite) TearDownSuite() {
-	s.pgtestbase.DB.Close()
+	s.pgTestBase.DB.Close()
 }
 
 func (s *clusterDatastoreSACSuite) SetupTest() {
@@ -77,15 +77,15 @@ func (s *clusterDatastoreSACSuite) deleteCluster(id string) {
 	<-doneSignal.Done()
 }
 
-type mutiClusterTest struct {
+type multiClusterTest struct {
 	Name                 string
 	Context              context.Context
 	ExpectedClusterIDs   []string
 	ExpectedClusterNames []string
 }
 
-func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, clusterID2 string, otherClusterID string) []mutiClusterTest {
-	return []mutiClusterTest{
+func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, clusterID2 string, otherClusterID string) []multiClusterTest {
+	return []multiClusterTest{
 		{
 			Name: "Cluster full read-only",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
@@ -325,6 +325,35 @@ func (s *clusterDatastoreSACSuite) TestGetClusters() {
 		s.Run(c.Name, func() {
 			ctx := c.Context
 			clusters, err := s.datastore.GetClusters(ctx)
+			s.NoError(err)
+			clusterNames := make([]string, 0, len(clusters))
+			for _, cluster := range clusters {
+				clusterNames = append(clusterNames, cluster.GetName())
+			}
+			s.ElementsMatch(c.ExpectedClusterNames, clusterNames)
+		})
+	}
+}
+
+func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
+	cluster1 := fixtures.GetCluster(testconsts.Cluster1)
+	clusterID1, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster1)
+	defer s.deleteCluster(clusterID1)
+	s.Require().NoError(err)
+	cluster1.Id = clusterID1
+	cluster2 := fixtures.GetCluster(testconsts.Cluster2)
+	clusterID2, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster2)
+	defer s.deleteCluster(clusterID2)
+	s.Require().NoError(err)
+	cluster2.Id = clusterID2
+	otherClusterID := testconsts.Cluster3
+
+	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
+
+	for _, c := range cases {
+		s.Run(c.Name, func() {
+			ctx := c.Context
+			clusters, err := s.datastore.GetClustersForSAC(ctx)
 			s.NoError(err)
 			clusterNames := make([]string, 0, len(clusters))
 			for _, cluster := range clusters {
