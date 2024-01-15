@@ -399,7 +399,9 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 	log.Infof("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(updaterKey)
 	var onlineFile *vulDefFile
-	openedFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
+	// Ensure the updater is running.
+	u.Start()
+	openedFile, onlineTime, err := u.file.Open()
 	if err != nil {
 		return nil, err
 	}
