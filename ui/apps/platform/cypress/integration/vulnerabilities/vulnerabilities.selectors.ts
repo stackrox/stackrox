@@ -2,4 +2,4 @@ const filterChipSection = '.pf-c-toolbar .pf-c-toolbar__group[aria-label="applie
 
 export const selectors = {
     clearFiltersButton: `${filterChipSection} button:contains("Clear filters")`,
-};
+} as const;
