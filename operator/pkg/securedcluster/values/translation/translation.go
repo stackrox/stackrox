@@ -98,6 +98,11 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
+	scannerV4AutoSenseConfig, err := scanner.AutoSenseLocalScannerV4Config(ctx, t.client, sc)
+	if err != nil {
+		return nil, err
+	}
+
 	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig))
 
 	if sc.Spec.AdmissionControl != nil {
@@ -113,6 +118,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
+	v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(sc, scannerV4AutoSenseConfig))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 
@@ -353,10 +359,22 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 	return &sv
 }
 
+func (t Translator) getLocalScannerV4ComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	s := securedCluster.Spec.ScannerV4
+	sv.SetBoolValue("disable", !config.DeployScannerResources)
+
+	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
+	translation.SetScannerV4DBValues(&sv, s.DB)
+
+	return &sv
+}
+
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
+	scanner.SetScannerV4Defaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}
