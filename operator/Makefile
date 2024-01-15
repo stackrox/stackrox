@@ -172,7 +172,7 @@ include $(PROJECT_DIR)/../make/gotools.mk
 
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools)
-$(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v4, tools)
+$(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools)
 $(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools)
