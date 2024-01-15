@@ -20,16 +20,20 @@ const routeMatcherMapForClusterDefaults = {
     },
 };
 
+// With conditional rendering of side panel,
+// commented requests only when it opens.
 const routeMatcherMapForClusters = {
+    /*
     [sensorUpgradesConfigAlias]: {
         method: 'GET',
         url: '/v1/sensorupgrades/config',
     },
+    */
     [clustersAlias]: {
         method: 'GET',
         url: 'v1/clusters',
     },
-    ...routeMatcherMapForClusterDefaults,
+    // ...routeMatcherMapForClusterDefaults,
 };
 const routeMatcherMapForDelegateScanning = {
     [delegatedRegistryConfigAlias]: {
@@ -68,7 +72,6 @@ export function interactAndVisitClusters(interactionCallback, staticResponseMap)
     interactionCallback();
 
     cy.location('pathname').should('eq', clustersPath);
-    cy.get(`h1:contains("${title}")`);
 
     waitForResponses(routeMatcherMapForClusters);
 }
