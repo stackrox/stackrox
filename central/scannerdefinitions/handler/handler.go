@@ -129,6 +129,8 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		} else if fileType == "cvss" {
 			h.getV4Files(w, r, cvssUpdaterKey, "")
 			return
+		} else {
+			writeErrorNotFound(w)
 		}
 	}
 
