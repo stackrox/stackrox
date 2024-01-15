@@ -741,25 +741,59 @@ collect_and_check_stackrox_logs() {
 
 # remove_existing_stackrox_resources() This exists for smoother repeat runs of
 # system tests against the same cluster.
+# shellcheck disable=SC2120
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
+    local namespaces=( "$@" )
+    local psps_supported=false
+    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding"
+
+    if [[ ${#namespaces[@]} == 0 ]]; then
+        namespaces+=( "stackrox" )
+    fi
+
+    info "Tearing down StackRox resources for namespaces ${namespaces[*]}..."
+
+    # Check API Server Capabilities.
+    if kubectl api-resources -o name | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
+        resource_types="${resource_types},SecurityContextConstraints"
+    fi
+    if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
+        psps_supported=true
+        resource_types="${resource_types},psp"
+    fi
 
     (
+        if [[ "$psps_supported" = "true" ]]; then
+            kubectl delete -R -f scripts/ci/psp --wait
+        fi
+
         # midstream ocp specific
-        kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app=rhacs-operator" --wait
-        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
-        # openshift specific:
-        kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
-        kubectl delete -R -f scripts/ci/psp --wait
-        kubectl delete ns stackrox --wait
-        kubectl delete ns stackrox-operator --wait
-        helm uninstall monitoring
-        helm uninstall central
-        helm uninstall scanner
-        helm uninstall sensor
-        kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
-    # (prefix output to avoid triggering prow log focus)
-    ) 2>&1 | sed -e 's/^/out: /' || true
+        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
+            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+        fi
+        kubectl delete --ignore-not-found ns stackrox-operator --wait
+
+        for namespace in "${namespaces[@]}"; do
+            if kubectl get ns "$namespace" >/dev/null 2>&1; then
+                kubectl -n "$namespace" delete "$resource_types" -l "app.kubernetes.io/name=stackrox" --wait
+            fi
+            kubectl delete --ignore-not-found ns "$namespace" --wait
+        done
+
+        helm list -o json | jq -r '.[] | .name' | while read -r name; do
+            case "$name" in
+                monitoring | central | scanner | sensor)
+                    helm uninstall "$name"
+                    ;;
+            esac
+        done
+
+        kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
+            kubectl delete --wait "$namespace"
+        done
+    ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
+    info "Finished tearing down resources."
 }
 
 remove_compliance_operator_resources() {
