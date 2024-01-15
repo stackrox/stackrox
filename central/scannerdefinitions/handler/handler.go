@@ -400,7 +400,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
-	log.Debug("Getting v4 data for updater key: %s", updaterKey)
+	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(updaterKey)
 	var onlineFile *vulDefFile
 	// Ensure the updater is running.
@@ -412,7 +412,7 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 	if openedFile == nil {
 		return nil, errors.New("No valid file can be opened")
 	}
-	log.Debug("Compressed data file is available: %s", openedFile.Name())
+	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
 			utils.IgnoreError(f.Close)

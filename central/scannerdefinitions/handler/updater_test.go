@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
 
@@ -90,14 +91,14 @@ func TestCvssUpdate(t *testing.T) {
 	require.NoError(t, u.doUpdate())
 	assertOnFileExistence(t, filePath, true)
 
-	n, err := countFilesInTarGz(filePath)
+	n, err := countYearlyFilesInTarGz(filePath)
 	if err != nil {
 		t.Fatalf("Failed to count files in zip: %v", err)
 	}
 	assert.Greater(t, n, 21, "Number of files should be greater than 21")
 }
 
-func countFilesInTarGz(tarGzFilePath string) (int, error) {
+func countYearlyFilesInTarGz(tarGzFilePath string) (int, error) {
 	file, err := os.Open(tarGzFilePath)
 	if err != nil {
 		return 0, err
@@ -121,6 +122,7 @@ func countFilesInTarGz(tarGzFilePath string) (int, error) {
 	tarr := tar.NewReader(gzr)
 
 	count := 0
+	yearRegexp := regexp.MustCompile(`\b(19|20)\d{2}\b`) // Regular expression for year
 	for {
 		header, err := tarr.Next()
 		if err != nil {
@@ -129,7 +131,7 @@ func countFilesInTarGz(tarGzFilePath string) (int, error) {
 			}
 			return 0, err
 		}
-		if header.Typeflag != tar.TypeDir {
+		if header.Typeflag != tar.TypeDir && yearRegexp.MatchString(header.Name) {
 			count++
 		}
 	}
