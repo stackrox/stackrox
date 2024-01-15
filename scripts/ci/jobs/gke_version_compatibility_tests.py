@@ -84,6 +84,7 @@ test_tuples.extend(
 
 sets = []
 for test_tuple in test_tuples:
+    os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
     test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
     sets.append(
         {
