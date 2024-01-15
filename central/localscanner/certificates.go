@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -16,27 +17,45 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
 	}
-
+	var certs = map[storage.ServiceType]*storage.TypedServiceCertificate{
+		storage.ServiceType_SCANNER_SERVICE:    nil,
+		storage.ServiceType_SCANNER_DB_SERVICE: nil,
+	}
 	var certIssueError error
-	caPem, scannerCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_SERVICE, namespace, clusterID)
-	if err != nil {
-		certIssueError = multierror.Append(certIssueError, err)
+	var caPem []byte
+
+	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
+		certs[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = nil
+		certs[storage.ServiceType_SCANNER_V4_MATCHER_SERVICE] = nil
+		certs[storage.ServiceType_SCANNER_V4_DB_SERVICE] = nil
 	}
-	_, scannerDBCertificate, err := localScannerCertificatesFor(storage.ServiceType_SCANNER_DB_SERVICE, namespace, clusterID)
-	if err != nil {
-		certIssueError = multierror.Append(certIssueError, err)
+
+	for serviceID := range certs {
+		ca, cert, err := localScannerCertificatesFor(serviceID, namespace, clusterID)
+		if err != nil {
+			certIssueError = multierror.Append(certIssueError, err)
+		}
+		certs[serviceID] = cert
+		if caPem == nil {
+			caPem = ca
+		}
 	}
+
 	if certIssueError != nil {
 		return nil, certIssueError
 	}
 
-	return &storage.TypedServiceCertificateSet{
-		CaPem: caPem,
-		ServiceCerts: []*storage.TypedServiceCertificate{
-			scannerCertificate,
-			scannerDBCertificate,
-		},
-	}, nil
+	certsList := make([]*storage.TypedServiceCertificate, 0, len(certs))
+	for _, cert := range certs {
+		certsList = append(certsList, cert)
+	}
+
+	certsSet := storage.TypedServiceCertificateSet{
+		CaPem:        caPem,
+		ServiceCerts: certsList,
+	}
+
+	return &certsSet, nil
 }
 
 func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
