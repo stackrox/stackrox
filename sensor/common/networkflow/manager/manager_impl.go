@@ -206,7 +206,6 @@ func NewManager(
 	policyDetector detector.Detector,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
-	enricherTicker.Stop()
 	mgr := &networkFlowManager{
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
@@ -221,6 +220,7 @@ func NewManager(
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
 	} else {
+		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
 	}
 
