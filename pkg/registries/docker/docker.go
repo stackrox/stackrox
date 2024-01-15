@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -31,32 +29,32 @@ const (
 	repoListInterval = 10 * time.Minute
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration, false)
-		return reg, err
-	}
+func Creator() (string, types.Creator) {
+	return GenericDockerRegistryType,
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, false)
+			return reg, err
+		}
 }
 
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
-func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration, true)
-		return reg, err
-	}
+func CreatorWithoutRepoList() (string, types.Creator) {
+	return GenericDockerRegistryType,
+		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
+			reg, err := NewDockerRegistry(integration, true)
+			return reg, err
+		}
 }
 
 var _ types.Registry = (*Registry)(nil)
 
 // Registry is the basic docker registry implementation
 type Registry struct {
-	cfg                   Config
+	cfg                   *Config
 	protoImageIntegration *storage.ImageIntegration
 
 	Client *registry.Registry
@@ -69,45 +67,17 @@ type Registry struct {
 	repositoryListLock   sync.RWMutex
 }
 
-// Config is the basic config for the docker registry
-type Config struct {
-	// Endpoint defines the Docker Registry URL
-	Endpoint string
-	// Username defines the Username for the Docker Registry
-	Username string
-	// Password defines the password for the Docker Registry
-	Password string
-	// Insecure defines if the registry should be insecure
-	Insecure bool
-	// DisableRepoList when true disables populating list of repos from remote registry.
-	DisableRepoList bool
-}
-
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
-	endpoint := cfg.Endpoint
-	if strings.EqualFold(endpoint, "https://docker.io") || strings.EqualFold(endpoint, "docker.io") {
-		endpoint = "https://registry-1.docker.io"
-	}
-	url := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-
+func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration) (*Registry, error) {
+	url := cfg.formatURL()
 	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
 	registryServer := urlfmt.GetServerFromURL(url)
 	if strings.Contains(cfg.Endpoint, "docker.io") {
 		registryServer = "docker.io"
 	}
-	var transport http.RoundTripper
-	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: true,
-		})
-	} else {
-		transport = proxy.RoundTripper()
-	}
 
-	client, err := registry.NewFromTransport(
-		url, registry.WrapTransport(transport, strings.TrimSuffix(url, "/"), cfg.Username, cfg.Password), registry.Quiet)
+	client, err := registry.NewFromTransport(url, cfg.GetTransport(), registry.Quiet)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +116,7 @@ func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bo
 	if !ok {
 		return nil, errors.New("Docker configuration required")
 	}
-	cfg := Config{
+	cfg := &Config{
 		Endpoint:        dockerConfig.Docker.GetEndpoint(),
 		Username:        dockerConfig.Docker.GetUsername(),
 		Password:        dockerConfig.Docker.GetPassword(),
@@ -238,7 +208,6 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
 	err := r.Client.Ping()
-
 	if err != nil {
 		log.Errorf("error testing docker integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {

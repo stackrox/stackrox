@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	nvdschema "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
@@ -609,6 +610,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	assert.NoError(t, err)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
+		nvdScores         map[string]nvdschema.CVSSV30
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 		wantErr           string
 	}{
@@ -729,7 +731,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
 						"cvss3_score":  []string{"9.9"},
 					}.Encode(),
-					Dist: &claircore.Distribution{DID: "rhel"},
+					Updater: "RHEL8-updater",
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -754,7 +756,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
 						"cvss2_score":  []string{"1.1"},
 					}.Encode(),
-					Dist: &claircore.Distribution{DID: "rhel"},
+					Updater: "RHEL8-updater",
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -781,7 +783,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
 						"cvss3_score":  []string{"9.9"},
 					}.Encode(),
-					Dist: &claircore.Distribution{DID: "rhel"},
+					Updater: "RHEL8-updater",
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -809,10 +811,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"severity":     []string{"sample severity"},
 						"cvss2_vector": []string{"invalid cvss2 vector"},
 					}.Encode(),
-					Dist: &claircore.Distribution{DID: "rhel"},
+					Updater: "RHEL8-updater",
 				},
 			},
-			wantErr: "invalid RHEL CVSS error: v2 vector",
+			wantErr: `v2 vector: need two values separated by :, got "invalid cvss2 vector"`,
 		},
 		"when severity with CVSSv3 is invalid then return error": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
@@ -822,16 +824,61 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"severity":     []string{"sample severity"},
 						"cvss3_vector": []string{"invalid cvss3 vector"},
 					}.Encode(),
-					Dist: &claircore.Distribution{DID: "rhel"},
+					Updater: "RHEL8-updater",
 				},
 			},
-			wantErr: "invalid RHEL CVSS error: v3 vector",
+			wantErr: `v3 vector: vector missing "CVSS:" prefix: "INVALID CVSS3 VECTOR"`,
+		},
+		"when OSV and severity with CVSSv3 then return": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:   now,
+					Severity: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					Updater:  "osv/sample-updater",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued: protoNow,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+					},
+				},
+			},
+		},
+		"when unknown updater then return NVD scores": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Issued:  now,
+					Updater: "unknown updater",
+				},
+			},
+			nvdScores: map[string]nvdschema.CVSSV30{
+				"foo": {
+					Version:      "3.1",
+					VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:     "foo",
+					Issued: protoNow,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+					},
+				},
+			},
 		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, nil)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdScores)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
@@ -860,7 +907,7 @@ func Test_convertToNormalizedSeverity(t *testing.T) {
 	assert.Equal(t, int(claircore.Critical), 5)
 }
 
-func Test_getVulnName(t *testing.T) {
+func Test_vulnerabilityName(t *testing.T) {
 	testcases := map[string]struct {
 		name     string
 		links    string
@@ -911,8 +958,30 @@ func Test_getVulnName(t *testing.T) {
 	for name, testcase := range testcases {
 		t.Run(name, func(t *testing.T) {
 			v := &claircore.Vulnerability{Name: testcase.name, Links: testcase.links}
-			assert.Equal(t, testcase.expected, getVulnName(v))
+			assert.Equal(t, testcase.expected, vulnerabilityName(v))
 		})
 	}
 
+}
+
+func Test_versionID(t *testing.T) {
+	tests := map[string]struct {
+		d         *claircore.Distribution
+		versionID string
+	}{
+		"when version ID is empty and distribution is Alpine then use version": {
+			d:         &claircore.Distribution{Version: "sample alpine version ID", DID: "alpine"},
+			versionID: "sample alpine version ID",
+		},
+		"when version is not empty and distribution is Alpine then use version ID": {
+			d:         &claircore.Distribution{Version: "sample alpine version", DID: "alpine"},
+			versionID: "sample alpine version",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			versionID := versionID(tt.d)
+			assert.Equal(t, tt.versionID, versionID)
+		})
+	}
 }

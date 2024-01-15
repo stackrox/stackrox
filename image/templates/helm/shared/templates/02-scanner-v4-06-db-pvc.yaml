@@ -47,6 +47,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
+    # this is used for backwards compatibility for operator if there are PVCs without annotation
+    # owned by the operator it will assume they belong to the deprecated central-db
+    target.pvc.stackrox.io: "scanner-v4-db"
   annotations:
     {{- include "srox.annotations" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
 spec:
