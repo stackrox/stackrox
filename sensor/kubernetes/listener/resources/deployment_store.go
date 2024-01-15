@@ -22,6 +22,12 @@ type DeploymentStore struct {
 
 	// deploymentSnapshots
 	deploymentSnapshots map[string]snapshotEntry
+
+	onRemoveObservers []OnRemoveObserver
+}
+
+type OnRemoveObserver interface {
+	OnDeploymentRemove(*storage.Deployment)
 }
 
 type snapshotEntry struct {
@@ -36,6 +42,13 @@ func newDeploymentStore() *DeploymentStore {
 		deployments:         make(map[string]*deploymentWrap),
 		deploymentSnapshots: make(map[string]snapshotEntry),
 	}
+}
+
+func (ds *DeploymentStore) AddOnRemoveObserver(observers ...OnRemoveObserver) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	ds.onRemoveObservers = append(ds.onRemoveObservers, observers...)
 }
 
 func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
@@ -73,6 +86,9 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	ids := ds.deploymentIDs[wrap.GetNamespace()]
 	if ids == nil {
 		return
+	}
+	for _, observer := range ds.onRemoveObservers {
+		observer.OnDeploymentRemove(ds.deploymentSnapshots[wrap.GetId()].builtDeployment)
 	}
 	delete(ids, wrap.GetId())
 	delete(ds.deployments, wrap.GetId())

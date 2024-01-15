@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
+	"github.com/stackrox/rox/sensor/common/deploymentreconciler"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -63,6 +65,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
 
 	storeProvider := resources.InitializeStore()
+	var deploymentReconciler deploymentreconciler.DeploymentReconciler
+	if features.SensorCapturesIntermediateEvents.Enabled() {
+		deploymentReconciler = deploymentreconciler.NewDeploymentReconciler()
+		storeProvider.AddOnRemoveObserver(deploymentReconciler)
+	}
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -149,6 +156,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		delegatedRegistryHandler,
 		imageService,
 		enhancer,
+	}
+	if features.SensorCapturesIntermediateEvents.Enabled() && deploymentReconciler != nil {
+		components = append(components, deploymentReconciler)
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)

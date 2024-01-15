@@ -80,6 +80,12 @@ func InitializeStore() *StoreProvider {
 	return p
 }
 
+func (p *StoreProvider) AddOnRemoveObserver(observers ...OnRemoveObserver) {
+	if p.deploymentStore != nil {
+		p.deploymentStore.AddOnRemoveObserver(observers...)
+	}
+}
+
 // CleanupStores deletes all entries from all stores
 func (p *StoreProvider) CleanupStores() {
 	for _, cleanable := range p.cleanableStores {
