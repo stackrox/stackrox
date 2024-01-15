@@ -192,10 +192,10 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
                                                     onToggle: () => expandedRowSet.toggle(cve),
                                                 }}
                                             />
-                                            <Td>
+                                            <Td dataLabel="CVE">
                                                 <Link to={cveURL}>{cve}</Link>
                                             </Td>
-                                            <Td>
+                                            <Td dataLabel="Images by severity">
                                                 <SeverityCountLabels
                                                     criticalCount={criticalCount}
                                                     importantCount={importantCount}
@@ -204,7 +204,7 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
                                                     filteredSeverities={filteredSeverities}
                                                 />
                                             </Td>
-                                            <Td>
+                                            <Td dataLabel="CVSS">
                                                 <CvssTd
                                                     cvss={topCVSS}
                                                     scoreVersion={
@@ -214,11 +214,11 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
                                                     }
                                                 />
                                             </Td>
-                                            <Td>{`${affectedImageCount} ${pluralize(
+                                            <Td dataLabel="Affected images">{`${affectedImageCount} ${pluralize(
                                                 'image',
                                                 affectedImageCount
                                             )}`}</Td>
-                                            <Td>
+                                            <Td dataLabel="First discovered">
                                                 <DateDistanceTd date={firstDiscoveredInSystem} />
                                             </Td>
                                         </Tr>
