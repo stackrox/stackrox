@@ -14,7 +14,8 @@ type AuthResponse struct {
 	Claims     *tokens.ExternalUserClaim
 	Expiration time.Time
 	ExtraOpts  []tokens.Option
-	IdpToken   string
+	// Set only for OIDC backend.
+	IdpToken string
 
 	RefreshTokenData
 }
