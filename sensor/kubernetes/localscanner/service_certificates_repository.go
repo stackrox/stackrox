@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,44 +51,33 @@ type serviceCertSecretSpec struct {
 	serviceKeyFileName  string
 }
 
+// newServiceCertSecretSpec creates a serviceCertSecretSpec with default filenames
+func newServiceCertSecretSpec(secretName string) serviceCertSecretSpec {
+	return serviceCertSecretSpec{
+		secretName:          secretName,
+		caCertFileName:      mtls.CACertFileName,
+		serviceCertFileName: mtls.ServiceCertFileName,
+		serviceKeyFileName:  mtls.ServiceKeyFileName,
+	}
+}
+
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
 // scanner and scanner DB in k8s secrets that are expected to have ownerReference as the only owner reference.
 func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 
+	secretByServiceTypes := map[storage.ServiceType]serviceCertSecretSpec{
+		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec("scanner-tls"),
+		storage.ServiceType_SCANNER_DB_SERVICE: newServiceCertSecretSpec("scanner-db-tls"),
+	}
+
+	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
+		secretByServiceTypes[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec("scanner-v4-indexer-tls")
+		secretByServiceTypes[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec("scanner-v4-db-tls")
+	}
+
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets: map[storage.ServiceType]serviceCertSecretSpec{
-			storage.ServiceType_SCANNER_SERVICE: {
-				secretName:          "scanner-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_DB_SERVICE: {
-				secretName:          "scanner-db-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE: {
-				secretName:          "scanner-v4-indexer-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE: {
-				secretName:          "scanner-v4-matcher-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_DB_SERVICE: {
-				secretName:          "scanner-v4-db-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-		},
+		secrets:        secretByServiceTypes,
 		ownerReference: ownerReference,
 		namespace:      namespace,
 		secretsClient:  secretsClient,
