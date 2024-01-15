@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	expectedClusterCounts = []*ResourceResultCountByClusterScan{
+	expectedClusterScanCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -80,7 +80,7 @@ var (
 		},
 	}
 
-	expectedCluster2And3Counts = []*ResourceResultCountByClusterScan{
+	expectedCluster2And3ScanCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -119,7 +119,7 @@ var (
 		},
 	}
 
-	expectedCluster2OnlyCounts = []*ResourceResultCountByClusterScan{
+	expectedCluster2OnlyScanCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -131,6 +131,81 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
+		},
+	}
+
+	expectedClusterCounts = []*ResultStatusCountByCluster{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster1,
+			ClusterName:        "cluster1",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ClusterID:          testconsts.Cluster2,
+			ClusterName:        "cluster2",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster3,
+			ClusterName:        "cluster3",
+		},
+	}
+
+	expectedCluster2And3Counts = []*ResultStatusCountByCluster{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ClusterID:          testconsts.Cluster2,
+			ClusterName:        "cluster2",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster3,
+			ClusterName:        "cluster3",
+		},
+	}
+
+	expectedCluster2OnlyCounts = []*ResultStatusCountByCluster{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ClusterID:          testconsts.Cluster2,
+			ClusterName:        "cluster2",
 		},
 	}
 )
@@ -280,7 +355,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCheckResultStats() {
 
 	results, err := s.dataStore.ComplianceCheckResultStats(s.hasReadCtx, query)
 	s.Require().NoError(err)
-	s.Require().Equal(expectedCluster2And3Counts, results)
+	s.Require().Equal(expectedCluster2And3ScanCounts, results)
 
 	// Counts with no access should return error
 	results, err = s.dataStore.ComplianceCheckResultStats(s.noAccessCtx, query)
@@ -396,6 +471,55 @@ func (s *complianceCheckResultDataStoreTestSuite) TestResultsStatsSac() {
 			desc:            "Empty query - Full access",
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedClusterScanCounts,
+		},
+		{
+			desc:            "Empty query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedCluster2OnlyScanCounts,
+		},
+		{
+			desc:            "Cluster 2 query - Only cluster 2 access",
+			query:           search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedCluster2OnlyScanCounts,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Only cluster 2 access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.Cluster2ReadWriteCtx,
+			expectedResults: expectedCluster2OnlyScanCounts,
+		},
+		{
+			desc: "Cluster 2 and 3 query - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedCluster2And3ScanCounts,
+		},
+	}
+
+	for _, tc := range testCases {
+		results, err := s.dataStore.ComplianceCheckResultStats(s.testContexts[tc.scopeKey], tc.query)
+		s.NoError(err)
+		s.Equal(tc.expectedResults, results)
+	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
+	s.setupTestData()
+	testCases := []struct {
+		desc            string
+		query           *apiV1.Query
+		scopeKey        string
+		expectedResults []*ResultStatusCountByCluster
+	}{
+		{
+			desc:            "Empty query - Full access",
+			query:           search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
 			expectedResults: expectedClusterCounts,
 		},
 		{
@@ -427,7 +551,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestResultsStatsSac() {
 	}
 
 	for _, tc := range testCases {
-		results, err := s.dataStore.ComplianceCheckResultStats(s.testContexts[tc.scopeKey], tc.query)
+		results, err := s.dataStore.ComplianceClusterStats(s.testContexts[tc.scopeKey], tc.query)
 		s.NoError(err)
 		s.Equal(tc.expectedResults, results)
 	}

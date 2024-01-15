@@ -145,8 +145,8 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 	return convertedResults
 }
 
-// ComplianceV2CheckNameStats converts the counts to the v2 stats
-func ComplianceV2CheckNameStats(resultCounts []*datastore.ResultStatusCountByCluster) []*v2.ComplianceClusterOverallStats {
+// ComplianceV2ClusterOverallStats converts the counts to the v2 stats
+func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster) []*v2.ComplianceClusterOverallStats {
 	var convertedResults []*v2.ComplianceClusterOverallStats
 
 	for _, resultCount := range resultCounts {

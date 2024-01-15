@@ -119,8 +119,8 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 	}, nil
 }
 
-// GetComplianceClusterStats lists current scan stats grouped by cluster
-func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+// GetComplianceOverallClusterStats lists current scan stats grouped by cluster
+func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceClusterOverallStatsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -136,7 +136,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, query *v2.R
 	}
 
 	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats: storagetov2.ComplianceV2CheckNameStats(scanResults),
+		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults),
 	}, nil
 }
 
