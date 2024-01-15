@@ -19,8 +19,6 @@ func GetConfig(ctx context.Context, name string) Controller {
 		return newPeriodicDisconnect(ctx, 5*time.Minute, 10*time.Second)
 	case "droppedpackets":
 		return newDroppedPackets(ctx, 0.01)
-	case "nodisconnect":
-		return newNoDisconnect(ctx)
 	case "none":
 		return &none{}
 	default:
