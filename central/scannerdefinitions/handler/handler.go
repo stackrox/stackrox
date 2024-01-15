@@ -126,12 +126,12 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
 			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
 			return
-		} else if fileType == "cvss" {
+		}
+		if fileType == "cvss" {
 			h.getV4Files(w, r, cvssUpdaterKey, "")
 			return
-		} else {
-			writeErrorNotFound(w)
 		}
+		writeErrorNotFound(w)
 	}
 
 	// Open the most recent definitions file for the provided `uuid`.
@@ -197,7 +197,7 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 
 	updater, exists := h.updaters[key]
 	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
+		filePath := filepath.Join(h.onlineVulnDir, key)
 		buildURL := func(values []string) string {
 			return strings.Join(values, "/")
 		}
@@ -206,11 +206,13 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		switch key {
 		case mappingUpdaterKey:
 			url = buildURL([]string{v4StorageDomain, mappingFile})
+			filePath += ".zip"
 		case cvssUpdaterKey:
 			url = buildURL([]string{v4StorageDomain, cvssFile})
-			filePath = filepath.Join(h.onlineVulnDir, key+".tar.gz")
+			filePath += ".tar.gz"
 		default: // uuid
 			url = buildURL([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix})
+			filePath += ".zip"
 		}
 
 		h.updaters[key] = &requestedUpdater{
@@ -398,7 +400,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
-	log.Infof("Getting v4 data for updater key: %s", updaterKey)
+	log.Debug("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(updaterKey)
 	var onlineFile *vulDefFile
 	// Ensure the updater is running.
@@ -408,9 +410,9 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 		return nil, err
 	}
 	if openedFile == nil {
-		return nil, errors.New("zip file is nil")
+		return nil, errors.New("No valid file can be opened")
 	}
-	log.Infof("Compressed data file is available: %s", openedFile.Name())
+	log.Debug("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
 			utils.IgnoreError(f.Close)
