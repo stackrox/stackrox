@@ -5,10 +5,8 @@ import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
-import CloseButton from 'Components/CloseButton';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
-import { useTheme } from 'Containers/ThemeProvider';
+import PageHeader from 'Components/PageHeader';
+import { PanelNew, PanelBody, PanelHeadEnd } from 'Components/Panel';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -61,11 +59,11 @@ type MessageState = {
     text: string;
 };
 
-export type ClustersSidePanelProps = {
-    selectedClusterId: string;
+export type ClusterPageProps = {
+    clusterId: string;
 };
 
-function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): ReactElement {
+function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     const history = useHistory();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
@@ -75,7 +73,6 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
 
     const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 
-    const { isDarkMode } = useTheme();
     const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
     const [clusterRetentionInfo, setClusterRetentionInfo] =
         useState<DecommissionedClusterRetentionInfo>(null);
@@ -90,16 +87,6 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
-    function unselectCluster() {
-        setSubmissionError(null);
-        setSelectedCluster(defaultCluster);
-        setMessageState(null);
-        setIsBlocked(false);
-        setWizardStep('FORM');
-        setPollingDelay(null);
-        history.push(clustersBasePath);
-    }
-
     function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
         return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
             ? 'MANAGER_TYPE_HELM_CHART'
@@ -108,7 +95,7 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
 
     useEffect(
         () => {
-            const clusterIdToRetrieve = selectedClusterId;
+            const clusterIdToRetrieve = clusterId;
 
             setLoadingCounter((prev) => prev + 1);
             getClusterDefaults()
@@ -200,7 +187,7 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
         // lint rule "exhaustive-deps" wants to add selectedCluster to change-detection
         // but we don't want to fetch while we're editing, so disabled that rule here
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectedClusterId, pollingCount]
+        [clusterId, pollingCount]
     );
 
     // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
@@ -266,7 +253,7 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
                     });
                 });
         } else {
-            unselectCluster();
+            history.push(clustersBasePath);
         }
     }
 
@@ -312,18 +299,12 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
         );
 
     return (
-        <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
+        <section className="flex flex-1 flex-col h-full">
+            <PageHeader header={selectedClusterName} subHeader="Cluster">
+                <PanelHeadEnd>{panelButtons}</PanelHeadEnd>
+            </PageHeader>
+
             <PanelNew testid="clusters-side-panel">
-                <PanelHead>
-                    <PanelTitle testid="clusters-side-panel-header" text={selectedClusterName} />
-                    <PanelHeadEnd>
-                        {panelButtons}
-                        <CloseButton
-                            onClose={unselectCluster}
-                            className="border-base-400 border-l"
-                        />
-                    </PanelHeadEnd>
-                </PanelHead>
                 <PanelBody>
                     {!!messageState && (
                         <div className="m-4">
@@ -382,8 +363,8 @@ function ClustersSidePanel({ selectedClusterId }: ClustersSidePanelProps): React
                     )}
                 </PanelBody>
             </PanelNew>
-        </SidePanelAnimatedArea>
+        </section>
     );
 }
 
-export default ClustersSidePanel;
+export default ClusterPage;

@@ -54,7 +54,7 @@ const title = 'Clusters';
 // assert
 
 export function assertClusterNameInSidePanel(clusterName) {
-    cy.get(`[data-testid="clusters-side-panel-header"]:contains("${clusterName}")`);
+    cy.get(`h1:contains("${clusterName}")`);
 }
 
 // visit
@@ -113,8 +113,6 @@ export function visitClusterById(clusterId, staticResponseMap) {
         },
     };
     visit(`${clustersPath}/${clusterId}`, routeMatcherMapForClusterById, staticResponseMap);
-
-    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
