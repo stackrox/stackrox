@@ -195,6 +195,10 @@ func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken
 	if err != nil {
 		return nil, err
 	}
+	claimsStr, err := claimsAsString(idToken)
+	if err != nil {
+		return nil, err
+	}
 
 	// Special case: in the case of an ID token being presented which has an empty group attribute, we attempt to
 	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
@@ -231,9 +235,9 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 	}
 
 	return &authproviders.AuthResponse{
-		Claims:          externalClaims,
-		Expiration:      idToken.GetExpiry(),
-		UnderlyingToken: rawIDToken,
+		Claims:     externalClaims,
+		Expiration: idToken.GetExpiry(),
+		IdPToken:   claimsStr,
 	}, nil
 }
 
@@ -263,9 +267,9 @@ func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken strin
 	}
 
 	return &authproviders.AuthResponse{
-		Claims:          externalClaims,
-		Expiration:      time.Now().Add(userInfoExpiration),
-		UnderlyingToken: rawUserInfo,
+		Claims:     externalClaims,
+		Expiration: time.Now().Add(userInfoExpiration),
+		IdPToken:   rawUserInfo,
 	}, nil
 }
 
@@ -709,7 +713,7 @@ func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[s
 }
 
 func claimsAsString(claimExtractor claimExtractor) (string, error) {
-	claims := make(map[string]interface{}, 0)
+	claims := make(map[string]interface{})
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return "", errors.Wrap(err, "failed to extract claims from IdP's token")
 	}

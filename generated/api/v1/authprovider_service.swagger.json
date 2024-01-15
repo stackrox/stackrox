@@ -606,7 +606,7 @@
             "$ref": "#/definitions/v1UserAttribute"
           }
         },
-        "underlyingToken": {
+        "idpToken": {
           "type": "string"
         }
       }

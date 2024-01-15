@@ -99,6 +99,7 @@ func (rm *storeBasedMapperImpl) createUser(descriptor *permissions.UserDescripto
 	user := &storage.User{
 		Id:             descriptor.UserID,
 		AuthProviderId: rm.authProviderID,
+		IdpToken:       descriptor.IdPToken,
 	}
 	addAttributesToUser(user, descriptor.Attributes)
 	return user

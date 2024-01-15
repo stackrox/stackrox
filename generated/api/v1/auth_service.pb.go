@@ -138,7 +138,7 @@ type AuthStatus struct {
 	AuthProvider         *storage.AuthProvider `protobuf:"bytes,5,opt,name=auth_provider,json=authProvider,proto3" json:"auth_provider,omitempty"`
 	UserInfo             *storage.UserInfo     `protobuf:"bytes,6,opt,name=user_info,json=userInfo,proto3" json:"user_info,omitempty"`
 	UserAttributes       []*UserAttribute      `protobuf:"bytes,7,rep,name=user_attributes,json=userAttributes,proto3" json:"user_attributes,omitempty"`
-	UnderlyingToken      string                `protobuf:"bytes,8,opt,name=underlying_token,json=underlyingToken,proto3" json:"underlying_token,omitempty"`
+	IdpToken             string                `protobuf:"bytes,8,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -269,9 +269,9 @@ func (m *AuthStatus) GetUserAttributes() []*UserAttribute {
 	return nil
 }
 
-func (m *AuthStatus) GetUnderlyingToken() string {
+func (m *AuthStatus) GetIdpToken() string {
 	if m != nil {
-		return m.UnderlyingToken
+		return m.IdpToken
 	}
 	return ""
 }
@@ -1417,10 +1417,10 @@ func (m *AuthStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.UnderlyingToken) > 0 {
-		i -= len(m.UnderlyingToken)
-		copy(dAtA[i:], m.UnderlyingToken)
-		i = encodeVarintAuthService(dAtA, i, uint64(len(m.UnderlyingToken)))
+	if len(m.IdpToken) > 0 {
+		i -= len(m.IdpToken)
+		copy(dAtA[i:], m.IdpToken)
+		i = encodeVarintAuthService(dAtA, i, uint64(len(m.IdpToken)))
 		i--
 		dAtA[i] = 0x42
 	}
@@ -1972,7 +1972,7 @@ func (m *AuthStatus) Size() (n int) {
 			n += 1 + l + sovAuthService(uint64(l))
 		}
 	}
-	l = len(m.UnderlyingToken)
+	l = len(m.IdpToken)
 	if l > 0 {
 		n += 1 + l + sovAuthService(uint64(l))
 	}
@@ -2568,7 +2568,7 @@ func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UnderlyingToken", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IdpToken", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2596,7 +2596,7 @@ func (m *AuthStatus) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.UnderlyingToken = string(dAtA[iNdEx:postIndex])
+			m.IdpToken = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

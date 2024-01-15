@@ -14,6 +14,7 @@ type RoleMapper interface {
 type UserDescriptor struct {
 	UserID     string
 	Attributes map[string][]string
+	IdPToken   string
 }
 
 // RoleStore defines an object that provides looking up roles.

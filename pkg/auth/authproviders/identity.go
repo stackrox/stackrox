@@ -30,6 +30,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	ud := &permissions.UserDescriptor{
 		UserID:     authResp.Claims.UserID,
 		Attributes: authResp.Claims.Attributes,
+		IdPToken:   authResp.IdPToken,
 	}
 
 	// config might contain semi-sensitive values, so strip it
