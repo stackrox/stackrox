@@ -163,7 +163,7 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	var eventsOutput []string
 	marshaler := jsonpb.Marshaler{}
 	for _, e := range events.ForwardMessages {
-		ev, err := marshaler.MarshalToString(e)
+		ev, err := marshaler.MarshalToString(e.Event)
 		if err != nil {
 			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events
@@ -208,12 +208,12 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 	}
 
 	for _, e := range events.ForwardMessages {
-		e.Timing = &central.Timing{
+		e.Event.Timing = &central.Timing{
 			Dispatcher: dispatcher,
-			Resource:   metricsPkg.GetResourceString(e),
+			Resource:   metricsPkg.GetResourceString(e.Event),
 			Nanos:      start,
 		}
-		metrics.SetResourceProcessingDurationForResource(e)
+		metrics.SetResourceProcessingDurationForResource(e.Event)
 	}
 	metrics.IncK8sEventCount(action.String(), dispatcher)
 

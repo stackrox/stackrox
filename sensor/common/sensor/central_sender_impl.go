@@ -116,6 +116,9 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
+			if msg.OnSent != nil {
+				msg.OnSent()
+			}
 		}
 	}
 }

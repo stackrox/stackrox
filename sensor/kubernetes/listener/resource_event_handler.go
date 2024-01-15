@@ -276,10 +276,12 @@ func (k *listenerImpl) handleAllEvents() {
 	syncingResources.Set(false)
 
 	k.outputQueue.Send(&component.ResourceEvent{
-		ForwardMessages: []*central.SensorEvent{
+		ForwardMessages: []*component.EventCallbackPair{
 			{
-				Resource: &central.SensorEvent_Synced{
-					Synced: &central.SensorEvent_ResourcesSynced{},
+				Event: &central.SensorEvent{
+					Resource: &central.SensorEvent_Synced{
+						Synced: &central.SensorEvent_ResourcesSynced{},
+					},
 				},
 			},
 		},

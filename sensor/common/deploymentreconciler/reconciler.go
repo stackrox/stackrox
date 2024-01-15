@@ -11,7 +11,7 @@ var _ common.SensorComponent = (*deploymentReconcilerImpl)(nil)
 
 type DeploymentReconciler interface {
 	common.SensorComponent
-	OnDeploymentRemove(*storage.Deployment)
+	OnDeploymentRemove(*storage.Deployment) func()
 }
 
 func NewDeploymentReconciler() *deploymentReconcilerImpl {

@@ -68,9 +68,15 @@ func (d *deploymentReconcilerImpl) sendDeleteEvents() {
 	d.deployments = make(map[string]*storage.Deployment)
 }
 
-func (d *deploymentReconcilerImpl) OnDeploymentRemove(deployment *storage.Deployment) {
+func (d *deploymentReconcilerImpl) OnDeploymentRemove(deployment *storage.Deployment) func() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
 	d.deployments[deployment.GetId()] = deployment
+	return func() {
+		d.lock.Lock()
+		defer d.lock.Unlock()
+
+		delete(d.deployments, deployment.GetId())
+	}
 }

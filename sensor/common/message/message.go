@@ -12,6 +12,13 @@ import (
 type ExpiringMessage struct {
 	*central.MsgFromSensor
 	Context context.Context
+	OnSent  func()
+}
+
+func NewWithOnSent(msg *central.MsgFromSensor, fn func()) *ExpiringMessage {
+	ret := NewExpiring(context.Background(), msg)
+	ret.OnSent = fn
+	return ret
 }
 
 // New creates an ExpiringMessage with msg and context.Background.
@@ -24,6 +31,14 @@ func NewExpiring(ctx context.Context, msg *central.MsgFromSensor) *ExpiringMessa
 	return &ExpiringMessage{
 		MsgFromSensor: msg,
 		Context:       ctx,
+	}
+}
+
+func NewExpiringWithCallback(ctx context.Context, msg *central.MsgFromSensor, callback func()) *ExpiringMessage {
+	return &ExpiringMessage{
+		MsgFromSensor: msg,
+		Context:       ctx,
+		OnSent:        callback,
 	}
 }
 

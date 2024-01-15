@@ -129,7 +129,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	objAsPod, _ := obj.(*v1.Pod)
 
 	events := &component.ResourceEvent{
-		ForwardMessages:      []*central.SensorEvent{},
+		ForwardMessages:      []*component.EventCallbackPair{},
 		DetectorMessages:     []component.DetectorMessage{},
 		ReprocessDeployments: []string{},
 		DeploymentTiming:     nil,
@@ -182,6 +182,16 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 
+	var callback func()
+	// Upsert/Delete at the end to avoid data race with other dispatchers
+	if action != central.ResourceAction_REMOVE_RESOURCE {
+		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
+	} else {
+		callback = d.deploymentStore.removeDeployment(deploymentWrap)
+		d.podStore.onDeploymentRemove(deploymentWrap)
+		d.processFilter.Delete(deploymentWrap.GetId())
+	}
+
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		// TODO(ROX-14309): move this logic to the resolver
 		// We need to do this here since the resolver relies on the deploymentStore to have the wrap
@@ -193,23 +203,18 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		events.AddDeploymentForDetection(component.DetectorMessage{
 			Object: deploymentWrap.GetDeployment(),
 			Action: action,
-		}).AddSensorEvent(deploymentWrap.toEvent(action)) // if resource is being removed, we can create the remove message here without related resources
+		}).AddSensorEventWithCallback(deploymentWrap.toEvent(action), func() {
+			log.Infof("On Remove callback of deployment %s:%s", deploymentWrap.GetId(), deploymentWrap.GetName())
+			if callback != nil {
+				callback()
+			}
+		}) // if resource is being removed, we can create the remove message here without related resources
 	} else {
 		// If re-sync is disabled, we don't need to process deployment relationships here. We pass a deployment
 		// references up the chain, which will be used to trigger the actual deployment event and detection.
 		events.AddDeploymentReference(resolver.ResolveDeploymentIds(deploymentWrap.GetId()),
 			component.WithParentResourceAction(action))
 	}
-
-	// Upsert/Delete at the end to avoid data race with other dispatchers
-	if action != central.ResourceAction_REMOVE_RESOURCE {
-		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
-	} else {
-		d.deploymentStore.removeDeployment(deploymentWrap)
-		d.podStore.onDeploymentRemove(deploymentWrap)
-		d.processFilter.Delete(deploymentWrap.GetId())
-	}
-
 	return events
 }
 
