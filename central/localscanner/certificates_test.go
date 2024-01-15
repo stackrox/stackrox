@@ -88,8 +88,6 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 			[]string{"scanner-db.stackrox", "scanner-db.stackrox.svc", "scanner-db.namespace", "scanner-db.namespace.svc"}},
 		{storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, "SCANNER_V4_INDEXER_SERVICE",
 			[]string{"scanner-v4-indexer.stackrox", "scanner-v4-indexer.stackrox.svc", "scanner-v4-indexer.namespace", "scanner-v4-indexer.namespace.svc"}},
-		{storage.ServiceType_SCANNER_V4_MATCHER_SERVICE, "SCANNER_V4_MATCHER_SERVICE",
-			[]string{"scanner-v4-matcher.stackrox", "scanner-v4-matcher.stackrox.svc", "scanner-v4-matcher.namespace", "scanner-v4-matcher.namespace.svc"}},
 		{storage.ServiceType_SCANNER_V4_DB_SERVICE, "SCANNER_V4_DB_SERVICE",
 			[]string{"scanner-v4-db.stackrox", "scanner-v4-db.stackrox.svc", "scanner-v4-db.namespace", "scanner-v4-db.namespace.svc"}},
 	}
@@ -124,7 +122,6 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 		scannerServiceTypes = append(
 			scannerServiceTypes,
 			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
-			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
 			storage.ServiceType_SCANNER_V4_DB_SERVICE,
 		)
 	}

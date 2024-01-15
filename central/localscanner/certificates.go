@@ -13,30 +13,34 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
+var serviceTypes = func() set.FrozenSet[storage.ServiceType] {
+	types := set.NewSet(
+		storage.ServiceType_SCANNER_SERVICE,
+		storage.ServiceType_SCANNER_DB_SERVICE,
+	)
+	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
+		types.AddAll(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
+	}
+	return types.Freeze()
+}()
+
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
 	}
-	var certs = map[storage.ServiceType]*storage.TypedServiceCertificate{
-		storage.ServiceType_SCANNER_SERVICE:    nil,
-		storage.ServiceType_SCANNER_DB_SERVICE: nil,
-	}
+
+	serviceCerts := make([]*storage.TypedServiceCertificate, 0, serviceTypes.Cardinality())
 	var certIssueError error
 	var caPem []byte
 
-	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
-		certs[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = nil
-		certs[storage.ServiceType_SCANNER_V4_MATCHER_SERVICE] = nil
-		certs[storage.ServiceType_SCANNER_V4_DB_SERVICE] = nil
-	}
-
-	for serviceID := range certs {
-		ca, cert, err := localScannerCertificatesFor(serviceID, namespace, clusterID)
+	for _, serviceType := range serviceTypes.AsSlice() {
+		ca, cert, err := localScannerCertificatesFor(serviceType, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
+			continue
 		}
-		certs[serviceID] = cert
+		serviceCerts = append(serviceCerts, cert)
 		if caPem == nil {
 			caPem = ca
 		}
@@ -46,16 +50,10 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 		return nil, certIssueError
 	}
 
-	certsList := make([]*storage.TypedServiceCertificate, 0, len(certs))
-	for _, cert := range certs {
-		certsList = append(certsList, cert)
-	}
-
 	certsSet := storage.TypedServiceCertificateSet{
 		CaPem:        caPem,
-		ServiceCerts: certsList,
+		ServiceCerts: serviceCerts,
 	}
-
 	return &certsSet, nil
 }
 
@@ -76,15 +74,7 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	supportedServices := set.NewFrozenSet(
-		storage.ServiceType_SCANNER_SERVICE,
-		storage.ServiceType_SCANNER_DB_SERVICE,
-		storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
-		storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
-		storage.ServiceType_SCANNER_V4_DB_SERVICE,
-	)
-
-	if !supportedServices.Contains(serviceType) {
+	if !serviceTypes.Contains(serviceType) {
 		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
 			serviceType)
 	}
