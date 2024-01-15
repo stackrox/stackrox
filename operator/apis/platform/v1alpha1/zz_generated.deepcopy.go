@@ -430,6 +430,11 @@ func (in *CollectorContainerSpec) DeepCopyInto(out *CollectorContainerSpec) {
 		*out = new(CollectorImageFlavor)
 		**out = **in
 	}
+	if in.ForceCollection != nil {
+		in, out := &in.ForceCollection, &out.ForceCollection
+		*out = new(bool)
+		**out = **in
+	}
 	in.ContainerSpec.DeepCopyInto(&out.ContainerSpec)
 }
 
