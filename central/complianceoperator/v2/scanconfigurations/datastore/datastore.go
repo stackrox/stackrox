@@ -35,12 +35,12 @@ type DataStore interface {
 	DeleteScanConfiguration(ctx context.Context, id string) (string, error)
 
 	// UpdateClusterStatus updates the scan configuration with the cluster status
-	UpdateClusterStatus(ctx context.Context, scanID string, clusterID string, clusterStatus string) error
+	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error
 
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
-	GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
+	GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
 
-	// Count scan config based on a query
+	// CountScanConfigurations scan config based on a query
 	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 }
 
@@ -59,6 +59,6 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store,
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore, searcher search.Searcher) (DataStore, error) {
 	store := pgStore.New(pool)
-	statusStore := statusStore.New(pool)
-	return New(store, statusStore, clusterDS, searcher), nil
+	statusStorage := statusStore.New(pool)
+	return New(store, statusStorage, clusterDS, searcher), nil
 }

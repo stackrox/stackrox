@@ -74,6 +74,13 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		})
 	}
 
+	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(scanConfig.GetClusters()))
+	for _, cluster := range scanConfig.GetClusters() {
+		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			ClusterId: cluster,
+		})
+	}
+
 	return &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName:         scanConfig.GetScanName(),
 		AutoApplyRemediations:  false,
@@ -84,6 +91,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		Profiles:               profiles,
 		ModifiedBy:             authn.UserFromContext(ctx),
 		Description:            scanConfig.GetScanConfig().GetDescription(),
+		Clusters:               clusters,
 	}
 }
 
