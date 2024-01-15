@@ -365,11 +365,14 @@ func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 }
 
 // Test sends a test notification.
-func (e *email) Test(ctx context.Context) error {
+func (e *email) Test(ctx context.Context) *notifiers.NotifierError {
 	subject := "StackRox Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with StackRox.")
-	err := e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body)
-	return err
+	if err := e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body); err != nil {
+		return notifiers.NewNotifierError("send test email failed", err)
+	}
+
+	return nil
 }
 
 func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) error {

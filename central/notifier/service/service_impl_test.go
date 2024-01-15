@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/notifiers"
+	notifiersMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
@@ -19,7 +21,6 @@ import (
 )
 
 func TestNotifierService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierServiceTestSuite))
 }
 
@@ -40,7 +41,6 @@ func (s *notifierServiceTestSuite) SetupTest() {
 	s.processor = mocks.NewMockProcessor(s.ctrl)
 	s.reporter = reporterMocks.NewMockReporter(s.ctrl)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-
 }
 
 func (s *notifierServiceTestSuite) getSvc() Service {
@@ -119,4 +119,55 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	secrets.ScrubSecretsFromStructWithReplacement(updateBasic, secrets.ScrubReplacementStr)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateBasic)
 	s.NoError(err)
+}
+
+func (s *notifierServiceTestSuite) TestNotifierTestDoesNotExposeInternalErrors() {
+	errMsg := "test message"
+	baseErrMsg := "127.0.0.1"
+	reqNotifier := createNotifier()
+
+	// Update registry to create mocked notifier.
+	creator := notifiers.Registry[reqNotifier.Type]
+	notifiers.Add(reqNotifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
+		notifier.EXPECT().Test(s.ctx).Return(notifiers.NewNotifierError(errMsg, errors.New(baseErrMsg)))
+		notifier.EXPECT().Close(s.ctx).Return(nil)
+
+		return notifier, nil
+	})
+
+	_, err := s.getSvc().TestNotifier(s.ctx, reqNotifier)
+	s.Error(err)
+	s.Assert().Contains(err.Error(), errMsg)
+	s.Assert().NotContains(err.Error(), baseErrMsg)
+
+	notifiers.Add(reqNotifier.Type, creator)
+}
+
+func (s *notifierServiceTestSuite) TestNotifierTestUpdatedDoesNotExposeInternalErrors() {
+	errMsg := "test message"
+	baseErrMsg := "127.0.0.1"
+
+	reqUpdateNotifier := createUpdateNotifierRequest()
+	reqUpdateNotifier.UpdatePassword = true
+
+	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
+		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()
+
+	// Update registry to create mocked notifier.
+	creator := notifiers.Registry[reqUpdateNotifier.Notifier.Type]
+	notifiers.Add(reqUpdateNotifier.Notifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
+		notifier.EXPECT().Test(s.ctx).Return(notifiers.NewNotifierError(errMsg, errors.New(baseErrMsg)))
+		notifier.EXPECT().Close(s.ctx).Return(nil)
+
+		return notifier, nil
+	})
+
+	_, err := s.getSvc().TestUpdatedNotifier(s.ctx, reqUpdateNotifier)
+	s.Error(err)
+	s.Assert().Contains(err.Error(), errMsg)
+	s.Assert().NotContains(err.Error(), baseErrMsg)
+
+	notifiers.Add(reqUpdateNotifier.Notifier.Type, creator)
 }

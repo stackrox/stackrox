@@ -140,8 +140,8 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 	return c.Notifier
 }
 
-func (c *cscc) Test(context.Context) error {
-	return errors.New("Test is not yet implemented for Cloud SCC")
+func (c *cscc) Test(context.Context) *notifiers.NotifierError {
+	return notifiers.NewNotifierError("Test is not yet implemented for Cloud SCC", nil)
 }
 
 func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore) (*storage.Cluster, error) {

@@ -121,16 +121,22 @@ type testPayload struct {
 	TestMessage string `json:"testMessage"`
 }
 
-func (s *sumologic) Test(ctx context.Context) error {
+func (s *sumologic) Test(ctx context.Context) *notifiers.NotifierError {
 	payload := testPayload{
 		TestID:      "testalert",
 		TestMessage: "This is a test message created to test integration with StackRox.",
 	}
 	marshaledPayload, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return notifiers.NewNotifierError("create test alert failed", err)
 	}
-	return s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
+
+	err = s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
+	if err != nil {
+		return notifiers.NewNotifierError("send test alert failed", err)
+	}
+
+	return nil
 }
 
 func init() {

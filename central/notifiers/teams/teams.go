@@ -360,18 +360,18 @@ func (t *teams) ProtoNotifier() *storage.Notifier {
 	return t.Notifier
 }
 
-func (t *teams) Test(ctx context.Context) error {
+func (t *teams) Test(ctx context.Context) *notifiers.NotifierError {
 	n := notification{
 		Text: "This is a test message created to test teams integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
 	if err != nil {
-		return errors.New("Could not marshal test notification")
+		return notifiers.NewNotifierError("create test message failed", errors.New("Could not marshal test notification"))
 	}
 
 	webhook := urlfmt.FormatURL(t.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
-	return retry.WithRetry(
+	err = retry.WithRetry(
 		func() error {
 			return t.postMessage(ctx, webhook, jsonPayload)
 		},
@@ -379,6 +379,12 @@ func (t *teams) Test(ctx context.Context) error {
 		retry.Tries(3),
 		retry.BetweenAttempts(backOff),
 	)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
 func (t *teams) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
