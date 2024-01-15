@@ -15,7 +15,7 @@ import util.Env
 @Tag("PZ")
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
-    private static final String PARENT_NAME = "/bin/sh"
+    private static final String PARENT_NAME = "/bin/dash"
     private static final String PROCESS_NAME = "/bin/sleep"
     private static final String PROCESS_ARGS = "600"
     private static final String CONTAINER_NAME = "eventnginx"

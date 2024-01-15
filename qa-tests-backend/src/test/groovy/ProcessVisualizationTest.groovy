@@ -149,9 +149,9 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/local/tomcat/bin/catalina.sh",
          "/usr/bin/dirname"] as Set | STRUTSDEPLOYMENT
 
-        ["/bin/sh", "/bin/sleep"] as Set | CENTOSDEPLOYMENT
+        ["/usr/bin/bash", "/bin/sleep"] as Set | CENTOSDEPLOYMENT
 
-        ["/bin/sh", "/bin/sleep"] as Set | FEDORADEPLOYMENT
+        ["/usr/bin/bash", "/bin/sleep"] as Set | FEDORADEPLOYMENT
 
         ["/usr/bin/tr", "/usr/bin/egrep", "/usr/bin/grep",
          "/usr/bin/hostname",
