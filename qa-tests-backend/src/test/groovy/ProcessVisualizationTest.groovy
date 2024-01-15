@@ -146,16 +146,17 @@ class ProcessVisualizationTest extends BaseSpecification {
         ["/usr/sbin/nginx"] as Set | NGINXDEPLOYMENT
 
         ["/usr/bin/bash", "/usr/bin/uname",
-         "/usr/local/tomcat/bin/catalina.sh",
+         "/opt/java/openjdk/bin/java",
          "/usr/bin/dirname"] as Set | STRUTSDEPLOYMENT
 
-        ["/usr/bin/bash", "/bin/sleep"] as Set | CENTOSDEPLOYMENT
+        // sleep resolves to /usr/bin/coreutils on centos
+        ["/usr/bin/bash", "/usr/bin/coreutils"] as Set | CENTOSDEPLOYMENT
 
-        ["/usr/bin/bash", "/bin/sleep"] as Set | FEDORADEPLOYMENT
+        ["/usr/bin/bash", "/usr/bin/sleep"] as Set | FEDORADEPLOYMENT
 
-        ["/usr/bin/tr", "/usr/bin/egrep", "/usr/bin/grep",
+        ["/usr/bin/tr", "/usr/bin/grep",
          "/usr/bin/hostname",
-         "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig",
+         "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.232.b09-0.el7_7.x86_64/jre/bin/java", "/usr/sbin/ldconfig",
          "/usr/bin/cut",
          "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
 
@@ -164,13 +165,13 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/local/bin/gosu"] as Set | REDISDEPLOYMENT
         */
 
-        ["/usr/local/bin/docker-entrypoint.sh",
+        ["/bin/bash",
          "/usr/bin/id",
          "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
 
-        ["/test/bin/exec.sh", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
+        ["/usr/bin/bash", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
 
-        ["/qa/exec.sh", "/bin/sleep"] as Set | ROX4979DEPLOYMENT
+        ["/bin/busybox"] as Set | ROX4979DEPLOYMENT
     }
 
     @Tag("BAT")
@@ -238,8 +239,7 @@ class ProcessVisualizationTest extends BaseSpecification {
           "/usr/bin/sleep":[[0, 0]],
         ] | ROX4751DEPLOYMENT
 
-        [ "/qa/exec.sh":[[9001, 9000]],
-          "/bin/sleep":[[9001, 9000]],
+        [ "/bin/busybox":[[9001, 9000]]
         ] | ROX4979DEPLOYMENT
 
         /*
@@ -299,13 +299,13 @@ class ProcessVisualizationTest extends BaseSpecification {
         [["/usr/sbin/nginx", "-g daemon off;"]] | NGINXDEPLOYMENT
 
         [
-            ["/bin/sh", "-c /bin/sleep 600"],
-            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
+            ["/usr/bin/bash", "-c /bin/sleep 600"],
+            ["/usr/bin/coreutils", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
         ] | CENTOSDEPLOYMENT
 
         [
-            ["/bin/sleep", "600"],
-            ["/bin/sh", "-c /bin/sleep 600"],
+            ["/usr/bin/sleep", "600"],
+            ["/usr/bin/bash", "-c /bin/sleep 600"],
         ] | FEDORADEPLOYMENT
 
         // this is not a full selection of processes expected in the ELASTICDEPLOYMENT
@@ -316,11 +316,11 @@ class ProcessVisualizationTest extends BaseSpecification {
             ["/usr/bin/tr", "\\n  "],
             ["/usr/bin/grep", "project.name"],
             ["/usr/bin/cut", "-d. -f1"],
-            ["/usr/bin/egrep", "/usr/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/usr/bin/bash", "/usr/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
             ["/usr/bin/hostname", ""],
             ["/usr/bin/grep", "-E -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
             ["/usr/bin/grep", "^- /etc/elasticsearch/jvm.options"],
-            ["/sbin/ldconfig", "-p"],
+            ["/usr/sbin/ldconfig", "-p"],
         ] | ELASTICDEPLOYMENT
     }
 

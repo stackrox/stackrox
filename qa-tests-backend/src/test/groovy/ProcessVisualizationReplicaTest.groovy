@@ -103,10 +103,10 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
 
         expectedFilePaths | depName
 
-        ["/run.sh", "/usr/sbin/apache2",
+        ["/bin/bash", "/usr/sbin/apache2",
           "/bin/chown", "/usr/bin/tail"] as Set | APACHEDEPLOYMENT
 
-        ["/usr/local/bin/docker-entrypoint.sh",
+        ["/bin/bash",
          "/usr/bin/id",
          "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
    }
