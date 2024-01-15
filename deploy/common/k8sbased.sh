@@ -712,18 +712,14 @@ function launch_sensor {
     fi
 
     # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
-    if [[ "$CHAOS_PROXY" == "true" ]]; then
+    if [[ -n "${ROX_CHAOS_PROFILE}" ]]; then
         original_endpoint=$(kubectl -n stackrox get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
 
         echo "Patching sensor with toxiproxy container"
-        chaos_profile="none"
-        if [[ -n "${ROX_CHAOS_PROFILE}" ]]; then
-           chaos_profile="${ROX_CHAOS_PROFILE}"
-        fi
         kubectl -n stackrox patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
         kubectl -n stackrox set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" \
                                                   -e ROX_CENTRAL_ENDPOINT="localhost:8989" \
-                                                  -e ROX_CHAOS_PROFILE="$chaos_profile"
+                                                  -e ROX_CHAOS_PROFILE="$ROX_CHAOS_PROFILE"
     fi
 
     echo
