@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -80,11 +79,9 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorscans.GetPipeline(),
 		nodeinventory.GetPipeline(),
 		enhancements.GetPipeline(),
+		complianceoperatorinfo.GetPipeline(),
 	}
 
-	if features.ComplianceEnhancements.Enabled() {
-		pipelines = append(pipelines, complianceoperatorinfo.GetPipeline())
-	}
 	deduper := s.manager.GetDeduper(ctx, clusterID)
 	return NewClusterPipeline(clusterID, deduper, pipelines...), nil
 }
