@@ -26,8 +26,7 @@ var (
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
 
-	clusterCache   = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
-	namespaceCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchNamespacesFromDB)
+	clusterCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
 )
 
 const (
@@ -43,7 +42,7 @@ func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRol
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := fetchNamespaces(adminCtx)
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -377,12 +376,4 @@ func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
 
 func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
 	return clusterStore.Singleton().GetClusters(ctx)
-}
-
-func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	return namespaceCache.GetObjects(ctx)
-}
-
-func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	return namespaceStore.Singleton().GetAllNamespaces(ctx)
 }
