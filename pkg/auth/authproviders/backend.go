@@ -14,7 +14,7 @@ type AuthResponse struct {
 	Claims     *tokens.ExternalUserClaim
 	Expiration time.Time
 	ExtraOpts  []tokens.Option
-	IdPToken   string
+	IdpToken   string
 
 	RefreshTokenData
 }

@@ -237,7 +237,7 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
-		IdPToken:   claimsStr,
+		IdpToken:   claimsStr,
 	}, nil
 }
 
@@ -269,7 +269,7 @@ func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken strin
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
-		IdPToken:   rawUserInfo,
+		IdpToken:   rawUserInfo,
 	}, nil
 }
 
