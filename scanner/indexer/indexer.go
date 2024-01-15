@@ -98,13 +98,11 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 	}
 	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(
-			`{"repo2cpe_mapping_url": "%s","repo2cpe_mapping_file": "%s"}`, indexerCfg.RepositoryToCPEURL, "mappings/reposiroty-to-cpe.json"))),
-	}
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(` {"repo2cpe_mapping_url": "%s",
+  "repo2cpe_mapping_file": "/run/mappings/repository-to-cpe.json"}`, indexerCfg.RepositoryToCPEURL)))}
 	opts.ScannerConfig.Package = map[string]func(interface{}) error{
-		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(
-			`{"name2repos_mapping_url": "%s", "name2repos_mapping_file": "%s"}`, indexerCfg.NameToCPEURL, "mappings/container-name-repos-map.json"))),
-	}
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(` {"name2repos_mapping_url": "%s",
+  "name2repos_mapping_file": "/run/mappings/container-name-repos-map.json"}`, indexerCfg.NameToCPEURL)))}
 
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
