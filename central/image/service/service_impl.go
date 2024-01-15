@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -373,7 +374,9 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		Metadata:       request.GetMetadata(),
 		IsClusterLocal: request.GetIsClusterLocal(),
 	}
-	_, err = s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+
+	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
+	_, err = s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
@@ -508,23 +511,9 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	return internalScanRespFromImage(img), nil
 }
 
-// scannerV4MatchRequest will return true if the request is for matching vulnerabilities to
-// components produced by the Scanner V4 indexer, false otherwise.
-func scannerV4MatchRequest(request *v1.EnrichLocalImageInternalRequest) bool {
-	// If indexer version is NOT empty, then assume the components are from the
-	// Scanner V4 indexer.
-	return request.GetIndexerVersion() != ""
-}
-
 func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.EnrichLocalImageInternalRequest) error {
-	if !scannerV4MatchRequest(request) {
-		log.Debugf("Matching vulns for Clairify index report for image %q", img.GetName().GetFullName())
-		_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
-		return err
-	}
-
-	log.Debugf("Matching vulns for Scanner V4 index report (ver: %s) for image %q", request.GetIndexerVersion(), img.GetName().GetFullName())
-	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetV4Contents(), request.GetNotes())
+	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	return err
 }
 
