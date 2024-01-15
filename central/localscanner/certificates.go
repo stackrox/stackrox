@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // secretDataMap represents data stored as part of a secret.
@@ -75,7 +76,15 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	if serviceType != storage.ServiceType_SCANNER_SERVICE && serviceType != storage.ServiceType_SCANNER_DB_SERVICE {
+	supportedServices := set.NewFrozenSet(
+		storage.ServiceType_SCANNER_SERVICE,
+		storage.ServiceType_SCANNER_DB_SERVICE,
+		storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
+		storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
+		storage.ServiceType_SCANNER_V4_DB_SERVICE,
+	)
+
+	if !supportedServices.Contains(serviceType) {
 		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
 			serviceType)
 	}
