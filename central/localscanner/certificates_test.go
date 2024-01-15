@@ -8,6 +8,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stretchr/testify/suite"
@@ -85,6 +86,12 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 			[]string{"scanner.stackrox", "scanner.stackrox.svc", "scanner.namespace", "scanner.namespace.svc"}},
 		{storage.ServiceType_SCANNER_DB_SERVICE, "SCANNER_DB_SERVICE",
 			[]string{"scanner-db.stackrox", "scanner-db.stackrox.svc", "scanner-db.namespace", "scanner-db.namespace.svc"}},
+		{storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, "SCANNER_V4_INDEXER_SERVICE",
+			[]string{"scanner-v4-indexer.stackrox", "scanner-v4-indexer.stackrox.svc", "scanner-v4-indexer.namespace", "scanner-v4-indexer.namespace.svc"}},
+		{storage.ServiceType_SCANNER_V4_MATCHER_SERVICE, "SCANNER_V4_MATCHER_SERVICE",
+			[]string{"scanner-v4-matcher.stackrox", "scanner-v4-matcher.stackrox.svc", "scanner-v4-matcher.namespace", "scanner-v4-matcher.namespace.svc"}},
+		{storage.ServiceType_SCANNER_V4_DB_SERVICE, "SCANNER_V4_DB_SERVICE",
+			[]string{"scanner-v4-db.stackrox", "scanner-v4-db.stackrox.svc", "scanner-v4-db.namespace", "scanner-v4-db.namespace.svc"}},
 	}
 
 	for _, tc := range testCases {
@@ -109,6 +116,18 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
+	scannerServiceTypes := []storage.ServiceType{
+		storage.ServiceType_SCANNER_SERVICE,
+		storage.ServiceType_SCANNER_DB_SERVICE,
+	}
+	if features.ScannerV4Support.Enabled() {
+		scannerServiceTypes = append(
+			scannerServiceTypes,
+			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE,
+			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE,
+			storage.ServiceType_SCANNER_V4_DB_SERVICE,
+		)
+	}
 	testCases := map[string]struct {
 		namespace  string
 		clusterID  string
@@ -129,8 +148,7 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 			s.Require().NotNil(certs.GetCaPem())
 			s.Require().NotEmpty(certs.GetServiceCerts())
 			for _, cert := range certs.ServiceCerts {
-				s.Contains([]storage.ServiceType{storage.ServiceType_SCANNER_SERVICE,
-					storage.ServiceType_SCANNER_DB_SERVICE}, cert.GetServiceType())
+				s.Contains(scannerServiceTypes, cert.GetServiceType())
 				s.NotEmpty(cert.GetCert().GetCertPem())
 				s.NotEmpty(cert.GetCert().GetKeyPem())
 			}
