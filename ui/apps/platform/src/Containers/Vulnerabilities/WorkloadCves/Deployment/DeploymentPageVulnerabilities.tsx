@@ -87,8 +87,8 @@ export const deploymentVulnerabilitiesQuery = gql`
 const defaultSortFields = ['CVE'];
 
 const searchOptions: SearchOption[] = [
-    IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
