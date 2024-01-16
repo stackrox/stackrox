@@ -501,8 +501,8 @@ func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updater
 	case mappingUpdaterKey:
 		f, err = h.openMostRecentFile(mappingUpdaterKey, fileName)
 	default:
-		errMsg := fmt.Sprintf("Failed to get updater: %s", updaterKey)
-		log.Errorf(errMsg)
+		errMsg := fmt.Sprintf("internal error: invalid updater key: %s", updaterKey)
+		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
