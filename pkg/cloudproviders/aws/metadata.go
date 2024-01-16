@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -26,6 +27,7 @@ const (
 	timeout             = 5 * time.Second
 	eksClusterNameLabel = "alpha.eksctl.io/cluster-name"
 	eksClusterNameTag   = "eks:cluster-name"
+	instanceTagsPath    = "/tags/instance"
 )
 
 var (
@@ -145,15 +147,15 @@ func getClusterMetadata(ctx context.Context,
 	}
 	k8sClient := k8sutil.MustCreateK8sClient(config)
 	clusterName, err = getClusterNameFromNodeLabels(ctx, k8sClient)
-	if err == nil {
-		return clusterMetadataFromName(clusterName, doc)
+	if err != nil {
+		log.Errorf("Failed to get EKS cluster metadata from node labels: %v", err)
+		return nil
 	}
-	log.Errorf("Failed to get EKS cluster metadata from node labels: %v", err)
-	return nil
+	return clusterMetadataFromName(clusterName, doc)
 }
 
 func getClusterNameFromInstanceTags(ctx context.Context, client *ec2metadata.EC2Metadata) (string, error) {
-	clusterName, err := client.GetMetadataWithContext(ctx, fmt.Sprintf("/tags/instance/%s", eksClusterNameTag))
+	clusterName, err := client.GetMetadataWithContext(ctx, path.Join(instanceTagsPath, eksClusterNameTag))
 	if err != nil {
 		return "", errors.Wrap(err, "getting cluster name tag")
 	}
