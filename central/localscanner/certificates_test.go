@@ -70,7 +70,7 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 			s.Require().NoError(err)
 			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
 			s.Require().NoError(err)
-			s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""))
+			s.NoError(certgen.VerifyServiceCertAndKey(certMap, "", validatingCA, serviceType))
 		})
 	}
 }
