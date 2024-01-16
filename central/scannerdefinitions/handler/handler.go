@@ -423,11 +423,10 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 		if err != nil {
 			return nil, err
 		}
-		if targetFile != nil {
-			onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
-		} else {
+		if targetFile == nil {
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
+		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
 	default:
 		return nil, fmt.Errorf("internal error: updater key: %s", updaterKey)
 	}
