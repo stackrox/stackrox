@@ -52,7 +52,7 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	assert.Greater(t, len(profile.Rules), 0, "failed to verify ocp4-cis profile contains any rules")
 }
 
-func TestComplianceCreateGetScanConfigurations(t *testing.T) {
+func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	ctx := context.Background()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
@@ -105,6 +105,7 @@ func TestComplianceCreateGetScanConfigurations(t *testing.T) {
 		if err != nil {
 			return err
 		}
+
 		resultsList := results.GetScanResults()
 		for i := 0; i < len(resultsList); i++ {
 			if resultsList[i].GetScanName() == testName {
@@ -118,10 +119,11 @@ func TestComplianceCreateGetScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDeleteComplianceScanConfigurations(t *testing.T) {
+func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 	ctx := context.Background()
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v2.NewComplianceScanConfigurationServiceClient(conn)
+	// Retrieve the results from the scan configuration once the scan is complete
 	serviceCluster := v1.NewClustersServiceClient(conn)
 	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
 	assert.NoError(t, err)
@@ -163,6 +165,7 @@ func TestDeleteComplianceScanConfigurations(t *testing.T) {
 	_, err = service.DeleteComplianceScanConfiguration(ctx, reqDelete)
 	assert.NoError(t, err)
 
+	// Verify scan configuration no longer exists
 	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
 	configs = scanConfigs.GetConfigurations()
 	scanconfigID = getscanConfigID(testName, configs)
