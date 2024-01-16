@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
@@ -25,12 +26,13 @@ var (
 	}
 )
 
-func NewErrHandler(treatWarningsAsErrors bool) *ErrHandler {
-	return &ErrHandler{treatWarningsAsErrors: treatWarningsAsErrors}
+func NewErrHandler(treatWarningsAsErrors bool, logger logger.Logger) *ErrHandler {
+	return &ErrHandler{treatWarningsAsErrors: treatWarningsAsErrors, logger: logger}
 }
 
 type ErrHandler struct {
 	treatWarningsAsErrors bool
+	logger                logger.Logger
 }
 
 func (e *ErrHandler) HandleError(err error) error {
@@ -40,24 +42,20 @@ func (e *ErrHandler) HandleError(err error) error {
 func (e *ErrHandler) HandleErrorPair(err1, err2 error) error {
 	w1, e1 := e.mapErrorsWarnings(err1)
 	w2, e2 := e.mapErrorsWarnings(err2)
-	if err := e.handleErrorsWarnings(w1, e1); err != nil {
-		return err
-	}
-	if err := e.handleErrorsWarnings(w2, e2); err != nil {
-		return err
-	}
-	if e1 == nil && e2 == nil && len(w1)+len(w2) > 0 && e.treatWarningsAsErrors {
-		return npg.ErrErrors
-	}
-	return nil
+	return e.handleErrorsWarnings(append(w1, w2...), goerrors.Join(e1, e2))
 }
 
 func (e *ErrHandler) handleErrorsWarnings(warnings []error, err error) error {
-	if err == nil && (len(warnings) == 0 || !e.treatWarningsAsErrors) {
+	if err == nil && (len(warnings) == 0) {
+		return nil
+	}
+	if err == nil && !e.treatWarningsAsErrors {
+		resErr := goerrors.Join(npg.ErrWarnings, goerrors.Join(warnings...))
+		e.logger.WarnfLn("%s", resErr.Error())
 		return nil
 	}
 	markerErr := npg.ErrErrors
-	if e.treatWarningsAsErrors {
+	if err == nil {
 		markerErr = npg.ErrWarnings
 	}
 	return goerrors.Join(markerErr, goerrors.Join(err, goerrors.Join(warnings...)))
