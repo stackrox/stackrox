@@ -3,13 +3,14 @@ package handler
 import (
 	"archive/zip"
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -49,7 +50,9 @@ const (
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	cvssFile          = "nvd-bundle/nvd-data.tar.gz"
 	mappingUpdaterKey = "mapping"
+	cvssUpdaterKey    = "cvss"
 )
 
 var (
@@ -119,11 +122,16 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
-	if fileType := r.URL.Query().Get("type"); fileType != "" {
+	if fileType := r.URL.Query().Get("file"); fileType != "" {
 		if v4FileName, exists := v4FileMapping[fileType]; exists {
-			h.getMappingFile(w, r, v4FileName)
+			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
 			return
 		}
+		if fileType == "cvss" {
+			h.getV4Files(w, r, cvssUpdaterKey, "")
+			return
+		}
+		writeErrorNotFound(w)
 	}
 
 	// Open the most recent definitions file for the provided `uuid`.
@@ -189,17 +197,23 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 
 	updater, exists := h.updaters[key]
 	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, key+".zip")
-		var url string
+		filePath := filepath.Join(h.onlineVulnDir, key)
 
-		if key == mappingUpdaterKey {
-			url = strings.Join([]string{v4StorageDomain, mappingFile}, "/")
-		} else { // if it's uuid
-			url = strings.Join([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix}, "/")
+		var urlStr string
+		switch key {
+		case mappingUpdaterKey:
+			urlStr, _ = url.JoinPath(v4StorageDomain, mappingFile)
+			filePath += ".zip"
+		case cvssUpdaterKey:
+			urlStr, _ = url.JoinPath(v4StorageDomain, cvssFile)
+			filePath += ".tar.gz"
+		default: // uuid
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
+			filePath += ".zip"
 		}
 
 		h.updaters[key] = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, url, h.interval),
+			updater: newUpdater(file.New(filePath), client, urlStr, h.interval),
 		}
 		updater = h.updaters[key]
 	}
@@ -381,31 +395,42 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
-func (h *httpHandler) openMostRecentMappings(fileName string) (file *vulDefFile, err error) {
+func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
-	log.Info("Getting v4 repository mapping data updater")
-	u := h.getUpdater(mappingUpdaterKey)
-
+	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
+	u := h.getUpdater(updaterKey)
 	var onlineFile *vulDefFile
-	onlineZipFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
-	if err != nil || onlineZipFile == nil {
-		return
+	// Ensure the updater is running.
+	u.Start()
+	openedFile, onlineTime, err := u.file.Open()
+	if err != nil {
+		return nil, err
 	}
-	log.Infof("Compressed repository mapping file is available: %s", onlineZipFile.Name())
+	if openedFile == nil {
+		return nil, errors.New("updater file was not found")
+	}
+	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
 			utils.IgnoreError(f.Close)
 		}
 	}
-	targetFile, err := openFromArchive(onlineZipFile.Name(), fileName)
-	if err != nil {
-		return nil, err
-	}
-	if targetFile != nil {
+	switch updaterKey {
+	case cvssUpdaterKey:
+		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
+	case mappingUpdaterKey:
+		targetFile, err := openFromArchive(openedFile.Name(), fileName)
+		if err != nil {
+			return nil, err
+		}
+		if targetFile == nil {
+			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
+		}
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
+	default:
+		return nil, fmt.Errorf("internal error: updater key: %s", updaterKey)
 	}
 	defer toClose(onlineFile)
-
 	file = onlineFile
 	return file, nil
 }
@@ -463,22 +488,35 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 	return tmpFile, nil
 }
 
-func (h *httpHandler) getMappingFile(w http.ResponseWriter, r *http.Request, fileName string) {
+func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updaterKey, fileName string) {
 	log.Infof("Fetching repository mapping file: %s", fileName)
-	f, err := h.openMostRecentMappings(fileName)
-	if err != nil {
-		log.Errorf("Failed to find JSON file: %v", err)
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read repository mapping file %s: %v", fileName, err)
+
+	var err error
+	var f *vulDefFile
+
+	switch updaterKey {
+	case cvssUpdaterKey:
+		f, err = h.openMostRecentFile(cvssUpdaterKey, "")
+	case mappingUpdaterKey:
+		f, err = h.openMostRecentFile(mappingUpdaterKey, fileName)
+	default:
+		errMsg := fmt.Sprintf("internal error: invalid updater key: %s", updaterKey)
+		log.Error(errMsg)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
+
+	if err != nil {
+		errMsg := fmt.Sprintf("could not read file: %v", err)
+		log.Error(errMsg)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		return
+	}
+
 	http.ServeContent(w, r, f.Name(), f.modTime, f)
 }
 
 func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, time.Time, error) {
-	if u == nil {
-		return nil, time.Time{}, errors.New("Fail to initialize updater")
-	}
-	log.Info("Initializing updater")
 	u.Start()
 	osFile, modTime, err := u.file.Open()
 	if err != nil {
