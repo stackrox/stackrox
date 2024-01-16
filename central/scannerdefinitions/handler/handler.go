@@ -7,10 +7,10 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -198,25 +198,22 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 	updater, exists := h.updaters[key]
 	if !exists {
 		filePath := filepath.Join(h.onlineVulnDir, key)
-		buildURL := func(values []string) string {
-			return strings.Join(values, "/")
-		}
 
-		var url string
+		var urlStr string
 		switch key {
 		case mappingUpdaterKey:
-			url = buildURL([]string{v4StorageDomain, mappingFile})
+			urlStr, _ = url.JoinPath(v4StorageDomain, mappingFile)
 			filePath += ".zip"
 		case cvssUpdaterKey:
-			url = buildURL([]string{v4StorageDomain, cvssFile})
+			urlStr, _ = url.JoinPath(v4StorageDomain, cvssFile)
 			filePath += ".tar.gz"
 		default: // uuid
-			url = buildURL([]string{scannerUpdateDomain, key, scannerUpdateURLSuffix})
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
 			filePath += ".zip"
 		}
 
 		h.updaters[key] = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, url, h.interval),
+			updater: newUpdater(file.New(filePath), client, urlStr, h.interval),
 		}
 		updater = h.updaters[key]
 	}
