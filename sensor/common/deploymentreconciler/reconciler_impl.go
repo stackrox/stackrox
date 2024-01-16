@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -25,6 +26,7 @@ type deploymentReconcilerImpl struct {
 func (d *deploymentReconcilerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventSyncFinished:
+		log.Infof("Sync finished")
 		d.sendDeleteEvents()
 	}
 }
@@ -55,7 +57,25 @@ func (d *deploymentReconcilerImpl) sendDeleteEvents() {
 
 	log.Infof("Sending %d deleting events", len(d.deployments))
 	for _, deployment := range d.deployments {
-		log.Infof("Sending delete event for deployment %S:%S", deployment.GetId(), deployment.GetName())
+		if features.SensorSendCreate.Enabled() {
+			log.Infof("Sending create event for deployment %s:%s", deployment.GetId(), deployment.GetName())
+			select {
+			case <-d.stopper.Flow().StopRequested():
+				return
+			case d.toCentral <- message.New(&central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id:     deployment.GetId(),
+						Action: central.ResourceAction_CREATE_RESOURCE,
+						Resource: &central.SensorEvent_Deployment{
+							Deployment: deployment,
+						},
+					},
+				},
+			}):
+			}
+		}
+		log.Infof("Sending delete event for deployment %s:%s", deployment.GetId(), deployment.GetName())
 		select {
 		case <-d.stopper.Flow().StopRequested():
 			return
@@ -85,6 +105,7 @@ func (d *deploymentReconcilerImpl) OnDeploymentRemove(deployment *storage.Deploy
 		d.lock.Lock()
 		defer d.lock.Unlock()
 
+		log.Infof("Callback removing deployment %s:%s", deployment.GetId(), deployment.GetName())
 		delete(d.deployments, deployment.GetId())
 	}
 }

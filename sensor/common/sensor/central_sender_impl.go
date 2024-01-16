@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -116,7 +117,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			if msg.OnSent != nil {
+			if features.SensorOnSentCallback.Enabled() && msg.OnSent != nil {
 				msg.OnSent()
 			}
 		}

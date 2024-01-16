@@ -94,6 +94,10 @@ var (
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", false)
 
+	SensorOnSentCallback = registerFeature("on sent callback", "ROX_CALLBACK", false)
+
+	SensorSendCreate = registerFeature("send create event for intermediate events", "ROX_SEND_CREATE", false)
+
 	// ScannerV4Support enables various capabilities associated with ACS + Clair consolidated scanner.
 	ScannerV4Support = registerUnchangeableFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4_SUPPORT", true)
 
