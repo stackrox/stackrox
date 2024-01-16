@@ -78,7 +78,7 @@ func fetchImages() []string {
 		return tags
 	}
 
-	images := make([]string, 0, 2200)
+	images := make([]string, 0, 2500)
 	for i := 0; i < 25; i++ {
 		repos := fetchRepos(i)
 		for _, repo := range repos {
