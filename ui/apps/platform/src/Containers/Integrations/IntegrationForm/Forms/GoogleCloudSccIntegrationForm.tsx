@@ -44,10 +44,10 @@ export const validationSchema = yup.object().shape({
                     is: false,
                     then: (serviceAccountSchema) =>
                         serviceAccountSchema
-                            .required('A service account is required')
+                            .required('A service account key is required')
                             .test(
                                 'isValidJson',
-                                'Service account must be valid JSON',
+                                'Service account key must be valid JSON',
                                 (value, context: yup.TestContext) => {
                                     const isRequired =
                                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -223,7 +223,7 @@ function GoogleCloudSccIntegrationForm({
                     )}
                     {!values.notifier.cscc.wifEnabled && (
                         <FormLabelGroup
-                            label="Service Account Key (JSON)"
+                            label="Service account key (JSON)"
                             isRequired={values.updatePassword}
                             fieldId="notifier.cscc.serviceAccount"
                             touched={touched}
