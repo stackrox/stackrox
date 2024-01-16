@@ -109,13 +109,15 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	return c
 }
 
-func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
+func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
 	b := resource.NewLocalBuilder().
 		Unstructured().
 		FilenameParam(false,
 			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
 		Flatten()
-	if !failFast {
+	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
+	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
+	if !(failFast && treatWarningsAsErrors) {
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
@@ -123,8 +125,8 @@ func getInfoObj(path string, failFast bool) ([]*resource.Info, error) {
 }
 
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
-	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError)
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
+	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	if err := errHandler.HandleError(err); err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err

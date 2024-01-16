@@ -53,11 +53,11 @@ teardown() {
 
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
   assert_failure
-  assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'No connections diff'
-  assert_line --index 2 --partial 'at dir1: no relevant Kubernetes workload resources found'
-  assert_line --index 3 --partial 'at dir1: no relevant Kubernetes network policy resources found'
-  assert_line --index 4 --partial 'there were errors during execution'
+  assert_line --partial 'YAML document is malformed'
+  assert_line --partial 'No connections diff'
+  assert_line --partial 'at dir1: no relevant Kubernetes workload resources found'
+  assert_line --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_line --partial 'there were errors during execution'
 }
 
 @test "roxctl-development netpol connectivity diff analyses dir1 and dir2 when run without --fail" {
@@ -67,13 +67,14 @@ teardown() {
 
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null
   assert_failure
-  assert_line --index 0 --partial 'This is a Technology Preview feature'
-  assert_line --index 1 --partial 'No connections diff'
-  assert_line --index 2 --partial 'at dir1: no relevant Kubernetes workload resources found'
-  assert_line --index 3 --partial 'at dir1: no relevant Kubernetes network policy resources found'
-  assert_line --index 4 --partial 'at dir2: no relevant Kubernetes workload resources found'
-  assert_line --index 5 --partial 'at dir2: no relevant Kubernetes network policy resources found'
-  assert_line --index 6 --partial 'there were errors during execution'
+  assert_line --partial 'there were warnings during execution'
+  assert_line --partial 'YAML document is malformed'
+  assert_line --partial 'at dir1: no relevant Kubernetes workload resources found'
+  assert_line --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_line --partial 'at dir2: no relevant Kubernetes workload resources found'
+  assert_line --partial 'at dir2: no relevant Kubernetes network policy resources found'
+  assert_line --partial 'there were errors during execution'
+  assert_line --partial 'No connections diff'
 }
 
 @test "roxctl-development netpol connectivity diff produces no output when all yamls are templated" {
@@ -83,14 +84,17 @@ teardown() {
   echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/"
   assert_failure
-  assert_line --index 1 --partial 'No connections diff'
-  assert_output --partial 'no relevant Kubernetes workload resources found'
-  assert_output --partial 'no relevant Kubernetes network policy resources found'
-  assert_output --partial 'there were errors during execution'
+  assert_line --partial 'there were warnings during execution'
+  assert_line --partial 'YAML document is malformed'
+  assert_line --partial 'at dir1: no relevant Kubernetes workload resources found'
+  assert_line --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_line --partial 'at dir2: no relevant Kubernetes workload resources found'
+  assert_line --partial 'at dir2: no relevant Kubernetes network policy resources found'
+  assert_line --partial 'there were errors during execution'
+  assert_line --partial 'No connections diff'
 }
 
-@test "roxctl-development netpol connectivity diff produces errors when some yamls are templated" {
-  skip "TODO: ROX-20271"
+@test "roxctl-development netpol connectivity diff produces warnings when some yamls are templated" {
   mkdir -p "$out_dir"
   write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
 
@@ -101,9 +105,11 @@ teardown() {
 
   echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
   run roxctl-development netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
-  assert_failure
+  assert_success
   assert_output --partial 'YAML document is malformed'
-  refute_output --partial 'no relevant Kubernetes resources found'
+  assert_output --partial 'there were warnings during execution'
+  assert_output --partial 'No connections diff'
+  assert_output --partial 'no relevant Kubernetes network policy resources found'
 }
 
 @test "roxctl-development netpol connectivity diff produces errors when all yamls are not K8s resources" {
@@ -129,8 +135,10 @@ teardown() {
   # without strict it ignores the invalid yaml and continue
   run roxctl-development netpol connectivity diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null
   assert_success
-  assert_line --regexp '^WARN:(.+)at dir1: no relevant Kubernetes network policy resources found$'
-  assert_output --partial 'Yaml document is not a K8s resource'
+  #assert_line --regexp '^WARN:(.+)at dir1: no relevant Kubernetes network policy resources found$'
+  assert_output --partial 'at dir1: no relevant Kubernetes network policy resources found'
+  assert_output --partial 'YAML document does not represent a K8s resource'
+  assert_output --partial 'there were warnings during execution'
   refute_output --partial 'there were errors during execution'
 }
 
@@ -143,7 +151,7 @@ teardown() {
   run roxctl-development netpol connectivity diff --dir1="${dir1}" --dir2="${dir1}" --remove --output-file=/dev/null --strict
   assert_failure
   assert_output --partial 'WARN:'
-  assert_output --partial 'Yaml document is not a K8s resource'
+  assert_output --partial 'YAML document does not represent a K8s resource'
   assert_output --partial 'ERROR:'
   assert_output --partial 'there were warnings during execution'
 }
