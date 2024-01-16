@@ -12,7 +12,7 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Alert, Text } from '@patternfly/react-core';
+import { Text } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
@@ -39,6 +39,7 @@ import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const cveListQuery = gql`
     query getImageCVEList(
@@ -292,16 +293,7 @@ function CVEsTable({
                                 <Td />
                                 <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
-                                        {summary ? (
-                                            <Text>{summary}</Text>
-                                        ) : (
-                                            <Alert
-                                                isInline
-                                                variant="warning"
-                                                title="Partial CVE data"
-                                                aria-label="Partial CVE data"
-                                            />
-                                        )}
+                                        {summary ? <Text>{summary}</Text> : <PartialCVEDataAlert />}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

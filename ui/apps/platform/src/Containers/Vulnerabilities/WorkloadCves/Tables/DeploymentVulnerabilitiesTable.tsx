@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Alert } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -30,6 +29,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import DateDistanceTd from '../components/DatePhraseTd';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -229,12 +229,7 @@ function DeploymentVulnerabilitiesTable({
                                             />
                                         </>
                                     ) : (
-                                        <Alert
-                                            isInline
-                                            variant="warning"
-                                            title="Partial CVE data"
-                                            aria-label="Partial CVE data"
-                                        />
+                                        <PartialCVEDataAlert />
                                     )}
                                 </ExpandableRowContent>
                             </Td>

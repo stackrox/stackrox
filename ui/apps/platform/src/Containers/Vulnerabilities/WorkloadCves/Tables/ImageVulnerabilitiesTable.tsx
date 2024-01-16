@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Alert } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -39,6 +38,7 @@ import CVESelectionTd from '../components/CVESelectionTd';
 import TooltipTh from '../components/TooltipTh';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -228,12 +228,7 @@ function ImageVulnerabilitiesTable({
                                                 />
                                             </>
                                         ) : (
-                                            <Alert
-                                                isInline
-                                                variant="warning"
-                                                title="Partial CVE data"
-                                                aria-label="Partial CVE data"
-                                            />
+                                            <PartialCVEDataAlert />
                                         )}
                                     </ExpandableRowContent>
                                 </Td>
