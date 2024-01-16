@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/npg"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 var (
@@ -26,56 +26,74 @@ var (
 	}
 )
 
-func NewErrHandler(treatWarningsAsErrors bool, logger logger.Logger) *ErrHandler {
-	return &ErrHandler{treatWarningsAsErrors: treatWarningsAsErrors, logger: logger}
-}
-
-type ErrHandler struct {
+type ErrorHandler struct {
+	displayWarn           error
 	treatWarningsAsErrors bool
-	logger                logger.Logger
 }
 
-func (e *ErrHandler) HandleError(err error) error {
-	return e.handleErrorsWarnings(e.mapErrorsWarnings(err))
-}
-
-func (e *ErrHandler) HandleErrorPair(err1, err2 error) error {
-	w1, e1 := e.mapErrorsWarnings(err1)
-	w2, e2 := e.mapErrorsWarnings(err2)
-	return e.handleErrorsWarnings(append(w1, w2...), goerrors.Join(e1, e2))
-}
-
-func (e *ErrHandler) handleErrorsWarnings(warnings []error, err error) error {
-	if err == nil && (len(warnings) == 0) {
-		return nil
+func NewErrHandler(treatWarningsAsErrors bool) *ErrorHandler {
+	return &ErrorHandler{
+		displayWarn:           nil,
+		treatWarningsAsErrors: treatWarningsAsErrors,
 	}
-	if err == nil && !e.treatWarningsAsErrors {
-		resErr := goerrors.Join(npg.ErrWarnings, goerrors.Join(warnings...))
-		e.logger.WarnfLn("%s", resErr.Error())
-		return nil
-	}
-	markerErr := npg.ErrErrors
-	if err == nil {
-		markerErr = npg.ErrWarnings
-	}
-	return goerrors.Join(markerErr, goerrors.Join(err, goerrors.Join(warnings...)))
 }
 
-func (e *ErrHandler) mapErrorsWarnings(err error) ([]error, error) {
-	if err == nil {
+func (e *ErrorHandler) Warnings() error {
+	return e.displayWarn
+}
+
+func (e *ErrorHandler) HandleError(err1 error) error {
+	warn, err := e.handleErrorsWarnings(mapErrorsWarnings(disaggregate(err1)...))
+	e.displayWarn = warn
+	return err
+}
+
+func (e *ErrorHandler) HandleErrorPair(err1, err2 error) error {
+	e.displayWarn = nil
+	war1, e1 := mapErrorsWarnings(disaggregate(err1)...)
+	war2, e2 := mapErrorsWarnings(disaggregate(err2)...)
+
+	var err error
+	e.displayWarn, err = e.handleErrorsWarnings(append(war1, war2...), append(e1, e2...))
+	return err
+}
+
+func (e *ErrorHandler) handleErrorsWarnings(warnings []error, errors []error) (error, error) {
+	if len(errors)+len(warnings) == 0 {
 		return nil, nil
 	}
-	warnings := make([]error, 0)
-	for s, mappedWarning := range warningsMapping {
-		if match, _ := regexp.Match(s, []byte(err.Error())); match {
-			warnings = append(warnings, goerrors.Join(err, mappedWarning))
+	markerErr := npg.ErrErrors
+	if len(errors) == 0 {
+		if !e.treatWarningsAsErrors {
+			return goerrors.Join(npg.ErrWarnings, goerrors.Join(warnings...)), nil
 		}
+		markerErr = npg.ErrWarnings
 	}
+	return nil, goerrors.Join(markerErr, goerrors.Join(append(errors, warnings...)...))
+}
 
-	for s, mappedError := range errorsMapping {
-		if match, _ := regexp.Match(s, []byte(err.Error())); match {
-			return warnings, goerrors.Join(err, mappedError)
+func mapErrorsWarnings(inErrs ...error) (warnings []error, outErrs []error) {
+	for _, err := range inErrs {
+		if err == nil {
+			continue
+		}
+		for s, mappedWarning := range warningsMapping {
+			if match, _ := regexp.Match(s, []byte(err.Error())); match {
+				warnings = append(warnings, goerrors.Join(err, mappedWarning))
+			}
+		}
+		for s, mappedError := range errorsMapping {
+			if match, _ := regexp.Match(s, []byte(err.Error())); match {
+				outErrs = append(outErrs, goerrors.Join(err, mappedError))
+			}
 		}
 	}
-	return warnings, nil
+	return warnings, outErrs
+}
+
+func disaggregate(err error) []error {
+	if aggr, ok := err.(utilerrors.Aggregate); ok {
+		return aggr.Errors()
+	}
+	return []error{err}
 }
