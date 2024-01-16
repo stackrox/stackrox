@@ -13,13 +13,12 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-var serviceTypes = func() set.FrozenSet[storage.ServiceType] {
-	types := set.NewSet(
-		storage.ServiceType_SCANNER_SERVICE,
-		storage.ServiceType_SCANNER_DB_SERVICE,
-	)
-	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
-		types.AddAll(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
+var v2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
+var v4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
+var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
+	types := v2ServiceTypes.Unfreeze()
+	if features.ScannerV4Support.Enabled() {
+		types = types.Union(v4ServiceTypes.Unfreeze())
 	}
 	return types.Freeze()
 }()
@@ -30,10 +29,17 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
 	}
 
-	serviceCerts := make([]*storage.TypedServiceCertificate, 0, serviceTypes.Cardinality())
 	var certIssueError error
 	var caPem []byte
 
+	// In any case, generate certificates for Scanner v2.
+	serviceTypes := v2ServiceTypes
+	if features.ScannerV4.Enabled() {
+		// Additionally, generate certificates for Scanner v4.
+		serviceTypes = allSupportedServiceTypes
+	}
+
+	serviceCerts := make([]*storage.TypedServiceCertificate, 0, serviceTypes.Cardinality())
 	for _, serviceType := range serviceTypes.AsSlice() {
 		ca, cert, err := localScannerCertificatesFor(serviceType, namespace, clusterID)
 		if err != nil {
@@ -74,7 +80,7 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 }
 
 func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	if !serviceTypes.Contains(serviceType) {
+	if !allSupportedServiceTypes.Contains(serviceType) {
 		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
 			serviceType)
 	}
