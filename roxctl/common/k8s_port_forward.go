@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -34,6 +33,8 @@ var (
 
 	errPortForwarding = errox.ServerError.New("port-forwarding error")
 )
+
+const reasonableTimeout = 10 * time.Second
 
 // setKubernetesDefaults sets default values on the provided client config for
 // accessing the Kubernetes API or returns an error if any of the defaults are
@@ -62,34 +63,48 @@ func sortByPhase(pods []*corev1.Pod) sort.Interface {
 	return sort.Reverse(podutils.ActivePods(pods))
 }
 
-func getCentralServiceSelectors(coreClient coreclient.ServicesGetter, namespace string) (string, error) {
+func getCentralServiceSelectors(ctx context.Context, coreClient coreclient.ServicesGetter, namespace string) (string, error) {
 	svc, err := coreClient.Services(namespace).
-		Get(context.TODO(), "central", metav1.GetOptions{})
+		Get(ctx, "central", metav1.GetOptions{})
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to get central service")
 	}
-	selectors := []string{}
-	for k, v := range svc.Spec.Selector {
-		selectors = append(selectors, k+"="+v)
+	_, sel, err := polymorphichelpers.SelectorsForObject(svc)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to get central pod selectors")
 	}
-	return strings.Join(selectors, ","), nil
+	return sel.String(), nil
 }
 
-//nolint:wrapcheck
-func getCentralPod(coreClient coreclient.CoreV1Interface, namespace string) (*corev1.Pod, error) {
-	selectors, err := getCentralServiceSelectors(coreClient, namespace)
+func getCentralPod(ctx context.Context, coreClient coreclient.CoreV1Interface, namespace string) (*corev1.Pod, error) {
+	selectors, err := getCentralServiceSelectors(ctx, coreClient, namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	forwardablePod, _, err := polymorphichelpers.GetFirstPod(coreClient,
-		namespace, selectors, 10*time.Second, sortByPhase)
+		namespace, selectors, reasonableTimeout, sortByPhase)
 	if err != nil {
-		return nil, err
+		return nil, err //nolint:wrapcheck
 	}
 
-	return coreClient.Pods(namespace).
-		Get(context.TODO(), forwardablePod.GetName(), metav1.GetOptions{})
+	return coreClient.Pods(namespace). //nolint:wrapcheck
+						Get(ctx, forwardablePod.GetName(), metav1.GetOptions{})
+}
+
+func getCentralAPIPort(pod *corev1.Pod) int32 {
+	if pod != nil {
+		for _, container := range pod.Spec.Containers {
+			if container.Name == "central" {
+				for _, p := range container.Ports {
+					if p.Name == "api" {
+						return p.ContainerPort
+					}
+				}
+			}
+		}
+	}
+	return 8443
 }
 
 func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-chan struct{}, readyChannel chan struct{}) (*portforward.PortForwarder, error) {
@@ -105,12 +120,12 @@ func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-ch
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to configure k8s REST client transport")
 	}
-
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
-	return portforward.New(dialer, []string{"0:8443"}, stopChannel, readyChannel, nil, nil) //nolint:wrapcheck
+	port := getCentralAPIPort(pod)
+	return portforward.New(dialer, []string{fmt.Sprintf("0:%d", port)}, stopChannel, readyChannel, nil, nil) //nolint:wrapcheck
 }
 
-func getConfigs() (*rest.Config, *kubernetes.Clientset, string, error) {
+func getConfigs() (*rest.Config, coreclient.CoreV1Interface, string, error) {
 	kubeConfigLoader := genericclioptions.NewConfigFlags(true).ToRawKubeConfigLoader()
 	namespace, _, err := kubeConfigLoader.Namespace()
 	if err != nil {
@@ -127,16 +142,16 @@ func getConfigs() (*rest.Config, *kubernetes.Clientset, string, error) {
 	if err != nil {
 		return nil, nil, "", errors.WithMessage(err, "failed to construct k8s client")
 	}
-	return restConfig, k8sClient, namespace, nil
+	return restConfig, k8sClient.CoreV1(), namespace, nil
 }
 
-func runPortForward() (uint16, error) {
-	restConfig, k8sClient, namespace, err := getConfigs()
+func runPortForward(ctx context.Context) (uint16, error) {
+	restConfig, core, namespace, err := getConfigs()
 	if err != nil {
 		return 0, err
 	}
 
-	pod, err := getCentralPod(k8sClient.CoreV1(), namespace)
+	pod, err := getCentralPod(ctx, core, namespace)
 	if err != nil {
 		return 0, err
 	}
@@ -146,7 +161,9 @@ func runPortForward() (uint16, error) {
 		}
 	}
 
+	// writing to stopChannel stops the forwarder.
 	stopChannel := make(chan struct{}, 1)
+	// forwarder writes to readyChannel when ready.
 	readyChannel := make(chan struct{})
 
 	// Gracefully stop forwarding on os.Interrupt signal.
@@ -187,7 +204,9 @@ func runPortForward() (uint16, error) {
 // the endpoint with local port forwarding to the service port.
 func GetForwardingEndpoint() (string, error) {
 	portForwardOnce.Do(func() {
-		if port, err := runPortForward(); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), reasonableTimeout)
+		defer cancel()
+		if port, err := runPortForward(ctx); err != nil {
 			portForwardingError = errPortForwarding.CausedBy(err)
 		} else {
 			forwardEndpoint = fmt.Sprintf("localhost:%d", port)
