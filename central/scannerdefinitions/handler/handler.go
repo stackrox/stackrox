@@ -509,7 +509,7 @@ func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updater
 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not read file: %v", err)
-		log.Errorf("Failed to find file: %v", errMsg)
+		log.Error(errMsg)
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
 		return
 	}
