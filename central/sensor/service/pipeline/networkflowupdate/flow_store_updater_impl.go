@@ -51,7 +51,7 @@ func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.C
 
 	closeTS := timestamp.Now()
 	if lastUpdateTS != nil {
-		closeTS := timestamp.FromGoTime(*lastUpdateTS)
+		closeTS = timestamp.FromGoTime(*lastUpdateTS)
 		if closeTS == 0 {
 			closeTS = timestamp.Now()
 		}

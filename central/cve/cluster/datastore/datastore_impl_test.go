@@ -15,15 +15,15 @@ func TestGetSuppressExpiry(t *testing.T) {
 	duration := 10 * time.Minute
 
 	expiry1, err := getSuppressExpiry(nil, nil)
-	assert.ErrorIs(t, err, nilSuppressionStartError)
+	assert.ErrorIs(t, err, errNilSuppressionStart)
 	assert.Equal(t, time.Time{}, expiry1)
 
 	expiry2, err := getSuppressExpiry(nil, &duration)
-	assert.ErrorIs(t, err, nilSuppressionStartError)
+	assert.ErrorIs(t, err, errNilSuppressionStart)
 	assert.Equal(t, time.Time{}, expiry2)
 
 	expiry3, err := getSuppressExpiry(&startTime, nil)
-	assert.ErrorIs(t, err, nilSuppressionDurationError)
+	assert.ErrorIs(t, err, errNilSuppressionDuration)
 	assert.Equal(t, time.Time{}, expiry3)
 
 	expiry4, err := getSuppressExpiry(&startTime, &duration)

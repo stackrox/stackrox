@@ -3,6 +3,7 @@ package networkflowupdate
 import (
 	"context"
 	"errors"
+	"time"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"

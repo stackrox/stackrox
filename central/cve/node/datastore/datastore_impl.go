@@ -27,9 +27,9 @@ var (
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
 
-	nilSuppressionStartError = errors.New("suppression start time is nil")
+	errNilSuppressionStart = errors.New("suppression start time is nil")
 
-	nilSuppressionDurationError = errors.New("suppression duration is nil")
+	errNilSuppressionDuration = errors.New("suppression duration is nil")
 )
 
 type datastoreImpl struct {
@@ -209,10 +209,10 @@ func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 
 func getSuppressExpiry(start *time.Time, duration *time.Duration) (time.Time, error) {
 	if start == nil {
-		return time.Time{}, nilSuppressionStartError
+		return time.Time{}, errNilSuppressionStart
 	}
 	if duration == nil {
-		return time.Time{}, nilSuppressionDurationError
+		return time.Time{}, errNilSuppressionDuration
 	}
 	return start.Truncate(time.Second).Add(duration.Truncate(time.Second)), nil
 }

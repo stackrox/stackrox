@@ -399,7 +399,7 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		ViolationMessage:           fromViolation.GetMessage(),
 		ViolationMessageAttributes: msgAttrs,
 		ViolationType:              typ,
-		ViolationTime:              protoconv.ConvertTimeToTimestamp(violationTime),
+		ViolationTime:              nil,
 		PodId:                      podID,
 		ContainerName:              containerName,
 	}

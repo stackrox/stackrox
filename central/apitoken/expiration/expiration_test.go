@@ -55,11 +55,11 @@ func generateToken(now *time.Time,
 		Revoked: revoked,
 	}
 	if now != nil {
-		issuedAt := (*now).Truncate(time.Microsecond)
+		issuedAt := now.Truncate(time.Microsecond)
 		token.IssuedAt = protoconv.ConvertTimeToTimestamp(issuedAt)
 	}
 	if expiration != nil {
-		expiresAt := (*expiration).Truncate(time.Microsecond)
+		expiresAt := expiration.Truncate(time.Microsecond)
 		token.Expiration = protoconv.ConvertTimeToTimestamp(expiresAt)
 	}
 	return token
