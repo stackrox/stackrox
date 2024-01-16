@@ -304,7 +304,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                 <PanelHeadEnd>{panelButtons}</PanelHeadEnd>
             </PageHeader>
 
-            <PanelNew testid="clusters-side-panel">
+            <PanelNew testid="cluster-page">
                 <PanelBody>
                     {!!messageState && (
                         <div className="m-4">
