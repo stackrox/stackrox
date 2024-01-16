@@ -53,8 +53,14 @@ const title = 'Clusters';
 
 // assert
 
-export function assertClusterNameInSidePanel(clusterName) {
-    cy.get(`[data-testid="clusters-side-panel-header"]:contains("${clusterName}")`);
+export function assertClusterDeletionInSummary(text) {
+    cy.get(
+        `div[data-testid="widget"]:has('div[data-testid="widget-header"]:contains("Cluster Deletion")') div[data-testid="widget-body"]:contains("${text}")`
+    );
+}
+
+export function assertClusterNameInHeading(clusterName) {
+    cy.get(`h1:contains("${clusterName}")`);
 }
 
 // visit
@@ -113,8 +119,6 @@ export function visitClusterById(clusterId, staticResponseMap) {
         },
     };
     visit(`${clustersPath}/${clusterId}`, routeMatcherMapForClusterById, staticResponseMap);
-
-    cy.get(`h1:contains("${title}")`);
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
@@ -140,7 +144,7 @@ export function visitClusterByNameWithFixture(clusterName, fixturePath) {
             [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
         });
 
-        assertClusterNameInSidePanel(clusterName);
+        assertClusterNameInHeading(clusterName);
     });
 }
 
@@ -167,7 +171,7 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         });
 
         cy.wait(['@metadata']);
-        assertClusterNameInSidePanel(clusterName);
+        assertClusterNameInHeading(clusterName);
     });
 }
 
