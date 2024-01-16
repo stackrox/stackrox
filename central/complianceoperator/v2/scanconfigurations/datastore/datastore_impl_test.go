@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	configSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -58,7 +57,6 @@ type complianceScanConfigDataStoreTestSuite struct {
 	db            *pgtest.TestPostgres
 	storage       configStore.Store
 	statusStorage scanStatusStore.Store
-	search        configSearch.Searcher
 
 	clusterID1 string
 	clusterID2 string
@@ -94,11 +92,8 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
-	indexer := configStore.NewIndexer(s.db)
-	configStorage := configStore.New(s.db)
-	s.search = configSearch.New(configStorage, indexer)
 
-	s.dataStore = New(s.storage, s.statusStorage, clusterDatastore, s.search)
+	s.dataStore = New(s.storage, s.statusStorage, clusterDatastore)
 
 	// Setup SAC contexts
 	s.testContexts = make(map[string]context.Context, 0)
@@ -349,21 +344,62 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 	configID := uuid.NewV4().String()
 
+	// This config has cluster 1 and cluster 2
 	scanConfig := s.getTestRec(mockScanName)
 	scanConfig.Id = configID
 
-	err := s.dataStore.UpsertScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig)
-	s.Require().NoError(err)
+	testCases := []struct {
+		desc        string
+		scanName    string
+		testContext context.Context
+		isErrorTest bool
+	}{
+		{
+			desc:        "Successful update - Full access",
+			scanName:    "case-1",
+			testContext: s.testContexts[unrestrictedReadWriteCtx],
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful update multiple clusters - Full access",
+			scanName:    "case-2",
+			testContext: s.testContexts[unrestrictedReadWriteCtx],
+			isErrorTest: false,
+		},
+		{
+			desc:        "No cluster access",
+			scanName:    "case-3",
+			testContext: s.testContexts[noAccessCtx],
+			isErrorTest: true,
+		},
+		{
+			desc:        "Multiple clusters config -- only access to one",
+			scanName:    "case-4",
+			testContext: s.testContexts[cluster1ReadWriteCtx],
+			isErrorTest: true,
+		},
+	}
 
-	// Verify we can get what we just added
-	foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
-	s.Require().NoError(err)
-	s.Require().True(found)
-	s.Require().Equal(scanConfig, foundConfig)
+	for _, tc := range testCases {
+		log.Info(tc.desc)
 
-	// Try to upsert without SAC access
-	err = s.dataStore.UpsertScanConfiguration(s.testContexts[noAccessCtx], scanConfig)
-	s.Require().Error(err)
+		err := s.dataStore.UpsertScanConfiguration(tc.testContext, scanConfig)
+		if tc.isErrorTest {
+			s.Require().Error(err)
+		} else {
+			s.Require().NoError(err)
+
+			// Verify we can get what we just added
+			foundConfig, found, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadCtx], configID)
+			s.Require().NoError(err)
+			s.Require().True(found)
+			s.Require().Equal(scanConfig, foundConfig)
+
+			// Clean up for the next run
+			_, err = s.dataStore.DeleteScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], configID)
+			s.Require().NoError(err)
+		}
+	}
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {

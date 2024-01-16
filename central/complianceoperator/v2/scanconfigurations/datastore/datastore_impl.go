@@ -6,7 +6,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	scanConfigSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,7 +25,6 @@ type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
 	clusterDS     clusterDatastore.DataStore
-	searcher      scanConfigSearch.Searcher
 	keyedMutex    *concurrency.KeyedMutex
 }
 
@@ -69,11 +67,7 @@ func (ds *datastoreImpl) GetScanConfigurations(ctx context.Context, query *v1.Qu
 	for _, scanConfig := range scanConfigs {
 		// We must ensure the user has access to all the clusters in a config.  The SAC filter will return the row
 		// if the user has access to any cluster
-		clusterScopeKeys := make([][]sac.ScopeKey, 0, len(scanConfig.GetClusters()))
-		for _, scanCluster := range scanConfig.GetClusters() {
-			clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(scanCluster.GetClusterId())})
-		}
-		if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopeKeys) {
+		if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(getScopeKeys(scanConfig.GetClusters())) {
 			return nil, nil
 		}
 	}
@@ -83,6 +77,9 @@ func (ds *datastoreImpl) GetScanConfigurations(ctx context.Context, query *v1.Qu
 
 // UpsertScanConfiguration adds or updates the scan configuration
 func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+	// SAC for an upsert requires access to all clusters present in the conifg.  This is handled
+	// in the store so a SAC check is not needed here.
+
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
@@ -97,24 +94,7 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 	elevatedSACReadCtx := sac.WithAllAccess(context.Background())
 
 	// Use elevated privileges to get all clusters associated with this configuration.
-	scanClusters, err := ds.GetScanConfigClusterStatus(elevatedSACReadCtx, id)
-	if err != nil {
-		return "", err
-	}
-
-	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(scanClusters))
-	for _, scanCluster := range scanClusters {
-		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(scanCluster.GetClusterId())})
-	}
-	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopeKeys) {
-		return "", sac.ErrResourceAccessDenied
-	}
-
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
-
-	// first check if the scan configuration exists
-	scanConfig, found, err := ds.GetScanConfiguration(ctx, id)
+	scanConfig, found, err := ds.GetScanConfiguration(elevatedSACReadCtx, id)
 	if err != nil {
 		return "", errors.Wrapf(err, "Unable to find scan configuration id %q", id)
 	}
@@ -122,6 +102,13 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 		return "", errors.Errorf("Scan configuration id %q not found", id)
 	}
 	scanConfigName := scanConfig.GetScanConfigName()
+
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(getScopeKeys(scanConfig.GetClusters())) {
+		return "", sac.ErrResourceAccessDenied
+	}
+
+	ds.keyedMutex.Lock(id)
+	defer ds.keyedMutex.Unlock(id)
 
 	// remove scan data from scan status table first
 	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
@@ -187,5 +174,16 @@ func (ds *datastoreImpl) GetScanConfigClusterStatus(ctx context.Context, scanCon
 }
 
 func (ds *datastoreImpl) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.searcher.Count(ctx, q)
+	// Need to account for cluster SAC, so first get the configs with the SAC filters applied
+	scanConfigs, err := ds.GetScanConfigurations(ctx, q)
+	return len(scanConfigs), err
+}
+
+func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_Cluster) [][]sac.ScopeKey {
+	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(scanClusters))
+	for _, scanCluster := range scanClusters {
+		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(scanCluster.GetClusterId())})
+	}
+
+	return clusterScopeKeys
 }

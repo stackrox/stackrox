@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -45,20 +44,19 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore, searcher search.Searcher) DataStore {
+func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:       scanConfigStore,
 		statusStorage: scanConfigStatusStore,
 		clusterDS:     clusterDS,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
-		searcher:      searcher,
 	}
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore, searcher search.Searcher) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore) (DataStore, error) {
 	store := pgStore.New(pool)
 	statusStorage := statusStore.New(pool)
-	return New(store, statusStorage, clusterDS, searcher), nil
+	return New(store, statusStorage, clusterDS), nil
 }
