@@ -291,7 +291,7 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	// Set this to 'true' to prevent translation of the collection method, e.g. to enforce using EBPF as an exception.
+	// Set this to 'true' to prevent conversion of the collection method, e.g. to enforce using EBPF as an exception.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ForceCollection *bool `json:"forceCollection,omitempty"`
