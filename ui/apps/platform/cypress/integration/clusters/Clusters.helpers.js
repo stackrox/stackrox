@@ -53,6 +53,12 @@ const title = 'Clusters';
 
 // assert
 
+export function assertClusterDeletionInSummary(text) {
+    cy.get(
+        `div[data-testid="widget"]:has('div[data-testid="widget-header"]:contains("Cluster Deletion")') div[data-testid="widget-body"]:contains("${text}")`
+    );
+}
+
 export function assertClusterNameInHeading(clusterName) {
     cy.get(`h1:contains("${clusterName}")`);
 }
