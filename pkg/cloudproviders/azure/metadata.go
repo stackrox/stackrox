@@ -18,7 +18,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const aksClusterNameLabel = "kubernetes.azure.com/cluster"
+const (
+	loggingRateLimiter  = "azure-metadata"
+	aksClusterNameLabel = "kubernetes.azure.com/cluster"
+)
 
 type computeMetadata struct {
 	Location       string `json:"location"`
@@ -97,12 +100,12 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		log.Errorf("Obtaining in-cluster Kubernetes config: %v", err)
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Obtaining in-cluster Kubernetes config: %s", err)
 		return nil
 	}
 	k8sClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Errorf("Creating Kubernetes clientset: %v", err)
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Creating Kubernetes clientset: %s", err)
 		return nil
 	}
 	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
@@ -113,7 +116,7 @@ func getClusterMetadataFromNodeLabels(ctx context.Context,
 ) *storage.ClusterMetadata {
 	nodeLabels, err := getAnyNodeLabels(ctx, k8sClient)
 	if err != nil {
-		log.Error("Failed to get node labels: ", err)
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get node labels: %s", err)
 		return nil
 	}
 
