@@ -5,9 +5,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type deploymentReconcilerImpl struct {
@@ -48,7 +53,9 @@ func (d *deploymentReconcilerImpl) sendDeleteEvents() {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
+	log.Infof("Sending %d deleting events", len(d.deployments))
 	for _, deployment := range d.deployments {
+		log.Infof("Sending delete event for deployment %S:%S", deployment.GetId(), deployment.GetName())
 		select {
 		case <-d.stopper.Flow().StopRequested():
 			return
@@ -72,6 +79,7 @@ func (d *deploymentReconcilerImpl) OnDeploymentRemove(deployment *storage.Deploy
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
+	log.Infof("Adding deployment %s:%s", deployment.GetId(), deployment.GetName())
 	d.deployments[deployment.GetId()] = deployment
 	return func() {
 		d.lock.Lock()
