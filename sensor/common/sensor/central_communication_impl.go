@@ -59,8 +59,8 @@ var (
 	errIncorrectEventOrder           = errors.Wrap(errCantReconcile, "central sent incorrect order of events")
 )
 
-func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector) {
-	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, onSyncDoneCallback func(), configHandler config.Handler, detector detector.Detector) {
+	go s.sendEvents(client, centralReachable, syncDone, onSyncDoneCallback, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(_ error) {
@@ -112,7 +112,7 @@ func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorSt
 	return central.SensorHello_STARTUP
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, onSyncDoneCallback func(), configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
@@ -193,7 +193,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.clientReconcile, s.initialDeduperState, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.clientReconcile, s.initialDeduperState, onSyncDoneCallback, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.

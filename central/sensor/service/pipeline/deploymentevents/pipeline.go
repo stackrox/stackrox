@@ -116,9 +116,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		log.Infof("Remove deployment %s:$s", deployment.GetId(), deployment.GetName())
+		log.Infof("Remove deployment %s:%s", deployment.GetId(), deployment.GetName())
 		err = s.runRemovePipeline(ctx, deployment.GetId(), clusterID, false)
-		log.Error("Error removing deployment %s:%s: %v", deployment.GetId(), deployment.GetName(), err)
+		log.Errorf("Error removing deployment %s:%s: %v", deployment.GetId(), deployment.GetName(), err)
 	default:
 		err = s.runGeneralPipeline(ctx, deployment, event.GetAction())
 	}

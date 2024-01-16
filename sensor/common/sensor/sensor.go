@@ -336,7 +336,7 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
 
 	syncDone := concurrency.NewSignal()
-	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, nil, s.configHandler, s.detector)
 	go s.notifySyncDone(&syncDone, s.centralCommunication)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
@@ -395,6 +395,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
+	onCentralSyncSent := func() {
+		s.notifyAllComponents(common.SensorComponentEventSyncSent)
+	}
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
@@ -413,7 +416,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
 		s.centralCommunication = centralCommunication
-		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, onCentralSyncSent, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()

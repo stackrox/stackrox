@@ -25,7 +25,7 @@ type deploymentReconcilerImpl struct {
 
 func (d *deploymentReconcilerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventSyncFinished:
+	case common.SensorComponentEventSyncSent:
 		log.Infof("Sync finished")
 		d.sendDeleteEvents()
 	}

@@ -23,6 +23,9 @@ const (
 
 	// SensorComponentEventSyncFinished denotes that Sensor finished initial sync.
 	SensorComponentEventSyncFinished SensorComponentEvent = "sync-finished"
+
+	// SensorComponentEventSyncSent denotes that Sensor finished initial sync.
+	SensorComponentEventSyncSent SensorComponentEvent = "sync-sent"
 )
 
 // LogSensorComponentEvent returns a unified string for logging the transition between component states/

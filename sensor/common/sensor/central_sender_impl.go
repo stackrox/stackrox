@@ -18,11 +18,13 @@ type centralSenderImpl struct {
 	senders             []common.SensorComponent
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
+	onSyncDoneCallback  func()
 	initialDeduperState map[deduperkey.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onSyncDoneCallback func(), onStops ...func(error)) {
 	s.initialDeduperState = initialDeduperState
+	s.onSyncDoneCallback = onSyncDoneCallback
 	go s.send(stream, sendUnchangedIDs, onStops...)
 }
 
@@ -110,6 +112,9 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 			if msg.GetEvent().GetSynced() != nil {
 				log.Infof("Sending synced signal to Central")
+				if s.onSyncDoneCallback != nil {
+					go s.onSyncDoneCallback()
+				}
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
@@ -118,7 +123,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 				return
 			}
 			if features.SensorOnSentCallback.Enabled() && msg.OnSent != nil {
-				msg.OnSent()
+				go msg.OnSent()
 			}
 		}
 	}
