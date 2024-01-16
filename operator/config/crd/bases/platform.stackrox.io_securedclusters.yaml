@@ -469,7 +469,9 @@ spec:
                           CORE_BPF is recommended. If you select "NoCollection", you
                           will not be able to see any information about network activity
                           and process executions. The remaining settings in these
-                          section will not have any effect.
+                          section will not have any effect. The value is a subject
+                          of conversion by the operator if needed, e.g. to remove
+                          deprecated methods.
                         enum:
                         - EBPF
                         - CORE_BPF
@@ -478,8 +480,10 @@ spec:
                         type: string
                       forceCollection:
                         default: false
-                        description: Set this to 'true' to prevent conversion of the
-                          collection method, e.g. to enforce using EBPF as an exception.
+                        description: When the "collection" field is set to the deprecated
+                          value "EBPF", then setting this to "true" prevents conversion
+                          of the collection method to "CORE_BPF". This could be used
+                          in exceptional situations when "EBPF" has to be enforces.
                         type: boolean
                       imageFlavor:
                         default: Regular
