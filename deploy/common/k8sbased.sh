@@ -47,6 +47,7 @@ function hotload_binary {
   local binary_name="$1"
   local local_name="$2"
   local deployment="$3"
+  local namespace=${4:-stackrox}
 
   echo
   echo "**********"
@@ -61,8 +62,8 @@ function hotload_binary {
       binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
   fi
 
-  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
-  kubectl -n stackrox set env "deploy/$deployment" "ROX_HOTRELOAD=true"
+  kubectl -n "${namespace}" patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
+  kubectl -n "${namespace}" set env "deploy/$deployment" "ROX_HOTRELOAD=true"
 }
 
 function verify_orch {
@@ -95,8 +96,9 @@ function local_dev {
 # Checks if central already exists in this cluster.
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
-    if "${ORCH_CMD}" -n stackrox get deployment central 2>&1; then
-        yes_no_prompt "Detected there is already a central running on this cluster. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
+    local namespace=${1:-stackrox}
+    if "${ORCH_CMD}" -n "${namespace}" get deployment central 2>&1; then
+        yes_no_prompt "Detected there is already a central running on this cluster in namespace ${namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
 
@@ -120,12 +122,13 @@ function yes_no_prompt() {
 }
 
 function launch_central {
-    local k8s_dir="$1"
+    local k8s_dir="$1"yy0
+    local namespace=${CENTRAL_NAMESPACE:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
     if [[ -z "$CI" ]]; then
-        prompt_if_central_exists
+        prompt_if_central_exists "${namespace}"
     fi
 
     echo "Generating central config..."
@@ -256,6 +259,10 @@ function launch_central {
 
     echo
     if [[ -n "${TRUSTED_CA_FILE}" ]]; then
+        if [[ "${namespace}" != "stackrox" ]]; then
+          echo "CA setup using '$TRUSTED_CA_FILE' is not support for custom namespace '${namespace}'." >&2
+          exit 1
+        fi
         if [[ -x "${unzip_dir}/scripts/ca-setup.sh" ]]; then
           "${unzip_dir}/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
         else
@@ -283,7 +290,7 @@ function launch_central {
 
         helm dependency update "${COMMON_DIR}/../charts/monitoring"
         envsubst < "${COMMON_DIR}/../charts/monitoring/values.yaml" > "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
-        helm upgrade -n stackrox --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
+        helm upgrade -n "${namespace}" --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
         rm "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
         echo "Deployed Monitoring..."
     fi
@@ -293,14 +300,14 @@ function launch_central {
       export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
     fi
 
-    echo "Deploying Central..."
+    echo "Deploying Central to namespace ${namespace}..."
 
-    ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
-      ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
+    ${KUBE_COMMAND:-kubectl} get namespace "${namespace}" &>/dev/null || \
+      ${KUBE_COMMAND:-kubectl} create namespace "${namespace}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
-        $unzip_dir/scripts/setup.sh
+        ROX_NAMESPACE="${namespace}" "${unzip_dir}/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/scripts"
 
@@ -311,6 +318,9 @@ function launch_central {
         --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
       )
 
+      if [[ "${namespace}" != "stackrox" ]]; then
+        helm_args+=(--set "allowNonstandardNamespace=true")
+      fi
       if [[ "$SCANNER_SUPPORT" != "true" ]]; then
         helm_args+=(--set scanner.disable=true)
       fi
@@ -392,8 +402,8 @@ function launch_central {
 
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
-        helm lint "${helm_chart}" -n stackrox
-        helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
+        helm lint "${helm_chart}" -n "${namespace}"
+        helm lint "${helm_chart}" -n "${namespace}" "${helm_args[@]}"
       fi
 
       # Add a custom values file to Helm
@@ -403,11 +413,16 @@ function launch_central {
         )
       fi
 
-      helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
+      helm upgrade --install -n "${namespace}" stackrox-central-services "${helm_chart}" \
           "${helm_args[@]}"
     else
+      if [[ "${namespace}" != "stackrox" ]]; then
+        echo "Deploying manifest bundles to namespaces other than 'stackrox' is not supported." >&2
+        exit 1
+      fi
+
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
-        $unzip_dir/central/scripts/setup.sh
+        ROX_NAMESPACE="${namespace}" $unzip_dir/central/scripts/setup.sh
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
       launch_service $unzip_dir central
@@ -459,12 +474,12 @@ function launch_central {
     fi
 
     if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
-        ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${STACKROX_NAMESPACE}" &>/dev/null
+        ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${namespace}" &>/dev/null
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
 
     if [[ "${is_local_dev}" == "true" && "${ROX_HOTRELOAD}" == "true" ]]; then
-      hotload_binary central central central
+      hotload_binary central central central "${namespace}"
     fi
 
     # Wait for any pending changes to Central deployment to get reconciled before trying to connect it.
@@ -475,7 +490,7 @@ function launch_central {
     if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
       rollout_wait_timeout="9m"
     fi
-    kubectl -n stackrox rollout status deploy/central --timeout="$rollout_wait_timeout"
+    kubectl -n "${namespace}" rollout status deploy/central --timeout="$rollout_wait_timeout"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -485,7 +500,7 @@ function launch_central {
         until [[ -n "${LB_IP}" ]]; do
             echo -n "."
             sleep 1
-            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+            LB_IP=$(kubectl -n "${namespace}" get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
             if [[ "$LB_IP" == "null" ]]; then
               unset LB_IP
             fi
@@ -500,7 +515,7 @@ function launch_central {
         until [ -n "${ROUTE_HOST}" ]; do
             echo -n "."
             sleep 1
-            ROUTE_HOST=$(kubectl -n stackrox get route/central -o jsonpath='{.status.ingress[0].host}')
+            ROUTE_HOST=$(kubectl -n "${namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
@@ -517,7 +532,7 @@ function launch_central {
         sleep 120
     fi
 
-    wait_for_central "${API_ENDPOINT}"
+    wait_for_central "${API_ENDPOINT}" "${namespace}"
     echo "Successfully deployed Central!"
 
     echo "Access the UI at: https://${API_ENDPOINT}"
@@ -528,6 +543,7 @@ function launch_central {
 
 function launch_sensor {
     local k8s_dir="$1"
+    local namespace=${SENSOR_NAMESPACE:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
     local extra_config=()
@@ -584,7 +600,10 @@ function launch_sensor {
     fi
 
     if [[ "${SENSOR_HELM_DEPLOY:-}" == "true" ]]; then
-      local sensor_namespace="${SENSOR_HELM_OVERRIDE_NAMESPACE:-stackrox}"
+      if [[ -n "${SENSOR_HELM_OVERRIDE_NAMESPACE}" && "${namespace}" != "stackrox" && "${SENSOR_HELM_OVERRIDE_NAMESPACE}" != "${namespace}" ]]; then
+        echo "Custom namespace '${namespace}' specified and SENSOR_HELM_OVERRIDE_NAMESPACE set in the environment, this does not seem reasonable." >&2
+        exit 1
+      fi
       mkdir "$k8s_dir/sensor-deploy"
       touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
       chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
@@ -619,7 +638,7 @@ function launch_sensor {
       if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
-      if [[ "$sensor_namespace" != "stackrox" ]]; then
+      if [[ "${namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
       fi
 
@@ -631,6 +650,7 @@ function launch_sensor {
 
       if [[ "$SENSOR_SCANNER_SUPPORT" == "true" ]]; then
         helm_args+=(--set scanner.disable=false)
+        helm_args+=(--set scannerV4.disable=false)
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then
@@ -655,16 +675,16 @@ function launch_sensor {
 
       if [[ -n "$CI" ]]; then
         helm lint "${helm_chart}"
-        helm lint "${helm_chart}" -n stackrox
-        helm lint "${helm_chart}" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
+        helm lint "${helm_chart}" -n "${namespace}"
+        helm lint "${helm_chart}" -n "${namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
-      if [[ "$sensor_namespace" != "stackrox" ]]; then
-        kubectl create namespace "$sensor_namespace" &>/dev/null || true
-        kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
+      if [[ "${namespace}" != "stackrox" ]]; then
+        kubectl create namespace "${namespace}" &>/dev/null || true
+        kubectl -n "${namespace}" get secret stackrox &>/dev/null || kubectl -n "${namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
+      helm upgrade --install -n "${namespace}" --create-namespace stackrox-secured-cluster-services "${helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
@@ -680,36 +700,39 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
-      namespace=stackrox
-      if [[ -n "$NAMESPACE_OVERRIDE" ]]; then
-        namespace="$NAMESPACE_OVERRIDE"
-        echo "Changing namespace to $NAMESPACE_OVERRIDE"
-        ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
-        sed -itmp.bak 's/set -e//g' $k8s_dir/sensor-deploy/sensor.sh
+      if [[ -n "${NAMESPACE_OVERRIDE}" ]]; then
+        if [[ "${namespace}" != "stackrox" && "${namespace}" != "${NAMESPACE_OVERRIDE}" ]]; then
+          echo "Custom namespace '${namespace}' specified and NAMESPACE_OVERRIDE set in the environment, this does not seem reasonable." >&2
+          exit 1
+        fi
+        namespace="${NAMESPACE_OVERRIDE}"
+        echo "Changing namespace to ${NAMESPACE_OVERRIDE} due to NAMESPACE_OVERRIDE set in the environment."
+        ls $k8s_dir/sensor-deploy/*.yaml | while read -r file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"${namespace}"'/g' "${file}"; done
+        sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
       fi
 
       echo "Deploying Sensor..."
-      NAMESPACE="$namespace" $k8s_dir/sensor-deploy/sensor.sh
+      NAMESPACE="${namespace}" $k8s_dir/sensor-deploy/sensor.sh
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
-       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+       kubectl -n "${namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
     # For local installations (e.g. on Colima): hotload binary and update resource requests
     if [[ "$(local_dev)" == "true" ]]; then
         if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
-            hotload_binary bin/kubernetes-sensor kubernetes sensor
+            hotload_binary bin/kubernetes-sensor kubernetes sensor "${namespace}"
         fi
         if [[ -z "${IS_RACE_BUILD}" ]]; then
-           kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+           kubectl -n "${namespace}" "${namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
     fi
 
     # When running CI steps or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
     if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
         if [[ -z "${IS_RACE_BUILD}" ]]; then
-            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+            kubectl -n "${namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
     fi
 
@@ -719,13 +742,13 @@ function launch_sensor {
 
     # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
     if [[ -n "${ROX_CHAOS_PROFILE}" ]]; then
-        original_endpoint=$(kubectl -n stackrox get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
+        original_endpoint=$(kubectl -n "${namespace}" get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
 
         echo "Patching sensor with toxiproxy container"
-        kubectl -n stackrox patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
-        kubectl -n stackrox set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" \
-                                                  -e ROX_CENTRAL_ENDPOINT="localhost:8989" \
-                                                  -e ROX_CHAOS_PROFILE="$ROX_CHAOS_PROFILE"
+        kubectl -n "${namespace}" patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
+        kubectl -n "${namespace}" set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" \
+                                                        -e ROX_CENTRAL_ENDPOINT="localhost:8989" \
+                                                        -e ROX_CHAOS_PROFILE="$ROX_CHAOS_PROFILE"
     fi
 
     echo
