@@ -240,10 +240,11 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
     response: GenerateClusterInitBundleResponse;
 }> {
     return axios
-        .post<{ meta: ClusterInitBundle; helmValuesBundle: string; kubectlBundle: string }>(
-            `${clusterInitUrl}/init-bundles`,
-            data
-        )
+        .post<{
+            meta: ClusterInitBundle;
+            helmValuesBundle: string;
+            kubectlBundle: string;
+        }>(`${clusterInitUrl}/init-bundles`, data)
         .then((response) => {
             return {
                 response: response.data || {},
