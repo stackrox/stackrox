@@ -140,7 +140,6 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	// TODO(ROX-21040): Implementation dependent on the API existing.
 	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
 }
 
