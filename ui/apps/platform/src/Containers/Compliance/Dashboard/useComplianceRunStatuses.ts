@@ -19,7 +19,7 @@ export type ComplianceRunStatusResponse = {
     };
 };
 
-export function isCurrentScanIncomplete(
+function isCurrentScanIncomplete(
     runs: ComplianceRunStatusResponse['complianceRunStatuses']['runs']
 ) {
     return runs.some((run) => run.state !== 'FINISHED');
@@ -59,6 +59,8 @@ export type UseComplianceRunStatusesResponse = {
     restartPolling: () => void;
     /* Whether or not an in progress scan was detected during the lifetime of this hook */
     inProgressScanDetected: boolean;
+    /* Whether or not the latest scan is incomplete */
+    isCurrentScanIncomplete: boolean;
 };
 
 export function useComplianceRunStatuses(): UseComplianceRunStatusesResponse {
@@ -104,5 +106,6 @@ export function useComplianceRunStatuses(): UseComplianceRunStatusesResponse {
                 }
             }),
         inProgressScanDetected,
+        isCurrentScanIncomplete: isCurrentScanIncomplete(data?.complianceRunStatuses.runs ?? []),
     };
 }

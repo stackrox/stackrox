@@ -24,7 +24,7 @@ import ManageStandardsError from './ManageStandardsError';
 import ManageStandardsModal from './ManageStandardsModal';
 import ComplianceDashboardTile from './ComplianceDashboardTile';
 import ComplianceScanProgress from './ComplianceScanProgress';
-import { isCurrentScanIncomplete, useComplianceRunStatuses } from './useComplianceRunStatuses';
+import { useComplianceRunStatuses } from './useComplianceRunStatuses';
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
@@ -44,7 +44,8 @@ function ComplianceDashboardPage(): ReactElement {
         isDarkMode ? 'text-base-600 hover:bg-primary-200' : 'text-base-100 hover:bg-primary-800'
     }`;
 
-    const { runs, error, restartPolling, inProgressScanDetected } = useComplianceRunStatuses();
+    const { runs, error, restartPolling, inProgressScanDetected, isCurrentScanIncomplete } =
+        useComplianceRunStatuses();
 
     function clickManageStandardsButton() {
         setIsFetchingStandards(true);
@@ -101,7 +102,7 @@ function ComplianceDashboardPage(): ReactElement {
                                 clusterId="*"
                                 standardId="*"
                                 onScanTriggered={restartPolling}
-                                scanInProgress={isCurrentScanIncomplete(runs)}
+                                scanInProgress={isCurrentScanIncomplete}
                             />
                         )}
                         {hasWriteAccessForCompliance && (

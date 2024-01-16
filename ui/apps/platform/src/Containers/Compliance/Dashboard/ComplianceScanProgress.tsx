@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-    Card,
-    CardBody,
-    CardTitle,
-    Progress,
-    ProgressMeasureLocation,
-} from '@patternfly/react-core';
+import { Card, CardBody, CardTitle, Progress } from '@patternfly/react-core';
 
 import { ComplianceRunStatusResponse } from './useComplianceRunStatuses';
 
@@ -33,7 +27,7 @@ function ComplianceScanProgress({ runs }: ComplianceDashboardCurrentProps) {
                     value={finishedRunCount}
                     min={0}
                     max={runs.length}
-                    measureLocation={ProgressMeasureLocation.outside}
+                    measureLocation={'outside'}
                     label={`${finishedRunCount} of ${runs.length} runs`}
                     valueText={`${finishedRunCount} of ${runs.length} runs`}
                 />
