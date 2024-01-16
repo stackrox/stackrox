@@ -902,7 +902,7 @@ spec:
           please refer to the documentation).
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
-      - description: Set this to 'true' to prevent translation of the collection method,
+      - description: Set this to 'true' to prevent conversion of the collection method,
           e.g. to enforce using EBPF as an exception.
         displayName: Force Collection
         path: perNode.collector.forceCollection

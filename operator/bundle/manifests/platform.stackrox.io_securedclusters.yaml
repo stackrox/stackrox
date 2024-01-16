@@ -478,9 +478,8 @@ spec:
                         type: string
                       forceCollection:
                         default: false
-                        description: Set this to 'true' to prevent translation of
-                          the collection method, e.g. to enforce using EBPF as an
-                          exception.
+                        description: Set this to 'true' to prevent conversion of the
+                          collection method, e.g. to enforce using EBPF as an exception.
                         type: boolean
                       imageFlavor:
                         default: Regular
