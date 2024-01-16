@@ -121,6 +121,25 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	s.NoError(err)
 }
 
+func (s *notifierServiceTestSuite) TestNotifierTestNoError() {
+	reqNotifier := createNotifier()
+
+	// Update registry to create mocked notifier.
+	creator := notifiers.Registry[reqNotifier.Type]
+	notifiers.Add(reqNotifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
+		notifier.EXPECT().Test(s.ctx).Return(nil)
+		notifier.EXPECT().Close(s.ctx).Return(nil)
+
+		return notifier, nil
+	})
+
+	_, err := s.getSvc().TestNotifier(s.ctx, reqNotifier)
+	s.NoError(err)
+
+	notifiers.Add(reqNotifier.Type, creator)
+}
+
 func (s *notifierServiceTestSuite) TestNotifierTestDoesNotExposeInternalErrors() {
 	errMsg := "test message"
 	baseErrMsg := "127.0.0.1"
@@ -142,6 +161,29 @@ func (s *notifierServiceTestSuite) TestNotifierTestDoesNotExposeInternalErrors()
 	s.Assert().NotContains(err.Error(), baseErrMsg)
 
 	notifiers.Add(reqNotifier.Type, creator)
+}
+
+func (s *notifierServiceTestSuite) TestNotifierTestUpdatedNoError() {
+	reqUpdateNotifier := createUpdateNotifierRequest()
+	reqUpdateNotifier.UpdatePassword = true
+
+	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
+		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()
+
+	// Update registry to create mocked notifier.
+	creator := notifiers.Registry[reqUpdateNotifier.Notifier.Type]
+	notifiers.Add(reqUpdateNotifier.Notifier.Type, func(_ *storage.Notifier) (notifiers.Notifier, error) {
+		notifier := notifiersMocks.NewMockNotifier(s.ctrl)
+		notifier.EXPECT().Test(s.ctx).Return(nil)
+		notifier.EXPECT().Close(s.ctx).Return(nil)
+
+		return notifier, nil
+	})
+
+	_, err := s.getSvc().TestUpdatedNotifier(s.ctx, reqUpdateNotifier)
+	s.NoError(err)
+
+	notifiers.Add(reqUpdateNotifier.Notifier.Type, creator)
 }
 
 func (s *notifierServiceTestSuite) TestNotifierTestUpdatedDoesNotExposeInternalErrors() {

@@ -199,7 +199,7 @@ func TestWithFakeJira(t *testing.T) {
 	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
-	assert.NoError(t, j.Test(context.Background()))
+	assert.Nil(t, j.Test(context.Background()))
 	require.Len(t, fj.createdIssues, 1)
 	issue := fj.createdIssues[0]
 	assert.Equal(t, "StackRox Test Issue", issue.Fields.Description)
