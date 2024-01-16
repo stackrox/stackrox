@@ -20,7 +20,7 @@ func ParseBasic(auth string) (authn.Authenticator, error) {
 		auth = os.Getenv(BasicAuthSetting)
 	}
 	if auth == "" {
-		log.Println("auth unspecified: using anonymous auth")
+		log.Printf("auth unspecified: using anonymous auth (use %s to set auth)", BasicAuthSetting)
 		return authn.Anonymous, nil
 	}
 
