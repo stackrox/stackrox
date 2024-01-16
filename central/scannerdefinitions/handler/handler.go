@@ -429,7 +429,7 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
 	default:
-		return nil, fmt.Errorf("fail to get updater and file: %s", updaterKey)
+		return nil, fmt.Errorf("internal error: updater key: %s", updaterKey)
 	}
 	defer toClose(onlineFile)
 	file = onlineFile
