@@ -30,18 +30,18 @@ export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
 type AnalyticsBoolean = 0 | 1;
 
 // search categories and type guards for tracking search filters on the Workload CVE pages
-export const searchCategoriesWithFilter = [
-    'CVE',
-    'IMAGE',
-    'COMPONENT',
-    'COMPONENT SOURCE',
-    'SEVERITY',
-    'FIXABLE',
-] as const;
+export const searchCategoriesWithFilter = ['COMPONENT SOURCE', 'SEVERITY', 'FIXABLE'] as const;
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
 export type SearchCategoryWithFilter = UnionFrom<typeof searchCategoriesWithFilter>;
 
-export const searchCategoriesWithoutFilter = ['DEPLOYMENT', 'NAMESPACE', 'CLUSTER'] as const;
+export const searchCategoriesWithoutFilter = [
+    'CVE',
+    'IMAGE',
+    'COMPONENT',
+    'DEPLOYMENT',
+    'NAMESPACE',
+    'CLUSTER',
+] as const;
 export const isSearchCategoryWithoutFilter = tupleTypeGuard(searchCategoriesWithoutFilter);
 export type SearchCategoryWithoutFilter = UnionFrom<typeof searchCategoriesWithoutFilter>;
 
@@ -137,7 +137,6 @@ type AnalyticsEvent =
           event: typeof GLOBAL_SNOOZE_CVE;
           properties: {
               type: 'NODE' | 'PLATFORM';
-              cve: string;
               duration: string;
           };
       };
