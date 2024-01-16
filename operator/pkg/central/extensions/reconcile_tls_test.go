@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -517,7 +518,7 @@ func TestRenewInitBundle(t *testing.T) {
 
 	cases := map[string]renewInitBundleTestCase{
 		"should NOT refresh init-bundle when the certificate remains valid": {
-			now:         "2021-02-11T12:00:00.000Z",
+			now:         "2021-02-11T11:59:00.000Z",
 			notBefore:   "2021-02-11T00:00:00.000Z",
 			notAfter:    "2021-02-11T23:59:59.000Z",
 			expectError: false,
@@ -526,19 +527,19 @@ func TestRenewInitBundle(t *testing.T) {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T00:00:00.000Z",
 			notAfter:           "2021-02-11T11:00:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 11:00:00 +0000 UTC, renew threshold: 2021-02-11 09:30:00 +0000 UTC",
+			expectErrorMessage: "certificate expired at 2021-02-11 11:00:00 +0000 UTC",
 		},
 		"should refresh init-bundle when the certificate lifetime is not started": {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T22:00:00.000Z",
 			notAfter:           "2021-02-11T23:59:59.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate lifetime starts in the future, not before: 2021-02-11 22:00:00 +0000 UTC",
+			expectErrorMessage: "certificate lifetime start 2021-02-11 22:00:00 +0000 UTC is in the future",
 		},
 		"should refresh init-bundle when the certificate expires within the reconciliation period": {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T00:00:00.000Z",
 			notAfter:           "2021-02-11T12:30:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 12:30:00 +0000 UTC, renew threshold: 2021-02-11 11:00:00 +0000 UTC",
+			expectErrorMessage: "certificate is past half of its validity, 2021-02-11 06:15:00 +0000 UTC",
 		},
 	}
 
@@ -561,12 +562,12 @@ func TestRenewInitBundle(t *testing.T) {
 
 			if c.expectError {
 				if c.expectErrorMessage != "" {
-					assert.EqualError(t, checkInitBundleCertRenewal(cert, now), c.expectErrorMessage)
+					assert.EqualError(t, checkCertRenewal(cert, now), c.expectErrorMessage)
 				} else {
-					assert.Error(t, checkInitBundleCertRenewal(cert, now))
+					assert.Error(t, checkCertRenewal(cert, now))
 				}
 			} else {
-				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
+				assert.NoError(t, checkCertRenewal(cert, now))
 			}
 		})
 	}
@@ -945,5 +946,75 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func Test_checkCertRenewal(t *testing.T) {
+	d := time.Date(2024, time.January, 10, 12, 0, 0, 0, time.UTC)
+	tests := map[string]struct {
+		certificate *x509.Certificate
+		currentTime time.Time
+		wantErr     assert.ErrorAssertionFunc
+	}{
+		"backwards": {
+			certificate: &x509.Certificate{
+				NotBefore: d.Add(10 * time.Hour),
+				NotAfter:  d,
+			},
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expires at 2024-01-10 12:00:00 +0000 UTC before it begins to be valid at 2024-01-10 22:00:00 +0000 UTC")
+			},
+		},
+		"future": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(-2 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate lifetime start 2024-01-10 12:00:00 +0000 UTC is in the future")
+			},
+		},
+		"expired": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(12 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expired at 2024-01-10 22:00:00 +0000 UTC")
+			},
+		},
+		"expiring soon": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(6 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate is past half of its validity, 2024-01-10 17:00:00 +0000 UTC")
+			},
+		},
+		"valid": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(2 * time.Hour),
+			wantErr:     assert.NoError,
+		},
+		"extremely short validity": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(4 * time.Microsecond),
+			},
+			currentTime: d.Add(1 * time.Microsecond),
+			wantErr:     assert.NoError,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			tt.wantErr(t, checkCertRenewal(tt.certificate, tt.currentTime), fmt.Sprintf("checkCertRenewal(%v, %v)", tt.certificate, tt.currentTime))
+		})
 	}
 }
