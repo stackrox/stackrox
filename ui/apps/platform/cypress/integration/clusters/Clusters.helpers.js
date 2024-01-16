@@ -53,7 +53,7 @@ const title = 'Clusters';
 
 // assert
 
-export function assertClusterNameInSidePanel(clusterName) {
+export function assertClusterNameInHeading(clusterName) {
     cy.get(`h1:contains("${clusterName}")`);
 }
 
@@ -138,7 +138,7 @@ export function visitClusterByNameWithFixture(clusterName, fixturePath) {
             [clusterAlias]: { body: { cluster, clusterRetentionInfo } },
         });
 
-        assertClusterNameInSidePanel(clusterName);
+        assertClusterNameInHeading(clusterName);
     });
 }
 
@@ -165,7 +165,7 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         });
 
         cy.wait(['@metadata']);
-        assertClusterNameInSidePanel(clusterName);
+        assertClusterNameInHeading(clusterName);
     });
 }
 

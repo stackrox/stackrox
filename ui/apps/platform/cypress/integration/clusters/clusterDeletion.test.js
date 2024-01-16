@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    assertClusterNameInSidePanel,
+    assertClusterNameInHeading,
     clusterAlias,
     visitClusterById,
     visitClusters,
@@ -45,7 +45,7 @@ describe('Cluster page clusterRetentionInfo', () => {
 
         const clusterName = 'remote';
         cy.get(`[data-testid="cluster-name"]:contains("${clusterName}")`).click();
-        assertClusterNameInSidePanel(clusterName);
+        assertClusterNameInHeading(clusterName);
         cy.get('div:contains("Cluster Deletion"):contains("Not applicable")');
     });
 
@@ -61,7 +61,7 @@ describe('Cluster page clusterRetentionInfo', () => {
 
             visitClusterById(cluster.id, staticResponseMap);
 
-            assertClusterNameInSidePanel(clusterName);
+            assertClusterNameInHeading(clusterName);
         });
     }
 
