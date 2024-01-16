@@ -245,8 +245,17 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
+    - run: |
+        wget https://github.com/SimonKagstrom/kcov/releases/download/v42/kcov-amd64.tar.gz
+        tar -xf kcov-amd64.tar.gz
+
     - name: Shell Unit Tests
-      run: make shell-unit-tests
+      run: PATH=$PATH:$PWD/usr/local/bin/ make shell-unit-tests
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: shell-unit-tests
 
     - name: Publish Test Report
       uses: test-summary/action@v2

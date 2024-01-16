@@ -532,6 +532,7 @@ go-postgres-bench-tests: build-prep test-prep
 shell-unit-tests:
 	@echo "+ $@"
 	$(SILENT)mkdir -p shell-test-output
+	kcov --include-path=$(BASE_DIR) $(BASE_DIR)/test-output \
 	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output \
 		scripts \
 		tests/e2e/bats
