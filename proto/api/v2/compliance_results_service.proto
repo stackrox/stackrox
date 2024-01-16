@@ -85,7 +85,7 @@ message ComplianceClusterScanStats {
     ComplianceScanCluster    cluster    = 2;
 }
 
-// ComplianceClusterOverallStats provides ovearall stats for cluster
+// ComplianceClusterOverallStats provides overall stats for cluster
 message ComplianceClusterOverallStats {
     ComplianceScanCluster                cluster     = 1;
     repeated ComplianceCheckStatusCount  check_stats = 2;
@@ -111,7 +111,7 @@ message ListComplianceScanResultsResponse {
     repeated ComplianceScanResult scan_results = 1;
 }
 
-// ListComplianceCheckScanStatsResponse provides stats based on the check names
+// ListComplianceCheckScanStatsResponse provides stats per cluster
 message ListComplianceClusterOverallStatsResponse {
     repeated ComplianceClusterOverallStats scan_stats = 1;
 }

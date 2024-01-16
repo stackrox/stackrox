@@ -832,7 +832,7 @@ func (m *ComplianceClusterScanStats) Clone() *ComplianceClusterScanStats {
 	return cloned
 }
 
-// ComplianceClusterOverallStats provides ovearall stats for cluster
+// ComplianceClusterOverallStats provides overall stats for cluster
 type ComplianceClusterOverallStats struct {
 	Cluster              *ComplianceScanCluster        `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	CheckStats           []*ComplianceCheckStatusCount `protobuf:"bytes,2,rep,name=check_stats,json=checkStats,proto3" json:"check_stats,omitempty"`
@@ -1184,7 +1184,7 @@ func (m *ListComplianceScanResultsResponse) Clone() *ListComplianceScanResultsRe
 	return cloned
 }
 
-// ListComplianceCheckScanStatsResponse provides stats based on the check names
+// ListComplianceCheckScanStatsResponse provides stats per cluster
 type ListComplianceClusterOverallStatsResponse struct {
 	ScanStats            []*ComplianceClusterOverallStats `protobuf:"bytes,1,rep,name=scan_stats,json=scanStats,proto3" json:"scan_stats,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`

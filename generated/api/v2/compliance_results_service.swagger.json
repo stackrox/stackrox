@@ -622,7 +622,7 @@
           }
         }
       },
-      "title": "ComplianceClusterOverallStats provides ovearall stats for cluster"
+      "title": "ComplianceClusterOverallStats provides overall stats for cluster"
     },
     "v2ComplianceClusterScanStats": {
       "type": "object",
@@ -737,7 +737,7 @@
           }
         }
       },
-      "title": "ListComplianceCheckScanStatsResponse provides stats based on the check names"
+      "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
     },
     "v2ListComplianceClusterScanStatsResponse": {
       "type": "object",

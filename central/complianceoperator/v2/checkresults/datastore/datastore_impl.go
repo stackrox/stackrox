@@ -3,12 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -20,8 +20,6 @@ import (
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
-
-	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -59,7 +57,7 @@ func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query 
 	return d.store.GetByQuery(ctx, query)
 }
 
-// ComplianceCheckResultStats retrieves the scan results stats specified by query
+// ComplianceCheckResultStats retrieves the scan results stats specified by query for the scan configuration
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
@@ -105,12 +103,11 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 	return countResults, nil
 }
 
-// ComplianceClusterStats retrieves the scan results stats specified by query
+// ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error) {
 	var err error
 	query, err = withSACFilter(ctx, resources.Compliance, query)
 	if err != nil {
-		log.Info(err)
 		return nil, err
 	}
 
@@ -141,8 +138,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
 	countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
 	if err != nil {
-		log.Info(err)
-		return nil, err
+		return nil, errors.Wrap(err, "unable to retrieve data")
 	}
 
 	return countResults, nil
