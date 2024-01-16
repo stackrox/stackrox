@@ -326,7 +326,7 @@ func (s *generatorTestSuite) TestGenerate() {
 		})
 
 	now := time.Now()
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), goMockTimeMatcher(&ts)).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{
@@ -653,7 +653,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		})
 
 	now := time.Now()
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), goMockTimeMatcher(&ts)).Return(
 		[]*storage.NetworkFlow{
 			depFlow("depA", "depB"),
 			depFlow("depA", "depD"),
@@ -1020,5 +1020,15 @@ func (s *generatorTestSuite) TestGenerateFromBaselineForDeployment() {
 			},
 			ApiVersion: "networking.k8s.io/v1",
 		},
+	})
+}
+
+func goMockTimeMatcher(t *time.Time) gomock.Matcher {
+	return gomock.Cond(func(x any) bool {
+		matchedTS, canCast := x.(*time.Time)
+		if !canCast || matchedTS == nil {
+			return false
+		}
+		return t.Compare(*matchedTS) == 0
 	})
 }
