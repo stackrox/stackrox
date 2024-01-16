@@ -29,7 +29,7 @@ const (
 	mockClusterName = "mock-cluster"
 	mockScanName    = "mock-scan"
 
-	unrestrictedReadCtx         = "unrestrictedReqdCtx"
+	unrestrictedReadCtx         = "unrestrictedReadCtx"
 	unrestrictedReadWriteCtx    = "unrestrictedReadWriteCtx"
 	cluster1ReadCtx             = "cluster1ReadCtx"
 	cluster1ReadWriteCtx        = "cluster1ReadWriteCtx"
