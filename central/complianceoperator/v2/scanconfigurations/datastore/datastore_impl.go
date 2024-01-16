@@ -34,11 +34,7 @@ func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*
 
 	// We must ensure the user has access to all the clusters in a config.  The SAC filter will return the row
 	// if the user has access to any cluster
-	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(scanConfig.GetClusters()))
-	for _, scanCluster := range scanConfig.GetClusters() {
-		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(scanCluster.GetClusterId())})
-	}
-	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopeKeys) {
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(getScopeKeys(scanConfig.GetClusters())) {
 		return nil, false, nil
 	}
 
