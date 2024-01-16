@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
+    clustersInitBundlesPath,
     integrationsPath,
     integrationsListPath,
     integrationCreatePath,
@@ -15,27 +17,26 @@ import IntegrationsListPage from './IntegrationsListPage';
 import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
 import IntegrationDetailsPage from './IntegrationDetailsPage';
-import usePermissions from '../../hooks/usePermissions';
-import IntegrationsNoPermission from './IntegrationsNoPermission';
 
 const Page = (): ReactElement => {
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForIntegrations = hasReadAccess('Integration');
+    // Redirect from list or view page to cluster init bundles list.
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
     return (
-        <>
-            {hasReadAccessForIntegrations ? (
-                <Switch>
-                    <Route exact path={integrationsPath} component={IntegrationTilesPage} />
-                    <Route exact path={integrationsListPath} component={IntegrationsListPage} />
-                    <Route path={integrationCreatePath} component={CreateIntegrationPage} />
-                    <Route path={integrationEditPath} component={EditIntegrationPage} />
-                    <Route path={integrationDetailsPath} component={IntegrationDetailsPage} />
-                    <Route component={IntegrationsNotFoundPage} />
-                </Switch>
-            ) : (
-                <IntegrationsNoPermission />
+        <Switch>
+            <Route exact path={integrationsPath} component={IntegrationTilesPage} />
+            {isMoveInitBundlesEnabled && (
+                <Route
+                    path={`${integrationsPath}/authProviders/clusterInitBundle/:action/:id`}
+                    render={() => <Redirect to={clustersInitBundlesPath} />}
+                />
             )}
-        </>
+            <Route exact path={integrationsListPath} component={IntegrationsListPage} />
+            <Route path={integrationCreatePath} component={CreateIntegrationPage} />
+            <Route path={integrationEditPath} component={EditIntegrationPage} />
+            <Route path={integrationDetailsPath} component={IntegrationDetailsPage} />
+            <Route component={IntegrationsNotFoundPage} />
+        </Switch>
     );
 };
 
