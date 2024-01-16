@@ -1,4 +1,5 @@
-# Recommended resource helm values for a dev environment setup of ACS
+# Recommended resource helm values for a minimal development environment setup of ACS.
+# These settings ARE NOT RECOMMENDED for production installations.
 [< if false >] # hide this comment in official helm charts
 # Please keep in sync:
 # - /operator/tests/*/*/*central-cr.yaml 
