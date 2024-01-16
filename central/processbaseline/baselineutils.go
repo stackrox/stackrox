@@ -25,24 +25,32 @@ const (
 )
 
 // locked checks whether a timestamp represents a locked process baseline true = locked, false = unlocked
-func locked(lockTime time.Time) bool {
-	return !lockTime.IsZero() && time.Now().Compare(lockTime) >= 0
+func locked(lockTime *time.Time) bool {
+	return lockTime != nil && time.Now().Compare(*lockTime) >= 0
 }
 
 // IsRoxLocked checks whether a process baseline is StackRox locked.
 func IsRoxLocked(baseline *storage.ProcessBaseline) bool {
-	timestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetStackRoxLockedTimestamp())
-	if err != nil {
-		return false
+	var timestamp *time.Time
+	if baseline.GetStackRoxLockedTimestamp() != nil {
+		rawTimestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetStackRoxLockedTimestamp())
+		if err != nil {
+			return false
+		}
+		timestamp = &rawTimestamp
 	}
 	return locked(timestamp)
 }
 
 // IsUserLocked checks whether a process baseline is user locked.
 func IsUserLocked(baseline *storage.ProcessBaseline) bool {
-	timestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetUserLockedTimestamp())
-	if err != nil {
-		return false
+	var timestamp *time.Time
+	if baseline.GetUserLockedTimestamp() != nil {
+		rawTimestamp, err := protocompat.ConvertTimestampToTimeOrError(baseline.GetUserLockedTimestamp())
+		if err != nil {
+			return false
+		}
+		timestamp = &rawTimestamp
 	}
 	return locked(timestamp)
 }

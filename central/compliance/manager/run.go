@@ -135,17 +135,18 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		errorMessage = r.err.Error()
 	}
 
-	startTime, _ := protocompat.ConvertTimeToTimestampOrError(r.startTime)
-	finishTime, _ := protocompat.ConvertTimeToTimestampOrError(r.finishTime)
-
 	proto := &v1.ComplianceRun{
 		Id:           r.id,
 		ClusterId:    r.domain.Cluster().Cluster().GetId(),
 		StandardId:   r.standardID(),
-		StartTime:    startTime,
-		FinishTime:   finishTime,
 		State:        r.status,
 		ErrorMessage: errorMessage,
+	}
+	if !r.startTime.IsZero() {
+		proto.StartTime, _ = protocompat.ConvertTimeToTimestampOrError(r.startTime)
+	}
+	if !r.finishTime.IsZero() {
+		proto.FinishTime, _ = protocompat.ConvertTimeToTimestampOrError(r.finishTime)
 	}
 	return proto
 }

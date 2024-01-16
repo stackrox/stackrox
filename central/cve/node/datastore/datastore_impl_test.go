@@ -11,9 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -118,14 +120,8 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
 	expectedCache := common.CVESuppressionCache{
-		"CVE-ABC": {
-			SuppressActivation: time.Unix(0, 0).UTC(),
-			SuppressExpiry:     time.Unix(0, 0).UTC(),
-		},
-		"CVE-DEF": {
-			SuppressActivation: time.Unix(0, 0).UTC(),
-			SuppressExpiry:     time.Unix(0, 0).UTC(),
-		},
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
@@ -137,7 +133,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	start := time.Now()
 	duration := 10 * time.Minute
 
-	expiry, err := getSuppressExpiry(start, duration)
+	expiry, err := getSuppressExpiry(&start, &duration)
 	suite.NoError(err)
 
 	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any()).Return(
@@ -162,7 +158,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 
 	// Clear image before suppressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
+	err = suite.datastore.Suppress(testAllAccessContext, &start, &duration, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#", "CVE-GHI#"}, nil)
@@ -177,4 +173,74 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
+}
+
+func TestGetSuppressionCacheEntry(t *testing.T) {
+	startTime := time.Now().UTC()
+	duration := 10 * time.Minute
+	activation := startTime.Truncate(time.Nanosecond)
+	expiration := startTime.Add(duration)
+
+	protoStart, err := protocompat.ConvertTimeToTimestampOrError(startTime)
+	assert.NoError(t, err)
+	protoExpiration, err := protocompat.ConvertTimeToTimestampOrError(expiration)
+	assert.NoError(t, err)
+
+	cve1 := &storage.NodeCVE{}
+	expectedEntry1 := common.SuppressionCacheEntry{}
+	entry1 := getSuppressionCacheEntry(cve1)
+	assert.Equal(t, expectedEntry1, entry1)
+
+	cve2 := &storage.NodeCVE{
+		SnoozeStart: protoStart,
+	}
+	expectedEntry2 := common.SuppressionCacheEntry{
+		SuppressActivation: &activation,
+	}
+	entry2 := getSuppressionCacheEntry(cve2)
+	assert.Equal(t, expectedEntry2, entry2)
+
+	cve3 := &storage.NodeCVE{
+		SnoozeExpiry: protoExpiration,
+	}
+	expectedEntry3 := common.SuppressionCacheEntry{
+		SuppressExpiry: &expiration,
+	}
+	entry3 := getSuppressionCacheEntry(cve3)
+	assert.Equal(t, expectedEntry3, entry3)
+
+	cve4 := &storage.NodeCVE{
+		SnoozeStart:  protoStart,
+		SnoozeExpiry: protoExpiration,
+	}
+	expectedEntry4 := common.SuppressionCacheEntry{
+		SuppressActivation: &activation,
+		SuppressExpiry:     &expiration,
+	}
+	entry4 := getSuppressionCacheEntry(cve4)
+	assert.Equal(t, expectedEntry4, entry4)
+}
+
+func TestGetSuppressExpiry(t *testing.T) {
+	startTime := time.Now().UTC()
+	duration := 10 * time.Minute
+
+	expiry1, err := getSuppressExpiry(nil, nil)
+	assert.ErrorIs(t, err, nilSuppressionStartError)
+	assert.Equal(t, time.Time{}, expiry1)
+
+	expiry2, err := getSuppressExpiry(nil, &duration)
+	assert.ErrorIs(t, err, nilSuppressionStartError)
+	assert.Equal(t, time.Time{}, expiry2)
+
+	expiry3, err := getSuppressExpiry(&startTime, nil)
+	assert.ErrorIs(t, err, nilSuppressionDurationError)
+	assert.Equal(t, time.Time{}, expiry3)
+
+	expiry4, err := getSuppressExpiry(&startTime, &duration)
+	assert.NoError(t, err)
+	truncatedStart := startTime.Truncate(time.Second)
+	truncatedDuration := duration.Truncate(time.Second)
+	expectedExpiry4 := truncatedStart.Add(truncatedDuration)
+	assert.Equal(t, expectedExpiry4, expiry4)
 }

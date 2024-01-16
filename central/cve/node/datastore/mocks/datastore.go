@@ -162,7 +162,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q any) *gomock.Call {
 }
 
 // Suppress mocks base method.
-func (m *MockDataStore) Suppress(ctx context.Context, start time.Time, duration time.Duration, cves ...string) error {
+func (m *MockDataStore) Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, start, duration}
 	for _, a := range cves {

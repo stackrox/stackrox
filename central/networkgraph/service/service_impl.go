@@ -430,9 +430,13 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		}
 	}
 
-	since, err := protocompat.ConvertTimestampToTimeOrError(request.GetSince())
-	if err != nil {
-		return err
+	var since *time.Time
+	if request.GetSince() != nil {
+		sinceRaw, err := protocompat.ConvertTimestampToTimeOrError(request.GetSince())
+		if err != nil {
+			return err
+		}
+		since = &sinceRaw
 	}
 
 	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)

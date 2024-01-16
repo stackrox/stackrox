@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
@@ -66,9 +67,13 @@ func getImageComponentResolvers(ctx context.Context, root *Resolver, imageScan *
 			if err != nil {
 				return nil, err
 			}
-			scanTime, err := protocompat.ConvertTimestampToTimeOrError(imageScan.GetScanTime())
-			if err != nil {
-				return nil, err
+			var scanTime *time.Time
+			if imageScan.GetScanTime() != nil {
+				scanRawTime, err := protocompat.ConvertTimestampToTimeOrError(imageScan.GetScanTime())
+				if err != nil {
+					return nil, err
+				}
+				scanTime = &scanRawTime
 			}
 			resolver.ctx = embeddedobjs.ComponentContext(ctx, os, scanTime, embeddedComponent)
 			idToComponent[id] = resolver

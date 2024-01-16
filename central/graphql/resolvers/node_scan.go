@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/node/datastore/store/common/v2"
@@ -74,9 +75,13 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 			if err != nil {
 				return nil, err
 			}
-			scanTime, err := protocompat.ConvertTimestampToTimeOrError(nodeScan.GetScanTime())
-			if err != nil {
-				return nil, err
+			var scanTime *time.Time
+			if nodeScan.GetScanTime() != nil {
+				scanRawTime, err := protocompat.ConvertTimestampToTimeOrError(nodeScan.GetScanTime())
+				if err != nil {
+					return nil, err
+				}
+				scanTime = &scanRawTime
 			}
 			resolver.ctx = embeddedobjs.NodeComponentContext(ctx, scanTime, embeddedComponent)
 			idToComponent[id] = resolver

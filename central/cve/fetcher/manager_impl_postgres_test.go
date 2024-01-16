@@ -532,7 +532,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	start := time.Now()
 	duration := 10 * time.Minute
 	clusterCVE := utils.EmbeddedVulnerabilityToClusterCVE(storage.CVE_K8S_CVE, vulns[0])
-	err = s.clusterCVEDatastore.Suppress(s.ctx, start, duration, vulns[0].GetCve())
+	err = s.clusterCVEDatastore.Suppress(s.ctx, &start, &duration, vulns[0].GetCve())
 	s.NoError(err)
 
 	storedCVE, found, err := s.clusterCVEDatastore.Get(s.ctx, clusterCVE.GetId())

@@ -325,6 +325,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
+	now := time.Now()
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
 		[]*storage.NetworkFlow{
 			{
@@ -386,7 +387,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, time.Now(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -651,6 +652,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
+	now := time.Now()
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
 		[]*storage.NetworkFlow{
 			depFlow("depA", "depB"),
@@ -666,7 +668,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, time.Now(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

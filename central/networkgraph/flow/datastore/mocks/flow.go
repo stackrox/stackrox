@@ -43,11 +43,11 @@ func (m *MockFlowDataStore) EXPECT() *MockFlowDataStoreMockRecorder {
 }
 
 // GetAllFlows mocks base method.
-func (m *MockFlowDataStore) GetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
+func (m *MockFlowDataStore) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFlows", ctx, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(time.Time)
+	ret1, _ := ret[1].(*time.Time)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -74,11 +74,11 @@ func (mr *MockFlowDataStoreMockRecorder) GetFlowsForDeployment(ctx, deploymentID
 }
 
 // GetMatchingFlows mocks base method.
-func (m *MockFlowDataStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
+func (m *MockFlowDataStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchingFlows", ctx, pred, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(time.Time)
+	ret1, _ := ret[1].(*time.Time)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }

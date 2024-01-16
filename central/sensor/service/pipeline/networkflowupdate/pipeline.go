@@ -67,9 +67,13 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
-	updateTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)
-	if err != nil {
-		return err
+	var updateTime *time.Time
+	if update.Time != nil {
+		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.Time)
+		if err != nil {
+			return err
+		}
+		updateTime = &updateRawTime
 	}
 	if err = s.storeUpdater.update(ctx, allUpdatedFlows, updateTime); err != nil {
 		return err

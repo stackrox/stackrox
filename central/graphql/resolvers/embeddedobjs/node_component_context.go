@@ -14,11 +14,11 @@ type nodeComponentContextKey struct{}
 // nodeComponentContextValue holds the value of the distro in the context.
 type nodeComponentContextValue struct {
 	component   *storage.EmbeddedNodeScanComponent
-	lastScanned time.Time
+	lastScanned *time.Time
 }
 
 // NodeComponentContext returns a new context with the component attached.
-func NodeComponentContext(ctx context.Context, lastScanned time.Time, component *storage.EmbeddedNodeScanComponent) context.Context {
+func NodeComponentContext(ctx context.Context, lastScanned *time.Time, component *storage.EmbeddedNodeScanComponent) context.Context {
 	return context.WithValue(ctx, nodeComponentContextKey{}, &nodeComponentContextValue{
 		component:   component,
 		lastScanned: lastScanned,
@@ -38,13 +38,13 @@ func NodeComponentFromContext(context context.Context) *storage.EmbeddedNodeScan
 }
 
 // NodeComponentLastScannedFromContext returns the last scanned time of the component, scoped to embedding node, from the input context.
-func NodeComponentLastScannedFromContext(context context.Context) time.Time {
+func NodeComponentLastScannedFromContext(context context.Context) *time.Time {
 	if context == nil {
-		return time.Time{}
+		return nil
 	}
 	value := context.Value(nodeComponentContextKey{})
 	if value == nil {
-		return time.Time{}
+		return nil
 	}
 	return value.(*nodeComponentContextValue).lastScanned
 }

@@ -141,7 +141,7 @@ func (encr *EmbeddedNodeScanComponentResolver) Vulns(_ context.Context, args Pag
 		vulns = append(vulns, &EmbeddedVulnerabilityResolver{
 			data:        vuln,
 			root:        encr.root,
-			lastScanned: encr.lastScanned,
+			lastScanned: &encr.lastScanned,
 		})
 	}
 

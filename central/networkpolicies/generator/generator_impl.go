@@ -107,7 +107,7 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since time.Time, includePorts bool) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *time.Time, includePorts bool) (map[networkgraph.Entity]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -277,9 +277,13 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "could not parse query")
 	}
 
-	since, err := protocompat.ConvertTimestampToTimeOrError(req.GetNetworkDataSince())
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not extract timestamp from query")
+	var since *time.Time
+	if req.GetNetworkDataSince() != nil {
+		sinceRaw, err := protocompat.ConvertTimestampToTimeOrError(req.GetNetworkDataSince())
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "could not extract timestamp from query")
+		}
+		since = &sinceRaw
 	}
 
 	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, since, req.GetIncludePorts())

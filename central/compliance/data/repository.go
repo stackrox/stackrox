@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"math"
-	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/mailru/easyjson"

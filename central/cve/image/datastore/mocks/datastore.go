@@ -44,7 +44,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // ApplyException mocks base method.
-func (m *MockDataStore) ApplyException(ctx context.Context, start, expiry time.Time, cves ...string) error {
+func (m *MockDataStore) ApplyException(ctx context.Context, start, expiry *time.Time, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, start, expiry}
 	for _, a := range cves {
@@ -200,7 +200,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q any) *gomock.Call
 }
 
 // Suppress mocks base method.
-func (m *MockDataStore) Suppress(ctx context.Context, start time.Time, duration time.Duration, cves ...string) error {
+func (m *MockDataStore) Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []any{ctx, start, duration}
 	for _, a := range cves {

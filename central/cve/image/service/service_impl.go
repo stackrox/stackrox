@@ -66,11 +66,15 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
 	createdAt := time.Now()
-	suppressDuration, err := protocompat.DurationFromProto(request.GetDuration())
-	if err != nil {
-		return nil, err
+	var suppressDuration *time.Duration
+	if request.GetDuration() != nil {
+		suppressRawDuration, err := protocompat.DurationFromProto(request.GetDuration())
+		if err != nil {
+			return nil, err
+		}
+		suppressDuration = &suppressRawDuration
 	}
-	if err := s.cves.Suppress(ctx, createdAt, suppressDuration, request.GetCves()...); err != nil {
+	if err := s.cves.Suppress(ctx, &createdAt, suppressDuration, request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// This handles updating image-cve edges and reprocessing affected deployments.

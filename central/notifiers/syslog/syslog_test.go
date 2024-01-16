@@ -132,7 +132,7 @@ func (s *SyslogNotifierTestSuite) TestCEFMakeTimestampExtensionPair() {
 	msTs := int64(value.Second())*1000 + (int64(value.Nanosecond())/1000000)%1000
 	expectedValue := []string{fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))}
 
-	extensionPair := makeTimeExtensionPair(key, value)
+	extensionPair := makeTimeExtensionPair(key, &value)
 	s.Equal(expectedValue, extensionPair)
 }
 

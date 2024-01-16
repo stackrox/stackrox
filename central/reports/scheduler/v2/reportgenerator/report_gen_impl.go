@@ -66,19 +66,18 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 	}
 
 	if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		dataStartTime, err := rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
+		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
 		if err != nil {
 			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
 			return
 		}
-		req.DataStartTime = dataStartTime
 	} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
 		sinceStartDate, err := protocompat.ConvertTimestampToTimeOrError(req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate())
 		if err != nil {
 			rg.logAndUpsertError(errors.Wrap(err, "Error getting the since start date from request"), req)
 			return
 		}
-		req.DataStartTime = sinceStartDate
+		req.DataStartTime = &sinceStartDate
 	}
 
 	// Change report status to PREPARING
@@ -204,7 +203,7 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 }
 
 func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
-	dataStartTime time.Time) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
+	dataStartTime *time.Time) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
 	var deployedImgResults []common.DeployedImagesResult
 	var watchedImgResults []common.WatchedImagesResult
 	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
@@ -249,9 +248,13 @@ func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, colle
 }
 
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
-	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
+	collection *storage.ResourceCollection, dataStartTime *time.Time) (*common.ReportQuery, error) {
+	ts := timestamp.MicroTS(0)
+	if dataStartTime != nil {
+		ts = timestamp.FromGoTime(*dataStartTime)
+	}
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
-		timestamp.FromGoTime(dataStartTime).GoTime())
+		ts.GoTime())
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching clusters to build report query")
@@ -361,7 +364,7 @@ func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifie
 	)
 }
 
-func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.ReportSnapshot) (time.Time, error) {
+func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.ReportSnapshot) (*time.Time, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, snap.GetReportConfigurationId()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
@@ -372,19 +375,22 @@ func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.R
 		ProtoQuery()
 	results, err := rg.reportSnapshotStore.SearchReportSnapshots(reportGenCtx, query)
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, "Error finding last successful scheduled report time")
+		return nil, errors.Wrap(err, "Error finding last successful scheduled report time")
 	}
 	if len(results) > 1 {
-		return time.Time{}, errors.Errorf("Received %d records when only one record is expected", len(results))
+		return nil, errors.Errorf("Received %d records when only one record is expected", len(results))
 	}
 	if len(results) == 0 {
-		return time.Time{}, nil
+		return nil, nil
+	}
+	if results[0].GetReportStatus().GetCompletedAt() == nil {
+		return nil, nil
 	}
 	completedAt, err := protocompat.ConvertTimestampToTimeOrError(results[0].GetReportStatus().GetCompletedAt())
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, "Error converting the last scheduled report completion time")
+		return nil, errors.Wrap(err, "Error converting the last scheduled report completion time")
 	}
-	return completedAt, nil
+	return &completedAt, nil
 }
 
 func (rg *reportGeneratorImpl) getDeploymentIDs(deploymentsQuery *v1.Query) ([]string, error) {

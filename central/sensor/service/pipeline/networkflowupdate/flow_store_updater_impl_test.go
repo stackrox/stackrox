@@ -206,6 +206,6 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}), gomock.Any()).Return(nil)
 
 	// Run test.
-	err := suite.tested.update(suite.hasWriteCtx, newFlows, secondTimestamp)
+	err := suite.tested.update(suite.hasWriteCtx, newFlows, &secondTimestamp)
 	suite.NoError(err, "update should succeed on first insert")
 }

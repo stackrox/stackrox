@@ -10,7 +10,7 @@ import (
 type ReportRequest struct {
 	ReportSnapshot *storage.ReportSnapshot
 	Collection     *storage.ResourceCollection
-	DataStartTime  time.Time
+	DataStartTime  *time.Time
 }
 
 type reportEmailBodyFormat struct {

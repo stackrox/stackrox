@@ -15,11 +15,11 @@ type componentContextKey struct{}
 type componentContextValue struct {
 	component   *storage.EmbeddedImageScanComponent
 	os          string
-	lastScanned time.Time
+	lastScanned *time.Time
 }
 
 // ComponentContext returns a new context with the component attached.
-func ComponentContext(ctx context.Context, os string, lastScanned time.Time, component *storage.EmbeddedImageScanComponent) context.Context {
+func ComponentContext(ctx context.Context, os string, lastScanned *time.Time, component *storage.EmbeddedImageScanComponent) context.Context {
 	return context.WithValue(ctx, componentContextKey{}, &componentContextValue{
 		component:   component,
 		os:          os,
@@ -40,13 +40,13 @@ func ComponentFromContext(context context.Context) *storage.EmbeddedImageScanCom
 }
 
 // LastScannedFromContext returns the last scanned time of the component, scoped to embedding image, from the input context.
-func LastScannedFromContext(context context.Context) time.Time {
+func LastScannedFromContext(context context.Context) *time.Time {
 	if context == nil {
-		return time.Time{}
+		return nil
 	}
 	value := context.Value(componentContextKey{})
 	if value == nil {
-		return time.Time{}
+		return nil
 	}
 	return value.(*componentContextValue).lastScanned
 }

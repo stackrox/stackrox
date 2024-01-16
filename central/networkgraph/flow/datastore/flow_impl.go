@@ -26,28 +26,28 @@ type flowDataStoreImpl struct {
 	deletedDeploymentsCache   expiringcache.Cache
 }
 
-func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
+func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	flows, ts, err := fds.storage.GetAllFlows(ctx, since)
 	if err != nil {
-		return nil, time.Time{}, nil
+		return nil, nil, nil
 	}
 
 	flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, nil, err
 	}
 	return flows, ts, nil
 }
 
-func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since time.Time) ([]*storage.NetworkFlow, time.Time, error) {
+func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
 	flows, ts, err := fds.storage.GetMatchingFlows(ctx, pred, since)
 	if err != nil {
-		return nil, time.Time{}, nil
+		return nil, nil, nil
 	}
 
 	flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, nil, err
 	}
 	return flows, ts, nil
 }

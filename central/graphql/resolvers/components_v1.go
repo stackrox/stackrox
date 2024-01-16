@@ -50,7 +50,7 @@ func (resolver *imageScanResolver) ComponentCount(ctx context.Context, args RawQ
 type EmbeddedImageScanComponentResolver struct {
 	os          string
 	root        *Resolver
-	lastScanned time.Time
+	lastScanned *time.Time
 	data        *storage.EmbeddedImageScanComponent
 }
 
@@ -117,7 +117,10 @@ func (eicr *EmbeddedImageScanComponentResolver) LayerIndex() (*int32, error) {
 
 // LastScanned is the last time the component was scanned in an image.
 func (eicr *EmbeddedImageScanComponentResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
-	return &graphql.Time{Time: eicr.lastScanned}, nil
+	if eicr.lastScanned == nil {
+		return nil, nil
+	}
+	return &graphql.Time{Time: *eicr.lastScanned}, nil
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
@@ -401,9 +404,12 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 				}
 			}
 			latestTime := idToComponent[thisComponentID].lastScanned
-			if latestTime.IsZero() || image.GetScan().GetScanTime().Compare(latestTime) > 0 {
-				t, _ := protocompat.ConvertTimestampToTimeOrError(image.GetScan().GetScanTime())
-				idToComponent[thisComponentID].lastScanned = t
+			imageScanTime, err := protocompat.ConvertTimestampToTimeOrError(image.GetScan().GetScanTime())
+			if err != nil {
+				continue
+			}
+			if latestTime == nil || imageScanTime.Compare(*latestTime) > 0 {
+				idToComponent[thisComponentID].lastScanned = &imageScanTime
 			}
 		}
 	}

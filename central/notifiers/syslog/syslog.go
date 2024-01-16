@@ -141,9 +141,13 @@ func (s *syslog) auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Not
 	// There will be 8+len(extra fields) different key/value pairs in this message.
 	extensionList := make([]string, 0, 8+len(notifier.GetSyslog().GetExtraFields()))
 
-	auditTime, err := protocompat.ConvertTimestampToTimeOrError(auditLog.GetTime())
-	if err != nil {
-		return ""
+	var auditTime *time.Time
+	if auditLog.GetTime() != nil {
+		auditRawTime, err := protocompat.ConvertTimestampToTimeOrError(auditLog.GetTime())
+		if err != nil {
+			return ""
+		}
+		auditTime = &auditRawTime
 	}
 
 	// deviceReciptTime is allowed to be ms since epoch, seems easier than converting it to a time string
@@ -179,15 +183,19 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 	extensionList := make([]string, 0, 5+2+len(s.Notifier.GetSyslog().GetExtraFields()))
 
 	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
-	alertFirstOccurred, err := protocompat.ConvertTimestampToTimeOrError(alert.GetFirstOccurred())
-	if err == nil {
-		extensionList = append(extensionList, makeTimeExtensionPair(startTime, alertFirstOccurred)...)
+	if alert.GetFirstOccurred() != nil {
+		alertFirstOccurred, err := protocompat.ConvertTimestampToTimeOrError(alert.GetFirstOccurred())
+		if err == nil {
+			extensionList = append(extensionList, makeTimeExtensionPair(startTime, &alertFirstOccurred)...)
+		}
 	}
-	alertTime, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
-	if err == nil {
-		extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, alertTime)...)
-		if alert.GetState() == storage.ViolationState_RESOLVED {
-			extensionList = append(extensionList, makeTimeExtensionPair(endTime, alertTime)...)
+	if alert.GetTime() != nil {
+		alertTime, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+		if err == nil {
+			extensionList = append(extensionList, makeTimeExtensionPair(deviceReceiptTime, &alertTime)...)
+			if alert.GetState() == storage.ViolationState_RESOLVED {
+				extensionList = append(extensionList, makeTimeExtensionPair(endTime, &alertTime)...)
+			}
 		}
 	}
 
@@ -257,9 +265,9 @@ func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	return makeExtensionPair(key, string(value))
 }
 
-func makeTimeExtensionPair(key string, timestamp time.Time) []string {
+func makeTimeExtensionPair(key string, timestamp *time.Time) []string {
 	// string(seconds) + string(milliseconds) should result in the string representation of a millisecond timestamp
-	if timestamp.IsZero() {
+	if timestamp == nil {
 		return nil
 	}
 	millisecondtimestamp := strconv.Itoa(timestamp.Second()*1000 + (timestamp.Nanosecond()/1000000)%1000)

@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -85,7 +84,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	}
 	zeroTs := timestamp.MicroTS(0)
 
-	foundNetworkFlows, _, err := s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err := s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -93,7 +92,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 	networkFlow.LastSeenTimestamp = protocompat.GetProtoTimestampFromSeconds(2)
 	s.NoError(s.store.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 	s.Equal(networkFlow, foundNetworkFlows[0])
@@ -102,12 +101,12 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	since, err := protocompat.ConvertTimestampToTimeOrError(sinceProtoTs)
 	s.NoError(err)
 	// Check the get all flows by since time
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, since)
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, &since)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
 	s.NoError(s.store.RemoveFlow(s.ctx, networkFlow.GetProps()))
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -116,7 +115,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	err = s.store.RemoveFlowsForDeployment(s.ctx, networkFlow.GetProps().GetSrcEntity().GetId())
 	s.NoError(err)
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -130,12 +129,12 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	s.NoError(s.store.UpsertFlows(s.ctx, networkFlows, zeroTs))
 
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 
 	// Make sure store for second cluster does not find any flows
-	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 0)
 
@@ -143,19 +142,19 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	networkFlow.ClusterId = secondCluster
 	s.NoError(store2.UpsertFlows(s.ctx, []*storage.NetworkFlow{networkFlow}, zeroTs))
 
-	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = store2.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 
 	pred := func(props *storage.NetworkFlowProperties) bool {
 		return true
 	}
-	foundNetworkFlows, _, err = store2.GetMatchingFlows(s.ctx, pred, time.Time{})
+	foundNetworkFlows, _, err = store2.GetMatchingFlows(s.ctx, pred, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, 1)
 
 	// Store 1 flows should remain
-	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, time.Time{})
+	foundNetworkFlows, _, err = s.store.GetAllFlows(s.ctx, nil)
 	s.NoError(err)
 	s.Len(foundNetworkFlows, flowCount)
 }

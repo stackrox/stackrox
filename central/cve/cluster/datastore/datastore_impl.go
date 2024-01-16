@@ -26,6 +26,10 @@ var (
 	clusterSAC = sac.ForResource(resources.Cluster)
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
+
+	nilSuppressionStartError = errors.New("suppression start time is nil")
+
+	nilSuppressionDurationError = errors.New("suppression duration is nil")
 )
 
 type datastoreImpl struct {
@@ -55,12 +59,16 @@ func (ds *datastoreImpl) DeleteClusterCVEsInternal(ctx context.Context, clusterI
 }
 
 func getSuppressionCacheEntry(cve *storage.ClusterCVE) common.SuppressionCacheEntry {
-	suppressActivation, _ := protocompat.ConvertTimestampToTimeOrError(cve.GetSnoozeStart())
-	suppressExpiry, _ := protocompat.ConvertTimestampToTimeOrError(cve.GetSnoozeExpiry())
-	return common.SuppressionCacheEntry{
-		SuppressActivation: suppressActivation,
-		SuppressExpiry:     suppressExpiry,
+	cacheEntry := common.SuppressionCacheEntry{}
+	if cve.GetSnoozeStart() != nil {
+		suppressActivation, _ := protocompat.ConvertTimestampToTimeOrError(cve.GetSnoozeStart())
+		cacheEntry.SuppressActivation = &suppressActivation
 	}
+	if cve.GetSnoozeExpiry() != nil {
+		suppressExpiry, _ := protocompat.ConvertTimestampToTimeOrError(cve.GetSnoozeExpiry())
+		cacheEntry.SuppressExpiry = &suppressExpiry
+	}
+	return cacheEntry
 }
 
 func (ds *datastoreImpl) buildSuppressedCache() error {
@@ -125,24 +133,14 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return cves, nil
 }
 
-func (ds *datastoreImpl) Suppress(ctx context.Context, start time.Time, duration time.Duration, cves ...string) error {
+func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error {
 	if ok, err := vulnRequesterOrApproverSAC.WriteAllowedToAll(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	snoozeStart, err := protocompat.ConvertTimeToTimestampOrError(start)
-	if err != nil {
-		return err
-	}
-
 	expiry, err := getSuppressExpiry(start, duration)
-	if err != nil {
-		return err
-	}
-
-	snoozeExpiry, err := protocompat.ConvertTimeToTimestampOrError(expiry)
 	if err != nil {
 		return err
 	}
@@ -154,7 +152,17 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start time.Time, duration
 
 	for _, vuln := range vulns {
 		vuln.Snoozed = true
-		vuln.SnoozeStart = snoozeStart
+		if start != nil {
+			snoozeStart, err := protocompat.ConvertTimeToTimestampOrError(*start)
+			if err != nil {
+				return err
+			}
+			vuln.SnoozeStart = snoozeStart
+		}
+		snoozeExpiry, err := protocompat.ConvertTimeToTimestampOrError(expiry)
+		if err != nil {
+			return err
+		}
 		vuln.SnoozeExpiry = snoozeExpiry
 	}
 	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
@@ -190,8 +198,14 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	return nil
 }
 
-func getSuppressExpiry(start time.Time, duration time.Duration) (time.Time, error) {
-	return start.Add(duration).Truncate(time.Second), nil
+func getSuppressExpiry(start *time.Time, duration *time.Duration) (time.Time, error) {
+	if start == nil {
+		return time.Time{}, nilSuppressionStartError
+	}
+	if duration == nil {
+		return time.Time{}, nilSuppressionDurationError
+	}
+	return start.Truncate(time.Second).Add(duration.Truncate(time.Second)), nil
 }
 
 func (ds *datastoreImpl) updateCache(cves ...*storage.ClusterCVE) {

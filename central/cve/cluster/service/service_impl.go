@@ -56,14 +56,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // SuppressCVEs suppresses CVEs from policy workflow and API endpoints that include cve in the responses.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := time.Now()
-	suppressDuration, err := protocompat.DurationFromProto(request.GetDuration())
-	if err != nil {
-		return nil, err
+	var suppressDuration *time.Duration
+	if request.GetDuration() != nil {
+		suppressRawDuration, err := protocompat.DurationFromProto(request.GetDuration())
+		if err != nil {
+			return nil, err
+		}
+		suppressDuration = &suppressRawDuration
 	}
 	if len(request.GetCves()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to snooze")
 	}
-	if err := s.cves.Suppress(ctx, createdAt, suppressDuration, request.GetCves()...); err != nil {
+	if err := s.cves.Suppress(ctx, &createdAt, suppressDuration, request.GetCves()...); err != nil {
 		return nil, err
 	}
 	// Clusters are not part of policy workflow, and we do not reprocess risk on cve snooze. Hence, nothing to do.

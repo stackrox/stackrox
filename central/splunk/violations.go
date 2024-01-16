@@ -212,7 +212,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp time.Time, toTimestam
 			seenViolations = true
 
 			timestamp := getProcessViolationTime(alert, procIndicator)
-			if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+			if timestamp == nil || timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
 				continue
 			}
 
@@ -234,7 +234,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp time.Time, toTimestam
 		seenViolations = true
 
 		timestamp := getNonProcessViolationTime(alert, v)
-		if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+		if timestamp == nil || timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
 			continue
 		}
 
@@ -299,12 +299,23 @@ func generateViolationID(alertID string, v *storage.Alert_Violation) (string, er
 	return uuid.NewV5(alertUUID, hex.Dump(data)).String(), nil
 }
 
-func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) time.Time {
-	timestamp, err := protocompat.ConvertTimestampToTimeOrError(fromProcIndicator.GetSignal().GetTime())
-	if err != nil || timestamp.IsZero() {
+func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *time.Time {
+	var rawTimestamp time.Time
+	var timestamp *time.Time
+	var err error
+	if fromProcIndicator.GetSignal().GetTime() != nil {
+		rawTimestamp, err = protocompat.ConvertTimestampToTimeOrError(fromProcIndicator.GetSignal().GetTime())
+		if err == nil {
+			timestamp = &rawTimestamp
+		}
+	}
+	if err != nil || timestamp == nil || timestamp.IsZero() {
 		// As a fallback when process violation does not have own time on the record take Alert's last seen time to
 		// provide at least some value.
-		timestamp, _ = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
+		rawTimestamp, err = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
+		if err == nil {
+			timestamp = &rawTimestamp
+		}
 	}
 	return timestamp
 }
@@ -318,24 +329,39 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	//   Binaries '/usr/bin/apt' and '/usr/bin/dpkg' executed with 5 different arguments under 2 different user IDs
 	// We still map it as best effort.
 	violationTime := getProcessViolationTime(fromAlert, fromProcIndicator)
-	return &integrations.SplunkViolation_ViolationInfo{
+	violationInfo := &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:        fromProcIndicator.GetId(),
 		ViolationMessage:   fromProcViolation.GetMessage(),
 		ViolationType:      integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
-		ViolationTime:      protoconv.ConvertTimeToTimestamp(violationTime),
+		ViolationTime:      nil,
 		PodId:              fromProcIndicator.GetPodId(),
 		PodUid:             fromProcIndicator.GetPodUid(),
 		ContainerName:      fromProcIndicator.GetContainerName(),
 		ContainerStartTime: fromProcIndicator.GetContainerStartTime(),
 		ContainerId:        fromProcIndicator.GetSignal().GetContainerId(),
 	}
+	if violationTime != nil {
+		violationInfo.ViolationTime = protoconv.ConvertTimeToTimestamp(*violationTime)
+	}
+	return violationInfo
 }
 
-func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) time.Time {
-	timestamp, err := protocompat.ConvertTimestampToTimeOrError(fromViolation.GetTime())
-	if err != nil || timestamp.IsZero() {
+func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *time.Time {
+	var rawTimestamp time.Time
+	var timestamp *time.Time
+	var err error
+	if fromViolation.GetTime() != nil {
+		rawTimestamp, err = protocompat.ConvertTimestampToTimeOrError(fromViolation.GetTime())
+		if err == nil {
+			timestamp = &rawTimestamp
+		}
+	}
+	if err != nil || timestamp == nil || timestamp.IsZero() {
 		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.
-		timestamp, _ = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
+		rawTimestamp, err = protocompat.ConvertTimestampToTimeOrError(fromAlert.GetTime())
+		if err == nil {
+			timestamp = &rawTimestamp
+		}
 	}
 	return timestamp
 }
@@ -368,8 +394,7 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
 	}
 
-	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)
-	return &integrations.SplunkViolation_ViolationInfo{
+	violationInfo := &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:                id,
 		ViolationMessage:           fromViolation.GetMessage(),
 		ViolationMessageAttributes: msgAttrs,
@@ -377,7 +402,12 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		ViolationTime:              protoconv.ConvertTimeToTimestamp(violationTime),
 		PodId:                      podID,
 		ContainerName:              containerName,
-	}, nil
+	}
+	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)
+	if violationTime != nil {
+		violationInfo.ViolationTime = protoconv.ConvertTimeToTimestamp(*violationTime)
+	}
+	return violationInfo, nil
 }
 
 func extractViolationMessageAttrs(fromViolation *storage.Alert_Violation) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {

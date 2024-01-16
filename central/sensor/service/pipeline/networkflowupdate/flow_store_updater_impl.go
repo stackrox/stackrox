@@ -20,9 +20,12 @@ type flowPersisterImpl struct {
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS time.Time) error {
+func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
 	now := timestamp.Now()
-	updateMicroTS := timestamp.FromGoTime(updateTS)
+	updateMicroTS := timestamp.MicroTS(0)
+	if updateTS != nil {
+		updateMicroTS = timestamp.FromGoTime(*updateTS)
+	}
 
 	flowsByIndicator := getFlowsByIndicator(newFlows, updateMicroTS, now)
 	if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
@@ -41,14 +44,17 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
-	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, time.Time{})
+	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	closeTS := timestamp.FromGoTime(lastUpdateTS)
-	if closeTS == 0 {
-		closeTS = timestamp.Now()
+	closeTS := timestamp.Now()
+	if lastUpdateTS != nil {
+		closeTS := timestamp.FromGoTime(*lastUpdateTS)
+		if closeTS == 0 {
+			closeTS = timestamp.Now()
+		}
 	}
 
 	// If there are flows in the store that are not terminated, and which are NOT present in the currentFlows,
