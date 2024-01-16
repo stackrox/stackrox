@@ -70,6 +70,7 @@ message Jira {
     }
     repeated PriorityMapping priority_mappings   = 5;
     string                   default_fields_json = 6;
+    bool                         disablePriority = 7;
 }
 
 message Email {

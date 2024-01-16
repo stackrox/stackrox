@@ -110,6 +110,7 @@ export type Jira = {
     issueType: string;
     priorityMappings: JiraPriorityMapping[];
     defaultFieldsJson: string;
+    disablePriority: boolean;
 };
 
 export type JiraPriorityMapping = {

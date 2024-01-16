@@ -531,6 +531,9 @@
         },
         "defaultFieldsJson": {
           "type": "string"
+        },
+        "disablePriority": {
+          "type": "boolean"
         }
       }
     },
