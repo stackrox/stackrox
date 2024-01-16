@@ -100,7 +100,11 @@ func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *s
 		log.Errorf("Obtaining in-cluster Kubernetes config: %v", err)
 		return nil
 	}
-	k8sClient := k8sutil.MustCreateK8sClient(config)
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Errorf("Creating Kubernetes clientset: %v", err)
+		return nil
+	}
 	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
 }
 
