@@ -195,9 +195,9 @@ export function getScanConfigs(
     };
     const params = qs.stringify({ query });
     return axios
-        .get<{ configurations: ComplianceScanConfigurationStatus[] }>(
-            `${scanScheduleUrl}?${params}`
-        )
+        .get<{
+            configurations: ComplianceScanConfigurationStatus[];
+        }>(`${scanScheduleUrl}?${params}`)
         .then((response) => {
             return response?.data?.configurations ?? [];
         });
