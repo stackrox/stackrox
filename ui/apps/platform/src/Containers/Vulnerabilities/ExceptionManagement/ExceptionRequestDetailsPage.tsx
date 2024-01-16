@@ -42,6 +42,7 @@ import RequestApprovalButtonModal from './components/RequestApprovalButtonModal'
 import RequestDenialButtonModal from './components/RequestDenialButtonModal';
 import RequestCancelButtonModal from './components/RequestCancelButtonModal';
 import RequestUpdateButtonModal from './components/RequestUpdateButtonModal';
+import { getVulnerabilityState } from './utils';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -162,6 +163,8 @@ function ExceptionRequestDetailsPage() {
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
 
+    const vulnerabilityState = getVulnerabilityState(vulnerabilityException);
+
     return (
         <>
             {successMessage && (
@@ -240,6 +243,7 @@ function ExceptionRequestDetailsPage() {
                         cves={relevantCVEs}
                         scope={scope}
                         expandedRowSet={expandedRowSet}
+                        vulnerabilityState={vulnerabilityState}
                     />
                 </PageSection>
             </PageSection>
