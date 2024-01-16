@@ -407,7 +407,7 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 		return nil, err
 	}
 	if openedFile == nil {
-		return nil, errors.New("No valid file can be opened")
+		return nil, errors.New("updater file was not found")
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	toClose := func(f *vulDefFile) {
