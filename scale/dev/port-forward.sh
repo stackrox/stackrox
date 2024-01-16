@@ -3,7 +3,7 @@
 # Port Forward to StackRox Central
 #
 # Usage:
-#   ./port-forward.sh 8443
+#   ./port-forward.sh <port> [namespace]
 #
 # Using a different command:
 #     The KUBE_COMMAND environment variable will override the default of kubectl
@@ -21,18 +21,18 @@ port="$1"
 namespace=${2:-stackrox}
 
 if [ -z "$1" ]; then
-	echo "usage: $0 8443"
-	echo "The above would forward localhost:8443 to central:443."
+	echo "usage: $0 <port> [namespace]"
+	echo "The above would forward localhost:<port> to central:443."
 	exit 1
 fi
 
 while true; do
-    central_pod="$(kubectl get pod -n "$namespace" --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
-    [ -z  "$central_pod" ] || break
+    central_pod="$(kubectl get pod -n "${namespace}" --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
+    [ -z  "${central_pod}" ] || break
     printf '.'
     sleep 1
 done
 echo
 
-nohup kubectl port-forward -n "$namespace" svc/central "${port}:443" 1>/dev/null 2>&1 &
+nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" 1>/dev/null 2>&1 &
 echo "Access central on https://localhost:${port}"
