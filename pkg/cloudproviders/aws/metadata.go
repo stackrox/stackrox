@@ -142,10 +142,14 @@ func getClusterMetadata(ctx context.Context,
 
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		log.Errorf("Obtaining in-cluster Kubernetes config: %v", err)
+		log.Errorf("Failed to get EKS cluster metadata: Obtaining in-cluster Kubernetes config: %v", err)
 		return nil
 	}
-	k8sClient := k8sutil.MustCreateK8sClient(config)
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Errorf("Failed to get EKS cluster metadata: Creating Kubernetes clientset: %v", err)
+		return nil
+	}
 	clusterName, err = getClusterNameFromNodeLabels(ctx, k8sClient)
 	if err != nil {
 		log.Errorf("Failed to get EKS cluster metadata from node labels: %v", err)
