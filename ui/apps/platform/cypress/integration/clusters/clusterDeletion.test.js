@@ -1,7 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
 
 import {
-    assertClusterNameInSidePanel,
+    assertClusterDeletionInSummary,
+    assertClusterNameInHeading,
     clusterAlias,
     visitClusterById,
     visitClusters,
@@ -45,8 +46,8 @@ describe('Cluster page clusterRetentionInfo', () => {
 
         const clusterName = 'remote';
         cy.get(`[data-testid="cluster-name"]:contains("${clusterName}")`).click();
-        assertClusterNameInSidePanel(clusterName);
-        cy.get('div:contains("Cluster Deletion"):contains("Not applicable")');
+        assertClusterNameInHeading(clusterName);
+        assertClusterDeletionInSummary('Not applicable');
     });
 
     const fixturePath = 'clusters/health.json';
@@ -61,7 +62,7 @@ describe('Cluster page clusterRetentionInfo', () => {
 
             visitClusterById(cluster.id, staticResponseMap);
 
-            assertClusterNameInSidePanel(clusterName);
+            assertClusterNameInHeading(clusterName);
         });
     }
 
@@ -69,41 +70,41 @@ describe('Cluster page clusterRetentionInfo', () => {
         const clusterRetentionInfo = { daysUntilDeletion: 30 };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("Not applicable")');
+        assertClusterDeletionInSummary('in 30 days');
     });
 
     it('should display in 7 days in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { daysUntilDeletion: 7 };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("in 7 days")'); // FYI yellow color
+        assertClusterDeletionInSummary('in 7 days'); // FYI yellow color
     });
 
     it('should display in 1 day in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { daysUntilDeletion: 1 };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("in 1 day")'); // FYI red color
+        assertClusterDeletionInSummary('in 1 day'); // FYI red color
     });
 
     it('should display Imminent for 0 days in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { daysUntilDeletion: 0 };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("Imminent")'); // FYI red color
+        assertClusterDeletionInSummary('Imminent'); // FYI red color
     });
 
     it('should display Imminent for -1 days in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { daysUntilDeletion: -1 };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("Imminent")'); // FYI red color
+        assertClusterDeletionInSummary('Imminent'); // FYI red color
     });
 
     it('should display Excluded from deletion in Cluster Deletion widget for mock request', () => {
         const clusterRetentionInfo = { isExcluded: true };
         visitClusterWithRetentionInfo(clusterRetentionInfo);
 
-        cy.get('div:contains("Cluster Deletion"):contains("Excluded from deletion")');
+        assertClusterDeletionInSummary('Excluded from deletion');
     });
 });
