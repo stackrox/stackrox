@@ -26,8 +26,6 @@ func NewNotifierError(msg string, err error) *NotifierError {
 	}
 }
 
-var _ error = (*NotifierError)(nil)
-
 func (e *NotifierError) Error() string {
 	if e == nil {
 		return ""
