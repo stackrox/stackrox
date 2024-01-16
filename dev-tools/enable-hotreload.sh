@@ -18,18 +18,20 @@ if [[ -z "$1" ]]; then
 fi
 
 component="$1"
+namespace=${2:-stackrox}
+
 case "${component}" in
 "sensor")
-  hotload_binary bin/kubernetes-sensor kubernetes sensor
+  hotload_binary bin/kubernetes-sensor kubernetes sensor "$namespace"
   ;;
 "central")
-  hotload_binary central central central
+  hotload_binary central central central "$namespace"
   ;;
 "migrator")
-  hotload_binary bin/migrator migrator central
+  hotload_binary bin/migrator migrator central "$namespace"
   ;;
 "admission"|"admission-control"|"admission-controller")
-  hotload_binary admission-control admission-control admission-control
+  hotload_binary admission-control admission-control admission-control "$namespace"
   ;;
 *)
   echo "Invalid input: ${component}"

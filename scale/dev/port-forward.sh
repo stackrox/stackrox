@@ -17,6 +17,9 @@
 
 set -x
 
+port="$1"
+namespace=${2:-stackrox}
+
 if [ -z "$1" ]; then
 	echo "usage: $0 8443"
 	echo "The above would forward localhost:8443 to central:443."
@@ -24,12 +27,12 @@ if [ -z "$1" ]; then
 fi
 
 while true; do
-    central_pod="$(kubectl get pod -n 'stackrox' --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
+    central_pod="$(kubectl get pod -n "$namespace" --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
     [ -z  "$central_pod" ] || break
     printf '.'
     sleep 1
 done
 echo
 
-nohup kubectl port-forward -n 'stackrox' svc/central "$1:443" 1>/dev/null 2>&1 &
-echo "Access central on https://localhost:$1"
+nohup kubectl port-forward -n "$namespace" svc/central "${port}:443" 1>/dev/null 2>&1 &
+echo "Access central on https://localhost:${port}"

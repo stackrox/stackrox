@@ -69,6 +69,7 @@ function generate_ca {
 #   - API server endpoint to ping
 function wait_for_central {
     LOCAL_API_ENDPOINT="$1"
+    local NAMESPACE=${2:-stackrox}
 
     echo -n "Waiting for Central to respond."
     set +e
@@ -78,9 +79,9 @@ function wait_for_central {
     until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" -gt "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
+            central_pod="$("${ORCH_CMD}" -n "$NAMESPACE" get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
             if [[ -n "$central_pod" ]]; then
-                "${ORCH_CMD}" -n stackrox exec "${central_pod}" -c central -- kill -ABRT 1
+                "${ORCH_CMD}" -n "$NAMESPACE" "${central_pod}" -c central -- kill -ABRT 1
             fi
             exit 1
         fi
