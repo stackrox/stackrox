@@ -24,33 +24,32 @@ type diffAnalyzer interface {
 	Errors() []npgdiff.DiffError
 }
 
-func getResult(path string, failFast bool, treatWarningsAsErrors bool) *resource.Result {
+func getInfoObjs(path string, failFast bool, treatWarningsAsErrors bool) ([]*resource.Info, error) {
 	b := resource.NewLocalBuilder().
 		Unstructured()
 	if !(failFast && treatWarningsAsErrors) {
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
-	return b.Path(true, path).Do()
+	return b.Path(true, path).Do().IgnoreErrors().Infos()
 }
 
-func getInfoObjs(result *resource.Result) ([]*resource.Info, error) {
-	return result.Infos()
+func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*resource.Info, warnings error, errs error) {
+	info1, err1 := getInfoObjs(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	info2, err2 := getInfoObjs(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	inputErrHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
+	err := inputErrHandler.HandleErrorPair(err1, err2)
+	return nil, nil, inputErrHandler.Warnings(), err
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
-	info1, err1 := getInfoObjs(getResult(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors))
-	info2, err2 := getInfoObjs(getResult(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors))
-	if err := errHandler.HandleErrorPair(err1, err2); err != nil {
+	info1, info2, warnings, err := cmd.processInput()
+	if err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err
 	}
-
-	// There is nothing to analyze, so we return early.
-	// Running ConnDiffFromResourceInfos would return 2 pairs of errors for this case.
-	if len(info1)+len(info2) == 0 {
-		return nil
+	if warnings != nil {
+		cmd.env.Logger().WarnfLn("%v", warnings)
 	}
 
 	connsDiff, err := analyzer.ConnDiffFromResourceInfos(info1, info2)

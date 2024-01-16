@@ -1,11 +1,13 @@
 package diff
 
 import (
+	goerrors "errors"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/npg"
@@ -91,60 +93,136 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 	}
 }
 
-func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
-	cases := []struct {
-		name                  string
-		inputFolderPath1      string
-		inputFolderPath2      string
-		strict                bool
-		stopOnFirstErr        bool
-		expectedAnalysisError error
+func (d *diffAnalyzeNetpolTestSuite) TestProcessInput() {
+	cases := map[string]struct {
+		inputFolderPath1 string
+		inputFolderPath2 string
+		strict           bool
+		stopOnFirstErr   bool
+		expectedWarn     error
+		expectedErr      error
 	}{
-		{
-			name:                  "Not existing input folder paths should result in error 'errox.NotFound'",
-			inputFolderPath1:      "/tmp/xxx",
-			inputFolderPath2:      "/tmp/xxx",
-			expectedAnalysisError: errox.NotFound,
+		"Not existing input folder paths should result in error 'errox.NotFound'": {
+			inputFolderPath1: "/tmp/xxx",
+			inputFolderPath2: "/tmp/xxx",
+			expectedWarn:     nil,
+			expectedErr:      errox.NotFound,
 		},
-		{
-			name:                  "Inputs with no resources should result in general NP-Guard error",
-			inputFolderPath1:      "testdata/empty-yamls",
-			inputFolderPath2:      "testdata/empty-yamls",
-			strict:                false,
-			expectedAnalysisError: npg.ErrErrors,
+		"Inputs with no resources should result in general NP-Guard error": {
+			inputFolderPath1: "testdata/empty-yamls",
+			inputFolderPath2: "testdata/empty-yamls",
+			strict:           false,
+			expectedWarn:     npg.ErrWarnings,
+			expectedErr:      nil,
 		},
-		{
-			name:                  "Treating warnings as errors should result in error of type 'npg.ErrWarnings'",
-			inputFolderPath1:      "testdata/acs-zeroday-with-invalid-doc",
-			inputFolderPath2:      "testdata/acs-zeroday-with-invalid-doc",
-			strict:                true,
-			expectedAnalysisError: npg.ErrWarnings,
+		"Inputs with no resources should result in general NP-Guard error when run with --fail": {
+			inputFolderPath1: "testdata/empty-yamls",
+			inputFolderPath2: "testdata/empty-yamls",
+			strict:           true,
+			expectedWarn:     nil,
+			expectedErr:      npg.ErrWarnings,
 		},
-		{
-			name:                  "Warnings on invalid input docs without using strict flag should not indicate warnings as errors",
-			inputFolderPath1:      "testdata/acs-zeroday-with-invalid-doc",
-			inputFolderPath2:      "testdata/acs-zeroday-with-invalid-doc",
-			strict:                false,
-			expectedAnalysisError: nil,
+		"Treating warnings as errors should result in error of type 'npg.ErrWarnings'": {
+			inputFolderPath1: "testdata/acs-zeroday-with-invalid-doc",
+			inputFolderPath2: "testdata/acs-zeroday-with-invalid-doc",
+			strict:           true,
+			expectedWarn:     nil,
+			expectedErr:      npg.ErrWarnings,
 		},
-		{
-			name:                  "Stop on first error with malformed yaml inputs should stop with general NP-Guard error",
-			inputFolderPath1:      "testdata/dirty", // yaml document malformed
-			inputFolderPath2:      "testdata/dirty",
-			stopOnFirstErr:        true,
-			expectedAnalysisError: nil, //npg.ErrErrors,
+		"Warnings on invalid input docs without using strict flag should not be treated as errors": {
+			inputFolderPath1: "testdata/acs-zeroday-with-invalid-doc",
+			inputFolderPath2: "testdata/acs-zeroday-with-invalid-doc",
+			strict:           false,
+			expectedWarn:     npg.ErrWarnings,
+			expectedErr:      nil,
 		},
-		{
-			name:                  "Testing Diff between two dirs should run successfully without errors",
-			inputFolderPath1:      "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
-			expectedAnalysisError: nil,
+		"Stop on first error with malformed yaml inputs should stop with general NP-Guard error as warning": {
+			inputFolderPath1: "testdata/dirty", // yaml document malformed
+			inputFolderPath2: "testdata/dirty",
+			stopOnFirstErr:   true,
+			strict:           false,
+			expectedWarn:     npg.ErrWarnings,
+			expectedErr:      nil,
+		},
+		"Stop on first error with malformed yaml inputs should stop with general NP-Guard error as error": {
+			inputFolderPath1: "testdata/dirty", // yaml document malformed
+			inputFolderPath2: "testdata/dirty",
+			stopOnFirstErr:   true,
+			strict:           true,
+			expectedWarn:     nil,
+			expectedErr:      npg.ErrWarnings,
+		},
+		"Testing Diff between two dirs should run successfully without errors": {
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			expectedWarn:     nil,
+			expectedErr:      nil,
 		},
 	}
 
-	for _, tt := range cases {
+	for name, tt := range cases {
 		tt := tt
-		d.Run(tt.name, func() {
+		d.Run(name, func() {
+			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
+			diffNetpolCmd := diffNetpolCommand{
+				stopOnFirstError:      tt.stopOnFirstErr,
+				treatWarningsAsErrors: tt.strict,
+				inputFolderPath1:      tt.inputFolderPath1,
+				inputFolderPath2:      tt.inputFolderPath2,
+				env:                   env,
+			}
+
+			d.NoError(diffNetpolCmd.validate())
+
+			_, _, warn, err := diffNetpolCmd.processInput()
+			if tt.expectedWarn != nil {
+				d.Require().Error(warn)
+				d.ErrorIs(warn, tt.expectedWarn)
+			} else {
+				d.NoError(warn, "Received unexpected warning")
+			}
+			if tt.expectedErr != nil {
+				d.Require().Error(err)
+				d.ErrorIs(err, tt.expectedErr)
+			} else {
+				d.NoError(err)
+			}
+		})
+	}
+}
+
+func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
+	cases := map[string]struct {
+		name                   string
+		inputFolderPath1       string
+		inputFolderPath2       string
+		strict                 bool
+		stopOnFirstErr         bool
+		expectedAnalyzerErrors []error
+		expectedError          error
+	}{
+		"Testing Diff between two empty dirs should return analysis error": {
+			inputFolderPath1: "testdata/empty-yamls",
+			inputFolderPath2: "testdata/empty-yamls",
+			expectedAnalyzerErrors: []error{
+				errors.New("at dir1: no relevant Kubernetes network policy resources found"),
+				errors.New("at dir2: no relevant Kubernetes network policy resources found"),
+				errors.New("at dir1: no relevant Kubernetes workload resources found"),
+				errors.New("at dir2: no relevant Kubernetes workload resources found"),
+			},
+			expectedError: npg.ErrErrors,
+		},
+		"Testing Diff between two dirs should run successfully without errors": {
+			inputFolderPath1:       "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2:       "testdata/netpol-diff-example-minimal",
+			expectedAnalyzerErrors: []error{},
+			expectedError:          nil,
+		},
+	}
+
+	for name, tt := range cases {
+		tt := tt
+		d.Run(name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			diffNetpolCmd := diffNetpolCommand{
 				stopOnFirstError:      tt.stopOnFirstErr,
@@ -161,12 +239,27 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 			d.NoError(err)
 
 			err = diffNetpolCmd.analyzeConnectivityDiff(analyzer)
-			if tt.expectedAnalysisError != nil {
+			if tt.expectedError != nil {
 				d.Require().Error(err)
-				d.ErrorIs(err, tt.expectedAnalysisError)
+				d.ErrorIs(err, tt.expectedError)
 			} else {
-				d.NoError(err)
+				d.NoError(err, "expected no error, but got: %v", err)
 			}
+
+			// convert custom errors to common errors
+			analyzerErrors := make([]error, len(analyzer.Errors()))
+			for i, diffError := range analyzer.Errors() {
+				analyzerErrors[i] = diffError.Error()
+			}
+
+			for _, err2 := range tt.expectedAnalyzerErrors {
+				d.ErrorContains(goerrors.Join(analyzerErrors...), err2.Error())
+			}
+
+			if tt.expectedAnalyzerErrors == nil || len(tt.expectedAnalyzerErrors) == 0 {
+				d.NoError(err, "expected no analyser error, but got: %v", goerrors.Join(analyzerErrors...))
+			}
+
 		})
 	}
 }
