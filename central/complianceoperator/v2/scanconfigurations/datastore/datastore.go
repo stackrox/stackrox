@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -35,30 +34,29 @@ type DataStore interface {
 	DeleteScanConfiguration(ctx context.Context, id string) (string, error)
 
 	// UpdateClusterStatus updates the scan configuration with the cluster status
-	UpdateClusterStatus(ctx context.Context, scanID string, clusterID string, clusterStatus string) error
+	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error
 
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
-	GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
+	GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
 
-	// Count scan config based on a query
+	// CountScanConfigurations scan config based on a query
 	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.
-func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore, searcher search.Searcher) DataStore {
+func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:       scanConfigStore,
 		statusStorage: scanConfigStatusStore,
 		clusterDS:     clusterDS,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
-		searcher:      searcher,
 	}
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore, searcher search.Searcher) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore) (DataStore, error) {
 	store := pgStore.New(pool)
-	statusStore := statusStore.New(pool)
-	return New(store, statusStore, clusterDS, searcher), nil
+	statusStorage := statusStore.New(pool)
+	return New(store, statusStorage, clusterDS), nil
 }

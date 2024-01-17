@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -36,6 +38,8 @@ type processScanConfigTestCase struct {
 	setMocks    func()
 	isErrorTest bool
 	expectedErr error
+	testContext context.Context
+	clusters    []string
 }
 
 func TestComplianceManager(t *testing.T) {
@@ -45,8 +49,9 @@ func TestComplianceManager(t *testing.T) {
 type complianceManagerTestSuite struct {
 	suite.Suite
 
-	hasWriteCtx context.Context
-	noAccessCtx context.Context
+	hasWriteCtx  context.Context
+	noAccessCtx  context.Context
+	testContexts map[string]context.Context
 
 	mockCtrl      *gomock.Controller
 	integrationDS *mocks.MockDataStore
@@ -69,8 +74,9 @@ func (suite *complianceManagerTestSuite) SetupTest() {
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
+			sac.ResourceScopeKeys(resources.Compliance)))
 	suite.noAccessCtx = sac.WithNoAccess(context.Background())
+	suite.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), suite.T(), resources.Compliance)
 
 	suite.integrationDS = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.scanConfigDS = scanConfigMocks.NewMockDataStore(suite.mockCtrl)
@@ -171,48 +177,74 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 	cases := []processScanConfigTestCase{
 		{
-			desc: "Successful creation of scan configuration",
+			desc:        "Successful creation of scan configuration",
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "")
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "")
 			},
 			isErrorTest: false,
 		},
 		{
-			desc: "Scan configuration already exists",
+			desc:        "Scan configuration already exists",
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(true, nil).Times(1)
 			},
 			isErrorTest: true,
 			expectedErr: errors.Errorf("Scan Configuration named %q already exists.", mockScanName),
 		},
 		{
-			desc: "Unable to store scan configuration",
+			desc:        "Unable to store scan configuration",
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
 			expectedErr: errors.Errorf("Unable to save scan config named %q", mockScanName),
 		},
 		{
-			desc: "Error from sensor",
+			desc:        "Error from sensor",
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "Unable to process sensor message")
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "Unable to process sensor message")
 			},
 			isErrorTest: false,
+		},
+		{
+			desc:        "Error due to not having write access",
+			testContext: suite.testContexts[testutils.UnrestrictedReadCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+			},
+			isErrorTest: true,
+			expectedErr: errors.New("access to resource denied"),
+		},
+		{
+			desc:        "Error due to only having write access to one of the clusters",
+			testContext: suite.testContexts[testutils.Cluster1ReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1, testconsts.Cluster2},
+			setMocks: func() {
+			},
+			isErrorTest: true,
+			expectedErr: errors.New("access to resource denied"),
 		},
 	}
 	for _, tc := range cases {
 		suite.T().Run(tc.desc, func(t *testing.T) {
 			tc.setMocks()
 
-			config, err := suite.manager.ProcessScanRequest(suite.hasWriteCtx, getTestRec(), []string{fixtureconsts.Cluster1})
+			config, err := suite.manager.ProcessScanRequest(tc.testContext, getTestRec(), tc.clusters)
 			if tc.isErrorTest {
 				suite.Require().NotNil(err)
 				suite.Require().Nil(config)
