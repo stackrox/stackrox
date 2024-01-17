@@ -550,7 +550,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	//remove scan config related to this cluster
 	ds.removeScanConfigObjects(ctx, cluster)
-	//remove profile cluster edge 
+	//remove profile cluster edge
 
 	// Remove nodes associated with this cluster
 	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
