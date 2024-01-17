@@ -10,6 +10,7 @@ import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationU
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
+const complianceResultsServiceUrl = '/v2/compliance/scan';
 
 export type ScheduleBase = {
     hour: number;
@@ -69,19 +70,46 @@ export type ComplianceScanConfigurationStatus = {
 
 // API types for Scan Results:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_results_service
-interface ComplianceScanStatsShim {
-    id: string; // TODO: id should be included in api response/proto
+
+export const ComplianceCheckStatus = {
+    UNSET_CHECK_STATUS: 'UNSET_CHECK_STATUS',
+    PASS: 'PASS',
+    FAIL: 'FAIL',
+    ERROR: 'ERROR',
+    INFO: 'INFO',
+    MANUAL: 'MANUAL',
+    NOT_APPLICABLE: 'NOT_APPLICABLE',
+    INCONSISTENT: 'INCONSISTENT',
+} as const;
+
+export type ComplianceCheckStatus =
+    (typeof ComplianceCheckStatus)[keyof typeof ComplianceCheckStatus];
+
+type ComplianceScanCluster = {
+    clusterId: string;
+    clusterName: string;
+};
+
+export type ComplianceCheckStatusCount = {
+    count: number;
+    status: ComplianceCheckStatus;
+};
+
+type ComplianceScanStatsShim = {
     scanName: string;
-    numberOfChecks: number; // int32
-    numberOfFailingChecks: number; // int32
-    numberOfPassingChecks: number; // int32
+    checkStats: ComplianceCheckStatusCount[];
     lastScan: string; // ISO 8601 date string
-}
+};
+
+type ComplianceClusterScanStats = {
+    scanStats: ComplianceScanStatsShim;
+    cluster: ComplianceScanCluster;
+};
 
 export interface ComplianceScanResultsOverview {
     scanStats: ComplianceScanStatsShim;
     profileName: string[];
-    clusterId: string[];
+    cluster: ComplianceScanCluster[];
 }
 
 export interface ListComplianceScanResultsOverviewResponse {
@@ -156,6 +184,27 @@ export function complianceResultsOverview(
             }
         });
     });
+}
+
+export function getComplianceClusterScanStats(
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceClusterScanStats[]> {
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        pagination: { offset, limit: pageSize },
+    };
+    const params = qs.stringify({ query });
+    return axios
+        .get<{ scanStats: ComplianceClusterScanStats[] }>(
+            `${complianceResultsServiceUrl}/stats/cluster?${params}`
+        )
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
 }
 
 /*
