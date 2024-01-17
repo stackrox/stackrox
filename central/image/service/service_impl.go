@@ -528,7 +528,7 @@ func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, reques
 		return scanExpired
 	}
 
-	v4MatchRequest := scannerV4MatchRequest(request)
+	v4MatchRequest := scannerTypes.ScannerV4IndexerVersion(request.GetIndexerVersion())
 	v4ExistingScan := existingImg.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
 	if v4ExistingScan && !v4MatchRequest {
 		// Do not overwrite a V4 scan with a Clairify scan regardless of expiration.
