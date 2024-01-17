@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
@@ -36,6 +37,8 @@ type Scanner interface {
 	// for that image does not exist, it is created. It returns the vulnerability
 	// report.
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator) (*v4.VulnerabilityReport, error)
+
+	GetMetadata(ctx context.Context) (*v4.Metadata, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -189,6 +192,20 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
 	return vr, nil
+}
+
+func (c *gRPCScanner) GetMetadata(ctx context.Context) (*v4.Metadata, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMetadata")
+	var m *v4.Metadata
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
+		var err error
+		m, err = c.matcher.GetMetadata(ctx, &types.Empty{})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get metadata: %w", err)
+	}
+	return m, nil
 }
 
 func getImageManifestID(ref name.Digest) string {

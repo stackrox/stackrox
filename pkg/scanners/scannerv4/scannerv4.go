@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -136,8 +137,15 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	// TODO(ROX-21040): Implementation dependent on the API existing.
-	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+	m, err := s.scannerClient.GetMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: m.GetLastVulnerabilityUpdate(),
+	}, nil
 }
 
 func (s *scannerv4) Match(image *storage.ImageName) bool {
