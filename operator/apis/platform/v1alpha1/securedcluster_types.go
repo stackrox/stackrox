@@ -296,7 +296,7 @@ type CollectorContainerSpec struct {
 	// When the "collection" field is set to the deprecated value "EBPF", then
 	// setting this to "true" prevents conversion of the collection method to
 	// "CORE_BPF". This could be used in exceptional situations when "EBPF" has
-	// to be enforces.
+	// to be used.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`
