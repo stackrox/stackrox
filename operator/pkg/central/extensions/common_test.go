@@ -98,8 +98,8 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	client = interceptor.NewClient(client, c.InterceptedK8sAPICalls)
 
-	// Verify that an initial invocation does not touch any of the existing secrets, and creates
-	// the expected ones.
+	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
+	// the expected managed ones.
 	err := runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
 	if c.ExpectedError == "" {
 		require.NoError(t, err)

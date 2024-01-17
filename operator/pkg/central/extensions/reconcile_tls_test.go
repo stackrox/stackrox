@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/types"
@@ -52,6 +54,24 @@ func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) s
 	}
 }
 
+// Inspired by certgen.GenerateCA.
+func generateInvalidCA() (mtls.CA, error) {
+	serial, err := mtls.RandomSerial()
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate a serial number")
+	}
+	req := csr.CertificateRequest{
+		CN:           mtls.ServiceCACommonName + " this makes it invalid",
+		KeyRequest:   csr.NewKeyRequest(),
+		SerialNumber: serial.String(),
+	}
+	caCert, _, caKey, err := initca.New(&req)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate keypair")
+	}
+	return mtls.LoadCAForSigning(caCert, caKey)
+}
+
 func TestCreateCentralTLS(t *testing.T) {
 	testCA, err := certgen.GenerateCA()
 	require.NoError(t, err)
@@ -69,6 +89,65 @@ func TestCreateCentralTLS(t *testing.T) {
 			Namespace: testutils.TestNamespace,
 		},
 		Data: centralFileMap,
+	}
+
+	centralFileMapWithInvalidLeaf := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidLeaf, testCA)
+	unrelatedTestCA, err := certgen.GenerateCA()
+	require.NoError(t, err)
+	// Resulting cert will not match CA and thus be up for replacement.
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidLeaf, unrelatedTestCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidLeaf, jwtKey)
+
+	existingCentralWithInvalidLeaf := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidLeaf,
+	}
+
+	centralFileMapWithMissingCAKey := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithMissingCAKey, testCA)
+	delete(centralFileMapWithMissingCAKey, mtls.CAKeyFileName)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithMissingCAKey, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithMissingCAKey, jwtKey)
+
+	existingCentralWithMissingCAKey := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithMissingCAKey,
+	}
+
+	centralFileMapWithInvalidCA := make(types.SecretDataMap)
+	invalidCA, err := generateInvalidCA()
+	require.NoError(t, err)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidCA, invalidCA)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidCA, invalidCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidCA, jwtKey)
+
+	existingCentralWithInvalidCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidCA,
+	}
+
+	centralFileMapWithCorruptCA := make(types.SecretDataMap)
+	centralFileMapWithCorruptCA[mtls.CACertFileName] = []byte("corrupt cert")
+	centralFileMapWithCorruptCA[mtls.CAKeyFileName] = []byte("corrupt key")
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithCorruptCA, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMap, jwtKey)
+
+	existingCentralWithCorruptCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithCorruptCA,
 	}
 
 	centralDBFileMap := make(types.SecretDataMap)
@@ -139,6 +218,29 @@ func TestCreateCentralTLS(t *testing.T) {
 				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
 				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
+		},
+		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidLeaf, existingCentralDB},
+			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+				"central-tls":    verifyCentralCert,
+				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+			},
+		},
+		"When a managed central-tls secret with missing CA key exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithMissingCAKey, existingCentralDB},
+			ExpectedError:   "malformed secret (ca.pem present but ca-key.pem missing), please delete it",
+		},
+		"When a managed central-tls secret with invalid CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidCA, existingCentralDB},
+			ExpectedError:   "invalid properties of CA in the existing secret, please delete it to allow re-generation: invalid certificate common name",
+		},
+		"When a managed central-tls secret with corrupt CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false),
+			ExistingManaged: []*v1.Secret{existingCentralWithCorruptCA, existingCentralDB},
+			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
 			Spec:     basicSpecWithScanner(false),
@@ -320,7 +422,7 @@ func TestRenewInitBundle(t *testing.T) {
 
 	cases := map[string]renewInitBundleTestCase{
 		"should NOT refresh init-bundle when the certificate remains valid": {
-			now:         "2021-02-11T12:00:00.000Z",
+			now:         "2021-02-11T11:59:00.000Z",
 			notBefore:   "2021-02-11T00:00:00.000Z",
 			notAfter:    "2021-02-11T23:59:59.000Z",
 			expectError: false,
@@ -329,19 +431,19 @@ func TestRenewInitBundle(t *testing.T) {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T00:00:00.000Z",
 			notAfter:           "2021-02-11T11:00:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 11:00:00 +0000 UTC, renew threshold: 2021-02-11 09:30:00 +0000 UTC",
+			expectErrorMessage: "certificate expired at 2021-02-11 11:00:00 +0000 UTC",
 		},
 		"should refresh init-bundle when the certificate lifetime is not started": {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T22:00:00.000Z",
 			notAfter:           "2021-02-11T23:59:59.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate lifetime starts in the future, not before: 2021-02-11 22:00:00 +0000 UTC",
+			expectErrorMessage: "certificate lifetime start 2021-02-11 22:00:00 +0000 UTC is in the future",
 		},
 		"should refresh init-bundle when the certificate expires within the reconciliation period": {
 			now:                "2021-02-11T12:00:00.000Z",
 			notBefore:          "2021-02-11T00:00:00.000Z",
 			notAfter:           "2021-02-11T12:30:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 12:30:00 +0000 UTC, renew threshold: 2021-02-11 11:00:00 +0000 UTC",
+			expectErrorMessage: "certificate is past half of its validity, 2021-02-11 06:15:00 +0000 UTC",
 		},
 	}
 
@@ -364,12 +466,12 @@ func TestRenewInitBundle(t *testing.T) {
 
 			if c.expectError {
 				if c.expectErrorMessage != "" {
-					assert.EqualError(t, checkInitBundleCertRenewal(cert, now), c.expectErrorMessage)
+					assert.EqualError(t, checkCertRenewal(cert, now), c.expectErrorMessage)
 				} else {
-					assert.Error(t, checkInitBundleCertRenewal(cert, now))
+					assert.Error(t, checkCertRenewal(cert, now))
 				}
 			} else {
-				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
+				assert.NoError(t, checkCertRenewal(cert, now))
 			}
 		})
 	}
@@ -748,5 +850,75 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func Test_checkCertRenewal(t *testing.T) {
+	d := time.Date(2024, time.January, 10, 12, 0, 0, 0, time.UTC)
+	tests := map[string]struct {
+		certificate *x509.Certificate
+		currentTime time.Time
+		wantErr     assert.ErrorAssertionFunc
+	}{
+		"backwards": {
+			certificate: &x509.Certificate{
+				NotBefore: d.Add(10 * time.Hour),
+				NotAfter:  d,
+			},
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expires at 2024-01-10 12:00:00 +0000 UTC before it begins to be valid at 2024-01-10 22:00:00 +0000 UTC")
+			},
+		},
+		"future": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(-2 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate lifetime start 2024-01-10 12:00:00 +0000 UTC is in the future")
+			},
+		},
+		"expired": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(12 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expired at 2024-01-10 22:00:00 +0000 UTC")
+			},
+		},
+		"expiring soon": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(6 * time.Hour),
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate is past half of its validity, 2024-01-10 17:00:00 +0000 UTC")
+			},
+		},
+		"valid": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(10 * time.Hour),
+			},
+			currentTime: d.Add(2 * time.Hour),
+			wantErr:     assert.NoError,
+		},
+		"extremely short validity": {
+			certificate: &x509.Certificate{
+				NotBefore: d,
+				NotAfter:  d.Add(4 * time.Microsecond),
+			},
+			currentTime: d.Add(1 * time.Microsecond),
+			wantErr:     assert.NoError,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			tt.wantErr(t, checkCertRenewal(tt.certificate, tt.currentTime), fmt.Sprintf("checkCertRenewal(%v, %v)", tt.certificate, tt.currentTime))
+		})
 	}
 }
