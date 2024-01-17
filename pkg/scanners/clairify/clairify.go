@@ -402,11 +402,8 @@ func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 
 // GetVulnerabilities retrieves the vulnerabilities present in the given image
 // represented by the given components and scan notes.
-func (c *clairify) GetVulnerabilities(image *storage.Image, components any, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
-	clairComponents, ok := components.(*clairGRPCV1.Components)
-	if !ok {
-		return nil, errors.Errorf("invalid components type: %T", components)
-	}
+func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerTypes.ScanComponents, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+	clairComponents := components.Clairify()
 
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
 		Components: clairComponents,
@@ -420,11 +417,6 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components any, note
 	}
 
 	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
-}
-
-func (c *clairify) CanHandle(components any) bool {
-	_, ok := components.(*clairGRPCV1.Components)
-	return ok
 }
 
 func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {

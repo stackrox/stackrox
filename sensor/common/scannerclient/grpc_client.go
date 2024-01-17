@@ -197,7 +197,7 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Clairify scanner for image: %q", imgName)
+	log.Debugf("Received image components from local Scanner for image: %q", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),

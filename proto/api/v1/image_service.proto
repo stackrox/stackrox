@@ -63,6 +63,7 @@ message GetImageVulnerabilitiesInternalRequest {
 }
 
 message EnrichLocalImageInternalRequest {
+    string                      indexer_version  = 12;
     string                      image_id         = 1;
     storage.ImageName           image_name       = 2;
     storage.ImageMetadata       metadata         = 3;
@@ -74,7 +75,6 @@ message EnrichLocalImageInternalRequest {
     string                      request_id       = 9;
     bool                        force            = 10;
     scanner.v4.Contents         v4_contents      = 11;
-    string                      indexer_version  = 12;
 }
 
 message UpdateLocalScanStatusInternalRequest {
