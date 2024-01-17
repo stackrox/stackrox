@@ -20,13 +20,18 @@ type scanResultKey struct {
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
 func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) *v2.ComplianceCheckResult {
 	converted := &v2.ComplianceCheckResult{
-		CheckId:      incoming.GetCheckId(),
-		CheckName:    incoming.GetCheckName(),
-		Description:  incoming.GetDescription(),
-		Instructions: incoming.GetInstructions(),
+		CheckId:   incoming.GetCheckId(),
+		CheckName: incoming.GetCheckName(),
 		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
 			clusterStatus(incoming),
 		},
+		Description:  incoming.GetDescription(),
+		Instructions: incoming.GetInstructions(),
+		Standard:     incoming.GetStandard(),
+		Control:      incoming.GetControl(),
+		Rationale:    incoming.GetRationale(),
+		ValuesUsed:   incoming.GetValuesUsed(),
+		Warnings:     incoming.GetWarnings(),
 	}
 
 	return converted
