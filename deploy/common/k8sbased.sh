@@ -260,7 +260,7 @@ function launch_central {
     echo
     if [[ -n "${TRUSTED_CA_FILE}" ]]; then
         if [[ "${namespace}" != "stackrox" ]]; then
-          echo "CA setup using '$TRUSTED_CA_FILE' is not support for custom namespace '${namespace}'." >&2
+          echo "CA setup using '$TRUSTED_CA_FILE' is not supported for custom namespace '${namespace}'." >&2
           exit 1
         fi
         if [[ -x "${unzip_dir}/scripts/ca-setup.sh" ]]; then
@@ -650,7 +650,6 @@ function launch_sensor {
 
       if [[ "$SENSOR_SCANNER_SUPPORT" == "true" ]]; then
         helm_args+=(--set scanner.disable=false)
-        helm_args+=(--set scannerV4.disable=false)
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then
@@ -725,7 +724,7 @@ function launch_sensor {
             hotload_binary bin/kubernetes-sensor kubernetes sensor "${namespace}"
         fi
         if [[ -z "${IS_RACE_BUILD}" ]]; then
-           kubectl -n "${namespace}" "${namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+           kubectl -n "${namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
         fi
     fi
 
