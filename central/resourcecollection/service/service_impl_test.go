@@ -50,7 +50,7 @@ func TestConsumers(t *testing.T) {
 
 	service := Singleton()
 	ctx := sac.WithAllAccess(context.Background())
-	resp, err := service.GetConsumers(ctx, &v1.ResourceByID{Id: "34a8c750-2ad0-44c5-8449-2648ccbeaaa3"})
+	resp, err := service.GetConsumers(ctx, &v1.ResourceByID{Id: "87504466-d0a4-4f51-9e76-e603574c3dcc"})
 	require.NoError(t, err)
 	fmt.Printf("%+v", resp.GetCollectionConsumer())
 	assert.NotEmpty(t, resp.GetCollectionConsumer())

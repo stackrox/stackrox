@@ -181,14 +181,15 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 //		ConsumerType ConsumerType
 //	}
 func (s *serviceImpl) GetConsumers(ctx context.Context, request *v1.ResourceByID) (*v1.CollectionConsumerListResponse, error) {
-	// error out if collection is in use by a report config
+	// TODO: This query below should work to reecive all report configurations with a foreign key = request.GetID()
+	// see test case TestConsumers()
 	//query := search.DisjunctionQuery(
-	//	search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery(),
 	//	search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery(),
 	//)
 
+	//query := search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery()
 	query := search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery()
-	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, nil)
+	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
 	}
