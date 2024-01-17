@@ -18,7 +18,6 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -71,7 +70,7 @@ func (s *postgresMigrationSuite) populateStore(clusterStore store.ClusterStore, 
 }
 
 func (s *postgresMigrationSuite) verify(flowStore store.FlowStore, flows []*storage.NetworkFlow) {
-	fetched, _, err := flowStore.GetAllFlows(s.ctx, &types.Timestamp{})
+	fetched, _, err := flowStore.GetAllFlows(s.ctx, protocompat.GetProtoTimestampZero())
 	s.NoError(err)
 	s.Len(fetched, len(flows))
 	sort.SliceStable(fetched, func(i, j int) bool {

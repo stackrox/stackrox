@@ -53,7 +53,7 @@ func (s *clusterStoreImpl) Walk(ctx context.Context, fn func(clusterID string, t
 		}
 		currentCluster = string(clusterID)
 		currentFlowStore = s.GetFlowStore(currentCluster)
-		flows, ts, err := currentFlowStore.GetAllFlows(ctx, &types.Timestamp{})
+		flows, ts, err := currentFlowStore.GetAllFlows(ctx, protocompat.GetProtoTimestampZero())
 		if err != nil {
 			return err
 		}
