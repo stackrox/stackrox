@@ -176,7 +176,7 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx conte
 		secretSpec, ok := r.secrets[cert.GetServiceType()]
 		if !ok {
 			// we don't know how to persist this.
-			err := errors.Errorf("unkown service type %q", cert.GetServiceType())
+			err := errors.Errorf("unknown service type %q", cert.GetServiceType())
 			serviceErrors = multierror.Append(serviceErrors, err)
 			continue
 		}
