@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -29,6 +30,11 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
+)
+
+const (
+	proxyConfigPath = "/run/secrets/stackrox.io/proxy-config"
+	proxyConfigFile = "config.yaml"
 )
 
 // Backends holds the backend engines the scanner may use depending on the
@@ -43,6 +49,12 @@ type Backends struct {
 }
 
 func init() {
+	// Set the http.DefaultTransport's Proxy function to one which reads from the proxy configuration file.
+	// Note: http.DefaultClient uses http.DefaultTransport.
+	if !proxy.UseWithDefaultTransport() {
+		golog.Println("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+	}
+
 	memlimit.SetMemoryLimit()
 }
 
@@ -74,6 +86,9 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(p, mtls.ServiceCertFileName)))
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(p, mtls.ServiceKeyFileName)))
 	}
+
+	// Periodically check for proxy updates.
+	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
 
 	// Initialize metrics and metrics server.
 	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())

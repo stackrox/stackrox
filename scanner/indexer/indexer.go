@@ -35,6 +35,7 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/version"
@@ -106,7 +107,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	// TODO: Update the HTTP client.
+	// Note: the DefaultClient has already been modified with Transport set to one which handles configured proxies.
+	// See scanner/cmd/scanner/main.go.
 	c := http.DefaultClient
 	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
 	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
@@ -211,10 +213,23 @@ func (i *localIndexer) IndexContainerImage(
 	return i.libIndex.Index(ctx, manifest)
 }
 
+var remoteTransport = proxiedRemoteTransport()
+
+func proxiedRemoteTransport() http.RoundTripper {
+	tr, ok := remote.DefaultTransport.(*http.Transport)
+	if !ok {
+		// The proxy function was already modified to proxy.TransportFunc.
+		// See scanner/cmd/scanner/main.go.
+		return http.DefaultTransport
+	}
+	tr.Proxy = proxy.TransportFunc
+	return tr
+}
+
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
 	repo := imgRef.Context()
 	reg := repo.Registry
-	tr := remote.DefaultTransport
+	tr := remoteTransport
 	tr = transport.NewUserAgent(tr, `StackRox Scanner/`+version.Version)
 	tr = transport.NewRetry(tr)
 	var err error
