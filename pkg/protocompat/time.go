@@ -22,15 +22,21 @@ func ConvertTimeToTimestampOrError(goTime time.Time) (*gogoTimestamp.Timestamp, 
 }
 
 // GetProtoTimestampFromSeconds instantiates a protobuf Timestamp structure initialized
-// with the input to the seconds granularity
+// with the input to the seconds granularity.
 func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {
 	return &gogoTimestamp.Timestamp{Seconds: seconds}
 }
 
 // GetProtoTimestampFromSecondsAndNanos instantiates a protobuf Timestamp structure initialized
-// with the input to the seconds granularity
+// with the input to the seconds and nanoseconds granularity.
 func GetProtoTimestampFromSecondsAndNanos(seconds int64, nanos int32) *gogoTimestamp.Timestamp {
 	return &gogoTimestamp.Timestamp{Seconds: seconds, Nanos: nanos}
+}
+
+// GetProtoTimestampZero instantiates a protobuf Timestamp structure initialized
+// with the zero values for all fields.
+func GetProtoTimestampZero() *gogoTimestamp.Timestamp {
+	return &gogoTimestamp.Timestamp{}
 }
 
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if

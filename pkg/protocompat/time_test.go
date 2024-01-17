@@ -78,6 +78,12 @@ func TestGetProtoTimestampFromSecondsAndNanos(t *testing.T) {
 	assert.Equal(t, nanos2, ts2.GetNanos())
 }
 
+func TestGetProtoTimestampZero(t *testing.T) {
+	ts1 := GetProtoTimestampZero()
+	assert.Equal(t, int64(0), ts1.GetSeconds())
+	assert.Equal(t, int32(0), ts1.GetNanos())
+}
+
 func TestTimestampNow(t *testing.T) {
 	nowTime := time.Now()
 	nowTimestamp := TimestampNow()
