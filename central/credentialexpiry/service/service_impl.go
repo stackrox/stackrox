@@ -162,7 +162,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 			errorList.AddError(err)
 			// All the endpoints have failed.
 			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
-				return nil, errors.New(errorList.String())
+				return nil, errorList.ToError()
 			}
 		case expiry := <-expiryC:
 			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
@@ -228,7 +228,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 		}
 	}
 	if len(expiries) == 0 {
-		return nil, errors.New(errorList.String())
+		return nil, errorList.ToError()
 	}
 
 	sort.Slice(expiries, func(i, j int) bool {
