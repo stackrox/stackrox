@@ -9,5 +9,5 @@ var (
 
 	// SensorEnhancementQueueSize configures the size of the buffered channel that incoming
 	// DeploymentEnhancementRequests are queued in
-	SensorEnhancementQueueSize = RegisterIntegerSetting("ROX_SENSOR_ENHANCEMENT_QUEUE_SIZE", 50)
+	SensorDeploymentEnhancementQueueSize = RegisterIntegerSetting("ROX_SENSOR_DEPLOYMENT_ENHANCEMENT_QUEUE_SIZE", 50)
 )
