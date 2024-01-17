@@ -808,7 +808,7 @@ spec:
       - description: When the "collection" field is set to the deprecated value "EBPF",
           then setting this to "true" prevents conversion of the collection method
           to "CORE_BPF". This could be used in exceptional situations when "EBPF"
-          has to be enforces.
+          has to be used.
         displayName: Force Collection
         path: perNode.collector.forceCollection
         x-descriptors:

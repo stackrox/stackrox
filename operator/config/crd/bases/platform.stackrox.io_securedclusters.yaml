@@ -483,7 +483,7 @@ spec:
                         description: When the "collection" field is set to the deprecated
                           value "EBPF", then setting this to "true" prevents conversion
                           of the collection method to "CORE_BPF". This could be used
-                          in exceptional situations when "EBPF" has to be enforces.
+                          in exceptional situations when "EBPF" has to be used.
                         type: boolean
                       imageFlavor:
                         default: Regular
