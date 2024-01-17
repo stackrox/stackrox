@@ -92,7 +92,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
-	// TODO(ROX-18888): Update HTTP client.
+	// Note: the DefaultClient has already been modified with Transport set to one which handles configured proxies.
+	// See scanner/cmd/scanner/main.go.
 	c := http.DefaultClient
 
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
