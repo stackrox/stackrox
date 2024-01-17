@@ -152,16 +152,16 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 			query:       &apiV2.RawQuery{Query: ""},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterScanStats{
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1),
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster2),
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster3),
+				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster1),
+				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster2),
+				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster3),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				results := []*datastore.ResourceCountByResultByCluster{
-					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster1),
-					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster2),
-					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster3),
+				results := []*datastore.ResourceResultCountByClusterScan{
+					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
+					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster2),
+					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster3),
 				}
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
@@ -171,14 +171,14 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
 			expectedErr: nil,
 			expectedResp: []*apiV2.ComplianceClusterScanStats{
-				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1),
+				convertUtils.GetComplianceClusterScanV2Count(s.T(), fixtureconsts.Cluster1),
 			},
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
-				results := []*datastore.ResourceCountByResultByCluster{
-					convertUtils.GetComplianceStorageCount(s.T(), fixtureconsts.Cluster1),
+				results := []*datastore.ResourceResultCountByClusterScan{
+					convertUtils.GetComplianceStorageClusterScanCount(s.T(), fixtureconsts.Cluster1),
 				}
 				s.resultDatastore.EXPECT().ComplianceCheckResultStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
 			},
@@ -201,6 +201,81 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceClusterScanStats() 
 			tc.setMocks()
 
 			results, err := s.service.GetComplianceClusterScanStats(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+			}
+		})
+	}
+}
+
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.RawQuery
+		expectedResp []*apiV2.ComplianceClusterOverallStats
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc:        "Empty query",
+			query:       &apiV2.RawQuery{Query: ""},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceClusterOverallStats{
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster2),
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster3),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				results := []*datastore.ResultStatusCountByCluster{
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster2),
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster3),
+				}
+				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with search field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceClusterOverallStats{
+				convertUtils.GetComplianceClusterV2Count(s.T(), fixtureconsts.Cluster1),
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+				results := []*datastore.ResultStatusCountByCluster{
+					convertUtils.GetComplianceStorageClusterCount(s.T(), fixtureconsts.Cluster1),
+				}
+				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(results, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with non-existent field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceOverallClusterStats(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 			} else {
