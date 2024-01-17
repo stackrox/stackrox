@@ -38,6 +38,9 @@ spec:
       nodeSelector:
         {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if ._rox.admissionControl.priorityClassName }}
+      priorityClassName: {{ ._rox.admissionControl.priorityClassName }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000

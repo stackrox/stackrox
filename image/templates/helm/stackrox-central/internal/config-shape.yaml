@@ -31,6 +31,7 @@ central:
   nodeSelector: null # string | dict
   tolerations: null # [dict]
   affinity: null # dict
+  priorityClassName: null # string
   exposeMonitoring: null # bool
   jwtSigner:
     key: null # string
@@ -82,6 +83,7 @@ central:
   db:
     nodeSelector: null # string | dict
     tolerations: null # [dict]
+    priorityClassName: null # string
     source:
       connectionString: null # string
       minConns: null # int

@@ -38,6 +38,9 @@ spec:
       {{- end }}
       affinity:
       {{- toYaml ._rox.sensor.affinity | nindent 8 }}
+      {{- if ._rox.sensor.priorityClassName }}
+      priorityClassName: {{ ._rox.sensor.priorityClassName }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
