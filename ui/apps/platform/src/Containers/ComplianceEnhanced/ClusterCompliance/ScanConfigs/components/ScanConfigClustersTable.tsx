@@ -11,43 +11,9 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
+import IconText from 'Components/PatternFly/IconText/IconText';
 import { ClusterScanStatus } from 'services/ComplianceEnhancedService';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const mockClusters = [
-    {
-        id: 'control-cluster',
-        name: 'control-cluster',
-        type: 'OCP',
-        provider: 'AWS',
-        region: 'us-east-1',
-        status: 'Healthy',
-    },
-    {
-        id: 'prod-cluster',
-        name: 'prod-cluster',
-        type: 'OSD',
-        provider: 'AWS',
-        region: 'us-east-1',
-        status: 'Healthy',
-    },
-    {
-        id: 'staging-cluster',
-        name: 'staging-cluster',
-        type: 'OCP',
-        provider: 'AWS',
-        region: 'us-west-1',
-        status: 'Healthy',
-    },
-    {
-        id: 'dev-cluster',
-        name: 'dev-cluster',
-        type: 'OCP',
-        provider: 'GCP',
-        region: 'us-central-1',
-        status: 'Healthy',
-    },
-];
+import { getClusterStatusObject } from '../compliance.scanConfigs.utils';
 
 type ScanConfigClustersTableProps = {
     clusterScanStatuses: ClusterScanStatus[];
@@ -151,24 +117,24 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams(0)}>Cluster</Th>
-                            <Th>Type</Th>
-                            <Th sort={getSortParams(2)}>Provider (Region)</Th>
-                            <Th sort={getSortParams(3)}>Operator status</Th>
+                            <Th sort={getSortParams(1)} width={20}>
+                                Operator status
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {clustersWindow.map((cluster) => {
+                            const statusObj = getClusterStatusObject(cluster.errors);
+
                             return (
                                 <Tr key={cluster.clusterId}>
-                                    <Td>{cluster.clusterName}</Td>
-                                    {/* @ts-expect-error api */}
-                                    <Td>{cluster.type || '-'}</Td>
-                                    <Td>
-                                        {/* @ts-expect-error api */}
-                                        {cluster.provider || '-'} ({cluster.region || '-'})
+                                    <Td dataLabel="Cluster">{cluster.clusterName}</Td>
+                                    <Td dataLabel="Operator status">
+                                        <IconText
+                                            icon={statusObj.icon}
+                                            text={statusObj.statusText}
+                                        />
                                     </Td>
-                                    {/* @ts-expect-error api */}
-                                    <Td>{cluster.status || '-'}</Td>
                                 </Tr>
                             );
                         })}

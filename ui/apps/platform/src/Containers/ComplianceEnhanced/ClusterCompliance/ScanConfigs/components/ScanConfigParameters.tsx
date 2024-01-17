@@ -45,13 +45,17 @@ function ScanConfigParameters({ scanConfig }: ScanConfigParametersProps): React.
                     <DescriptionListGroup>
                         <DescriptionListTerm>Last run</DescriptionListTerm>
                         <DescriptionListDescription>
+                            {/* TODO: (vjw, 2024-01-16) using the `lastUpdatedTime` field
+                                      as a placeholder for now
+                                      There is a comment in GitHub that the correct field,
+                                      `lastRun` will be available soon.
+                            */}
                             <Timestamp
                                 date={new Date(scanConfig.lastUpdatedTime)}
                                 dateFormat="short"
                                 timeFormat="long"
                                 className="pf-u-color-100 pf-u-font-size-md"
                             />
-                            <span className="pf-u-warning-color-100">(using lastUpdatedTime)</span>
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
