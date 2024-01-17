@@ -6,16 +6,14 @@ import (
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 var (
-	clientContentType = stringutils.FirstNonEmpty(env.KubernetesClientContentType.Setting(), "application/vnd.kubernetes.protobuf")
-
 	log = logging.LoggerForModule()
 )
 
@@ -36,15 +34,6 @@ type clientSet struct {
 	openshiftConfig   configVersioned.Interface
 	openshiftRoute    routeVersioned.Interface
 	openshiftOperator operatorVersioned.Interface
-}
-
-func mustCreateK8sClient(config *rest.Config) kubernetes.Interface {
-	config.ContentType = clientContentType
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Panicf("Creating Kubernetes clientset: %v", err)
-	}
-	return client
 }
 
 func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interface {
@@ -101,10 +90,9 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 
 // MustCreateInterfaceFromRest creates a client interface using a rest config as a parameter
 func MustCreateInterfaceFromRest(config *rest.Config) Interface {
-	config.ContentType = clientContentType
 	return &clientSet{
 		dynamic:           mustCreateDynamicClient(config),
-		k8s:               mustCreateK8sClient(config),
+		k8s:               k8sutil.MustCreateK8sClient(config),
 		openshiftApps:     mustCreateOpenshiftAppsClient(config),
 		openshiftConfig:   mustCreateOpenshiftConfigClient(config),
 		openshiftRoute:    mustCreateOpenshiftRouteClient(config),
@@ -114,7 +102,7 @@ func MustCreateInterfaceFromRest(config *rest.Config) Interface {
 
 // MustCreateInterface creates a client interface for both Kubernetes and Openshift clients
 func MustCreateInterface() Interface {
-	config, err := rest.InClusterConfig()
+	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
 	}
