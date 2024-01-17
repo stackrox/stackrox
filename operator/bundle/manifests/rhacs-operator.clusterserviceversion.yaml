@@ -886,7 +886,8 @@ spec:
       - description: The method for system-level data collection. CORE_BPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
-          these section will not have any effect.
+          these section will not have any effect. The value is a subject of conversion
+          by the operator if needed, e.g. to remove deprecated methods.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
@@ -900,10 +901,14 @@ spec:
           please refer to the documentation).
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
-      - description: Set this to 'true' to prevent translation of the collection method,
-          e.g. to enforce using EBPF as an exception.
+      - description: When the "collection" field is set to the deprecated value "EBPF",
+          then setting this to "true" prevents conversion of the collection method
+          to "CORE_BPF". This could be used in exceptional situations when "EBPF"
+          has to be used.
         displayName: Force Collection
         path: perNode.collector.forceCollection
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.

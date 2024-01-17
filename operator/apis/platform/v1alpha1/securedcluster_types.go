@@ -279,6 +279,8 @@ type CollectorContainerSpec struct {
 	// The method for system-level data collection. CORE_BPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
+	// The value is a subject of conversion by the operator if needed, e.g. to
+	// remove deprecated methods.
 	//+kubebuilder:default=CORE_BPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
@@ -291,9 +293,12 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	// Set this to 'true' to prevent translation of the collection method, e.g. to enforce using EBPF as an exception.
+	// When the "collection" field is set to the deprecated value "EBPF", then
+	// setting this to "true" prevents conversion of the collection method to
+	// "CORE_BPF". This could be used in exceptional situations when "EBPF" has
+	// to be used.
 	//+kubebuilder:default=false
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
