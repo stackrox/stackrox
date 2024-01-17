@@ -40,6 +40,7 @@ export type JiraIntegration = {
             priorityName: string;
         }[];
         defaultFieldsJson: string;
+        disablePriority: boolean;
     };
     type: 'jira';
 } & NotifierIntegrationBase;
@@ -85,19 +86,19 @@ export const validationSchema = yup.object().shape({
 const defaultSeverities = [
     {
         severity: 'CRITICAL_SEVERITY',
-        priorityName: 'P0-Highest',
+        priorityName: 'Highest',
     },
     {
         severity: 'HIGH_SEVERITY',
-        priorityName: 'P1-High',
+        priorityName: 'High',
     },
     {
         severity: 'MEDIUM_SEVERITY',
-        priorityName: 'P2-Medium',
+        priorityName: 'Medium',
     },
     {
         severity: 'LOW_SEVERITY',
-        priorityName: 'P3-Low',
+        priorityName: 'Low',
     },
 ];
 
@@ -112,6 +113,7 @@ export const defaultValues: JiraIntegrationFormValues = {
             url: '',
             priorityMappings: defaultSeverities,
             defaultFieldsJson: '',
+            disablePriority: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -314,6 +316,20 @@ function JiraIntegrationForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
+                        <FormLabelGroup
+                            fieldId="notifier.jira.disablePriority"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Disable setting priority"
+                                id="notifier.jira.disablePriority"
+                                isChecked={values.notifier.jira.disablePriority}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
                         <FormFieldGroupExpandable
                             isExpanded={false}
                             toggleAriaLabel="Toggle showing Jira priority mappings"
@@ -388,7 +404,11 @@ function JiraIntegrationForm({
                                                                     }
                                                                     onChange={onChange}
                                                                     onBlur={handleBlur}
-                                                                    isDisabled={!isEditable}
+                                                                    isDisabled={
+                                                                        !isEditable ||
+                                                                        values.notifier.jira
+                                                                            .disablePriority
+                                                                    }
                                                                 />
                                                             </FormLabelGroup>
                                                         </FlexItem>

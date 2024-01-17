@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Alert, Button } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
-import CloseButton from 'Components/CloseButton';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
-import { useTheme } from 'Containers/ThemeProvider';
+import PageHeader from 'Components/PageHeader';
+import { PanelNew, PanelBody, PanelHeadEnd } from 'Components/Panel';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -22,6 +20,7 @@ import { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
+import { clustersBasePath } from 'routePaths';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -60,7 +59,12 @@ type MessageState = {
     text: string;
 };
 
-function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
+export type ClusterPageProps = {
+    clusterId: string;
+};
+
+function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
+    const history = useHistory();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
@@ -69,7 +73,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 
-    const { isDarkMode } = useTheme();
     const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
     const [clusterRetentionInfo, setClusterRetentionInfo] =
         useState<DecommissionedClusterRetentionInfo>(null);
@@ -84,16 +87,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
-    function unselectCluster() {
-        setSubmissionError(null);
-        setSelectedClusterId('');
-        setSelectedCluster(defaultCluster);
-        setMessageState(null);
-        setIsBlocked(false);
-        setWizardStep('FORM');
-        setPollingDelay(null);
-    }
-
     function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
         return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
             ? 'MANAGER_TYPE_HELM_CHART'
@@ -102,7 +95,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
 
     useEffect(
         () => {
-            const clusterIdToRetrieve = selectedClusterId;
+            const clusterIdToRetrieve = clusterId;
 
             setLoadingCounter((prev) => prev + 1);
             getClusterDefaults()
@@ -194,7 +187,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         // lint rule "exhaustive-deps" wants to add selectedCluster to change-detection
         // but we don't want to fetch while we're editing, so disabled that rule here
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [selectedClusterId, pollingCount]
+        [clusterId, pollingCount]
     );
 
     // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
@@ -260,7 +253,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     });
                 });
         } else {
-            unselectCluster();
+            history.push(clustersBasePath);
         }
     }
 
@@ -285,13 +278,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         }
     }
 
-    /**
-     * rendering section
-     */
-    if (!selectedClusterId) {
-        return null;
-    }
-
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
 
     // @TODO: improve error handling when adding support for new clusters
@@ -313,18 +299,12 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
         );
 
     return (
-        <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
-            <PanelNew testid="clusters-side-panel">
-                <PanelHead>
-                    <PanelTitle testid="clusters-side-panel-header" text={selectedClusterName} />
-                    <PanelHeadEnd>
-                        {panelButtons}
-                        <CloseButton
-                            onClose={unselectCluster}
-                            className="border-base-400 border-l"
-                        />
-                    </PanelHeadEnd>
-                </PanelHead>
+        <section className="flex flex-1 flex-col h-full">
+            <PageHeader header={selectedClusterName} subHeader="Cluster">
+                <PanelHeadEnd>{panelButtons}</PanelHeadEnd>
+            </PageHeader>
+
+            <PanelNew testid="cluster-page">
                 <PanelBody>
                     {!!messageState && (
                         <div className="m-4">
@@ -383,17 +363,8 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                     )}
                 </PanelBody>
             </PanelNew>
-        </SidePanelAnimatedArea>
+        </section>
     );
 }
 
-ClustersSidePanel.propTypes = {
-    setSelectedClusterId: PropTypes.func.isRequired,
-    selectedClusterId: PropTypes.string,
-};
-
-ClustersSidePanel.defaultProps = {
-    selectedClusterId: '',
-};
-
-export default ClustersSidePanel;
+export default ClusterPage;

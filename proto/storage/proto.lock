@@ -4527,6 +4527,12 @@
                 "id": 15,
                 "name": "description",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "clusters",
+                "type": "Cluster",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -4545,6 +4551,24 @@
                   "name": "annotations",
                   "type": "string"
                 }
+              }
+            ],
+            "messages": [
+              {
+                "name": "Cluster",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster_id",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           },
@@ -4575,12 +4599,12 @@
               },
               {
                 "id": 2,
-                "name": "scan_id",
+                "name": "scan_config_id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint\""
+                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
                   }
                 ]
               },

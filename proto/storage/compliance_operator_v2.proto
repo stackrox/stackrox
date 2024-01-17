@@ -97,6 +97,10 @@ message ComplianceOperatorScanConfigurationV2 {
     // Most recent user to update the scan configurations
     SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
     string                        description              = 15;
+    message Cluster {
+        string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    }
+    repeated Cluster                        clusters          = 16;
 }
 
 // Next Tag: 7
@@ -105,7 +109,7 @@ message ComplianceOperatorScanConfigurationV2 {
 message ComplianceOperatorClusterScanConfigStatus {
     string                        id                  = 6 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-    string                        scan_id             = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint"'];
+    string                        scan_config_id      = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"'];
     repeated string               errors              = 3;
     google.protobuf.Timestamp     last_updated_time   = 4 [(gogoproto.moretags) = 'search:"Compliance Scan Config Last Updated Time,hidden"'];
     string                        cluster_name        = 5;

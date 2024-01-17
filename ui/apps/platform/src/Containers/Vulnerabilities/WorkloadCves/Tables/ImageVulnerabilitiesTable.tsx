@@ -38,6 +38,7 @@ import CVESelectionTd from '../components/CVESelectionTd';
 import TooltipTh from '../components/TooltipTh';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -218,11 +219,17 @@ function ImageVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
-                                        <p className="pf-u-mb-md">{summary}</p>
-                                        <ImageComponentVulnerabilitiesTable
-                                            imageMetadataContext={image}
-                                            componentVulnerabilities={imageComponents}
-                                        />
+                                        {summary && image ? (
+                                            <>
+                                                <p className="pf-u-mb-md">{summary}</p>
+                                                <ImageComponentVulnerabilitiesTable
+                                                    imageMetadataContext={image}
+                                                    componentVulnerabilities={imageComponents}
+                                                />
+                                            </>
+                                        ) : (
+                                            <PartialCVEDataAlert />
+                                        )}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

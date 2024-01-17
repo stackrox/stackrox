@@ -112,12 +112,12 @@ func insertIntoComplianceOperatorClusterScanConfigStatuses(batch *pgx.Batch, obj
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
-		obj.GetScanId(),
+		pgutils.NilOrUUID(obj.GetScanConfigId()),
 		pgutils.NilOrTime(obj.GetLastUpdatedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (Id, ClusterId, ScanId, LastUpdatedTime, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, ScanId = EXCLUDED.ScanId, LastUpdatedTime = EXCLUDED.LastUpdatedTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (Id, ClusterId, ScanConfigId, LastUpdatedTime, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, ScanConfigId = EXCLUDED.ScanConfigId, LastUpdatedTime = EXCLUDED.LastUpdatedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -137,7 +137,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 	copyCols := []string{
 		"id",
 		"clusterid",
-		"scanid",
+		"scanconfigid",
 		"lastupdatedtime",
 		"serialized",
 	}
@@ -156,7 +156,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetScanId(),
+			pgutils.NilOrUUID(obj.GetScanConfigId()),
 			pgutils.NilOrTime(obj.GetLastUpdatedTime()),
 			serialized,
 		})

@@ -262,9 +262,9 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 	}
 }
 
-// GetComplianceStorageCount returns mock data shaped like count query would return
-func GetComplianceStorageCount(_ *testing.T, clusterID string) *datastore.ResourceCountByResultByCluster {
-	return &datastore.ResourceCountByResultByCluster{
+// GetComplianceStorageClusterScanCount returns mock data shaped like count query would return
+func GetComplianceStorageClusterScanCount(_ *testing.T, clusterID string) *datastore.ResourceResultCountByClusterScan {
+	return &datastore.ResourceResultCountByClusterScan{
 		PassCount:          passCount,
 		FailCount:          failCount,
 		ErrorCount:         errorCount,
@@ -278,8 +278,8 @@ func GetComplianceStorageCount(_ *testing.T, clusterID string) *datastore.Resour
 	}
 }
 
-// GetComplianceClusterV2Count returns V2 count matching that from GetComplianceStorageCount
-func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceClusterScanStats {
+// GetComplianceClusterScanV2Count returns V2 count matching that from GetComplianceStorageClusterScanCount
+func GetComplianceClusterScanV2Count(_ *testing.T, clusterID string) *v2.ComplianceClusterScanStats {
 	return &v2.ComplianceClusterScanStats{
 		Cluster: &v2.ComplianceScanCluster{
 			ClusterId:   clusterID,
@@ -287,7 +287,7 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 		},
 		ScanStats: &v2.ComplianceScanStatsShim{
 			ScanName: scanConfigName1,
-			CheckStats: []*v2.ComplianceScanStatsShim_ComplianceCheckStatusCount{
+			CheckStats: []*v2.ComplianceCheckStatusCount{
 				{
 					Count:  failCount,
 					Status: v2.ComplianceCheckStatus_FAIL,
@@ -316,6 +316,61 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 					Count:  notApplicableCount,
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 				},
+			},
+		},
+	}
+}
+
+// GetComplianceStorageClusterCount returns mock data shaped like count query would return
+func GetComplianceStorageClusterCount(_ *testing.T, clusterID string) *datastore.ResultStatusCountByCluster {
+	return &datastore.ResultStatusCountByCluster{
+		PassCount:          passCount,
+		FailCount:          failCount,
+		ErrorCount:         errorCount,
+		InconsistentCount:  inconsistentCount,
+		InfoCount:          infoCount,
+		ManualCount:        manualCount,
+		NotApplicableCount: notApplicableCount,
+		ClusterName:        clusterName1,
+		ClusterID:          clusterID,
+	}
+}
+
+// GetComplianceClusterV2Count returns V2 count matching that from GetComplianceStorageClusterCount
+func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceClusterOverallStats {
+	return &v2.ComplianceClusterOverallStats{
+		Cluster: &v2.ComplianceScanCluster{
+			ClusterId:   clusterID,
+			ClusterName: clusterName1,
+		},
+		CheckStats: []*v2.ComplianceCheckStatusCount{
+			{
+				Count:  failCount,
+				Status: v2.ComplianceCheckStatus_FAIL,
+			},
+			{
+				Count:  infoCount,
+				Status: v2.ComplianceCheckStatus_INFO,
+			},
+			{
+				Count:  passCount,
+				Status: v2.ComplianceCheckStatus_PASS,
+			},
+			{
+				Count:  errorCount,
+				Status: v2.ComplianceCheckStatus_ERROR,
+			},
+			{
+				Count:  manualCount,
+				Status: v2.ComplianceCheckStatus_MANUAL,
+			},
+			{
+				Count:  inconsistentCount,
+				Status: v2.ComplianceCheckStatus_INCONSISTENT,
+			},
+			{
+				Count:  notApplicableCount,
+				Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 			},
 		},
 	}

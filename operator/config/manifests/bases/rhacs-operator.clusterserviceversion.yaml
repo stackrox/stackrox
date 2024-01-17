@@ -79,9 +79,7 @@ spec:
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
       - description: Enables the encryption of notifier secrets stored in the Central
-          DB. An encryption key must be provided in a secret called `central-encryption-key`
-          in the Central namespace, with the key stored in the `encryption-key` data
-          field.
+          DB.
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
@@ -733,7 +731,8 @@ spec:
       - description: The method for system-level data collection. CORE_BPF is recommended.
           If you select "NoCollection", you will not be able to see any information
           about network activity and process executions. The remaining settings in
-          these section will not have any effect.
+          these section will not have any effect. The value is a subject of conversion
+          by the operator if needed, e.g. to remove deprecated methods.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
@@ -804,6 +803,14 @@ spec:
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
+      - description: When the "collection" field is set to the deprecated value "EBPF",
+          then setting this to "true" prevents conversion of the collection method
+          to "CORE_BPF". This could be used in exceptional situations when "EBPF"
+          has to be used.
+        displayName: Force Collection
+        path: perNode.collector.forceCollection
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Settings for the Node-Inventory container, which is responsible
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings

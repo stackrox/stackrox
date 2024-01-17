@@ -16,10 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
-	_ types.Scanner = (*scannerv4)(nil)
+	_ types.Scanner                  = (*scannerv4)(nil)
+	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -167,4 +169,33 @@ func (s *scannerv4) Test() error {
 
 func (s *scannerv4) Type() string {
 	return types.ScannerV4
+}
+
+func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerv1.Note) (*storage.ImageScan, error) {
+	v4Contents := components.ScannerV4()
+
+	digest, err := pkgscanner.DigestFromImage(image)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
+	if err != nil {
+		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+
+	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+		image.GetName().GetFullName(),
+		vr.GetHashId(),
+		len(vr.GetContents().GetDistributions()),
+		len(vr.GetContents().GetEnvironments()),
+		len(vr.GetContents().GetPackages()),
+		len(vr.GetContents().GetRepositories()),
+		len(vr.GetPackageVulnerabilities()),
+		len(vr.GetVulnerabilities()),
+	)
+
+	return imageScan(image.GetMetadata(), vr), nil
 }

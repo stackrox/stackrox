@@ -9,6 +9,7 @@ import (
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,7 +19,7 @@ type awsTransport struct {
 	config    *docker.Config
 	client    *awsECR.ECR
 	expiresAt *time.Time
-	mutex     sync.Mutex
+	mutex     sync.RWMutex
 }
 
 func newAWSTransport(config *docker.Config, client *awsECR.ECR) *awsTransport {
@@ -30,14 +31,19 @@ func newAWSTransport(config *docker.Config, client *awsECR.ECR) *awsTransport {
 }
 
 func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-	if t.isExpiredNoLock() {
-		if err := t.refreshNoLock(); err != nil {
+	// We perform a TOC-TOU intentionally to optimize the read path.
+	// This is advantageous because...
+	// a) we only need a write lock every 12 hours to refresh the token.
+	// b) refreshing the token multiple times is idempotent.
+	// c) we do not want to block the entire read path for performance reasons.
+	if concurrency.WithRLock1(&t.mutex, t.isExpiredNoLock) {
+		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
 			return nil, err
 		}
 	}
-	return t.Transport.RoundTrip(req)
+	return concurrency.WithRLock2(&t.mutex,
+		func() (*http.Response, error) { return t.Transport.RoundTrip(req) },
+	)
 }
 
 func (t *awsTransport) isExpiredNoLock() bool {

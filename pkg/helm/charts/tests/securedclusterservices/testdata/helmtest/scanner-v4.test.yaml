@@ -32,7 +32,7 @@ tests:
 
 - name: "scanner V4 is disabled should not be installed by default"
   expect: |
-    .deployments["scanner-v4"] | assertThat(. == null)
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. == null)
 
 - name: "scanner can override image config"
@@ -124,3 +124,19 @@ tests:
         FOO: bar
   expect: |
     envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
+
+- name: "Enabling scanner v2 automatically enables scanner v4 as well"
+  values:
+    scanner:
+      disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+
+- name: "Enabling scanner v2 does not enable scanner v4 if it has been explicitly disabled"
+  values:
+    scannerV4:
+      disable: true
+    scanner:
+      disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
