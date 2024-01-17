@@ -15,8 +15,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
-	"gopkg.in/yaml.v3"
+	"github.com/stackrox/rox/scanner/internal/version"
 )
 
 var (
@@ -40,8 +41,7 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
-			// TODO(ROX-19005): replace with a URL related to the desired version.
-			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
+			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{
@@ -163,7 +163,7 @@ type MatcherConfig struct {
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
 	IndexerAddr string `yaml:"indexer_addr"`
-	// VulnerabilitiesURL sets the URL to pull vulnerability data bundles.
+	// VulnerabilitiesURL specifies the URL to query for vulnerabilities.
 	VulnerabilitiesURL string `yaml:"vulnerabilities_url"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
 	RemoteIndexerEnabled bool
@@ -185,9 +185,18 @@ func (c *MatcherConfig) validate() error {
 			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
 		}
 	}
-	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
-		return fmt.Errorf("vulnerabilities_url: %w", err)
+
+	if c.VulnerabilitiesURL == "" {
+		return errors.New("vulnerabilities_url: cannot be empty")
 	}
+	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
+		return fmt.Errorf("vulnerabilities_url: invalid URL: %w", err)
+	}
+	v := "dev"
+	if buildinfo.ReleaseBuild {
+		v = version.Version
+	}
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", v)
 	return nil
 }
 
