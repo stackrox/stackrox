@@ -12,9 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-secured-cluster-services
-    app.kubernetes.io/version: 4.2.x-187-ga2148c149d
     auto-upgrade.stackrox.io/component: sensor
-    helm.sh/chart: stackrox-secured-cluster-services-400.2.0-187-ga2148c149d
   name: manage-compliance
   namespace: openshift-compliance
 roleRef:

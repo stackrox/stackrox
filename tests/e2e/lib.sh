@@ -376,6 +376,10 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+        # The following role and role binding are a workaround until we have
+        # installation tooling that sets permissions accordingly for the
+        # service account to interact with the Compliance Operator -
+        # https://issues.redhat.com/browse/ROX-18124.
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRole.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRoleBinding.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator
