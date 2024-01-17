@@ -31,6 +31,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -45,10 +46,7 @@ import (
 )
 
 const (
-	pruneInterval      = 1 * time.Hour
-	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
-	clusterGCFreq      = 24 * time.Hour
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
 
@@ -62,6 +60,9 @@ var (
 	pruningCtx            = sac.WithAllAccess(context.Background())
 	lastClusterPruneTime  time.Time
 	lastLogImbuePruneTime time.Time
+	pruneInterval         = env.PruneInterval.DurationSetting()
+	orphanWindow          = env.OrphanWindow.DurationSetting()
+	clusterGCFreq         = env.ClusterGCFreq.DurationSetting()
 )
 
 // GarbageCollector implements a generic garbage collection mechanism.
