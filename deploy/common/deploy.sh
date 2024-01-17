@@ -81,7 +81,7 @@ function wait_for_central {
             echo >&2 "Exceeded deadline waiting for Central."
             central_pod="$("${ORCH_CMD}" -n "${NAMESPACE}" get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
             if [[ -n "$central_pod" ]]; then
-                "${ORCH_CMD}" -n "${NAMESPACE}" "${central_pod}" -c central -- kill -ABRT 1
+                "${ORCH_CMD}" -n "${NAMESPACE}" exec "${central_pod}" -c central -- kill -ABRT 1
             fi
             exit 1
         fi
