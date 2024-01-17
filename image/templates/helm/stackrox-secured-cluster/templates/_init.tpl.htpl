@@ -268,7 +268,18 @@
 {{/*
    Local Scanner v4 Indexer setup.
   */}}
+
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
+
+{{/* To establish a smooth and automated activation of Scanner v4 in situations where Scanner v2 is
+     already activated, we let `scanner.disable: false` have the implicit side-effect of
+    `scannerV4.disable: false` if the latter has not been explicitly set. */}}
+{{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
+  {{- if kindIs "invalid" $scannerV4Cfg.disable -}}
+    {{- $_ = set $scannerV4Cfg "disable" $._rox.scanner.disable -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Disable scanner v4 always in kubectl outputs */}}
 
 {{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
