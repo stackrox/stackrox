@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/types"
@@ -29,7 +31,7 @@ import (
 func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCert(data, ca, storage.ServiceType_CENTRAL_SERVICE, ""))
+	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
@@ -48,8 +50,26 @@ func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) s
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCert(data, validatingCA, serviceType, fileNamePrefix))
+		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
 	}
+}
+
+// Inspired by certgen.GenerateCA.
+func generateInvalidCA() (mtls.CA, error) {
+	serial, err := mtls.RandomSerial()
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate a serial number")
+	}
+	req := csr.CertificateRequest{
+		CN:           mtls.ServiceCACommonName + " this makes it invalid",
+		KeyRequest:   csr.NewKeyRequest(),
+		SerialNumber: serial.String(),
+	}
+	caCert, _, caKey, err := initca.New(&req)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "could not generate keypair")
+	}
+	return mtls.LoadCAForSigning(caCert, caKey)
 }
 
 func TestCreateCentralTLS(t *testing.T) {
@@ -69,6 +89,65 @@ func TestCreateCentralTLS(t *testing.T) {
 			Namespace: testutils.TestNamespace,
 		},
 		Data: centralFileMap,
+	}
+
+	centralFileMapWithInvalidLeaf := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidLeaf, testCA)
+	unrelatedTestCA, err := certgen.GenerateCA()
+	require.NoError(t, err)
+	// Resulting cert will not match CA and thus be up for replacement.
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidLeaf, unrelatedTestCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidLeaf, jwtKey)
+
+	existingCentralWithInvalidLeaf := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidLeaf,
+	}
+
+	centralFileMapWithMissingCAKey := make(types.SecretDataMap)
+	certgen.AddCAToFileMap(centralFileMapWithMissingCAKey, testCA)
+	delete(centralFileMapWithMissingCAKey, mtls.CAKeyFileName)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithMissingCAKey, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithMissingCAKey, jwtKey)
+
+	existingCentralWithMissingCAKey := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithMissingCAKey,
+	}
+
+	centralFileMapWithInvalidCA := make(types.SecretDataMap)
+	invalidCA, err := generateInvalidCA()
+	require.NoError(t, err)
+	certgen.AddCAToFileMap(centralFileMapWithInvalidCA, invalidCA)
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithInvalidCA, invalidCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMapWithInvalidCA, jwtKey)
+
+	existingCentralWithInvalidCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithInvalidCA,
+	}
+
+	centralFileMapWithCorruptCA := make(types.SecretDataMap)
+	centralFileMapWithCorruptCA[mtls.CACertFileName] = []byte("corrupt cert")
+	centralFileMapWithCorruptCA[mtls.CAKeyFileName] = []byte("corrupt key")
+	require.NoError(t, certgen.IssueCentralCert(centralFileMapWithCorruptCA, testCA))
+	certgen.AddJWTSigningKeyToFileMap(centralFileMap, jwtKey)
+
+	existingCentralWithCorruptCA := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: centralFileMapWithCorruptCA,
 	}
 
 	centralDBFileMap := make(types.SecretDataMap)
@@ -107,16 +186,52 @@ func TestCreateCentralTLS(t *testing.T) {
 		Data: scannerDBFileMap,
 	}
 
+	scannerV4IndexerFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4IndexerFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4IndexerFileMap, testCA, mtls.ScannerV4IndexerSubject, ""))
+
+	existingScannerV4Indexer := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-indexer-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4IndexerFileMap,
+	}
+
+	scannerV4MatcherFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4MatcherFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4MatcherFileMap, testCA, mtls.ScannerV4MatcherSubject, ""))
+
+	existingScannerV4Matcher := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-matcher-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4MatcherFileMap,
+	}
+
+	scannerV4DBFileMap := make(types.SecretDataMap)
+	certgen.AddCACertToFileMap(scannerV4DBFileMap, testCA)
+	require.NoError(t, certgen.IssueServiceCert(scannerV4DBFileMap, testCA, mtls.ScannerV4DBSubject, ""))
+
+	existingScannerV4DB := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scanner-v4-db-tls",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: scannerV4DBFileMap,
+	}
+
 	cases := map[string]secretReconciliationTestCase{
 		"When no secrets exist and scanner is disabled, a managed central-tls and central-db-tls secrets should be created": {
-			Spec: basicSpecWithScanner(false),
+			Spec: basicSpecWithScanner(false, false),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
 			},
 		},
 		"When no secrets exist and scanner is disabled but secured cluster exists, a managed central-tls secret and init bundle secrets should be created": {
-			Spec: basicSpecWithScanner(false),
+			Spec: basicSpecWithScanner(false, false),
 			Other: []ctrlClient.Object{&platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-secured-cluster-services",
@@ -132,73 +247,138 @@ func TestCreateCentralTLS(t *testing.T) {
 			},
 		},
 		"When no secrets exist and scanner is enabled, all managed secrets should be created": {
-			Spec: basicSpecWithScanner(true),
+			Spec: basicSpecWithScanner(true, true),
+			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+				"central-tls":            verifyCentralCert,
+				"central-db-tls":         verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
+				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
+				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
+			},
+		},
+		"When a managed central-tls secret with valid CA but invalid service cert exists, it should be fixed": {
+			Spec:            basicSpecWithScanner(false, false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidLeaf, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"central-tls":    verifyCentralCert,
 				"central-db-tls": verifyCentralServiceCert(storage.ServiceType_CENTRAL_DB_SERVICE),
-				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
 			},
 		},
+		"When a managed central-tls secret with missing CA key exists, it should fail": {
+			Spec:            basicSpecWithScanner(false, false),
+			ExistingManaged: []*v1.Secret{existingCentralWithMissingCAKey, existingCentralDB},
+			ExpectedError:   "malformed secret (ca.pem present but ca-key.pem missing), please delete it",
+		},
+		"When a managed central-tls secret with invalid CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false, false),
+			ExistingManaged: []*v1.Secret{existingCentralWithInvalidCA, existingCentralDB},
+			ExpectedError:   "invalid properties of CA in the existing secret, please delete it to allow re-generation: invalid certificate common name",
+		},
+		"When a managed central-tls secret with corrupt CA exists, it should fail": {
+			Spec:            basicSpecWithScanner(false, false),
+			ExistingManaged: []*v1.Secret{existingCentralWithCorruptCA, existingCentralDB},
+			ExpectedError:   "invalid CA in the existing secret, please delete it to allow re-generation: tls: failed to find any PEM data in certificate input",
+		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is disabled, no further secrets should be created": {
-			Spec:     basicSpecWithScanner(false),
+			Spec:     basicSpecWithScanner(false, false),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 		},
 		"When a valid unmanaged central-tls and central-db-tls secrets exist and scanner is enabled, managed secrets should be created for scanner": {
-			Spec:     basicSpecWithScanner(true),
+			Spec:     basicSpecWithScanner(true, true),
 			Existing: []*v1.Secret{existingCentral, existingCentralDB},
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-				"scanner-tls":    verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
-				"scanner-db-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-tls":            verifyCentralServiceCert(storage.ServiceType_SCANNER_SERVICE),
+				"scanner-db-tls":         verifyCentralServiceCert(storage.ServiceType_SCANNER_DB_SERVICE),
+				"scanner-v4-indexer-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+				"scanner-v4-matcher-tls": verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_MATCHER_SERVICE),
+				"scanner-v4-db-tls":      verifyCentralServiceCert(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 			},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is disabled, no secrets should be created or deleted": {
-			Spec:     basicSpecWithScanner(false),
-			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
+			Spec: basicSpecWithScanner(false, false),
+			Existing: []*v1.Secret{
+				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
+				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
+			},
 		},
 		"When valid unmanaged secrets exist for everything and scanner is enabled, no secrets should be created or deleted": {
-			Spec:     basicSpecWithScanner(true),
-			Existing: []*v1.Secret{existingCentral, existingCentralDB, existingScanner, existingScannerDB},
+			Spec: basicSpecWithScanner(true, true),
+			Existing: []*v1.Secret{
+				existingCentral, existingCentralDB, existingScanner, existingScannerDB,
+				existingScannerV4Indexer, existingScannerV4Matcher, existingScannerV4DB,
+			},
 		},
 		"When creating a new central-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: creatingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When creating a new central-db-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: creatingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When creating a new scanner-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: creatingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When creating a new scanner-db-tls secret fails, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: creatingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
 		},
+		"When creating a new scanner-v4-indexer-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When creating a new scanner-v4-matcher-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When creating a new scanner-v4-db-tls secret fails, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: creatingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
+		},
 		"When getting an existing central-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: gettingSecretFails("central-tls"),
 			ExpectedError:          "reconciling central-tls secret",
 		},
 		"When getting an existing central-db-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			InterceptedK8sAPICalls: gettingSecretFails("central-db-tls"),
 			ExpectedError:          "reconciling central-db-tls secret",
 		},
 		"When getting an existing scanner-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: gettingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
 		},
 		"When getting an existing scanner-db-tls secret fails with a non-404 error, an error should be returned": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			InterceptedK8sAPICalls: gettingSecretFails("scanner-db-tls"),
 			ExpectedError:          "reconciling scanner-db-tls secret",
+		},
+		"When getting an existing scanner-v4-indexer-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When getting an existing scanner-v4-matcher-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When getting an existing scanner-v4-db-tls secret fails with a non-404 error, an error should be returned": {
+			Spec:                   basicSpecWithScanner(false, true),
+			InterceptedK8sAPICalls: gettingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
 		},
 		"When deleting an existing central-tls secret fails, an error should be returned": {
 			Deleted:                true,
@@ -227,6 +407,24 @@ func TestCreateCentralTLS(t *testing.T) {
 			ExistingManaged:        []*v1.Secret{existingScanner},
 			InterceptedK8sAPICalls: deletingSecretFails("scanner-tls"),
 			ExpectedError:          "reconciling scanner-tls secret",
+		},
+		"When deleting an existing scanner-v4-indexer-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Indexer},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-indexer-tls"),
+			ExpectedError:          "reconciling scanner-v4-indexer-tls secret",
+		},
+		"When deleting an existing scanner-v4-matcher-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4Matcher},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-matcher-tls"),
+			ExpectedError:          "reconciling scanner-v4-matcher-tls secret",
+		},
+		"When deleting an existing scanner-v4-db-tls secret fails, an error should be returned": {
+			Deleted:                true,
+			ExistingManaged:        []*v1.Secret{existingScannerV4DB},
+			InterceptedK8sAPICalls: deletingSecretFails("scanner-v4-db-tls"),
+			ExpectedError:          "reconciling scanner-v4-db-tls secret",
 		},
 		"When deleting an existing scanner-tls secret fails with a 404, an error should not be returned because the secret is likely to be already deleted": {
 			Deleted:                true,
@@ -309,39 +507,56 @@ func secretIsAlreadyDeleted(secretName string) interceptor.Funcs {
 	}
 }
 
-func TestRenewInitBundle(t *testing.T) {
-	type renewInitBundleTestCase struct {
-		now                string
-		notBefore          string
-		notAfter           string
-		expectError        bool
-		expectErrorMessage string
-	}
-
-	cases := map[string]renewInitBundleTestCase{
-		"should NOT refresh init-bundle when the certificate remains valid": {
-			now:         "2021-02-11T12:00:00.000Z",
-			notBefore:   "2021-02-11T00:00:00.000Z",
-			notAfter:    "2021-02-11T23:59:59.000Z",
-			expectError: false,
+func Test_checkCertRenewal(t *testing.T) {
+	cases := map[string]struct {
+		now       string
+		notBefore string
+		notAfter  string
+		wantErr   assert.ErrorAssertionFunc
+	}{
+		"should reject certificate that becomes invalid before it becomes valid": {
+			now:       "2021-02-11T11:59:00.000Z",
+			notBefore: "2021-02-11T23:59:59.000Z",
+			notAfter:  "2021-02-11T00:00:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expires at 2021-02-11 00:00:00 +0000 UTC before it begins to be valid at 2021-02-11 23:59:59 +0000 UTC")
+			},
 		},
-		"should refresh init-bundle when the certificate is already expired": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T00:00:00.000Z",
-			notAfter:           "2021-02-11T11:00:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 11:00:00 +0000 UTC, renew threshold: 2021-02-11 09:30:00 +0000 UTC",
+		"should NOT return error when the certificate remains valid": {
+			now:       "2021-02-11T11:59:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T23:59:59.000Z",
+			wantErr:   assert.NoError,
 		},
-		"should refresh init-bundle when the certificate lifetime is not started": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T22:00:00.000Z",
-			notAfter:           "2021-02-11T23:59:59.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate lifetime starts in the future, not before: 2021-02-11 22:00:00 +0000 UTC",
+		"should NOT return error when the certificate is valid for an extremely short time": {
+			now:       "2021-02-11T00:00:00.001Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T00:00:00.004Z",
+			wantErr:   assert.NoError,
 		},
-		"should refresh init-bundle when the certificate expires within the reconciliation period": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T00:00:00.000Z",
-			notAfter:           "2021-02-11T12:30:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 12:30:00 +0000 UTC, renew threshold: 2021-02-11 11:00:00 +0000 UTC",
+		"should return error when the certificate is already expired": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T11:00:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expired at 2021-02-11 11:00:00 +0000 UTC")
+			},
+		},
+		"should return error when the certificate lifetime is not started": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T22:00:00.000Z",
+			notAfter:  "2021-02-11T23:59:59.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate lifetime start 2021-02-11 22:00:00 +0000 UTC is in the future")
+			},
+		},
+		"should return error when the certificate expires soon": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T12:30:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate is past half of its validity, 2021-02-11 06:15:00 +0000 UTC")
+			},
 		},
 	}
 
@@ -357,20 +572,9 @@ func TestRenewInitBundle(t *testing.T) {
 			}
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
+			r := &createCentralTLSExtensionRun{currentTime: now}
 
-			if c.expectErrorMessage != "" {
-				c.expectError = true
-			}
-
-			if c.expectError {
-				if c.expectErrorMessage != "" {
-					assert.EqualError(t, checkInitBundleCertRenewal(cert, now), c.expectErrorMessage)
-				} else {
-					assert.Error(t, checkInitBundleCertRenewal(cert, now))
-				}
-			} else {
-				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
-			}
+			c.wantErr(t, r.checkCertRenewal(cert), fmt.Sprintf("checkCertRenewal(%v, %v)", cert, now))
 		})
 	}
 }
@@ -486,7 +690,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				mtls.ServiceKeyFileName: centralCertFromCA1.KeyPEM,
 			},
 			assert: func(t *testing.T, err error) {
-				assert.ErrorContains(t, err, "no service certificate in file map")
+				assert.ErrorContains(t, err, "no service certificate for CENTRAL_SERVICE in file map")
 			},
 		},
 		"should fail when the service key is missing": {
@@ -496,7 +700,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
 			},
 			assert: func(t *testing.T, err error) {
-				assert.ErrorContains(t, err, "no service private key in file map")
+				assert.ErrorContains(t, err, "no service private key for CENTRAL_SERVICE in file map")
 			},
 		},
 		"should fail when the service cert does not match the service key": {
@@ -572,7 +776,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := &createCentralTLSExtensionRun{}
+			r := &createCentralTLSExtensionRun{currentTime: time.Now()}
 			err := r.validateAndConsumeCentralTLSData(tt.fileMap, true)
 			tt.assert(t, err)
 		})
@@ -734,7 +938,8 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 			for name, tt := range cases {
 				t.Run(name, func(t *testing.T) {
 					r := &createCentralTLSExtensionRun{
-						ca: tt.ca,
+						ca:          tt.ca,
+						currentTime: time.Now(),
 					}
 					switch subject {
 					case mtls.ScannerSubject:

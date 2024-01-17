@@ -27,7 +27,7 @@ func TestNexus(t *testing.T) {
 				Password: "admin123",
 			},
 		},
-	})
+	}, nil)
 	require.NoError(t, err)
 
 	endpoint = urlfmt.TrimHTTPPrefixes(endpoint)

@@ -95,7 +95,7 @@ func (r *reconcileAdminPasswordExtensionRun) Execute(ctx context.Context) error 
 		return err
 	}
 
-	if err := r.EnsureSecret(ctx, defaultPasswordSecretName, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData, true); err != nil {
+	if err := r.EnsureSecret(ctx, defaultPasswordSecretName, r.validateHtpasswdSecretData, r.generateHtpasswdSecretData); err != nil {
 		return errors.Wrap(err, "reconciling central-htpasswd secret")
 	}
 

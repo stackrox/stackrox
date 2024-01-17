@@ -3,7 +3,7 @@ package datastore
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
+	pgStore "github.com/stackrox/rox/central/namespace/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/pkg/sync"
 )

@@ -293,7 +293,6 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 
 		t.Run(name, tf)
 	}
-
 }
 
 func TestRegistryStore_GenImgIntName(t *testing.T) {

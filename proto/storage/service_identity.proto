@@ -17,7 +17,7 @@ message ServiceIdentity {
     string      init_bundle_id = 5;
 }
 
-// Next available tag: 13
+// Next available tag: 16
 enum ServiceType {
     UNKNOWN_SERVICE            = 0;
     SENSOR_SERVICE             = 1;

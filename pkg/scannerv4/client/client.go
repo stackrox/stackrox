@@ -12,6 +12,7 @@ import (
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
@@ -103,7 +104,12 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		connOpt.TLS.UseClientCert = clientconn.MustUseClientCert
 		connOpt.TLS.ServerName = o.serverName
 	}
-	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt)
+
+	callOpts := []grpc.CallOption{
+		grpc.MaxCallRecvMsgSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+	}
+
+	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first

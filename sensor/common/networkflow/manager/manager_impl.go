@@ -131,10 +131,11 @@ type processUniqueKey struct {
 }
 
 type processListeningIndicator struct {
-	key      processUniqueKey
-	port     uint16
-	protocol storage.L4Protocol
-	podUID   string
+	key       processUniqueKey
+	port      uint16
+	protocol  storage.L4Protocol
+	podUID    string
+	namespace string
 }
 
 func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
@@ -150,6 +151,7 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 		},
 		DeploymentId: i.key.deploymentID,
 		PodUid:       i.podUID,
+		Namespace:    i.namespace,
 	}
 
 	if ts != timestamp.InfiniteFuture {
@@ -204,7 +206,6 @@ func NewManager(
 	policyDetector detector.Detector,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
-	enricherTicker.Stop()
 	mgr := &networkFlowManager{
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
@@ -219,6 +220,7 @@ func NewManager(
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
 	} else {
+		enricherTicker.Stop()
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage)
 	}
 
@@ -613,9 +615,10 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 			deploymentID:  container.DeploymentID,
 			process:       ep.processKey,
 		},
-		port:     ep.endpoint.IPAndPort.Port,
-		protocol: ep.endpoint.L4Proto.ToProtobuf(),
-		podUID:   container.PodUID,
+		port:      ep.endpoint.IPAndPort.Port,
+		protocol:  ep.endpoint.L4Proto.ToProtobuf(),
+		podUID:    container.PodUID,
+		namespace: container.Namespace,
 	}
 
 	processesListening[indicator] = status.lastSeen

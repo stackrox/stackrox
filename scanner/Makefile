@@ -140,10 +140,6 @@ db-image:
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
 ###########
-## Tests ##
-###########
-
-###########
 ## Tools ##
 ###########
 
@@ -164,6 +160,20 @@ SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
+
+#################
+## Integration ##
+#################
+
+integration-timeout := 20m
+
+db-integration-d := datastore/postgres
+db-integration-go-tag  := scanner_db_integration
+
+.PHONY: db-integration-test
+db-integration-test: $(build-deps-t)
+	@echo "+ $@"
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##

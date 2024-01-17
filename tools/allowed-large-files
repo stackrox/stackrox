@@ -38,6 +38,7 @@ qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
 scale/image/fixtures/scrape.json
+scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json
 scanner/e2etests/testdata/image_tests.orig.json
 scanner/updater/rhel/testdata/Red_Hat_Enterprise_Linux_3.xml

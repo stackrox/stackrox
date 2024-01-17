@@ -11,8 +11,11 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
+from pre_tests import PreSystemTests
+from ci_tests import QaE2eTestCompatibility
+from post_tests import PostClusterTest, FinalPost
+from runners import ClusterTestSetsRunner
 from clusters import GKECluster
-from compatibility_test import make_compatibility_test_runner
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
     get_latest_helm_chart_version_for_specific_release,
@@ -79,41 +82,27 @@ test_tuples.extend(
     if support_exception not in test_tuples
 )
 
-gkecluster = GKECluster(
-    "compat-test", machine_type="e2-standard-8", num_nodes=2)
-
-failing_tuples = []
+sets = []
 for test_tuple in test_tuples:
-    os.environ["CENTRAL_CHART_VERSION_OVERRIDE"] = test_tuple.central_version
-    os.environ["SENSOR_CHART_VERSION_OVERRIDE"] = test_tuple.sensor_version
-    try:
-        make_compatibility_test_runner(
-            cluster=gkecluster,
-            test_versions=f'{test_tuple.central_version}--{test_tuple.sensor_version}',
-        ).run()
-    except Exception as e:
-        print(
-            f'Exception "{str(e)}" raised in compatibility test for '
-            f'central version {test_tuple.central_version} and '
-            f'sensor version {test_tuple.sensor_version}',
-            file=sys.stderr,
-        )
-        failing_tuples.append(test_tuple)
+    os.environ["ROX_TELEMETRY_STORAGE_KEY_V1"] = 'DISABLED'
+    test_versions = f'{test_tuple.central_version}--{test_tuple.sensor_version}'
+    sets.append(
+        {
+            "name": f'version compatibility tests: {test_versions}',
+            "test": QaE2eTestCompatibility(test_tuple.central_version, test_tuple.sensor_version),
+            "post_test": PostClusterTest(
+                    check_stackrox_logs=True,
+                    artifact_destination_prefix=test_versions,
+            ),
+        },
+    )
+sets[0]["pre_test"] = PreSystemTests()
 
-if len(failing_tuples) > 0:
-    # pylint: disable=invalid-name
-    failing_string = ", ".join(
-        [
-            (
-                "(Central v"
-                + str(failing_tuple.central_version)
-                + ", Sensor v"
-                + str(failing_tuple.sensor_version)
-                + ")"
-            )
-            for failing_tuple in failing_tuples
-        ]
-    )
-    raise RuntimeError(
-        "Compatibility tests failed for versions " + failing_string + "."
-    )
+ClusterTestSetsRunner(
+    cluster=GKECluster("compat-test",
+                       machine_type="e2-standard-8", num_nodes=2),
+    sets=sets,
+    final_post=FinalPost(
+        store_qa_tests_data=True,
+    ),
+).run()

@@ -60,7 +60,7 @@ func (r *reconcileScannerDBPasswordExtensionRun) Execute(ctx context.Context) er
 
 func (r *reconcileScannerDBPasswordExtensionRun) reconcilePasswordSecret(ctx context.Context, shouldExist bool) error {
 	if shouldExist {
-		return r.EnsureSecret(ctx, r.passwordResourceName, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData, true)
+		return r.EnsureSecret(ctx, r.passwordResourceName, r.validateScannerDBPasswordData, r.generateScannerDBPasswordData)
 	}
 	return r.DeleteSecret(ctx, r.passwordResourceName)
 }

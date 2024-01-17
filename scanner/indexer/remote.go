@@ -8,6 +8,7 @@ import (
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/scanner/mappers"
 	"google.golang.org/grpc"
@@ -36,9 +37,13 @@ func NewRemoteIndexer(ctx context.Context, address string) (*remoteIndexer, erro
 			InsecureSkipVerify: true,
 		},
 	}
+	callOpts := []grpc.CallOption{
+		grpc.MaxCallRecvMsgSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+	}
 	// TODO: [ROX-19050] Set the Scanner V4 TLS validation and the correct subject
 	//       when certificates are ready.
-	conn, err := clientconn.GRPCConnection(ctx, mtls.ScannerV4IndexerSubject, address, connOpt)
+	// TODO: consider using client library pkg/scannerv4/client instead.
+	conn, err := clientconn.GRPCConnection(ctx, mtls.ScannerV4IndexerSubject, address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
 	if err != nil {
 		return nil, err
 	}
