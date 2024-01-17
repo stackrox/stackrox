@@ -129,11 +129,17 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		Ecosystems:           ecosystems(ctx),
 	}
 	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(` {"repo2cpe_mapping_url": "%s",
-  "repo2cpe_mapping_file": "/run/mappings/repository-to-cpe.json"}`, indexerCfg.RepositoryToCPEURL)))}
+		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`
+{
+  "repo2cpe_mapping_url": "%s",
+  "repo2cpe_mapping_file": "%s"
+}`, indexerCfg.RepositoryToCPEURL, indexerCfg.RepositoryToCPEFile)))}
 	opts.ScannerConfig.Package = map[string]func(interface{}) error{
-		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(` {"name2repos_mapping_url": "%s",
-  "name2repos_mapping_file": "/run/mappings/container-name-repos-map.json"}`, indexerCfg.NameToCPEURL)))}
+		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`
+{
+  "name2repos_mapping_url": "%s",
+  "name2repos_mapping_file": "%s"
+}`, indexerCfg.NameToReposURL, indexerCfg.NameToReposFile)))}
 
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {

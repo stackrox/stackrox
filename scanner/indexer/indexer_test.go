@@ -82,7 +82,7 @@ indexer:
     password_file: ""
   get_layer_timeout: 1m
   repository_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/repository-to-cpe.json
-  name_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
+  name_to_repos_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
 matcher:
   enable: true
   database:
