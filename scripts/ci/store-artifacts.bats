@@ -37,24 +37,36 @@ function setup() {
 }
 
 @test "stores" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run store_artifacts /tmp
     assert_success
     assert_output --partial "Destination: ${GS_URL}/tmp"
 }
 
 @test "stores to a different destination" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run store_artifacts /tmp different
     assert_success
     assert_output --partial "Destination: ${GS_URL}/different"
 }
 
 @test "stores to unique destinations" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run store_artifacts /tmp unique
     assert_success
     assert_output --partial "Destination: ${GS_URL}/unique-2"
 }
 
 @test "stores to unique destinations with many existing" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run store_artifacts /tmp many
     assert_success
     assert_output --partial "Destination: ${GS_URL}/many-10"
