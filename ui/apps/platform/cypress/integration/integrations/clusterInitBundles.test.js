@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     getHelperElementByLabel,
     getInputByLabel,
@@ -21,6 +22,12 @@ const integrationType = 'clusterInitBundle';
 
 describe('Cluster Init Bundles', () => {
     withAuth();
+
+    before(function () {
+        if (hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
+            this.skip();
+        }
+    });
 
     it('should create a new Cluster Init Bundle and then view and delete', () => {
         // we have to use a randomstring here because using a name with a date is not a valid clusterInitBundle name
