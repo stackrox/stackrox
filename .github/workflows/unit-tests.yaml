@@ -232,6 +232,35 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         directory: 'roxctl-test-output'
 
+  shell-unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+
+    - name: Shell Unit Tests
+      run: make shell-unit-tests
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'shell-test-output/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled()) && github.event_name == 'push'
+      uses: ./.github/actions/junit2jira
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'shell-test-output'
+
   slack-on-unit-tests-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -248,8 +277,9 @@ jobs:
       - go
       - go-bench
       - go-postgres
-      - ui
       - local-roxctl-tests
+      - shell-unit-tests
+      - ui
     permissions:
       actions: read
     steps:

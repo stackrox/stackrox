@@ -12,12 +12,18 @@ function setup() {
 }
 
 @test "is_in_PR_context() is not by default" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run is_in_PR_context
     assert_failure 1
     assert_output ''
 }
 
 @test "is_in_PR_context() is not for OpenShift CI" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     export OPENSHIFT_CI=true
     run is_in_PR_context
     assert_failure 1
@@ -41,6 +47,9 @@ function setup() {
 }
 
 @test "is_in_PR_context() is not for OpenShift CI unexpected env" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='{"bad":"ness"}'
     run is_in_PR_context
@@ -49,6 +58,9 @@ function setup() {
 }
 
 @test "is_in_PR_context() is not for OpenShift CI unexpected env II" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     export OPENSHIFT_CI=true
     export CLONEREFS_OPTIONS='real badness'
     run is_in_PR_context
