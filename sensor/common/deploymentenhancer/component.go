@@ -34,7 +34,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 
 	return &DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, env.SensorEnhancementQueueSize.IntegerSetting()),
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, env.SensorDeploymentEnhancementQueueSize.IntegerSetting()),
 		storeProvider:    provider,
 		ctx:              ctx,
 		ctxCancel:        ctxCancel,
@@ -56,7 +56,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	case d.deploymentsQueue <- toEnhance:
 		return nil
 	default:
-		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", env.SensorEnhancementQueueSize.IntegerSetting())
+		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", env.SensorDeploymentEnhancementQueueSize.IntegerSetting())
 	}
 }
 
