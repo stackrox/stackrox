@@ -27,6 +27,12 @@ func GetProtoTimestampFromSeconds(seconds int64) *gogoTimestamp.Timestamp {
 	return &gogoTimestamp.Timestamp{Seconds: seconds}
 }
 
+// GetProtoTimestampFromSecondsAndNanos instantiates a protobuf Timestamp structure initialized
+// with the input to the seconds granularity
+func GetProtoTimestampFromSecondsAndNanos(seconds int64, nanos int32) *gogoTimestamp.Timestamp {
+	return &gogoTimestamp.Timestamp{Seconds: seconds, Nanos: nanos}
+}
+
 // CompareTimestamps compares two timestamps and returns zero if equal, a negative value if
 // the first timestamp is before the second or a positive value if the first timestamp is
 // after the second.
