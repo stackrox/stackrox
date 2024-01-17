@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	scanDataStore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -21,6 +22,7 @@ import (
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
+
 	"github.com/stackrox/rox/central/ranking"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -62,6 +64,7 @@ var (
 )
 
 type datastoreImpl struct {
+	scanStore                 scanDataStore.DataStore
 	clusterStorage            clusterStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
@@ -545,6 +548,10 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	ds.removeClusterPods(ctx, cluster)
 
+	//remove scan config related to this cluster
+	ds.removeScanConfigObjects(ctx, cluster)
+	//remove profile cluster edge 
+
 	// Remove nodes associated with this cluster
 	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
@@ -600,6 +607,21 @@ func (ds *datastoreImpl) removeClusterNamespaces(ctx context.Context, cluster *s
 		err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
 		if err != nil {
 			log.Errorf("Failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
+		}
+	}
+
+}
+
+func (ds *datastoreImpl) removeScanConfigObjects(ctx context.Context, cluster *storage.Cluster) {
+
+	scans, err := ds.scanStore.GetScansByCluster(ctx, cluster.GetId())
+	if err != nil {
+		log.Errorf("Failed to get scans for removed cluster %s: %v", cluster.GetId(), err)
+		return
+	}
+	for _, scan := range scans {
+		if err = ds.scanStore.DeleteScan(ctx, scan.GetId()); err != nil {
+			log.Errorf("Failed to remove scan with id %s as part of removal of cluster %s: %v", scan.GetId(), cluster.GetId(), err)
 		}
 	}
 
