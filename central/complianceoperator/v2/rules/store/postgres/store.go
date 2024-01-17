@@ -92,11 +92,10 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.Complianc
 		obj.GetOperatorVersion(),
 		obj.GetRuleVersion(),
 		obj.GetRuleType(),
-		obj.GetSeverity(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, OperatorVersion, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, OperatorVersion, RuleVersion, RuleType, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -118,7 +117,6 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		"operatorversion",
 		"ruleversion",
 		"ruletype",
-		"severity",
 		"serialized",
 	}
 
@@ -138,7 +136,6 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetOperatorVersion(),
 			obj.GetRuleVersion(),
 			obj.GetRuleType(),
-			obj.GetSeverity(),
 			serialized,
 		})
 
