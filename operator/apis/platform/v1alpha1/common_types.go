@@ -152,7 +152,7 @@ type ScannerV4DB struct {
 
 // ScannerComponentScaling defines replication settings of scanner components.
 type ScannerComponentScaling struct {
-	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
+	// When enabled, the number of component replicas is managed dynamically based on the load, within the limits
 	// specified below.
 	//+kubebuilder:default=Enabled
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling",order=1

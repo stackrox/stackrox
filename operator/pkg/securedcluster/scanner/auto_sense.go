@@ -45,7 +45,7 @@ func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client
 	SetScannerV4Defaults(&s.Spec)
 	scannerV4Component := *s.Spec.ScannerV4.ScannerComponent
 
-	return autoSenseScanner(ctx, client, scannerV4Component, s.Namespace)
+	return autoSenseScanner(ctx, client, scannerV4Component, s.GetNamespace())
 
 }
 
@@ -72,7 +72,7 @@ func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComp
 		return AutoSenseResult{}, nil
 	}
 
-	return AutoSenseResult{}, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
+	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
 }
 
 func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {

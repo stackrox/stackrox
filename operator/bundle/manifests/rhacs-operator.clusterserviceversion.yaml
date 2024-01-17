@@ -59,7 +59,7 @@ spec:
         displayName: Scanner Component Settings
         path: scanner
       - description: Settings for the Scanner V4 component, which can run in addition
-          to the existing Scanner service
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Settings related to outgoing network traffic.
@@ -469,7 +469,7 @@ spec:
         path: scanner.analyzer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
@@ -602,7 +602,7 @@ spec:
         path: scannerV4.indexer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
@@ -638,7 +638,7 @@ spec:
         path: scannerV4.matcher.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.matcher.scaling.autoScaling
@@ -727,7 +727,7 @@ spec:
         displayName: Scanner Component Settings
         path: scanner
       - description: Settings for the Scanner V4 component, which can run in addition
-          to the existing Scanner service
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Allows you to specify additional trusted Root CAs.
@@ -966,7 +966,7 @@ spec:
         path: scanner.analyzer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
@@ -1085,7 +1085,7 @@ spec:
         path: scannerV4.indexer.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling

@@ -68,7 +68,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
-	// Settings for the Scanner V4 component, which can run in addition to the existing Scanner service
+	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 

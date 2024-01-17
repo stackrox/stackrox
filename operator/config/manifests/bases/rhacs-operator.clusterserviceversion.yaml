@@ -131,7 +131,7 @@ spec:
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
@@ -160,14 +160,14 @@ spec:
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.matcher.scaling
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.matcher.scaling.autoScaling
@@ -331,7 +331,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
       - description: Settings for the Scanner V4 component, which can run in addition
-          to the existing Scanner service
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: The name of the storage class to use for the PVC. If your cluster
@@ -742,7 +742,7 @@ spec:
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
@@ -765,7 +765,7 @@ spec:
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
-      - description: When enabled, the number of analyzer replicas is managed dynamically
+      - description: When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits specified below.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
@@ -933,7 +933,7 @@ spec:
         displayName: Replicas
         path: admissionControl.replicas
       - description: Settings for the Scanner V4 component, which can run in addition
-          to the existing Scanner service
+          to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
       - description: Allows you to specify additional trusted Root CAs.

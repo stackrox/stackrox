@@ -753,7 +753,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:
@@ -942,7 +942,7 @@ spec:
                 type: object
               scannerV4:
                 description: Settings for the Scanner V4 component, which can run
-                  in addition to the existing Scanner service
+                  in addition to the previously existing Scanner components
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1157,7 +1157,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:
