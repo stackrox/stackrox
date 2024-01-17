@@ -51,8 +51,13 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 		return errox.ReferencedObjectNotFound.New("received empty message")
 	}
 	log.Debugf("Received message to process in DeploymentEnhancer: %+v", toEnhance)
-	d.deploymentsQueue <- toEnhance
-	return nil
+
+	select {
+	case d.deploymentsQueue <- toEnhance:
+		return nil
+	default:
+		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", deploymentQueueSize)
+	}
 }
 
 // Start starts the component

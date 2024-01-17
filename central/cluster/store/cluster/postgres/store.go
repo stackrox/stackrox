@@ -57,7 +57,10 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -65,6 +68,8 @@ func New(db postgres.DB) Store {
 		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
+
 		isUpsertAllowed,
 		targetResource,
 	)
@@ -83,6 +88,11 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if scopeChecker.IsAllowed() {
@@ -113,10 +123,11 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
+		obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, Status_ProviderMetadata_Cluster_Type, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

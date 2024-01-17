@@ -174,6 +174,20 @@ func (mr *MockDeploymentStoreMockRecorder) GetBuiltDeployment(id any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuiltDeployment", reflect.TypeOf((*MockDeploymentStore)(nil).GetBuiltDeployment), id)
 }
 
+// GetSnapshot mocks base method.
+func (m *MockDeploymentStore) GetSnapshot(id string) *storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSnapshot", id)
+	ret0, _ := ret[0].(*storage.Deployment)
+	return ret0
+}
+
+// GetSnapshot indicates an expected call of GetSnapshot.
+func (mr *MockDeploymentStoreMockRecorder) GetSnapshot(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshot", reflect.TypeOf((*MockDeploymentStore)(nil).GetSnapshot), id)
+}
+
 // MockPodStore is a mock of PodStore interface.
 type MockPodStore struct {
 	ctrl     *gomock.Controller

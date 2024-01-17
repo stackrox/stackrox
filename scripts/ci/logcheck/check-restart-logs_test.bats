@@ -20,6 +20,9 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 }
 
 @test "a log with no exception is not OK" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run "$CMD" "openshift-crio-api-e2e-tests" "${TEST_FIXTURES}/no-exception-collector-previous.log"
     [ "$status" -eq 2 ]
     [ "${lines[0]}" = "Checking for a restart exception in: ${TEST_FIXTURES}/no-exception-collector-previous.log" ]
@@ -79,6 +82,9 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 }
 
 @test "checks them all" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
     [ "${#lines[@]}" -eq 7 ]

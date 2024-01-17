@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	clusterPG "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	configSearch "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
@@ -46,6 +45,9 @@ type complianceScanConfigDataStoreTestSuite struct {
 	storage       configStore.Store
 	statusStorage scanStatusStore.Store
 	search        configSearch.Searcher
+
+	clusterID1 string
+	clusterID2 string
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
@@ -77,15 +79,18 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	clusterDatastore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.db)
 	s.Require().NoError(err)
 
-	clusterStore := clusterPG.New(s.db)
-	s.Require().NoError(clusterStore.Upsert(sac.WithAllAccess(context.Background()), &storage.Cluster{
-		Id:   fixtureconsts.Cluster1,
-		Name: mockClusterName,
-	}))
-	s.Require().NoError(clusterStore.Upsert(sac.WithAllAccess(context.Background()), &storage.Cluster{
-		Id:   fixtureconsts.Cluster2,
-		Name: "mock-cluster-2",
-	}))
+	clusterID1, cluster1AddErr := clusterDatastore.AddCluster(sac.WithAllAccess(context.Background()), &storage.Cluster{
+		Name:      mockClusterName,
+		MainImage: "4.3.0",
+	})
+	s.clusterID1 = clusterID1
+	s.Require().NoError(cluster1AddErr)
+	clusterID2, cluster2AddErr := clusterDatastore.AddCluster(sac.WithAllAccess(context.Background()), &storage.Cluster{
+		Name:      "mock-cluster-2",
+		MainImage: "4.3.0",
+	})
+	s.clusterID2 = clusterID2
+	s.Require().NoError(cluster2AddErr)
 
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
@@ -217,7 +222,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestDeleteScanConfiguration() {
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
 
 	// Add Scan config status
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, fixtureconsts.Cluster1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID, s.clusterID1, "testing status"))
 
 	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID)
 	s.Require().NoError(err)
@@ -258,9 +263,9 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig2))
 
 	// Add Scan config status
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, fixtureconsts.Cluster1, "testing status"))
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, fixtureconsts.Cluster2, "testing status"))
-	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID2, fixtureconsts.Cluster1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, s.clusterID1, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID1, s.clusterID2, "testing status"))
+	s.Require().NoError(s.dataStore.UpdateClusterStatus(s.hasWriteCtx, configID2, s.clusterID1, "testing status"))
 
 	clusterStatuses, err := s.dataStore.GetScanConfigClusterStatus(s.hasReadCtx, configID1)
 	s.Require().NoError(err)

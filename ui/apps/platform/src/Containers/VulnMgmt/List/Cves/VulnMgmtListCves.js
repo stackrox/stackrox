@@ -391,11 +391,9 @@ const VulnMgmtCves = ({
             return;
         }
 
-        cveNames.forEach((cve) => {
-            analyticsTrack({
-                event: GLOBAL_SNOOZE_CVE,
-                properties: { type, cve, duration },
-            });
+        analyticsTrack({
+            event: GLOBAL_SNOOZE_CVE,
+            properties: { type, duration },
         });
     }
 

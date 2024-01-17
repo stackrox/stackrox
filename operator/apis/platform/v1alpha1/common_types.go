@@ -122,21 +122,36 @@ type LocalConfigMapReference struct {
 type ScannerAnalyzerComponent struct {
 	// Controls the number of analyzer replicas and autoscaling.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	Scaling *ScannerAnalyzerScaling `json:"scaling,omitempty"`
+	Scaling *ScannerComponentScaling `json:"scaling,omitempty"`
 
 	DeploymentSpec `json:",inline"`
 }
 
 // GetScaling returns scaling config even if receiver is nil
-func (s *ScannerAnalyzerComponent) GetScaling() *ScannerAnalyzerScaling {
+func (s *ScannerAnalyzerComponent) GetScaling() *ScannerComponentScaling {
 	if s == nil {
 		return nil
 	}
 	return s.Scaling
 }
 
-// ScannerAnalyzerScaling defines replication settings of the analyzer.
-type ScannerAnalyzerScaling struct {
+// ScannerV4Component defines common configuration for Scanner V4 indexer and matcher components.
+type ScannerV4Component struct {
+	// Controls the number of replicas and autoscaling for this component.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Scaling        *ScannerComponentScaling `json:"scaling,omitempty"`
+	DeploymentSpec `json:",inline"`
+}
+
+// ScannerV4DB defines configuration for the Scanner V4 database component.
+type ScannerV4DB struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Persistence    *Persistence `json:"persistence,omitempty"`
+	DeploymentSpec `json:",inline"`
+}
+
+// ScannerComponentScaling defines replication settings of scanner components.
+type ScannerComponentScaling struct {
 	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
 	// specified below.
 	//+kubebuilder:default=Enabled

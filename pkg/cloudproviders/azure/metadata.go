@@ -3,23 +3,35 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	loggingRateLimiter  = "azure-metadata"
+	aksClusterNameLabel = "kubernetes.azure.com/cluster"
+)
+
+type computeMetadata struct {
+	Location       string `json:"location"`
+	Zone           string `json:"zone"`
+	SubscriptionID string `json:"subscriptionId"`
+	VMID           string `json:"vmId"`
+}
+
 type azureInstanceMetadata struct {
-	Compute struct {
-		Location       string `json:"location"`
-		Zone           string `json:"zone"`
-		SubscriptionID string `json:"subscriptionId"`
-		VMID           string `json:"vmId"`
-	} `json:"compute"`
+	Compute *computeMetadata `json:"compute"`
 }
 
 var (
@@ -70,6 +82,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 	verified := attestedVMID != "" && attestedVMID == metadata.Compute.VMID
 
+	clusterMetadata := getClusterMetadata(ctx, &metadata)
+
 	return &storage.ProviderMetadata{
 		Region: metadata.Compute.Location,
 		Zone:   metadata.Compute.Zone,
@@ -79,5 +93,54 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 			},
 		},
 		Verified: verified,
+		Cluster:  clusterMetadata,
 	}, nil
+}
+
+func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Obtaining in-cluster Kubernetes config: %s", err)
+		return nil
+	}
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Creating Kubernetes clientset: %s", err)
+		return nil
+	}
+	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
+}
+
+func getClusterMetadataFromNodeLabels(ctx context.Context,
+	k8sClient kubernetes.Interface, metadata *azureInstanceMetadata,
+) *storage.ClusterMetadata {
+	nodeLabels, err := getAnyNodeLabels(ctx, k8sClient)
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get node labels: %s", err)
+		return nil
+	}
+
+	// The label is of the form "MC_<resource-group>_<cluster-name>_<location>.
+	// Since both <resource-group> and <cluster-name> may contain underscores,
+	// we cannot further separate the resource group and cluster name.
+	if value, ok := nodeLabels[aksClusterNameLabel]; ok {
+		clusterName := strings.TrimPrefix(value, "MC_")
+		clusterName = strings.TrimSuffix(clusterName, fmt.Sprintf("_%s", metadata.Compute.Location))
+		clusterID := fmt.Sprintf("%s_%s", metadata.Compute.SubscriptionID, value)
+		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: clusterName, Id: clusterID}
+	}
+	return nil
+}
+
+// getAnyNodeLabels returns the labels of an arbitrary node. This is useful
+// to extract global labels such as the cluster name.
+func getAnyNodeLabels(ctx context.Context, client kubernetes.Interface) (map[string]string, error) {
+	nodeList, err := client.CoreV1().Nodes().List(ctx, v1.ListOptions{Limit: 1})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing nodes")
+	}
+	if nodeList.Size() == 0 {
+		return nil, errors.New("no nodes found")
+	}
+	return nodeList.Items[0].GetLabels(), nil
 }

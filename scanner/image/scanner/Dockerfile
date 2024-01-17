@@ -1,6 +1,14 @@
+ARG MAPPINGS_REGISTRY=registry.access.redhat.com
+ARG MAPPINGS_BASE_IMAGE=ubi8
+ARG MAPPINGS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
+
+FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mappings
+
+COPY download-mappings.sh /download-mappings.sh
+RUN /download-mappings.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -18,6 +26,7 @@ COPY scripts/entrypoint.sh \
      scripts/save-dir-contents /usr/local/bin/
 COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \

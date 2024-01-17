@@ -126,9 +126,9 @@ spec:
         - name: ROX_INSTALL_METHOD
           value: {{ ._rox.env.installMethod | quote }}
         [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
-        {{- if not ._rox.scannerV4.disable }}
+        {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4
-          value: "{{ not ._rox.scannerV4.disable }}"
+          value: "true"
         {{- end }}
         [<- end >]
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
@@ -180,8 +180,8 @@ spec:
         {{- end }}
         {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
-        - name: central-encryption-key
-          mountPath: /run/secrets/stackrox.io/central-encryption-key
+        - name: central-encryption-key-chain
+          mountPath: /run/secrets/stackrox.io/central-encryption-key-chain
         {{- end }}
         {{- end }}
         {{- if ._rox.monitoring.openshift.enabled }}
@@ -268,9 +268,9 @@ spec:
       {{- end }}
       {{- if ._rox.central.notifierSecretsEncryption }}
       {{- if ._rox.central.notifierSecretsEncryption.enabled }}
-      - name: central-encryption-key
+      - name: central-encryption-key-chain
         secret:
-          secretName: central-encryption-key
+          secretName: central-encryption-key-chain
       {{- end }}
       {{- end }}
       - name: stackrox-db

@@ -169,7 +169,13 @@
   {{- $name -}}
 {{- else -}}
   {{- /* Add global prefix to resource name. */ -}}
-  {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
+  {{- if hasPrefix "stackrox-" $name -}}
+    {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
+  {{- else if hasPrefix "stackrox:" $name -}}
+    {{- printf "%s:%s" $._rox.globalPrefix (trimPrefix "stackrox:" $name) -}}
+  {{- else -}}
+    {{- include "srox.fail" (printf "Unknown naming convention for global resource %q." $name) -}}
+  {{- end -}}
 {{- end -}}
 {{- end -}}
 

@@ -22,12 +22,14 @@ indexer:
     password_file: /run/secrets/stackrox.io/secrets/password
   get_layer_timeout: 1m
   {{- if ._rox.env.centralServices }}
-  repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=repo2cpe
-  name_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?type=name2cpe
+  repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=repo2cpe
+  name_to_repos_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=name2cpe
   {{- else }}
-  repository_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?type=repo2cpe
-  name_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?type=name2cpe
+  repository_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=repo2cpe
+  name_to_repos_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=name2cpe
   {{- end }}
+  repository_to_cpe_file: /run/mappings/repository-to-cpe.json
+  name_to_repos_file: /run/mappings/container-name-repos-map.json
 matcher:
   enable: false
 log_level: info

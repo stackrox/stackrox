@@ -1,13 +1,12 @@
 package jira
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -43,14 +42,6 @@ var (
 		storage.Severity_MEDIUM_SEVERITY,
 		storage.Severity_LOW_SEVERITY,
 	}
-
-	defaultPriorities = map[storage.Severity]string{
-		storage.Severity_CRITICAL_SEVERITY: "P0",
-		storage.Severity_HIGH_SEVERITY:     "P1",
-		storage.Severity_MEDIUM_SEVERITY:   "P2",
-		storage.Severity_LOW_SEVERITY:      "P3",
-	}
-	pattern = regexp.MustCompile(`^(P[0-9])\b`)
 )
 
 // jira notifier plugin.
@@ -69,57 +60,172 @@ type jira struct {
 }
 
 type issueTypeResult struct {
-	StartAt    int                      `json:"startAt"`
-	MaxResults int                      `json:"maxResults"`
-	Total      int                      `json:"total"`
-	IssueTypes []*jiraLib.MetaIssueType `json:"values"`
+	StartAt         int                      `json:"startAt"`
+	MaxResults      int                      `json:"maxResults"`
+	Total           int                      `json:"total"`
+	IssueTypes      []*jiraLib.MetaIssueType `json:"values"`
+	IssueTypesCloud []*jiraLib.MetaIssueType `json:"issueTypes"`
+}
+
+type issueField struct {
+	Name    string `json:"name"`
+	Key     string `json:"key"`
+	FieldID string `json:"fieldId"`
+}
+
+type issueFieldsResult struct {
+	StartAt          int           `json:"startAt"`
+	MaxResults       int           `json:"maxResults"`
+	Total            int           `json:"total"`
+	IssueFields      []*issueField `json:"values"`
+	IssueFieldsCloud []*issueField `json:"fields"`
+}
+
+type permissionResult struct {
+	Permissions map[string]struct {
+		HavePermission bool
+	}
+}
+
+func callJira(client *jiraLib.Client, urlPath string, result interface{}, startAt int) error {
+	req, err := client.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return errors.Wrap(err, "Failed to create Jira request")
+	}
+
+	values := req.URL.Query()
+	values.Set("startAt", strconv.Itoa(startAt))
+	req.URL.RawQuery = values.Encode()
+
+	resp, err := client.Do(req, nil)
+	if err != nil {
+		return errors.Wrap(err, "Failed to successfully make request to Jira")
+	}
+
+	defer utils.IgnoreError(resp.Body.Close)
+	err = json.NewDecoder(resp.Body).Decode(result)
+	if err != nil {
+		return errors.Wrap(err, "Failed to decode JSON response from Jira")
+	}
+
+	return nil
 }
 
 func getIssueTypes(client *jiraLib.Client, project string) ([]*jiraLib.MetaIssueType, error) {
+	urlPath := fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes", project)
+
+	var result issueTypeResult
+
+	err := callJira(client, urlPath, &result, 0)
+
+	if err != nil {
+		return []*jiraLib.MetaIssueType{}, err
+	}
+
+	returnList := make([]*jiraLib.MetaIssueType, 0, result.Total)
+
+	if len(result.IssueTypes) == 0 {
+		returnList = append(returnList, result.IssueTypesCloud...)
+	} else {
+		returnList = append(returnList, result.IssueTypes...)
+	}
+
+	for len(returnList) < result.Total {
+		result = issueTypeResult{}
+		err = callJira(client, urlPath, &result, len(returnList))
+		if err != nil {
+			return nil, err
+		}
+
+		var actualIssueTypes []*jiraLib.MetaIssueType
+		if len(result.IssueTypes) == 0 {
+			actualIssueTypes = result.IssueTypesCloud
+		} else {
+			actualIssueTypes = result.IssueTypes
+		}
+
+		returnList = append(returnList, actualIssueTypes...)
+	}
+
+	return returnList, nil
+}
+
+func getIssueFields(client *jiraLib.Client, project, issueID string) ([]*issueField, error) {
+	urlPath := fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes/%s", project, issueID)
+
+	var result issueFieldsResult
+
+	err := callJira(client, urlPath, &result, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	returnList := make([]*issueField, 0, result.Total)
+
+	if len(result.IssueFields) == 0 {
+		returnList = append(returnList, result.IssueFieldsCloud...)
+	} else {
+		returnList = append(returnList, result.IssueFields...)
+	}
+
+	for len(returnList) < result.Total {
+		result = issueFieldsResult{}
+		err = callJira(client, urlPath, &result, len(returnList))
+		if err != nil {
+			return nil, err
+		}
+
+		var actualIssueTypes []*issueField
+		if len(result.IssueFields) == 0 {
+			actualIssueTypes = result.IssueFieldsCloud
+		} else {
+			actualIssueTypes = result.IssueFields
+		}
+
+		returnList = append(returnList, actualIssueTypes...)
+	}
+
+	return returnList, nil
+}
+
+func isPriorityFieldOnIssueType(client *jiraLib.Client, project, issueType string) (bool, error) {
+	// Get issue types
+
 	// Low level HTTP client call is used here due to the deprecation/removal of the Jira endpoint used by the Jira library
 	// to fetch the CreateMeta data, and there is no API call for the suggested endpoint to use in place of the removed one.
 	// Info here:
 	// https://confluence.atlassian.com/jiracore/createmeta-rest-endpoint-to-be-removed-975040986.html
-	urlPath := fmt.Sprintf("rest/api/2/issue/createmeta/%s/issuetypes", project)
-
-	req, err := client.NewRequest("GET", urlPath, nil)
-	if err != nil {
-		return []*jiraLib.MetaIssueType{}, err
-	}
-
-	resp, err := client.Do(req, nil)
-	if err != nil {
-		return []*jiraLib.MetaIssueType{}, err
-	}
-
-	result := &issueTypeResult{}
-	defer utils.IgnoreError(resp.Body.Close)
-	err = json.NewDecoder(resp.Body).Decode(result)
-	if err != nil {
-		return []*jiraLib.MetaIssueType{}, err
-	}
-
-	return result.IssueTypes, nil
-}
-
-func isPriorityNeeded(client *jiraLib.Client, project, issueType string) (bool, error) {
 	issueTypes, err := getIssueTypes(client, project)
 	if err != nil {
 		return false, errors.Wrapf(err, "could not get meta information for JIRA project %q", project)
 	}
 
-	var validIssues []string
+	// Validate that the desired type exists and get its ID
+	var issueID string
 	for _, issue := range issueTypes {
-		validIssues = append(validIssues, issue.Name)
-		if !strings.EqualFold(issue.Name, issueType) {
-			continue
+		if strings.EqualFold(issue.Name, issueType) {
+			issueID = issue.Id
 		}
-		bytes, _ := json.MarshalIndent(issue.Fields, "", "  ")
-		log.Debugf("Fields for %q: %s", issue.Name, bytes)
-		_, hasPriority := issue.Fields["priority"]
-		return hasPriority, nil
 	}
-	return false, errors.Errorf("could not find issue type %q in project %q. Valid issue types are: %+v", issueType, project, validIssues)
+
+	if issueID == "" {
+		return false, errors.Errorf("could not find issue type %q in project %q.", issueType, project)
+	}
+
+	// Fetch its fields
+	issueTypeFields, err := getIssueFields(client, project, issueID)
+	if err != nil {
+		return false, errors.Wrapf(err, "could not get meta information for JIRA project %q and issue type %s", project, issueType)
+	}
+
+	// Validate priority is one of the fields
+	for _, field := range issueTypeFields {
+		if strings.EqualFold("priority", field.Name) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
@@ -277,7 +383,56 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 		return nil, err
 	}
 
-	decCreds := notifier.GetJira().GetPassword()
+	client, err := createClient(notifier, cryptoCodec, cryptoKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	canCreateIssues, err := canCreateIssuesInProject(client, notifier.GetLabelDefault())
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !canCreateIssues {
+		return nil, fmt.Errorf("Cannot create issues in project %s", notifier.GetLabelDefault())
+	}
+
+	var priorityMapping map[storage.Severity]string
+	if !conf.DisablePriority {
+		priorityMapping, err = configurePriority(client, conf, notifier.GetLabelDefault())
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// marshal unknowns
+	var unknownMap map[string]interface{}
+	if conf.GetDefaultFieldsJson() != "" {
+		if err := json.Unmarshal([]byte(conf.GetDefaultFieldsJson()), &unknownMap); err != nil {
+			return nil, errors.Wrap(err, "could not unmarshal default fields JSON")
+		}
+	}
+
+	return &jira{
+		client:             client,
+		conf:               notifier.GetJira(),
+		notifier:           notifier,
+		metadataGetter:     metadataGetter,
+		mitreStore:         mitreStore,
+		severityToPriority: priorityMapping,
+
+		needsPriority: !conf.DisablePriority,
+		unknownMap:    unknownMap,
+	}, nil
+}
+
+func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*jiraLib.Client, error) {
+	conf := notifier.GetJira()
+	decCreds := conf.GetPassword()
+
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
 		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
@@ -301,10 +456,22 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create JIRA client")
 	}
-	prios, _, err := client.Priority.GetList()
+
+	// Test auth
+
+	urlPath := "rest/api/2/configuration"
+
+	req, err := client.NewRequest("GET", urlPath, nil)
 	if err != nil {
-		errStr := err.Error()
-		if strings.HasPrefix(errStr, "401") || strings.HasPrefix(errStr, "403") {
+		return nil, err
+	}
+
+	log.Debugf("Making request to %s", urlPath)
+	resp, err := client.Do(req, nil)
+
+	if err != nil {
+		if resp.StatusCode == 401 || resp.StatusCode == 403 {
+			log.Debug("Retrying request using bearer auth")
 			httpClient := &http.Client{
 				Timeout: timeout,
 				Transport: &jiraLib.BearerAuthTransport{
@@ -317,53 +484,96 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 			if err != nil {
 				return nil, errors.Wrap(err, "could not create JIRA client")
 			}
-			prios, _, err = client.Priority.GetList()
+
+			req, err = client.NewRequest("GET", urlPath, nil)
+			if err != nil {
+				return nil, err
+			}
+			resp, err = client.Do(req, nil)
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "could not get the priority list")
+			if resp.StatusCode == 401 || resp.StatusCode == 403 {
+				return nil, errors.Wrap(err, "Could not authenticate to Jira")
+			}
 		}
 	}
-	jiraConf := notifier.GetJira()
 
-	derivedPriorities := mapPriorities(jiraConf, prios)
-	if len(jiraConf.GetPriorityMappings()) == 0 {
-		bytes, _ := json.Marshal(&derivedPriorities)
-		log.Debugf("Derived Jira Priorities: %s", bytes)
-		for k, v := range derivedPriorities {
-			jiraConf.PriorityMappings = append(jiraConf.PriorityMappings, &storage.Jira_PriorityMapping{
-				Severity:     k,
-				PriorityName: v,
-			})
-		}
-		sort.Slice(jiraConf.PriorityMappings, func(i, j int) bool {
-			return jiraConf.PriorityMappings[i].Severity < jiraConf.PriorityMappings[j].Severity
-		})
-	}
+	return client, nil
+}
 
-	needsPriority, err := isPriorityNeeded(client, notifier.GetLabelDefault(), jiraConf.GetIssueType())
+func canCreateIssuesInProject(client *jiraLib.Client, project string) (bool, error) {
+	urlPath := fmt.Sprintf("rest/api/2/mypermissions/?projectKey=%s&permissions=CREATE_ISSUES", project)
+
+	req, err := client.NewRequest("GET", urlPath, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not determine if priority is a required field for project %q issue type %q", notifier.GetLabelDefault(), jiraConf.GetIssueType())
+		return false, err
 	}
 
-	// marshal unknowns
-	var unknownMap map[string]interface{}
-	if jiraConf.GetDefaultFieldsJson() != "" {
-		if err := json.Unmarshal([]byte(jiraConf.GetDefaultFieldsJson()), &unknownMap); err != nil {
-			return nil, errors.Wrap(err, "could not unmarshal default fields JSON")
+	log.Debugf("Making request to %s", urlPath)
+	resp, err := client.Do(req, nil)
+	if err != nil {
+		log.Debugf("Raw error message from jira lib: %s", err.Error())
+		if resp != nil && resp.StatusCode == 404 {
+			return false, fmt.Errorf("Project %s not found", project)
+		}
+		return false, err
+	}
+
+	result := &permissionResult{}
+
+	defer utils.IgnoreError(resp.Body.Close)
+	err = json.NewDecoder(resp.Body).Decode(result)
+	if err != nil {
+		return false, err
+	}
+
+	return result.Permissions["CREATE_ISSUES"].HavePermission, nil
+}
+
+func configurePriority(client *jiraLib.Client, jiraConf *storage.Jira, project string) (map[storage.Severity]string, error) {
+	hasPriority, err := isPriorityFieldOnIssueType(client, project, jiraConf.GetIssueType())
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not determine if priority is a required field for project %q issue type %q", project, jiraConf.GetIssueType())
+	}
+
+	if !hasPriority {
+		errMsg := "Priority field not found on requested issue type %s in project %s. Consider checking the 'Disable setting priority' box."
+		return nil, fmt.Errorf(errMsg, jiraConf.GetIssueType(), project)
+	}
+
+	prios, _, err := client.Priority.GetList()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get the priority list")
+	}
+
+	return mapPriorities(prios, jiraConf.GetPriorityMappings())
+}
+
+func mapPriorities(prios []jiraLib.Priority, storageMapping []*storage.Jira_PriorityMapping) (map[storage.Severity]string, error) {
+	if len(storageMapping) == 0 {
+		return nil, errors.New("Please define priority mappings")
+	}
+
+	prioNameSet := map[string]string{}
+	for _, prio := range prios {
+		prioNameSet[prio.Name] = ""
+	}
+
+	finalizedMapping := map[storage.Severity]string{}
+	missingFromJira := []string{}
+	for _, prioMapping := range storageMapping {
+		if _, exists := prioNameSet[prioMapping.PriorityName]; exists {
+			finalizedMapping[prioMapping.Severity] = prioMapping.PriorityName
+		} else {
+			missingFromJira = append(missingFromJira, prioMapping.PriorityName)
 		}
 	}
 
-	return &jira{
-		client:             client,
-		conf:               notifier.GetJira(),
-		notifier:           notifier,
-		metadataGetter:     metadataGetter,
-		mitreStore:         mitreStore,
-		severityToPriority: derivedPriorities,
+	if len(missingFromJira) > 0 {
+		return nil, fmt.Errorf("Priority mappings that do not exist in Jira: %v", missingFromJira)
+	}
 
-		needsPriority: needsPriority,
-		unknownMap:    unknownMap,
-	}, nil
+	return finalizedMapping, nil
 }
 
 func (j *jira) ProtoNotifier() *storage.Notifier {
@@ -373,11 +583,18 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 func (j *jira) createIssue(_ context.Context, severity storage.Severity, i *jiraLib.Issue) error {
 	i.Fields.Unknowns = j.unknownMap
 
-	if j.needsPriority {
+	if !j.conf.DisablePriority {
 		i.Fields.Priority = &jiraLib.Priority{
 			Name: j.severityToPriority[severity],
 		}
 	}
+
+	buf := new(bytes.Buffer)
+	err := json.NewEncoder(buf).Encode(i)
+	if err != nil {
+		return err
+	}
+	log.Debug(buf)
 
 	_, resp, err := j.client.Issue.Create(i)
 	if err != nil && resp == nil {
@@ -406,67 +623,6 @@ func (j *jira) Test(ctx context.Context) error {
 		},
 	}
 	return j.createIssue(ctx, storage.Severity_LOW_SEVERITY, i)
-}
-
-// Optimistically tries to match all of the Jira priorities with the known mapping defined in defaultPriorities
-// If any severity is not matched, then it returns a nil map
-func optimisticMatching(prios []jiraLib.Priority) map[storage.Severity]string {
-	shortened := make(map[string]string)
-	for _, prio := range prios {
-		if match := pattern.FindString(prio.Name); len(match) > 0 {
-			shortened[match] = prio.Name
-		}
-	}
-	output := make(map[storage.Severity]string)
-	for k, name := range defaultPriorities {
-		match, ok := shortened[name]
-		if !ok {
-			return nil
-		}
-		output[k] = match
-	}
-	return output
-}
-
-func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[storage.Severity]string {
-	// Prioritize the defined mappings, which based on validation must contain mappings for ALL severities
-	if len(integration.GetPriorityMappings()) != 0 {
-		priorities := make(map[storage.Severity]string)
-		for _, mapping := range integration.GetPriorityMappings() {
-			priorities[mapping.GetSeverity()] = mapping.GetPriorityName()
-		}
-		return priorities
-	}
-	if matching := optimisticMatching(prios); matching != nil {
-		return matching
-	}
-	// Lexicographically sort the priorities retrieved from Jira, which as far as we know are
-	// single digit IDs in string form. It's possible that the Jira installation has fewer priorities than our
-	// severities and therefore we will attribute the last priority from Jira to the remaining severities
-	sort.Slice(prios, func(i, j int) bool {
-		numI, errI := strconv.Atoi(prios[i].ID)
-		numJ, errJ := strconv.Atoi(prios[j].ID)
-		if errI == nil && errJ == nil {
-			return numI < numJ
-		}
-		if errI != errJ {
-			return errI == nil // all numeric before all non-numeric
-		}
-		return prios[i].ID < prios[j].ID
-	})
-	// Truncate priorities to the number of severities
-	if len(prios) > len(severities) {
-		prios = prios[:len(severities)]
-	}
-	priorities := make(map[storage.Severity]string)
-	for i, sev := range severities {
-		if i > len(prios)-1 {
-			priorities[sev] = prios[len(prios)-1].Name
-			continue
-		}
-		priorities[sev] = prios[i].Name
-	}
-	return priorities
 }
 
 func init() {

@@ -21,9 +21,10 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet(factory Factory) Set {
+func NewSet(factory Factory, creatorOpts ...types.CreatorOption) Set {
 	return &setImpl{
 		factory:      factory,
 		integrations: make(map[string]types.ImageRegistry),
+		creatorOpts:  creatorOpts,
 	}
 }

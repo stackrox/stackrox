@@ -8,8 +8,11 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,7 +73,7 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 			s.Require().NoError(err)
 			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
 			s.Require().NoError(err)
-			s.NoError(certgen.VerifyServiceCert(certMap, validatingCA, serviceType, ""))
+			s.NoError(certgen.VerifyServiceCertAndKey(certMap, "", validatingCA, serviceType))
 		})
 	}
 }
@@ -85,6 +88,10 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 			[]string{"scanner.stackrox", "scanner.stackrox.svc", "scanner.namespace", "scanner.namespace.svc"}},
 		{storage.ServiceType_SCANNER_DB_SERVICE, "SCANNER_DB_SERVICE",
 			[]string{"scanner-db.stackrox", "scanner-db.stackrox.svc", "scanner-db.namespace", "scanner-db.namespace.svc"}},
+		{storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, "SCANNER_V4_INDEXER_SERVICE",
+			[]string{"scanner-v4-indexer.stackrox", "scanner-v4-indexer.stackrox.svc", "scanner-v4-indexer.namespace", "scanner-v4-indexer.namespace.svc"}},
+		{storage.ServiceType_SCANNER_V4_DB_SERVICE, "SCANNER_V4_DB_SERVICE",
+			[]string{"scanner-v4-db.stackrox", "scanner-v4-db.stackrox.svc", "scanner-v4-db.namespace", "scanner-v4-db.namespace.svc"}},
 	}
 
 	for _, tc := range testCases {
@@ -109,17 +116,49 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 }
 
 func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
-	testCases := map[string]struct {
-		namespace  string
-		clusterID  string
-		shouldFail bool
-	}{
-		"no parameter missing": {namespace: namespace, clusterID: clusterID, shouldFail: false},
-		"namespace missing":    {namespace: "", clusterID: clusterID, shouldFail: true},
-		"clusterID missing":    {namespace: namespace, clusterID: "", shouldFail: true},
+	getServiceTypes := func() set.FrozenSet[string] {
+		serviceTypes := v2ServiceTypes
+		if features.ScannerV4.Enabled() {
+			serviceTypes = allSupportedServiceTypes
+		}
+		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
+		for _, serviceType := range serviceTypes.AsSlice() {
+			serviceTypeNames = append(serviceTypeNames, serviceType.String())
+		}
+		return set.NewFrozenSet(serviceTypeNames...)
 	}
+	testCases := map[string]struct {
+		namespace        string
+		clusterID        string
+		shouldFail       bool
+		scannerV4Enabled bool
+	}{
+		"no parameter missing": {
+			namespace:  namespace,
+			clusterID:  clusterID,
+			shouldFail: false,
+		},
+		"no parameter missing, scanner v4 enabled": {
+			namespace:        namespace,
+			clusterID:        clusterID,
+			shouldFail:       false,
+			scannerV4Enabled: true,
+		},
+		"namespace missing": {
+			namespace:  "",
+			clusterID:  clusterID,
+			shouldFail: true,
+		},
+		"clusterID missing": {
+			namespace:  namespace,
+			clusterID:  "",
+			shouldFail: true,
+		},
+	}
+	scannerV4Enabled := features.ScannerV4.Enabled()
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
+			testutils.MustUpdateFeature(s.T(), features.ScannerV4, tc.scannerV4Enabled)
 			certs, err := IssueLocalScannerCerts(tc.namespace, tc.clusterID)
 			if tc.shouldFail {
 				s.Require().Error(err)
@@ -128,12 +167,18 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 			s.Require().NoError(err)
 			s.Require().NotNil(certs.GetCaPem())
 			s.Require().NotEmpty(certs.GetServiceCerts())
+			expectedServiceTypes := getServiceTypes().Unfreeze()
 			for _, cert := range certs.ServiceCerts {
-				s.Contains([]storage.ServiceType{storage.ServiceType_SCANNER_SERVICE,
-					storage.ServiceType_SCANNER_DB_SERVICE}, cert.GetServiceType())
+				certService := cert.GetServiceType().String()
+				// Verifies that the service types of the returned certificates are supported Scanner service types.
+				s.Contains(expectedServiceTypes, certService, "[%s] unexpected certificate service type %q", tcName, certService)
+				expectedServiceTypes.Remove(certService)
 				s.NotEmpty(cert.GetCert().GetCertPem())
 				s.NotEmpty(cert.GetCert().GetKeyPem())
 			}
+			// Verify that certificates for all expected service types have been returned.
+			s.Empty(expectedServiceTypes.AsSlice(), "[%s] not all expected certificates were returned by IssueLocalScannerCerts", tcName)
 		})
 	}
+	testutils.MustUpdateFeature(s.T(), features.ScannerV4, scannerV4Enabled)
 }

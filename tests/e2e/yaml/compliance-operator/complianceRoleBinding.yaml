@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-secured-cluster-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+  labels:
+    app.kubernetes.io/component: sensor
+    app.kubernetes.io/instance: stackrox-secured-cluster-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-secured-cluster-services
+    app.kubernetes.io/version: 4.2.x-187-ga2148c149d
+    auto-upgrade.stackrox.io/component: sensor
+    helm.sh/chart: stackrox-secured-cluster-services-400.2.0-187-ga2148c149d
+  name: manage-compliance
+  namespace: openshift-compliance
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: edit-compliance
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: stackrox
