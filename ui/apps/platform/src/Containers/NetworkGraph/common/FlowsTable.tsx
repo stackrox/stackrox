@@ -26,6 +26,7 @@ import {
     PlusIcon,
 } from '@patternfly/react-icons';
 
+import { ensureExhaustive } from 'utils/type.utils';
 import { BaselineSimulationDiffState, Flow, FlowEntityType } from '../types/flow.type';
 import { protocolLabel } from '../utils/flowUtils';
 
@@ -52,6 +53,21 @@ const columnNames = {
     // @TODO: This would be a good point to update with i18n translation ability
     portAndProtocol: 'Port / protocol',
 };
+
+function getFlowSubtext(flow: Flow): string {
+    switch (flow.type) {
+        case 'DEPLOYMENT':
+            return `in "${flow.namespace}"`;
+        case 'CIDR_BLOCK':
+        case 'EXTERNAL_ENTITIES':
+            return 'External to cluster';
+        case 'INTERNAL_ENTITIES':
+        case 'UKNOWN_INTERNAL_ENTITY':
+            return 'Internal to cluster';
+        default:
+            return ensureExhaustive(flow.type);
+    }
+}
 
 function getBaselineSimulatedRowStyle(
     baselineSimulationDiffState: BaselineSimulationDiffState | undefined
@@ -275,9 +291,7 @@ function FlowsTable({
                                         <div>
                                             <TextContent>
                                                 <Text component={TextVariants.small}>
-                                                    {row.type === 'DEPLOYMENT'
-                                                        ? `in "${row.namespace}"`
-                                                        : 'External to cluster'}
+                                                    {getFlowSubtext(row)}
                                                 </Text>
                                             </TextContent>
                                         </div>

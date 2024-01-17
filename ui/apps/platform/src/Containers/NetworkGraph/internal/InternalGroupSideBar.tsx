@@ -15,21 +15,18 @@ import {
 } from '@patternfly/react-core';
 
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { getEdgesByNodeId, getNodeById } from '../utils/networkGraphUtils';
+import { getEdgesByNodeId } from '../utils/networkGraphUtils';
 import {
-    CIDRBlockNodeModel,
     CustomEdgeModel,
     CustomNodeModel,
-    ExternalEntitiesNodeModel,
-    ExternalGroupNodeModel,
+    InternalGroupNodeModel,
     isOfType,
 } from '../types/topology.type';
 
-import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
-type ExternalGroupSideBarProps = {
-    id: string;
+type InternalGroupSideBarProps = {
+    selectedNode: InternalGroupNodeModel;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     onNodeSelect: (id: string) => void;
@@ -41,36 +38,29 @@ const columnNames = {
     activeTraffic: 'Active traffic',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ExternalGroupSideBar({
-    id,
+function InternalGroupSideBar({
+    selectedNode,
     nodes,
     edges,
     onNodeSelect,
-}: ExternalGroupSideBarProps): ReactElement {
+}: InternalGroupSideBarProps): ReactElement {
     // component state
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
     // derived data
-    const externalGroupNode = getNodeById(nodes, id) as ExternalGroupNodeModel;
-    const externalNodes = [
-        ...nodes.filter(isOfType('CIDR_BLOCK')),
-        ...nodes.filter(isOfType('EXTERNAL_ENTITIES')),
+    const internalNodes = [
+        ...nodes.filter(isOfType('UKNOWN_INTERNAL_ENTITY')),
+        ...nodes.filter(isOfType('INTERNAL_ENTITIES')),
     ];
 
-    const onNodeSelectHandler =
-        (externalNode: ExternalEntitiesNodeModel | CIDRBlockNodeModel) => () => {
-            onNodeSelect(externalNode.id);
-        };
-
-    const filteredExternalNodes = entityNameFilter
-        ? externalNodes.filter((externalNode) => {
-              if (externalNode.label) {
-                  return externalNode.label.includes(entityNameFilter);
+    const filteredInternalNodes = entityNameFilter
+        ? internalNodes.filter(({ label }) => {
+              if (label) {
+                  return label.includes(entityNameFilter);
               }
               return false;
           })
-        : externalNodes;
+        : internalNodes;
 
     return (
         <Stack>
@@ -79,7 +69,7 @@ function ExternalGroupSideBar({
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h2} className="pf-u-font-size-xl">
-                                {externalGroupNode?.label}
+                                {selectedNode.label}
                             </Text>
                         </TextContent>
                         <TextContent>
@@ -87,7 +77,7 @@ function ExternalGroupSideBar({
                                 component={TextVariants.h3}
                                 className="pf-u-font-size-sm pf-u-color-200"
                             >
-                                Connected entities outside your cluster
+                                Unspecified connected entities within your cluster
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -113,7 +103,7 @@ function ExternalGroupSideBar({
                                 <ToolbarItem>
                                     <TextContent>
                                         <Text component={TextVariants.h3}>
-                                            {filteredExternalNodes.length} results found
+                                            {filteredInternalNodes.length} results found
                                         </Text>
                                     </TextContent>
                                 </ToolbarItem>
@@ -121,47 +111,28 @@ function ExternalGroupSideBar({
                         </Toolbar>
                     </StackItem>
                     <StackItem>
-                        <TableComposable aria-label="External to cluster table" variant="compact">
+                        <TableComposable aria-label="Internal to cluster table" variant="compact">
                             <Thead>
                                 <Tr>
                                     <Th width={50}>{columnNames.entity}</Th>
-                                    <Th>{columnNames.address}</Th>
                                     <Th>{columnNames.activeTraffic}</Th>
                                 </Tr>
                             </Thead>
                             <Tbody>
-                                {filteredExternalNodes.map((externalNode) => {
-                                    const entityIcon =
-                                        externalNode.data.type === 'CIDR_BLOCK' ? (
-                                            <CidrBlockIcon />
-                                        ) : (
-                                            <ExternalEntitiesIcon />
-                                        );
-                                    const entityName = externalNode.label;
-                                    const address =
-                                        externalNode.data.type === 'CIDR_BLOCK'
-                                            ? externalNode.data.externalSource.cidr
-                                            : '';
-                                    const relevantEdges = getEdgesByNodeId(edges, externalNode.id);
+                                {filteredInternalNodes.map((node) => {
+                                    const entityName = node.label;
+                                    const relevantEdges = getEdgesByNodeId(edges, node.id);
                                     return (
-                                        <Tr key={externalNode.id}>
+                                        <Tr key={node.id}>
                                             <Td dataLabel={columnNames.entity}>
-                                                <Flex>
-                                                    <FlexItem>{entityIcon}</FlexItem>
-                                                    <FlexItem>
-                                                        <Button
-                                                            variant="link"
-                                                            isInline
-                                                            onClick={onNodeSelectHandler(
-                                                                externalNode
-                                                            )}
-                                                        >
-                                                            {entityName}
-                                                        </Button>
-                                                    </FlexItem>
-                                                </Flex>
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() => onNodeSelect(node.id)}
+                                                >
+                                                    {entityName}
+                                                </Button>
                                             </Td>
-                                            <Td dataLabel={columnNames.address}>{address}</Td>
                                             <Td dataLabel={columnNames.activeTraffic}>
                                                 {relevantEdges.length}
                                             </Td>
@@ -177,4 +148,4 @@ function ExternalGroupSideBar({
     );
 }
 
-export default ExternalGroupSideBar;
+export default InternalGroupSideBar;

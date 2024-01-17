@@ -93,9 +93,15 @@ function createFlow({
         entity = adjacentNodeData.deployment.name;
         namespace = adjacentNodeData.deployment.namespace;
     } else if (adjacentNodeData.type === 'CIDR_BLOCK') {
-        entity = `${adjacentNodeData.externalSource.name}`;
+        entity = adjacentNodeData.externalSource.name;
     } else if (adjacentNodeData.type === 'EXTERNAL_ENTITIES') {
         entity = 'External entities';
+    } else if (adjacentNodeData.type === 'INTERNAL_ENTITIES') {
+        entity = 'Internal entities';
+    } else if (adjacentNodeData.type === 'UKNOWN_INTERNAL_ENTITY') {
+        // We don't know what this internal entity is so we just show the id. Often
+        // this will be the IP address of the entity so is still valuable to show.
+        entity = adjacentNodeData.id;
     }
     // we need a unique id for each network flow
     const flowId = `${entity}-${namespace}-${direction}-${String(port)}-${String(protocol)}`;

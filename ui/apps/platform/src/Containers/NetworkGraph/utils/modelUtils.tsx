@@ -30,6 +30,8 @@ import {
     CIDRBlockData,
     UnknownInternalEntityNodeModel,
     InternalEntitiesNodeModel,
+    InternalGroupData,
+    InternalGroupNodeModel,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -92,6 +94,24 @@ function getExternalGroupNode(): ExternalGroupNodeModel {
     };
 }
 
+function getInternalGroupNode(): InternalGroupNodeModel {
+    const internalGroupData: InternalGroupData = {
+        collapsible: true,
+        showContextMenu: false,
+        type: 'INTERNAL_GROUP',
+        isFadedOut: false,
+    };
+    return {
+        id: 'Internal to cluster',
+        type: 'group',
+        children: [],
+        group: true,
+        label: 'Internal to cluster',
+        style: { padding: 15 },
+        data: internalGroupData,
+    };
+}
+
 function getDeploymentNodeModel(
     entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
@@ -116,17 +136,9 @@ function getDeploymentNodeModel(
 }
 
 function getExternalNodeModel(
-    entity:
-        | ExternalSourceNetworkEntityInfo
-        | InternetNetworkEntityInfo
-        | UnknownInternalEntityNetworkEntityInfo
-        | InternalNetworkEntitiesInfo,
+    entity: ExternalSourceNetworkEntityInfo | InternetNetworkEntityInfo,
     outEdges: OutEdges
-):
-    | ExternalEntitiesNodeModel
-    | UnknownInternalEntityNodeModel
-    | CIDRBlockNodeModel
-    | InternalEntitiesNodeModel {
+): ExternalEntitiesNodeModel | CIDRBlockNodeModel {
     const baseNode = getBaseNode(entity.id);
     switch (entity.type) {
         case 'INTERNET':
@@ -135,20 +147,6 @@ function getExternalNodeModel(
                 shape: NodeShape.rect,
                 label: 'External Entities',
                 data: { ...entity, type: 'EXTERNAL_ENTITIES', outEdges, isFadedOut: false },
-            };
-        case 'UKNOWN_INTERNAL_ENTITY':
-            return {
-                ...baseNode,
-                shape: NodeShape.trapezoid,
-                label: entity?.id || 'Unknown entity',
-                data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
-            };
-        case 'INTERNAL_ENTITIES':
-            return {
-                ...baseNode,
-                shape: NodeShape.stadium,
-                label: 'Internal entities',
-                data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
             };
         case 'EXTERNAL_SOURCE':
             // eslint-disable-next-line no-case-declarations
@@ -163,6 +161,31 @@ function getExternalNodeModel(
                 shape: NodeShape.rect,
                 label: entity?.externalSource?.name || 'Unknown entity',
                 data: cidrBlockData,
+            };
+        default:
+            return ensureExhaustive(entity);
+    }
+}
+
+function getInternalNodeModel(
+    entity: InternalNetworkEntitiesInfo | UnknownInternalEntityNetworkEntityInfo,
+    outEdges: OutEdges
+): InternalEntitiesNodeModel | UnknownInternalEntityNodeModel {
+    const baseNode = getBaseNode(entity.id);
+    switch (entity.type) {
+        case 'INTERNAL_ENTITIES':
+            return {
+                ...baseNode,
+                shape: NodeShape.rect,
+                label: 'Internal entities',
+                data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
+            };
+        case 'UKNOWN_INTERNAL_ENTITY':
+            return {
+                ...baseNode,
+                shape: NodeShape.rect,
+                label: entity?.id || 'Unknown entity',
+                data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
             };
         default:
             return ensureExhaustive(entity);
@@ -185,10 +208,11 @@ function getNodeModel(
                 isExternallyConnected
             );
         case 'EXTERNAL_SOURCE':
-        case 'UKNOWN_INTERNAL_ENTITY':
-        case 'INTERNAL_ENTITIES':
         case 'INTERNET':
             return getExternalNodeModel(entity, outEdges);
+        case 'UKNOWN_INTERNAL_ENTITY':
+        case 'INTERNAL_ENTITIES':
+            return getInternalNodeModel(entity, outEdges);
         default:
             return ensureExhaustive(entity);
     }
@@ -238,19 +262,21 @@ export function transformActiveData(
     activeEdgeMap: Record<string, CustomEdgeModel>;
     activeNodeMap: Record<string, CustomNodeModel>;
 } {
-    const activeDataModel = {
+    const activeDataModel: {
+        graph: typeof graphModel;
+        nodes: CustomNodeModel[];
+        edges: CustomEdgeModel[];
+    } = {
         graph: graphModel,
-        nodes: [] as CustomNodeModel[],
-        edges: [] as CustomEdgeModel[],
+        nodes: [],
+        edges: [],
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
-    const externalNodes: Record<
+    const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
+    const internalNodes: Record<
         string,
-        | ExternalEntitiesNodeModel
-        | UnknownInternalEntityNodeModel
-        | CIDRBlockNodeModel
-        | InternalEntitiesNodeModel
+        UnknownInternalEntityNodeModel | InternalEntitiesNodeModel
     > = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
@@ -292,15 +318,17 @@ export function transformActiveData(
         }
 
         // to group external entities and cidr blocks to external grouping
-        if (
-            type === 'EXTERNAL_SOURCE' ||
-            type === 'INTERNET' ||
-            type === 'UKNOWN_INTERNAL_ENTITY' ||
-            type === 'INTERNAL_ENTITIES'
-        ) {
+        if (type === 'EXTERNAL_SOURCE' || type === 'INTERNET') {
             const externalNode = getExternalNodeModel(entity, outEdges);
             if (!externalNodes[id]) {
                 externalNodes[id] = externalNode;
+            }
+        }
+
+        if (type === 'UKNOWN_INTERNAL_ENTITY' || type === 'INTERNAL_ENTITIES') {
+            const internalNode = getInternalNodeModel(entity, outEdges);
+            if (!internalNodes[id]) {
+                internalNodes[id] = internalNode;
             }
         }
 
@@ -370,6 +398,17 @@ export function transformActiveData(
         activeDataModel.nodes.push(externalGroupNode);
     }
 
+    const internalNodeIds = Object.keys(internalNodes);
+    if (internalNodeIds.length > 0) {
+        const internalGroupNode = getInternalGroupNode();
+        internalNodeIds.forEach((internalNodeId) => {
+            internalGroupNode?.children?.push(internalNodeId);
+        });
+
+        // add external group node to data model
+        activeDataModel.nodes.push(internalGroupNode);
+    }
+
     // add deployment nodes to data model
     activeDataModel.nodes.push(...Object.values(deploymentNodes));
 
@@ -379,8 +418,12 @@ export function transformActiveData(
     // add external nodes to data model
     activeDataModel.nodes.push(...Object.values(externalNodes));
 
+    // add internal nodes to data model
+    activeDataModel.nodes.push(...Object.values(internalNodes));
+
     // add edges to data model
     activeDataModel.edges.push(...Object.values(activeEdgeMap));
+
     return {
         activeDataModel,
         // set activeEdgeMap to be able to cross reference edges by id for the extraneous graph
@@ -506,6 +549,7 @@ export function createExtraneousFlowsModel(
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
+    const internalNode = getInternalGroupNode();
     // add all non-group nodes from the active graph
     Object.values(activeNodeMap).forEach((node) => {
         if (!node.group) {
@@ -592,6 +636,10 @@ export function createExtraneousFlowsModel(
             if (externalNode && externalNode?.children) {
                 externalNode.children.push(data.id);
             }
+        }
+
+        if (type === 'UKNOWN_INTERNAL_ENTITY' || type === 'INTERNAL_ENTITIES') {
+            internalNode?.children?.push(data.id);
         }
     });
 

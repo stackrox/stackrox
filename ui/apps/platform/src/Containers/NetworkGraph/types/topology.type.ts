@@ -12,6 +12,7 @@ export type CustomNodeModel =
     | DeploymentNodeModel
     | ExternalGroupNodeModel
     | ExternalEntitiesNodeModel
+    | InternalGroupNodeModel
     | UnknownInternalEntityNodeModel
     | InternalEntitiesNodeModel
     | CIDRBlockNodeModel
@@ -36,6 +37,8 @@ export type UnknownInternalEntityNodeModel = Override<
     NodeModel,
     { data: UnknownInternalEntityData }
 >;
+
+export type InternalGroupNodeModel = Override<NodeModel, { data: InternalGroupData }>;
 
 export type InternalEntitiesNodeModel = Override<NodeModel, { data: InternalEntitiesData }>;
 
@@ -81,11 +84,52 @@ export type NamespaceData = {
 
 export type NetworkPolicyState = 'none' | 'both' | 'ingress' | 'egress';
 
+// prettier-ignore
+type NodeModelType<DataType extends NodeDataType> =
+    DataType extends 'DEPLOYMENT' ? DeploymentNodeModel :
+    DataType extends 'INTERNAL_GROUP' ? InternalGroupNodeModel :
+    DataType extends 'EXTERNAL_GROUP' ? ExternalGroupNodeModel :
+    DataType extends 'EXTERNAL_ENTITIES' ? ExternalEntitiesNodeModel :
+    DataType extends 'CIDR_BLOCK' ? CIDRBlockNodeModel :
+    DataType extends 'UKNOWN_INTERNAL_ENTITY' ? UnknownInternalEntityNodeModel :
+    DataType extends 'INTERNAL_ENTITIES' ? InternalEntitiesNodeModel :
+    DataType extends 'EXTRANEOUS' ? ExtraneousNodeModel :
+    never;
+
+/**
+ * Returns a type guard for checking if a node is of a certain type
+ *
+ * @template DataType the type of node to check, should not be specified explicitly
+ * @param type the expected string value of the node's `data.type` property
+ * @returns a type guard for checking if a node is of a certain type
+ */
+export function isOfType<DataType extends NodeDataType>(
+    type: DataType
+): (node: CustomNodeModel) => node is NodeModelType<DataType> {
+    return (node: CustomNodeModel): node is NodeModelType<DataType> => node.data.type === type;
+}
+
+/**
+ * Type guard for checking if a node is of a certain type
+ *
+ * @template DataType the type of node to check, should not be specified explicitly
+ * @param type the expected string value of the node's `data.type` property
+ * @param node the node to check
+ * @returns true if the node is of the specified type, false otherwise
+ */
+export function isNodeOfType<DataType extends NodeDataType>(
+    type: DataType,
+    node: CustomNodeModel
+): node is NodeModelType<DataType> {
+    return isOfType(type)(node);
+}
+
 export type NodeDataType =
     | 'DEPLOYMENT'
     | 'EXTERNAL_GROUP'
     | 'EXTERNAL_ENTITIES'
     | 'CIDR_BLOCK'
+    | 'INTERNAL_GROUP'
     | 'UKNOWN_INTERNAL_ENTITY'
     | 'INTERNAL_ENTITIES'
     | 'EXTRANEOUS';
@@ -110,6 +154,13 @@ export type DeploymentData = {
 
 export type ExternalGroupData = {
     type: 'EXTERNAL_GROUP';
+    collapsible: boolean;
+    showContextMenu: boolean;
+    isFadedOut: boolean;
+};
+
+export type InternalGroupData = {
+    type: 'INTERNAL_GROUP';
     collapsible: boolean;
     showContextMenu: boolean;
     isFadedOut: boolean;

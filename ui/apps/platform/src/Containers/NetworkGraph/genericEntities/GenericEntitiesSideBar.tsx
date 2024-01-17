@@ -21,9 +21,8 @@ import {
     getNumFlows,
 } from '../utils/flowUtils';
 import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { CIDRBlockNodeModel, CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+import { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
 
-import { CidrBlockIcon } from '../common/NetworkGraphIcons';
 import AdvancedFlowsFilter, {
     defaultAdvancedFlowsFilters,
 } from '../common/AdvancedFlowsFilter/AdvancedFlowsFilter';
@@ -31,16 +30,25 @@ import EntityNameSearchInput from '../common/EntityNameSearchInput';
 import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 
-type CidrBlockSideBarProps = {
+export type GenericEntitiesSideBarProps = {
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     onNodeSelect: (id: string) => void;
+    EntityHeaderIcon: ReactElement;
+    sidebarTitle: string;
+    flowTableLabel: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarProps): ReactElement {
-    // component state
+function GenericEntitiesSideBar({
+    id,
+    nodes,
+    edges,
+    onNodeSelect,
+    EntityHeaderIcon,
+    sidebarTitle,
+    flowTableLabel,
+}: GenericEntitiesSideBarProps): ReactElement {
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
     const [advancedFilters, setAdvancedFilters] = React.useState<AdvancedFlowsFilterType>(
         defaultAdvancedFlowsFilters
@@ -53,8 +61,7 @@ function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarPr
     const [expandedRows, setExpandedRows] = React.useState<string[]>(initialExpandedRows);
     const [selectedRows, setSelectedRows] = React.useState<string[]>([]);
 
-    // derived data
-    const cidrBlockNode = getNodeById(nodes, id) as CIDRBlockNodeModel;
+    const entityNode = getNodeById(nodes, id);
     const numFlows = getNumFlows(filteredFlows);
     const allUniquePorts = getAllUniquePorts(filteredFlows);
 
@@ -66,13 +73,11 @@ function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarPr
         <Stack>
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                    <FlexItem>
-                        <CidrBlockIcon />
-                    </FlexItem>
+                    <FlexItem>{EntityHeaderIcon}</FlexItem>
                     <FlexItem>
                         <TextContent>
                             <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                                {cidrBlockNode?.label}
+                                {entityNode?.label}
                             </Text>
                         </TextContent>
                         <TextContent>
@@ -80,7 +85,7 @@ function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarPr
                                 component={TextVariants.h2}
                                 className="pf-u-font-size-sm pf-u-color-200"
                             >
-                                {cidrBlockNode?.data.externalSource.cidr}
+                                {sidebarTitle}
                             </Text>
                         </TextContent>
                     </FlexItem>
@@ -118,7 +123,7 @@ function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarPr
                     </StackItem>
                     <StackItem>
                         <FlowsTable
-                            label="Cidr block flows"
+                            label={flowTableLabel}
                             flows={filteredFlows}
                             numFlows={numFlows}
                             expandedRows={expandedRows}
@@ -134,4 +139,4 @@ function CidrBlockSideBar({ id, nodes, edges, onNodeSelect }: CidrBlockSideBarPr
     );
 }
 
-export default CidrBlockSideBar;
+export default GenericEntitiesSideBar;

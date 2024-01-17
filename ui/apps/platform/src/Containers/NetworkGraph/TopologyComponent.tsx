@@ -19,14 +19,13 @@ import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
-import CidrBlockSideBar from './cidr/CidrBlockSideBar';
-import ExternalEntitiesSideBar from './externalEntities/ExternalEntitiesSideBar';
+import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
     clearSimulationQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
 import { getNodeById } from './utils/networkGraphUtils';
-import { CustomModel, CustomNodeModel } from './types/topology.type';
+import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
@@ -39,6 +38,12 @@ import {
 } from './hooks/useNetworkPolicySimulator';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
+import {
+    CidrBlockIcon,
+    ExternalEntitiesIcon,
+    InternalEntitiesIcon,
+} from './common/NetworkGraphIcons';
+import InternalGroupSideBar from './internal/InternalGroupSideBar';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -218,22 +223,53 @@ const TopologyComponent = ({
                             onNodeSelect={onNodeSelect}
                         />
                     )}
-                    {selectedNode && selectedNode?.data?.type === 'CIDR_BLOCK' && (
-                        <CidrBlockSideBar
+                    {selectedNode && isNodeOfType('CIDR_BLOCK', selectedNode) && (
+                        <GenericEntitiesSideBar
                             id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
+                            EntityHeaderIcon={<CidrBlockIcon />}
+                            sidebarTitle={selectedNode.data.externalSource.cidr ?? ''}
+                            flowTableLabel="Cidr block flows"
+                        />
+                    )}
+                    {selectedNode && isNodeOfType('INTERNAL_GROUP', selectedNode) && (
+                        <InternalGroupSideBar
+                            selectedNode={selectedNode}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
                             onNodeSelect={onNodeSelect}
                         />
                     )}
-                    {selectedNode && selectedNode?.data?.type === 'EXTERNAL_ENTITIES' && (
-                        <ExternalEntitiesSideBar
+                    {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
+                        <GenericEntitiesSideBar
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
                             onNodeSelect={onNodeSelect}
+                            EntityHeaderIcon={<ExternalEntitiesIcon />}
+                            sidebarTitle={'Connected Entities Outside Your Cluster'}
+                            flowTableLabel="External entities flows"
                         />
                     )}
+                    {selectedNode &&
+                        (isNodeOfType('INTERNAL_ENTITIES', selectedNode) ||
+                            isNodeOfType('UKNOWN_INTERNAL_ENTITY', selectedNode)) && (
+                            <GenericEntitiesSideBar
+                                id={selectedNode.id}
+                                nodes={model?.nodes || []}
+                                edges={model?.edges || []}
+                                onNodeSelect={onNodeSelect}
+                                EntityHeaderIcon={<InternalEntitiesIcon />}
+                                sidebarTitle={
+                                    selectedNode.data.type === 'INTERNAL_ENTITIES'
+                                        ? 'Unspecified entity connection within your clusters'
+                                        : ''
+                                }
+                                flowTableLabel="Internal entities flows"
+                            />
+                        )}
                 </TopologySideBar>
             }
             sideBarOpen={!!selectedNode || simulation.isOn}
