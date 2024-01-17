@@ -40,6 +40,7 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, c),
 		centralObj:          c,
+		currentTime:         time.Now(),
 	}
 	return run.Execute(ctx)
 }
@@ -47,8 +48,9 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
-	ca         mtls.CA
-	centralObj *platform.Central
+	ca          mtls.CA
+	centralObj  *platform.Central
+	currentTime time.Time
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
@@ -260,7 +262,7 @@ func (r *createCentralTLSExtensionRun) reconcileScannerV4DBTLSSecret(ctx context
 }
 
 func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storage.ServiceType, fileNamePrefix string, fileMap types.SecretDataMap) error {
-	if err := certgen.VerifyCert(fileMap, fileNamePrefix, r.getValidateCert(serviceType)); err != nil {
+	if err := certgen.VerifyServiceCertAndKey(fileMap, fileNamePrefix, r.ca, serviceType, r.checkCertRenewal); err != nil {
 		return err
 	}
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
@@ -269,35 +271,22 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	return nil
 }
 
-func (r *createCentralTLSExtensionRun) getValidateCert(serviceType storage.ServiceType) certgen.ValidateCertFunc {
-	validateService := certgen.GetValidateServiceCertFunc(r.ca, serviceType)
-	return func(certificate *x509.Certificate) error {
-		if err := validateService(certificate); err != nil {
-			return err
-		}
-		if err := checkCertRenewal(certificate, time.Now()); err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-func checkCertRenewal(certificate *x509.Certificate, currentTime time.Time) error {
+func (r *createCentralTLSExtensionRun) checkCertRenewal(certificate *x509.Certificate) error {
 	startTime := certificate.NotBefore
 	endTime := certificate.NotAfter
 	if !endTime.After(startTime) {
 		return fmt.Errorf("certificate expires at %s before it begins to be valid at %s", endTime, startTime)
 	}
-	if currentTime.Before(startTime) {
+	if r.currentTime.Before(startTime) {
 		return fmt.Errorf("certificate lifetime start %s is in the future", startTime)
 	}
-	if currentTime.After(endTime) {
+	if r.currentTime.After(endTime) {
 		return fmt.Errorf("certificate expired at %s", endTime)
 	}
 	validityDuration := endTime.Sub(startTime)
 	halfOfValidityDuration := time.Duration(validityDuration.Nanoseconds()/2) * time.Nanosecond
 	refreshTime := startTime.Add(halfOfValidityDuration)
-	if currentTime.After(refreshTime) {
+	if r.currentTime.After(refreshTime) {
 		return fmt.Errorf("certificate is past half of its validity, %s", refreshTime)
 	}
 	return nil
