@@ -48,8 +48,10 @@ func resetGRPCClient() {
 	scannerClientMutex.Lock()
 	defer scannerClientMutex.Unlock()
 
-	if scannerClient != nil {
-		utils.Should(scannerClient.Close())
-		scannerClient = nil
+	if scannerClient == nil {
+		return
 	}
+
+	utils.Should(scannerClient.Close())
+	scannerClient = nil
 }
