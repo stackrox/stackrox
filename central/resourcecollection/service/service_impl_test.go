@@ -5,9 +5,11 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/globaldb"
 	reportConfigurationDS "github.com/stackrox/rox/central/reports/config/datastore"
 	datastoreMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -36,6 +40,20 @@ type CollectionServiceTestSuite struct {
 	deploymentDS      *deploymentDSMocks.MockDataStore
 	resourceConfigDS  reportConfigurationDS.DataStore
 	collectionService Service
+}
+
+func TestConsumers(t *testing.T) {
+	t.Setenv("POSTGRES_PASSWORD", "password")
+	t.Setenv("USER", "postgres")
+	db := pgtest.ForT(t)
+	globaldb.SetPostgresTest(t, db)
+
+	service := Singleton()
+	ctx := sac.WithAllAccess(context.Background())
+	resp, err := service.GetConsumers(ctx, &v1.ResourceByID{Id: "34a8c750-2ad0-44c5-8449-2648ccbeaaa3"})
+	require.NoError(t, err)
+	fmt.Printf("%+v", resp.GetCollectionConsumer())
+	assert.NotEmpty(t, resp.GetCollectionConsumer())
 }
 
 func (suite *CollectionServiceTestSuite) SetupSuite() {

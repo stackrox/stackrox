@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -162,6 +163,46 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+// GetConsumers returns all consumer for a collection
+// Consumer Model
+
+// type ConsumerType string
+//
+// const (
+//
+//	CollectionType      ConsumerType = "collection"
+//	VulnerabilityReport ConsumerType = "vulnerability_report"
+//
+// )
+//
+//	type CollectionConsumer struct {
+//		ConsumerType ConsumerType
+//	}
+func (s *serviceImpl) GetConsumers(ctx context.Context, request *v1.ResourceByID) (*v1.CollectionConsumerListResponse, error) {
+	// error out if collection is in use by a report config
+	//query := search.DisjunctionQuery(
+	//	search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, request.GetId()).ProtoQuery(),
+	//	search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery(),
+	//)
+
+	query := search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery()
+	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
+	}
+
+	response := &v1.CollectionConsumerListResponse{}
+	for _, report := range reports {
+		fmt.Printf("Report test %s \n", report.Name)
+		response.CollectionConsumer = append(response.CollectionConsumer, &v1.CollectionConsumer{
+			Id:           report.Id,
+			ConsumerType: "vulnerability_report",
+		})
+	}
+
+	return response, nil
 }
 
 // CreateCollection creates a new collection from the given request

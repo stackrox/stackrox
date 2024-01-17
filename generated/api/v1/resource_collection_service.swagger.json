@@ -321,6 +321,44 @@
         ]
       }
     },
+    "/v1/collections/{id}/consumers": {
+      "post": {
+        "operationId": "CollectionService_GetConsumers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CollectionConsumerListResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ResourceByID"
+            }
+          }
+        ],
+        "tags": [
+          "CollectionService"
+        ]
+      }
+    },
     "/v1/collectionscount": {
       "get": {
         "operationId": "CollectionService_GetCollectionCount",
@@ -608,6 +646,28 @@
       ],
       "default": "UNSET"
     },
+    "v1CollectionConsumer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "consumerType": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CollectionConsumerListResponse": {
+      "type": "object",
+      "properties": {
+        "collectionConsumer": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1CollectionConsumer"
+          }
+        }
+      }
+    },
     "v1CollectionDeploymentMatchOptions": {
       "type": "object",
       "properties": {
@@ -772,6 +832,14 @@
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v1ResourceByID": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
     },
     "v1SortOption": {
       "type": "object",

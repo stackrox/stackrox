@@ -77,7 +77,8 @@ func DropDatabase(t testing.TB, database string) {
 // ForT creates and returns a Postgres for the test
 func ForT(t testing.TB) *TestPostgres {
 	// Bootstrap a test database
-	database := CreateADatabaseForT(t)
+	//database := CreateADatabaseForT(t)
+	database := "central"
 
 	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 
