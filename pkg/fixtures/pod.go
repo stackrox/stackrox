@@ -1,7 +1,6 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -79,14 +78,14 @@ func GetPod() *storage.Pod {
 						},
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   200,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   800,
-						},
+						Started: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							200),
+
+						Finished: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							800),
+
 						ExitCode:          0,
 						TerminationReason: "Completed",
 					},
@@ -169,14 +168,14 @@ func GetPod1() *storage.Pod {
 						},
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
-						Started: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   200,
-						},
-						Finished: &types.Timestamp{
-							Seconds: 1,
-							Nanos:   800,
-						},
+						Started: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							200),
+
+						Finished: protocompat.GetProtoTimestampFromSecondsAndNanos(
+							1,
+							800),
+
 						ExitCode:          0,
 						TerminationReason: "Completed",
 					},

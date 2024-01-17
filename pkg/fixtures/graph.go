@@ -1,7 +1,6 @@
 package fixtures
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -570,23 +569,23 @@ func GetImageSherlockHolmes1() *storage.Image {
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Digest:  "sha256:0a488a3872bfcd9e79a3575b5c273b01c01a21b16e86213a26eb7f3ab540eb84",
-				Created: &types.Timestamp{Seconds: 1553642092, Nanos: 227945051},
+				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642092, 227945051),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
-						Created:     &types.Timestamp{Seconds: 1553640086, Nanos: 106246179},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640086, 106246179),
 					},
 					{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
-						Created:     &types.Timestamp{Seconds: 1553640126, Nanos: 263243615},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640126, 263243615),
 					},
 					{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
-						Created:     &types.Timestamp{Seconds: 1553640134, Nanos: 213199897},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640134, 213199897),
 					},
 				},
 				User:       "root",
@@ -609,7 +608,7 @@ func GetImageSherlockHolmes1() *storage.Image {
 		},
 		Scan: &storage.ImageScan{
 			ScannerVersion: "2.24.0-11-g05cf175999",
-			ScanTime:       &types.Timestamp{Seconds: 1654154310, Nanos: 970783800},
+			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154310, 970783800),
 			Components: []*storage.EmbeddedImageScanComponent{
 				GetEmbeddedImageComponent1x1(),
 				GetEmbeddedImageComponent1x2(),
@@ -627,7 +626,7 @@ func GetImageSherlockHolmes1() *storage.Image {
 		SetComponents:             &storage.Image_Components{Components: 3},
 		SetCves:                   &storage.Image_Cves{Cves: 5},
 		SetFixable:                &storage.Image_FixableCves{FixableCves: 2},
-		LastUpdated:               &types.Timestamp{Seconds: 1654154313, Nanos: 67882700},
+		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
 		NotPullable:               false,
 		IsClusterLocal:            false,
 		Priority:                  0,
@@ -653,23 +652,23 @@ func GetImageDoctorJekyll2() *storage.Image {
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Digest:  "sha256:9fe0366ee2eead5a66948f853ebedae5464361b5ffb166980db355d294a971ff",
-				Created: &types.Timestamp{Seconds: 1553642392, Nanos: 877872600},
+				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642392, 877872600),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
-						Created:     &types.Timestamp{Seconds: 1553641386, Nanos: 227945051},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641386, 227945051),
 					},
 					{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
-						Created:     &types.Timestamp{Seconds: 1553641426, Nanos: 106246179},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641426, 106246179),
 					},
 					{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
-						Created:     &types.Timestamp{Seconds: 1553641534, Nanos: 302497847},
+						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641534, 302497847),
 					},
 				},
 				User:       "root",
@@ -692,7 +691,7 @@ func GetImageDoctorJekyll2() *storage.Image {
 		},
 		Scan: &storage.ImageScan{
 			ScannerVersion: "2.24.0-11-g05cf175999",
-			ScanTime:       &types.Timestamp{Seconds: 1654154710, Nanos: 67882700},
+			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154710, 67882700),
 			Components: []*storage.EmbeddedImageScanComponent{
 				GetEmbeddedImageComponent1s2x3(),
 				GetEmbeddedImageComponent2x4(),
@@ -710,7 +709,7 @@ func GetImageDoctorJekyll2() *storage.Image {
 		SetComponents:             &storage.Image_Components{Components: 3},
 		SetCves:                   &storage.Image_Cves{Cves: 5},
 		SetFixable:                &storage.Image_FixableCves{FixableCves: 2},
-		LastUpdated:               &types.Timestamp{Seconds: 1654154413, Nanos: 970783800},
+		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
 		NotPullable:               false,
 		IsClusterLocal:            false,
 		Priority:                  0,
@@ -1085,7 +1084,7 @@ func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 		LastUpdated:      nil,
 		K8SUpdated:       nil,
 		Scan: &storage.NodeScan{
-			ScanTime:        &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
+			ScanTime:        protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400),
 			OperatingSystem: "Linux",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				GetEmbeddedNodeComponent1x1(),
@@ -1133,7 +1132,7 @@ func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 		LastUpdated:      nil,
 		K8SUpdated:       nil,
 		Scan: &storage.NodeScan{
-			ScanTime:        &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
+			ScanTime:        protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400),
 			OperatingSystem: "Linux",
 			Components: []*storage.EmbeddedNodeScanComponent{
 				GetEmbeddedNodeComponent1s2x3(),

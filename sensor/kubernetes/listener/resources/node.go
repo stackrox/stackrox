@@ -84,7 +84,7 @@ func buildNode(node *v1.Node) *storage.Node {
 		Taints:                  convertTaints(node.Spec.Taints),
 		Labels:                  node.GetLabels(),
 		Annotations:             node.GetAnnotations(),
-		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
+		JoinedAt:                protocompat.GetProtoTimestampFromSecondsAndNanos(creation.Seconds, creation.Nanos),
 		InternalIpAddresses:     internal,
 		ExternalIpAddresses:     external,
 		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),
