@@ -511,14 +511,18 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 					ContainerPorts: []uint16{port},
 				},
 			}
+			entitiesName := "Internal Entities"
+			if m.resolveEntityType(conn) == networkgraph.InternetEntity() {
+				entitiesName = "External Entities"
+			}
 			if conn.incoming {
 				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
-					"Marking it as 'Internal Entities' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)))
+					"Marking it as '%s' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)), entitiesName)
 			} else {
 				log.Debugf("Outgoing connection from container %s/%s to %s. "+
-					"Marking it as 'Internal Entities' in the network graph.",
-					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String())
+					"Marking it as '%s' in the network graph.",
+					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
 			}
 		} else {
 			lookupResults = []clusterentities.LookupResult{
