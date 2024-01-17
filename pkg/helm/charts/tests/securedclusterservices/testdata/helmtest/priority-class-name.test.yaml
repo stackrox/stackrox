@@ -20,7 +20,7 @@ tests:
     .deployments.sensor.spec.template.spec.priorityClassName | assertThat(. == null)
     .daemonsets.collector.spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments["admission-control"].spec.template.spec.priorityClassName | assertThat(. == null)
-  
+
 - name: "with populated settings"
   values:
     sensor:
