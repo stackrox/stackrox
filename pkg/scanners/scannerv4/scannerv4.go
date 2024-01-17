@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
-	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
@@ -161,11 +160,8 @@ func (s *scannerv4) Type() string {
 	return types.ScannerV4
 }
 
-func (s *scannerv4) GetVulnerabilities(image *storage.Image, contents any, _ []scannerV1.Note) (*storage.ImageScan, error) {
-	v4Contents, ok := contents.(*v4.Contents)
-	if !ok {
-		return nil, fmt.Errorf("invalid contents type: %T", contents)
-	}
+func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerv1.Note) (*storage.ImageScan, error) {
+	v4Contents := components.ScannerV4()
 
 	digest, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
@@ -176,7 +172,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, contents any, _ []s
 	defer cancel()
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
 	if err != nil {
-		return nil, fmt.Errorf("get vulnerabilities report (reference: %q): %w", digest.Name(), err)
+		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
 	}
 
 	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -191,9 +187,4 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, contents any, _ []s
 	)
 
 	return imageScan(image.GetMetadata(), vr), nil
-}
-
-func (s *scannerv4) CanHandle(contents any) bool {
-	_, ok := contents.(*v4.Contents)
-	return ok
 }
