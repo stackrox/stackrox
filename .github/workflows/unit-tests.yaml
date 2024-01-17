@@ -245,12 +245,10 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
-    - run: |
-        wget https://github.com/SimonKagstrom/kcov/releases/download/v42/kcov-amd64.tar.gz
-        tar -xf kcov-amd64.tar.gz
+    - run: sudo apt install -y kcov 
 
     - name: Shell Unit Tests
-      run: PATH=$PATH:$PWD/usr/local/bin/ make shell-unit-tests
+      run: make shell-unit-tests
 
     - uses: codecov/codecov-action@v3
       with:
