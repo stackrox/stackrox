@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -373,7 +374,9 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		Metadata:       request.GetMetadata(),
 		IsClusterLocal: request.GetIsClusterLocal(),
 	}
-	_, err = s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+
+	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
+	_, err = s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +472,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	if !hasErrors {
 		if forceScanUpdate {
-			if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
+			if err := s.enrichWithVulnerabilities(img, request); err != nil && imgExists {
 				// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 				// central, since it could lead to us overriding an enriched image with a non-enriched image.
 				s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -506,6 +509,12 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
+}
+
+func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.EnrichLocalImageInternalRequest) error {
+	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
+	return err
 }
 
 // buildNames returns a slice containing the known image names from the various parameters.
