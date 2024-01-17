@@ -22,22 +22,24 @@ func GRPCClientSingleton() ScannerClient {
 	scannerClientMutex.Lock()
 	defer scannerClientMutex.Unlock()
 
-	if scannerClient == nil {
-		if !env.LocalImageScanningEnabled.BooleanSetting() {
-			log.Infof("scanner disabled: %s is false, will not attempt to connect to a local scanner",
-				env.LocalImageScanningEnabled.EnvVar())
-			return nil
-		}
-		var err error
-		if isScannerV4Enabled && centralcaps.Has(centralsensor.ScannerV4Supported) {
-			log.Info("Creating Scanner V4 client")
-			scannerClient, err = dialV4()
-		} else {
-			log.Info("Creating Scanner V2 client")
-			scannerClient, err = dialV2()
-		}
-		utils.Should(err)
+	if scannerClient != nil {
+		return scannerClient
 	}
+
+	if !env.LocalImageScanningEnabled.BooleanSetting() {
+		log.Infof("scanner disabled: %s is false, will not attempt to connect to a local scanner",
+			env.LocalImageScanningEnabled.EnvVar())
+		return nil
+	}
+	var err error
+	if isScannerV4Enabled && centralcaps.Has(centralsensor.ScannerV4Supported) {
+		log.Info("Creating Scanner V4 client")
+		scannerClient, err = dialV4()
+	} else {
+		log.Info("Creating Scanner V2 client")
+		scannerClient, err = dialV2()
+	}
+	utils.Should(err)
 
 	return scannerClient
 }
