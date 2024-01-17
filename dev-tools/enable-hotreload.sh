@@ -12,8 +12,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "${DIR}"/../deploy/common/k8sbased.sh
 
 if [[ -z "$1" ]]; then
-  echo "Expected component as the first arg"
-  echo "Available [sensor, central, migrator, admission]"
+  echo "Usage: $0 <component> [ <namespace> ]"
+  echo "Available components: sensor, central, migrator, admission"
   exit 1
 fi
 
@@ -34,8 +34,8 @@ case "${component}" in
   hotload_binary admission-control admission-control admission-control "${namespace}"
   ;;
 *)
-  echo "Invalid input: ${component}"
-  echo "Available [sensor, central, migrator, admission]"
+  echo "Invalid component: ${component}"
+  echo "Available components: sensor, central, migrator, admission"
   exit 1
   ;;
 esac

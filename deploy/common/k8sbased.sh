@@ -63,7 +63,7 @@ function hotload_binary {
   fi
 
   kubectl -n "${namespace}" patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
-  kubectl -n "${namespace}" set env "deploy/$deployment" "ROX_HOTRELOAD=true"
+  kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
 }
 
 function verify_orch {
@@ -122,7 +122,7 @@ function yes_no_prompt() {
 }
 
 function launch_central {
-    local k8s_dir="$1"yy0
+    local k8s_dir="$1"
     local namespace=${CENTRAL_NAMESPACE:-stackrox}
     local common_dir="${k8s_dir}/../common"
 
@@ -422,7 +422,7 @@ function launch_central {
       fi
 
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
-        ROX_NAMESPACE="${namespace}" $unzip_dir/central/scripts/setup.sh
+        ROX_NAMESPACE="${namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
       launch_service $unzip_dir central
@@ -490,7 +490,7 @@ function launch_central {
     if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
       rollout_wait_timeout="9m"
     fi
-    kubectl -n "${namespace}" rollout status deploy/central --timeout="$rollout_wait_timeout"
+    kubectl -n "${namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
