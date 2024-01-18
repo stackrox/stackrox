@@ -12,6 +12,8 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
@@ -74,10 +76,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
 
-	// Note: the DefaultClient has already been modified with Transport set to one which handles configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	c := http.DefaultClient
-
+	// There should not be any network activity by the libvuln package.
+	// A nil *http.Client is not allowed, so use one which denies all outbound traffic.
+	ccClient := &http.Client{
+		Transport: httputil.DenyTransport(),
+	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:        store,
 		Locker:       locker,
@@ -86,18 +89,30 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Enrichers:                nil,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
-		Client:                   c,
+		Client:                   ccClient,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
 
+	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxClientOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("creating Central http.Transport: %w", err)
+	}
+	// The Matcher should never reach out to Sensor.
+	sensorTransport := httputil.DenyTransport()
+	// Note: http.DefaultTransport has already been modified to handle configured proxies.
+	// See scanner/cmd/scanner/main.go.
+	defaultTransport := http.DefaultTransport
+	client := &http.Client{
+		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
+	}
 	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
 		Locker:        locker,
 		Pool:          pool,
 		MetadataStore: metadataStore,
-		Client:        c,
+		Client:        client,
 		// TODO(ROX-19005): replace with a URL related to the desired version.
 		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
 	})
