@@ -13,15 +13,15 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
 )
 
-var (
-	// matcherNames specifies the ClairCore matchers to use.
-	// TODO(ROX-14093): add NodeJS once implemented.
-	matcherNames = []string{
+// matcherNames specifies the ClairCore matchers to use.
+func matcherNames() []string {
+	names := []string{
 		"alpine-matcher",
 		"aws-matcher",
 		"debian-matcher",
@@ -36,7 +36,11 @@ var (
 		"suse",
 		"ubuntu-matcher",
 	}
-)
+	if env.ScannerV4NodeJSSupport.BooleanSetting() {
+		names = append(names, "nodejs")
+	}
+	return names
+}
 
 // Matcher represents a vulnerability matcher.
 //
@@ -98,7 +102,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:        store,
 		Locker:       locker,
-		MatcherNames: matcherNames,
+		MatcherNames: matcherNames(),
 		// TODO(ROX-21264): Replace with our own enricher(s).
 		Enrichers:                nil,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
