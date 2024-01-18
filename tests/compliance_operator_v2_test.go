@@ -60,7 +60,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
 	assert.NoError(t, err)
 	clusterID := clusters.GetClusters()[0].GetId()
-	testName := fmt.Sprintf("test_%s", uuid.NewV4().String())
+	testName := fmt.Sprintf("test-%s", uuid.NewV4().String())
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testName,
 		Id:       "",
@@ -129,7 +129,7 @@ func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 
 	clusterID := clusters.GetClusters()[0].GetId()
-	testName := fmt.Sprintf("test_%s", uuid.NewV4().String())
+	testName := fmt.Sprintf("test-%s", uuid.NewV4().String())
 	req := &v2.ComplianceScanConfiguration{
 		ScanName: testName,
 		Id:       "",
