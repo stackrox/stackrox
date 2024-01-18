@@ -271,6 +271,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV4FailureWhenDisabled() {
+	testutils.MustUpdateFeature(s.T(), features.ScannerV4, false)
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
