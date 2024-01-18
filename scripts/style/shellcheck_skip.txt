@@ -1,5 +1,4 @@
 deploy/common/docker-auth.sh
-deploy/common/k8sbased.sh
 deploy/openshift/deploy-local.sh
 dev-tools/add-host-alias.sh
 dev-tools/roxctl.sh
