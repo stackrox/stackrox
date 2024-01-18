@@ -230,9 +230,9 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
-		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
+		log.Warnf("DeploymentEnrichment: Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
 	} else {
-		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+		log.Debugf("DeploymentEnrichment: Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
@@ -396,6 +396,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			continue
 		}
 		deployments = append(deployments, d)
+		log.Errorf("DeploymentEnrichment: Incoming Deployment : %#v", d)
 	}
 	errs := errorList.ToError()
 
@@ -417,6 +418,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if err != nil {
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
+		log.Errorf("DeploymentEnrichment: Enriched from Sensor Deployment example: %#v", deployments[0])
 	}
 
 	for _, d := range deployments {
