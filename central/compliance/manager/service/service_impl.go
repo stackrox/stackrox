@@ -85,6 +85,20 @@ func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRuns
 }
 
 func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
+	if req.GetLatest() && len(req.GetRunIds()) != 0 {
+		return nil, errox.InvalidArgs.New("both latest and run ids cannot be specified")
+	}
+
+	if req.GetLatest() {
+		runs, err := s.manager.GetLatestRunStatuses(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &v1.GetComplianceRunStatusesResponse{
+			Runs: runs,
+		}, nil
+	}
+
 	runs, err := s.manager.GetRunStatuses(ctx, req.GetRunIds()...)
 	if err != nil {
 		return nil, err

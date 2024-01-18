@@ -43,12 +43,17 @@ var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
+type latestRunKey struct {
+	clusterID, standardID string
+}
+
 type manager struct {
 	standardsRegistry         *standards.Registry
 	complianceOperatorManager complianceOperatorManager.Manager
 
-	mutex    sync.RWMutex
-	runsByID map[string]*runInstance
+	mutex      sync.RWMutex
+	runsByID   map[string]*runInstance
+	latestRuns map[latestRunKey]*runInstance
 
 	stopSig    concurrency.Signal
 	interruptC chan struct{}
@@ -72,7 +77,8 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 		complianceOperatorManager: complianceOperatorManager,
 		complianceOperatorResults: complianceOperatorResults,
 
-		runsByID: make(map[string]*runInstance),
+		runsByID:   make(map[string]*runInstance),
+		latestRuns: make(map[latestRunKey]*runInstance),
 
 		interruptC: make(chan struct{}),
 
@@ -90,6 +96,7 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 }
 
 func (m *manager) createDomain(ctx context.Context, clusterID string) (framework.ComplianceDomain, error) {
+	t := time.Now()
 	cluster, ok, err := m.clusterStore.GetCluster(ctx, clusterID)
 	if err == nil && !ok {
 		err = errors.New("cluster not found")
@@ -97,8 +104,10 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
+	log.Infof("Took %d milliseconds to get cluster", time.Since(t).Milliseconds())
 
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	t = time.Now()
 	results, err := m.nodeStore.Search(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
@@ -107,16 +116,21 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
+	log.Infof("Took %d milliseconds to search nodes", time.Since(t).Milliseconds())
 
+	t = time.Now()
 	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
+	log.Infof("Took %d milliseconds to search deployments", time.Since(t).Milliseconds())
 
+	t = time.Now()
 	machineConfigs, err := m.complianceOperatorManager.GetMachineConfigs(clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting machine configs for cluster %s", clusterID)
 	}
+	log.Infof("Took %d milliseconds to get machine configs", time.Since(t).Milliseconds())
 	return framework.NewComplianceDomain(cluster, nodes, deployments, machineConfigs), nil
 }
 
@@ -125,6 +139,7 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard *standar
 	run := createRun(runID, domain, standard)
 	concurrency.WithLock(&m.mutex, func() {
 		m.runsByID[runID] = run
+		m.latestRuns[latestRunKey{clusterID: domain.Cluster().ID(), standardID: standard.ID}] = run
 	})
 	return run
 }
@@ -313,10 +328,12 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 	var runs []*runInstance
 	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
 	for clusterID, standardImpls := range standardsByClusterID {
+		log.Infof("Creating domain for %s", clusterID)
 		domain, err := m.createDomain(elevatedCtx, clusterID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
+		log.Infof("Created domain for %s", clusterID)
 		domainPB := getDomainProto(domain)
 		// Domain is indirectly scoped, and checks global permissions for write operations.
 		// Temporarily elevating the privileges to write the domain informations.
@@ -327,10 +344,12 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 				sac.ResourceScopeKeys(resources.Compliance),
 			),
 		)
+		log.Infof("Storing domain for %s", clusterID)
 		err = m.resultsStore.StoreComplianceDomain(domainWriteCtx, domainPB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)
 		}
+		log.Infof("Stored domain for %s", clusterID)
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
 		perClusterDataRepoOnce := &perClusterDataRepoFactory{
@@ -381,6 +400,32 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	}
 
 	return runStatuses, nil
+}
+
+func (m *manager) GetLatestRunStatuses(ctx context.Context) ([]*v1.ComplianceRun, error) {
+	runStatuses := m.getLatestRunStatuses()
+
+	// Check read access to all of the runs
+	clusterScopes := newClusterScopeCollector()
+	for _, runStatus := range runStatuses {
+		clusterScopes.add(runStatus.GetClusterId())
+	}
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
+		return nil, errox.NotFound
+	}
+
+	return runStatuses, nil
+}
+
+func (m *manager) getLatestRunStatuses() []*v1.ComplianceRun {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	result := make([]*v1.ComplianceRun, 0, len(m.latestRuns))
+	for _, run := range m.latestRuns {
+		result = append(result, run.ToProto())
+	}
+	return result
 }
 
 func (m *manager) getRunStatuses(ids []string) []*v1.ComplianceRun {
