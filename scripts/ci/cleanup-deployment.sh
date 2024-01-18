@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 namespace=${1:-stackrox}
 
