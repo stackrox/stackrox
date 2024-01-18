@@ -14,6 +14,15 @@ message GetIntegrationHealthResponse {
     repeated storage.IntegrationHealth integrationHealth = 1;
 }
 
+message VulnDefinitionsInfoRequest {
+    enum Component {
+        SCANNER    = 0;
+        SCANNER_V4 = 1;
+    }
+
+    Component component = 1;
+}
+
 message VulnDefinitionsInfo {
     google.protobuf.Timestamp last_updated_timestamp = 1;
 }
@@ -44,7 +53,7 @@ service IntegrationHealthService {
         };
     }
 
-    rpc GetVulnDefinitionsInfo(Empty) returns (VulnDefinitionsInfo) {
+    rpc GetVulnDefinitionsInfo(VulnDefinitionsInfoRequest) returns (VulnDefinitionsInfo) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/vulndefinitions"
         };
