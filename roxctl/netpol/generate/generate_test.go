@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -33,7 +32,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	}{
 		"not existing inputFolderPath should raise 'os.ErrNotExist' error": {
 			inputFolderPath:    "/tmp/xxx",
-			expectedSynthError: os.ErrNotExist,
+			expectedSynthError: errox.NotFound,
 		},
 		"happyPath": {
 			inputFolderPath:    "testdata/minimal",
