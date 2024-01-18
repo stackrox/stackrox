@@ -13,6 +13,10 @@ import (
 
 const lastVulnUpdateKey = `last-vuln-update`
 
+var (
+	errNoLastUpdateTime = errors.New("no last updated time in the DB")
+)
+
 // GetLastVulnerabilityUpdate retrieves the last vulnerability update from the database.
 //
 // The returned time will be in the form of http.TimeFormat.
@@ -22,11 +26,11 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 	var t string
 	row := m.pool.QueryRow(ctx, selectTimestamp, lastVulnUpdateKey)
 	err := row.Scan(&t)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return time.Time{}, nil
-	}
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return time.Time{}, err
+	}
+	if err != nil || t == "" {
+		return time.Time{}, errNoLastUpdateTime
 	}
 
 	timestamp, err := time.Parse(http.TimeFormat, strings.TrimSpace(t))
