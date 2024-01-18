@@ -33,7 +33,6 @@ func makeTestRun(testRunID, testStandardID, testStandardName string, testNodes [
 		testNodes,
 		nil,
 		nil,
-		nil,
 	)
 	return createRun(testRunID, testDomain, testStandard)
 }
