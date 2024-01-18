@@ -68,6 +68,24 @@ func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport
 	return nil
 }
 
+func sourceType(pkg *v4.Package) storage.SourceType {
+	db := pkg.GetPackageDb()
+	switch {
+	case strings.HasPrefix(db, "go:"):
+		return storage.SourceType_GO
+	case strings.HasPrefix(db, "file:") || strings.HasPrefix(db, "jar:") || strings.HasPrefix(db, "maven:"):
+		return storage.SourceType_JAVA
+	case strings.HasPrefix(db, "nodejs:"):
+		return storage.SourceType_NODEJS
+	case strings.HasPrefix(db, "python:"):
+		return storage.SourceType_PYTHON
+	case strings.HasPrefix(db, "ruby:"):
+		return storage.SourceType_RUBY
+	default:
+		return storage.SourceType_OS
+	}
+}
+
 func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 {
 		return nil
