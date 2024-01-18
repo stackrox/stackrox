@@ -62,7 +62,22 @@ function hotload_binary {
       binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
   fi
 
-  kubectl -n "${namespace}" patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"'binary-${local_name}'"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"'binary-${local_name}'"}]}}}}'
+  kubectl -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: "${deployment}"
+          volumeMounts:
+            - mountPath: "/stackrox/${binary_name}"
+              name: "binary-${local_name}"
+      volumes:
+        - hostPath:
+            path: "${binary_path}"
+            type: ""
+          name: "binary-${local_name}"
+EOF
+)
   kubectl -n "${namespace}" set env "deploy/${deployment}" "ROX_HOTRELOAD=true"
 }
 
@@ -111,7 +126,7 @@ function yes_no_prompt() {
   local tries=0
   [[ -z "$prompt" ]] || echo >&2 "$prompt"
   local answer=""
-  while (( tries < 3 )) && { echo -n "Type 'yes' or 'no': "; read answer; } ; do
+  while (( tries < 3 )) && { echo -n "Type 'yes' or 'no': "; read -r answer; } ; do
     answer="$(echo "$answer" | tr '[:upper:]' '[:lower:]')"
     [[ "$answer" == "yes" ]] && return 0
     [[ "$answer" == "no" ]] && return 1
@@ -152,13 +167,6 @@ function launch_central {
     add_storage_args() {
         STORAGE_ARGS+=("$@")
     }
-    add_maybe_file_arg() {
-    	if [[ -f "$1" ]]; then
-    		add_file_arg "$1"
-    	else
-    		add_args "$1"
-    	fi
-    }
     add_file_arg() {
     	if (( use_docker )); then
     		EXTRA_DOCKER_ARGS+=(-v "$(realpath "$1"):$(realpath "$1")")
@@ -191,8 +199,8 @@ function launch_central {
 
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
-    command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
-    command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*' || true
+    { command -v oc >/dev/null && pkill -f oc'.*port-forward.*'; } || true    # terminate stale port forwarding from earlier runs
+    { command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*'; } || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
@@ -297,7 +305,8 @@ function launch_central {
 
     if [[ -f "${unzip_dir}/password" ]]; then
       export ROX_ADMIN_USER=admin
-      export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+      ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+      export ROX_ADMIN_PASSWORD
     fi
 
     echo "Deploying Central to namespace ${namespace}..."
@@ -425,7 +434,7 @@ function launch_central {
         ROX_NAMESPACE="${namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
-      launch_service $unzip_dir central
+      launch_service "${unzip_dir}" central
       echo
 
       if [[ "${is_local_dev}" == "true" ]]; then
@@ -458,9 +467,9 @@ function launch_central {
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
           if [[ -n "${REGISTRY_USERNAME}" ]]; then
-            $unzip_dir/scanner/scripts/setup.sh
+            "${unzip_dir}/scanner/scripts/setup.sh"
           fi
-          launch_service $unzip_dir scanner
+          launch_service "${unzip_dir}" scanner
 
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
@@ -519,7 +528,7 @@ function launch_central {
         done
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
-        $central_scripts_dir/port-forward.sh 8000
+        "${central_scripts_dir}/port-forward.sh" 8000
     fi
 
     if [[ "${needs_monitoring}" == "true" ]]; then
@@ -688,13 +697,13 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
       else
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi
@@ -706,12 +715,14 @@ function launch_sensor {
         fi
         namespace="${NAMESPACE_OVERRIDE}"
         echo "Changing namespace to ${NAMESPACE_OVERRIDE} due to NAMESPACE_OVERRIDE set in the environment."
-        ls $k8s_dir/sensor-deploy/*.yaml | while read -r file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"${namespace}"'/g' "${file}"; done
+        find "${k8s_dir}/sensor-deploy" -name '*.yaml' -depth 1 | while read -r file; do
+          sed -i'.original' -e 's/namespace: stackrox/namespace: '"${namespace}"'/g' "${file}"
+        done
         sed -itmp.bak 's/set -e//g' "${k8s_dir}/sensor-deploy/sensor.sh"
       fi
 
       echo "Deploying Sensor..."
-      NAMESPACE="${namespace}" $k8s_dir/sensor-deploy/sensor.sh
+      NAMESPACE="${namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
