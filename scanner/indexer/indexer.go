@@ -36,7 +36,9 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/version"
@@ -144,14 +146,26 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	// Note: the DefaultClient has already been modified with Transport set to one which handles configured proxies.
+	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxClientOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("creating Central http.Transport: %w", err)
+	}
+	sensorTransport, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxClientOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("creating Sensor http.Transport: %w", err)
+	}
+	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
-	c := http.DefaultClient
+	defaultTransport := http.DefaultTransport
+	client := &http.Client{
+		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
+	}
+
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, root),
+		FetchArena:           libindex.NewRemoteFetchArena(client, root),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
@@ -169,7 +183,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root stri
   "name2repos_mapping_file": "%s"
 }`, indexerCfg.NameToReposURL, indexerCfg.NameToReposFile)))}
 
-	indexer, err := libindex.New(ctx, &opts, c)
+	indexer, err := libindex.New(ctx, &opts, client)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
