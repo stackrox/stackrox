@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -15,8 +16,7 @@ import (
 )
 
 var (
-	log                 = logging.LoggerForModule()
-	deploymentQueueSize = 50 // TODO(ROX-21291): Configurable via env var
+	log = logging.LoggerForModule()
 )
 
 // The DeploymentEnhancer takes a list of Deployments and enhances them with all available information
@@ -34,7 +34,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 
 	return &DeploymentEnhancer{
 		responsesC:       make(chan *message.ExpiringMessage),
-		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, deploymentQueueSize),
+		deploymentsQueue: make(chan *central.DeploymentEnhancementRequest, env.SensorDeploymentEnhancementQueueSize.IntegerSetting()),
 		storeProvider:    provider,
 		ctx:              ctx,
 		ctxCancel:        ctxCancel,
@@ -56,7 +56,7 @@ func (d *DeploymentEnhancer) ProcessMessage(msg *central.MsgToSensor) error {
 	case d.deploymentsQueue <- toEnhance:
 		return nil
 	default:
-		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", deploymentQueueSize)
+		return errox.ResourceExhausted.Newf("DeploymentEnhancer queue has reached its limit of %d", env.SensorDeploymentEnhancementQueueSize.IntegerSetting())
 	}
 }
 
