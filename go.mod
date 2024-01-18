@@ -60,7 +60,7 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.14.1
 	github.com/jackc/pgx/v4 v4.18.1
-	github.com/jackc/pgx/v5 v5.5.1
+	github.com/jackc/pgx/v5 v5.5.2
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.17.4
 	github.com/lib/pq v1.10.9
