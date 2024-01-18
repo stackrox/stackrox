@@ -42,6 +42,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Name:          pkg.GetName(),
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			Source:        sourceType(pkg),
 			Location:      pkg.GetPackageDb(),
 			HasLayerIndex: layerIndex(layerSHAToIndex, report, id),
 		}
@@ -69,17 +70,21 @@ func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport
 }
 
 func sourceType(pkg *v4.Package) storage.SourceType {
-	db := pkg.GetPackageDb()
-	switch {
-	case strings.HasPrefix(db, "go:"):
+	pkgType, _, ok := strings.Cut(pkg.GetPackageDb(), ":")
+	if !ok {
+		return storage.SourceType_OS
+	}
+
+	switch pkgType {
+	case "go":
 		return storage.SourceType_GO
-	case strings.HasPrefix(db, "file:") || strings.HasPrefix(db, "jar:") || strings.HasPrefix(db, "maven:"):
+	case "file", "jar", "maven":
 		return storage.SourceType_JAVA
-	case strings.HasPrefix(db, "nodejs:"):
+	case "nodejs":
 		return storage.SourceType_NODEJS
-	case strings.HasPrefix(db, "python:"):
+	case "python":
 		return storage.SourceType_PYTHON
-	case strings.HasPrefix(db, "ruby:"):
+	case "ruby":
 		return storage.SourceType_RUBY
 	default:
 		return storage.SourceType_OS
