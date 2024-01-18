@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	npguard "github.com/np-guard/cluster-topology-analyzer/pkg/controller"
+	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/netpol/connectivity/netpolerrors"
 	v1 "k8s.io/api/networking/v1"
+	"k8s.io/cli-runtime/pkg/resource"
 )
 
 const (
@@ -144,12 +146,34 @@ func (cmd *NetpolGenerateCmd) setupPath(path string) error {
 }
 
 type netpolGenerator interface {
-	PoliciesFromFolderPath(string) ([]*v1.NetworkPolicy, error)
+	PoliciesFromInfos(infos []*resource.Info) ([]*v1.NetworkPolicy, error)
 	Errors() []npguard.FileProcessingError
 }
 
+func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
+	b := resource.NewLocalBuilder().
+		Unstructured().
+		FilenameParam(false,
+			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
+		Flatten()
+	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
+	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
+	if !(failFast && treatWarningsAsErrors) {
+		b.ContinueOnError()
+	}
+	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
+	return b.Do().Infos()
+}
+
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
-	recommendedNetpols, err := synth.PoliciesFromFolderPath(cmd.inputFolderPath)
+	errHandler := netpolerrors.NewErrHandler(cmd.Options.TreatWarningsAsErrors)
+	infos, err := getInfoObj(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
+	if err := errHandler.HandleError(err); err != nil {
+		//nolint:wrapcheck // The package claimed to be external is local and shared by all related netpol-commands
+		return err
+	}
+
+	recommendedNetpols, err := synth.PoliciesFromInfos(infos)
 	if err != nil {
 		return errors.Wrap(err, "error generating network policies")
 	}
