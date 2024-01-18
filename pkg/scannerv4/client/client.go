@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
@@ -39,6 +40,9 @@ type Scanner interface {
 
 	// GetVulnerabilities will match vulnerabilities to the contents provided.
 	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error)
+
+	// GetMatcherMetadata returns metadata from the matcher.
+	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -208,6 +212,20 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 	}
 
 	return vr, nil
+}
+
+func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
+	var m *v4.Metadata
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
+		var err error
+		m, err = c.matcher.GetMetadata(ctx, &types.Empty{})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get metadata: %w", err)
+	}
+	return m, nil
 }
 
 func getImageManifestID(ref name.Digest) string {
