@@ -3,11 +3,12 @@ import { useHistory } from 'react-router-dom';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
-import { fetchClusterInitBundles, revokeClusterInitBundles } from 'services/ClustersService';
+import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundleDescription from './InitBundleDescription';
 import InitBundlesHeader from './InitBundlesHeader';
+import RevokeBundleModal from './RevokeBundleModal';
 
 export type InitBundlePageProps = {
     hasWriteAccessForInitBundles: boolean;
@@ -17,7 +18,6 @@ export type InitBundlePageProps = {
 function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProps): ReactElement {
     const history = useHistory();
     const [isRevoking, setIsRevoking] = useState(false);
-    const [errorMessageForRevoke, setErrorMessageForRevoke] = useState('');
 
     const {
         data: dataForFetch,
@@ -31,17 +31,13 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
 
     function onClickRevoke() {
         setIsRevoking(true);
-        // TODO investigate second argument and add confirmation modal.
-        revokeClusterInitBundles([id], [])
-            .then(() => {
-                setErrorMessageForRevoke('');
-                setIsRevoking(false);
-                history.goBack(); // to table
-            })
-            .catch((error) => {
-                setErrorMessageForRevoke(getAxiosErrorMessage(error));
-                setIsRevoking(false);
-            });
+    }
+
+    function onCloseModal(wasRevoked: boolean) {
+        setIsRevoking(false);
+        if (wasRevoked) {
+            history.goBack(); // to table
+        }
     }
 
     const headerActions =
@@ -76,17 +72,13 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
                     </Alert>
                 ) : initBundle ? (
                     <>
-                        {errorMessageForRevoke && (
-                            <Alert
-                                variant="danger"
-                                title="Unable to revoke cluster init bundle"
-                                component="div"
-                                isInline
-                            >
-                                {errorMessageForRevoke}
-                            </Alert>
-                        )}
                         <InitBundleDescription initBundle={initBundle} />
+                        {isRevoking && (
+                            <RevokeBundleModal
+                                initBundle={initBundle}
+                                onCloseModal={onCloseModal}
+                            />
+                        )}
                     </>
                 ) : (
                     <Alert

@@ -1,15 +1,21 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { ClusterInitBundle } from 'services/ClustersService';
 import { clustersInitBundlesPath } from 'routePaths';
 
 export type InitBundlesTableProps = {
+    hasWriteAccessForInitBundles: boolean;
     initBundles: ClusterInitBundle[];
+    setInitBundleToRevoke: (initBundle: ClusterInitBundle) => void;
 };
 
-function InitBundlesTable({ initBundles }: InitBundlesTableProps): ReactElement {
+function InitBundlesTable({
+    hasWriteAccessForInitBundles,
+    initBundles,
+    setInitBundleToRevoke,
+}: InitBundlesTableProps): ReactElement {
     return (
         <TableComposable variant="compact">
             <Thead>
@@ -18,6 +24,7 @@ function InitBundlesTable({ initBundles }: InitBundlesTableProps): ReactElement 
                     <Th>Created by</Th>
                     <Th>Created at</Th>
                     <Th>Expires at</Th>
+                    {hasWriteAccessForInitBundles && <Td />}
                 </Tr>
             </Thead>
             <Tbody>
@@ -32,6 +39,21 @@ function InitBundlesTable({ initBundles }: InitBundlesTableProps): ReactElement 
                             <Td dataLabel="Created by">{createdBy.id}</Td>
                             <Td dataLabel="Created at">{createdAt}</Td>
                             <Td dataLabel="Expires at">{expiresAt}</Td>
+                            {hasWriteAccessForInitBundles && (
+                                <Td>
+                                    <ActionsColumn
+                                        menuAppendTo={() => document.body}
+                                        items={[
+                                            {
+                                                title: 'Revoke bundle',
+                                                onClick: () => {
+                                                    setInitBundleToRevoke(initBundle);
+                                                },
+                                            },
+                                        ]}
+                                    />
+                                </Td>
+                            )}
                         </Tr>
                     );
                 })}
