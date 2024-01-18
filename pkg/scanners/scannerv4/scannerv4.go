@@ -30,7 +30,7 @@ var (
 	defaultMaxConcurrentScans = int64(30)
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
-	metadataTimeout = 20 * time.Second
+	metadataTimeout = 1 * time.Minute
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.

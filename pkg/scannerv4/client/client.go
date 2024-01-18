@@ -215,7 +215,17 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 }
 
 func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
-	return c.matcher.GetMetadata(ctx, &types.Empty{})
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
+	var m *v4.Metadata
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
+		var err error
+		m, err = c.matcher.GetMetadata(ctx, &types.Empty{})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get metadata: %w", err)
+	}
+	return m, nil
 }
 
 func getImageManifestID(ref name.Digest) string {
