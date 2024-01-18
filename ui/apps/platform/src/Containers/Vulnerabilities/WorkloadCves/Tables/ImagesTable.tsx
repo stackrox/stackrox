@@ -13,6 +13,7 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../types';
+import ImageScanningErrorLabelLayout from '../components/ImageScanningErrorLabelLayout';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -46,6 +47,8 @@ export const imageListQuery = gql`
                 }
             }
             scanTime
+            scanNotes
+            notes
         }
     }
 `;
@@ -72,6 +75,8 @@ type Image = {
         } | null;
     } | null;
     scanTime: string | null;
+    scanNotes: string[];
+    notes: string[];
 };
 
 export type ImagesTableProps = {
@@ -126,6 +131,8 @@ function ImagesTable({
                     metadata,
                     watchStatus,
                     scanTime,
+                    scanNotes,
+                    notes,
                 }) => {
                     const criticalCount = imageCVECountBySeverity.critical.total;
                     const importantCount = imageCVECountBySeverity.important.total;
@@ -146,19 +153,24 @@ function ImagesTable({
                             <Tr>
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <ImageNameTd name={name} id={id}>
-                                            {isWatchedImage && (
-                                                <Label
-                                                    isCompact
-                                                    variant="outline"
-                                                    color="grey"
-                                                    className="pf-u-mt-xs"
-                                                    icon={<EyeIcon />}
-                                                >
-                                                    Watched image
-                                                </Label>
-                                            )}
-                                        </ImageNameTd>
+                                        <ImageScanningErrorLabelLayout
+                                            imageNotes={notes}
+                                            scanNotes={scanNotes}
+                                        >
+                                            <ImageNameTd name={name} id={id}>
+                                                {isWatchedImage && (
+                                                    <Label
+                                                        isCompact
+                                                        variant="outline"
+                                                        color="grey"
+                                                        className="pf-u-mt-xs"
+                                                        icon={<EyeIcon />}
+                                                    >
+                                                        Watched image
+                                                    </Label>
+                                                )}
+                                            </ImageNameTd>
+                                        </ImageScanningErrorLabelLayout>
                                     ) : (
                                         'Image name not available'
                                     )}

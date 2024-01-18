@@ -6,6 +6,7 @@ import {
     ClipboardCopy,
     Divider,
     Flex,
+    FlexItem,
     PageSection,
     Skeleton,
     Tab,
@@ -13,10 +14,12 @@ import {
     TabsComponent,
     TabTitleText,
     Title,
+    Alert,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
+import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
@@ -33,6 +36,7 @@ import ImageDetailBadges, {
     ImageDetails,
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
+import getImageScanMessage from '../utils/getImageScanMessage';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     vulnerabilityState: 'OBSERVED',
@@ -82,6 +86,7 @@ function ImagePage() {
     const imageName = imageData?.name
         ? `${imageData.name.registry}/${imageData.name.remote}:${imageData.name.tag}`
         : 'NAME UNKNOWN';
+    const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
 
     let mainContent: ReactNode | null = null;
 
@@ -122,6 +127,22 @@ function ImagePage() {
                                 </ClipboardCopy>
                             )}
                             <ImageDetailBadges imageData={imageData} />
+                            {!isEmpty(scanMessage) && (
+                                <Alert
+                                    className="pf-u-w-100"
+                                    variant="warning"
+                                    isInline
+                                    title="CVE data may be inaccurate"
+                                >
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        spaceItems={{ default: 'spaceItemsSm' }}
+                                    >
+                                        <FlexItem>{scanMessage.header}</FlexItem>
+                                        <FlexItem>{scanMessage.body}</FlexItem>
+                                    </Flex>
+                                </Alert>
+                            )}
                         </Flex>
                     ) : (
                         <Flex
