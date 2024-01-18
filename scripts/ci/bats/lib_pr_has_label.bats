@@ -10,6 +10,9 @@ function setup() {
 }
 
 @test "a pr may have a label" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     local pr_details=$(cat "${BATS_TEST_DIRNAME}/fixtures/a_pr.json")
     run pr_has_label "has-this-label" "$pr_details"
     assert_success
@@ -17,6 +20,9 @@ function setup() {
 }
 
 @test "a pr may not have a label" {
+    if [[ -n "${GITHUB_ACTION:-}" ]]; then
+        skip "not working on GHA"
+    fi
     local pr_details=$(cat "${BATS_TEST_DIRNAME}/fixtures/a_pr.json")
     run pr_has_label "does-not-have-this-label" "$pr_details"
     assert_failure

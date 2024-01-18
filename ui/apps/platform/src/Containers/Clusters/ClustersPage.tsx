@@ -6,7 +6,7 @@ import { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 
 import ClustersTablePanel from './ClustersTablePanel';
-import ClustersSidePanel from './ClustersSidePanel';
+import ClusterPage from './ClusterPage';
 
 function ClustersPage(): ReactElement {
     const { clusterId } = useParams(); // see routePaths for parameter
@@ -19,12 +19,13 @@ function ClustersPage(): ReactElement {
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
+    if (clusterId) {
+        return <ClusterPage clusterId={clusterId} />;
+    }
+
     return (
         <section className="flex flex-1 flex-col h-full">
-            <div className="flex flex-1 relative">
-                <ClustersTablePanel selectedClusterId={clusterId} searchOptions={searchOptions} />
-                {clusterId && <ClustersSidePanel selectedClusterId={clusterId} />}
-            </div>
+            <ClustersTablePanel selectedClusterId={clusterId} searchOptions={searchOptions} />
         </section>
     );
 }

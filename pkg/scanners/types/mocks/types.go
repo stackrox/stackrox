@@ -218,7 +218,7 @@ func (m *MockImageVulnerabilityGetter) EXPECT() *MockImageVulnerabilityGetterMoc
 }
 
 // GetVulnerabilities mocks base method.
-func (m *MockImageVulnerabilityGetter) GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error) {
+func (m *MockImageVulnerabilityGetter) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, notes []scannerV1.Note) (*storage.ImageScan, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVulnerabilities", image, components, notes)
 	ret0, _ := ret[0].(*storage.ImageScan)

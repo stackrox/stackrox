@@ -39,6 +39,7 @@ import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const cveListQuery = gql`
     query getImageCVEList(
@@ -292,7 +293,7 @@ function CVEsTable({
                                 <Td />
                                 <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
-                                        {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
+                                        {summary ? <Text>{summary}</Text> : <PartialCVEDataAlert />}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -30,7 +31,7 @@ import (
 func verifyCentralCert(t *testing.T, data types.SecretDataMap) {
 	ca, err := certgen.LoadCAFromFileMap(data)
 	require.NoError(t, err)
-	assert.NoError(t, certgen.VerifyServiceCert(data, ca, storage.ServiceType_CENTRAL_SERVICE, ""))
+	assert.NoError(t, certgen.VerifyServiceCertAndKey(data, "", ca, storage.ServiceType_CENTRAL_SERVICE))
 
 	_, err = certgen.LoadJWTSigningKeyFromFileMap(data)
 	assert.NoError(t, err)
@@ -49,7 +50,7 @@ func verifyServiceCert(serviceType storage.ServiceType, fileNamePrefix string) s
 		validatingCA, err := mtls.LoadCAForValidation(data["ca.pem"])
 		require.NoError(t, err)
 
-		assert.NoError(t, certgen.VerifyServiceCert(data, validatingCA, serviceType, fileNamePrefix))
+		assert.NoError(t, certgen.VerifyServiceCertAndKey(data, fileNamePrefix, validatingCA, serviceType))
 	}
 }
 
@@ -506,39 +507,56 @@ func secretIsAlreadyDeleted(secretName string) interceptor.Funcs {
 	}
 }
 
-func TestRenewInitBundle(t *testing.T) {
-	type renewInitBundleTestCase struct {
-		now                string
-		notBefore          string
-		notAfter           string
-		expectError        bool
-		expectErrorMessage string
-	}
-
-	cases := map[string]renewInitBundleTestCase{
-		"should NOT refresh init-bundle when the certificate remains valid": {
-			now:         "2021-02-11T12:00:00.000Z",
-			notBefore:   "2021-02-11T00:00:00.000Z",
-			notAfter:    "2021-02-11T23:59:59.000Z",
-			expectError: false,
+func Test_checkCertRenewal(t *testing.T) {
+	cases := map[string]struct {
+		now       string
+		notBefore string
+		notAfter  string
+		wantErr   assert.ErrorAssertionFunc
+	}{
+		"should reject certificate that becomes invalid before it becomes valid": {
+			now:       "2021-02-11T11:59:00.000Z",
+			notBefore: "2021-02-11T23:59:59.000Z",
+			notAfter:  "2021-02-11T00:00:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expires at 2021-02-11 00:00:00 +0000 UTC before it begins to be valid at 2021-02-11 23:59:59 +0000 UTC")
+			},
 		},
-		"should refresh init-bundle when the certificate is already expired": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T00:00:00.000Z",
-			notAfter:           "2021-02-11T11:00:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 11:00:00 +0000 UTC, renew threshold: 2021-02-11 09:30:00 +0000 UTC",
+		"should NOT return error when the certificate remains valid": {
+			now:       "2021-02-11T11:59:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T23:59:59.000Z",
+			wantErr:   assert.NoError,
 		},
-		"should refresh init-bundle when the certificate lifetime is not started": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T22:00:00.000Z",
-			notAfter:           "2021-02-11T23:59:59.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate lifetime starts in the future, not before: 2021-02-11 22:00:00 +0000 UTC",
+		"should NOT return error when the certificate is valid for an extremely short time": {
+			now:       "2021-02-11T00:00:00.001Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T00:00:00.004Z",
+			wantErr:   assert.NoError,
 		},
-		"should refresh init-bundle when the certificate expires within the reconciliation period": {
-			now:                "2021-02-11T12:00:00.000Z",
-			notBefore:          "2021-02-11T00:00:00.000Z",
-			notAfter:           "2021-02-11T12:30:00.000Z",
-			expectErrorMessage: "init bundle secret requires update, certificate is expired (or going to expire soon), not after: 2021-02-11 12:30:00 +0000 UTC, renew threshold: 2021-02-11 11:00:00 +0000 UTC",
+		"should return error when the certificate is already expired": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T11:00:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate expired at 2021-02-11 11:00:00 +0000 UTC")
+			},
+		},
+		"should return error when the certificate lifetime is not started": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T22:00:00.000Z",
+			notAfter:  "2021-02-11T23:59:59.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate lifetime start 2021-02-11 22:00:00 +0000 UTC is in the future")
+			},
+		},
+		"should return error when the certificate expires soon": {
+			now:       "2021-02-11T12:00:00.000Z",
+			notBefore: "2021-02-11T00:00:00.000Z",
+			notAfter:  "2021-02-11T12:30:00.000Z",
+			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+				return assert.ErrorContains(t, err, "certificate is past half of its validity, 2021-02-11 06:15:00 +0000 UTC")
+			},
 		},
 	}
 
@@ -554,20 +572,9 @@ func TestRenewInitBundle(t *testing.T) {
 			}
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
+			r := &createCentralTLSExtensionRun{currentTime: now}
 
-			if c.expectErrorMessage != "" {
-				c.expectError = true
-			}
-
-			if c.expectError {
-				if c.expectErrorMessage != "" {
-					assert.EqualError(t, checkInitBundleCertRenewal(cert, now), c.expectErrorMessage)
-				} else {
-					assert.Error(t, checkInitBundleCertRenewal(cert, now))
-				}
-			} else {
-				assert.NoError(t, checkInitBundleCertRenewal(cert, now))
-			}
+			c.wantErr(t, r.checkCertRenewal(cert), fmt.Sprintf("checkCertRenewal(%v, %v)", cert, now))
 		})
 	}
 }
@@ -683,7 +690,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				mtls.ServiceKeyFileName: centralCertFromCA1.KeyPEM,
 			},
 			assert: func(t *testing.T, err error) {
-				assert.ErrorContains(t, err, "no service certificate in file map")
+				assert.ErrorContains(t, err, "no service certificate for CENTRAL_SERVICE in file map")
 			},
 		},
 		"should fail when the service key is missing": {
@@ -693,7 +700,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 				mtls.ServiceCertFileName: centralCertFromCA1.CertPEM,
 			},
 			assert: func(t *testing.T, err error) {
-				assert.ErrorContains(t, err, "no service private key in file map")
+				assert.ErrorContains(t, err, "no service private key for CENTRAL_SERVICE in file map")
 			},
 		},
 		"should fail when the service cert does not match the service key": {
@@ -769,7 +776,7 @@ func Test_createCentralTLSExtensionRun_validateAndConsumeCentralTLSData(t *testi
 
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := &createCentralTLSExtensionRun{}
+			r := &createCentralTLSExtensionRun{currentTime: time.Now()}
 			err := r.validateAndConsumeCentralTLSData(tt.fileMap, true)
 			tt.assert(t, err)
 		})
@@ -931,7 +938,8 @@ func Test_createCentralTLSExtensionRun_validateServiceTLSData(t *testing.T) {
 			for name, tt := range cases {
 				t.Run(name, func(t *testing.T) {
 					r := &createCentralTLSExtensionRun{
-						ca: tt.ca,
+						ca:          tt.ca,
+						currentTime: time.Now(),
 					}
 					switch subject {
 					case mtls.ScannerSubject:

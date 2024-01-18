@@ -23,6 +23,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const (
+	// v4IndexerVersion represents an arbitrary indexer version, at this time
+	// a non-empty value will be interpreted as a Scanner V4 index by Central.
+	//
+	// TODO(ROX-21362): Replace this with the actual version from the indexer API.
+	v4IndexerVersion = "v4"
+)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -35,8 +43,10 @@ type ScannerClient interface {
 
 // ImageAnalysis is the result of an image analysis.
 type ImageAnalysis struct {
-	ScanStatus scannerV1.ScanStatus
-	ScanNotes  []scannerV1.Note
+	ScanStatus     scannerV1.ScanStatus
+	ScanNotes      []scannerV1.Note
+	IndexerVersion string
+
 	// Fields for analysis results for each supported Scanner: Scanner V2 (v1 proto)
 	// and Scanner V4 (v4 proto).
 	V1Components *scannerV1.Components
@@ -89,6 +99,16 @@ func (i *ImageAnalysis) GetContents() *v4.Contents {
 		return i.V4Contents
 	}
 	return nil
+}
+
+// GetIndexerVersion returns the version of the indexer used to produce
+// the associated index report.
+func (i *ImageAnalysis) GetIndexerVersion() string {
+	if i != nil {
+		return i.IndexerVersion
+	}
+
+	return ""
 }
 
 // getScannerEndpoint reads and validate the Scanner gRPC endpoint setting. If
@@ -177,7 +197,7 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Scanner for image %s", imgName)
+	log.Debugf("Received image components from local Scanner for image: %q", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),
@@ -204,6 +224,8 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 	return &ImageAnalysis{
 		ScanStatus: st,
 		V4Contents: ir.GetContents(),
+		// TODO(ROX-21362): Replace this with the actual version from the indexer API.
+		IndexerVersion: v4IndexerVersion,
 	}
 }
 
@@ -226,6 +248,9 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
+
+	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
+
 	return convertIndexReportToAnalysis(ir), nil
 }
 
