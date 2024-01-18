@@ -98,13 +98,17 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
-	nodes, err := m.nodeStore.SearchRawNodes(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := m.nodeStore.Search(ctx, clusterQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
+	}
+	nodes, err := m.nodeStore.GetManyNodeMetadata(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, query)
+	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
