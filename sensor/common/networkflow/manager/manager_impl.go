@@ -41,6 +41,7 @@ const (
 )
 
 var (
+	flowDebug = env.RegisterSetting("ROX_FLOW_DEBUG", env.WithDefault("true"))
 	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
 	externalIPv4Addr = net.ParseIP("255.255.255.255")
 	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
@@ -308,6 +309,21 @@ func (m *networkFlowManager) resetContext() {
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
+	log.Info("================= -------------------------- =================")
+	log.Info("=================   Connections to Central   =================")
+	log.Info("================= -------------------------- =================")
+	for _, c := range msg.GetNetworkFlowUpdate().GetUpdated() {
+		log.Info("Connection: ", c)
+	}
+	log.Info("================= -------------------------- =================")
+	log.Info("=================    Endpoints to Central    =================")
+	log.Info("================= -------------------------- =================")
+	for _, c := range msg.GetNetworkFlowUpdate().GetUpdatedEndpoints() {
+		log.Info("Endpoint: ", c)
+	}
+	log.Info("================= -------------------------- =================")
+	log.Info("Time: ", msg.GetNetworkFlowUpdate().GetTime())
+	log.Info("================= -------------------------- =================")
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		select {
 		case <-m.done.Done():
@@ -384,6 +400,19 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
+	log.Info("================= -------------------------- =================")
+	log.Info("=================     Current Connections    =================")
+	log.Info("================= -------------------------- =================")
+	for c, t := range currentConns {
+		log.Info("Connection: ", c, " time: ", t)
+	}
+	log.Info("================= -------------------------- =================")
+	log.Info("=================      Current Endpoints     =================")
+	log.Info("================= -------------------------- =================")
+	for e, t := range currentEndpoints {
+		log.Info("Endpoint: ", e, " time: ", t)
+	}
+	log.Info("================= -------------------------- =================")
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
 
@@ -879,6 +908,25 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
+	if flowDebug.Setting() != "" {
+		log.Info("================= -------------------------- =================")
+		log.Info("================= Connections from Collector =================")
+		log.Info("================= -------------------------- =================")
+		for _, c := range networkInfo.UpdatedConnections {
+			log.Info("Connection: ", c)
+		}
+		log.Info("================= -------------------------- =================")
+		log.Info("=================  Endpoints from Collector  =================")
+		log.Info("================= -------------------------- =================")
+		for _, e := range networkInfo.UpdatedEndpoints {
+			log.Info("Endpoint: ", e)
+		}
+		log.Info("================= -------------------------- =================")
+		log.Info("Time: ", networkInfo.Time)
+		log.Info("Time now: ", nowTimestamp)
+		log.Info("Sequence id: ", sequenceID)
+		log.Info("================= -------------------------- =================")
+	}
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 	updatedEndpoints := getUpdatedContainerEndpoints(h.hostname, networkInfo)
 
@@ -950,6 +998,21 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		h.lastKnownTimestamp = nowTimestamp
 		flowMetrics.HostEndpointsAdded.Add(float64(len(h.endpoints) - prevSize))
 	}
+	log.Info("================= -------------------------- =================")
+	log.Info("=================  Connections after Process =================")
+	log.Info("================= -------------------------- =================")
+	for c, s := range h.connections {
+		log.Info("Connection: ", c, " status: ", s)
+	}
+	log.Info("================= -------------------------- =================")
+	log.Info("=================   Endpoints after Process  =================")
+	log.Info("================= -------------------------- =================")
+	for e, s := range h.endpoints {
+		log.Info("Endpoint: ", e, " status: ", s)
+	}
+	log.Info("================= -------------------------- =================")
+	log.Info("Last known timestamp: ", h.lastKnownTimestamp)
+	log.Info("================= -------------------------- =================")
 
 	return nil
 }
