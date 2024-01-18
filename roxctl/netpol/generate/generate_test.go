@@ -5,7 +5,6 @@ import (
 
 	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
-
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/npg"
