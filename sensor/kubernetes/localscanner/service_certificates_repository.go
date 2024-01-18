@@ -17,6 +17,13 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
+const (
+	scannerSecretName          = "scanner-tls"
+	scannerDbSecretName        = "scanner-db-tls"
+	scannerV4IndexerSecretName = "scanner-v4-indexer-tls"
+	scannerV4DbSecretName      = "scanner-v4-db-tls"
+)
+
 var (
 	// ErrUnexpectedSecretsOwner indicates that this repository should not be updating the certificates in
 	// the secrets they do not have the expected owner.
@@ -68,13 +75,13 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 
 	secretsByServiceType := map[storage.ServiceType]serviceCertSecretSpec{
-		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec("scanner-tls"),
-		storage.ServiceType_SCANNER_DB_SERVICE: newServiceCertSecretSpec("scanner-db-tls"),
+		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec(scannerSecretName),
+		storage.ServiceType_SCANNER_DB_SERVICE: newServiceCertSecretSpec(scannerDbSecretName),
 	}
 
 	if features.ScannerV4.Enabled() {
-		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec("scanner-v4-indexer-tls")
-		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec("scanner-v4-db-tls")
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec(scannerV4IndexerSecretName)
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec(scannerV4DbSecretName)
 	}
 
 	return &serviceCertificatesRepoSecretsImpl{
@@ -176,9 +183,7 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx conte
 
 		secretSpec, ok := r.secrets[cert.GetServiceType()]
 		if !ok {
-			// we don't know how to persist this.
-			err := errors.Errorf("unknown service type %q", cert.GetServiceType())
-			serviceErrors = multierror.Append(serviceErrors, err)
+			log.Warnf("skip persisting unknown service type: %q", cert.GetServiceType())
 			continue
 		}
 		if err := r.ensureServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {
@@ -197,6 +202,10 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx contex
 		return createErr
 	}
 	return patchErr
+}
+
+func (r *serviceCertificatesRepoSecretsImpl) getKnownServiceTypes() map[storage.ServiceType]serviceCertSecretSpec {
+	return r.secrets
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) patchServiceCertificate(ctx context.Context, caPem []byte,

@@ -566,3 +566,7 @@ func (m *certsRepoMock) ensureServiceCertificates(ctx context.Context, certifica
 	args := m.Called(ctx, certificates)
 	return args.Error(0)
 }
+
+func (m *certsRepoMock) getKnownServiceTypes() map[storage.ServiceType]serviceCertSecretSpec {
+	return make(map[storage.ServiceType]serviceCertSecretSpec, 0)
+}
