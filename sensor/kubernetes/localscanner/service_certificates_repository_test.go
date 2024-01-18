@@ -43,7 +43,7 @@ var (
 			Namespace: namespace,
 		},
 	}
-	scannerV4Certificates = &storage.TypedServiceCertificateSet{
+	scannerV2AndV4CertificateSet = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
 			createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
@@ -267,7 +267,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.NoError(repo.ensureServiceCertificates(context.Background(), scannerV4Certificates))
+	s.NoError(repo.ensureServiceCertificates(context.Background(), scannerV2AndV4CertificateSet))
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV4FailureWhenDisabled() {
@@ -276,7 +276,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
-	err := repo.ensureServiceCertificates(context.Background(), scannerV4Certificates)
+	err := repo.ensureServiceCertificates(context.Background(), scannerV2AndV4CertificateSet)
 
 	s.ErrorContains(err, "unknown service type")
 }

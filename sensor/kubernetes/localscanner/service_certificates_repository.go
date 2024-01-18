@@ -62,22 +62,23 @@ func newServiceCertSecretSpec(secretName string) serviceCertSecretSpec {
 }
 
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
-// scanner and scanner DB in k8s secrets that are expected to have ownerReference as the only owner reference.
+// scannerV2, scanner DB, scannerV4 indexer and ScannerV4 DB in k8s secrets.
+// Those secrets have to have ownerReference as the only owner reference.
 func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 
-	secretByServiceTypes := map[storage.ServiceType]serviceCertSecretSpec{
+	secretsByServiceType := map[storage.ServiceType]serviceCertSecretSpec{
 		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec("scanner-tls"),
 		storage.ServiceType_SCANNER_DB_SERVICE: newServiceCertSecretSpec("scanner-db-tls"),
 	}
 
-	if features.ScannerV4Support.Enabled() && features.ScannerV4.Enabled() {
-		secretByServiceTypes[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec("scanner-v4-indexer-tls")
-		secretByServiceTypes[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec("scanner-v4-db-tls")
+	if features.ScannerV4.Enabled() {
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec("scanner-v4-indexer-tls")
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec("scanner-v4-db-tls")
 	}
 
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets:        secretByServiceTypes,
+		secrets:        secretsByServiceType,
 		ownerReference: ownerReference,
 		namespace:      namespace,
 		secretsClient:  secretsClient,
