@@ -398,6 +398,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			continue
 		}
 		deployments = append(deployments, d)
+		log.Errorf("DeploymentEnrichment: Incoming Deployment : %#v", d)
 	}
 	errs := errorList.ToError()
 
@@ -420,6 +421,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if err != nil {
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
+		log.Errorf("DeploymentEnrichment: Enriched from Sensor Deployment example: %#v", deployments[0])
 	}
 
 	for _, d := range deployments {
