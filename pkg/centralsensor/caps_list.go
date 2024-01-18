@@ -45,4 +45,7 @@ const (
 
 	// ComplianceV2Integrations identifies the capability of central to support V2 integrations with compliance operator
 	ComplianceV2Integrations = "ComplianceV2Integrations"
+
+	// ScannerV4Supported identifies the capability of Central to support Scanner V4 related requests from Sensor.
+	ScannerV4Supported = "ScannerV4Supported"
 )
