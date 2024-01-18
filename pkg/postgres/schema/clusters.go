@@ -43,8 +43,9 @@ const (
 
 // Clusters holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {
-	ID         string            `gorm:"column:id;type:uuid;primaryKey"`
-	Name       string            `gorm:"column:name;type:varchar;unique"`
-	Labels     map[string]string `gorm:"column:labels;type:jsonb"`
-	Serialized []byte            `gorm:"column:serialized;type:bytea"`
+	ID                                string                       `gorm:"column:id;type:uuid;primaryKey"`
+	Name                              string                       `gorm:"column:name;type:varchar;unique"`
+	Labels                            map[string]string            `gorm:"column:labels;type:jsonb"`
+	StatusProviderMetadataClusterType storage.ClusterMetadata_Type `gorm:"column:status_providermetadata_cluster_type;type:integer"`
+	Serialized                        []byte                       `gorm:"column:serialized;type:bytea"`
 }

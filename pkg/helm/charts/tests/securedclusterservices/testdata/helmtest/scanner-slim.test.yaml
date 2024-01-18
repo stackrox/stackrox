@@ -2,6 +2,8 @@ values:
   monitoring:
     openshift:
       enabled: false
+  scannerV4:
+    disable: true
 server:
   visibleSchemas:
   - openshift-4.1.0

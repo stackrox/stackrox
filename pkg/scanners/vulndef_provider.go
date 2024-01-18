@@ -8,7 +8,7 @@ import (
 
 // VulnDefsInfoProvider provides functionality to obtain vulnerability definitions information.
 type VulnDefsInfoProvider interface {
-	GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, error)
+	GetVulnDefsInfo(scannerType string) (*v1.VulnDefinitionsInfo, error)
 }
 
 // NewVulnDefsInfoProvider returns new instance of NewVulnDefsInfoProvider.
@@ -22,12 +22,16 @@ type vulnDefsInfoProviderImpl struct {
 	scanners Set
 }
 
-func (p *vulnDefsInfoProviderImpl) GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, error) {
+func (p *vulnDefsInfoProviderImpl) GetVulnDefsInfo(scannerType string) (*v1.VulnDefinitionsInfo, error) {
 	if len(p.scanners.GetAll()) == 0 {
 		return nil, errors.New("no image integrations found")
 	}
 
 	for _, scanner := range p.scanners.GetAll() {
+		if scanner.GetScanner().Type() != scannerType {
+			continue
+		}
+
 		info, err := scanner.GetScanner().GetVulnDefinitionsInfo()
 		if err != nil {
 			return nil, err

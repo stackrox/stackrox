@@ -2,7 +2,6 @@ package datastore
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/search"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -17,10 +16,8 @@ var (
 )
 
 func initialize() {
-	indexer := pgStore.NewIndexer(globaldb.GetPostgres())
 	storage := pgStore.New(globaldb.GetPostgres())
-	searchScanConfig := search.New(storage, indexer)
-	dataStore = New(storage, statusStore.New(globaldb.GetPostgres()), clusterDatastore.Singleton(), searchScanConfig)
+	dataStore = New(storage, statusStore.New(globaldb.GetPostgres()), clusterDatastore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

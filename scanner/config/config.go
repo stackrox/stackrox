@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -26,8 +27,9 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
-
-			GetLayerTimeout: Duration(time.Minute),
+			GetLayerTimeout:    Duration(time.Minute),
+			RepositoryToCPEURL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
+			NameToReposURL:     "https://access.redhat.com/security/data/metrics/container-name-repos-map.json",
 		},
 		Matcher: MatcherConfig{
 			Enable: true,
@@ -79,19 +81,51 @@ type IndexerConfig struct {
 	Database Database `yaml:"database"`
 	// Enable if false disables the Indexer service.
 	Enable bool `yaml:"enable"`
-	// GetLayerTimeout timeout duration of GET requests for layers
-	GetLayerTimeout    Duration `yaml:"get_layer_timeout"`
-	RepositoryToCPEURL string   `yaml:"repository_to_cpe_url"`
-	NameToCPEURL       string   `yaml:"name_to_cpe_url"`
+	// GetLayerTimeout specifies the timeout duration of GET requests for layers
+	GetLayerTimeout Duration `yaml:"get_layer_timeout"`
+	// RepositoryToCPEURL specifies the URL to query for repository-to-cpe.json.
+	RepositoryToCPEURL string `yaml:"repository_to_cpe_url"`
+	// RepositoryToCPEURL specifies the location of the seed repository-to-cpe.json.
+	RepositoryToCPEFile string `yaml:"repository_to_cpe_file"`
+	// NameToReposURL specifies the URL to query for container-name-repos-map.json.
+	NameToReposURL string `yaml:"name_to_repos_url"`
+	// NameToReposFile specifies the location of the seed container-name-repos-map.json.
+	NameToReposFile string `yaml:"name_to_repos_file"`
 }
 
 func (c *IndexerConfig) validate() error {
 	if !c.Enable {
 		return nil
 	}
+
 	if err := c.Database.validate(); err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
+
+	if c.RepositoryToCPEURL == "" {
+		return errors.New("repository_to_cpe_url: cannot be empty")
+	}
+	if _, err := url.Parse(c.RepositoryToCPEURL); err != nil {
+		return fmt.Errorf("repository_to_cpe_url: invalid URL: %w", err)
+	}
+	if c.RepositoryToCPEFile != "" {
+		if _, err := os.Stat(c.RepositoryToCPEFile); err != nil {
+			return fmt.Errorf("repository_to_cpe_file: %w", err)
+		}
+	}
+
+	if c.NameToReposURL == "" {
+		return errors.New("name_to_repos_url: cannot be empty")
+	}
+	if _, err := url.Parse(c.NameToReposURL); err != nil {
+		return fmt.Errorf("name_to_repos_url: invalid URL: %w", err)
+	}
+	if c.NameToReposFile != "" {
+		if _, err := os.Stat(c.NameToReposFile); err != nil {
+			return fmt.Errorf("name_to_repos_file: %w", err)
+		}
+	}
+
 	return nil
 }
 

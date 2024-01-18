@@ -116,6 +116,19 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "component",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SCANNER",
+              "SCANNER_V4"
+            ],
+            "default": "SCANNER"
+          }
+        ],
         "tags": [
           "IntegrationHealthService"
         ]
@@ -223,6 +236,14 @@
           "format": "date-time"
         }
       }
+    },
+    "v1VulnDefinitionsInfoRequestComponent": {
+      "type": "string",
+      "enum": [
+        "SCANNER",
+        "SCANNER_V4"
+      ],
+      "default": "SCANNER"
     }
   }
 }

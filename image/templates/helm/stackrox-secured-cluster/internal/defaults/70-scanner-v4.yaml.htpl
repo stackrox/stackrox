@@ -1,6 +1,6 @@
 [<- if and .FeatureFlags.ROX_SCANNER_V4_SUPPORT (not .KubectlOutput) >]
 scannerV4:
-  disable: true [</* On secured-clusters local scanners (irregardless of the version) require explicit activation. */>]
+  [</* On secured-clusters local scanners (irregardless of the version) require explicit activation. */>]
   indexer:
     replicas: 3
     logLevel: INFO

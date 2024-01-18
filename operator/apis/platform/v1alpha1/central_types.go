@@ -206,9 +206,7 @@ type DeclarativeConfiguration struct {
 
 // NotifierSecretsEncryption defines settings for encrypting notifier secrets in the Central DB.
 type NotifierSecretsEncryption struct {
-	// Enables the encryption of notifier secrets stored in the Central DB. An encryption key must be
-	// provided in a secret called `central-encryption-key` in the Central namespace, with the key stored in
-	// the `encryption-key` data field.
+	// Enables the encryption of notifier secrets stored in the Central DB.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
