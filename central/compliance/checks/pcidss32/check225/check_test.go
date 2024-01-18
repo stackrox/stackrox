@@ -77,7 +77,7 @@ func (s *suiteImpl) TestUnusedPorts() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, nil, deployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, nil, deployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
@@ -150,7 +150,7 @@ func (s *suiteImpl) TestPass() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, nil, deployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, nil, deployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
