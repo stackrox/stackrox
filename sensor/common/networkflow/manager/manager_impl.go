@@ -463,6 +463,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+			if status.lastSeen == 0 || status.lastSeen == timestamp.InfiniteFuture {
+				status.lastSeen = timestamp.Now()
+			}
 		}
 		return
 	}
