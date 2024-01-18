@@ -80,6 +80,7 @@ message TriggerComplianceRunsResponse {
 
 message GetComplianceRunStatusesRequest {
     repeated string run_ids = 1;
+    bool latest             = 2;
 }
 
 message GetComplianceRunStatusesResponse {
