@@ -41,8 +41,8 @@ function ClustersCoverageTable() {
     const { data: clusterScanStats, loading: isLoading, error } = useRestQuery(listQuery);
 
     const renderTableContent = () => {
-        return clusterScanStats?.map(({ cluster, scanStats }, index) => {
-            const { passCount, totalCount } = getPassAndTotalCount(scanStats.checkStats);
+        return clusterScanStats?.map(({ cluster, checkStats }, index) => {
+            const { passCount, totalCount } = getPassAndTotalCount(checkStats);
             const passPercentage = calculateCompliancePercentage(passCount, totalCount);
 
             return (

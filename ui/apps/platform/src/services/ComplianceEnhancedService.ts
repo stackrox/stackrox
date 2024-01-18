@@ -3,7 +3,7 @@ import qs from 'qs';
 
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { SlimUser } from 'types/user.proto';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
 import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
@@ -102,7 +102,7 @@ type ComplianceScanStatsShim = {
 };
 
 type ComplianceClusterScanStats = {
-    scanStats: ComplianceScanStatsShim;
+    checkStats: ComplianceCheckStatusCount[];
     cluster: ComplianceScanCluster;
 };
 
@@ -190,18 +190,18 @@ export function getComplianceClusterScanStats(
     page?: number,
     pageSize?: number
 ): Promise<ComplianceClusterScanStats[]> {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
-    const query = {
-        pagination: { offset, limit: pageSize },
+    // Note: hard-coding the search filter and sort option for now
+    const searchFilter = {};
+    const sortOption = {
+        field: 'Cluster',
+        reversed: false,
     };
-    const params = qs.stringify({ query });
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
     return axios
-        .get<{ scanStats: ComplianceClusterScanStats[] }>(
-            `${complianceResultsServiceUrl}/stats/cluster?${params}`
-        )
+        .get<{
+            scanStats: ComplianceClusterScanStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
         });
