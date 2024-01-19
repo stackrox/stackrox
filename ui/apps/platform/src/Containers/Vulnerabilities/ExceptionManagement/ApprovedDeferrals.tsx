@@ -123,7 +123,6 @@ function ApprovedDeferrals() {
                         searchFilter={searchFilter}
                         onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
-                        isRegexMatcher={false}
                     />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination

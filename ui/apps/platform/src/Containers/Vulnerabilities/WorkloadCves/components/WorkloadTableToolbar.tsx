@@ -170,7 +170,6 @@ function WorkloadTableToolbar({
                     }}
                     searchOptions={searchOptions}
                     autocompleteSearchContext={autocompleteSearchContext}
-                    isRegexMatcher
                 />
                 <ToolbarGroup>
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
