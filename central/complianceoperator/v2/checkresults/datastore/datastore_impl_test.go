@@ -406,6 +406,42 @@ func (s *complianceCheckResultDataStoreTestSuite) TestSearchResultsSac() {
 			scopeKey:      testutils.Cluster2ReadWriteCtx,
 			expectedCount: 3,
 		},
+		{
+			desc:          "Check name query - Full Access",
+			query:         search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "test-check-2").ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Check name query and cluster 3 - Cluster 3 Access",
+			query: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "test-check-2").
+				AddStrings(search.ClusterID, testconsts.Cluster3).ProtoQuery(),
+			scopeKey:      testutils.Cluster3ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Check name query and cluster 2 - Full Access",
+			query: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "test-check-2").
+				AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 0,
+		},
+		{
+			desc: "Check name query and cluster 3 and scan config name - Cluster 3 Access",
+			query: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "test-check-2").
+				AddStrings(search.ClusterID, testconsts.Cluster3).
+				AddStrings(search.ComplianceOperatorScanConfigName, "scanConfig2").ProtoQuery(),
+			scopeKey:      testutils.Cluster3ReadWriteCtx,
+			expectedCount: 1,
+		},
+		{
+			desc: "Check name query and cluster 3 and scan config name - Cluster 3 Access",
+			query: search.NewQueryBuilder().AddStrings(search.ComplianceOperatorCheckName, "test-check-2").
+				AddStrings(search.ClusterID, testconsts.Cluster3).
+				AddStrings(search.ComplianceOperatorScanConfigName, "scanConfig1").ProtoQuery(),
+			scopeKey:      testutils.Cluster3ReadWriteCtx,
+			expectedCount: 0,
+		},
 	}
 
 	for _, tc := range testCases {
