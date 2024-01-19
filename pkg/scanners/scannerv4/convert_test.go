@@ -119,98 +119,69 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
 
-func TestLocation(t *testing.T) {
+func TestParsePackageDB(t *testing.T) {
 	testcases := []struct {
-		expected string
-		env      *v4.Environment
+		packageDB          string
+		expectedSourceType storage.SourceType
+		expectedLocation   string
 	}{
 		{
-			expected: "var/lib/dpkg/status",
-			env: &v4.Environment{
-				PackageDb: "var/lib/dpkg/status",
-			},
+			packageDB:          "var/lib/dpkg/status",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "var/lib/dpkg/status",
 		},
 		{
-			expected: "var/lib/rpm/rpmdb.sqlite",
-			env: &v4.Environment{
-				PackageDb: "sqlite:var/lib/rpm/rpmdb.sqlite",
-			},
+			packageDB:          "sqlite:var/lib/rpm/rpmdb.sqlite",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "var/lib/rpm/rpmdb.sqlite",
 		},
 		{
-			expected: "usr/local/bin/scanner",
-			env: &v4.Environment{
-				PackageDb: "go:usr/local/bin/scanner",
-			},
+			packageDB:          "go:usr/local/bin/scanner",
+			expectedSourceType: storage.SourceType_GO,
+			expectedLocation:   "usr/local/bin/scanner",
+		},
+		{
+			packageDB:          "file:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "jar:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "maven:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "nodejs:package.json",
+			expectedSourceType: storage.SourceType_NODEJS,
+			expectedLocation:   "package.json",
+		},
+		{
+			packageDB:          "python:hello/.egg-info",
+			expectedSourceType: storage.SourceType_PYTHON,
+			expectedLocation:   "hello/.egg-info",
+		},
+		{
+			packageDB:          "ruby:opt/specifications/howdy.gemspec",
+			expectedSourceType: storage.SourceType_RUBY,
+			expectedLocation:   "opt/specifications/howdy.gemspec",
+		},
+		{
+			packageDB:          "h:e:llo",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "h:e:llo",
 		},
 	}
 
 	for _, testcase := range testcases {
-		t.Run(testcase.expected, func(t *testing.T) {
-			source := location(testcase.env)
-			assert.Equal(t, testcase.expected, source)
-		})
-	}
-}
-
-func TestSourceType(t *testing.T) {
-	testcases := []struct {
-		expected storage.SourceType
-		env      *v4.Environment
-	}{
-		{
-			expected: storage.SourceType_OS,
-			env: &v4.Environment{
-				PackageDb: "sqlite:var/lib/rpm/rpmdb.sqlite",
-			},
-		},
-		{
-			expected: storage.SourceType_GO,
-			env: &v4.Environment{
-				PackageDb: "go:usr/local/bin/scanner",
-			},
-		},
-		{
-			expected: storage.SourceType_JAVA,
-			env: &v4.Environment{
-				PackageDb: "file:pkg.jar",
-			},
-		},
-		{
-			expected: storage.SourceType_JAVA,
-			env: &v4.Environment{
-				PackageDb: "jar:pkg.jar",
-			},
-		},
-		{
-			expected: storage.SourceType_JAVA,
-			env: &v4.Environment{
-				PackageDb: "maven:pkg.jar",
-			},
-		},
-		{
-			expected: storage.SourceType_NODEJS,
-			env: &v4.Environment{
-				PackageDb: "nodejs:package.json",
-			},
-		},
-		{
-			expected: storage.SourceType_PYTHON,
-			env: &v4.Environment{
-				PackageDb: "python:hello/.egg-info",
-			},
-		},
-		{
-			expected: storage.SourceType_RUBY,
-			env: &v4.Environment{
-				PackageDb: "ruby:opt/specifications/howdy.gemspec",
-			},
-		},
-	}
-
-	for _, testcase := range testcases {
-		t.Run(testcase.expected.String(), func(t *testing.T) {
-			source := sourceType(testcase.env)
-			assert.Equal(t, testcase.expected, source)
+		t.Run(testcase.packageDB, func(t *testing.T) {
+			source, location := parsePackageDB(testcase.packageDB)
+			assert.Equal(t, testcase.expectedSourceType, source)
+			assert.Equal(t, testcase.expectedLocation, location)
 		})
 	}
 }

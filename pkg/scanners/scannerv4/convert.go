@@ -41,13 +41,12 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 
 		var (
 			source   storage.SourceType
-			loc      string
+			location string
 			layerIdx *storage.EmbeddedImageScanComponent_LayerIndex
 		)
 		env := environment(report, id)
 		if env != nil {
-			source = sourceType(env)
-			loc = location(env)
+			source, location = parsePackageDB(env.GetPackageDb())
 			layerIdx = layerIndex(layerSHAToIndex, env)
 		}
 
@@ -56,7 +55,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
 			Source:        source,
-			Location:      loc,
+			Location:      location,
 			HasLayerIndex: layerIdx,
 		}
 
@@ -81,34 +80,31 @@ func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
 	return nil
 }
 
-func location(env *v4.Environment) string {
-	// Assume : is an invalid character for a filepath in a Linux filesystem.
-	before, after, found := strings.Cut(env.GetPackageDb(), ":")
+func parsePackageDB(packageDB string) (storage.SourceType, string) {
+	prefix, path, found := strings.Cut(packageDB, ":")
 	if !found {
-		return before
-	}
-	return after
-}
-
-func sourceType(env *v4.Environment) storage.SourceType {
-	pkgType, _, found := strings.Cut(env.GetPackageDb(), ":")
-	if !found {
-		return storage.SourceType_OS
+		// All currently know language packages have a prefix, so this must be an OS package.
+		return storage.SourceType_OS, packageDB
 	}
 
-	switch pkgType {
+	switch prefix {
 	case "go":
-		return storage.SourceType_GO
+		return storage.SourceType_GO, path
 	case "file", "jar", "maven":
-		return storage.SourceType_JAVA
+		return storage.SourceType_JAVA, path
 	case "nodejs":
-		return storage.SourceType_NODEJS
+		return storage.SourceType_NODEJS, path
 	case "python":
-		return storage.SourceType_PYTHON
+		return storage.SourceType_PYTHON, path
 	case "ruby":
-		return storage.SourceType_RUBY
+		return storage.SourceType_RUBY, path
+	case "bdb", "sqlite", "ndb":
+		// RPM databases are prefixed with the DB kind.
+		return storage.SourceType_OS, path
 	default:
-		return storage.SourceType_OS
+		// ":" is a valid character in a file path.
+		// We could not identify a known prefix, so just return the entire path.
+		return storage.SourceType_OS, packageDB
 	}
 }
 
