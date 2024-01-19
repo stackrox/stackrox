@@ -30,7 +30,7 @@ func getInfoObjs(path string, failFast bool, treatWarningsAsErrors bool) ([]*res
 	if !(failFast && treatWarningsAsErrors) {
 		b.ContinueOnError()
 	}
-	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
+	//nolint:wrapcheck // we do wrap the errors later in ErrorHandler
 	return b.Path(true, path).Do().IgnoreErrors().Infos()
 }
 
@@ -39,13 +39,13 @@ func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*r
 	info2, err2 := getInfoObjs(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	inputErrHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
 	err := inputErrHandler.HandleErrorPair(err1, err2)
-	return nil, nil, inputErrHandler.Warnings(), err
+	//nolint:wrapcheck // warnings are not errors and don't need to be wrapped
+	return info1, info2, inputErrHandler.Warnings(), err
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
 	info1, info2, warnings, err := cmd.processInput()
 	if err != nil {
-		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
 		return err
 	}
 	if warnings != nil {

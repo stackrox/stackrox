@@ -26,11 +26,13 @@ var (
 	}
 )
 
+// ErrorHandler handles errors returned by k8s.io/cli-runtime/pkg/resource when reading manifests
 type ErrorHandler struct {
 	displayWarn           error
 	treatWarningsAsErrors bool
 }
 
+// NewErrHandler returns ErrorHandler
 func NewErrHandler(treatWarningsAsErrors bool) *ErrorHandler {
 	return &ErrorHandler{
 		displayWarn:           nil,
@@ -38,16 +40,19 @@ func NewErrHandler(treatWarningsAsErrors bool) *ErrorHandler {
 	}
 }
 
+// Warnings returns warnings to be displayed to the user
 func (e *ErrorHandler) Warnings() error {
 	return e.displayWarn
 }
 
+// HandleError handles errors after reading a single location with manifests
 func (e *ErrorHandler) HandleError(err1 error) error {
 	warn, err := e.handleErrorsWarnings(mapErrorsWarnings(disaggregate(err1)...))
 	e.displayWarn = warn
 	return err
 }
 
+// HandleErrorPair handles errors after reading a two locations with manifests (e.g. diff command)
 func (e *ErrorHandler) HandleErrorPair(err1, err2 error) error {
 	e.displayWarn = nil
 	war1, e1 := mapErrorsWarnings(disaggregate(err1)...)
