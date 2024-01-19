@@ -9,9 +9,9 @@ import (
 
 // MuxTransport returns a [http.RoundTripper] which handles HTTP requests as follows:
 //
-//   * If the request is destined for Central, use the given Central [http.RoundTripper].
-//   * If the request is destined for Sensor, use the given Sensor [http.RoundTripper].
-//   * Otherwise, use the default [http.RoundTripper].
+//   - If the request is destined for Central, use the given Central [http.RoundTripper].
+//   - If the request is destined for Sensor, use the given Sensor [http.RoundTripper].
+//   - Otherwise, use the default [http.RoundTripper].
 //
 // This is designed for Scanner's specific use-case. It is possible to generalize this, but that's not necessary
 // at this time.
