@@ -46,6 +46,7 @@ deploy_stackrox() {
     touch "${STATE_DEPLOYED}"
 }
 
+# shellcheck disable=SC2120
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
         die "expected central chart version and sensor chart version as parameters in \
@@ -208,6 +209,7 @@ deploy_central() {
     fi
 }
 
+# shellcheck disable=SC2120
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
     info "Deploying central via operator into namespace ${central_namespace}"
@@ -313,6 +315,7 @@ deploy_sensor() {
     fi
 }
 
+# shellcheck disable=SC2120
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
@@ -447,6 +450,7 @@ setup_podsecuritypolicies_config() {
 
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
 # to load kernel objects and create network connections.
+# shellcheck disable=SC2120
 wait_for_collectors_to_be_operational() {
     local sensor_namespace=${1:-stackrox}
     info "Will wait for collectors to reach a ready state in namespace ${sensor_namespace}"
@@ -483,6 +487,7 @@ wait_for_collectors_to_be_operational() {
     done
 }
 
+# shellcheck disable=SC2120
 patch_resources_for_test() {
     local central_namespace=${1:-stackrox}
     info "Patch the loadbalancer and netpol resources for endpoints test"
