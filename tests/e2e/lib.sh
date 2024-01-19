@@ -924,13 +924,13 @@ wait_for_api() {
 }
 
 record_build_info() {
-    _record_build_info "${1:-}" || {
+    local central_namespace=${1:-stackrox}
+    _record_build_info "${central_namespace}" || {
         # Failure to gather metrics is not a test failure
         info "WARNING: Job build info record failed"
     }
 }
 
-# shellcheck disable=SC2120
 _record_build_info() {
     if ! is_CI; then
         return
