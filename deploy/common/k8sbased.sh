@@ -111,9 +111,9 @@ function local_dev {
 # Checks if central already exists in this cluster.
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
-    local namespace=${1:-stackrox}
-    if "${ORCH_CMD}" -n "${namespace}" get deployment central 2>&1; then
-        yes_no_prompt "Detected there is already a central running on this cluster in namespace ${namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
+    local central_namespace=${1:-stackrox}
+    if "${ORCH_CMD}" -n "${central_namespace}" get deployment central 2>&1; then
+        yes_no_prompt "Detected there is already a central running on this cluster in namespace ${central_namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
 
