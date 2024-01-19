@@ -148,15 +148,13 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
 		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`
 {
-  "repo2cpe_mapping_url": "%s",
-  "repo2cpe_mapping_file": "%s"
-}`, indexerCfg.RepositoryToCPEURL, indexerCfg.RepositoryToCPEFile)))}
+  "repo2cpe_mapping_url": "%s"
+}`, indexerCfg.RepositoryToCPEURL)))}
 	opts.ScannerConfig.Package = map[string]func(interface{}) error{
 		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`
 {
-  "name2repos_mapping_url": "%s",
-  "name2repos_mapping_file": "%s"
-}`, indexerCfg.NameToReposURL, indexerCfg.NameToReposFile)))}
+  "name2repos_mapping_url": "%s"
+}`, indexerCfg.NameToReposURL)))}
 
 	indexer, err := libindex.New(ctx, &opts, client)
 	if err != nil {
