@@ -13,7 +13,6 @@ import { SearchIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
-import omitBy from 'lodash/omitBy';
 
 import { getEntityPagePath } from 'Containers/Vulnerabilities/WorkloadCves/searchUtils';
 import { VulnerabilitySeverityLabel } from 'Containers/Vulnerabilities/WorkloadCves/types';
@@ -33,7 +32,10 @@ import {
     getScoreVersionsForTopCVSS,
     sortCveDistroList,
 } from 'Containers/Vulnerabilities/WorkloadCves/sortUtils';
-import { VulnerabilityExceptionScope } from 'services/VulnerabilityExceptionService';
+import {
+    VulnerabilityExceptionScope,
+    VulnerabilityState,
+} from 'services/VulnerabilityExceptionService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getImageScopeSearchValue } from 'Containers/Vulnerabilities/ExceptionManagement/utils';
 
@@ -48,9 +50,15 @@ type RequestCVEsTableProps = {
     cves: string[];
     scope: VulnerabilityExceptionScope;
     expandedRowSet: SetResult<string>;
+    vulnerabilityState: VulnerabilityState;
 };
 
-function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps) {
+function RequestCVEsTable({
+    cves,
+    scope,
+    expandedRowSet,
+    vulnerabilityState,
+}: RequestCVEsTableProps) {
     const { page, perPage, setPage } = useURLPagination(20);
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultCVESortFields,
@@ -168,18 +176,12 @@ function RequestCVEsTable({ cves, scope, expandedRowSet }: RequestCVEsTableProps
                                     s: {
                                         IMAGE: queryObject.Image,
                                     },
-                                    vulnerabilityState: 'DEFERRED',
                                 };
-                                // @TODO: This needs to be tested more thoroughly. Once the deferred tab shows the correct data, we should add a test for this
                                 const cveURL = getEntityPagePath(
                                     'CVE',
                                     cve,
-                                    // TODO: (dv 2023-11-15)
-                                    //      We need to pass the appropriate request state here in order to link to the correct tab
-                                    //      This will change depending on what type of request we are looking at as well as
-                                    //      the state of the request
-                                    'OBSERVED',
-                                    omitBy(cveURLQueryOptions, (value) => value === '')
+                                    vulnerabilityState,
+                                    cveURLQueryOptions
                                 );
 
                                 return (
