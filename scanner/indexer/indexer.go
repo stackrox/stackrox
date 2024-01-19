@@ -121,19 +121,22 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 		return nil
 	})
 
-	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxClientOptions{})
+	centralInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.CentralSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Central http.Transport: %w", err)
+		return nil, fmt.Errorf("creating Central interceptor: %w", err)
 	}
-	sensorTransport, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxClientOptions{})
+	sensorInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.SensorSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Sensor http.Transport: %w", err)
+		return nil, fmt.Errorf("creating Sensor interceptor: %w", err)
 	}
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
 	client := &http.Client{
-		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
+		Transport: &httputil.Transport{
+			Default:     defaultTransport,
+			Interceptor: httputil.ChainRoundTripInterceptors(centralInterceptor, sensorInterceptor),
+		},
 	}
 
 	// TODO: Consider making layer scan concurrency configurable?
