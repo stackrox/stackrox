@@ -4,16 +4,20 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
@@ -36,14 +40,15 @@ type storeType = storage.ComplianceOperatorRuleV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, name string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, name string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, name string) (*storeType, bool, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -60,7 +65,7 @@ func New(db postgres.DB) Store {
 		copyFromComplianceOperatorRuleV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		isUpsertAllowed,
 		targetResource,
 	)
 }
@@ -68,7 +73,7 @@ func New(db postgres.DB) Store {
 // region Helper functions
 
 func pkGetter(obj *storeType) string {
-	return obj.GetName()
+	return obj.GetId()
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
@@ -77,6 +82,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceOperatorRuleV2s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.ComplianceOperatorRuleV2) error {
@@ -88,15 +110,40 @@ func insertIntoComplianceOperatorRuleV2(batch *pgx.Batch, obj *storage.Complianc
 
 	values := []interface{}{
 		// parent primary keys start
+		obj.GetId(),
 		obj.GetName(),
-		obj.GetOperatorVersion(),
-		obj.GetRuleVersion(),
 		obj.GetRuleType(),
 		obj.GetSeverity(),
+		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, OperatorVersion, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, OperatorVersion = EXCLUDED.OperatorVersion, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_rule_v2 (Id, Name, RuleType, Severity, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	batch.Queue(finalStr, values...)
+
+	var query string
+
+	for childIndex, child := range obj.GetControls() {
+		if err := insertIntoComplianceOperatorRuleV2Controls(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from compliance_operator_rule_v2_controls where compliance_operator_rule_v2_Id = $1 AND idx >= $2"
+	batch.Queue(query, obj.GetId(), len(obj.GetControls()))
+	return nil
+}
+
+func insertIntoComplianceOperatorRuleV2Controls(batch *pgx.Batch, obj *storage.RuleControls, complianceOperatorRuleV2ID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		complianceOperatorRuleV2ID,
+		idx,
+		obj.GetStandard(),
+	}
+
+	finalStr := "INSERT INTO compliance_operator_rule_v2_controls (compliance_operator_rule_v2_Id, idx, Standard) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_rule_v2_Id, idx) DO UPDATE SET compliance_operator_rule_v2_Id = EXCLUDED.compliance_operator_rule_v2_Id, idx = EXCLUDED.idx, Standard = EXCLUDED.Standard"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -114,11 +161,11 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
+		"id",
 		"name",
-		"operatorversion",
-		"ruleversion",
 		"ruletype",
 		"severity",
+		"clusterid",
 		"serialized",
 	}
 
@@ -134,16 +181,16 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		}
 
 		inputRows = append(inputRows, []interface{}{
+			obj.GetId(),
 			obj.GetName(),
-			obj.GetOperatorVersion(),
-			obj.GetRuleVersion(),
 			obj.GetRuleType(),
 			obj.GetSeverity(),
+			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
 
 		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetName())
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -157,6 +204,55 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			deletes = deletes[:0]
 
 			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromComplianceOperatorRuleV2Controls(ctx, s, tx, obj.GetId(), obj.GetControls()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromComplianceOperatorRuleV2Controls(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorRuleV2ID string, objs ...*storage.RuleControls) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"compliance_operator_rule_v2_id",
+		"idx",
+		"standard",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			complianceOperatorRuleV2ID,
+			idx,
+			obj.GetStandard(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_rule_v2_controls"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -184,6 +280,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableComplianceOperatorRuleV2(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_rule_v2 CASCADE")
+	dropTableComplianceOperatorRuleV2Controls(ctx, db)
+
+}
+
+func dropTableComplianceOperatorRuleV2Controls(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_rule_v2_controls CASCADE")
 
 }
 
