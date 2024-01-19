@@ -54,13 +54,26 @@ func TestConvert(t *testing.T) {
 	inReport := &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
 			Environments: map[string]*v4.Environment_List{
-				"1": {Environments: []*v4.Environment{
-					{IntroducedIn: "hash"},
-				}},
+				"1": {
+					Environments: []*v4.Environment{
+						{
+							PackageDb:    "maven:opt/java/pkg.jar",
+							IntroducedIn: "hash",
+						},
+					},
+				},
+			},
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "rhel",
+					VersionId: "9",
+				},
 			},
 			Packages: []*v4.Package{
 				{
-					Id: "1",
+					Id:      "1",
+					Name:    "my-java-pkg",
+					Version: "1.2.3",
 				},
 			},
 		},
@@ -73,13 +86,19 @@ func TestConvert(t *testing.T) {
 			},
 		},
 		PackageVulnerabilities: map[string]*v4.StringList{
-			"1": {Values: []string{"CVE1-ID"}},
+			"1": {
+				Values: []string{"CVE1-ID"},
+			},
 		},
 	}
 
 	expected := &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{
 			{
+				Name:          "my-java-pkg",
+				Version:       "1.2.3",
+				Source:        storage.SourceType_JAVA,
+				Location:      "opt/java/pkg.jar",
 				HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 				Vulns: []*storage.EmbeddedVulnerability{
 					{
@@ -91,13 +110,109 @@ func TestConvert(t *testing.T) {
 				},
 			},
 		},
-		OperatingSystem: "unknown",
+		OperatingSystem: "rhel:9",
 	}
 
 	actual := imageScan(inMetadata, inReport)
 
 	assert.Equal(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
+}
+
+func TestLocation(t *testing.T) {
+	testcases := []struct {
+		expected string
+		env      *v4.Environment
+	}{
+		{
+			expected: "var/lib/dpkg/status",
+			env: &v4.Environment{
+				PackageDb: "var/lib/dpkg/status",
+			},
+		},
+		{
+			expected: "var/lib/rpm/rpmdb.sqlite",
+			env: &v4.Environment{
+				PackageDb: "sqlite:var/lib/rpm/rpmdb.sqlite",
+			},
+		},
+		{
+			expected: "usr/local/bin/scanner",
+			env: &v4.Environment{
+				PackageDb: "go:usr/local/bin/scanner",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			source := location(testcase.env)
+			assert.Equal(t, testcase.expected, source)
+		})
+	}
+}
+
+func TestSourceType(t *testing.T) {
+	testcases := []struct {
+		expected storage.SourceType
+		env      *v4.Environment
+	}{
+		{
+			expected: storage.SourceType_OS,
+			env: &v4.Environment{
+				PackageDb: "sqlite:var/lib/rpm/rpmdb.sqlite",
+			},
+		},
+		{
+			expected: storage.SourceType_GO,
+			env: &v4.Environment{
+				PackageDb: "go:usr/local/bin/scanner",
+			},
+		},
+		{
+			expected: storage.SourceType_JAVA,
+			env: &v4.Environment{
+				PackageDb: "file:pkg.jar",
+			},
+		},
+		{
+			expected: storage.SourceType_JAVA,
+			env: &v4.Environment{
+				PackageDb: "jar:pkg.jar",
+			},
+		},
+		{
+			expected: storage.SourceType_JAVA,
+			env: &v4.Environment{
+				PackageDb: "maven:pkg.jar",
+			},
+		},
+		{
+			expected: storage.SourceType_NODEJS,
+			env: &v4.Environment{
+				PackageDb: "nodejs:package.json",
+			},
+		},
+		{
+			expected: storage.SourceType_PYTHON,
+			env: &v4.Environment{
+				PackageDb: "python:hello/.egg-info",
+			},
+		},
+		{
+			expected: storage.SourceType_RUBY,
+			env: &v4.Environment{
+				PackageDb: "ruby:opt/specifications/howdy.gemspec",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected.String(), func(t *testing.T) {
+			source := sourceType(testcase.env)
+			assert.Equal(t, testcase.expected, source)
+		})
+	}
 }
 
 func TestOS(t *testing.T) {

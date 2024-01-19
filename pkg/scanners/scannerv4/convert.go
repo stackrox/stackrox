@@ -38,13 +38,26 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	for _, pkg := range report.GetContents().GetPackages() {
 		id := pkg.GetId()
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
+
+		var (
+			source   storage.SourceType
+			loc      string
+			layerIdx *storage.EmbeddedImageScanComponent_LayerIndex
+		)
+		env := environment(report, id)
+		if env != nil {
+			source = sourceType(env)
+			loc = location(env)
+			layerIdx = layerIndex(layerSHAToIndex, env)
+		}
+
 		component := &storage.EmbeddedImageScanComponent{
 			Name:          pkg.GetName(),
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			Source:        sourceType(pkg),
-			Location:      pkg.GetPackageDb(),
-			HasLayerIndex: layerIndex(layerSHAToIndex, report, id),
+			Source:        source,
+			Location:      loc,
+			HasLayerIndex: layerIdx,
 		}
 
 		components = append(components, component)
@@ -53,25 +66,33 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	return components
 }
 
-func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
-	// TODO(ROX-21377): Confirm with Clair team how handle multiple environments
-	envList := report.GetContents().GetEnvironments()[pkgID]
-	if len(envList.GetEnvironments()) > 0 {
-		env := envList.GetEnvironments()[0]
+func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+	envList, ok := report.GetContents().GetEnvironments()[id]
+	if !ok {
+		return nil
+	}
 
-		if val, ok := layerSHAToIndex[env.GetIntroducedIn()]; ok {
-			return &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: val,
-			}
-		}
+	envs := envList.GetEnvironments()
+	if len(envs) > 0 {
+		// Just use the first environment.
+		return envs[0]
 	}
 
 	return nil
 }
 
-func sourceType(pkg *v4.Package) storage.SourceType {
-	pkgType, _, ok := strings.Cut(pkg.GetPackageDb(), ":")
-	if !ok {
+func location(env *v4.Environment) string {
+	// Assume : is an invalid character for a filepath in a Linux filesystem.
+	before, after, found := strings.Cut(env.GetPackageDb(), ":")
+	if !found {
+		return before
+	}
+	return after
+}
+
+func sourceType(env *v4.Environment) storage.SourceType {
+	pkgType, _, found := strings.Cut(env.GetPackageDb(), ":")
+	if !found {
 		return storage.SourceType_OS
 	}
 
@@ -88,6 +109,17 @@ func sourceType(pkg *v4.Package) storage.SourceType {
 		return storage.SourceType_RUBY
 	default:
 		return storage.SourceType_OS
+	}
+}
+
+func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.EmbeddedImageScanComponent_LayerIndex {
+	idx, ok := layerSHAToIndex[env.GetIntroducedIn()]
+	if !ok {
+		return nil
+	}
+
+	return &storage.EmbeddedImageScanComponent_LayerIndex{
+		LayerIndex: idx,
 	}
 }
 
