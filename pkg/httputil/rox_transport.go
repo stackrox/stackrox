@@ -12,11 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// RoxTransportOptions represents client options for reaching out to Rox-related services.
+// RoxTransportOptions represents transport options for reaching out to Rox-related services.
 type RoxTransportOptions struct {
 	disableCompression bool
 }
 
+// RoxRoundTripInterceptor creates a [RoundTripInterceptor] based on the transport derived from the given subject and options.
 func RoxRoundTripInterceptor(subject mtls.Subject, o RoxTransportOptions) (RoundTripInterceptor, error) {
 	transport, err := RoxTransport(subject, o)
 	if err != nil {
@@ -31,6 +32,7 @@ func RoxRoundTripInterceptor(subject mtls.Subject, o RoxTransportOptions) (Round
 	}, nil
 }
 
+// RoxTransport creates a [http.RoundTripper] derived from the given subject and options.
 func RoxTransport(subject mtls.Subject, o RoxTransportOptions) (http.RoundTripper, error) {
 	tlsConfig, err := clientconn.TLSConfig(subject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
