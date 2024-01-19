@@ -5,19 +5,23 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	iiDStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,8 +40,9 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedCredentialExpiryServiceServer
 
-	imageIntegrations imageIntegrationStore.DataStore
-	scannerConfig     *tls.Config
+	imageIntegrations iiDStore.DataStore
+	scannerConfigs    map[mtls.Subject]*tls.Config
+	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error)
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -46,6 +51,8 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getCentralCertExpiry()
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
+	case v1.GetCertExpiry_SCANNER_V4:
+		return s.getScannerV4CertExpiry(ctx)
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
@@ -85,23 +92,19 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint string) (*types.Timestamp, error) {
-	addr, err := ensureTLSAndReturnAddr(endpoint)
-	if err != nil {
-		return nil, err
-	}
-	conn, err := tlsutils.DialContext(ctx, "tcp", addr, s.scannerConfig)
+func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error) {
+	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, tlsConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
 	}
 	defer utils.IgnoreError(conn.Close)
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return nil, errors.Errorf("scanner at %s returned no peer certs", endpoint)
+		return nil, errors.Errorf("%q at %s returned no peer certs", subject.Identifier, endpoint)
 	}
 	leafCert := certs[0]
-	if cn := leafCert.Subject.CommonName; cn != mtls.ScannerSubject.CN() {
-		return nil, errors.Errorf("common name of scanner at %s (%s) is not as expected", endpoint, cn)
+	if cn := leafCert.Subject.CommonName; cn != subject.CN() {
+		return nil, errors.Errorf("common name of %q at %s (%s) is not as expected", subject.Identifier, endpoint, cn)
 	}
 	expiry, err := types.TimestampProto(leafCert.NotAfter)
 	if err != nil {
@@ -111,7 +114,8 @@ func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint s
 }
 
 func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
-	if s.scannerConfig == nil {
+	scannerConfig := s.scannerConfigs[mtls.ScannerSubject]
+	if scannerConfig == nil {
 		return nil, errors.New("could not load TLS config to talk to scanner")
 	}
 	integrations, err := s.imageIntegrations.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
@@ -135,7 +139,12 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 
 	for _, endpoint := range clairifyEndpoints {
 		go func(endpoint string) {
-			expiry, err := s.maybeGetExpiryFomScannerAt(ctx, endpoint)
+			addr, err := ensureTLSAndReturnAddr(endpoint)
+			if err != nil {
+				errC <- err
+				return
+			}
+			expiry, err := s.expiryFunc(ctx, mtls.ScannerSubject, scannerConfig, addr)
 			if err != nil {
 				errC <- err
 				return
@@ -153,12 +162,80 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 			errorList.AddError(err)
 			// All the endpoints have failed.
 			if len(errorList.ErrorStrings()) == len(clairifyEndpoints) {
-				return nil, errors.New(errorList.String())
+				return nil, errorList.ToError()
 			}
 		case expiry := <-expiryC:
 			return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
 		}
 	}
+}
+
+func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
+	if !features.ScannerV4.Enabled() {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scanner V4 is not enabled/integrated")
+	}
+	indexerConfig := s.scannerConfigs[mtls.ScannerV4IndexerSubject]
+	matcherConfig := s.scannerConfigs[mtls.ScannerV4MatcherSubject]
+	if indexerConfig == nil && matcherConfig == nil {
+		return nil, errors.New("could not load TLS configs to talk to Scanner V4 indexer and matcher")
+	}
+
+	integration, exists, err := s.imageIntegrations.GetImageIntegration(ctx, iiStore.DefaultScannerV4Integration.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve Scanner V4 image integration")
+	}
+	if !exists {
+		return nil, errors.New("Scanner V4 image integration missing")
+	}
+
+	s4Config := integration.GetScannerV4()
+	indexerEndpoint := scannerv4.DefaultIndexerEndpoint
+	if endpoint := s4Config.GetIndexerEndpoint(); endpoint != "" {
+		indexerEndpoint = endpoint
+	}
+	matcherEndpoint := scannerv4.DefaultMatcherEndpoint
+	if endpoint := s4Config.GetMatcherEndpoint(); endpoint != "" {
+		matcherEndpoint = endpoint
+	}
+
+	numEndpoints := 2
+	errC := make(chan error, numEndpoints)
+	expiryC := make(chan *types.Timestamp, numEndpoints)
+	getExpiry := func(subject mtls.Subject, endpoint string) {
+		expiry, err := s.expiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
+		if err != nil {
+			errC <- err
+			return
+		}
+
+		log.Debugf("Obtained expiry for %q: %s", subject.Identifier, expiry)
+		expiryC <- expiry
+	}
+
+	go getExpiry(mtls.ScannerV4IndexerSubject, indexerEndpoint)
+	go getExpiry(mtls.ScannerV4MatcherSubject, matcherEndpoint)
+
+	errorList := errorhelpers.NewErrorList("failed to determine Scanner V4 cert expiry")
+	expiries := make([]*types.Timestamp, 0, numEndpoints)
+	for i := 0; i < numEndpoints; i++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case err := <-errC:
+			errorList.AddError(err)
+		case expiry := <-expiryC:
+			expiries = append(expiries, expiry)
+		}
+	}
+	if len(expiries) == 0 {
+		return nil, errorList.ToError()
+	}
+
+	sort.Slice(expiries, func(i, j int) bool {
+		return expiries[i].Compare(expiries[j]) < 0
+	})
+
+	return &v1.GetCertExpiry_Response{Expiry: expiries[0]}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
