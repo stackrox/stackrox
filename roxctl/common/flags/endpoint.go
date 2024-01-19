@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"net"
 	"net/url"
 	"strings"
 
@@ -114,6 +115,10 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 		if booleanFlagOrSettingValue(plaintext, *plaintextSet, env.PlaintextEnv) != usePlaintext {
 			return "", false, errox.InvalidArgs.Newf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
 		}
+	}
+
+	if _, _, err := net.SplitHostPort(u.Host); err != nil {
+		return "", false, errox.InvalidArgs.Newf("invalid endpoint: %s, the scheme should be: http(s)://<endpoint>:<port>", err.Error())
 	}
 
 	return u.Host, usePlaintext, nil
