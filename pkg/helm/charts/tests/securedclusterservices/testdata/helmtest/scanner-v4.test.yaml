@@ -43,6 +43,17 @@ tests:
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. != null)
 
+- name: "no matcher resources should exist"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .secrets["scanner-v4-matcher-tls"] | assertThat(. == null)
+    .configmaps["scanner-v4-matcher-config"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)
+    .services["scanner-v4-matcher"] | assertThat(. == null)
+    .horizontalpodautoscalers["scanner-v4-matcher"] | assertThat(. == null)
+
 - name: "scanner can override image config"
   set:
     scannerV4.disable: false
