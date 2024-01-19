@@ -954,8 +954,8 @@ spec:
                           nodes, you can configure a node selector here.
                         type: object
                       persistence:
-                        description: Persistence defines persistence settings for
-                          central.
+                        description: ScannerV4Persistence defines persistence settings
+                          for scanner V4.
                         properties:
                           hostPath:
                             description: Stores persistent data on a directory on
@@ -973,10 +973,11 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: stackrox-db
+                                default: scanner-v4-pvc
                                 description: The name of the PVC to manage persistent
                                   data. If no PVC with the given name exists, it will
-                                  be created. Defaults to "stackrox-db" if not set.
+                                  be created. Defaults to "scanner-v4-pvc" if not
+                                  set.
                                 type: string
                               size:
                                 description: The size of the persistent volume when

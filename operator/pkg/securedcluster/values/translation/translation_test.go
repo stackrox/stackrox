@@ -396,8 +396,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 							DB: &platform.ScannerV4DB{
-								Persistence: &platform.Persistence{
-									PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+								Persistence: &platform.ScannerV4Persistence{
+									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
 										ClaimName: pointer.String("scanner-v4-db-pvc"),
 									},
 								},
