@@ -18,6 +18,7 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/datastore/postgres"
@@ -76,54 +77,79 @@ type Indexer interface {
 // localIndexer is the Indexer implementation that runs libindex locally.
 type localIndexer struct {
 	libIndex        *libindex.Libindex
+	pool            *pgxpool.Pool
+	root            string
 	getLayerTimeout time.Duration
 }
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewIndexer")
+
+	var success bool
+
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
+	defer func() {
+		if !success {
+			pool.Close()
+		}
+	}()
+
 	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = store.Close(ctx)
+		}
+	}()
+
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
+		}
+	}()
 
-	indexer, err := newLibindex(ctx, cfg, store, locker)
+	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating indexer root directory: %w", err)
+	}
+	defer func() {
+		if !success {
+			_ = os.RemoveAll(root)
+		}
+	}()
+
+	indexer, err := newLibindex(ctx, cfg, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
 
+	success = true
 	return &localIndexer{
 		libIndex:        indexer,
+		pool:            pool,
+		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
 }
 
-func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
-	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
-	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
-	if err != nil {
-		return nil, fmt.Errorf("creating indexer root directory: %w", err)
-	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(faRoot)
-		}
-		return nil
-	})
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		FetchArena:           libindex.NewRemoteFetchArena(c, root),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
@@ -151,7 +177,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
-	return i.libIndex.Close(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	i.pool.Close()
+	return err
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
