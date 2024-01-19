@@ -24,7 +24,10 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 
-import { categoriesUtilsForRegistryScanner } from '../../utils/integrationUtils';
+import {
+    categoriesUtilsForRegistryScanner,
+    getGoogleCredentialsPlaceholder,
+} from '../../utils/integrationUtils';
 
 const { categoriesAlternatives, getCategoriesText, matchCategoriesAlternative, validCategories } =
     categoriesUtilsForRegistryScanner;
@@ -49,34 +52,28 @@ export const validationSchema = yup.object().shape({
             serviceAccount: yup
                 .string()
                 .trim()
-                .when('wifEnabled', {
-                    is: false,
-                    then: (serviceAccountSchema) =>
-                        serviceAccountSchema
-                            .required('A service account key is required')
-                            .test(
-                                'isValidJson',
-                                'Service account key must be valid JSON',
-                                (value, context: yup.TestContext) => {
-                                    const isRequired =
-                                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                        // @ts-ignore
-                                        context?.from[2]?.value?.updatePassword || false;
-                                    if (!isRequired) {
-                                        return true;
-                                    }
-                                    if (!value) {
-                                        return false;
-                                    }
-                                    try {
-                                        JSON.parse(value);
-                                    } catch (e) {
-                                        return false;
-                                    }
-                                    return true;
-                                }
-                            ),
-                }),
+                .test(
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account key',
+                    (value, context: yup.TestContext) => {
+                        const requirePasswordField =
+                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                            // @ts-ignore
+                            context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.wifEnabled;
+
+                        if (!requirePasswordField || useWorkloadId) {
+                            return true;
+                        }
+                        try {
+                            JSON.parse(value as string);
+                        } catch (e) {
+                            return false;
+                        }
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
+                    }
+                ),
         }),
         skipTestIntegration: yup.bool(),
         type: yup.string().matches(/google/),
@@ -235,22 +232,6 @@ function GoogleIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && isEditable && (
-                        <FormLabelGroup
-                            fieldId="updatePassword"
-                            helperText="Enable this option to replace currently stored credentials (if any)"
-                            errors={errors}
-                        >
-                            <Checkbox
-                                id="updatePassword"
-                                label="Update stored credentials"
-                                isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
                     {isCloudCredentialsEnabled && (
                         <FormLabelGroup
                             fieldId="config.google.wifEnabled"
@@ -267,31 +248,60 @@ function GoogleIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    {!values.config.google.wifEnabled && (
-                        <FormLabelGroup
-                            label="Service account key (JSON)"
-                            isRequired={values.updatePassword}
-                            fieldId="config.google.serviceAccount"
-                            touched={touched}
-                            errors={errors}
-                        >
-                            <TextArea
-                                className="json-input"
-                                isRequired={values.updatePassword}
-                                type="text"
-                                id="config.google.serviceAccount"
-                                value={values.config.google.serviceAccount}
-                                onChange={onChange}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable || !values.updatePassword}
-                                placeholder={
-                                    values.updatePassword
-                                        ? 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}'
-                                        : 'Currently-stored credentials will be used.'
-                                }
-                            />
-                        </FormLabelGroup>
-                    )}
+                    {!isCreating &&
+                        !(isCloudCredentialsEnabled && values.config.google.wifEnabled) &&
+                        isEditable && (
+                            <FormLabelGroup
+                                label=""
+                                fieldId="updatePassword"
+                                helperText="Enable this option to replace currently stored credentials (if any)"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <Checkbox
+                                    label="Update stored credentials"
+                                    id="updatePassword"
+                                    isChecked={values.updatePassword}
+                                    onChange={onUpdateCredentialsChange}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                        )}
+                    <FormLabelGroup
+                        label="Service account key (JSON)"
+                        isRequired={
+                            values.updatePassword &&
+                            isCloudCredentialsEnabled &&
+                            !values.config.google.wifEnabled
+                        }
+                        fieldId="config.google.serviceAccount"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextArea
+                            className="json-input"
+                            isRequired={
+                                values.updatePassword &&
+                                !(isCloudCredentialsEnabled && values.config.google.wifEnabled)
+                            }
+                            type="text"
+                            id="config.google.serviceAccount"
+                            name="config.google.serviceAccount"
+                            value={values.config.google.serviceAccount}
+                            onChange={onChange}
+                            onBlur={handleBlur}
+                            isDisabled={
+                                !isEditable ||
+                                !values.updatePassword ||
+                                (isCloudCredentialsEnabled && values.config.google.wifEnabled)
+                            }
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                isCloudCredentialsEnabled && values.config.google.wifEnabled,
+                                values.updatePassword
+                            )}
+                        />
+                    </FormLabelGroup>
                     <FormLabelGroup
                         fieldId="config.skipTestIntegration"
                         touched={touched}

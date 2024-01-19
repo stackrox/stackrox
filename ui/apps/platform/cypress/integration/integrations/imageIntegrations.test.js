@@ -191,7 +191,7 @@ describe('Image Integrations', () => {
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
         getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
-            'A service account key is required'
+            'Valid JSON is required for service account key'
         );
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -248,7 +248,7 @@ describe('Image Integrations', () => {
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
         getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
-            'A service account key is required'
+            'Valid JSON is required for service account key'
         );
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
@@ -257,12 +257,10 @@ describe('Image Integrations', () => {
 
         // Step 2.1, enable workload identity, this should remove the service account field
         getInputByLabel('Use workload identity').click();
-        cy.get(
-            `.pf-c-form__group:has('.pf-c-form__control:contains("Service account key (JSON)")') textarea`
-        ).should('not.exist');
+        getInputByLabel('Service account key (JSON)').should('be.disabled');
         // Step 2.2, disable workload identity, this should render the service account field again
         getInputByLabel('Use workload identity').click();
-        getInputByLabel('Service account key (JSON)').should('be.visible');
+        getInputByLabel('Service account key (JSON)').should('be.enabled');
 
         // Step 3, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
