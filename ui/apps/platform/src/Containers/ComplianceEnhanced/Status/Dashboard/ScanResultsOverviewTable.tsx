@@ -23,6 +23,7 @@ import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
 import ScanResultsToolbar from './ScanResultsToolbar';
+import { getPassAndTotalCount } from '../../ClusterCompliance/Coverage/compliance.coverage.utils';
 
 const sortFields = ['Scan Name', 'Failing Controls', 'Last Scanned'];
 const defaultSortOption = { field: 'Scan Name', direction: 'asc' } as SortOption;
@@ -61,25 +62,35 @@ function ScanResultsOverviewTable() {
             );
         }
 
-        return scanResultsOverviewData?.map(({ scanStats, clusterId, profileName }) => (
-            <Tr key={scanStats.id}>
-                <Td>
-                    <Link
-                        to={generatePath(complianceEnhancedStatusScansPath, { id: scanStats.id })}
-                        className="your-button-class-name-if-any"
-                    >
-                        {scanStats.scanName}
-                    </Link>
-                </Td>
-                <Td>{displayOnlyItemOrItemCount(clusterId, 'clusters')}</Td>
-                <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
-                <Td>{`${scanStats.numberOfFailingChecks}/${scanStats.numberOfChecks}`}</Td>
-                <Td>{format(scanStats.lastScan, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                <Td isActionCell>
-                    <ActionsColumn items={defaultActions()} />
-                </Td>
-            </Tr>
-        ));
+        return scanResultsOverviewData?.map(({ scanStats, cluster, profileName }) => {
+            const { passCount, totalCount } = getPassAndTotalCount(scanStats.checkStats);
+            return (
+                <Tr key={scanStats.scanName}>
+                    <Td>
+                        <Link
+                            to={generatePath(complianceEnhancedStatusScansPath, {
+                                id: scanStats.scanName,
+                            })}
+                            className="your-button-class-name-if-any"
+                        >
+                            {scanStats.scanName}
+                        </Link>
+                    </Td>
+                    <Td>
+                        {displayOnlyItemOrItemCount(
+                            cluster.map((item) => item.clusterName),
+                            'clusters'
+                        )}
+                    </Td>
+                    <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
+                    <Td>{`${passCount}/${totalCount}`}</Td>
+                    <Td>{format(scanStats.lastScan, 'DD MMM YYYY, h:mm:ss A')}</Td>
+                    <Td isActionCell>
+                        <ActionsColumn items={defaultActions()} />
+                    </Td>
+                </Tr>
+            );
+        });
     };
 
     return (

@@ -3,13 +3,14 @@ import qs from 'qs';
 
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { SlimUser } from 'types/user.proto';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
 import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
+const complianceResultsServiceUrl = '/v2/compliance/scan';
 
 export type ScheduleBase = {
     hour: number;
@@ -69,19 +70,46 @@ export type ComplianceScanConfigurationStatus = {
 
 // API types for Scan Results:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_results_service
-interface ComplianceScanStatsShim {
-    id: string; // TODO: id should be included in api response/proto
+
+export const ComplianceCheckStatus = {
+    UNSET_CHECK_STATUS: 'UNSET_CHECK_STATUS',
+    PASS: 'PASS',
+    FAIL: 'FAIL',
+    ERROR: 'ERROR',
+    INFO: 'INFO',
+    MANUAL: 'MANUAL',
+    NOT_APPLICABLE: 'NOT_APPLICABLE',
+    INCONSISTENT: 'INCONSISTENT',
+} as const;
+
+export type ComplianceCheckStatus =
+    (typeof ComplianceCheckStatus)[keyof typeof ComplianceCheckStatus];
+
+type ComplianceScanCluster = {
+    clusterId: string;
+    clusterName: string;
+};
+
+export type ComplianceCheckStatusCount = {
+    count: number;
+    status: ComplianceCheckStatus;
+};
+
+type ComplianceScanStatsShim = {
     scanName: string;
-    numberOfChecks: number; // int32
-    numberOfFailingChecks: number; // int32
-    numberOfPassingChecks: number; // int32
+    checkStats: ComplianceCheckStatusCount[];
     lastScan: string; // ISO 8601 date string
-}
+};
+
+type ComplianceClusterScanStats = {
+    checkStats: ComplianceCheckStatusCount[];
+    cluster: ComplianceScanCluster;
+};
 
 export interface ComplianceScanResultsOverview {
     scanStats: ComplianceScanStatsShim;
     profileName: string[];
-    clusterId: string[];
+    cluster: ComplianceScanCluster[];
 }
 
 export interface ListComplianceScanResultsOverviewResponse {
@@ -156,6 +184,27 @@ export function complianceResultsOverview(
             }
         });
     });
+}
+
+export function getComplianceClusterScanStats(
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceClusterScanStats[]> {
+    // Note: hard-coding the search filter and sort option for now
+    const searchFilter = {};
+    const sortOption = {
+        field: 'Cluster',
+        reversed: false,
+    };
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterScanStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
 }
 
 /*
