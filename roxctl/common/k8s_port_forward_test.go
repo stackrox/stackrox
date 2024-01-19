@@ -18,7 +18,6 @@ func Test_getCentralAPIPort(t *testing.T) {
 		expectedPort int32
 	}
 	tests := map[string]testCase{
-		"nil": {pod: nil, expectedPort: 8443},
 		"good 1": {
 			pod: &corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{
 				Name: "central",

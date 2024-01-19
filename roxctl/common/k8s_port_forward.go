@@ -34,7 +34,10 @@ var (
 	errPortForwarding = errox.ServerError.New("port-forwarding error")
 )
 
-const reasonableTimeout = 10 * time.Second
+const (
+	reasonableTimeout = 10 * time.Second
+	defaultAPIPort    = 8443
+)
 
 // setKubernetesDefaults sets default values on the provided client config for
 // accessing the Kubernetes API or returns an error if any of the defaults are
@@ -85,7 +88,7 @@ func getCentralPod(ctx context.Context, coreClient coreclient.CoreV1Interface, n
 	forwardablePod, _, err := polymorphichelpers.GetFirstPod(coreClient,
 		namespace, selectors, reasonableTimeout, sortByPhase)
 	if err != nil {
-		return nil, err //nolint:wrapcheck
+		return nil, errors.WithMessage(err, "cannot find a matching pod")
 	}
 
 	return coreClient.Pods(namespace). //nolint:wrapcheck
@@ -93,18 +96,16 @@ func getCentralPod(ctx context.Context, coreClient coreclient.CoreV1Interface, n
 }
 
 func getCentralAPIPort(pod *corev1.Pod) int32 {
-	if pod != nil {
-		for _, container := range pod.Spec.Containers {
-			if container.Name == "central" {
-				for _, p := range container.Ports {
-					if p.Name == "api" {
-						return p.ContainerPort
-					}
+	for _, container := range pod.Spec.Containers {
+		if container.Name == "central" {
+			for _, p := range container.Ports {
+				if p.Name == "api" {
+					return p.ContainerPort
 				}
 			}
 		}
 	}
-	return 8443
+	return defaultAPIPort
 }
 
 func getPortForwarder(restConfig *rest.Config, pod *corev1.Pod, stopChannel <-chan struct{}, readyChannel chan struct{}) (*portforward.PortForwarder, error) {
@@ -153,7 +154,7 @@ func runPortForward(ctx context.Context) (uint16, error) {
 
 	pod, err := getCentralPod(ctx, core, namespace)
 	if err != nil {
-		return 0, err
+		return 0, errors.WithMessage(err, "cannot get central pod")
 	}
 	for _, c := range pod.Status.Conditions {
 		if c.Type == corev1.PodReady && c.Status != corev1.ConditionTrue {
@@ -195,7 +196,7 @@ func runPortForward(ctx context.Context) (uint16, error) {
 	}
 	ports, err := forwarder.GetPorts()
 	if err != nil {
-		return 0, errors.WithMessage(err, "failed to aquire forwarding ports")
+		return 0, errors.WithMessage(err, "failed to acquire forwarding ports")
 	}
 	return ports[0].Local, nil
 }
