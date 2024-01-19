@@ -29,14 +29,8 @@ jobs:
       run: |
         source './scripts/ci/lib.sh'
 
-        matrix='{ "build_and_push": { "name":[], "goos":[], "goarch":[] } }'
-
-        # The base matrix
-        matrix="$(jq '.build_and_push.name += ["default"]' <<< "$matrix")"
-        matrix="$(jq '.build_and_push.goos += ["linux"]' <<< "$matrix")"
-        # If this is updated, be sure to update architectures in push-manifests job below.
         # TODO(ROX-21746): add arm64 back
-        matrix="$(jq '.build_and_push.goarch += ["amd64", "ppc64le", "s390x"]' <<< "$matrix")"
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "ppc64le", "s390x"] } }'
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
@@ -106,7 +100,6 @@ jobs:
 
   push-manifests:
     needs:
-    - define-job-matrix
     - build-and-push
     runs-on: ubuntu-latest
     container:
