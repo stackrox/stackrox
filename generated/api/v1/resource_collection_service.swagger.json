@@ -654,6 +654,9 @@
         },
         "consumerType": {
           "type": "string"
+        },
+        "name": {
+          "type": "string"
         }
       }
     },

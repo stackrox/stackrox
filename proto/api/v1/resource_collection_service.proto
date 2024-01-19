@@ -87,6 +87,7 @@ message ListCollectionsResponse {
 message CollectionConsumer {
     string id = 1;
     string consumer_type = 2;
+    string name = 4;
 }
 
 message CollectionConsumerListResponse {
