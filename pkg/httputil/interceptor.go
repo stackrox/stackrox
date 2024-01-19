@@ -27,6 +27,9 @@ type RoundTripInterceptor func(req *http.Request, roundTrip RoundTripperFunc) (*
 // ChainRoundTripInterceptors combines the given interceptors such that the first element in the list will be the first to
 // process a request.
 func ChainRoundTripInterceptors(interceptors ...RoundTripInterceptor) RoundTripInterceptor {
+	if len(interceptors) == 0 {
+		return nil
+	}
 	return func(req *http.Request, roundTrip RoundTripperFunc) (*http.Response, error) {
 		return interceptors[0](req, getRoundTrip(interceptors, 0, roundTrip))
 	}
