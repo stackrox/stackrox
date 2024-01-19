@@ -31,6 +31,7 @@ test_sensor() {
 
     test_preamble
     setup_deployment_env false false
+    # shellcheck disable=SC2119
     remove_existing_stackrox_resources
 
     rm -f FAIL
