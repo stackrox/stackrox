@@ -181,7 +181,6 @@ deploy_stackrox_operator() {
     fi
 }
 
-# shellcheck disable=SC2120
 deploy_central() {
     local central_namespace=${1:-stackrox}
     info "Deploying central to namespace ${central_namespace}"
