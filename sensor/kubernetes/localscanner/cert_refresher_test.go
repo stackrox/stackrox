@@ -273,7 +273,3 @@ func (m *dependenciesMock) getCertsRenewalTime(certificates *storage.TypedServic
 	args := m.Called(certificates)
 	return args.Get(0).(time.Time), args.Error(1)
 }
-
-func (m *dependenciesMock) getKnownServiceTypes() map[storage.ServiceType]serviceCertSecretSpec {
-	return make(map[storage.ServiceType]serviceCertSecretSpec, 0)
-}

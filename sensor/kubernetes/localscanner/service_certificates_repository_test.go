@@ -218,7 +218,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = unknownServiceType
 
 	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
-
+	// Not fails and skips unknown service type
 	s.NoError(err)
 }
 
@@ -269,7 +269,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 
 	err := repo.ensureServiceCertificates(ctx, scannerV2AndV4CertificateSet)
 	s.NoError(err)
-	expectedSecretNames := []string{scannerSecretName, scannerDbSecretName, scannerV4IndexerSecretName, scannerV4IndexerSecretName}
+	expectedSecretNames := []string{scannerSecretName, scannerDbSecretName, scannerV4IndexerSecretName, scannerV4DbSecretName}
 	for _, secretName := range expectedSecretNames {
 		_, err = secretsClient.Get(ctx, secretName, metav1.GetOptions{})
 		s.NoError(err)
@@ -291,7 +291,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 	s.NoError(err)
 	_, err = secretsClient.Get(ctx, scannerV4IndexerSecretName, metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
-	_, err = secretsClient.Get(ctx, scannerV4IndexerSecretName, metav1.GetOptions{})
+	_, err = secretsClient.Get(ctx, scannerV4DbSecretName, metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
 }
 

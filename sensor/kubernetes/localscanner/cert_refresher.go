@@ -2,13 +2,13 @@ package localscanner
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"golang.org/x/exp/maps"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -38,8 +38,6 @@ type serviceCertificatesRepo interface {
 	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
 	// ensureServiceCertificates persists the certificates on permanent storage.
 	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
-	// ensureServiceCertificates returns map of supported service type certificates
-	getKnownServiceTypes() map[storage.ServiceType]serviceCertSecretSpec
 }
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
@@ -92,9 +90,17 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 		// send the error to the ticker, so it retries with backoff.
 		return 0, err
 	}
-	knownServiceTypes := maps.Keys(repository.getKnownServiceTypes())
-	log.Infof("successfully refreshed %v: %+q", certsDescription, knownServiceTypes)
+	serviceTypeNames := getServiceTypeNames(certificates.ServiceCerts)
+	log.Infof("successfully refreshed %v for: %v", certsDescription, strings.Join(serviceTypeNames, ", "))
 	return time.Until(renewalTime), nil
+}
+
+func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
+	var serviceTypeNames []string
+	for _, c := range serviceCertificates {
+		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+	}
+	return serviceTypeNames
 }
 
 func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,

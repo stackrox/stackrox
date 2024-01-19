@@ -204,10 +204,6 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx contex
 	return patchErr
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) getKnownServiceTypes() map[storage.ServiceType]serviceCertSecretSpec {
-	return r.secrets
-}
-
 func (r *serviceCertificatesRepoSecretsImpl) patchServiceCertificate(ctx context.Context, caPem []byte,
 	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
 	patch := []patchSecretDataByteMap{{
