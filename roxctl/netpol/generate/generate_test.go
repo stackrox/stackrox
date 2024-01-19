@@ -1,9 +1,9 @@
 package generate
 
 import (
-	"os"
 	"testing"
 
+	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -33,7 +33,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	}{
 		"not existing inputFolderPath should raise 'os.ErrNotExist' error": {
 			inputFolderPath:    "/tmp/xxx",
-			expectedSynthError: os.ErrNotExist,
+			expectedSynthError: errox.NotFound,
 		},
 		"happyPath": {
 			inputFolderPath:    "testdata/minimal",
@@ -44,9 +44,9 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			expectedSynthError: npg.ErrWarnings,
 			strict:             true,
 		},
-		"stopOnFistError": {
+		"stopOnFirstError": {
 			inputFolderPath:    "testdata/dirty",
-			expectedSynthError: npg.ErrErrors,
+			expectedSynthError: &npguard.NoK8sResourcesFoundError{},
 			stopOnFirstErr:     true,
 		},
 		"output should be written to a single file": {

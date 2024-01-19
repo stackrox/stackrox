@@ -125,7 +125,7 @@ func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.
 }
 
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors, cmd.env.Logger())
+	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
 	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	if err := errHandler.HandleError(err); err != nil {
 		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
