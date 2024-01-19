@@ -973,11 +973,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: scanner-v4-pvc
+                                default: scanner-v4-db
                                 description: The name of the PVC to manage persistent
                                   data. If no PVC with the given name exists, it will
-                                  be created. Defaults to "scanner-v4-pvc" if not
-                                  set.
+                                  be created. Defaults to "scanner-v4-db" if not set.
                                 type: string
                               size:
                                 description: The size of the persistent volume when

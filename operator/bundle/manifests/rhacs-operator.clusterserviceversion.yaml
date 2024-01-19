@@ -563,8 +563,8 @@ spec:
         displayName: Path
         path: scannerV4.db.persistence.hostPath.path
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-pvc"
-          if not set.
+          the given name exists, it will be created. Defaults to "scanner-v4-db" if
+          not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: The size of the persistent volume when created through the claim.
@@ -1046,8 +1046,8 @@ spec:
         displayName: Path
         path: scannerV4.db.persistence.hostPath.path
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-pvc"
-          if not set.
+          the given name exists, it will be created. Defaults to "scanner-v4-db" if
+          not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: The size of the persistent volume when created through the claim.

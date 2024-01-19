@@ -153,8 +153,8 @@ spec:
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-pvc"
-          if not set.
+          the given name exists, it will be created. Defaults to "scanner-v4-db" if
+          not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.
@@ -758,8 +758,8 @@ spec:
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
       - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-pvc"
-          if not set.
+          the given name exists, it will be created. Defaults to "scanner-v4-db" if
+          not set.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.

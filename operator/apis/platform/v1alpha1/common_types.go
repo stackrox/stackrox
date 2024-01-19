@@ -187,9 +187,9 @@ func (p *ScannerV4Persistence) GetHostPath() string {
 // ScannerV4PersistentVolumeClaim defines PVC-based persistence settings for Central DB.
 type ScannerV4PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-	// created. Defaults to "scanner-v4-pvc" if not set.
+	// created. Defaults to "scanner-v4-db" if not set.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:default=scanner-v4-pvc
+	//+kubebuilder:default=scanner-v4-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
