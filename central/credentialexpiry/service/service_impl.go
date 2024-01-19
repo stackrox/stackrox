@@ -42,7 +42,7 @@ type serviceImpl struct {
 
 	imageIntegrations iiDStore.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
-	getExpiryFunc     func(context.Context, mtls.Subject, *tls.Config, string) (*types.Timestamp, error)
+	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error)
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -144,7 +144,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 				errC <- err
 				return
 			}
-			expiry, err := s.getExpiryFunc(ctx, mtls.ScannerSubject, scannerConfig, addr)
+			expiry, err := s.expiryFunc(ctx, mtls.ScannerSubject, scannerConfig, addr)
 			if err != nil {
 				errC <- err
 				return
@@ -172,7 +172,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 
 func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertExpiry_Response, error) {
 	if !features.ScannerV4.Enabled() {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scanner V4 is not integrated")
+		return nil, errors.Wrap(errox.InvalidArgs, "Scanner V4 is not enabled/integrated")
 	}
 	indexerConfig := s.scannerConfigs[mtls.ScannerV4IndexerSubject]
 	matcherConfig := s.scannerConfigs[mtls.ScannerV4MatcherSubject]
@@ -190,19 +190,19 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 
 	s4Config := integration.GetScannerV4()
 	indexerEndpoint := scannerv4.DefaultIndexerEndpoint
-	if s4Config.GetIndexerEndpoint() != "" {
-		indexerEndpoint = s4Config.GetIndexerEndpoint()
+	if endpoint := s4Config.GetIndexerEndpoint(); endpoint != "" {
+		indexerEndpoint = endpoint
 	}
 	matcherEndpoint := scannerv4.DefaultMatcherEndpoint
-	if s4Config.GetMatcherEndpoint() != "" {
-		matcherEndpoint = s4Config.GetMatcherEndpoint()
+	if endpoint := s4Config.GetMatcherEndpoint(); endpoint != "" {
+		matcherEndpoint = endpoint
 	}
 
 	numEndpoints := 2
 	errC := make(chan error, numEndpoints)
 	expiryC := make(chan *types.Timestamp, numEndpoints)
 	getExpiry := func(subject mtls.Subject, endpoint string) {
-		expiry, err := s.getExpiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
+		expiry, err := s.expiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
 		if err != nil {
 			errC <- err
 			return

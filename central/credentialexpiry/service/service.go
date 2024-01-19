@@ -53,6 +53,6 @@ func New(imageIntegrations imageIntegrationStore.DataStore) Service {
 	return &serviceImpl{
 		imageIntegrations: imageIntegrations,
 		scannerConfigs:    tlsConfigs,
-		getExpiryFunc:     maybeGetExpiryFromScannerAt,
+		expiryFunc:        maybeGetExpiryFromScannerAt,
 	}
 }

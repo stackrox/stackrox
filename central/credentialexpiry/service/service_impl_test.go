@@ -164,7 +164,7 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 			s := &serviceImpl{
 				imageIntegrations: iiDSMock,
 				scannerConfigs:    tc.scannerConfigs,
-				getExpiryFunc:     tc.expiryFunc,
+				expiryFunc:        tc.expiryFunc,
 			}
 			actual, err := s.getScannerV4CertExpiry(context.Background())
 			if tc.errorExpected {
