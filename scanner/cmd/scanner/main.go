@@ -32,11 +32,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const (
-	proxyConfigPath = "/run/secrets/stackrox.io/proxy-config"
-	proxyConfigFile = "config.yaml"
-)
-
 // Backends holds the backend engines the scanner may use depending on the
 // configuration and mode in which it is running.
 type Backends struct {
@@ -87,8 +82,10 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(p, mtls.ServiceKeyFileName)))
 	}
 
-	// Periodically check for proxy updates.
-	proxy.WatchProxyConfig(ctx, proxyConfigPath, proxyConfigFile, true)
+	//  If proxy path is set, periodically check for updates.
+	if cfg.Proxy.ConfigDir != "" {
+		proxy.WatchProxyConfig(ctx, cfg.Proxy.ConfigDir, cfg.Proxy.ConfigFile, true)
+	}
 
 	// Initialize metrics and metrics server.
 	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
