@@ -118,17 +118,18 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
-	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxClientOptions{})
+	centralInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.CentralSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Central http.Transport: %w", err)
+		return nil, fmt.Errorf("creating Central interceptor: %w", err)
 	}
-	// The Matcher should never reach out to Sensor.
-	sensorTransport := httputil.DenyTransport()
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
 	client := &http.Client{
-		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
+		Transport: &httputil.Transport{
+			Default:     defaultTransport,
+			Interceptor: centralInterceptor,
+		},
 	}
 	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
