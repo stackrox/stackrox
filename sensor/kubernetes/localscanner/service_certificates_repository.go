@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	scannerSecretName          = "scanner-tls"
-	scannerDbSecretName        = "scanner-db-tls"
-	scannerV4IndexerSecretName = "scanner-v4-indexer-tls"
-	scannerV4DbSecretName      = "scanner-v4-db-tls"
+	scannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credentials
+	scannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credentials
+	scannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credentials
+	scannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credentials
 )
 
 var (
