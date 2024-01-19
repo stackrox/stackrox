@@ -1,7 +1,7 @@
 import { visit } from '../../../helpers/visit';
 
 const basePath = '/main/vulnerabilities/exception-management';
-const pendingRequestsPath = `${basePath}/pending-requests`;
+export const pendingRequestsPath = `${basePath}/pending-requests`;
 
 export function visitExceptionManagement() {
     visit(pendingRequestsPath);
