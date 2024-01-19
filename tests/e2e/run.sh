@@ -137,6 +137,9 @@ run_roxctl_tests() {
     junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
         "$ROOT/tests/roxctl/istio-support.sh"
 
+    junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
+        "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
+
     junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
         "$ROOT/tests/roxctl/helm-chart-generation.sh"
 
