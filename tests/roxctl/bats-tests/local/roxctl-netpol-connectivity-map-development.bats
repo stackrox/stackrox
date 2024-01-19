@@ -33,7 +33,7 @@ teardown() {
 }
 
 @test "roxctl-development netpol connectivity map should return error on directory with no files" {
-  mkdir -p "$out_dir"  
+  mkdir -p "$out_dir"
   run roxctl-development netpol connectivity map "$out_dir"
   assert_failure
   assert_line --partial "no relevant Kubernetes workload resources found"
@@ -100,17 +100,17 @@ teardown() {
   assert_success
   assert_output --partial 'there were warnings during execution'
   assert_output --partial 'file1.yaml'
-  assert_output --partial 'file2.yaml'  
+  assert_output --partial 'file2.yaml'
 
   run roxctl-development netpol connectivity map "$out_dir/" --strict
   assert_failure
   assert_output --partial 'there were warnings during execution'
   assert_output --partial 'file1.yaml'
-  assert_output --partial 'file2.yaml'    
+  assert_output --partial 'file2.yaml'
 }
 
-# TODO: does this test represent a desired behavior? 
-# @test "roxctl-development netpol connectivity succedes and returns parital warnings when run with --fail" {
+# TODO: does this test represent a desired behavior?
+# @test "roxctl-development netpol connectivity succeeds and returns partial warnings when run with --fail" {
 #   mkdir -p "$out_dir"
 #   assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
 #   assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
