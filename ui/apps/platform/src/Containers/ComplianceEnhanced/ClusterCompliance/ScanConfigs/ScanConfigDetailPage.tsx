@@ -8,18 +8,6 @@ import useRestQuery from 'hooks/useRestQuery';
 import { getScanConfig } from 'services/ComplianceEnhancedService';
 import ViewScanConfigDetail from './ViewScanConfigDetail';
 
-const EditScanConfigButton = (id) => {
-    return (
-        <Link
-            to={`${generatePath(complianceEnhancedScanConfigDetailPath, {
-                scanConfigId: id,
-            })}?action=edit`}
-        >
-            <Button variant="primary">Edit scan schedule</Button>
-        </Link>
-    );
-};
-
 type ScanConfigDetailPageProps = {
     hasWriteAccessForCompliance: boolean;
 };

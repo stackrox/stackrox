@@ -52,9 +52,9 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
     // this would be a place to return simplified string or number versions of each column to sort by.
     const getSortableRowValues = (cluster: ClusterScanStatus): (string | number | null)[] => {
         // @ts-expect-error api
-        const { clusterName, provider, status } = cluster;
+        const { clusterName, status } = cluster;
 
-        return [clusterName, null, provider, status] as (string | number | null)[];
+        return [clusterName, status] as (string | number | null)[];
     };
 
     // Note that we perform the sort as part of the component's render logic and not in onSort.
@@ -62,19 +62,19 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
     const sortedClusters = clusterScanStatuses.sort((a, b) => {
         const aValue = getSortableRowValues(a)[activeSortIndex];
         const bValue = getSortableRowValues(b)[activeSortIndex];
-        if (typeof aValue === 'number') {
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
             // Numeric sort
             if (activeSortDirection === 'asc') {
-                return aValue - (bValue as number);
+                return aValue - bValue;
             }
-            return (bValue as number) - aValue;
+            return bValue - aValue;
         }
-        if (typeof aValue === 'string') {
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
             // String sort
             if (activeSortDirection === 'asc') {
-                return aValue.localeCompare(bValue as string);
+                return aValue.localeCompare(bValue);
             }
-            return (bValue as string).localeCompare(aValue);
+            return bValue.localeCompare(aValue);
         }
 
         // fallback, don't sort

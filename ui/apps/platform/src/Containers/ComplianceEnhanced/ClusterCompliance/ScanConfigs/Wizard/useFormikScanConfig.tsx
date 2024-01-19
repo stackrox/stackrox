@@ -37,7 +37,7 @@ const validationSchema = yup.object().shape({
             .string()
             .required('Scan name is required')
             .matches(
-                /(^((?!-)(?!\.)[a-z0-9-.]{0,253}$))/,
+                /^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/,
                 "Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
             ),
         description: yup.string(),
