@@ -86,12 +86,14 @@ type localIndexer struct {
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewIndexer")
 
+	var success bool
+
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
 	defer func() {
-		if err != nil {
+		if !success {
 			pool.Close()
 		}
 	}()
@@ -100,40 +102,38 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return store.Close(ctx)
+	defer func() {
+		if !success {
+			_ = store.Close(ctx)
 		}
-		return nil
-	})
+	}()
 
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return locker.Close(ctx)
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
 		}
-		return nil
-	})
+	}()
 
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer root directory: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(root)
+	defer func() {
+		if !success {
+			_ = os.RemoveAll(root)
 		}
-		return nil
-	})
+	}()
 
 	indexer, err := newLibindex(ctx, cfg, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
 
+	success = true
 	return &localIndexer{
 		libIndex:        indexer,
 		pool:            pool,

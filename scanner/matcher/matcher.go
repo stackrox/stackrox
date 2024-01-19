@@ -13,7 +13,6 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater"
@@ -61,12 +60,14 @@ type matcherImpl struct {
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
 
+	var success bool
+
 	pool, err := ccpostgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
 	defer func() {
-		if err != nil {
+		if !success {
 			pool.Close()
 		}
 	}()
@@ -85,12 +86,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return locker.Close(ctx)
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
 		}
-		return nil
-	})
+	}()
 
 	// TODO(ROX-18888): Update HTTP client.
 	c := http.DefaultClient
@@ -108,12 +108,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return libVuln.Close(ctx)
+	defer func() {
+		if !success {
+			_ = libVuln.Close(ctx)
 		}
-		return nil
-	})
+	}()
 
 	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
@@ -134,6 +133,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
+	success = true
 	return &matcherImpl{
 		libVuln:       libVuln,
 		metadataStore: metadataStore,
