@@ -34,7 +34,7 @@ type gatherResult struct {
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
 	gatherPool := concPool.NewWithResults[[]k8sintrospect.File]().WithContext(ctx)
 
-	clusterNameMap, err := s.getClusterNameMap(ctx)
+	clusterNameMap, err := s.getClusterNameByIDMap(ctx)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWrite
 func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zipWriter, opts debugDumpOptions) error {
 	gatherPool := concPool.NewWithResults[[]k8sintrospect.File]().WithContext(ctx)
 
-	clusterNameMap, err := s.getClusterNameMap(ctx)
+	clusterNameMap, err := s.getClusterNameByIDMap(ctx)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zipWrite
 	return writeGatherResultsToZIP(ctx, zipWriter, "sensor-metrics", gatherResults)
 }
 
-func (s *serviceImpl) getClusterNameMap(ctx context.Context) (map[string]string, error) {
+func (s *serviceImpl) getClusterNameByIDMap(ctx context.Context) (map[string]string, error) {
 	// Build an ID -> Name map for clusters.
 	clusters, err := s.clusters.GetClusters(ctx)
 	if err != nil {
@@ -181,9 +181,7 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string,
 	err := sensorConn.Telemetry().PullMetrics(ctx, callback)
 	if err != nil {
 		log.Warnw("Error pulling metrics from sensor", logging.ClusterName(clusterName), logging.Err(err))
-		return []k8sintrospect.File{
-			createErrorFile(clusterName, err),
-		}, nil
+		return []k8sintrospect.File{createErrorFile(clusterName, err)}, nil
 	}
 	return res.files, nil
 }
@@ -253,14 +251,14 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 // it will return false.
 func getClusterNameForSensorConnection(conn connection.SensorConnection, usedClusterNames set.Set[string],
 	clusterIDToName map[string]string, opts debugDumpOptions) (string, bool) {
-	clusterName, candidateName, valid := getClusterCandidate(conn, clusterIDToName, opts)
+	_, candidateName, valid := getClusterCandidate(conn, clusterIDToName, opts)
 	if !valid {
 		return "", false
 	}
 
 	i := 0
 	for !usedClusterNames.Add(candidateName) {
-		candidateName = fmt.Sprintf("%s_%d", clusterName, i)
+		candidateName = fmt.Sprintf("%s_%d", candidateName, i)
 		i++
 	}
 	return candidateName, true

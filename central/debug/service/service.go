@@ -313,6 +313,8 @@ func addJSONToZip(zipWriter *zipWriter, fileName string, jsonObj interface{}) er
 }
 
 func zipPrometheusMetrics(ctx context.Context, zipWriter *zipWriter, name string) error {
+	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
+	// time.
 	buf := &bytes.Buffer{}
 	if err := prometheusutil.ExportText(ctx, buf); err != nil {
 		return err
@@ -328,6 +330,8 @@ func zipPrometheusMetrics(ctx context.Context, zipWriter *zipWriter, name string
 }
 
 func getMemory(zipWriter *zipWriter) error {
+	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
+	// time.
 	buf := &bytes.Buffer{}
 	if err := pprof.WriteHeapProfile(buf); err != nil {
 		return err
@@ -343,6 +347,8 @@ func getMemory(zipWriter *zipWriter) error {
 }
 
 func getCPU(ctx context.Context, zipWriter *zipWriter, duration time.Duration) error {
+	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
+	// time.
 	buf := &bytes.Buffer{}
 	if err := pprof.StartCPUProfile(buf); err != nil {
 		return err
@@ -367,6 +373,8 @@ func getCPU(ctx context.Context, zipWriter *zipWriter, duration time.Duration) e
 }
 
 func getMutex(zipWriter *zipWriter) error {
+	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
+	// time.
 	buf := &bytes.Buffer{}
 	p := pprof.Lookup("mutex")
 	if err := p.WriteTo(buf, 0); err != nil {
@@ -384,6 +392,8 @@ func getMutex(zipWriter *zipWriter) error {
 }
 
 func getGoroutines(zipWriter *zipWriter) error {
+	// Write to the buffer first instead of directly to the zip writer, this way we hold the lock _only_ for the copy
+	// time.
 	buf := &bytes.Buffer{}
 	p := pprof.Lookup("goroutine")
 	if err := p.WriteTo(buf, 2); err != nil {
