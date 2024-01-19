@@ -260,7 +260,6 @@ function GoogleIntegrationForm({
                             <Checkbox
                                 label="Use workload identity"
                                 id="config.google.wifEnabled"
-                                aria-label="enable wif"
                                 isChecked={values.config.google.wifEnabled}
                                 onChange={onChange}
                                 onBlur={handleBlur}

@@ -213,7 +213,6 @@ function GoogleCloudSccIntegrationForm({
                             <Checkbox
                                 label="Use workload identity"
                                 id="notifier.cscc.wifEnabled"
-                                aria-label="enable wif"
                                 isChecked={values.notifier.cscc.wifEnabled}
                                 onChange={onChange}
                                 onBlur={handleBlur}
