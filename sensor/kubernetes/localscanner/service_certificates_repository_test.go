@@ -216,10 +216,16 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceTypeIgnores() {
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = unknownServiceType
+	ctx := context.Background()
+	clientSet := fake.NewSimpleClientset(sensorDeployment)
+	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
-	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
+	err := fixture.repo.ensureServiceCertificates(ctx, fixture.certificates)
 	// Not fails and skips unknown service type
 	s.NoError(err)
+
+	_, err = secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
+	s.ErrorContains(err, "not found")
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceTypeSuccess() {
