@@ -36,11 +36,11 @@ import (
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
@@ -146,22 +146,20 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	centralInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.CentralSubject, httputil.RoxTransportOptions{})
+
+	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Central interceptor: %w", err)
+		return nil, fmt.Errorf("creating Central transport: %w", err)
 	}
-	sensorInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.SensorSubject, httputil.RoxTransportOptions{})
+	sensorInterceptor, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Sensor interceptor: %w", err)
+		return nil, fmt.Errorf("creating Sensor transport: %w", err)
 	}
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
 	client := &http.Client{
-		Transport: &httputil.Transport{
-			Default:     defaultTransport,
-			Interceptor: httputil.ChainRoundTripInterceptors(centralInterceptor, sensorInterceptor),
-		},
+		Transport: httputil.MuxTransport(centralTransport, sensorInterceptor, defaultTransport),
 	}
 
 	// TODO: Consider making layer scan concurrency configurable?

@@ -13,10 +13,10 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater"
 )
 
@@ -97,7 +97,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// There should not be any network activity by the libvuln package.
 	// A nil *http.Client is not allowed, so use one which denies all outbound traffic.
 	ccClient := &http.Client{
-		Transport: httputil.DenyTransport(),
+		Transport: httputil.DenyTransport(ctx),
 	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:        store,
@@ -118,18 +118,17 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
-	centralInterceptor, err := httputil.RoxRoundTripInterceptor(mtls.CentralSubject, httputil.RoxTransportOptions{})
+	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxTransportOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("creating Central interceptor: %w", err)
+		return nil, fmt.Errorf("creating Central transport: %w", err)
 	}
+	// Matcher should never reach out to Sensor.
+	sensorTransport := httputil.DenyTransport(ctx)
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
 	client := &http.Client{
-		Transport: &httputil.Transport{
-			Default:     defaultTransport,
-			Interceptor: centralInterceptor,
-		},
+		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
 	}
 	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
