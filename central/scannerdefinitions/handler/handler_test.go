@@ -211,7 +211,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Should get mapping json file from online update.
-	req = s.getRequestWithJSONFile(t, "name2cpe")
+	req = s.getRequestWithJSONFile(t, "name2repos")
 	w.Data.Reset()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
