@@ -146,12 +146,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-
 	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxTransportOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("creating Central transport: %w", err)
 	}
-	sensorInterceptor, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxTransportOptions{})
+	sensorTransport, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxTransportOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("creating Sensor transport: %w", err)
 	}
@@ -159,7 +158,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root stri
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
 	client := &http.Client{
-		Transport: httputil.MuxTransport(centralTransport, sensorInterceptor, defaultTransport),
+		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
 	}
 
 	// TODO: Consider making layer scan concurrency configurable?
