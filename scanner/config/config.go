@@ -235,7 +235,7 @@ func (c *MTLSConfig) validate() error {
 
 // ProxyConfig configures HTTP proxies.
 type ProxyConfig struct {
-	ConfigDir string `yaml:"config_dir"`
+	ConfigDir  string `yaml:"config_dir"`
 	ConfigFile string `yaml:"config_file"`
 }
 
