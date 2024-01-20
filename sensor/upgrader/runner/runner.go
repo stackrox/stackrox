@@ -21,7 +21,7 @@ type Runner interface {
 	Err() error
 	Finished() bool
 	// MostRecentStage returns the most recent stage that the runner executed
-	// -- either succesfully, or unsuccessfully. If it was unsuccessful,
+	// -- either successfully, or unsuccessfully. If it was unsuccessful,
 	// Err() is guaranteed to be non-nil.
 	MostRecentStage() sensorupgrader.Stage
 	// RunNextStage runs the next stage of the runner.
