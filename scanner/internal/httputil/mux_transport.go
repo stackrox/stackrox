@@ -1,9 +1,11 @@
 package httputil
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
+	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
@@ -17,12 +19,16 @@ import (
 // at this time.
 func MuxTransport(centralTransport, sensorTransport, defaultTransport http.RoundTripper) http.RoundTripper {
 	return httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		zlog.Info(context.Background()).Str("Host", req.URL.Host).Str("URL", req.URL.String()).Send()
 		switch {
 		case strings.HasPrefix(req.URL.Host, "central"):
+			zlog.Info(context.Background()).Msg("REACHING OUT TO CENTRAL")
 			return centralTransport.RoundTrip(req)
 		case strings.HasPrefix(req.URL.Host, "sensor"):
+			zlog.Info(context.Background()).Msg("REACHING OUT TO SENSOR")
 			return sensorTransport.RoundTrip(req)
 		default:
+			zlog.Info(context.Background()).Msg("REACHING OUT TO SOMETHING ELSE")
 			return defaultTransport.RoundTrip(req)
 		}
 	})

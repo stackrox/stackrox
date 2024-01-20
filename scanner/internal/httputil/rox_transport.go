@@ -16,7 +16,7 @@ import (
 )
 
 // defaultDialer is copied from http.DefaultTransport as of go1.20.10.
-var defaultDialer = &net.Dialer{
+var defaultDialer = net.Dialer{
 	Timeout:   30 * time.Second,
 	KeepAlive: 30 * time.Second,
 }
