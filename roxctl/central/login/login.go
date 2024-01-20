@@ -9,13 +9,17 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -28,6 +32,10 @@ const (
 	authorizePath = "/authorize-roxctl"
 )
 
+var (
+	errNoValidLoginAuthProvider = errors.New("No valid login auth provider configured within Central. " +
+		"At least one auth provider that is not basic auth needs to be configured")
+)
 var (
 	//go:embed authorize.html
 	closePage []byte
@@ -90,6 +98,12 @@ func (l *loginCommand) construct(cmd *cobra.Command) error {
 }
 
 func (l *loginCommand) login() error {
+	// Before opening any listeners and starting with the auth flow, ensure that we have at least 1 login auth provider
+	// that is not of type basic.
+	if err := l.verifyLoginAuthProviders(); err != nil {
+		return errors.Wrap(err, "verifying login auth providers")
+	}
+
 	// Use a random port reported as free and usable by the kernel.
 	listener, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
@@ -261,4 +275,30 @@ You can now use the retrieved access token for all other roxctl commands!
 
 In case the access token is expired and cannot be refreshed, you have to run "roxctl central login" again.`, centralURL)
 	return nil
+}
+
+func (l *loginCommand) verifyLoginAuthProviders() error {
+	httpClient, err := l.env.HTTPClient(30*time.Second, auth.Anonymous())
+	if err != nil {
+		return errors.Wrap(err, "creating HTTP client")
+	}
+
+	resp, err := httpClient.DoReqAndVerifyStatusCode("/v1/login/authproviders", http.MethodGet,
+		http.StatusOK, nil)
+	if err != nil {
+		return errors.Wrap(err, "requesting login auth providers")
+	}
+
+	var loginAuthProviders v1.GetLoginAuthProvidersResponse
+	if err := jsonpb.Unmarshal(resp.Body, &loginAuthProviders); err != nil {
+		return errors.Wrap(err, "unmarshalling login auth providers response")
+	}
+
+	for _, loginAuthProvider := range loginAuthProviders.GetAuthProviders() {
+		if loginAuthProvider.GetType() != basicAuthProvider.TypeName {
+			return nil
+		}
+	}
+
+	return errNoValidLoginAuthProvider
 }
