@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/mtls"
-	"golang.org/x/net/http2"
 )
 
 var (
@@ -89,14 +88,16 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 	if err != nil {
 		return nil, fmt.Errorf("configuring TLS: %w", err)
 	}
-	// clientConn.TLSConfig currently prefers gRPC, which Central hosts on the same port as HTTP.
-	// Clear NextProtos so we don't accidentally prefer gRPC traffic over HTTP.
-	// NextProtos will be repopulated via http2.ConfigureTransport.
-	tlsConfig.NextProtos = nil
+	// TODO(ROX-21861): clientconn.TLSConfig prefers HTTP/2 traffic over HTTP/1.1.
+	// At the moment, we are receiving status code 421 from StackRox services,
+	// so clear NextProtos to ensure we only use HTTP/1.x.
+	// tlsConfig.NextProtos = nil
 
-	transport := &http.Transport{
+	return &http.Transport{
 		Proxy:           proxy.FromConfig(),
 		TLSClientConfig: tlsConfig,
+		// TODO(ROX-21861): When enabled, we receive status code 421.
+		// For now, disallow all HTTP/2 traffic to StackRox services.
 		ForceAttemptHTTP2: false,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
@@ -105,10 +106,5 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-	}
-	if err := http2.ConfigureTransport(transport); err != nil {
-		return nil, fmt.Errorf("configuring HTTP/2 transport: %w", err)
-	}
-
-	return transport, nil
+	}, nil
 }
