@@ -91,7 +91,7 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 	// TODO(ROX-21861): clientconn.TLSConfig prefers HTTP/2 traffic over HTTP/1.1.
 	// At the moment, we are receiving status code 421 from StackRox services,
 	// so clear NextProtos to ensure we only use HTTP/1.x.
-	// tlsConfig.NextProtos = nil
+	tlsConfig.NextProtos = nil
 
 	return &http.Transport{
 		Proxy:           proxy.FromConfig(),
