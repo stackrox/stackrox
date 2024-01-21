@@ -31,7 +31,7 @@ var (
 )
 
 type options struct {
-	denySensor  bool
+	denySensor bool
 }
 
 // TransportOption configures options for HTTP transport.
@@ -49,7 +49,7 @@ func WithDenySensor(deny bool) TransportOption {
 //
 // It is assumed the StackRox services are in the same Kubernetes namespace.
 //
-// Only Central and Sensor are support StackRox services at this time.
+// Only Central and Sensor are supported StackRox services at this time.
 func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (http.RoundTripper, error) {
 	var o options
 	for _, opt := range opts {
@@ -91,8 +91,8 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 	// Use the default NextProto settings.
 	tlsConfig.NextProtos = nil
 	return &http.Transport{
-		Proxy:              proxy.FromConfig(),
-		TLSClientConfig:    tlsConfig,
+		Proxy:           proxy.FromConfig(),
+		TLSClientConfig: tlsConfig,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
 		DialContext:           defaultDialer.DialContext,

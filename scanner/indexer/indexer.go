@@ -250,6 +250,7 @@ func (i *localIndexer) IndexContainerImage(
 	return i.libIndex.Index(ctx, manifest)
 }
 
+// remoteTransport is the http.RoundTripper to use when talking to image registries.
 var remoteTransport = proxiedRemoteTransport()
 
 func proxiedRemoteTransport() http.RoundTripper {
