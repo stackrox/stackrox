@@ -28,6 +28,8 @@ setup_file() {
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+    export CUSTOM_CENTRAL_NAMESPACE=stackrox-central
+    export CUSTOM_SENSOR_NAMESPACE=stackrox-sensor
 }
 
 test_case_no=0
@@ -56,13 +58,13 @@ setup() {
 
     if (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-       run remove_existing_stackrox_resources
+        teardown
     fi
     test_case_no=$(( test_case_no + 1))
 }
 
 teardown() {
-    run remove_existing_stackrox_resources
+    run remove_existing_stackrox_resources "stackrox" "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE"
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
@@ -153,10 +155,47 @@ teardown() {
     verify_scannerV4_deployed "stackrox"
 }
 
+@test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
+    MAIN_IMAGE_TAG=""
+    local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
+    local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
+    info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
+    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
+    fi
+    (
+        # shellcheck disable=SC2030,SC2031
+        export MAIN_IMAGE_TAG
+        # shellcheck disable=SC2030,SC2031
+        export ROX_SCANNER_V4=true
+        # shellcheck disable=SC2030,SC2031
+        export OUTPUT_FORMAT=helm
+        # shellcheck disable=SC2030,SC2031
+        export SENSOR_SCANNER_SUPPORT=true
+        deploy_stackrox "" "$central_namespace" "$sensor_namespace"
+    )
+    verify_scannerV2_deployed "$central_namespace"
+    verify_scannerV4_deployed "$central_namespace"
+    verify_scannerV4_indexer_deployed "$sensor_namespace"
+}
+
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
+    verify_no_scannerV4_indexer_deployed "$namespace"
+    verify_no_scannerV4_matcher_deployed "$namespace"
+}
+
+verify_no_scannerV4_indexer_deployed() {
+    local namespace=${1:-stackrox}
     run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-    refute_output --regexp "scanner-v4"
+    refute_output --regexp "scanner-v4-indexer"
+}
+
+verify_no_scannerV4_matcher_deployed() {
+    local namespace=${1:-stackrox}
+    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    refute_output --regexp "scanner-v4-matcher"
 }
 
 # TODO: For now, Scanner v2 is expected to run in parallel.
@@ -169,7 +208,18 @@ verify_scannerV2_deployed() {
 
 verify_scannerV4_deployed() {
     local namespace=${1:-stackrox}
+    verify_scannerV4_indexer_deployed "$namespace"
+    verify_scannerV4_matcher_deployed "$namespace"
+}
+
+verify_scannerV4_indexer_deployed() {
+    local namespace=${1:-stackrox}
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
+}
+
+verify_scannerV4_matcher_deployed() {
+    local namespace=${1:-stackrox}
+    wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
 }
