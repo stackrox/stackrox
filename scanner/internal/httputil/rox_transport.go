@@ -39,11 +39,11 @@ func RoxTransport(subject mtls.Subject, o RoxTransportOptions) (http.RoundTrippe
 	return &http.Transport{
 		Proxy:              proxy.FromConfig(),
 		TLSClientConfig:    tlsConfig,
+		ForceAttemptHTTP2:  false,
 		DisableCompression: o.disableCompression,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
 		DialContext:           defaultDialer.DialContext,
-		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
