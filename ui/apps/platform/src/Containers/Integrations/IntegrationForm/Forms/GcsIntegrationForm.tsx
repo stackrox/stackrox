@@ -309,7 +309,7 @@ function GcsIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && !values.externalBackup.gcs.useWorkloadId && isEditable && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
@@ -323,7 +323,7 @@ function GcsIntegrationForm({
                                 isChecked={values.updatePassword}
                                 onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
-                                isDisabled={!isEditable}
+                                isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
                             />
                         </FormLabelGroup>
                     )}

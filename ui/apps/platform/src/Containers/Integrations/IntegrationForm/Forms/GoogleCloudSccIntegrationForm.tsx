@@ -199,26 +199,27 @@ function GoogleCloudSccIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    {!isCreating &&
-                        !(isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled) &&
-                        isEditable && (
-                            <FormLabelGroup
-                                label=""
-                                fieldId="updatePassword"
-                                helperText="Enable this option to replace currently stored credentials (if any)"
-                                touched={touched}
-                                errors={errors}
-                            >
-                                <Checkbox
-                                    label="Update stored credentials"
-                                    id="updatePassword"
-                                    isChecked={values.updatePassword}
-                                    onChange={onUpdateCredentialsChange}
-                                    onBlur={handleBlur}
-                                    isDisabled={!isEditable}
-                                />
-                            </FormLabelGroup>
-                        )}
+                    {!isCreating && isEditable && (
+                        <FormLabelGroup
+                            label=""
+                            fieldId="updatePassword"
+                            helperText="Enable this option to replace currently stored credentials (if any)"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Update stored credentials"
+                                id="updatePassword"
+                                isChecked={values.updatePassword}
+                                onChange={onUpdateCredentialsChange}
+                                onBlur={handleBlur}
+                                isDisabled={
+                                    !isEditable ||
+                                    (isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
+                                }
+                            />
+                        </FormLabelGroup>
+                    )}
                     <FormLabelGroup
                         label="Service account key (JSON)"
                         isRequired={
