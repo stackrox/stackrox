@@ -125,8 +125,6 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
 
-	log.Infof("GOT REQUEST FROM %s FOR %s or %s", r.RemoteAddr, r.URL.String(), r.RequestURI)
-
 	// If only file is requested, then this is for Scanner v4.
 	if fileName != "" && uuid == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {

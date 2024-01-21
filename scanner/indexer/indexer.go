@@ -37,7 +37,6 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -146,19 +145,14 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	centralTransport, err := httputil.RoxTransport(mtls.CentralSubject, httputil.RoxTransportOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("creating Central transport: %w", err)
-	}
-	sensorTransport, err := httputil.RoxTransport(mtls.SensorSubject, httputil.RoxTransportOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("creating Sensor transport: %w", err)
-	}
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
-	defaultTransport := http.DefaultTransport
+	t, err := httputil.TransportMux(http.DefaultTransport)
+	if err != nil {
+		return nil, fmt.Errorf("creating HTTP transport: %w", err)
+	}
 	client := &http.Client{
-		Transport: httputil.MuxTransport(centralTransport, sensorTransport, defaultTransport),
+		Transport: t,
 	}
 
 	// TODO: Consider making layer scan concurrency configurable?
