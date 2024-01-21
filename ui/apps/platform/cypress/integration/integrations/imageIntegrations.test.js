@@ -200,12 +200,10 @@ describe('Image Integrations', () => {
 
         // Step 2.1, enable workload identity, this should remove the service account field
         getInputByLabel('Use workload identity').click();
-        cy.get(
-            `.pf-c-form__group:has('.pf-c-form__control:contains("Service account key (JSON)")') textarea`
-        ).should('not.exist');
+        getInputByLabel('Service account key (JSON)').should('be.disabled');
         // Step 2.2, disable workload identity, this should render the service account field again
         getInputByLabel('Use workload identity').click();
-        getInputByLabel('Service account key (JSON)').should('be.visible');
+        getInputByLabel('Service account key (JSON)').should('be.enabled');
 
         // Step 3, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
