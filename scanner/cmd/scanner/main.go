@@ -84,6 +84,10 @@ func main() {
 
 	//  If proxy path is set, periodically check for updates.
 	if cfg.Proxy.ConfigDir != "" {
+		zlog.Info(ctx).
+			Str("dir", cfg.Proxy.ConfigDir).
+			Str("file", cfg.Proxy.ConfigFile).
+			Msg("proxy configured")
 		proxy.WatchProxyConfig(ctx, cfg.Proxy.ConfigDir, cfg.Proxy.ConfigFile, true)
 	}
 
