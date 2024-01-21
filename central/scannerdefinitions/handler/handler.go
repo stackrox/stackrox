@@ -185,7 +185,7 @@ func writeErrorNotFound(w http.ResponseWriter) {
 
 func writeErrorBadRequest(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte("at least one of file and uuid must be specified"))
+	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
