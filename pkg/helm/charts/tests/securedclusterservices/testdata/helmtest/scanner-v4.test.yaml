@@ -140,3 +140,17 @@ tests:
       disable: false
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
+
+- name: "Global resource ValidatingWebHook"
+  tests:
+  - name: "is not renamed for standard namespace"
+    expect: |
+      .validatingwebhookconfigurations["stackrox"] | assertThat(. != null)
+  - name: "is adapted to custom namespaces"
+    release:
+      namespace: custom-ns
+    set:
+      allowNonstandardNamespace: true
+    expect: |
+      .validatingwebhookconfigurations["stackrox"] | assertThat(. == null)
+      .validatingwebhookconfigurations["stackrox-custom-ns"] | assertThat(. != null)
