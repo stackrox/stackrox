@@ -31,8 +31,7 @@ var (
 )
 
 type options struct {
-	forceAttemptHTTP2 bool
-	denySensor        bool
+	denySensor bool
 }
 
 // TransportOption configures options for HTTP transport.
@@ -42,14 +41,6 @@ type TransportOption func(o *options)
 func WithDenySensor(deny bool) TransportOption {
 	return func(o *options) {
 		o.denySensor = deny
-	}
-}
-
-// WithForceAttemptHTTP2 configures whether the transports for StackRox services
-// should force attempt HTTP/2 traffic.
-func WithForceAttemptHTTP2(force bool) TransportOption {
-	return func(o *options) {
-		o.forceAttemptHTTP2 = force
 	}
 }
 
@@ -95,14 +86,17 @@ func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
 		UseClientCert: clientconn.MustUseClientCert,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("configuring TLS: %w", err)
 	}
-	// Use the default NextProto settings.
+	// clientConn.TLSConfig currently prefers gRPC, which Central hosts on the same port as HTTP.
+	// Clear NextProtos so we don't accidentally prefer gRPC traffic over HTTP.
+	// NextProtos will be repopulated via http2.ConfigureTransport.
 	tlsConfig.NextProtos = nil
-	return &http.Transport{
-		Proxy:             proxy.FromConfig(),
-		TLSClientConfig:   tlsConfig,
-		ForceAttemptHTTP2: o.forceAttemptHTTP2,
+
+	transport := &http.Transport{
+		Proxy:           proxy.FromConfig(),
+		TLSClientConfig: tlsConfig,
+		ForceAttemptHTTP2: true,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
 		DialContext:           defaultDialer.DialContext,
@@ -110,5 +104,7 @@ func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-	}, nil
+	}
+
+	return transport, nil
 }
