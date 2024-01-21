@@ -26,6 +26,8 @@ func RoxTransport(subject mtls.Subject, o RoxTransportOptions) (http.RoundTrippe
 	tlsConfig, err := clientconn.TLSConfig(subject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
+	// Do not set NextProtos.
+	tlsConfig.NextProtos = nil
 	//tlsConfig, err := TLSClientConfigForCentral()
 
 	if err != nil {
