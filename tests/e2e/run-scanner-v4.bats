@@ -68,6 +68,11 @@ setup() {
     fi
 
     test_case_no=$(( test_case_no + 1))
+
+    export MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG:-}
+    info "Overriding MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
+
+    export ROX_SCANNER_V4=true
 }
 
 teardown() {
@@ -276,47 +281,29 @@ EOF
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
-    local MAIN_IMAGE_TAG=""
-
     if [[ "$CI" = "true" ]]; then
         setup_default_TLS_certs
     fi
 
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=helm
+    local main_image_tag="${MAIN_IMAGE_TAG}"
+
     # Deploy earlier version without Scanner V4.
     local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
     info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
+
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
-    (
-        # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG
-        # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4=true
-        # shellcheck disable=SC2030,SC2031
-        export CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}"
-        # shellcheck disable=SC2030,SC2031
-        export OUTPUT_FORMAT=helm
-        deploy_stackrox
-    )
+    CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" deploy_stackrox
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
     info "Upgrading StackRox using HEAD Helm chart"
-    MAIN_IMAGE_TAG=""
-    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
-    fi
-    (
-        # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG
-        # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4=true
-        # shellcheck disable=SC2030,SC2031
-        export OUTPUT_FORMAT=helm
-        deploy_stackrox
-    )
+    MAIN_IMAGE_TAG="${main_image_tag}"
+
+    deploy_stackrox
 
     # Verify that Scanner v2 and v4 are up.
     verify_scannerV2_deployed "stackrox"
@@ -324,65 +311,39 @@ EOF
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 disabled" {
-    MAIN_IMAGE_TAG=""
     info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled"
-    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
-    fi
-    (
-        # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG
-        # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4=false
-        # shellcheck disable=SC2030,SC2031
-        export OUTPUT_FORMAT=helm
-        deploy_stackrox
-    )
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=helm
+    export ROX_SCANNER_V4=false
+    deploy_stackrox
+
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
-    MAIN_IMAGE_TAG=""
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
-    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
-    fi
-    (
-        # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG
-        # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4=true
-        # shellcheck disable=SC2030,SC2031
-        export OUTPUT_FORMAT=helm
-        deploy_stackrox
-    )
+
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=helm
+    deploy_stackrox
+
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
-    MAIN_IMAGE_TAG=""
     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
+
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
-    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
-        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
-        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
-    fi
-    (
-        # shellcheck disable=SC2030,SC2031
-        export MAIN_IMAGE_TAG
-        # shellcheck disable=SC2030,SC2031
-        export ROX_SCANNER_V4=true
-        # shellcheck disable=SC2030,SC2031
-        export OUTPUT_FORMAT=helm
-        # shellcheck disable=SC2030,SC2031
-        export SENSOR_SCANNER_SUPPORT=true
-        _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
-    )
+
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=helm
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+    _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
+
     verify_scannerV2_deployed "$central_namespace"
     verify_scannerV4_deployed "$central_namespace"
     verify_scannerV4_indexer_deployed "$sensor_namespace"
