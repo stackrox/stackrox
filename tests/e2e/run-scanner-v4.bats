@@ -90,7 +90,7 @@ teardown() {
         export CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}"
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
-        deploy_stackrox >&3
+        deploy_stackrox
     )
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
@@ -107,7 +107,7 @@ teardown() {
         export ROX_SCANNER_V4=true
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
-        deploy_stackrox >&3 # This is doing an `helm upgrade --install ...` under the hood.
+        deploy_stackrox
     )
 
     # Verify that Scanner v2 and v4 are up.
@@ -129,7 +129,7 @@ teardown() {
         export ROX_SCANNER_V4=false
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
-        deploy_stackrox >&3
+        deploy_stackrox
     )
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
@@ -149,7 +149,7 @@ teardown() {
         export ROX_SCANNER_V4=true
         # shellcheck disable=SC2030,SC2031
         export OUTPUT_FORMAT=helm
-        deploy_stackrox >&3
+        deploy_stackrox
     )
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
