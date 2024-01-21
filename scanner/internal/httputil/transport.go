@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/mtls"
+	"golang.org/x/net/http2"
 )
 
 var (
@@ -56,14 +57,14 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 		opt(&o)
 	}
 
-	centralTransport, err := roxTransport(mtls.CentralSubject, o)
+	centralTransport, err := roxTransport(mtls.CentralSubject)
 	if err != nil {
 		return nil, fmt.Errorf("creating Central TLS config: %w", err)
 	}
 
 	sensorTransport := DenyTransport
 	if !o.denySensor {
-		sensorTransport, err = roxTransport(mtls.SensorSubject, o)
+		sensorTransport, err = roxTransport(mtls.SensorSubject)
 		if err != nil {
 			return nil, fmt.Errorf("creating Sensor TLS config: %w", err)
 		}
@@ -81,7 +82,7 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 	}), nil
 }
 
-func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
+func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 	tlsConfig, err := clientconn.TLSConfig(subject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
@@ -96,7 +97,7 @@ func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
 	transport := &http.Transport{
 		Proxy:           proxy.FromConfig(),
 		TLSClientConfig: tlsConfig,
-		ForceAttemptHTTP2: true,
+		ForceAttemptHTTP2: false,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
 		DialContext:           defaultDialer.DialContext,
@@ -104,6 +105,9 @@ func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+	}
+	if err := http2.ConfigureTransport(transport); err != nil {
+		return nil, fmt.Errorf("configuring HTTP/2 transport: %w", err)
 	}
 
 	return transport, nil
