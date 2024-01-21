@@ -130,7 +130,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	indexer, err := newLibindex(ctx, cfg, root, store, locker)
+	// Note: http.DefaultTransport has already been modified to handle configured proxies.
+	// See scanner/cmd/scanner/main.go.
+	t, err := httputil.TransportMux(http.DefaultTransport)
+	if err != nil {
+		return nil, fmt.Errorf("creating HTTP transport: %w", err)
+	}
+	client := &http.Client{
+		Transport: t,
+	}
+
+	indexer, err := newLibindex(ctx, cfg, client, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
@@ -144,17 +154,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}, nil
 }
 
-func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	t, err := httputil.TransportMux(http.DefaultTransport)
-	if err != nil {
-		return nil, fmt.Errorf("creating HTTP transport: %w", err)
-	}
-	client := &http.Client{
-		Transport: t,
-	}
-
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *http.Client, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
