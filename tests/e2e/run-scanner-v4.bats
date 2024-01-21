@@ -133,6 +133,44 @@ teardown() {
     verify_no_scannerV4_deployed "stackrox"
 }
 
+@test "Fresh installation of central deployment bundle with Scanner v4 enabled" {
+    MAIN_IMAGE_TAG=""
+    info "Installing StackRox using central deployment bundle with Scanner v4 enabled"
+    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
+    fi
+    (
+        # shellcheck disable=SC2030,SC2031
+        export MAIN_IMAGE_TAG
+        # shellcheck disable=SC2030,SC2031
+        export OUTPUT_FORMAT=kubectl
+        deploy_stackrox
+    )
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
+}
+
+@test "Fresh installation of central deployment bundle with Scanner v4 disabled" {
+    MAIN_IMAGE_TAG=""
+    info "Installing StackRox using central deployment bundle with Scanner v4 disabled"
+    if [[ -n "${CURRENT_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$CURRENT_MAIN_IMAGE_TAG"
+    fi
+    (
+        # shellcheck disable=SC2030,SC2031
+        export MAIN_IMAGE_TAG
+        # shellcheck disable=SC2030,SC2031
+        export OUTPUT_FORMAT=kubectl
+        # shellcheck disable=SC2030,SC2031
+        export ROX_SCANNER_V4=false
+        deploy_stackrox
+    )
+    verify_scannerV2_deployed "stackrox"
+    verify_no_scannerV4_deployed "stackrox"
+}
+
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
     MAIN_IMAGE_TAG=""
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
