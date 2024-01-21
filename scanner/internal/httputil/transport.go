@@ -31,7 +31,8 @@ var (
 )
 
 type options struct {
-	denySensor bool
+	forceAttemptHTTP2 bool
+	denySensor        bool
 }
 
 // TransportOption configures options for HTTP transport.
@@ -41,6 +42,14 @@ type TransportOption func(o *options)
 func WithDenySensor(deny bool) TransportOption {
 	return func(o *options) {
 		o.denySensor = deny
+	}
+}
+
+// WithForceAttemptHTTP2 configures whether the transports for StackRox services
+// should force attempt HTTP/2 traffic.
+func WithForceAttemptHTTP2(force bool) TransportOption {
+	return func(o *options) {
+		o.forceAttemptHTTP2 = force
 	}
 }
 
@@ -56,14 +65,14 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 		opt(&o)
 	}
 
-	centralTransport, err := roxTransport(mtls.CentralSubject)
+	centralTransport, err := roxTransport(mtls.CentralSubject, o)
 	if err != nil {
 		return nil, fmt.Errorf("creating Central TLS config: %w", err)
 	}
 
 	sensorTransport := DenyTransport
 	if !o.denySensor {
-		sensorTransport, err = roxTransport(mtls.SensorSubject)
+		sensorTransport, err = roxTransport(mtls.SensorSubject, o)
 		if err != nil {
 			return nil, fmt.Errorf("creating Sensor TLS config: %w", err)
 		}
@@ -81,7 +90,7 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 	}), nil
 }
 
-func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
+func roxTransport(subject mtls.Subject, o options) (http.RoundTripper, error) {
 	tlsConfig, err := clientconn.TLSConfig(subject, clientconn.TLSConfigOptions{
 		UseClientCert: clientconn.MustUseClientCert,
 	})
@@ -91,12 +100,12 @@ func roxTransport(subject mtls.Subject) (http.RoundTripper, error) {
 	// Use the default NextProto settings.
 	tlsConfig.NextProtos = nil
 	return &http.Transport{
-		Proxy:           proxy.FromConfig(),
-		TLSClientConfig: tlsConfig,
+		Proxy:             proxy.FromConfig(),
+		TLSClientConfig:   tlsConfig,
+		ForceAttemptHTTP2: o.forceAttemptHTTP2,
 
 		// The rest are (more-or-less) copied from http.DefaultTransport as of go1.20.10.
 		DialContext:           defaultDialer.DialContext,
-		ForceAttemptHTTP2:     true,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
