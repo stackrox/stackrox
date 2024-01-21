@@ -173,6 +173,9 @@
     {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
   {{- else if hasPrefix "stackrox:" $name -}}
     {{- printf "%s:%s" $._rox.globalPrefix (trimPrefix "stackrox:" $name) -}}
+  {{- else if eq "stackrox" $name -}}
+    {{/* Edge-case: the resource name doesn't have a "stackrox[-:]" prefix, but it is only "stackrox". */}}
+    {{- printf "%s" $._rox.globalPrefix -}}
   {{- else -}}
     {{- include "srox.fail" (printf "Unknown naming convention for global resource %q." $name) -}}
   {{- end -}}
