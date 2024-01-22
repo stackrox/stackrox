@@ -221,15 +221,13 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	s.getFirstServiceCertificate(fixture.certificates).ServiceType = unknownServiceType
 	ctx := context.Background()
-	clientSet := fake.NewSimpleClientset(sensorDeployment)
-	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
 	persistedCertificates, err := fixture.repo.ensureServiceCertificates(ctx, fixture.certificates)
 	// Not fails and skips unknown service type
 	s.NoError(err)
 	s.Equal(emptyPersistedCertificates, persistedCertificates)
 
-	_, err = secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
+	_, err = fixture.secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
 }
 
