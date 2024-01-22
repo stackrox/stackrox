@@ -232,18 +232,18 @@ func (s *slack) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *slack) Test(ctx context.Context) error {
+func (s *slack) Test(ctx context.Context) *notifiers.NotifierError {
 	n := notification{
 		Text: "This is a test message created to test integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
 	if err != nil {
-		return errors.New("Could not marshal test notification")
+		return notifiers.NewNotifierError("create test message failed", errors.New("Could not marshal test notification"))
 	}
 
 	webhook := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
-	return retry.WithRetry(
+	err = retry.WithRetry(
 		func() error {
 			return s.postMessage(ctx, webhook, jsonPayload)
 		},
@@ -254,6 +254,12 @@ func (s *slack) Test(ctx context.Context) error {
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
 func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {

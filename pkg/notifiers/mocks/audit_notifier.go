@@ -15,6 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	notifiers "github.com/stackrox/rox/pkg/notifiers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -98,10 +99,10 @@ func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(arg0, arg1 any) *gomoc
 }
 
 // Test mocks base method.
-func (m *MockAuditNotifier) Test(arg0 context.Context) error {
+func (m *MockAuditNotifier) Test(arg0 context.Context) *notifiers.NotifierError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Test", arg0)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*notifiers.NotifierError)
 	return ret0
 }
 

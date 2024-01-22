@@ -291,9 +291,13 @@ func (s *syslog) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *syslog) Test(context.Context) error {
+func (s *syslog) Test(context.Context) *notifiers.NotifierError {
 	data := s.getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
-	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
+	if err := s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data); err != nil {
+		return notifiers.NewNotifierError("send test syslog failed", err)
+	}
+
+	return nil
 }
 
 func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {

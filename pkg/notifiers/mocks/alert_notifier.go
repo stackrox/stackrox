@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	storage "github.com/stackrox/rox/generated/storage"
+	notifiers "github.com/stackrox/rox/pkg/notifiers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -83,10 +84,10 @@ func (mr *MockAlertNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // Test mocks base method.
-func (m *MockAlertNotifier) Test(arg0 context.Context) error {
+func (m *MockAlertNotifier) Test(arg0 context.Context) *notifiers.NotifierError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Test", arg0)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*notifiers.NotifierError)
 	return ret0
 }
 
