@@ -141,7 +141,10 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 
 	// Ensure the scan configuration exists
 	_, found, err := ds.GetScanConfiguration(ctx, scanConfigID)
-	if err != nil || !found {
+	if err != nil {
+		return errors.Wrapf(err, "Unable to retrieve scan configuration id %q", scanConfigID)
+	}
+	if !found {
 		return errors.Errorf("Unable to find scan configuration id %q", scanConfigID)
 	}
 

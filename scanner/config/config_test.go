@@ -200,3 +200,23 @@ func Test_Database_validate(t *testing.T) {
 		assert.ErrorContains(t, err, "specify either")
 	})
 }
+
+func Test_ProxyConfig_validate(t *testing.T) {
+	tmp := t.TempDir()
+	configFile, err := os.Create(filepath.Join(tmp, "config.yaml"))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		require.NoError(t, configFile.Close())
+	})
+
+	t.Run("when config dir does not exist then ok", func(t *testing.T) {
+		c := ProxyConfig{}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when config file specified then ok", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "config.yaml"}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+}
