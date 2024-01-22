@@ -27,11 +27,12 @@ const (
 )
 
 var (
-	errForced          = errors.New("forced error")
-	scannerServiceType = storage.ServiceType_SCANNER_SERVICE
-	unknownServiceType = storage.ServiceType_SENSOR_SERVICE
-	serviceCertificate = createServiceCertificate(scannerServiceType)
-	certificates       = &storage.TypedServiceCertificateSet{
+	errForced                  = errors.New("forced error")
+	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
+	unknownServiceType         = storage.ServiceType_SENSOR_SERVICE
+	emptyPersistedCertificates []*storage.TypedServiceCertificate
+	serviceCertificate         = createServiceCertificate(scannerServiceType)
+	certificates               = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
 			serviceCertificate,
@@ -43,7 +44,7 @@ var (
 			Namespace: namespace,
 		},
 	}
-	scannerV2AndV4CertificateSet = &storage.TypedServiceCertificateSet{
+	scannersCertificateSet = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
 			createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
@@ -154,8 +155,11 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 				cancel()
 			}
 
-			err := tc.fixture.repo.ensureServiceCertificates(ctx, tc.fixture.certificates)
+			persistedCertificates, err := tc.fixture.repo.ensureServiceCertificates(ctx, tc.fixture.certificates)
 
+			if tc.expectedErr == nil {
+				s.Equal(tc.fixture.certificates.ServiceCerts, persistedCertificates)
+			}
 			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
@@ -220,9 +224,10 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
-	err := fixture.repo.ensureServiceCertificates(ctx, fixture.certificates)
+	persistedCertificates, err := fixture.repo.ensureServiceCertificates(ctx, fixture.certificates)
 	// Not fails and skips unknown service type
 	s.NoError(err)
+	s.Equal(emptyPersistedCertificates, persistedCertificates)
 
 	_, err = secretsClient.Get(ctx, unknownServiceType.String()+"-secret", metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
@@ -232,8 +237,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceT
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
 	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 
-	err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
+	persistedCertificates, err := fixture.repo.ensureServiceCertificates(context.Background(), fixture.certificates)
 
+	s.Equal(emptyPersistedCertificates, persistedCertificates)
 	s.NoError(err)
 }
 
@@ -242,7 +248,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsNoCertificate
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.NoError(repo.ensureServiceCertificates(context.Background(), nil))
+	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), nil)
+	s.Equal(emptyPersistedCertificates, persistedCertificates)
+	s.NoError(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure() {
@@ -253,7 +261,8 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	s.Error(repo.ensureServiceCertificates(ctx, certificates.Clone()))
+	_, err := repo.ensureServiceCertificates(ctx, certificates.Clone())
+	s.Error(err)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMissingSecretSuccess() {
@@ -261,8 +270,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMi
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	err := repo.ensureServiceCertificates(context.Background(), certificates)
+	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), certificates)
 
+	s.Equal(certificates.ServiceCerts, persistedCertificates)
 	s.NoError(err)
 }
 
@@ -273,8 +283,9 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 	ctx := context.Background()
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	err := repo.ensureServiceCertificates(ctx, scannerV2AndV4CertificateSet)
+	persistedCertificates, err := repo.ensureServiceCertificates(ctx, scannersCertificateSet)
 	s.NoError(err)
+	s.Equal(scannersCertificateSet.ServiceCerts, persistedCertificates)
 	expectedSecretNames := []string{scannerSecretName, scannerDbSecretName, scannerV4IndexerSecretName, scannerV4DbSecretName}
 	for _, secretName := range expectedSecretNames {
 		_, err = secretsClient.Get(ctx, secretName, metav1.GetOptions{})
@@ -288,9 +299,14 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
 	repo := newServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	scannerV2Certificates := []*storage.TypedServiceCertificate{
+		createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
+		createServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
+	}
 
-	err := repo.ensureServiceCertificates(context.Background(), scannerV2AndV4CertificateSet)
+	persistedCertificates, err := repo.ensureServiceCertificates(context.Background(), scannersCertificateSet)
 	s.NoError(err)
+	s.Equal(scannerV2Certificates, persistedCertificates)
 	_, err = secretsClient.Get(ctx, scannerSecretName, metav1.GetOptions{})
 	s.NoError(err)
 	_, err = secretsClient.Get(ctx, scannerDbSecretName, metav1.GetOptions{})
