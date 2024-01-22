@@ -765,8 +765,8 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
     local psps_supported=false
-    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,role,rolebinding"
-    local global_resource_types="validatingwebhookconfigurations,clusterrole,clusterrolebinding"
+    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
+    local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
 
     if [[ ${#namespaces[@]} == 0 ]]; then
         namespaces+=( "stackrox" )

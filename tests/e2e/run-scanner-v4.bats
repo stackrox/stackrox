@@ -62,18 +62,23 @@ setup() {
 
     if (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-        _teardown
-    fi
-    if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
-        echo "Only tearing down resources, exiting now..." >&3
-        exit 0
+        teardown
+        if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
+            echo "Only tearing down resources, exiting now..." >&3
+            exit 0
+        fi
     fi
 
     test_case_no=$(( test_case_no + 1))
 }
 
-_teardown() {
-    run remove_existing_stackrox_resources "stackrox" "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE"
+teardown() {
+    local namespaces=( "stackrox" "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" )
+    for namespace in "${namespaces[@]}"; do
+        if kubectl get ns "${namespace}" >/dev/null 2>&1; then
+            run remove_existing_stackrox_resources "${namespace}"
+        fi
+    done
 }
 
 # We are using our own deploy function, because we want to have the flexibility to patch down resources
