@@ -1,4 +1,4 @@
-# 0008 - CVSS Enricher
+# 0008 - NVD Enricher
 
 - **Author(s):** J. Victor Martins <jvdm@sdf.org>
 - **Created:** [2024-01-22 Mon]
