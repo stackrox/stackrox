@@ -728,6 +728,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
@@ -774,6 +777,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
 					"disable": false,
 				},
 				"sensor": map[string]interface{}{
