@@ -72,9 +72,12 @@ func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *splunk) Test(ctx context.Context) error {
+func (s *splunk) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.healthEndpoint != "" {
-		return s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil)
+		if err := s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil); err != nil {
+			return notifiers.NewNotifierError("health check failed", err)
+		}
+		return nil
 	}
 	alert := &storage.Alert{
 		Policy: &storage.Policy{Name: "Test Policy"},
@@ -83,7 +86,12 @@ func (s *splunk) Test(ctx context.Context) error {
 			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
 		},
 	}
-	return s.postAlert(ctx, alert)
+
+	if err := s.postAlert(ctx, alert); err != nil {
+		return notifiers.NewNotifierError("send test alert failed", err)
+	}
+
+	return nil
 }
 
 func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {

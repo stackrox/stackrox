@@ -100,8 +100,8 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
 
-func (p *pagerDuty) Test(_ context.Context) error {
-	return p.postAlert(&storage.Alert{
+func (p *pagerDuty) Test(_ context.Context) *notifiers.NotifierError {
+	err := p.postAlert(&storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
 			Name:        "Test PagerDuty Policy",
@@ -119,6 +119,12 @@ func (p *pagerDuty) Test(_ context.Context) error {
 		},
 		Time: types.TimestampNow(),
 	}, newAlert)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send PagerDuty alert failed", err)
+	}
+
+	return nil
 }
 
 func (p *pagerDuty) AckAlert(_ context.Context, alert *storage.Alert) error {

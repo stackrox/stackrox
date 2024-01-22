@@ -15,5 +15,5 @@ type Notifier interface {
 	// ProtoNotifier gets the proto version of the notifier
 	ProtoNotifier() *storage.Notifier
 	// Test sends a test message
-	Test(context.Context) error
+	Test(context.Context) *NotifierError
 }
