@@ -138,6 +138,9 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 		return
 	}
 	key := eventPkg.GetKeyFromMessage(msg)
+	if strings.Contains(key, "Rule") {
+		log.Infof("SHREWS MarkSuccessful -- key %q", key)
+	}
 
 	d.hashLock.Lock()
 	defer d.hashLock.Unlock()
@@ -204,6 +207,9 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 	}
 	event := msg.GetEvent()
 	key := eventPkg.GetKeyFromMessage(msg)
+	if strings.Contains(key, "Rule") {
+		log.Infof("SHREWS ShouldProcess -- key %q", key)
+	}
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.hashLock.Lock()
@@ -216,6 +222,9 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 		// check if element is in successfully processed and mark as processed for syncs so that these are not reconciled away
 		concurrency.WithLock(&d.hashLock, func() {
 			if val, ok := d.successfullyProcessed[key]; ok {
+				if strings.Contains(key, "Rule") {
+					log.Infof("SHREWS ShouldProcess -- sync mark as processed %q", key)
+				}
 				val.processed = true
 			}
 		})
