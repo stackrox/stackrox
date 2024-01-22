@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -14,13 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	search2 "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkSearchAllPods(b *testing.B) {
-	b.Skip("ROX-20480: This test is failing. Skipping!")
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -39,14 +37,9 @@ func BenchmarkSearchAllPods(b *testing.B) {
 
 	const numPods = 1000
 	for i := 0; i < numPods; i++ {
-		if i > 0 && i%100 == 0 {
-			fmt.Println("Added", i, "pods")
-		}
-		podPrototype.Id = fmt.Sprintf("pod%d", i)
+		podPrototype.Id = uuid.NewV4().String()
 		require.NoError(b, podsDatastore.UpsertPod(ctx, podPrototype))
 	}
-	fmt.Println("Added", numPods, "pods")
-
 	b.Run("SearchRetrieval", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			pods, err := podsDatastore.Search(ctx, search2.EmptyQuery())

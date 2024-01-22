@@ -74,7 +74,6 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		AddSelectFields(pkgSearch.NewQuerySelect(pkgSearch.AlertID).AggrFunc(aggregatefunc.Count).Distinct()).
 		AddGroupBy(pkgSearch.Severity).ProtoQuery()
 	b.Run("selectQuery", func(b *testing.B) {
-		b.Skip("ROX-20480: This test is failing. Skipping!")
 		for i := 0; i < b.N; i++ {
 			runSelectQuery(ctx, b, testDB, query, expected)
 		}
@@ -141,6 +140,6 @@ func runSelectQuery(ctx context.Context, t testing.TB, testDB *pgtest.TestPostgr
 }
 
 type violationsBySeverity struct {
-	AlertIDCount int `db:"alertidcount"`
+	AlertIDCount int `db:"alert_id_count"`
 	Severity     int `db:"severity"` // int because of enum
 }
