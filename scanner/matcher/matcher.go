@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/internal/httputil"
@@ -117,10 +118,16 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
-	// Matcher should never reach out to Sensor, so ensure all traffic is denied.
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
-	transport, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenySensor(true))
+	defaultTransport := http.DefaultTransport
+	// If this is a release build, Matcher should only reach out to Central,
+	// so deny (and log) any other traffic.
+	if buildinfo.ReleaseBuild {
+		defaultTransport = httputil.DenyTransport
+	}
+	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is denied.
+	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenySensor(true))
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	}
