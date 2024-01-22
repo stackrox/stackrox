@@ -10,6 +10,9 @@ The package provides the following entities:
   - API interceptors;
   - periodic data gatherer.
 
+Please see how telemetry collection should be configured in different
+environments [here](https://docs.engineering.redhat.com/display/StackRox/Telemetry+Configuration+in+Environments).
+
 # Components
 
 ## Client configuration
