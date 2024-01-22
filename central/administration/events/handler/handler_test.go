@@ -8,6 +8,7 @@ import (
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
@@ -57,7 +58,9 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return addCalled
 	}
-	s.datastore.EXPECT().AddEvent(s.handler.eventWriteCtx, event).Do(addSetCalledFn)
+	concurrency.WithLock(&s.mutex, func() {
+		s.datastore.EXPECT().AddEvent(s.handler.eventWriteCtx, event).Do(addSetCalledFn)
+	})
 
 	flushCalled := false
 	flushSetCalledFn := func(ctx context.Context) {
@@ -70,7 +73,9 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return flushCalled
 	}
-	s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
+	concurrency.WithLock(&s.mutex, func() {
+		s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
+	})
 
 	s.eventStream.Produce(event)
 
