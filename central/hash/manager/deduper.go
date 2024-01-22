@@ -24,6 +24,8 @@ type Deduper interface {
 	// MarkSuccessful marks the message if necessary as being successfully processed, so it can be committed to the database
 	// It will promote the message from the received map to the successfully processed map
 	MarkSuccessful(msg *central.MsgFromSensor)
+	// MarkUnsuccessful deletes the msg from the received map in order to allow future messages a chance to be successfully processed
+	MarkUnsuccessful(msg *central.MsgFromSensor)
 	// StartSync is called once a new Sensor connection is initialized
 	StartSync()
 	// ProcessSync processes the Sensor sync message and reconciles the successfully processed and received maps
@@ -128,6 +130,19 @@ func (d *deduperImpl) StartSync() {
 	for _, v := range d.successfullyProcessed {
 		v.processed = false
 	}
+}
+
+// MarkUnsuccessful marks a message as unsuccessfully processed and purges any values for it from the deduper.
+// This only applies when the message had an unretryable error such as context canceled
+func (d *deduperImpl) MarkUnsuccessful(msg *central.MsgFromSensor) {
+	if skipDedupe(msg) {
+		return
+	}
+	key := eventPkg.GetKeyFromMessage(msg)
+
+	concurrency.WithLock(&d.hashLock, func() {
+		delete(d.received, key)
+	})
 }
 
 // MarkSuccessful marks a message as successfully processed
