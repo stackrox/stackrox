@@ -1,3 +1,6 @@
+import React, { ReactElement } from 'react';
+import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+
 import {
     DailySchedule,
     MonthlySchedule,
@@ -9,6 +12,11 @@ import {
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 import { ScanConfigFormValues, ScanConfigParameters } from './Wizard/useFormikScanConfig';
+
+type ClusterStatusObject = {
+    icon: ReactElement;
+    statusText: string;
+};
 
 export function convertFormikParametersToSchedule(parameters: ScanConfigParameters): Schedule {
     const { intervalType, time, daysOfWeek, daysOfMonth } = parameters;
@@ -71,13 +79,14 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
 
 export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
     const { parameters, clusters, profiles } = formikValues;
-    const { name } = parameters;
+    const { name, description } = parameters;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
 
     return {
         scanName: name,
         scanConfig: {
+            description,
             oneTimeScan: false,
             profiles,
             scanSchedule,
@@ -117,4 +126,16 @@ export function formatScanSchedule(schedule: Schedule) {
         default:
             return 'Invalid Schedule';
     }
+}
+
+export function getClusterStatusObject(errors: string[]): ClusterStatusObject {
+    return errors && errors.length && errors[0] !== ''
+        ? {
+              icon: <ExclamationCircleIcon color="var(--pf-global--danger-color--100)" />,
+              statusText: 'Unhealthy',
+          }
+        : {
+              icon: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
+              statusText: 'Healthy',
+          };
 }
