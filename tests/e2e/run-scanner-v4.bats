@@ -19,6 +19,8 @@ setup_file() {
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
+    export ORCH_CMD=kubectl
+    export SENSOR_HELM_MANAGED=true
 
     # Prepare earlier version
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
@@ -47,6 +49,8 @@ setup() {
 
     set -euo pipefail
 
+    export POD_SECURITY_POLICIES=false
+
     require_environment "ORCHESTRATOR_FLAVOR"
     export_test_environment
     if [[ "$CI" = "true" ]]; then
@@ -68,6 +72,258 @@ setup() {
 
 teardown() {
     run remove_existing_stackrox_resources
+}
+
+# We are using our own deploy function, because we want to have the flexibility to patch down resources
+# after deployment. Without this we are only able to special-case local deployments and CI deployments,
+# but not, for example, manual testing on Infra.
+#
+# shellcheck disable=SC2120
+_deploy_stackrox() {
+    local tls_client_certs=${1:-}
+    local central_namespace=${2:-stackrox}
+    local sensor_namespace=${3:-stackrox}
+
+    deploy_stackrox_operator
+
+    _deploy_central "${central_namespace}"
+    export_central_basic_auth_creds
+    wait_for_api "${central_namespace}"
+    setup_client_TLS_certs "${tls_client_certs}"
+    record_build_info "${central_namespace}"
+
+    _deploy_sensor "${sensor_namespace}" "${central_namespace}"
+    echo "Sensor deployed. Waiting for sensor to be up"
+    sensor_wait "${sensor_namespace}"
+
+    # Bounce collectors to avoid restarts on initial module pull
+    "${ORCH_CMD}" -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
+
+    sensor_wait "${sensor_namespace}"
+
+    wait_for_collectors_to_be_operational "${sensor_namespace}"
+
+    touch "${STATE_DEPLOYED}"
+}
+
+# shellcheck disable=SC2120
+_deploy_central() {
+    local central_namespace=${1:-stackrox}
+    info "Deploying central to namespace ${central_namespace}"
+
+    # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
+    # deployed with strict checks
+    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+        ci_export CGO_CHECKS "true"
+    fi
+
+    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
+        ci_export IS_RACE_BUILD "true"
+    fi
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+        deploy_central_via_operator "${central_namespace}"
+    else
+        if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
+            if pr_has_label ci-helm-deploy; then
+                ci_export OUTPUT_FORMAT helm
+            fi
+        fi
+
+        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
+    fi
+
+    patch_down_central "${central_namespace}"
+}
+
+patch_down_central() {
+   local central_namespace="$1"
+    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/central" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: central
+          resources:
+            requests:
+              memory: "1000Mi"
+              cpu: "500m"
+            limits:
+              memory: "4000Mi"
+              cpu: "1000m"
+EOF
+    )
+    if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+EOF
+        )
+    fi
+
+    if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-matcher >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-matcher" --patch-file <(cat <<EOF
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+EOF
+        )
+    fi
+    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: indexer
+          resources:
+            requests:
+              memory: "4300Mi"
+              cpu: "1000m"
+            limits:
+              memory: "4600Mi"
+              cpu: "1000m"
+EOF
+    )
+    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: matcher
+          resources:
+            requests:
+              memory: "2000Mi"
+              cpu: "400m"
+            limits:
+              memory: "2000Mi"
+              cpu: "6000m"
+EOF
+    )
+    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: db
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "300m"
+            limits:
+              memory: "1000Mi"
+              cpu: "1000m"
+EOF
+    )
+}
+
+# shellcheck disable=SC2120
+_deploy_sensor() {
+    local sensor_namespace=${1:-stackrox}
+    local central_namespace=${2:-stackrox}
+
+    info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
+
+    ci_export ROX_AFTERGLOW_PERIOD "15"
+
+    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
+        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
+    else
+        if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
+            echo "Deploying Sensor using Helm ..."
+            ci_export SENSOR_HELM_DEPLOY "true"
+            ci_export ADMISSION_CONTROLLER "true"
+        else
+            echo "Deploying sensor using kubectl ... "
+            if [[ -n "${IS_RACE_BUILD:-}" ]]; then
+                # builds with -race are slow at generating the sensor bundle
+                # https://stack-rox.atlassian.net/browse/ROX-6987
+                ci_export ROXCTL_TIMEOUT "60s"
+            fi
+        fi
+
+        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+        CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
+    fi
+
+    patch_down_sensor "${sensor_namespace}"
+
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        # Sensor is CPU starved under OpenShift causing all manner of test failures:
+        # https://stack-rox.atlassian.net/browse/ROX-5334
+        # https://stack-rox.atlassian.net/browse/ROX-6891
+        # et al.
+        "${ORCH_CMD}" -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+    fi
+}
+
+patch_down_sensor() {
+   local sensor_namespace="$1"
+
+    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/sensor" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: sensor
+          resources:
+            requests:
+              cpu: "1500m"
+            limits:
+              cpu: "2000m"
+EOF
+    )
+
+    if "$ORCH_CMD" -n "${sensor_namespace}" get hpa scanner >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${sensor_namespace}" patch "hpa/scanner" --patch-file <(cat <<EOF
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+EOF
+        )
+    fi
+    if "$ORCH_CMD" -n "${sensor_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${sensor_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+EOF
+        )
+    fi
+    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
+spec:
+  template:
+    spec:
+      containers:
+        - name: db
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "300m"
+            limits:
+              memory: "1000Mi"
+              cpu: "1000m"
+EOF
+    )
+    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: indexer
+          resources:
+            requests:
+              memory: "4300Mi"
+              cpu: "1000m"
+            limits:
+              memory: "4600Mi"
+              cpu: "1000m"
+EOF
+    )
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
@@ -160,7 +416,7 @@ teardown() {
 
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
-    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    run "${ORCH_CMD}" -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4"
 }
 
