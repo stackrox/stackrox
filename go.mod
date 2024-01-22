@@ -126,7 +126,7 @@ require (
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.17.0
 	golang.stackrox.io/grpc-http1 v0.3.7
-	google.golang.org/api v0.155.0
+	google.golang.org/api v0.157.0
 	google.golang.org/genproto v0.0.0-20240108191215-35c7eff3a6b1
 	google.golang.org/grpc v1.60.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
@@ -389,7 +389,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240108191215-35c7eff3a6b1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240108191215-35c7eff3a6b1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
