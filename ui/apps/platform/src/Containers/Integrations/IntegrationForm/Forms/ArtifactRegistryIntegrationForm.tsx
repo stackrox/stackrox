@@ -226,7 +226,11 @@ function ArtifactRegistryIntegrationForm({
                             <Checkbox
                                 label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !(
+                                        isCloudCredentialsEnabled && values.config.google.wifEnabled
+                                    ) && values.updatePassword
+                                }
                                 onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={

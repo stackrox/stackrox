@@ -210,7 +210,11 @@ function GoogleCloudSccIntegrationForm({
                             <Checkbox
                                 label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !(
+                                        isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled
+                                    ) && values.updatePassword
+                                }
                                 onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={

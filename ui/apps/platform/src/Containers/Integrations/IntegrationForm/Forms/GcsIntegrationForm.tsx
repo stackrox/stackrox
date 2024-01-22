@@ -320,7 +320,10 @@ function GcsIntegrationForm({
                             <Checkbox
                                 label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !values.externalBackup.gcs.useWorkloadId &&
+                                    values.updatePassword
+                                }
                                 onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
