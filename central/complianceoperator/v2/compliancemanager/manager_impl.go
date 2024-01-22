@@ -89,6 +89,11 @@ func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complia
 	return m.integrationDS.UpdateComplianceIntegration(ctx, complianceIntegration)
 }
 
+// Remove cluster from scan config
+func (m *managerImpl) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {
+	return m.scanSettingDS.RemoveClusterFromScanConfig(ctx, clusterID)
+}
+
 // ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
 func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	if !features.ComplianceEnhancements.Enabled() {
