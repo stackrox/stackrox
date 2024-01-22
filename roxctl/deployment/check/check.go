@@ -237,18 +237,18 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		combinedDeployments = combinedDeployments + normalizeYaml(string(fileContents))
 	}
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
+	alerts, ignoredObjRefs, remarks, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
 
-	return d.printResults(alerts, ignoredObjRefs)
+	return d.printResults(alerts, ignoredObjRefs, remarks)
 }
 
-func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, []string, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
+		return nil, nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -263,7 +263,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		Namespace:        d.namespace,
 	})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
+		return nil, nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
@@ -271,10 +271,10 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		alerts = append(alerts, r.GetAlerts()...)
 	}
 
-	return alerts, response.GetIgnoredObjectRefs(), nil
+	return alerts, response.GetIgnoredObjectRefs(), response.GetRemarks(), nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string, remarks []string) error {
 	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
 	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
 	// want this to be visible to the old output format.
@@ -298,6 +298,10 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 		return errors.Wrap(err, "could not print policy summary")
 	}
 
+	if len(remarks) > 0 {
+		printRemarks(remarks, d.env.Logger())
+	}
+
 	amountBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()
 
 	if !d.standardizedFormat {
@@ -308,7 +312,15 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	if amountBreakingPolicies != 0 {
 		return errors.Wrap(policy.NewErrBreakingPolicies(amountBreakingPolicies), "breaking policies found")
 	}
+
 	return nil
+}
+
+func printRemarks(remarks []string, out logger.Logger) {
+	out.PrintfLn("Additional remarks:")
+	for _, r := range remarks {
+		out.PrintfLn("%s", r)
+	}
 }
 
 func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logger.Logger, deployments ...string) {
