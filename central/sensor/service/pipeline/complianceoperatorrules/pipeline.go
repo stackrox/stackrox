@@ -3,6 +3,7 @@ package complianceoperatorrules
 import (
 	"context"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/rules/datastore"
@@ -124,6 +125,10 @@ func (s *pipelineImpl) processComplianceRule(_ context.Context, event *central.S
 	rule := event.GetComplianceOperatorRule()
 	rule.ClusterId = clusterID
 
+	if val := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; val == "" {
+		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
+	}
+
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.manager.DeleteRule(rule)
@@ -138,6 +143,10 @@ func (s *pipelineImpl) processComplianceRuleV2(ctx context.Context, event *centr
 	}
 
 	rule := event.GetComplianceOperatorRuleV2()
+
+	if val := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; val == "" {
+		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
+	}
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
