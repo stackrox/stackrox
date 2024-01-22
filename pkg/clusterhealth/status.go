@@ -126,7 +126,7 @@ func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInf
 	if desiredPods == 0 {
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
-	if localScannerHealthInfo.GetTotalReadyDbPods() == 0 {
+	if localScannerHealthInfo.GetTotalReadyDbPods() != localScannerHealthInfo.GetTotalDesiredDbPods() {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 

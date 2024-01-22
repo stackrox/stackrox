@@ -23,7 +23,7 @@ const resolveDbHealthStatus = (desiredPods: number, readyPods: number) => {
     if (!desiredPods) {
         return notAvailable;
     }
-    return healthStatusLabels[readyPods ? 'HEALTHY' : 'UNHEALTHY'];
+    return healthStatusLabels[readyPods == desiredPods ? 'HEALTHY' : 'UNHEALTHY'];
 };
 
 const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) => {
