@@ -384,6 +384,8 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.Namespace = ns
 	}
 
+	var remarks []string
+
 	var deployments []*storage.Deployment
 	errorList := errorhelpers.NewErrorList("error parsing YAML files")
 
@@ -421,6 +423,9 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if err != nil {
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
+		for _, d := range deployments {
+			remarks = append(remarks, fmt.Sprintf("%s: Permission Level: %s, Exposures: %#v", d.GetName(), d.GetServiceAccountPermissionLevel().String(), d.GetPorts()))
+		}
 		log.Errorf("DeploymentEnrichment: Enriched from Sensor Deployment example: %#v", deployments[0])
 	}
 
@@ -433,12 +438,17 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if run != nil {
 			runs = append(runs, run)
 		}
+		an, err := s.getAppliedNetpolsForDeployment(ctx, eCtx, d)
+		if err != nil {
+			continue
+		}
+		remarks = append(remarks, fmt.Sprintf("%s: Applied Network Policies: %#v", d.GetName(), an.Policies))
 	}
 
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
-		Remarks:           []string{"testremark"},
+		Remarks:           remarks,
 	}, nil
 }
 
