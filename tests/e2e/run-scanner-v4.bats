@@ -30,6 +30,13 @@ setup_file() {
     export CHART_REPOSITORY
     export CUSTOM_CENTRAL_NAMESPACE=stackrox-central
     export CUSTOM_SENSOR_NAMESPACE=stackrox-sensor
+
+    if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
+        echo "Only tearing down resources..." >&3
+        teardown >&3 2>&1
+        echo "Done, exiting now." >&3
+        exit 0
+    fi
 }
 
 test_case_no=0
