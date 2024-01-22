@@ -158,6 +158,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 		val:       msg.GetEvent().GetSensorHash(),
 		processed: true,
 	}
+	log.Infof("Message marked successful: %s", key)
 }
 
 func (d *deduperImpl) getValueNoLock(key string) (uint64, bool) {
@@ -199,7 +200,9 @@ func (d *deduperImpl) ProcessSync() {
 
 // ShouldProcess determines if a message should be processed or if it should be deduped and dropped
 func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
+	log.Infof("Deduper should process: %+v", msg)
 	if skipDedupe(msg) {
+		log.Infof("Skip dedupe: %+v", msg)
 		return true
 	}
 	event := msg.GetEvent()
@@ -211,20 +214,24 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 
 		delete(d.received, key)
 		delete(d.successfullyProcessed, key)
+		log.Infof("Remove resource: %s %+v", key, msg)
 		return true
 	case central.ResourceAction_SYNC_RESOURCE:
 		// check if element is in successfully processed and mark as processed for syncs so that these are not reconciled away
 		concurrency.WithLock(&d.hashLock, func() {
 			if val, ok := d.successfullyProcessed[key]; ok {
+				log.Infof("Was successfully processed: %s %+v", key, msg)
 				val.processed = true
 			}
 		})
 	}
 	// Backwards compatibility with a previous Sensor
 	if event.GetSensorHashOneof() == nil {
+		log.Infof("Sensor hash empty: %s %+v", key, msg)
 		// Compute the sensor hash
 		hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
 		if !ok {
+			log.Infof("Failed to hash event: %s %+v", key, msg)
 			return true
 		}
 		event.SensorHashOneof = &central.SensorEvent_SensorHash{
@@ -233,7 +240,9 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 	}
 	// In the reprocessing case, the above will never evaluate to not nil, but it makes testing easier
 	if msg.GetProcessingAttempt() > 0 {
-		return d.shouldReprocess(key, event.GetSensorHash())
+		ret := d.shouldReprocess(key, event.GetSensorHash())
+		log.Infof("should reprocess %t %s %+v", ret, key, msg)
+		return ret
 	}
 
 	d.hashLock.Lock()
@@ -241,12 +250,14 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 
 	prevValue, ok := d.getValueNoLock(key)
 	if ok && prevValue == event.GetSensorHash() {
+		log.Infof("deduper hit %s %+v", key, msg)
 		return false
 	}
 	d.received[key] = &entry{
 		val:       event.GetSensorHash(),
 		processed: true,
 	}
+	log.Infof("should process %s %+v", key, msg)
 	return true
 }
 
