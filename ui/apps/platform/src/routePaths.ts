@@ -39,6 +39,7 @@ export const complianceEnhancedStatusProfilesPath = `${complianceEnhancedStatusP
 export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
 export const complianceEnhancedClusterComplianceBasePath = `${complianceEnhancedBasePath}/cluster-compliance`;
 export const complianceEnhancedScanConfigsPath = `${complianceEnhancedClusterComplianceBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigDetailPath = `${complianceEnhancedScanConfigsPath}/:scanConfigId`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedClusterComplianceBasePath}/coverage`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
