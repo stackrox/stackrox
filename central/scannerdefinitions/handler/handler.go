@@ -139,6 +139,8 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// At this point, we assume the request is from Scanner v2.
+
 	if uuid == "" {
 		writeErrorBadRequest(w)
 		return
