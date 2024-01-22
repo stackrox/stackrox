@@ -36,6 +36,8 @@ func TestTranslation(t *testing.T) {
 func (s *TranslationTestSuite) TestImageOverrides() {
 	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
 	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
+	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
+	s.T().Setenv(images.ScannerV4Indexer.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
 	obj := platform.SecuredCluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,6 +60,14 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	scannerDbImage, err := vals.PathValue("image.scannerDb.fullRef")
 	s.Require().NoError(err)
 	s.Equal("stackrox/scanner-db:1.0.0", scannerDbImage)
+
+	scannerV4DbImage, err := vals.PathValue("image.scannerV4DB.fullRef")
+	s.Require().NoError(err)
+	s.Equal("stackrox/scanner-v4-db:1.0.0", scannerV4DbImage)
+
+	scannerV4Image, err := vals.PathValue("image.scannerV4.fullRef")
+	s.Require().NoError(err)
+	s.Equal("stackrox/scanner-v4:1.0.0", scannerV4Image)
 }
 
 func TestReadBaseValues(t *testing.T) {
