@@ -13,7 +13,7 @@ import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../types';
-import ImageScanningErrorLabelLayout from '../components/ImageScanningErrorLabelLayout';
+import ImageScanningErrorLabel from '../components/ImageScanningErrorLabelLayout';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -153,24 +153,25 @@ function ImagesTable({
                             <Tr>
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <ImageScanningErrorLabelLayout
-                                            imageNotes={notes}
-                                            scanNotes={scanNotes}
-                                        >
-                                            <ImageNameTd name={name} id={id}>
-                                                {isWatchedImage && (
-                                                    <Label
-                                                        isCompact
-                                                        variant="outline"
-                                                        color="grey"
-                                                        className="pf-u-mt-xs"
-                                                        icon={<EyeIcon />}
-                                                    >
-                                                        Watched image
-                                                    </Label>
-                                                )}
-                                            </ImageNameTd>
-                                        </ImageScanningErrorLabelLayout>
+                                        <ImageNameTd name={name} id={id}>
+                                            {isWatchedImage && (
+                                                <Label
+                                                    isCompact
+                                                    variant="outline"
+                                                    color="grey"
+                                                    className="pf-u-mt-xs"
+                                                    icon={<EyeIcon />}
+                                                >
+                                                    Watched image
+                                                </Label>
+                                            )}
+                                            {(notes.length !== 0 || scanNotes.length !== 0) && (
+                                                <ImageScanningErrorLabel
+                                                    imageNotes={notes}
+                                                    scanNotes={scanNotes}
+                                                />
+                                            )}
+                                        </ImageNameTd>
                                     ) : (
                                         'Image name not available'
                                     )}

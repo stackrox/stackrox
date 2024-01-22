@@ -5,62 +5,48 @@ import isEmpty from 'lodash/isEmpty';
 
 import getImageScanMessage from '../utils/getImageScanMessage';
 
-export type ImageScanningErrorLabelLayoutProps = {
-    children: React.ReactNode;
+export type ImageScanningErrorLabelProps = {
     imageNotes: string[];
     scanNotes: string[];
 };
 
-/**
- * ‘Image scanning error’ label layout for use in tables. Conditionally renders a label
- * with a tooltip for information about image scanning errors.
- *
- * @param children - The table cell contents to render before the label
- * @param imageNotes - The image notes
- * @param scanNotes - The image scan notes
- */
-function ImageScanningErrorLabelLayout({
-    children,
-    imageNotes,
-    scanNotes,
-}: ImageScanningErrorLabelLayoutProps) {
+function ImageScanningErrorLabel({ imageNotes, scanNotes }: ImageScanningErrorLabelProps) {
     const scanMessage = getImageScanMessage(imageNotes, scanNotes);
 
+    if (isEmpty(scanMessage)) {
+        return null;
+    }
+
     return (
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
-            {children}
-            {!isEmpty(scanMessage) && (
-                <FlexItem>
-                    <Popover
-                        aria-label="Image scanning error label"
-                        headerContent={<div>CVE data may be inaccurate</div>}
-                        bodyContent={
-                            <Flex
-                                direction={{ default: 'column' }}
-                                spaceItems={{ default: 'spaceItemsSm' }}
-                            >
-                                <FlexItem>{scanMessage.header}</FlexItem>
-                                <FlexItem>{scanMessage.body}</FlexItem>
-                            </Flex>
-                        }
-                        enableFlip
-                        position="top"
+        <>
+            <Popover
+                aria-label="Image scanning error label"
+                headerContent={<div>CVE data may be inaccurate</div>}
+                bodyContent={
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <Button variant="plain" className="pf-u-p-0">
-                            <Label
-                                color="orange"
-                                isCompact
-                                icon={<ExclamationTriangleIcon />}
-                                variant="outline"
-                            >
-                                Image scanning error
-                            </Label>
-                        </Button>
-                    </Popover>
-                </FlexItem>
-            )}
-        </Flex>
+                        <FlexItem>{scanMessage.header}</FlexItem>
+                        <FlexItem>{scanMessage.body}</FlexItem>
+                    </Flex>
+                }
+                enableFlip
+                position="top"
+            >
+                <Button variant="plain" className="pf-u-p-0">
+                    <Label
+                        color="orange"
+                        isCompact
+                        icon={<ExclamationTriangleIcon />}
+                        variant="outline"
+                    >
+                        Image scanning error
+                    </Label>
+                </Button>
+            </Popover>
+        </>
     );
 }
 
-export default ImageScanningErrorLabelLayout;
+export default ImageScanningErrorLabel;
