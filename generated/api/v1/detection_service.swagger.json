@@ -1546,6 +1546,12 @@
             "type": "string"
           },
           "description": "The reference will be in the format: namespace/name[\u003cgroup\u003e/\u003cversion\u003e, Kind=\u003ckind\u003e]."
+        },
+        "remarks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

@@ -431,9 +431,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			runs = append(runs, run)
 		}
 	}
+
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
+		Remarks:           []string{"testremark"},
 	}, nil
 }
 
