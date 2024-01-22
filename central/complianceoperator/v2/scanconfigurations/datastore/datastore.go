@@ -41,6 +41,9 @@ type DataStore interface {
 
 	// CountScanConfigurations scan config based on a query
 	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
+
+	// Remove deleted cluster from scan config
+	RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error
 }
 
 // New returns an instance of DataStore.

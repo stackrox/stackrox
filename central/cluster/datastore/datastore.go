@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	complianceManager "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -94,6 +95,7 @@ func New(
 	clusterRanker *ranking.Ranker,
 	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
+	complianceManager complianceManager.Manager,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:            clusterStorage,
@@ -117,6 +119,7 @@ func New(
 		networkBaselineMgr:        networkBaselineMgr,
 		idToNameCache:             simplecache.New(),
 		nameToIDCache:             simplecache.New(),
+		complianceManager:         complianceManager,
 	}
 
 	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)

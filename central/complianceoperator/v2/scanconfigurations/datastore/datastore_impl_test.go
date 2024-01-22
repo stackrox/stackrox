@@ -217,6 +217,41 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 	}
 }
 
+func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig() {
+	configID1 := uuid.NewV4().String()
+	scanConfig1 := s.getTestRec(mockScanName)
+	scanConfig1.Id = configID1
+	configID2 := uuid.NewV4().String()
+	scanConfig2 := s.getTestRec("mock-scan-config-2")
+	scanConfig2.Id = configID2
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig1))
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig2))
+
+	for _, cluster := range scanConfig1.Clusters {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.ClusterId, "testing status"))
+
+	}
+
+	for _, cluster := range scanConfig2.Clusters {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID2, cluster.ClusterId, "testing status"))
+	}
+
+	err := s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.Clusters[0].GetClusterId())
+	s.Require().NoError(err)
+	newscanConfig, exists, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
+	s.Require().NoError(err)
+	s.Require().True(exists, "scan config not found")
+	s.Require().Less(len(newscanConfig.GetClusters()), len(scanConfig1.GetClusters()))
+	scanConfigStatus, err := s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
+	s.Require().NoError(err)
+	s.Require().Empty(scanConfigStatus)
+	newscanConfig, exists, err = s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.GetId())
+	s.Require().NoError(err)
+	s.Require().True(exists, "scan config not found")
+	s.Require().Less(len(newscanConfig.GetClusters()), len(scanConfig2.GetClusters()))
+}
+
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 	configID1 := uuid.NewV4().String()
 	configID2 := uuid.NewV4().String()

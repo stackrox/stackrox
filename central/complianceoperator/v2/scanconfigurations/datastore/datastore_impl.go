@@ -186,3 +186,34 @@ func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_
 
 	return clusterScopeKeys
 }
+
+func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	scans, err := ds.GetScanConfigurations(ctx, q)
+	if err != nil {
+		return err
+	}
+	for _, scan := range scans {
+		clusters := scan.GetClusters()
+		newClusters := []*storage.ComplianceOperatorScanConfigurationV2_Cluster{}
+		for _, cluster := range clusters {
+			if cluster.GetClusterId() != clusterID {
+				newClusters = append(newClusters, cluster)
+			}
+
+		}
+		scan.Clusters = newClusters
+		err := ds.UpsertScanConfiguration(ctx, scan)
+		if err != nil {
+			return err
+		}
+		_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanConfig, scan.GetId()).ProtoQuery())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scan.GetId())
+		}
+	}
+
+	return nil
+}
