@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/services/health"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
@@ -29,8 +30,10 @@ var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
-// matcherService represents a vulnerability matcher gRPC service.
-type matcherService struct {
+var _ health.Provider = (*MatcherService)(nil)
+
+// MatcherService represents a vulnerability matcher gRPC service.
+type MatcherService struct {
 	v4.UnimplementedMatcherServer
 	// indexer is used to retrieve index reports.
 	indexer indexer.ReportGetter
@@ -42,15 +45,15 @@ type matcherService struct {
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
 // empty content in enrich requests, pass a non-nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
-	return &matcherService{
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *MatcherService {
+	return &MatcherService{
 		matcher:              matcher,
 		indexer:              indexer,
 		disableEmptyContents: indexer == nil,
 	}
 }
 
-func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
+func (s *MatcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetVulnerabilities")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
@@ -89,7 +92,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 }
 
 // retrieveIndexReport will pull an index report from the Indexer backend.
-func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
+func (s *MatcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
 	ir, found, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
@@ -101,7 +104,7 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 }
 
 // parseIndexReport will generate an index report from a Contents payload.
-func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
+func (s *MatcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
 	ir, err := mappers.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
@@ -110,7 +113,7 @@ func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.Ind
 	return ir, nil
 }
 
-func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.Metadata, error) {
+func (s *MatcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.Metadata, error) {
 	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting last vulnerability update time: %w", err)
@@ -127,12 +130,12 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.M
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
-func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
+func (s *MatcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 	v4.RegisterMatcherServer(grpcServer, s)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
-func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *MatcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := matcherAuth
 	// If this a dev build, allow anonymous traffic for testing purposes.
 	if !buildinfo.ReleaseBuild {
@@ -142,7 +145,21 @@ func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName st
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
-func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
+func (s *MatcherService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the matcher.
 	return nil
+}
+
+func (_ *MatcherService) Name() string {
+	return "matcher"
+}
+
+func (_ *MatcherService) Ready() bool {
+	// TODO Check s.matcher is initialized (e.g. `s.matcher.Ready()`).
+	return true
+}
+
+func (_ *MatcherService) Live() bool {
+	// Matcher liveness is purely based on successful gRPC response.
+	return true
 }

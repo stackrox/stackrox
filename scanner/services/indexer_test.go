@@ -22,7 +22,7 @@ type indexerServiceTestSuite struct {
 	suite.Suite
 	ctx         context.Context
 	indexerMock *mocks.MockIndexer
-	service     *indexerService
+	service     *IndexerService
 	mockCtrl    *gomock.Controller
 }
 
@@ -61,7 +61,7 @@ func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report 
 }
 
 func (s *indexerServiceTestSuite) TestAuthz() {
-	testutils.AssertAuthzWorks(s.T(), &indexerService{})
+	testutils.AssertAuthzWorks(s.T(), &IndexerService{})
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {

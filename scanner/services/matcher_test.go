@@ -40,7 +40,7 @@ func (s *matcherServiceTestSuite) TearDownTest() {
 }
 
 func (s *matcherServiceTestSuite) TestAuthz() {
-	testutils.AssertAuthzWorks(s.T(), &matcherService{})
+	testutils.AssertAuthzWorks(s.T(), &MatcherService{})
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_NewMatcherService() {

@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
+	"github.com/stackrox/rox/scanner/services/health"
 	"golang.org/x/sys/unix"
 )
 
@@ -205,8 +206,11 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 // getServices returns the list of the API services based on the backends provided.
 func getServices(b *Backends) []grpc.APIService {
 	var srvs []grpc.APIService
+	var hp []health.Provider
 	if b.Indexer != nil {
-		srvs = append(srvs, services.NewIndexerService(b.Indexer))
+		s := services.NewIndexerService(b.Indexer)
+		srvs = append(srvs, s)
+		hp = append(hp, s)
 	}
 	if b.Matcher != nil {
 		// Set the index report getter to the remote indexer if available, otherwise the
@@ -216,8 +220,11 @@ func getServices(b *Backends) []grpc.APIService {
 		if getter == nil {
 			getter = b.Indexer
 		}
-		srvs = append(srvs, services.NewMatcherService(b.Matcher, getter))
+		s := services.NewMatcherService(b.Matcher, getter)
+		srvs = append(srvs, s)
+		hp = append(hp, s)
 	}
+	srvs = append(srvs, health.NewService(hp))
 	return srvs
 }
 

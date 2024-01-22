@@ -82,17 +82,20 @@ spec:
             drop: ["NET_RAW"]
           runAsNonRoot: true
           runAsUser: 65534
-# TODO(mclamei): Enable when the grpc healthcheck in indexer works.
-#
-# {{ if semverCompare ">= 1.24.0" ._rox._apiServer.version }}
-#         readinessProbe:
-#           grpc:
-#             port: 8443
-#           timeoutSeconds: 10
-#           periodSeconds: 10
-#           failureThreshold: 6
-#           successThreshold: 1
-# {{- end }}
+        {{ if semverCompare ">= 1.24.0" ._rox._apiServer.version }}
+        readinessProbe:
+          grpc:
+            port: 8443
+          timeoutSeconds: 60
+          periodSeconds: 60
+          failureThreshold: 3
+        livenessProbe:
+          grpc:
+            port: 8443
+          timeoutSeconds: 15
+          periodSeconds: 15
+          failureThreshold: 3
+        {{- end }}
         volumeMounts:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/

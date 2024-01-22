@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/mappers"
+	"github.com/stackrox/rox/scanner/services/health"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
@@ -29,19 +30,21 @@ var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
-type indexerService struct {
+var _ health.Provider = (*IndexerService)(nil)
+
+type IndexerService struct {
 	v4.UnimplementedIndexerServer
 	indexer indexer.Indexer
 }
 
 // NewIndexerService creates a new indexer service.
-func NewIndexerService(indexer indexer.Indexer) *indexerService {
-	return &indexerService{
+func NewIndexerService(indexer indexer.Indexer) *IndexerService {
+	return &IndexerService{
 		indexer: indexer,
 	}
 }
 
-func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
+func (s *IndexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.CreateIndexReport")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
@@ -86,7 +89,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	return indexReport, nil
 }
 
-func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
+func (s *IndexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/service/indexer.GetIndexReport",
 		"hash_id", req.GetHashId(),
@@ -108,7 +111,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	return indexReport, nil
 }
 
-func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {
+func (s *IndexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/service/indexer.HasIndexReport",
 		"hash_id", req.GetHashId(),
@@ -124,7 +127,7 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 
 // getClairIndexReport query and return a claircore index report, return a "not
 // found" error when the report does not exist.
-func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+func (s *IndexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	clairReport, ok, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
 		return nil, false, err
@@ -136,12 +139,12 @@ func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
-func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
+func (s *IndexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 	v4.RegisterIndexerServer(grpcServer, s)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
-func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *IndexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	auth := indexerAuth
 	// If this a dev build, allow anonymous traffic for testing purposes.
 	if !buildinfo.ReleaseBuild {
@@ -151,7 +154,21 @@ func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName st
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
-func (s *indexerService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
+func (s *IndexerService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// Currently we do not set up gRPC gateway for the matcher.
 	return nil
+}
+
+func (_ *IndexerService) Name() string {
+	return "indexer"
+}
+
+func (_ *IndexerService) Ready() bool {
+	// TODO Check s.indexer is initialized (e.g. `s.indexer.Ready()`).
+	return true
+}
+
+func (_ *IndexerService) Live() bool {
+	// Indexer liveness is purely based on successful gRPC response.
+	return true
 }
