@@ -137,15 +137,25 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 	testCases := map[string]struct {
-		expectedErr error
-		fixture     *certSecretsRepoFixture
+		expectedErr           error
+		fixture               *certSecretsRepoFixture
+		persistedCertificates []*storage.TypedServiceCertificate
 	}{
-		"successful patch": {expectedErr: nil, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
-		"failed patch due to k8s API error": {
-			expectedErr: errForced,
-			fixture:     s.newFixture(certSecretsRepoFixtureConfig{k8sAPIVerbToError: "patch"}),
+		"successful patch": {
+			expectedErr:           nil,
+			fixture:               s.newFixture(certSecretsRepoFixtureConfig{}),
+			persistedCertificates: certificates.ServiceCerts,
 		},
-		"cancelled patch": {expectedErr: context.Canceled, fixture: s.newFixture(certSecretsRepoFixtureConfig{})},
+		"failed patch due to k8s API error": {
+			expectedErr:           errForced,
+			fixture:               s.newFixture(certSecretsRepoFixtureConfig{k8sAPIVerbToError: "patch"}),
+			persistedCertificates: emptyPersistedCertificates,
+		},
+		"cancelled patch": {
+			expectedErr:           context.Canceled,
+			fixture:               s.newFixture(certSecretsRepoFixtureConfig{}),
+			persistedCertificates: emptyPersistedCertificates,
+		},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -157,9 +167,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestPatch() {
 
 			persistedCertificates, err := tc.fixture.repo.ensureServiceCertificates(ctx, tc.fixture.certificates)
 
-			if tc.expectedErr == nil {
-				s.Equal(tc.fixture.certificates.ServiceCerts, persistedCertificates)
-			}
+			s.Equal(tc.persistedCertificates, persistedCertificates)
 			s.ErrorIs(err, tc.expectedErr)
 		})
 	}
