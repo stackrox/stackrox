@@ -174,7 +174,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	caPem := certificates.GetCaPem()
-	persistedCertificates := make ([]*storage.TypedServiceCertificate, 0, len(certificates))
+	persistedCertificates := make([]*storage.TypedServiceCertificate, 0, len(certificates.GetServiceCerts()))
 	var serviceErrors error
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
