@@ -125,6 +125,7 @@ export type GoogleConfig = {
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
     serviceAccount: string; // scrub: always
     project: string;
+    wifEnabled: boolean;
 };
 
 export type IbmImageIntegration = {

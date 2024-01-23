@@ -20,6 +20,11 @@ jobs:
     uses: ./.github/workflows/build.yaml
     secrets: inherit
 
+  build-scanner-v4:
+    name: Build Scanner v4
+    uses: ./.github/workflows/scanner-build.yaml
+    secrets: inherit
+
   check-is-release:
     runs-on: ubuntu-latest
     outputs:

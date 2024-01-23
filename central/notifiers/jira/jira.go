@@ -609,7 +609,7 @@ func (j *jira) createIssue(_ context.Context, severity storage.Severity, i *jira
 	return err
 }
 
-func (j *jira) Test(ctx context.Context) error {
+func (j *jira) Test(ctx context.Context) *notifiers.NotifierError {
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Description: "StackRox Test Issue",
@@ -622,7 +622,12 @@ func (j *jira) Test(ctx context.Context) error {
 			Summary: "This is a test issue created to test integration with StackRox.",
 		},
 	}
-	return j.createIssue(ctx, storage.Severity_LOW_SEVERITY, i)
+
+	if err := j.createIssue(ctx, storage.Severity_LOW_SEVERITY, i); err != nil {
+		return notifiers.NewNotifierError("create test Jira issue failed", err)
+	}
+
+	return nil
 }
 
 func init() {

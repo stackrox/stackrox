@@ -101,7 +101,7 @@ func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, cluster
 func genRandomNetworks(family pkgNet.Family, numNetworks int) (map[string]struct{}, error) {
 	nets := make(map[string]struct{})
 
-	var bits int
+	var bits int32
 	if family == pkgNet.IPv4 {
 		bits = 32
 	} else if family == pkgNet.IPv6 {
@@ -114,7 +114,7 @@ func genRandomNetworks(family pkgNet.Family, numNetworks int) (map[string]struct
 			return nil, err
 		}
 
-		n, err := networkgraph.ValidateCIDR(net.IP(ip).String() + "/" + strconv.Itoa(int(1+rand.Int31n(int32(bits)))))
+		n, err := networkgraph.ValidateCIDR(net.IP(ip).String() + "/" + strconv.Itoa(int(1+rand.Int31n(bits))))
 		if err != nil {
 			continue
 		}

@@ -1,7 +1,8 @@
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { getInputByLabel } from '../../../helpers/formHelpers';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
-import { deferAndVisitRequestDetails, pendingRequestsPath } from './ExceptionManagement.helpers';
+import { deferAndVisitRequestDetails } from './ExceptionManagement.helpers';
 
 const comment = 'Defer me';
 const expiry = 'When all CVEs are fixable';
@@ -45,22 +46,15 @@ describe('Exception Management Request Details Page', () => {
         }
     });
 
-    it('should be able to cancel a request if the user is the requester', () => {
-        cy.get('button:contains("Cancel request")').click();
+    it('should be able to approve a request if approval permissions are granted', () => {
+        cy.get('button:contains("Approve request")').click();
         cy.get('div[role="dialog"]').should('exist');
-        cy.get('div[role="dialog"] button:contains("Cancel request")').click();
+        getInputByLabel('Approval rationale').type('Approved');
+        cy.get('div[role="dialog"] button:contains("Approve")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(pendingRequestsPath);
-        });
-    });
-
-    it('should be able to see how many CVEs will be affected by a cancel', () => {
-        cy.get('table tbody tr:not(".pf-c-table__expandable-row")').then((rows) => {
-            const numCVEs = rows.length;
-            cy.get('button:contains("Cancel request")').click();
-            cy.get('div[role="dialog"]').should('exist');
-            cy.get(`div:contains("CVE count: ${numCVEs}")`).should('exist');
-        });
+        cy.get('div[aria-label="Success Alert"]').should(
+            'contain',
+            'The vulnerability request was successfully approved.'
+        );
     });
 });

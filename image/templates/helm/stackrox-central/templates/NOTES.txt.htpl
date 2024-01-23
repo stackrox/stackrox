@@ -13,7 +13,7 @@ Central Services Configuration Summary:
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   Scanner V4 Installation Method:              {{ ._rox.scannerV4._installMode }}
 {{- if ._rox._scannerV4Volume }}
-  Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+  Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
 {{- end }}
 [<- end >]
 

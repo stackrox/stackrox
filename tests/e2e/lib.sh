@@ -149,6 +149,7 @@ export_test_environment() {
     ci_export ROX_SCANNER_V4_SUPPORT "${ROX_SCANNER_V4_SUPPORT:-true}"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
+    ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -257,6 +258,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_CREDENTIALS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
