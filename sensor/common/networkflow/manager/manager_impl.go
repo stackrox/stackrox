@@ -215,6 +215,7 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		finished:          &sync.WaitGroup{},
+		activeConnections: make(map[connection]networkConnIndicator),
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -238,6 +239,8 @@ type networkFlowManager struct {
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
+
+	activeConnections map[connection]networkConnIndicator
 
 	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
@@ -450,6 +453,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			if activeConn, found := m.activeConnections[*conn]; found {
+				enrichedConnections[activeConn] = timestamp.Now()
+				delete(m.activeConnections, *conn)
+				return
+			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
@@ -548,6 +556,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
 				enrichedConnections[indicator] = status.lastSeen
+				if status.lastSeen == timestamp.InfiniteFuture {
+					m.activeConnections[*conn] = indicator
+				} else {
+					delete(m.activeConnections, *conn)
+				}
 			}
 		}
 	}
