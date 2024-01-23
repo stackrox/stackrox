@@ -28,6 +28,19 @@ export function getIsSignatureIntegration(source: IntegrationSource): boolean {
     return source === 'signatureIntegrations';
 }
 
+export function getGoogleCredentialsPlaceholder(
+    useWorkloadId: boolean,
+    updatePassword: boolean
+): string {
+    if (useWorkloadId) {
+        return '';
+    }
+    if (updatePassword) {
+        return 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}';
+    }
+    return 'Currently-stored credentials will be used.';
+}
+
 /*
  * Return mutated integration with cleared stored credential string properties.
  *
