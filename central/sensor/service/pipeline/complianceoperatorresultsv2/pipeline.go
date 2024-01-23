@@ -51,7 +51,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorCheckResult)
+	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorCheckResultV2)
 
 	event := msg.GetEvent()
 	// If a sensor sends in a v1 compliance message we will still process it the v1 way in the event
