@@ -760,11 +760,7 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 
 	for conn, prevTS := range previous {
 		if _, ok := current[conn]; !ok {
-			ts := prevTS
-			if ts == 0 || ts == timestamp.InfiniteFuture {
-				ts = timestamp.Now()
-			}
-			updates = append(updates, conn.toProto(ts))
+			updates = append(updates, conn.toProto(prevTS))
 		}
 	}
 
