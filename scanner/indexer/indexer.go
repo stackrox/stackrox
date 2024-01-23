@@ -88,6 +88,7 @@ type Indexer interface {
 	ReportGetter
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
+	Ready(context.Context) error
 }
 
 // localIndexer is the Indexer implementation that runs libindex locally.
@@ -220,6 +221,13 @@ func (i *localIndexer) Close(ctx context.Context) error {
 	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
 	i.pool.Close()
 	return err
+}
+
+func (i *localIndexer) Ready(ctx context.Context) error {
+	if err := i.pool.Ping(ctx); err != nil {
+		return fmt.Errorf("indexer DB ping failed: %w", err)
+	}
+	return nil
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
