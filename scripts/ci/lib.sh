@@ -590,10 +590,8 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     central_services_chart_dir="$(mktemp -d)"
     secured_cluster_services_chart_dir="$(mktemp -d)"
-    roxctl helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
     roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
-    roxctl helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
