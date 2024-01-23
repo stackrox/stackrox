@@ -75,6 +75,7 @@ enum SearchCategory {
     ADMINISTRATION_USAGE            = 62;
     COMPLIANCE_PROFILES             = 63;
     COMPLIANCE_PROFILE_CLUSTER_EDGE = 64;
+    COMPLIANCE_RULES                = 65;
 }
 
 enum SearchDataType {

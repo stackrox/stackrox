@@ -54,30 +54,31 @@ func (mr *MockDataStoreMockRecorder) DeleteRule(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRule", reflect.TypeOf((*MockDataStore)(nil).DeleteRule), ctx, id)
 }
 
-// UpsertRule mocks base method.
-func (m *MockDataStore) UpsertRule(ctx context.Context, result *storage.ComplianceOperatorRuleV2) error {
+// GetRulesByCluster mocks base method.
+func (m *MockDataStore) GetRulesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorRuleV2, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertRule", ctx, result)
+	ret := m.ctrl.Call(m, "GetRulesByCluster", ctx, clusterID)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorRuleV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRulesByCluster indicates an expected call of GetRulesByCluster.
+func (mr *MockDataStoreMockRecorder) GetRulesByCluster(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRulesByCluster", reflect.TypeOf((*MockDataStore)(nil).GetRulesByCluster), ctx, clusterID)
+}
+
+// UpsertRule mocks base method.
+func (m *MockDataStore) UpsertRule(ctx context.Context, rule *storage.ComplianceOperatorRuleV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRule", ctx, rule)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertRule indicates an expected call of UpsertRule.
-func (mr *MockDataStoreMockRecorder) UpsertRule(ctx, result any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertRule(ctx, rule any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRule", reflect.TypeOf((*MockDataStore)(nil).UpsertRule), ctx, result)
-}
-
-// UpsertRules mocks base method.
-func (m *MockDataStore) UpsertRules(ctx context.Context, result []*storage.ComplianceOperatorRuleV2) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertRules", ctx, result)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertRules indicates an expected call of UpsertRules.
-func (mr *MockDataStoreMockRecorder) UpsertRules(ctx, result any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRules", reflect.TypeOf((*MockDataStore)(nil).UpsertRules), ctx, result)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRule", reflect.TypeOf((*MockDataStore)(nil).UpsertRule), ctx, rule)
 }

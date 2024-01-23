@@ -60,21 +60,32 @@ message ComplianceOperatorProfileV2 {
     repeated string     values      = 13;
 }
 
-// Next Tag: 14
+// Next Tag: 15
 message ComplianceOperatorRuleV2 {
-    string              name             = 1 [(gogoproto.moretags) = 'search:"Compliance Rule Name,hidden" sql:"pk"'];
-    string              operator_version = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden"'];
-    string              rule_version     = 3 [(gogoproto.moretags) = 'search:"Compliance Rule Version,hidden"'];
-    string              rule_type        = 4 [(gogoproto.moretags) = 'search:"Compliance Rule Type,hidden"'];
-    RuleSeverity        severity         = 5 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden"'];
-    map<string, string> labels           = 6;
-    map<string, string> annotations      = 7;
-    string              title            = 8;
-    string              description      = 9;
-    string              rationale        = 10;
-    string              fixes            = 11;
-    repeated string     valuesUsed       = 12;
-    repeated string     warnings         = 13;
+    string                id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                rule_id          = 2;
+    string                name             = 3 [(gogoproto.moretags) = 'search:"Compliance Rule Name,hidden"'];
+    string                rule_type        = 4 [(gogoproto.moretags) = 'search:"Compliance Rule Type,hidden"'];
+    RuleSeverity          severity         = 5 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden"'];
+    map<string, string>   labels           = 6;
+    map<string, string>   annotations      = 7;
+    string                title            = 8;
+    string                description      = 9;
+    string                rationale        = 10;
+    message Fix {
+        string platform   = 1;
+        string disruption = 2;
+    }
+    repeated Fix          fixes            = 11;
+    string                warning          = 12;
+    repeated RuleControls controls         = 13;
+    string                cluster_id       = 14 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+}
+
+// Next Tag: 3
+message RuleControls {
+    string          standard = 1 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden"'];
+    repeated string controls = 2;
 }
 
 // Next Tag: 16
@@ -130,7 +141,7 @@ message ComplianceOperatorCheckResultV2 {
         NOT_APPLICABLE = 6;
         INCONSISTENT   = 7;
     }
-    string                    id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                    id               = 1 [(gogoproto.moretags) = 'search:"Compliance Check UID,hidden" sql:"pk"'];
     string                    check_id         = 2 [(gogoproto.moretags) = 'search:"Compliance Check ID,hidden"'];
     string                    check_name       = 3 [(gogoproto.moretags) = 'search:"Compliance Check Name,hidden"'];
     string                    cluster_id       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
