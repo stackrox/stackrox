@@ -58,7 +58,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 		existingIDs.Add(rule.GetId())
 	}
 
-	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRule)(nil))
+	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRuleV2)(nil))
 	return reconciliation.Perform(store, existingIDs, "complianceoperatorrulesv2", func(id string) error {
 		return s.v2RuleDatastore.DeleteRule(ctx, id)
 	})
