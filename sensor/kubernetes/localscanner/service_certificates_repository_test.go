@@ -30,7 +30,7 @@ var (
 	errForced                  = errors.New("forced error")
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
 	unknownServiceType         = storage.ServiceType_SENSOR_SERVICE
-	emptyPersistedCertificates []*storage.TypedServiceCertificate
+	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
 	serviceCertificate         = createServiceCertificate(scannerServiceType)
 	certificates               = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
