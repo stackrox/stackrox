@@ -62,7 +62,7 @@ function getMessage(response) {
                         IdP Token:
                     </span>{' '}
                     <span aria-labelledby="user-idp-token">
-                        {JSON.stringify(response?.idpToken)}
+                        {JSON.stringify(response?.idpToken, null, 4)}
                     </span>
                 </p>
             )}
