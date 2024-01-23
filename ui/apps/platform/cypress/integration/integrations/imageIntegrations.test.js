@@ -170,6 +170,61 @@ describe('Image Integrations', () => {
         cy.get('label:contains("Use container IAM role")').should('not.exist');
     });
 
+    it('should create a new Google Artifact Registry integration', () => {
+        const integrationName = generateNameWithDate('Google Artifact Registry Test');
+        const integrationType = 'artifactregistry';
+
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType);
+
+        // Step 0, should start out with disabled Save and Test buttons
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 1, check empty fields
+        getInputByLabel('Integration name').type(' ');
+        getInputByLabel('Registry endpoint').type(' ');
+        getInputByLabel('Project').type(' ');
+        getInputByLabel('Service account key (JSON)').type(' ').blur();
+
+        getHelperElementByLabel('Integration name').contains('An integration name is required');
+        getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
+        getHelperElementByLabel('Project').contains('A project is required');
+        getHelperElementByLabel('Service account key (JSON)').contains(
+            'Valid JSON is required for service account key'
+        );
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 2, check conditional fields
+
+        // Step 2.1, enable workload identity, this should remove the service account field
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Service account key (JSON)').should('be.disabled');
+        // Step 2.2, disable workload identity, this should render the service account field again
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Service account key (JSON)').should('be.enabled');
+
+        // Step 3, check valid from and save
+        getInputByLabel('Integration name').clear().type(integrationName);
+
+        getInputByLabel('Registry endpoint').clear().type('test.endpoint');
+        getInputByLabel('Project').clear().type('test');
+        getInputByLabel('Service account key (JSON)').type('{"key":"value"}', {
+            parseSpecialCharSequences: false,
+        });
+
+        testIntegrationInFormWithStoredCredentials(
+            integrationSource,
+            integrationType,
+            staticResponseForTest
+        );
+
+        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+
+        // Test does not delete, because it did not create.
+    });
+
     it('should create a new Google Container Registry integration', () => {
         const integrationName = generateNameWithDate('Google Container Registry Test');
         const integrationType = 'google';
@@ -191,12 +246,21 @@ describe('Image Integrations', () => {
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
         getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
-            'A service account key is required'
+            'Valid JSON is required for service account key'
         );
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Step 2, check valid from and save
+        // Step 2, check conditional fields
+
+        // Step 2.1, enable workload identity, this should remove the service account field
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Service account key (JSON)').should('be.disabled');
+        // Step 2.2, disable workload identity, this should render the service account field again
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Service account key (JSON)').should('be.enabled');
+
+        // Step 3, check valid from and save
         getInputByLabel('Integration name').clear().type(integrationName);
 
         const selected = 'pf-m-selected';
