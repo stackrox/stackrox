@@ -26,6 +26,7 @@ export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
+export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
 export const collectionsBasePath = `${mainPath}/collections`;
@@ -150,6 +151,8 @@ export type RouteKey =
     | 'apidocs-v2'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
     | 'clusters'
@@ -196,6 +199,11 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     'clusters/delegated-image-scanning': {
+        resourceAccessRequirements: everyResource(['Administration']),
+    },
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    'clusters/discovered-clusters': {
+        featureFlagRequirements: allEnabled(['ROX_CLOUD_SOURCES']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
