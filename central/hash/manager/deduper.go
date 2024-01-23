@@ -135,14 +135,14 @@ func (d *deduperImpl) StartSync() {
 // MarkUnsuccessful marks a message as unsuccessfully processed and purges any values for it from the deduper.
 // This only applies when the message had an unretryable error such as context canceled
 func (d *deduperImpl) MarkUnsuccessful(msg *central.MsgFromSensor) {
-	if skipDedupe(msg) {
-		return
-	}
-	key := eventPkg.GetKeyFromMessage(msg)
-
-	concurrency.WithLock(&d.hashLock, func() {
-		delete(d.received, key)
-	})
+	//if skipDedupe(msg) {
+	//	return
+	//}
+	//key := eventPkg.GetKeyFromMessage(msg)
+	//
+	//concurrency.WithLock(&d.hashLock, func() {
+	//	delete(d.received, key)
+	//})
 }
 
 // MarkSuccessful marks a message as successfully processed
