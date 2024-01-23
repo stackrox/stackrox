@@ -15,6 +15,10 @@ defaults:
     config: "@config/central/config.yaml|config/central/config.yaml.default"
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
 
+    serviceTLS:
+[<- if .KubectlOutput >]
+      generate: false
+[<- end >]
     exposeMonitoring: false
 
     affinity:
@@ -74,6 +78,11 @@ defaults:
         enabled: false
     db:
       external: false
+
+      serviceTLS:
+[<- if .KubectlOutput >]
+        generate: false
+[<- end >]
 
       source:
         minConns: 10
