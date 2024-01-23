@@ -20,6 +20,7 @@ slack_user=''
 case "$github_login" in
 '0x656b694d')       slack_user='U02MJ72K1B5' ;;
 'BradLugo')         slack_user='U042Z3TSZU3' ;;
+'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
 'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
 'Maddosaurus')      slack_user='U01Q5L5R0GJ' ;;
 'Molter73')         slack_user='U02A292NPV2' ;;
@@ -43,7 +44,6 @@ case "$github_login" in
 'fredrb')           slack_user='U02H0SPRHC0' ;;
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
 'gavin-stackrox')   slack_user='U01QJF2LM9D' ;;
-'grimmimeloni')     slack_user='U048VH2JZ1C' ;;
 'house-d')          slack_user='U03H69TFKH9' ;;
 'ivan-degtiarenko') slack_user='U01U2UKP7D4' ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
