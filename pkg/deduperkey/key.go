@@ -33,6 +33,7 @@ var (
 		&central.SensorEvent_ComplianceOperatorResult{},
 		&central.SensorEvent_ComplianceOperatorProfile{},
 		&central.SensorEvent_ComplianceOperatorRule{},
+		&central.SensorEvent_ComplianceOperatorRuleV2{},
 		&central.SensorEvent_ComplianceOperatorScanSettingBinding{},
 		&central.SensorEvent_ComplianceOperatorScan{},
 		&central.SensorEvent_AlertResults{},
