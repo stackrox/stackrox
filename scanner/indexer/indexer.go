@@ -141,7 +141,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}, nil
 }
 
-func castToConfig[T any](f func(cfg T)) func(o interface{}) error {
+func castToConfig[T any](f func(cfg T)) func(o any) error {
 	return func(o interface{}) error {
 		cfg, ok := o.(T)
 		if !ok {
@@ -153,7 +153,6 @@ func castToConfig[T any](f func(cfg T)) func(o interface{}) error {
 }
 
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
-
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
 	// TODO: Consider making layer scan concurrency configurable?
