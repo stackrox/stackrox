@@ -80,7 +80,8 @@ tests:
 - name: "Install mode is reported by Helm chart installation notes"
   tests:
   - name: "when installing neither indexer nor matcher"
-    scannerV4.disable: true
+    set:
+      scannerV4.disable: true
     expect: |
       .notes | assertThat(match("Scanner V4 Installation Method: +none"))
   - name: "when installing indexer and matcher"
