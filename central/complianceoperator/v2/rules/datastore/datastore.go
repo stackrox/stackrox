@@ -14,33 +14,24 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	// UpsertRule adds the rule to the database
-	UpsertRule(ctx context.Context, result *storage.ComplianceOperatorRuleV2) error
-
-	// UpsertRules adds the rules to the database
-	UpsertRules(ctx context.Context, result []*storage.ComplianceOperatorRuleV2) error
+	UpsertRule(ctx context.Context, rule *storage.ComplianceOperatorRuleV2) error
 
 	// DeleteRule removes a rule from the database
 	DeleteRule(ctx context.Context, id string) error
+
+	// GetRulesByCluster retrieves rules by cluster
+	GetRulesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorRuleV2, error)
 }
 
 // New returns an instance of DataStore.
 func New(complianceRuleStorage pgStore.Store) DataStore {
-	ds := &datastoreImpl{
+	return &datastoreImpl{
 		store: complianceRuleStorage,
 	}
-	return ds
-}
-
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, complianceRuleStorage pgStore.Store) DataStore {
-	ds := &datastoreImpl{
-		store: complianceRuleStorage,
-	}
-	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	return New(store), nil
+	return New(store)
 }
