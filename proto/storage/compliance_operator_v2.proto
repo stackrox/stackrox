@@ -130,7 +130,7 @@ message ComplianceOperatorCheckResultV2 {
         NOT_APPLICABLE = 6;
         INCONSISTENT   = 7;
     }
-    string                    id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                    id               = 1 [(gogoproto.moretags) = 'search:"Compliance Check UID,hidden" sql:"pk"'];
     string                    check_id         = 2 [(gogoproto.moretags) = 'search:"Compliance Check ID,hidden"'];
     string                    check_name       = 3 [(gogoproto.moretags) = 'search:"Compliance Check Name,hidden"'];
     string                    cluster_id       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];

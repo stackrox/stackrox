@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -284,6 +285,54 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 
 			if tc.expectedResp != nil {
 				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+			}
+		})
+	}
+}
+
+func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ResourceByID
+		expectedResp *apiV2.ComplianceCheckResult
+		expectedErr  error
+		found        bool
+		setMocks     func()
+	}{
+		{
+			desc:         "ID exists",
+			query:        &apiV2.ResourceByID{Id: uuid.NewDummy().String()},
+			expectedErr:  nil,
+			expectedResp: convertUtils.GetConvertedComplianceResult(s.T()),
+			found:        true,
+			setMocks: func() {
+				s.resultDatastore.EXPECT().GetComplianceCheckResult(gomock.Any(), uuid.NewDummy().String()).Return(convertUtils.GetComplianceStorageResult(s.T()), true, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with non-existent record",
+			query:       &apiV2.ResourceByID{Id: uuid.NewDummy().String()},
+			expectedErr: errors.Wrapf(errox.InvalidArgs, "compliance check result with id %q does not exist", uuid.NewDummy().String()),
+			found:       false,
+			setMocks: func() {
+				s.resultDatastore.EXPECT().GetComplianceCheckResult(gomock.Any(), uuid.NewDummy().String()).Return(nil, false, nil).Times(1)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			result, err := s.service.GetComplianceScanCheckResult(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T()), result)
 			}
 		})
 	}
