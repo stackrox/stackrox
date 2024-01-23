@@ -20,12 +20,12 @@ import (
 
 // Vulnerability describes a vulnerability in a TestCase.
 type Vulnerability struct {
-	Name        string                 `json:"Name"`
-	Description string                 `json:"Description"`
-	Link        string                 `json:"Link"`
-	Severity    string                 `json:"Severity"`
-	Metadata    map[string]interface{} `json:"Metadata"`
-	FixedBy     string                 `json:"FixedBy"`
+	Name        string         `json:"Name"`
+	Description string         `json:"Description"`
+	Link        string         `json:"Link"`
+	Severity    string         `json:"Severity"`
+	Metadata    map[string]any `json:"Metadata"`
+	FixedBy     string         `json:"FixedBy"`
 }
 
 // Vulnerability describes a feature in a TestCase.

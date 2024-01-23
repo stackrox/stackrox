@@ -10,10 +10,12 @@ import {
     List,
     ListItem,
 } from '@patternfly/react-core';
-import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import uniqBy from 'lodash/uniqBy';
+
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { getDateTime } from 'utils/dateUtils';
 import { ensureExhaustive } from 'utils/type.utils';
+
 import { Distro, sortCveDistroList } from '../sortUtils';
 
 export type ImageCveMetadata = {
@@ -85,15 +87,11 @@ function ImageCvePageHeader({ data }: ImageCvePageHeaderProps) {
                     <List isPlain>
                         {prioritizedDistros.map((distro) => (
                             <ListItem key={distro.operatingSystem}>
-                                <a
-                                    className="pf-u-pl-0"
-                                    href={distro.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {getDistroLinkText(distro)}
-                                    <ExternalLinkAltIcon className="pf-u-display-inline pf-u-ml-sm" />
-                                </a>
+                                <ExternalLink>
+                                    <a href={distro.link} target="_blank" rel="noopener noreferrer">
+                                        {getDistroLinkText(distro)}
+                                    </a>
+                                </ExternalLink>
                             </ListItem>
                         ))}
                     </List>

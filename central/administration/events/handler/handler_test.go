@@ -36,7 +36,6 @@ func (s *handlerTestSuite) SetupTest() {
 	s.eventStream = stream.GetStreamForTesting(s.T())
 	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
-	s.handler.Start()
 }
 
 func (s *handlerTestSuite) TearDownTest() {
@@ -72,6 +71,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 	}
 	s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
 
+	s.handler.Start()
 	s.eventStream.Produce(event)
 
 	s.Eventually(addCalledFn, 100*time.Millisecond, 10*time.Millisecond)
