@@ -88,17 +88,19 @@ func initialize() {
 			if secured && !needsRekey {
 				continue
 			}
-			if needsRekey {
-				err = notifierUtils.RekeyNotifier(protoNotifier, oldKey, cryptoKey)
-				if err != nil {
-					utils.Should(fmt.Errorf("error rekeying notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
-					continue
-				}
-			} else {
+
+			if !secured {
 				err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
 				if err != nil {
 					// Don't send out error from crypto lib
 					utils.Should(fmt.Errorf("error securing notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
+					continue
+				}
+			} else {
+				// Secured but needs to be rekeyed
+				err = notifierUtils.RekeyNotifier(protoNotifier, oldKey, cryptoKey)
+				if err != nil {
+					utils.Should(fmt.Errorf("error rekeying notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
 					continue
 				}
 			}

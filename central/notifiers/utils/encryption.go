@@ -83,7 +83,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		return nil
 	}
 	creds, err := getCredentials(notifier)
-	if err != nil || creds == "" {
+	if err != nil {
 		return err
 	}
 
@@ -92,7 +92,9 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 	if err != nil {
 		return err
 	}
-	cleanupCredentials(notifier)
+	if env.CleanupNotifierCreds.BooleanSetting() {
+		cleanupCredentials(notifier)
+	}
 	return nil
 }
 
@@ -101,15 +103,18 @@ func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return false, nil
 	}
+	if !env.CleanupNotifierCreds.BooleanSetting() {
+		return notifier.GetNotifierSecret() != "", nil
+	}
 	creds, err := getCredentials(notifier)
 	if err != nil {
 		return false, nil
 	}
 	if notifier.GetType() == pkgNotifiers.AWSSecurityHubType {
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
-		return notifier.NotifierSecret != "" && creds.GetAccessKeyId() == "" && creds.GetSecretAccessKey() == "", nil
+		return notifier.GetNotifierSecret() != "" && creds.GetAccessKeyId() == "" && creds.GetSecretAccessKey() == "", nil
 	}
-	return notifier.NotifierSecret != "" && creds == "", nil
+	return notifier.GetNotifierSecret() != "" && creds == "", nil
 }
 
 // RekeyNotifier rekeys an already secured notifier using the new key
@@ -118,11 +123,14 @@ func RekeyNotifier(notifier *storage.Notifier, oldKey string, newKey string) err
 		return nil
 	}
 	secured, err := IsNotifierSecured(notifier)
-	if err != nil || !secured {
+	if err != nil {
 		return err
 	}
+	if !secured {
+		return errors.New("Cannot rekey unsecured notifier")
+	}
 	cryptoCodec := cryptocodec.Singleton()
-	creds, err := cryptoCodec.Decrypt(oldKey, notifier.NotifierSecret)
+	creds, err := cryptoCodec.Decrypt(oldKey, notifier.GetNotifierSecret())
 	if err != nil {
 		return err
 	}
