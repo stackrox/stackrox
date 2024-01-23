@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -227,7 +228,7 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		}
 	}
 
-	u.updateHealthWithLocalScannerV4Info(&result)
+	u.populateScannerV4Info(&result)
 
 	if len(result.StatusErrors) > 0 {
 		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
@@ -236,10 +237,10 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	return &result
 }
 
-// updateHealthWithLocalScannerV4Info will add to the ready / desired pod counts of health
-// the state of the Scanner V4 related pods.
-func (u *updaterImpl) updateHealthWithLocalScannerV4Info(result *storage.ScannerHealthInfo) {
-	if !features.ScannerV4.Enabled() {
+// populateScannerV4Info will add the state of the Scanner V4 related pods to
+// result if appropriate.
+func (u *updaterImpl) populateScannerV4Info(result *storage.ScannerHealthInfo) {
+	if !features.ScannerV4.Enabled() || !centralcaps.Has(centralsensor.ScannerV4Supported) {
 		return
 	}
 
@@ -248,11 +249,11 @@ func (u *updaterImpl) updateHealthWithLocalScannerV4Info(result *storage.Scanner
 		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner v4 indexer deployment in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner v4 indexer deployment in namespace %q: %v", u.namespace, err))
 	} else {
-		result.TotalDesiredAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{
-			TotalDesiredAnalyzerPods: indexer.Status.Replicas + result.GetTotalDesiredAnalyzerPods(),
+		result.TotalDesiredV4IndexerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredV4IndexerPods{
+			TotalDesiredV4IndexerPods: indexer.Status.Replicas,
 		}
-		result.TotalReadyAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{
-			TotalReadyAnalyzerPods: indexer.Status.ReadyReplicas + result.GetTotalReadyAnalyzerPods(),
+		result.TotalReadyV4IndexerPodsOpt = &storage.ScannerHealthInfo_TotalReadyV4IndexerPods{
+			TotalReadyV4IndexerPods: indexer.Status.ReadyReplicas,
 		}
 	}
 
@@ -261,11 +262,11 @@ func (u *updaterImpl) updateHealthWithLocalScannerV4Info(result *storage.Scanner
 		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner v4 db deployment in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner v4 db deployment in namespace %q: %v", u.namespace, err))
 	} else {
-		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
-			TotalDesiredDbPods: db.Status.Replicas + result.GetTotalDesiredDbPods(),
+		result.TotalDesiredV4DbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredV4DbPods{
+			TotalDesiredV4DbPods: db.Status.Replicas,
 		}
-		result.TotalReadyDbPodsOpt = &storage.ScannerHealthInfo_TotalReadyDbPods{
-			TotalReadyDbPods: db.Status.ReadyReplicas + result.GetTotalReadyDbPods(),
+		result.TotalReadyV4DbPodsOpt = &storage.ScannerHealthInfo_TotalReadyV4DbPods{
+			TotalReadyV4DbPods: db.Status.ReadyReplicas,
 		}
 	}
 }

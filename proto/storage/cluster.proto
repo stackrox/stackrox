@@ -389,6 +389,21 @@ message ScannerHealthInfo {
         int32 total_ready_db_pods = 4;
     }
 
+    // Scanner V4 fields
+
+    oneof total_desired_v4_indexer_pods_opt {
+        int32 total_desired_v4_indexer_pods = 6;
+    }
+    oneof total_ready_v4_indexer_pods_opt {
+        int32 total_ready_v4_indexer_pods = 7;
+    }
+    oneof total_desired_v4_db_pods_opt {
+        int32 total_desired_v4_db_pods = 8;
+    }
+    oneof total_ready_v4_db_pods_opt {
+        int32 total_ready_v4_db_pods = 9;
+    }
+
     // Collection of errors that occurred while trying to obtain scanner health info.
     repeated string status_errors = 5;
 }
