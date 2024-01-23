@@ -8,7 +8,6 @@ import (
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/administration/events/stream"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
@@ -37,7 +36,6 @@ func (s *handlerTestSuite) SetupTest() {
 	s.eventStream = stream.GetStreamForTesting(s.T())
 	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
-	s.handler.Start()
 }
 
 func (s *handlerTestSuite) TearDownTest() {
@@ -58,9 +56,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return addCalled
 	}
-	concurrency.WithLock(&s.mutex, func() {
-		s.datastore.EXPECT().AddEvent(s.handler.eventWriteCtx, event).Do(addSetCalledFn)
-	})
+	s.datastore.EXPECT().AddEvent(s.handler.eventWriteCtx, event).Do(addSetCalledFn)
 
 	flushCalled := false
 	flushSetCalledFn := func(ctx context.Context) {
@@ -73,10 +69,9 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return flushCalled
 	}
-	concurrency.WithLock(&s.mutex, func() {
-		s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
-	})
+	s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
 
+	s.handler.Start()
 	s.eventStream.Produce(event)
 
 	s.Eventually(addCalledFn, 100*time.Millisecond, 10*time.Millisecond)
