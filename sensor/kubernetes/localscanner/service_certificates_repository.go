@@ -167,14 +167,14 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 // in their data.
 // This operation is idempotent but not atomic in sense that on error some secrets might be created and updated,
 // while others are not.
-// ensureServiceCertificates returns list of persists certificates.
+// The first return value contains the certificates that have been persisted.
 // Each missing secret is created with the owner specified in the constructor as owner.
 // This only creates secrets for the service types that appear in certificates, missing service types are just skipped.
 // Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
 func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	caPem := certificates.GetCaPem()
-	var persistedCertificates []*storage.TypedServiceCertificate
+	persistedCertificates := make ([]*storage.TypedServiceCertificate, 0, len(certificates))
 	var serviceErrors error
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
@@ -184,7 +184,7 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx conte
 
 		secretSpec, ok := r.secrets[cert.GetServiceType()]
 		if !ok {
-			log.Warnf("skip persisting unknown service type: %q", cert.GetServiceType())
+			log.Warnf("skipping persisting of certificate for unknown service type: %q", cert.GetServiceType())
 			continue
 		}
 		if err := r.ensureServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {

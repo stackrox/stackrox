@@ -97,7 +97,7 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 }
 
 func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
-	var serviceTypeNames []string
+	serviceTypeNames := make([]string, 0, len(serviceCertificates))
 	for _, c := range serviceCertificates {
 		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
 	}
