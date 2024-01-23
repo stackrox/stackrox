@@ -54,7 +54,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                         <span>
                             {totalReadyAnalyzerPods === null
                                 ? notAvailable
-                                : totalReadyAnalyzerPods + totalReadyV4IndexerPods}
+                                : totalReadyAnalyzerPods + (totalReadyV4IndexerPods || 0)}
                         </span>
                     </td>
                 </tr>
@@ -65,7 +65,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                     <td className={tdClassName} data-testid="totalDesiredPods">
                         {totalDesiredAnalyzerPods === null
                             ? notAvailable
-                            : totalDesiredAnalyzerPods + totalDesiredV4IndexerPods}
+                            : totalDesiredAnalyzerPods + (totalDesiredV4IndexerPods || 0)}
                     </td>
                 </tr>
                 <tr className={trClassName} key="dbAvailable">
@@ -74,8 +74,8 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                     </th>
                     <td className={tdClassName} data-testid="dbAvailable">
                         {resolveDbHealthStatus(
-                            totalDesiredDbPods + totalDesiredV4DbPods, 
-                            totalReadyDbPods + totalReadyV4DbPods,
+                            totalDesiredDbPods + (totalDesiredV4DbPods || 0),
+                            totalReadyDbPods + (totalReadyV4DbPods || 0),
                         )}
                     </td>
                 </tr>
