@@ -1,4 +1,4 @@
-package complianceoperatorrules
+package complianceoperatorrulesv2
 
 import (
 	"context"
@@ -8,16 +8,15 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/rules/datastore"
 	v2Datastore "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -53,29 +52,30 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	existingIDs := set.NewStringSet()
-	walkFn := func() error {
-		existingIDs.Clear()
-		return s.datastore.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
-			if rule.GetClusterId() == clusterID {
-				existingIDs.Add(rule.GetId())
-			}
-			return nil
-		})
+	if !features.ComplianceEnhancements.Enabled() {
+		return nil
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+
+	existingIDs := set.NewStringSet()
+
+	rules, err := s.v2RuleDatastore.GetRulesByCluster(ctx, clusterID)
+	if err != nil {
 		return err
 	}
 
-	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRule)(nil))
-	return reconciliation.Perform(store, existingIDs, "complianceoperatorrules", func(id string) error {
+	for _, rule := range rules {
+		// The UID is used for reconciliation
+		existingIDs.Add(rule.GetId())
+	}
 
-		return s.datastore.Delete(ctx, id)
+	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRuleV2)(nil))
+	return reconciliation.Perform(store, existingIDs, "complianceoperatorrulesv2", func(id string) error {
+		return s.v2RuleDatastore.DeleteRule(ctx, id)
 	})
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetComplianceOperatorRule() != nil
+	return msg.GetEvent().GetComplianceOperatorRuleV2() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -86,16 +86,22 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// If a sensor sends in a v1 compliance message we will still process it the v1 way in the event
 	// a sensor is not updated.
 	switch event.Resource.(type) {
-	case *central.SensorEvent_ComplianceOperatorRule:
-		return s.processComplianceRule(ctx, event, clusterID)
+	case *central.SensorEvent_ComplianceOperatorRuleV2:
+		if !features.ComplianceEnhancements.Enabled() {
+			return errors.New("Next gen compliance is disabled.  Message unexpected.")
+		}
+		return s.processComplianceRuleV2(ctx, event, clusterID)
 	}
 
 	return errors.Errorf("unexpected message %t.", event.Resource)
 }
 
-func (s *pipelineImpl) processComplianceRule(_ context.Context, event *central.SensorEvent, clusterID string) error {
-	rule := event.GetComplianceOperatorRule()
-	rule.ClusterId = clusterID
+func (s *pipelineImpl) processComplianceRuleV2(ctx context.Context, event *central.SensorEvent, clusterID string) error {
+	if !features.ComplianceEnhancements.Enabled() {
+		return errors.New("Next gen compliance is disabled.  Message unexpected.")
+	}
+
+	rule := event.GetComplianceOperatorRuleV2()
 
 	if val := rule.Annotations[v1alpha1.RuleIDAnnotationKey]; val == "" {
 		return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
@@ -103,9 +109,10 @@ func (s *pipelineImpl) processComplianceRule(_ context.Context, event *central.S
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.manager.DeleteRule(rule)
+		// For now, we need to process V1 rules as well to ensure we retain the full capability of V1 compliance
+		return s.v2RuleDatastore.DeleteRule(ctx, rule.GetId())
 	default:
-		return s.manager.AddRule(rule)
+		return s.v2RuleDatastore.UpsertRule(ctx, internaltov2storage.ComplianceOperatorRule(rule, clusterID))
 	}
 }
 
