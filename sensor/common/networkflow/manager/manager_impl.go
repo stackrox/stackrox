@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -38,6 +39,7 @@ const (
 	maxContainerResolutionWaitPeriod = 2 * time.Minute
 
 	connectionDeletionGracePeriod = 5 * time.Minute
+	charset                       = "abcdef0123456789"
 )
 
 var (
@@ -48,6 +50,7 @@ var (
 
 	emptyProcessInfo = processInfo{}
 	tickerTime       = time.Second * 30
+	fakeActiveFlows  = env.RegisterIntegerSetting("ROX_FAKE_ACTIVE_FLOWS", 0)
 )
 
 type hostConnections struct {
@@ -200,6 +203,14 @@ func (e *containerEndpoint) String() string {
 	return fmt.Sprintf("%s %s: %s", e.containerID, e.processKey, e.endpoint)
 }
 
+func randStringWithLength(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
 // NewManager creates a new instance of network flow manager
 func NewManager(
 	clusterEntities EntityStore,
@@ -218,6 +229,31 @@ func NewManager(
 		finished:          &sync.WaitGroup{},
 		activeConnections: make(map[connection]networkConnIndicator),
 	}
+
+	for i := 0; i < fakeActiveFlows.IntegerSetting(); i++ {
+		conn := connection{
+			local: net.ParseIPPortPair("0,0,0,0:80"),
+			remote: net.NumericEndpoint{
+				IPAndPort: net.ParseIPPortPair("0.0.0.0:80"),
+				L4Proto:   net.L4Proto(2),
+			},
+			containerID: randStringWithLength(10),
+			incoming:    true,
+		}
+		mgr.activeConnections[conn] = networkConnIndicator{
+			srcEntity: networkgraph.Entity{
+				ID:   randStringWithLength(10),
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			},
+			dstEntity: networkgraph.Entity{
+				ID:   randStringWithLength(10),
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			},
+			dstPort:  uint16(rand.Intn(1000)),
+			protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		}
+	}
+	flowMetrics.SetActiveFlowsTrackerSizeGauge(len(mgr.activeConnections))
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
 		mgr.sensorUpdates = make(chan *message.ExpiringMessage, env.NetworkFlowBufferSize.IntegerSetting())
