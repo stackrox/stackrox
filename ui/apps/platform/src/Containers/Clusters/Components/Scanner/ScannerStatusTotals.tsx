@@ -73,7 +73,10 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                         Database:
                     </th>
                     <td className={tdClassName} data-testid="dbAvailable">
-                        {resolveDbHealthStatus(totalDesiredDbPods + totalDesiredV4DbPods, totalReadyDbPods + totalReadyV4DbPods)}
+                        {resolveDbHealthStatus(
+                            totalDesiredDbPods + totalDesiredV4DbPods, 
+                            totalReadyDbPods + totalReadyV4DbPods,
+                        )}
                     </td>
                 </tr>
                 {statusErrors && statusErrors.length > 0 && (
