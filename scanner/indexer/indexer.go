@@ -145,7 +145,7 @@ func castToConfig[T any](f func(cfg T)) func(o any) error {
 	return func(o interface{}) error {
 		cfg, ok := o.(T)
 		if !ok {
-			return errors.New("internal erorr: casting failed")
+			return errors.New("internal error: casting failed")
 		}
 		f(cfg)
 		return nil
