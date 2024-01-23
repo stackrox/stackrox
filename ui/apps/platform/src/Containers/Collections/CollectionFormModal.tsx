@@ -14,6 +14,7 @@ import {
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { useMediaQuery } from 'react-responsive';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { collectionsBasePath } from 'routePaths';
 import { Collection } from 'services/CollectionsService';
@@ -130,17 +131,15 @@ function CollectionsFormModal({
         ) : (
             <>
                 {hasWriteAccessForCollections && modalAction.type === 'view' && (
-                    <Button
-                        variant="link"
-                        component="a"
-                        href={`${collectionsBasePath}/${modalAction.collectionId}?action=edit`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        icon={<ExternalLinkAltIcon />}
-                        iconPosition="right"
-                    >
-                        Edit collection
-                    </Button>
+                    <ExternalLink>
+                        <a
+                            href={`${collectionsBasePath}/${modalAction.collectionId}?action=edit`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Edit collection
+                        </a>
+                    </ExternalLink>
                 )}
                 {isDrawerOpen ? (
                     <Button variant="secondary" onClick={closeDrawer}>

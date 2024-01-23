@@ -1,17 +1,14 @@
 import React, { useState, ReactElement } from 'react';
 import { Button, ButtonVariant, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
-import {
-    AngleDownIcon,
-    AngleUpIcon,
-    DownloadIcon,
-    ExternalLinkAltIcon,
-} from '@patternfly/react-icons';
+import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 import { parse } from 'date-fns';
 
-import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
+import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
 import { getVersionedDocs } from 'utils/versioning';
+
 import DiagnosticBundleForm from './DiagnosticBundleForm';
 import { getQueryString, startingTimeRegExp } from './diagnosticBundleUtils';
 
@@ -88,25 +85,18 @@ function GenerateDiagnosticBundle(): ReactElement {
                 Download diagnostic bundle
             </Button>
             {version && (
-                <Button
-                    variant="link"
-                    isInline
-                    component="a"
-                    href={getVersionedDocs(
-                        version,
-                        'configuration/generate-diagnostic-bundle.html'
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Flex
-                        alignItems={{ default: 'alignItemsCenter' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
+                <ExternalLink>
+                    <a
+                        href={getVersionedDocs(
+                            version,
+                            'configuration/generate-diagnostic-bundle.html'
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
-                        <span>Generate a diagnostic bundle</span>
-                        <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
-                    </Flex>
-                </Button>
+                        Generate a diagnostic bundle
+                    </a>
+                </ExternalLink>
             )}
         </Flex>
     );
