@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
@@ -54,6 +55,7 @@ type Matcher interface {
 type matcherImpl struct {
 	libVuln       *libvuln.Libvuln
 	metadataStore postgres.MatcherMetadataStore
+	pool          *pgxpool.Pool
 
 	updater *updater.Updater
 }
@@ -61,22 +63,38 @@ type matcherImpl struct {
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.NewMatcher")
+
+	var success bool
+
 	pool, err := ccpostgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
+	defer func() {
+		if !success {
+			pool.Close()
+		}
+	}()
+
 	store, err := ccpostgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+
 	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
 	}
+
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating matcher postgres locker: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
+		}
+	}()
 
 	// TODO(ROX-18888): Update HTTP client.
 	c := http.DefaultClient
@@ -94,6 +112,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if err != nil {
 		return nil, fmt.Errorf("creating libvuln: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = libVuln.Close(ctx)
+		}
+	}()
 
 	u, err := updater.New(ctx, updater.Opts{
 		Store:         store,
@@ -105,7 +128,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
 	})
 	if err != nil {
-		_ = libVuln.Close(ctx)
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
@@ -115,9 +137,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
+	success = true
 	return &matcherImpl{
 		libVuln:       libVuln,
 		metadataStore: metadataStore,
+		pool:          pool,
 
 		updater: u,
 	}, nil
@@ -136,5 +160,7 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	return errors.Join(m.updater.Stop(), m.libVuln.Close(ctx))
+	err := errors.Join(m.updater.Stop(), m.libVuln.Close(ctx))
+	m.pool.Close()
+	return err
 }

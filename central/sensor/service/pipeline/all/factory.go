@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresults"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrules"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrulesv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscans"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscansettingbinding"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
@@ -80,6 +81,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		nodeinventory.GetPipeline(),
 		enhancements.GetPipeline(),
 		complianceoperatorinfo.GetPipeline(),
+		complianceoperatorrulesv2.GetPipeline(),
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

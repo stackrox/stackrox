@@ -57,6 +57,11 @@ func (d *datastoreImpl) SearchComplianceCheckResults(ctx context.Context, query 
 	return d.store.GetByQuery(ctx, query)
 }
 
+// GetComplianceCheckResult returns the instance of the result specified by ID
+func (d *datastoreImpl) GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error) {
+	return d.store.Get(ctx, complianceResultID)
+}
+
 // ComplianceCheckResultStats retrieves the scan results stats specified by query for the scan configuration
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
 	var err error

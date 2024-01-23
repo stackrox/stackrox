@@ -38,7 +38,7 @@ var (
 		},
 	}
 
-	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	latestTagEnabledAndEnforced = &storage.Policy{
 		Id:   uuid.NewV4().String(),

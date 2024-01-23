@@ -1432,6 +1432,7 @@
         "JAVA",
         "RUBY",
         "NODEJS",
+        "GO",
         "DOTNETCORERUNTIME",
         "INFRASTRUCTURE"
       ],

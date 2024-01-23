@@ -38,15 +38,6 @@ var (
 		},
 	}
 
-	testPods = []*storage.Pod{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
-	}
-
 	testMachineConfigs = map[string][]string{
 		"standard": {
 			"config1",
@@ -54,7 +45,7 @@ var (
 		},
 	}
 
-	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testPods, testMachineConfigs)
+	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testMachineConfigs)
 )
 
 func TestEmptyRun(t *testing.T) {

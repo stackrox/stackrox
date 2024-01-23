@@ -73,6 +73,7 @@ function ScanConfigOptions(): ReactElement {
                                     fieldId="parameters.name"
                                     errors={formik.errors}
                                     touched={formik.touched}
+                                    helperText="Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
                                 >
                                     <TextInput
                                         isRequired

@@ -148,6 +148,7 @@ enum SourceType {
     JAVA              = 2;
     RUBY              = 3;
     NODEJS            = 4;
+    GO                = 7;
     DOTNETCORERUNTIME = 5;
     INFRASTRUCTURE    = 6;
 }

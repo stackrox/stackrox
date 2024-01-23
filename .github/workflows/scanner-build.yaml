@@ -14,14 +14,45 @@ on:
     - synchronize
 
 jobs:
+  define-job-matrix:
+    outputs:
+      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Define the matrix for build jobs
+      id: define-job-matrix
+      run: |
+        source './scripts/ci/lib.sh'
+
+        # TODO(ROX-21746): add arm64 back
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "ppc64le", "s390x"] } }'
+
+        # Conditionally add a prerelease build (binaries built with GOTAGS=release)
+        if ! is_tagged; then
+          if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
+            matrix="$(jq '.build_and_push.name += ["prerelease"]' <<< "$matrix")"
+          fi
+        fi
+
+        echo "Job matrix after conditionals:"
+        jq <<< "$matrix"
+
+        condensed="$(jq -c <<< "$matrix")"
+        echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
+
   build-and-push:
+    needs: define-job-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        # If this is updated, be sure to update architectures in push-manifests below.
-        # TODO(ROX-21746): add arm64 back
-        goarch: ['amd64', 'ppc64le', 's390x']
-        goos: ['linux']
+      # Supports two go binary builds:
+      # default    - built with environment defaults (see handle-tagged-build & env.mk)
+      # prerelease - built with GOTAGS=release
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:
@@ -47,6 +78,15 @@ jobs:
         # Prevent fatal error "detected dubious ownership in repository" from recent git.
         git config --global --add safe.directory "$(pwd)"
 
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Setup Go build environment for release
+      if: |
+        contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+          ||
+        matrix.name == 'prerelease'
+      run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
     - name: Build Scanner and ScannerDB images
       run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
@@ -59,9 +99,9 @@ jobs:
         push_scanner_image_set ${{ matrix.goarch }}
 
   push-manifests:
-    runs-on: ubuntu-latest
     needs:
     - build-and-push
+    runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:

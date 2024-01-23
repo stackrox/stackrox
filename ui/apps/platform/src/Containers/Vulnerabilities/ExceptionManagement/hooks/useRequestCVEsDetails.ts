@@ -41,7 +41,6 @@ type RequestCVEDetail = {
 
 type UseAffectedImagesCountResult = {
     isLoading: boolean;
-    totalAffectedImageCount: number;
     requestCVEsDetails: RequestCVEDetail[];
 };
 
@@ -71,14 +70,8 @@ function useRequestCVEsDetails(exception: VulnerabilityException): UseAffectedIm
             };
         }) || [];
 
-    const totalAffectedImageCount =
-        data?.imageCVEs.reduce((acc, curr) => {
-            return acc + curr.affectedImageCount;
-        }, 0) || 0;
-
     return {
         isLoading,
-        totalAffectedImageCount,
         requestCVEsDetails,
     };
 }

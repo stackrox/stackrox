@@ -1,6 +1,13 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
+import {
+    Checkbox,
+    Form,
+    FormSelect,
+    PageSection,
+    TextInput,
+    TextArea,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
@@ -18,6 +25,8 @@ import FormLabelGroup from '../FormLabelGroup';
 import ScheduleIntervalOptions from '../FormSchedule/ScheduleIntervalOptions';
 import ScheduleWeeklyOptions from '../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../FormSchedule/ScheduleDailyOptions';
+
+import { getGoogleCredentialsPlaceholder } from '../../utils/integrationUtils';
 
 export type GcsIntegration = {
     gcs: {
@@ -58,7 +67,7 @@ export const validationSchema = yup.object().shape({
                 .trim()
                 .test(
                     'serviceAccount-test',
-                    'Valid JSON is required for service account',
+                    'Valid JSON is required for service account key',
                     (value, context: yup.TestContext) => {
                         const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -300,7 +309,7 @@ function GcsIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && !values.externalBackup.gcs.useWorkloadId && isEditable && (
+                    {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
                             fieldId="updatePassword"
@@ -309,29 +318,33 @@ function GcsIntegrationForm({
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update service account"
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
+                                isChecked={
+                                    !values.externalBackup.gcs.useWorkloadId &&
+                                    values.updatePassword
+                                }
                                 onChange={onUpdateCredentialsChange}
                                 onBlur={handleBlur}
-                                isDisabled={!isEditable}
+                                isDisabled={!isEditable || values.externalBackup.gcs.useWorkloadId}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
+                        label="Service account key (JSON)"
                         isRequired={
                             values.updatePassword && !values.externalBackup.gcs.useWorkloadId
                         }
-                        label="Service account (JSON)"
                         fieldId="externalBackup.gcs.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextInput
+                        <TextArea
+                            className="json-input"
                             isRequired={
                                 values.updatePassword && !values.externalBackup.gcs.useWorkloadId
                             }
-                            type="password"
+                            type="text"
                             id="externalBackup.gcs.serviceAccount"
                             name="externalBackup.gcs.serviceAccount"
                             value={values.externalBackup.gcs.serviceAccount}
@@ -342,11 +355,10 @@ function GcsIntegrationForm({
                                 !values.updatePassword ||
                                 values.externalBackup.gcs.useWorkloadId
                             }
-                            placeholder={
-                                values.updatePassword || values.externalBackup.gcs.useWorkloadId
-                                    ? ''
-                                    : 'Currently-stored service account JSON will be used.'
-                            }
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                values.externalBackup.gcs.useWorkloadId,
+                                values.updatePassword
+                            )}
                         />
                     </FormLabelGroup>
                 </Form>

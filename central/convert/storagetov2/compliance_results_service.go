@@ -7,14 +7,14 @@ import (
 )
 
 type checkResultKey struct {
-	scanName    string
-	profileName string
-	checkName   string
+	scanConfigName string
+	profileName    string
+	checkName      string
 }
 
 type scanResultKey struct {
-	scanName    string
-	profileName string
+	scanConfigName string
+	profileName    string
 }
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
@@ -49,9 +49,9 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	var orderedKeys []checkResultKey
 	for _, result := range incoming {
 		key := checkResultKey{
-			scanName:    result.GetScanConfigName(),
-			profileName: "", // TODO(ROX-20334)
-			checkName:   result.GetCheckName(),
+			scanConfigName: result.GetScanConfigName(),
+			profileName:    "", // TODO(ROX-20334)
+			checkName:      result.GetCheckName(),
 		}
 		workingResult, found := resultsByScanCheck[key]
 		// First time seeing this rule in the results.
@@ -73,8 +73,8 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	var convertedResults []*v2.ComplianceScanResult
 	for _, key := range orderedKeys {
 		scanKey := scanResultKey{
-			scanName:    key.scanName,
-			profileName: key.profileName,
+			scanConfigName: key.scanConfigName,
+			profileName:    key.profileName,
 		}
 		result, resultFound := resultsByScanCheck[key]
 		if !resultFound {
@@ -93,7 +93,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 
 	for _, key := range scanOrder {
 		convertedResults = append(convertedResults, &v2.ComplianceScanResult{
-			ScanName:     key.scanName,
+			ScanName:     key.scanConfigName,
 			ProfileName:  key.profileName,
 			CheckResults: resultsByScan[key],
 		})
@@ -203,5 +203,6 @@ func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2) *v2.Compli
 		},
 		Status:      convertComplianceCheckStatus(incoming.Status),
 		CreatedTime: incoming.GetCreatedTime(),
+		CheckUid:    incoming.GetId(),
 	}
 }

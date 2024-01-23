@@ -4335,34 +4335,28 @@
             "fields": [
               {
                 "id": 1,
-                "name": "name",
+                "name": "id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Rule Name,hidden,store\"sql:\"pk\""
+                    "value": "sql:\"pk\""
                   }
                 ]
               },
               {
                 "id": 2,
-                "name": "operator_version",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Operator Version,hidden,store\""
-                  }
-                ]
+                "name": "rule_id",
+                "type": "string"
               },
               {
                 "id": 3,
-                "name": "rule_version",
+                "name": "name",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Rule Version,hidden,store\""
+                    "value": "search:\"Compliance Rule Name,hidden\""
                   }
                 ]
               },
@@ -4373,7 +4367,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Rule Type,hidden,store\""
+                    "value": "search:\"Compliance Rule Type,hidden\""
                   }
                 ]
               },
@@ -4384,7 +4378,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Rule Severity,hidden,store\""
+                    "value": "search:\"Compliance Rule Severity,hidden\""
                   }
                 ]
               },
@@ -4406,19 +4400,30 @@
               {
                 "id": 11,
                 "name": "fixes",
-                "type": "string"
+                "type": "Fix",
+                "is_repeated": true
               },
               {
                 "id": 12,
-                "name": "valuesUsed",
-                "type": "string",
-                "is_repeated": true
+                "name": "warning",
+                "type": "string"
               },
               {
                 "id": 13,
-                "name": "warnings",
-                "type": "string",
+                "name": "controls",
+                "type": "RuleControls",
                 "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
               }
             ],
             "maps": [
@@ -4437,6 +4442,23 @@
                   "name": "annotations",
                   "type": "string"
                 }
+              }
+            ],
+            "messages": [
+              {
+                "name": "Fix",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "platform",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "disruption",
+                    "type": "string"
+                  }
+                ]
               }
             ]
           },
