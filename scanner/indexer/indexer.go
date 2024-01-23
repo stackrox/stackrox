@@ -3,7 +3,6 @@ package indexer
 import (
 	"context"
 	"crypto/sha512"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -142,6 +141,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}, nil
 }
 
+func castToConfig[T any](f func(cfg T)) func(o any) error {
+	return func(o interface{}) error {
+		cfg, ok := o.(T)
+		if !ok {
+			return errors.New("internal error: casting failed")
+		}
+		f(cfg)
+		return nil
+	}
+}
+
 func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
@@ -153,20 +163,23 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root stri
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
+		ScannerConfig: struct {
+			Package, Dist, Repo, File map[string]func(interface{}) error
+		}{
+			Repo: map[string]func(interface{}) error{
+				"rhel-repository-scanner": castToConfig(func(cfg *rhel.RepositoryScannerConfig) {
+					cfg.Repo2CPEMappingURL = indexerCfg.RepositoryToCPEURL
+					cfg.Repo2CPEMappingFile = indexerCfg.RepositoryToCPEFile
+				}),
+			},
+			Package: map[string]func(interface{}) error{
+				"rhel_containerscanner": castToConfig(func(cfg *rhcc.ScannerConfig) {
+					cfg.Name2ReposMappingURL = indexerCfg.NameToReposURL
+					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile
+				}),
+			},
+		},
 	}
-	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`
-{
-  "repo2cpe_mapping_url": "%s",
-  "repo2cpe_mapping_file": "%s"
-}`, indexerCfg.RepositoryToCPEURL, indexerCfg.RepositoryToCPEFile)))}
-	opts.ScannerConfig.Package = map[string]func(interface{}) error{
-		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`
-{
-  "name2repos_mapping_url": "%s",
-  "name2repos_mapping_file": "%s"
-}`, indexerCfg.NameToReposURL, indexerCfg.NameToReposFile)))}
-
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
@@ -394,10 +407,4 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
-}
-
-func deserializeFunc(jsonData []byte) func(interface{}) error {
-	return func(v interface{}) error {
-		return json.Unmarshal(jsonData, v)
-	}
 }
