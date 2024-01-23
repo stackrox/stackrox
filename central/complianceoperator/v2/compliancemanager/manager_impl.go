@@ -99,6 +99,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	if err != nil {
 		return nil, err
 	}
+	createScanRequest := false
 
 	var cron string
 	if scanRequest.GetSchedule() != nil {
@@ -116,18 +117,22 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 	}
 
-	// Check if scan configuration already exists.
-	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
-	if err != nil {
-		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-	if found {
-		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
-	}
+	// No ID means an add so we need to make sure the name does not already exist
+	if scanRequest.Id == "" {
+		// Check if scan configuration already exists by name.
+		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
+		if err != nil {
+			log.Error(err)
+			return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+		}
+		if found {
+			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
+		}
 
-	scanRequest.Id = uuid.NewV4().String()
-	scanRequest.CreatedTime = types.TimestampNow()
+		scanRequest.Id = uuid.NewV4().String()
+		scanRequest.CreatedTime = types.TimestampNow()
+		createScanRequest = true
+	}
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -143,26 +148,11 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_ApplyScanConfig{
-						ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-							Id: sensorRequestID,
-							ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-								ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
-									ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-										ScanName:       scanRequest.GetScanConfigName(),
-										StrictNodeScan: true,
-										Profiles:       profiles,
-									},
-									Cron: cron,
-								},
-							},
-						},
-					},
-				},
-			},
+		var sensorMessage *central.MsgToSensor
+		if createScanRequest {
+			sensorMessage = buildCreateScanConfig(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName())
+		} else {
+			sensorMessage = buildUpdateScanConfig(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName())
 		}
 
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)

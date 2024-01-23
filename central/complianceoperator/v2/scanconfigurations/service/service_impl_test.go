@@ -120,7 +120,29 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 
 	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
+	// ID will be added to the record and returned.  Add it to the validation object
+	request.Id = uuid.NewDummy().String()
 	s.Require().Equal(request, config)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	request := getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
+	processResponse.Id = uuid.NewDummy().String()
+	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
+
+	_, err := s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().NoError(err)
+
+	// Test Case 2: Update with Empty ID
+	request.Id = ""
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Scan configuration ID is required: invalid arguments")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
