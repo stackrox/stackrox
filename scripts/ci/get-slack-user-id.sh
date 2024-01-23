@@ -43,6 +43,7 @@ case "$github_login" in
 'fredrb')           slack_user='U02H0SPRHC0' ;;
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
 'gavin-stackrox')   slack_user='U01QJF2LM9D' ;;
+'grimmimeloni')     slack_user='U048VH2JZ1C' ;;
 'house-d')          slack_user='U03H69TFKH9' ;;
 'ivan-degtiarenko') slack_user='U01U2UKP7D4' ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
