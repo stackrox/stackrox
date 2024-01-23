@@ -25,13 +25,13 @@ import {
     Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
+import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 
 import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
-import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
