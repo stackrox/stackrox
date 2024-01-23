@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 24
+// Next Tag: 25
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];

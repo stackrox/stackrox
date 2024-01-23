@@ -55,7 +55,7 @@ func (ImageIntegrationCategory) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_9e3766be4a43c581, []int{0}
 }
 
-// Next Tag: 24
+// Next Tag: 25
 type ImageIntegration struct {
 	Id         string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
 	Name       string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"`

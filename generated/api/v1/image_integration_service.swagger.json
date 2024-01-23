@@ -549,7 +549,7 @@
           "$ref": "#/definitions/storageImageIntegrationSource"
         }
       },
-      "title": "Next Tag: 24"
+      "title": "Next Tag: 25"
     },
     "storageImageIntegrationCategory": {
       "type": "string",
