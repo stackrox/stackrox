@@ -52,7 +52,6 @@ export const UrlDetailType = {
     CIDR_BLOCK: 'cidr',
     EXTERNAL_ENTITIES: 'internet',
     EXTERNAL_GROUP: 'external',
-    UKNOWN_INTERNAL_ENTITY: 'unknown',
     INTERNAL_ENTITIES: 'internal',
 } as const;
 export type UrlDetailTypeKey = keyof typeof UrlDetailType;
@@ -253,23 +252,17 @@ const TopologyComponent = ({
                             flowTableLabel="External entities flows"
                         />
                     )}
-                    {selectedNode &&
-                        (isNodeOfType('INTERNAL_ENTITIES', selectedNode) ||
-                            isNodeOfType('UKNOWN_INTERNAL_ENTITY', selectedNode)) && (
-                            <GenericEntitiesSideBar
-                                id={selectedNode.id}
-                                nodes={model?.nodes || []}
-                                edges={model?.edges || []}
-                                onNodeSelect={onNodeSelect}
-                                EntityHeaderIcon={<InternalEntitiesIcon />}
-                                sidebarTitle={
-                                    selectedNode.data.type === 'INTERNAL_ENTITIES'
-                                        ? 'Unspecified entity connection within your clusters'
-                                        : ''
-                                }
-                                flowTableLabel="Internal entities flows"
-                            />
-                        )}
+                    {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
+                        <GenericEntitiesSideBar
+                            id={selectedNode.id}
+                            nodes={model?.nodes || []}
+                            edges={model?.edges || []}
+                            onNodeSelect={onNodeSelect}
+                            EntityHeaderIcon={<InternalEntitiesIcon />}
+                            sidebarTitle={'Unspecified entity connection within your clusters'}
+                            flowTableLabel="Internal entities flows"
+                        />
+                    )}
                 </TopologySideBar>
             }
             sideBarOpen={!!selectedNode || simulation.isOn}

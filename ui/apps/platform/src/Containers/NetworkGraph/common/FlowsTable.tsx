@@ -62,7 +62,6 @@ function getFlowSubtext(flow: Flow): string {
         case 'EXTERNAL_ENTITIES':
             return 'External to cluster';
         case 'INTERNAL_ENTITIES':
-        case 'UKNOWN_INTERNAL_ENTITY':
             return 'Internal to cluster';
         default:
             return ensureExhaustive(flow.type);

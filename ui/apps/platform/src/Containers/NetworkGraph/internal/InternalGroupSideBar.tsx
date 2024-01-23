@@ -48,10 +48,7 @@ function InternalGroupSideBar({
     const [entityNameFilter, setEntityNameFilter] = React.useState<string>('');
 
     // derived data
-    const internalNodes = [
-        ...nodes.filter(isOfType('UKNOWN_INTERNAL_ENTITY')),
-        ...nodes.filter(isOfType('INTERNAL_ENTITIES')),
-    ];
+    const internalNodes = nodes.filter(isOfType('INTERNAL_ENTITIES'));
 
     const filteredInternalNodes = entityNameFilter
         ? internalNodes.filter(({ label }) => {

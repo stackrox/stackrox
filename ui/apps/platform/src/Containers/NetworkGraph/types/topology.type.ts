@@ -13,7 +13,6 @@ export type CustomNodeModel =
     | ExternalGroupNodeModel
     | ExternalEntitiesNodeModel
     | InternalGroupNodeModel
-    | UnknownInternalEntityNodeModel
     | InternalEntitiesNodeModel
     | CIDRBlockNodeModel
     | ExtraneousNodeModel;
@@ -21,7 +20,6 @@ export type CustomNodeModel =
 export type CustomSingleNodeModel =
     | DeploymentNodeModel
     | ExternalEntitiesNodeModel
-    | UnknownInternalEntityNodeModel
     | InternalEntitiesNodeModel
     | CIDRBlockNodeModel;
 
@@ -32,11 +30,6 @@ export type DeploymentNodeModel = Override<NodeModel, { data: DeploymentData }>;
 export type ExternalGroupNodeModel = Override<NodeModel, { data: ExternalGroupData }>;
 
 export type ExternalEntitiesNodeModel = Override<NodeModel, { data: ExternalEntitiesData }>;
-
-export type UnknownInternalEntityNodeModel = Override<
-    NodeModel,
-    { data: UnknownInternalEntityData }
->;
 
 export type InternalGroupNodeModel = Override<NodeModel, { data: InternalGroupData }>;
 
@@ -52,15 +45,13 @@ export type CustomSingleNodeData =
     | DeploymentData
     | ExternalEntitiesData
     | CIDRBlockData
-    | InternalEntitiesData
-    | UnknownInternalEntityData;
+    | InternalEntitiesData;
 
 export type CustomNodeData =
     | NamespaceData
     | DeploymentData
     | ExternalGroupData
     | ExternalEntitiesData
-    | UnknownInternalEntityData
     | InternalEntitiesData
     | CIDRBlockData;
 
@@ -91,7 +82,6 @@ type NodeModelType<DataType extends NodeDataType> =
     DataType extends 'EXTERNAL_GROUP' ? ExternalGroupNodeModel :
     DataType extends 'EXTERNAL_ENTITIES' ? ExternalEntitiesNodeModel :
     DataType extends 'CIDR_BLOCK' ? CIDRBlockNodeModel :
-    DataType extends 'UKNOWN_INTERNAL_ENTITY' ? UnknownInternalEntityNodeModel :
     DataType extends 'INTERNAL_ENTITIES' ? InternalEntitiesNodeModel :
     DataType extends 'EXTRANEOUS' ? ExtraneousNodeModel :
     never;
@@ -130,7 +120,6 @@ export type NodeDataType =
     | 'EXTERNAL_ENTITIES'
     | 'CIDR_BLOCK'
     | 'INTERNAL_GROUP'
-    | 'UKNOWN_INTERNAL_ENTITY'
     | 'INTERNAL_ENTITIES'
     | 'EXTRANEOUS';
 
@@ -163,13 +152,6 @@ export type InternalGroupData = {
     type: 'INTERNAL_GROUP';
     collapsible: boolean;
     showContextMenu: boolean;
-    isFadedOut: boolean;
-};
-
-export type UnknownInternalEntityData = {
-    type: 'UKNOWN_INTERNAL_ENTITY';
-    id: string;
-    outEdges: OutEdges;
     isFadedOut: boolean;
 };
 

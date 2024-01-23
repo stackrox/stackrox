@@ -98,10 +98,6 @@ function createFlow({
         entity = 'External entities';
     } else if (adjacentNodeData.type === 'INTERNAL_ENTITIES') {
         entity = 'Internal entities';
-    } else if (adjacentNodeData.type === 'UKNOWN_INTERNAL_ENTITY') {
-        // We don't know what this internal entity is so we just show the id. Often
-        // this will be the IP address of the entity so is still valuable to show.
-        entity = adjacentNodeData.id;
     }
     // we need a unique id for each network flow
     const flowId = `${entity}-${namespace}-${direction}-${String(port)}-${String(protocol)}`;
@@ -235,8 +231,6 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
             backendType = 'EXTERNAL_SOURCE';
         } else if (type === 'EXTERNAL_ENTITIES') {
             backendType = 'INTERNET';
-        } else if (type === 'UKNOWN_INTERNAL_ENTITY') {
-            backendType = 'UKNOWN_INTERNAL_ENTITY';
         } else if (type === 'INTERNAL_ENTITIES') {
             backendType = 'INTERNAL_ENTITIES';
         } else {
@@ -277,7 +271,7 @@ export function createFlowsFromGroupedDiffFlows(
         } else if (entity.type === 'INTERNAL_ENTITIES') {
             entityName = 'Internal entities';
             type = 'INTERNAL_ENTITIES';
-        } else if (entity.type === 'EXTERNAL_SOURCE' || entity.type === 'UKNOWN_INTERNAL_ENTITY') {
+        } else if (entity.type === 'EXTERNAL_SOURCE') {
             entityName = entity.externalSource.name;
             type = 'CIDR_BLOCK';
         }

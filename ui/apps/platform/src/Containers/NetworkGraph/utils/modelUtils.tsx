@@ -9,7 +9,6 @@ import {
     OutEdges,
     L4Protocol,
     EdgeProperties,
-    UnknownInternalEntityNetworkEntityInfo,
     InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
@@ -28,7 +27,6 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
-    UnknownInternalEntityNodeModel,
     InternalEntitiesNodeModel,
     InternalGroupData,
     InternalGroupNodeModel,
@@ -168,28 +166,16 @@ function getExternalNodeModel(
 }
 
 function getInternalNodeModel(
-    entity: InternalNetworkEntitiesInfo | UnknownInternalEntityNetworkEntityInfo,
+    entity: InternalNetworkEntitiesInfo,
     outEdges: OutEdges
-): InternalEntitiesNodeModel | UnknownInternalEntityNodeModel {
+): InternalEntitiesNodeModel {
     const baseNode = getBaseNode(entity.id);
-    switch (entity.type) {
-        case 'INTERNAL_ENTITIES':
-            return {
-                ...baseNode,
-                shape: NodeShape.rect,
-                label: 'Internal entities',
-                data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
-            };
-        case 'UKNOWN_INTERNAL_ENTITY':
-            return {
-                ...baseNode,
-                shape: NodeShape.rect,
-                label: entity?.id || 'Unknown entity',
-                data: { ...entity, type: 'UKNOWN_INTERNAL_ENTITY', outEdges, isFadedOut: false },
-            };
-        default:
-            return ensureExhaustive(entity);
-    }
+    return {
+        ...baseNode,
+        shape: NodeShape.rect,
+        label: 'Internal entities',
+        data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
+    };
 }
 
 function getNodeModel(
@@ -210,7 +196,6 @@ function getNodeModel(
         case 'EXTERNAL_SOURCE':
         case 'INTERNET':
             return getExternalNodeModel(entity, outEdges);
-        case 'UKNOWN_INTERNAL_ENTITY':
         case 'INTERNAL_ENTITIES':
             return getInternalNodeModel(entity, outEdges);
         default:
@@ -274,10 +259,7 @@ export function transformActiveData(
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
-    const internalNodes: Record<
-        string,
-        UnknownInternalEntityNodeModel | InternalEntitiesNodeModel
-    > = {};
+    const internalNodes: Record<string, InternalEntitiesNodeModel> = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
@@ -325,7 +307,7 @@ export function transformActiveData(
             }
         }
 
-        if (type === 'UKNOWN_INTERNAL_ENTITY' || type === 'INTERNAL_ENTITIES') {
+        if (type === 'INTERNAL_ENTITIES') {
             const internalNode = getInternalNodeModel(entity, outEdges);
             if (!internalNodes[id]) {
                 internalNodes[id] = internalNode;
@@ -638,7 +620,7 @@ export function createExtraneousFlowsModel(
             }
         }
 
-        if (type === 'UKNOWN_INTERNAL_ENTITY' || type === 'INTERNAL_ENTITIES') {
+        if (type === 'INTERNAL_ENTITIES') {
             internalNode?.children?.push(data.id);
         }
     });

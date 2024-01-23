@@ -42,8 +42,7 @@ export type NetworkEntityInfo =
     | DeploymentNetworkEntityInfo
     | ExternalSourceNetworkEntityInfo
     | InternetNetworkEntityInfo
-    | InternalNetworkEntitiesInfo
-    | UnknownInternalEntityNetworkEntityInfo;
+    | InternalNetworkEntitiesInfo;
 
 export type DeploymentNetworkEntityInfo = {
     deployment: {
@@ -69,15 +68,6 @@ export type ExternalSourceNetworkEntityInfo = {
     type: 'EXTERNAL_SOURCE';
 } & BaseNetworkEntityInfo;
 
-export type UnknownInternalEntityNetworkEntityInfo = {
-    externalSource: {
-        name: string;
-        cidr?: string;
-        default: boolean; // `default` indicates whether the external source is user-generated or system-generated.
-    };
-    type: 'UKNOWN_INTERNAL_ENTITY';
-} & BaseNetworkEntityInfo;
-
 export type InternetNetworkEntityInfo = {
     type: 'INTERNET';
 } & BaseNetworkEntityInfo;
@@ -97,7 +87,6 @@ export type NetworkEntityInfoType =
     | 'INTERNET'
     | 'LISTEN_ENDPOINT'
     | 'EXTERNAL_SOURCE'
-    | 'UKNOWN_INTERNAL_ENTITY'
     | 'INTERNAL_ENTITIES';
 
 export type L4Protocol =
