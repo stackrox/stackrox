@@ -11,7 +11,7 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ commonExtensions.ScannerBearingCustomResource = (*securedClusterWithScannerBearer)(nil)
+var _ commonExtensions.ScannerV4BearingCustomResource = (*securedClusterWithScannerV4Bearer)(nil)
 
 type securedClusterWithScannerV4Bearer struct {
 	*platform.SecuredCluster

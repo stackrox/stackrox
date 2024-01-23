@@ -184,7 +184,7 @@ func (p *ScannerV4Persistence) GetHostPath() string {
 	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
-// ScannerV4PersistentVolumeClaim defines PVC-based persistence settings for Central DB.
+// ScannerV4PersistentVolumeClaim defines PVC-based persistence settings for Scanner V4 DB.
 type ScannerV4PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
 	// created. Defaults to "scanner-v4-db" if not set.
