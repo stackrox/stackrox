@@ -46,7 +46,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		totalCount[iiType]++
 
 		if (ii.GetType() == types.ECRType && ii.GetEcr().GetUseIam()) ||
-			(ii.GetType() == types.ArtifactType && ii.GetGoogle().GetWifEnabled()) ||
+			(ii.GetType() == types.ArtifactRegistryType && ii.GetGoogle().GetWifEnabled()) ||
 			(ii.GetType() == types.GoogleType && ii.GetGoogle().GetWifEnabled()) ||
 			(ii.GetType() == types.AzureType && ii.GetAzure().GetWifEnabled()) {
 			stsCount[iiType]++

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -154,9 +153,9 @@ func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
 // DockerConfigToImageIntegration creates an image integration for a given
 // registry URL and docker config.
 func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
-	registryType := docker.GenericDockerRegistryType
+	registryType := types.DockerType
 	if rhel.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
-		registryType = types.RHELType
+		registryType = types.RedHatType
 	}
 
 	var id string

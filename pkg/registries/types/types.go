@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	// ArtifactType represents the Google artifact image integration.
-	ArtifactType = "artifactregistry"
+	// ArtifactRegistryType represents the Google Artifact registry image integration.
+	ArtifactRegistryType = "artifactregistry"
 
 	// ArtifactoryType represents the Artifactory image integration.
 	ArtifactoryType = "artifactory"
@@ -34,8 +34,8 @@ const (
 	// QuayType represents the Quay image integration.
 	QuayType = "quay"
 
-	// RHELType represents the RHEL image integration.
-	RHELType = "rhel"
+	// RedHatType represents the RHEL image integration.
+	RedHatType = "rhel"
 )
 
 // Config is the config of the registry, which can be utilized by 3rd party scanners

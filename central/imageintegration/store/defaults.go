@@ -104,7 +104,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "54107745-5717-49c1-9073-a2b72f7a3b49",
 		Name:       "registry.access.redhat.com",
-		Type:       registryTypes.RHELType,
+		Type:       registryTypes.RedHatType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{

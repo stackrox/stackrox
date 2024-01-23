@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -151,9 +150,9 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool, name string) *storage.ImageIntegration {
-	registryType := dockerFactory.GenericDockerRegistryType
+	registryType := types.DockerType
 	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
-		registryType = registryTypes.RHELType
+		registryType = registryTypes.RedHatType
 	}
 
 	return &storage.ImageIntegration{
