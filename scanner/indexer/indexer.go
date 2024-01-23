@@ -142,7 +142,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 }
 
 func castToConfig[T any](f func(cfg T)) func(o any) error {
-	return func(o interface{}) error {
+	return func(o any) error {
 		cfg, ok := o.(T)
 		if !ok {
 			return errors.New("internal error: casting failed")
@@ -164,15 +164,15 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root stri
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
 		ScannerConfig: struct {
-			Package, Dist, Repo, File map[string]func(interface{}) error
+			Package, Dist, Repo, File map[string]func(any) error
 		}{
-			Repo: map[string]func(interface{}) error{
+			Repo: map[string]func(any) error{
 				"rhel-repository-scanner": castToConfig(func(cfg *rhel.RepositoryScannerConfig) {
 					cfg.Repo2CPEMappingURL = indexerCfg.RepositoryToCPEURL
 					cfg.Repo2CPEMappingFile = indexerCfg.RepositoryToCPEFile
 				}),
 			},
-			Package: map[string]func(interface{}) error{
+			Package: map[string]func(any) error{
 				"rhel_containerscanner": castToConfig(func(cfg *rhcc.ScannerConfig) {
 					cfg.Name2ReposMappingURL = indexerCfg.NameToReposURL
 					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile

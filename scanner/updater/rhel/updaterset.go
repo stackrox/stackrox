@@ -169,7 +169,7 @@ func Updaters(ctx context.Context, c *http.Client) ([]driver.Updater, error) {
 	if err != nil {
 		return nil, err
 	}
-	nilCfg := func(interface{}) error { return nil }
+	nilCfg := func(any) error { return nil }
 	f.Configure(ctx, nilCfg, c)
 	s, err := f.UpdaterSet(ctx)
 	if err != nil {
