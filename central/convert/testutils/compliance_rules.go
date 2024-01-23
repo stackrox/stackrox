@@ -99,6 +99,7 @@ func getAnnotations() map[string]string {
 	annotations["policies.open-cluster-management.io/standards"] = "NERC-CIP,PCI-DSS"
 	annotations["control.compliance.openshift.io/NERC-CIP"] = "CIP-003-8 R6;CIP-004-6 R3;CIP-007-3 R6.1"
 	annotations["control.compliance.openshift.io/PCI-DSS"] = "Req-2.2"
+	annotations["compliance.openshift.io/rule"] = "random-rule-name"
 
 	return annotations
 }
