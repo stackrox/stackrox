@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
+import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import {
+    ComplianceScanConfigurationStatus,
     DailySchedule,
     MonthlySchedule,
     Schedule,
@@ -11,12 +13,28 @@ import {
 } from 'services/ComplianceEnhancedService';
 import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
-import { ScanConfigFormValues, ScanConfigParameters } from './Wizard/useFormikScanConfig';
-
 type ClusterStatusObject = {
     icon: ReactElement;
     statusText: string;
 };
+
+export type ScanConfigParameters = {
+    name: string;
+    description: string;
+    intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | null;
+    time: string;
+    daysOfWeek: DayOfWeek[];
+    daysOfMonth: DayOfMonth[];
+};
+
+export type ScanConfigFormValues = {
+    id?: string;
+    parameters: ScanConfigParameters;
+    clusters: string[];
+    profiles: string[];
+};
+
+export type PageActions = 'create' | 'edit' | 'clone';
 
 export function convertFormikParametersToSchedule(parameters: ScanConfigParameters): Schedule {
     const { intervalType, time, daysOfWeek, daysOfMonth } = parameters;
@@ -44,7 +62,9 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
             const weeklySchedule: WeeklySchedule = {
                 ...baseSchedule,
                 intervalType: 'WEEKLY',
-                daysOfWeek: { days: daysOfWeek.map((day) => parseInt(day)) },
+                daysOfWeek: {
+                    days: daysOfWeek.map((day) => parseInt(day, 10)),
+                },
             };
             return weeklySchedule;
         }
@@ -53,7 +73,7 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
             const monthlySchedule: MonthlySchedule = {
                 ...baseSchedule,
                 intervalType: 'MONTHLY',
-                daysOfMonth: { days: daysOfMonth.map((day) => parseInt(day)) },
+                daysOfMonth: { days: daysOfMonth.map((day) => parseInt(day, 10)) },
             };
             return monthlySchedule;
         }
@@ -77,13 +97,103 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
     }
 }
 
+// TODO: is there a saner way to let TS know string from a subset of numbers is string of that same subset?
+function getDayOfWeekString(day): DayOfWeek {
+    if (day === 0) {
+        return '0';
+    }
+    if (day === 1) {
+        return '1';
+    }
+    if (day === 2) {
+        return '2';
+    }
+    if (day === 3) {
+        return '3';
+    }
+    if (day === 4) {
+        return '4';
+    }
+    if (day === 5) {
+        return '5';
+    }
+    if (day === 6) {
+        return '6';
+    }
+    return '0'; // fallback, default to first day of week
+}
+// TODO: is there a saner way to let TS know string from a subset of numbers is string of that same subset?
+function getDayOfMonthString(day): DayOfMonth {
+    if (day === 1) {
+        return '1';
+    }
+    if (day === 15) {
+        return '15';
+    }
+    return '1'; // fallback, default to first day of month
+}
+
+export function convertScheduleToFormikParameters(
+    scanSchedule: Schedule
+): Pick<ScanConfigParameters, 'intervalType' | 'time' | 'daysOfWeek' | 'daysOfMonth'> {
+    const { intervalType, hour, minute } = scanSchedule;
+
+    // eslint-disable-next-line no-nested-ternary
+    const adjustedHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+
+    const suffix = hour > 12 ? 'PM' : 'AM';
+
+    const timeString = `${adjustedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
+
+    switch (intervalType) {
+        case 'WEEKLY': {
+            return {
+                intervalType: 'WEEKLY',
+                time: timeString,
+                daysOfWeek: scanSchedule.daysOfWeek.days.map((day) => getDayOfWeekString(day)),
+                daysOfMonth: [],
+            };
+        }
+
+        case 'MONTHLY': {
+            return {
+                intervalType: 'MONTHLY',
+                time: timeString,
+                daysOfWeek: [],
+                daysOfMonth: scanSchedule.daysOfMonth.days.map((day) => getDayOfMonthString(day)),
+            };
+        }
+
+        case 'DAILY': {
+            return {
+                intervalType: 'DAILY',
+                time: timeString,
+                daysOfWeek: [],
+                daysOfMonth: [],
+            };
+        }
+
+        case 'UNSET':
+        case null:
+        default: {
+            return {
+                intervalType: null,
+                time: timeString,
+                daysOfWeek: [],
+                daysOfMonth: [],
+            };
+        }
+    }
+}
+
 export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
-    const { parameters, clusters, profiles } = formikValues;
+    const { id, parameters, clusters, profiles } = formikValues;
     const { name, description } = parameters;
 
     const scanSchedule = convertFormikParametersToSchedule(parameters);
 
     return {
+        id,
         scanName: name,
         scanConfig: {
             description,
@@ -92,6 +202,30 @@ export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {
             scanSchedule,
         },
         clusters,
+    };
+}
+
+export function convertScanConfigToFormik(
+    existingConfig: ComplianceScanConfigurationStatus
+): ScanConfigFormValues {
+    const { id, scanName, scanConfig, clusterStatus } = existingConfig;
+    const { description = '', profiles, scanSchedule } = scanConfig;
+
+    const { intervalType, time, daysOfWeek, daysOfMonth } =
+        convertScheduleToFormikParameters(scanSchedule);
+
+    return {
+        id,
+        parameters: {
+            name: scanName,
+            description,
+            intervalType,
+            time,
+            daysOfWeek,
+            daysOfMonth,
+        },
+        clusters: clusterStatus.map((clusterStatus) => clusterStatus.clusterId),
+        profiles,
     };
 }
 

@@ -1,22 +1,7 @@
 import { FormikProps, useFormik } from 'formik';
 import * as yup from 'yup';
 
-import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
-
-export type ScanConfigParameters = {
-    name: string;
-    description: string;
-    intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | null;
-    time: string;
-    daysOfWeek: DayOfWeek[];
-    daysOfMonth: DayOfMonth[];
-};
-
-export type ScanConfigFormValues = {
-    parameters: ScanConfigParameters;
-    clusters: string[];
-    profiles: string[];
-};
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
     parameters: {
@@ -60,9 +45,9 @@ const validationSchema = yup.object().shape({
     }),
 });
 
-function useFormikScanConfig(): FormikProps<ScanConfigFormValues> {
+function useFormikScanConfig(initialFormValues): FormikProps<ScanConfigFormValues> {
     const formik = useFormik<ScanConfigFormValues>({
-        initialValues: defaultScanConfigFormValues,
+        initialValues: initialFormValues || defaultScanConfigFormValues,
         validationSchema,
         onSubmit: () => {},
         validateOnMount: true,
