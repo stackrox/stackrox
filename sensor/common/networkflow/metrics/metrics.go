@@ -16,6 +16,7 @@ func init() {
 		HostConnectionsRemoved,
 		HostEndpointsAdded,
 		HostEndpointsRemoved,
+		activeFlowsTrackerSize,
 	)
 }
 
@@ -82,4 +83,15 @@ var (
 		Name:      "processes_listening_on_port_removed",
 		Help:      "Total number of processes listening on ports",
 	})
+	activeFlowsTrackerSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "active_network_flow_tracker_size",
+		Help:      "A gauge that tracks the size of the active network flow tracker",
+	})
 )
+
+// SetActiveFlowsTrackerSizeGauge set the active flows tracker size gauge.
+func SetActiveFlowsTrackerSizeGauge(number int) {
+	activeFlowsTrackerSize.Set(float64(number))
+}
