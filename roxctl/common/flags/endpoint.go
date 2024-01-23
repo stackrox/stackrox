@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -88,6 +89,9 @@ func AddConnectionFlags(c *cobra.Command) {
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
+		if _, _, err := net.SplitHostPort(endpoint); err != nil {
+			return "", false, errox.InvalidArgs.Newf("invalid endpoint: %s, the scheme should be: http(s)://<endpoint>:<port>", err.Error())
+		}
 		return endpoint, plaintext, nil
 	}
 
@@ -101,10 +105,13 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	}
 
 	var usePlaintext bool
+	var defaultPort int
 	switch u.Scheme {
 	case "http":
+		defaultPort = 80
 		usePlaintext = true
 	case "https":
+		defaultPort = 443
 		usePlaintext = false
 	default:
 		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, the scheme should be: http(s)://<endpoint>:<port>", u.Scheme)
@@ -117,8 +124,8 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 		}
 	}
 
-	if _, _, err := net.SplitHostPort(u.Host); err != nil {
-		return "", false, errox.InvalidArgs.Newf("invalid endpoint: %s, the scheme should be: http(s)://<endpoint>:<port>", err.Error())
+	if u.Port() == "" {
+		u.Host = fmt.Sprintf("%s:%d", u.Host, defaultPort)
 	}
 
 	return u.Host, usePlaintext, nil

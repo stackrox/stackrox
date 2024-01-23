@@ -24,8 +24,8 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 			host:     "localhost:8443",
 		},
 		{
-			endpoint: "localhost",
-			host:     "localhost",
+			endpoint: "https://localhost",
+			host:     "localhost:443",
 		},
 		{
 			endpoint: "https://example.com:443",
@@ -38,15 +38,33 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 		},
 		{
 			endpoint: "https://example.com",
-			err:      "invalid endpoint: address example.com: missing port in address, the scheme should be: http(s)://<endpoint>:<port>",
+			host:     "example.com:443",
 		},
 		{
-			endpoint: "http://example.com",
-			err:      "invalid endpoint: address example.com: missing port in address, the scheme should be: http(s)://<endpoint>:<port>",
+			endpoint:     "http://example.com",
+			host:         "example.com:80",
+			usePlaintext: true,
+		},
+		{
+			endpoint:     "http://128.66.0.1",
+			host:         "128.66.0.1:80",
+			usePlaintext: true,
 		},
 		{
 			endpoint: "128.66.0.1",
-			host:     "128.66.0.1",
+			err:      "invalid endpoint: address 128.66.0.1: missing port in address, the scheme should be: http(s)://<endpoint>:<port>",
+		},
+		{
+			endpoint: "example.com",
+			err:      "invalid endpoint: address example.com: missing port in address, the scheme should be: http(s)://<endpoint>:<port>",
+		},
+		{
+			endpoint: "example.com:80:80",
+			err:      "invalid endpoint: address example.com:80:80: too many colons in address, the scheme should be: http(s)://<endpoint>:<port>",
+		},
+		{
+			endpoint: "host:port",
+			host:     "host:port",
 		},
 	}
 
@@ -64,5 +82,4 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 			assert.Equal(t, tc.usePlaintext, usePlaintext)
 		})
 	}
-
 }
