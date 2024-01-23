@@ -481,15 +481,15 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 				return
 			}
 
-			err = store.RemoveOrphanedFlows(pruningCtx, &orphanTime)
-			if err != nil {
-				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
-			}
-
-			// Second remove stale network flows
 			err = store.RemoveStaleFlows(pruningCtx)
 			if err != nil {
 				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
+			}
+
+			// Second remove orphaned network flows
+			err = store.RemoveOrphanedFlows(pruningCtx, &orphanTime)
+			if err != nil {
+				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
 			}
 		}(c)
 	}
