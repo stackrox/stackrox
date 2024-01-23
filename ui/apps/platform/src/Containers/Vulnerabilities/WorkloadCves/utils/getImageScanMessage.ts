@@ -1,3 +1,6 @@
+import isEmpty from 'lodash/isEmpty';
+import Raven from 'raven-js';
+
 import { imageScanMessages, ScanMessage } from 'messages/vulnMgmt.messages';
 
 export default function getImageScanMessage(
@@ -34,6 +37,11 @@ export default function getImageScanMessage(
     }
     if (hasOSCvesStale) {
         return imageScanMessages.osCvesStale;
+    }
+    if (!isEmpty(imageNotes) || !isEmpty(scanNotes)) {
+        Raven.captureException(new Error('Unknown State Detected'), {
+            extra: { imageNotes, scanNotes },
+        });
     }
 
     return {};
