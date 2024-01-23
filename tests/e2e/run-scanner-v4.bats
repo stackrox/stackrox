@@ -56,8 +56,13 @@ setup() {
 
     if (( test_case_no == 0 )); then
         # executing initial teardown to begin test execution in a well-defined state
-       run remove_existing_stackrox_resources
+        teardown
     fi
+    if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
+        echo "Only tearing down resources, exiting now..." >&3
+        exit 0
+    fi
+
     test_case_no=$(( test_case_no + 1))
 }
 
