@@ -74,7 +74,14 @@
 {{ else }}
   {{ $generate := $cfg.generate }}
   {{ if kindIs "invalid" $generate }}
-    {{ $generate = $.Release.IsInstall }}
+    {{ if and (not $.Release.IsInstall) (not $.Release.IsUpgrade) }}
+      {{/* Special case: looks like we are in linting mode, enable generation of certs. */}}
+      {{/* Otherwise we would (see line below) set this to IsInstall, which is false. */}}
+      {{/* In effect no CA certificate is going to be generated and this causes cert configuration for the services to fail. */}}
+      {{ $generate = true }}
+    {{ else }}
+      {{ $generate = $.Release.IsInstall }}
+    {{ end }}
   {{ end }}
   {{ if $generate }}
     {{ if $spec.ca }}
