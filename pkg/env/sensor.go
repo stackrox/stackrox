@@ -2,8 +2,8 @@ package env
 
 import "time"
 
-// These environment variables are used in the deployment file
-// Please check the files before deleting
+// These environment variables are used in the deployment file.
+// Please check the files before deleting.
 var (
 	// CentralEndpoint is used to provide Central's reachable endpoint to a sensor.
 	CentralEndpoint = RegisterSetting("ROX_CENTRAL_ENDPOINT", WithDefault("central.stackrox.svc:443"),
@@ -26,7 +26,7 @@ var (
 	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
 	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
 
-	// EventPipelineQueueSize is used to specify the size of the eventPipeline's queues
+	// EventPipelineQueueSize is used to specify the size of the eventPipeline's queues.
 	EventPipelineQueueSize = RegisterIntegerSetting("ROX_EVENT_PIPELINE_QUEUE_SIZE", 1000)
 
 	// ConnectionRetryInitialInterval defines how long it takes for sensor to retry gRPC connection when it first disconnects.
@@ -43,7 +43,7 @@ var (
 	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
 	RegistryTLSCheckTTL = registerDurationSetting("ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
 
-	// DeduperStateSyncTimeout defines the maximum time Sensor will wait for the expected deduper state coming from Central
+	// DeduperStateSyncTimeout defines the maximum time Sensor will wait for the expected deduper state coming from Central.
 	DeduperStateSyncTimeout = registerDurationSetting("ROX_DEDUPER_STATE_TIMEOUT", 30*time.Second)
 
 	// NetworkFlowBufferSize holds the size of how many network flows updates will be kept in Sensor while offline.
@@ -57,4 +57,8 @@ var (
 
 	// DetectorNetworkFlowBufferSize indicates how many network flows will be kept in Sensor while offline in the detector.
 	DetectorNetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_DETECTOR_NETWORK_FLOW_BUFFER_SIZE", 1000)
+
+	// DiagnosticDataCollectionTimeout defines the timeout for the diagnostic data collection on Sensor side.
+	DiagnosticDataCollectionTimeout = registerDurationSetting("ROX_DIAGNOSTIC_DATA_COLLECTION_TIMEOUT",
+		2*time.Minute)
 )
