@@ -31,7 +31,7 @@ const resolveDbHealthStatus = (desiredPods: number, readyPods: number) => {
 };
 
 const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) => {
-    let {
+    const {
         totalDesiredAnalyzerPods,
         totalReadyAnalyzerPods,
         totalDesiredDbPods,
