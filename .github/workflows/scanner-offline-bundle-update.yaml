@@ -1,0 +1,64 @@
+name: Scanner release offline vulnerability bundle update
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+    - scanner/*
+    - yli3/*
+
+jobs:
+  read-release-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.output-matrix.outputs.matrix }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate matrix JSON
+      id: output-matrix
+      run: |
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
+        # Extract X.Y versions, ensuring uniqueness
+        grep -oE '^[0-9]+\.[0-9]+' scanner/updater/version/RELEASE_VERSION | sort -u | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
+
+  upload-release-vulnerabilities:
+    needs: read-release-versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
+      max-parallel: 1
+      matrix:
+        version: ${{ fromJson(needs.read-release-versions.outputs.matrix).versions }}
+    env:
+      ROX_PRODUCT_VERSION: ${{ matrix.version }}
+    steps:
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate offline vulnerability bundle
+      run: |
+        bash .github/workflows/scripts/scanner-update-offline-bundle.sh "$ROX_PRODUCT_VERSION"
+
+  send-notification:
+    needs:
+    - read-release-versions
+    - upload-release-vulnerabilities
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to update offline vulnerabilities bundle"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
