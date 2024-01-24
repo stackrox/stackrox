@@ -90,6 +90,7 @@ type Store interface {
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *storeType) error) error
+    WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}

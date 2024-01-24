@@ -60,6 +60,7 @@ type Store[T any, PT unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context) (int, error)
 	Walk(ctx context.Context, fn func(obj PT) error) error
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
 	GetAll(ctx context.Context) ([]PT, error)
 	Get(ctx context.Context, id string) (PT, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
@@ -176,11 +177,8 @@ func (s *genericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 }
 
-// Walk iterates over all the objects in the store and applies the closure.
-func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
-
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
+func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, query, s.db)
 	if err != nil {
 		return err
 	}
@@ -200,6 +198,20 @@ func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) e
 		}
 	}
 	return nil
+}
+
+// Walk iterates over all the objects in the store and applies the closure.
+func (s *genericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Walk)
+
+	return s.walkByQuery(ctx, search.EmptyQuery(), fn)
+}
+
+// WalkByQuery iterates over all the objects scoped by the query and applies the closure.
+func (s *genericStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.WalkByQuery)
+
+	return s.walkByQuery(ctx, query, fn)
 }
 
 // GetAll retrieves all objects from the store.
