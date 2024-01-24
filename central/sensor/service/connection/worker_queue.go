@@ -68,23 +68,25 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 	queue := w.queues[idx]
 	for msg := queue.pullBlocking(stopSig); msg != nil; msg = queue.pullBlocking(stopSig) {
 		err := handler(ctx, msg)
-		if err != nil && !errors.Is(err, context.Canceled) {
-			if pgutils.IsTransientError(err) {
-				msg.ProcessingAttempt++
+		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				if pgutils.IsTransientError(err) {
+					msg.ProcessingAttempt++
 
-				if msg.ProcessingAttempt == maxHandlerAttempts {
-					log.Errorf("Error handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
+					if msg.ProcessingAttempt == maxHandlerAttempts {
+						log.Errorf("Error handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
+						continue
+					}
+					reprocessingDuration := time.Duration(msg.ProcessingAttempt) * handlerRetryInterval
+					log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msg.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
+					concurrency.AfterFunc(reprocessingDuration, func() {
+						w.injector.InjectMessageIntoQueue(msg)
+					}, stopSig)
 					continue
 				}
-				reprocessingDuration := time.Duration(msg.ProcessingAttempt) * handlerRetryInterval
-				log.Warnf("Reprocessing sensor message %T in %d minutes: %v", msg.GetEvent().GetResource(), int(reprocessingDuration.Minutes()), err)
-				concurrency.AfterFunc(reprocessingDuration, func() {
-					w.injector.InjectMessageIntoQueue(msg)
-				}, stopSig)
-				continue
+				log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
 			}
 			deduper.MarkUnsuccessful(msg)
-			log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
 		}
 	}
 	w.waitGroup.Add(-1)
