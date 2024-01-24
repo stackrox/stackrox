@@ -87,7 +87,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.46.0
-	github.com/quay/claircore v1.5.21-0.20240112165122-6c4f1b56aa63
+	github.com/quay/claircore v1.5.21-0.20240124010924-3f84aa609a95
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.8
@@ -454,8 +454,6 @@ replace (
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
-
-	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20240123191306-0aef4aed2fdd
 
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
 
