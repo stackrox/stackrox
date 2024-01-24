@@ -1,6 +1,8 @@
 package generate
 
 import (
+	goerrors "errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -161,33 +163,47 @@ func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.
 }
 
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
+	warns, errs := cmd.generate(synth)
+	if cmd.Options.TreatWarningsAsErrors {
+		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
+	}
+	for _, warn := range warns {
+		cmd.env.Logger().WarnfLn("%v", warn)
+	}
+	return goerrors.Join(errs...)
+}
+
+func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []error) {
 	errHandler := netpolerrors.NewErrHandler(cmd.Options.TreatWarningsAsErrors)
 	infos, err := getInfoObj(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
-	if err := errHandler.HandleError(err); err != nil {
-		//nolint:wrapcheck // The package claimed to be external is local and shared by all related netpol-commands
-		return err
+	warns, errs := errHandler.HandleError(err)
+	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
+		return warns, errs
 	}
 
 	recommendedNetpols, err := synth.PoliciesFromInfos(infos)
 	if err != nil {
-		return errors.Wrap(err, "error generating network policies")
+		return warns, append(errs, errors.Wrap(err, "error generating network policies"))
 	}
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
-		return err
+		return warns, append(errs, err)
 	}
 	var roxerr error
-	for _, e := range synth.Errors() {
-		if e.IsSevere() {
-			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
+	for _, err := range synth.Errors() {
+		if err.IsSevere() {
+			errs = append(errs, fmt.Errorf("%s %s", err.Error(), err.Location()))
 			roxerr = npg.ErrErrors
 		} else {
-			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
+			warns = append(warns, fmt.Errorf("%s %s", err.Error(), err.Location()))
 			if cmd.Options.TreatWarningsAsErrors && roxerr == nil {
 				roxerr = npg.ErrWarnings
 			}
 		}
 	}
-	return roxerr
+	if roxerr != nil {
+		errs = append(errs, roxerr)
+	}
+	return warns, errs
 }
 
 func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {

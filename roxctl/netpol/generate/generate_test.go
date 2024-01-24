@@ -23,7 +23,7 @@ type generateNetpolTestSuite struct {
 func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	cases := map[string]struct {
 		inputFolderPath       string
-		expectedSynthError    error
+		expectedSynthError    string
 		expectedValidateError error
 		strict                bool
 		stopOnFirstErr        bool
@@ -31,34 +31,34 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		outDir                string
 		removeOutputPath      bool
 	}{
-		"not existing inputFolderPath should raise 'os.ErrNotExist' error": {
+		"not existing inputFolderPath should raise 'does not exist' error": {
 			inputFolderPath:    "/tmp/xxx",
-			expectedSynthError: errox.NotFound,
+			expectedSynthError: "the path \"/tmp/xxx\" does not exist",
 		},
 		"happyPath": {
 			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: nil,
+			expectedSynthError: "",
 		},
 		"treating warnings as errors": {
 			inputFolderPath:    "testdata/empty-yamls",
-			expectedSynthError: npg.ErrWarnings,
+			expectedSynthError: npg.ErrWarnings.Error(),
 			strict:             true,
 		},
 		"stopOnFirstError": {
 			inputFolderPath:    "testdata/dirty",
-			expectedSynthError: &npguard.NoK8sResourcesFoundError{},
+			expectedSynthError: (&npguard.NoK8sResourcesFoundError{}).Error(),
 			stopOnFirstErr:     true,
 		},
 		"output should be written to a single file": {
 			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: nil,
+			expectedSynthError: "",
 			outFile:            d.T().TempDir() + "/out.yaml",
 			outDir:             "",
 			removeOutputPath:   false,
 		},
 		"output should be written to files in a directory": {
 			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: nil,
+			expectedSynthError: "",
 			outFile:            "",
 			outDir:             d.T().TempDir(),
 			removeOutputPath:   true,
@@ -66,7 +66,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		"should return error that the dir already exists": {
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: errox.AlreadyExists,
-			expectedSynthError:    nil,
+			expectedSynthError:    "",
 			outFile:               "",
 			outDir:                d.T().TempDir(),
 			removeOutputPath:      false,
@@ -113,9 +113,9 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			d.Assert().NoError(err)
 
 			err = generateNetpolCmd.generateNetpol(generator)
-			if tt.expectedSynthError != nil {
+			if tt.expectedSynthError != "" {
 				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedSynthError)
+				d.Assert().ErrorContains(err, tt.expectedSynthError)
 			} else {
 				d.Assert().NoError(err)
 			}

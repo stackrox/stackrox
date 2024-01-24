@@ -99,64 +99,64 @@ func (d *diffAnalyzeNetpolTestSuite) TestProcessInput() {
 		inputFolderPath2 string
 		strict           bool
 		stopOnFirstErr   bool
-		expectedWarn     error
-		expectedErr      error
+		expectedWarn     string
+		expectedErr      string
 	}{
-		"Not existing input folder paths should result in error 'errox.NotFound'": {
+		"Not existing input folder paths should result in error": {
 			inputFolderPath1: "/tmp/xxx",
 			inputFolderPath2: "/tmp/xxx",
-			expectedWarn:     nil,
-			expectedErr:      errox.NotFound,
+			expectedWarn:     "",
+			expectedErr:      "the path \"/tmp/xxx\" does not exist",
 		},
-		"Inputs with no resources should result in general NP-Guard error": {
+		"Inputs with no resources should not result in general NP-Guard error": {
 			inputFolderPath1: "testdata/empty-yamls",
 			inputFolderPath2: "testdata/empty-yamls",
 			strict:           false,
-			expectedWarn:     npg.ErrWarnings,
-			expectedErr:      nil,
+			expectedWarn:     "unable to decode",
+			expectedErr:      "",
 		},
 		"Inputs with no resources should result in general NP-Guard error when run with --fail": {
 			inputFolderPath1: "testdata/empty-yamls",
 			inputFolderPath2: "testdata/empty-yamls",
 			strict:           true,
-			expectedWarn:     nil,
-			expectedErr:      npg.ErrWarnings,
+			expectedWarn:     "",
+			expectedErr:      npg.ErrWarnings.Error(),
 		},
 		"Treating warnings as errors should result in error of type 'npg.ErrWarnings'": {
 			inputFolderPath1: "testdata/acs-zeroday-with-invalid-doc",
 			inputFolderPath2: "testdata/acs-zeroday-with-invalid-doc",
 			strict:           true,
-			expectedWarn:     nil,
-			expectedErr:      npg.ErrWarnings,
+			expectedWarn:     "",
+			expectedErr:      npg.ErrWarnings.Error(),
 		},
 		"Warnings on invalid input docs without using strict flag should not be treated as errors": {
 			inputFolderPath1: "testdata/acs-zeroday-with-invalid-doc",
 			inputFolderPath2: "testdata/acs-zeroday-with-invalid-doc",
 			strict:           false,
-			expectedWarn:     npg.ErrWarnings,
-			expectedErr:      nil,
+			expectedWarn:     "Object 'Kind' is missing in",
+			expectedErr:      "",
 		},
-		"Stop on first error with malformed yaml inputs should stop with general NP-Guard error as warning": {
+		"Stop on first error with malformed yaml inputs without strict setting should not stop with general NP-Guard error": {
 			inputFolderPath1: "testdata/dirty", // yaml document malformed
 			inputFolderPath2: "testdata/dirty",
 			stopOnFirstErr:   true,
 			strict:           false,
-			expectedWarn:     npg.ErrWarnings,
-			expectedErr:      nil,
+			expectedWarn:     "error parsing",
+			expectedErr:      "",
 		},
-		"Stop on first error with malformed yaml inputs should stop with general NP-Guard error as error": {
+		"Stop on first error with malformed yaml inputs with strict setting should stop with general NP-Guard error as error": {
 			inputFolderPath1: "testdata/dirty", // yaml document malformed
 			inputFolderPath2: "testdata/dirty",
 			stopOnFirstErr:   true,
 			strict:           true,
-			expectedWarn:     nil,
-			expectedErr:      npg.ErrWarnings,
+			expectedWarn:     "",
+			expectedErr:      npg.ErrWarnings.Error(),
 		},
 		"Testing Diff between two dirs should run successfully without errors": {
 			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
 			inputFolderPath2: "testdata/netpol-diff-example-minimal",
-			expectedWarn:     nil,
-			expectedErr:      nil,
+			expectedWarn:     "",
+			expectedErr:      "",
 		},
 	}
 
@@ -175,15 +175,15 @@ func (d *diffAnalyzeNetpolTestSuite) TestProcessInput() {
 			d.NoError(diffNetpolCmd.validate())
 
 			_, _, warn, err := diffNetpolCmd.processInput()
-			if tt.expectedWarn != nil {
+			if tt.expectedWarn != "" {
 				d.Require().Error(warn)
-				d.ErrorIs(warn, tt.expectedWarn)
+				d.ErrorContains(warn, tt.expectedWarn)
 			} else {
 				d.NoError(warn, "Received unexpected warning")
 			}
-			if tt.expectedErr != nil {
+			if tt.expectedErr != "" {
 				d.Require().Error(err)
-				d.ErrorIs(err, tt.expectedErr)
+				d.ErrorContains(err, tt.expectedErr)
 			} else {
 				d.NoError(err)
 			}

@@ -2,6 +2,7 @@
 package diff
 
 import (
+	goerrors "errors"
 	"os"
 	"path/filepath"
 
@@ -38,9 +39,8 @@ func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*r
 	info1, err1 := getInfoObjs(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	info2, err2 := getInfoObjs(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	inputErrHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
-	err := inputErrHandler.HandleErrorPair(err1, err2)
-	//nolint:wrapcheck // warnings are not errors and don't need to be wrapped
-	return info1, info2, inputErrHandler.Warnings(), err
+	w, e := inputErrHandler.HandleErrorPair(err1, err2)
+	return info1, info2, goerrors.Join(w...), goerrors.Join(e...)
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {

@@ -2,6 +2,8 @@
 package connectivitymap
 
 import (
+	goerrors "errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -125,37 +127,51 @@ func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.
 }
 
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
+	warns, errs := cmd.analyze(analyzer)
+	if cmd.treatWarningsAsErrors {
+		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
+	}
+	for _, warn := range warns {
+		cmd.env.Logger().WarnfLn("%v", warn)
+	}
+	return goerrors.Join(errs...)
+}
+
+func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
 	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
 	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
-	if err := errHandler.HandleError(err); err != nil {
-		//nolint:wrapcheck // The package claimed to be external is local and shared by two related netpol-commands
-		return err
+	warns, errs := errHandler.HandleError(err)
+	if cmd.stopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.treatWarningsAsErrors)) {
+		return warns, errs
 	}
 
 	conns, _, err := analyzer.ConnlistFromResourceInfos(infos)
 	if err != nil {
-		return errors.Wrap(err, "error in connectivity analysis")
+		return warns, append(errs, errors.Wrap(err, "connectivity analysis"))
 	}
 	connsStr, err := analyzer.ConnectionsListToString(conns)
 	if err != nil {
-		return errors.Wrap(err, "error in formatting connectivity list")
+		return warns, append(errs, errors.Wrap(err, "formatting connectivity list"))
 	}
 	if err := cmd.ouputConnList(connsStr); err != nil {
-		return err
+		return warns, append(errs, errors.Wrap(err, "writing connectivity result"))
 	}
 	var roxerr error
-	for _, e := range analyzer.Errors() {
-		if e.IsSevere() {
-			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
+	for _, err := range analyzer.Errors() {
+		if err.IsSevere() {
+			errs = append(errs, fmt.Errorf("%s %s", err.Error(), err.Location()))
 			roxerr = npg.ErrErrors
 		} else {
-			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
+			warns = append(warns, fmt.Errorf("%s %s", err.Error(), err.Location()))
 			if cmd.treatWarningsAsErrors && roxerr == nil {
 				roxerr = npg.ErrWarnings
 			}
 		}
 	}
-	return roxerr
+	if roxerr != nil {
+		errs = append(errs, roxerr)
+	}
+	return warns, errs
 }
 
 func (cmd *Cmd) ouputConnList(connsStr string) error {

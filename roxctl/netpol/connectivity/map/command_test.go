@@ -1,7 +1,6 @@
 package connectivitymap
 
 import (
-	"errors"
 	"os"
 	"path"
 	"testing"
@@ -31,54 +30,62 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 	cases := []struct {
 		name                  string
 		inputFolderPath       string
-		expectedAnalysisError error
+		expectedAnalysisError string
 		expectedValidateError error
-		strict                bool
+		treatWarningsAsErrors bool
 		stopOnFirstErr        bool
 		outFile               string
 		outputToFile          bool
 		focusWorkload         string
 		outputFormat          string
 		removeOutputPath      bool
-		errStringContainment  bool
 	}{
 		{
-			name:                  "Not existing inputFolderPath should result in error 'errox.NotFound'",
+			name:                  "Not existing inputFolderPath should print error about path not existing but attempt analysis",
 			inputFolderPath:       "/tmp/xxx",
-			expectedAnalysisError: errox.NotFound,
+			stopOnFirstErr:        false,
+			treatWarningsAsErrors: false,
+			expectedAnalysisError: "there were errors",
+		},
+		{
+			name:                  "Not existing inputFolderPath should stop on first error about path not existing",
+			inputFolderPath:       "/tmp/xxx",
+			stopOnFirstErr:        true,
+			treatWarningsAsErrors: false,
+			expectedAnalysisError: "does not exist",
 		},
 		{
 			name:                  "happyPath",
 			inputFolderPath:       "testdata/minimal",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 		},
 		{
 			name:                  "errors with no resources found",
 			inputFolderPath:       "testdata/empty-yamls",
-			expectedAnalysisError: npg.ErrErrors,
+			expectedAnalysisError: npg.ErrErrors.Error(),
 		},
 		{
 			name:                  "treating warnings as errors",
 			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedAnalysisError: npg.ErrWarnings,
-			strict:                true,
+			expectedAnalysisError: npg.ErrWarnings.Error(),
+			treatWarningsAsErrors: true,
 		},
 		{
 			name:                  "warnings not indicated without strict",
 			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 		},
 		{
 			name:                  "stopOnFistError",
 			inputFolderPath:       "testdata/dirty", // yaml document malformed
-			expectedAnalysisError: npg.ErrErrors,
+			expectedAnalysisError: npg.ErrErrors.Error(),
 			stopOnFirstErr:        true,
 		},
 		{
 			name:                  "output should be written to a single file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
@@ -86,7 +93,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "should return error that the file already exists",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: errox.AlreadyExists,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outFile:               outFileTxt,
 			removeOutputPath:      false,
 		},
@@ -94,7 +101,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "should override existing file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outFile:               outFileTxt,
 			removeOutputPath:      true,
 		},
@@ -102,7 +109,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "output should be written to default txt output file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outputToFile:          true,
 			outputFormat:          defaultOutputFormat,
 		},
@@ -111,20 +118,19 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			inputFolderPath:       "testdata/minimal",
 			focusWorkload:         "default/backend",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 		},
 		{
 			name:                  "not supported output format",
 			inputFolderPath:       "testdata/minimal",
 			outputFormat:          "docx",
-			errStringContainment:  true,
-			expectedAnalysisError: errors.New("docx output format is not supported."),
+			expectedAnalysisError: "docx output format is not supported.",
 		},
 		{
 			name:                  "generate output in json format",
 			inputFolderPath:       "testdata/minimal",
 			outputFormat:          "json",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			expectedValidateError: nil,
 			outFile:               outFileJSON,
 		},
@@ -132,7 +138,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "generate output in md format",
 			inputFolderPath:       "testdata/minimal",
 			outputFormat:          "md",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			expectedValidateError: nil,
 			outFile:               outFileMD,
 		},
@@ -140,7 +146,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "generate output in csv format",
 			inputFolderPath:       "testdata/minimal",
 			outputFormat:          "csv",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			expectedValidateError: nil,
 			outFile:               outFileCSV,
 		},
@@ -148,21 +154,21 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "generate output in dot format",
 			inputFolderPath:       "testdata/minimal",
 			outputFormat:          "dot",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			expectedValidateError: nil,
 			outFile:               outFileDOT,
 		},
 		{
 			name:                  "openshift resources are recognized by the serializer with k8s resources",
 			inputFolderPath:       "testdata/frontend-security",
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			expectedValidateError: nil,
 		},
 		{
 			name:                  "output should be written to default json output file",
 			inputFolderPath:       "testdata/minimal",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outputToFile:          true,
 			outputFormat:          "json",
 		},
@@ -170,7 +176,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			name:                  "generate connections list with ingress controller",
 			inputFolderPath:       "testdata/acs-security-demos",
 			expectedValidateError: nil,
-			expectedAnalysisError: nil,
+			expectedAnalysisError: "",
 			outputToFile:          true,
 		},
 	}
@@ -181,7 +187,7 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{
 				stopOnFirstError:      tt.stopOnFirstErr,
-				treatWarningsAsErrors: tt.strict,
+				treatWarningsAsErrors: tt.treatWarningsAsErrors,
 				inputFolderPath:       "", // set through construct
 				outputFilePath:        tt.outFile,
 				removeOutputPath:      tt.removeOutputPath,
@@ -203,23 +209,19 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 			d.Assert().NoError(err)
 
 			err = analyzeNetpolCmd.analyzeNetpols(analyzer)
-			if tt.expectedAnalysisError != nil {
+			if tt.expectedAnalysisError != "" {
 				d.Require().Error(err)
-				if tt.errStringContainment {
-					d.Assert().Contains(err.Error(), tt.expectedAnalysisError.Error())
-				} else {
-					d.Assert().ErrorIs(err, tt.expectedAnalysisError)
-				}
+				d.Assert().Contains(err.Error(), tt.expectedAnalysisError)
 			} else {
 				d.Assert().NoError(err)
 			}
 
-			if tt.outFile != "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
+			if tt.outFile != "" && tt.expectedAnalysisError == "" && tt.expectedValidateError == nil {
 				_, err := os.Stat(tt.outFile)
 				d.Assert().NoError(err) // out file should exist
 			}
 
-			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == nil && tt.expectedValidateError == nil {
+			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == "" && tt.expectedValidateError == nil {
 				defaultFile := analyzeNetpolCmd.getDefaultFileName()
 				formatSuffix := ""
 				if tt.outputFormat != "" {
