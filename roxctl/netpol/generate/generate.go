@@ -172,7 +172,8 @@ func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []er
 	}
 	errArr := make([]resources.ErrorLocationSeverity, len(synth.Errors()))
 	for i, processingError := range synth.Errors() {
-		errArr[i] = &processingError
+		cp := processingError
+		errArr[i] = &cp
 	}
 	w, e = resources.HandleNPGerrors(errArr, cmd.Options.TreatWarningsAsErrors)
 	return append(warns, w...), append(errs, e...)

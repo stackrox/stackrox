@@ -5,12 +5,14 @@ import (
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
+// ErrorLocationSeverity is an error that can be severe and has a reference to a location (e.g., file on disk)
 type ErrorLocationSeverity interface {
 	Error() error
 	Location() string
 	IsSevere() bool
 }
 
+// HandleNPGerrors classifies NP-Guard errors as warnings or errors
 func HandleNPGerrors(src []ErrorLocationSeverity, treatWarningsAsErrors bool) (warns []error, errs []error) {
 	var roxerr error
 	for _, err := range src {
