@@ -79,8 +79,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
-		// TODO(ROX-19050): Set the Scanner V4 TLS validation when certificates are ready.
-		// client.SkipTLSVerification,
 	)
 	if err != nil {
 		return nil, err
