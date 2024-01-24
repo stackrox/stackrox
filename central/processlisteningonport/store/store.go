@@ -26,7 +26,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
-
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 	GetProcessListeningOnPort(
 		ctx context.Context,
 		deploymentID string,
