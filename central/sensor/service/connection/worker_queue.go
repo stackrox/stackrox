@@ -86,7 +86,7 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 				}
 				log.Errorf("Unretryable error found while handling sensor message %T permanently: %v", msg.GetEvent().GetResource(), err)
 			}
-			deduper.MarkUnsuccessful(msg)
+			deduper.RemoveMessage(msg)
 		}
 	}
 	w.waitGroup.Add(-1)
