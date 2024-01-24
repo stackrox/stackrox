@@ -49,8 +49,6 @@ setup() {
 
     set -euo pipefail
 
-    export POD_SECURITY_POLICIES=false
-
     require_environment "ORCHESTRATOR_FLAVOR"
     export_test_environment
     if [[ "$CI" = "true" ]]; then
