@@ -368,7 +368,7 @@ spec:
     - name: sast-snyk-check
       params:
       - name: ARGS
-        value: "--all-projects --exclude=test*,vendor,deps --policy-path=.tekton/.snyk"
+        value: "--policy-path=$(workspaces.workspace.path)/source/.tekton/.snyk"
       runAfter:
       - clone-repository
       taskRef:
