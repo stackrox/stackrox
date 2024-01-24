@@ -80,7 +80,8 @@ tests:
 - name: "Install mode is reported by Helm chart installation notes"
   tests:
   - name: "when installing neither indexer nor matcher"
-    scannerV4.disable: true
+    set:
+      scannerV4.disable: true
     expect: |
       .notes | assertThat(match("Scanner V4 Installation Method: +none"))
   - name: "when installing indexer and matcher"
@@ -231,3 +232,21 @@ tests:
   expect: |
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
+
+- name: "Scanner V4 is installed by default"
+  set:
+    scannerV4.disable: null
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "Scanner V4 can be disabled without impacting Scanner V2"
+  set:
+    scannerV4.disable: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .deployments["scanner-v4-db"] | assertThat(. == null)
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
