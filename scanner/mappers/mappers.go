@@ -304,7 +304,10 @@ func toProtoV4VulnerabilitiesMap(
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		sev, err := severityAndScores(v, nvdScores)
 		if err != nil {
-			return nil, err
+			// TODO: Add scanning note about skipped vulns
+			// Just skip this vulnerability to ensure matching does not fail.
+			zlog.Warn(ctx).Err(err).Msgf("skipping %s", vulnerabilityName(v))
+			continue
 		}
 		// Look for CVSS scores in the severity field, then set the
 		// scores only if at least one is found.
@@ -561,7 +564,7 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 	switch {
 	case osvUpdaterPattern.MatchString(vuln.Updater):
 		if vuln.Severity == "" {
-			errList.AddStrings("severity is empty")
+			errList.AddStrings("OSV severity is empty")
 			break
 		}
 		// ClairCore has no CVSS version indicator for OSV data, assuming CVSS V2 if
@@ -579,7 +582,7 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 		}
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		if vuln.Severity == "" {
-			errList.AddStrings("severity is empty")
+			errList.AddStrings("RHEL severity is empty")
 			break
 		}
 		q, err := url.ParseQuery(vuln.Severity)
