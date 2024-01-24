@@ -99,6 +99,7 @@ require (
 	github.com/sergi/go-diff v1.3.1
 	github.com/sigstore/cosign/v2 v2.2.2
 	github.com/sigstore/sigstore v1.8.1
+	github.com/sourcegraph/conc v0.3.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
@@ -128,7 +129,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.7
 	google.golang.org/api v0.157.0
 	google.golang.org/genproto v0.0.0-20240108191215-35c7eff3a6b1
-	google.golang.org/grpc v1.60.1
+	google.golang.org/grpc v1.61.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.32.0
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -347,7 +348,6 @@ require (
 	github.com/sigstore/timestamp-authority v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
-	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/viper v1.17.0 // indirect
@@ -454,7 +454,7 @@ replace (
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
-	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20240123191306-0aef4aed2fdd
+	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20240124010924-3f84aa609a95
 
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
 

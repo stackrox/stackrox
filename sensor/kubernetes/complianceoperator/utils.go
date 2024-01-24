@@ -102,16 +102,22 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	return errList.ToError()
 }
 
-func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {
-	return validateScanName(req)
-}
-
 func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) error {
 	return validateScanName(req)
 }
 
 func validateApplyResumeScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) error {
 	return validateScanName(req)
+}
+
+func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {
+	if req == nil {
+		return errors.New("apply scan configuration request is empty")
+	}
+	if req.GetScanName() == "" {
+		return errors.New("no name provided for the scan")
+	}
+	return nil
 }
 
 func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {

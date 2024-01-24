@@ -83,17 +83,17 @@ func (mr *MockManagerMockRecorder) ProcessComplianceOperatorInfo(ctx, compliance
 }
 
 // ProcessRescanRequest mocks base method.
-func (m *MockManager) ProcessRescanRequest(ctx context.Context, rescanRequest any) error {
+func (m *MockManager) ProcessRescanRequest(ctx context.Context, scanID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessRescanRequest", ctx, rescanRequest)
+	ret := m.ctrl.Call(m, "ProcessRescanRequest", ctx, scanID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessRescanRequest indicates an expected call of ProcessRescanRequest.
-func (mr *MockManagerMockRecorder) ProcessRescanRequest(ctx, rescanRequest any) *gomock.Call {
+func (mr *MockManagerMockRecorder) ProcessRescanRequest(ctx, scanID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessRescanRequest", reflect.TypeOf((*MockManager)(nil).ProcessRescanRequest), ctx, rescanRequest)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessRescanRequest", reflect.TypeOf((*MockManager)(nil).ProcessRescanRequest), ctx, scanID)
 }
 
 // ProcessScanRequest mocks base method.

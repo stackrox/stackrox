@@ -8,12 +8,20 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+)
+
+const (
+	scannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credentials
+	scannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credentials
+	scannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credentials
+	scannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credentials
 )
 
 var (
@@ -50,44 +58,34 @@ type serviceCertSecretSpec struct {
 	serviceKeyFileName  string
 }
 
+// newServiceCertSecretSpec creates a serviceCertSecretSpec with default filenames
+func newServiceCertSecretSpec(secretName string) serviceCertSecretSpec {
+	return serviceCertSecretSpec{
+		secretName:          secretName,
+		caCertFileName:      mtls.CACertFileName,
+		serviceCertFileName: mtls.ServiceCertFileName,
+		serviceKeyFileName:  mtls.ServiceKeyFileName,
+	}
+}
+
 // newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
-// scanner and scanner DB in k8s secrets that are expected to have ownerReference as the only owner reference.
+// scannerV2, scanner DB, scannerV4 indexer and ScannerV4 DB in k8s secrets.
+// Those secrets have to have ownerReference as the only owner reference.
 func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
 
+	secretsByServiceType := map[storage.ServiceType]serviceCertSecretSpec{
+		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec(scannerSecretName),
+		storage.ServiceType_SCANNER_DB_SERVICE: newServiceCertSecretSpec(scannerDbSecretName),
+	}
+
+	if features.ScannerV4.Enabled() {
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = newServiceCertSecretSpec(scannerV4IndexerSecretName)
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec(scannerV4DbSecretName)
+	}
+
 	return &serviceCertificatesRepoSecretsImpl{
-		secrets: map[storage.ServiceType]serviceCertSecretSpec{
-			storage.ServiceType_SCANNER_SERVICE: {
-				secretName:          "scanner-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_DB_SERVICE: {
-				secretName:          "scanner-db-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_INDEXER_SERVICE: {
-				secretName:          "scanner-v4-indexer-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_MATCHER_SERVICE: {
-				secretName:          "scanner-v4-matcher-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-			storage.ServiceType_SCANNER_V4_DB_SERVICE: {
-				secretName:          "scanner-v4-db-tls",
-				caCertFileName:      mtls.CACertFileName,
-				serviceCertFileName: mtls.ServiceCertFileName,
-				serviceKeyFileName:  mtls.ServiceKeyFileName,
-			},
-		},
+		secrets:        secretsByServiceType,
 		ownerReference: ownerReference,
 		namespace:      namespace,
 		secretsClient:  secretsClient,
@@ -169,33 +167,34 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 // in their data.
 // This operation is idempotent but not atomic in sense that on error some secrets might be created and updated,
 // while others are not.
+// The first return value contains the certificates that have been persisted.
 // Each missing secret is created with the owner specified in the constructor as owner.
 // This only creates secrets for the service types that appear in certificates, missing service types are just skipped.
 // Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
 func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx context.Context,
-	certificates *storage.TypedServiceCertificateSet) error {
-
+	certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	caPem := certificates.GetCaPem()
+	persistedCertificates := make([]*storage.TypedServiceCertificate, 0, len(certificates.GetServiceCerts()))
 	var serviceErrors error
 	for _, cert := range certificates.GetServiceCerts() {
 		// on context cancellation abort putting other secrets.
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return persistedCertificates, ctx.Err()
 		}
 
 		secretSpec, ok := r.secrets[cert.GetServiceType()]
 		if !ok {
-			// we don't know how to persist this.
-			err := errors.Errorf("unkown service type %q", cert.GetServiceType())
-			serviceErrors = multierror.Append(serviceErrors, err)
+			log.Warnf("skipping persisting of certificate for unknown service type: %q", cert.GetServiceType())
 			continue
 		}
 		if err := r.ensureServiceCertificate(ctx, caPem, cert, secretSpec); err != nil {
 			serviceErrors = multierror.Append(serviceErrors, err)
+		} else {
+			persistedCertificates = append(persistedCertificates, cert)
 		}
 	}
 
-	return serviceErrors
+	return persistedCertificates, serviceErrors
 }
 
 func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx context.Context, caPem []byte,

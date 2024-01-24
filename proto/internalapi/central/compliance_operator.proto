@@ -52,7 +52,7 @@ message ApplyComplianceScanConfigRequest {
         string              cron          = 2;
     }
     message RerunScheduledScan {
-       string scan_name = 1;
+        string scan_name = 1;
     }
     message SuspendScheduledScan {
         string scan_name = 1;

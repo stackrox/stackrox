@@ -157,3 +157,12 @@ func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, 
 		Count: int32(scanConfigs),
 	}, nil
 }
+
+func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, request *v2.ResourceByID) (*v2.Empty, error) {
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to rerun a scan")
+	}
+
+	err := s.manager.ProcessRescanRequest(ctx, request.GetId())
+	return &v2.Empty{}, err
+}

@@ -1,4 +1,5 @@
 import qs from 'qs';
+import { cloneDeep } from 'lodash';
 
 import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
 import {
@@ -27,6 +28,7 @@ import {
     CLUSTER_SEARCH_OPTION,
     COMPONENT_SOURCE_SEARCH_OPTION,
     COMPONENT_SEARCH_OPTION,
+    regexSearchOptions,
 } from '../searchOptions';
 
 export type EntityTab = 'CVE' | 'Image' | 'Deployment';
@@ -161,11 +163,12 @@ export function getVulnStateScopedQueryString(
     searchFilter: QuerySearchFilter,
     vulnerabilityState?: VulnerabilityState // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 ): string {
+    const searchFilterWithRegex = applyRegexSearchModifiers(searchFilter);
     const vulnerabilityStateFilter = vulnerabilityState
         ? { 'Vulnerability State': vulnerabilityState }
         : {};
     return getRequestQueryStringForSearchFilter({
-        ...searchFilter,
+        ...searchFilterWithRegex,
         ...vulnerabilityStateFilter,
     });
 }
@@ -180,4 +183,19 @@ export function getStatusesForExceptionCount(
     vulnerabilityState: VulnerabilityState | undefined
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
+}
+
+/**
+ * Adds the regex search modifier to the search filter for any search options that support it.
+ */
+export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
+    const regexSearchFilter = cloneDeep(searchFilter);
+
+    Object.entries(regexSearchFilter).forEach(([key, value]) => {
+        if (regexSearchOptions.some((option) => option === key)) {
+            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
+        }
+    });
+
+    return regexSearchFilter;
 }

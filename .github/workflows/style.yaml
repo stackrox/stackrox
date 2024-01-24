@@ -122,7 +122,7 @@ jobs:
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: /github/home/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}

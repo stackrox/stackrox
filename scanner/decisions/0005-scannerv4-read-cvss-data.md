@@ -5,7 +5,8 @@
 
 ## Status
 
-Accepted
+Status: Updated
+Updated By: [#0008 - NVD Enricher](0008-nvd-enricher.md).
 
 ## Context
 

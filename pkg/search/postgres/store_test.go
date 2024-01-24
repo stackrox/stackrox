@@ -16,6 +16,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -240,6 +241,26 @@ func TestWalk(t *testing.T) {
 
 	assert.ElementsMatch(t, walkedNames, injectedNames)
 	assert.ElementsMatch(t, testObjects, walkedObjects)
+}
+
+func TestWalkByQuery(t *testing.T) {
+	testDB := pgtest.ForT(t)
+	store := newStore(testDB)
+	require.NotNil(t, store)
+
+	testObjects := sampleTestSingleKeyStructArray("WalkByQuery")
+	assert.NoError(t, store.UpsertMany(ctx, testObjects))
+
+	query := search.NewQueryBuilder().AddExactMatches(search.TestName, testObjects[0].GetName(), testObjects[1].GetName()).ProtoQuery()
+	expectedObjects := testObjects[:2]
+	var walkedObjects []*storage.TestSingleKeyStruct
+	walkFn := func(obj *storage.TestSingleKeyStruct) error {
+		walkedObjects = append(walkedObjects, obj)
+		return nil
+	}
+
+	assert.NoError(t, store.WalkByQuery(ctx, query, walkFn))
+	assert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
 func TestGetAll(t *testing.T) {
