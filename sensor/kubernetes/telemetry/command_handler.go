@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"runtime/pprof"
+	"sync/atomic"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -13,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
@@ -26,21 +30,23 @@ import (
 )
 
 const (
-	clusterInfoChunkSize = 2 * (1 << 20) // Bytes per streaming chunk, 2MB chosen arbitrarily
-	gatherTimeout        = 30 * time.Second
+	clusterInfoChunkSize = 2 * (1 << 20) // Bytes per streaming chunk, 2MB chosen arbitrarily.
 
-	maxK8sFileSize = 2 * (1 << 20) // maximum file size for Kubernetes files (YAMLs, logs)
+	maxK8sFileSize = 2 * (1 << 20) // maximum file size for Kubernetes files (YAMLs, logs).
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	diagnosticBundleTimeout = env.DiagnosticDataCollectionTimeout.DurationSetting()
 )
 
 type commandHandler struct {
 	responsesC      chan *message.ExpiringMessage
 	clusterGatherer *gatherers.ClusterGatherer
 
-	stopSig concurrency.ErrorSignal
+	stopSig          concurrency.ErrorSignal
+	centralReachable atomic.Bool
 
 	pendingContextCancels      map[string]context.CancelFunc
 	pendingContextCancelsMutex sync.Mutex
@@ -81,7 +87,15 @@ func (h *commandHandler) Stop(err error) {
 	h.stopSig.SignalWithError(err)
 }
 
-func (h *commandHandler) Notify(common.SensorComponentEvent) {}
+func (h *commandHandler) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		h.centralReachable.Store(true)
+	case common.SensorComponentEventOfflineMode:
+		h.centralReachable.Store(false)
+		h.cancelPendingRequests()
+	}
+}
 
 func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
@@ -98,7 +112,7 @@ func (h *commandHandler) processCancelRequest(req *central.CancelPullTelemetryDa
 	requestID := req.GetRequestId()
 
 	if requestID == "" {
-		return errors.New("received invalid telemetry cancellation request with empty request ID")
+		return errox.InvalidArgs.New("received invalid telemetry request with empty request ID")
 	}
 
 	h.pendingContextCancelsMutex.Lock()
@@ -113,15 +127,33 @@ func (h *commandHandler) processCancelRequest(req *central.CancelPullTelemetryDa
 	return nil
 }
 
+// cancelPendingRequests cancels all pending requests currently executed by the command handler.
+func (h *commandHandler) cancelPendingRequests() {
+	h.pendingContextCancelsMutex.Lock()
+	defer h.pendingContextCancelsMutex.Unlock()
+
+	for reqID, cancel := range h.pendingContextCancels {
+		if cancel != nil {
+			log.Infof("Cancelling telemetry pull request %s due to Central connection interruption", reqID)
+			delete(h.pendingContextCancels, reqID)
+		}
+	}
+}
+
 func (h *commandHandler) processRequest(req *central.PullTelemetryDataRequest) error {
 	if req.GetRequestId() == "" {
-		return errors.New("received invalid telemetry request with empty request ID")
+		return errox.InvalidArgs.New("received invalid telemetry request with empty request ID")
 	}
 	go h.dispatchRequest(req)
 	return nil
 }
 
 func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *central.PullTelemetryDataResponse) error {
+	if !h.centralReachable.Load() {
+		log.Debugf("Sending telemetry response called while in offline mode, Telemetry response %s discarded",
+			resp.GetRequestId())
+		return nil
+	}
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_TelemetryDataResponse{
 			TelemetryDataResponse: resp,
@@ -160,13 +192,13 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 		ctx, cancel = context.WithCancel(ctx)
 		log.Infof("Received telemetry data request %s without a timeout", requestID)
 	}
+	defer cancel()
 
 	// Store the context in order to be able to react to cancellations.
 	concurrency.WithLock(&h.pendingContextCancelsMutex, func() {
 		h.pendingContextCancels[requestID] = cancel
 	})
 	defer func() {
-		cancel()
 		concurrency.WithLock(&h.pendingContextCancelsMutex, func() {
 			delete(h.pendingContextCancels, requestID)
 		})
@@ -225,6 +257,9 @@ func createKubernetesPayload(file k8sintrospect.File) *central.TelemetryResponse
 func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error,
 	since *types.Timestamp) error {
+	subCtx, cancel := context.WithTimeout(ctx, diagnosticBundleTimeout)
+	defer cancel()
+
 	restCfg, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "could not instantiate Kubernetes REST client config")
@@ -238,11 +273,13 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "error parsing since timestamp")
 	}
-	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
+
+	return k8sintrospect.Collect(subCtx, k8sintrospect.DefaultConfigWithSecrets(), restCfg, fileCb, sinceTs)
 }
 
-func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
-	subCtx, cancel := context.WithTimeout(ctx, gatherTimeout)
+func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
+	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
+	subCtx, cancel := context.WithTimeout(ctx, diagnosticBundleTimeout)
 	defer cancel()
 	clusterInfo := h.clusterGatherer.Gather(subCtx)
 	jsonBytes, err := json.Marshal(clusterInfo)
@@ -277,15 +314,16 @@ func createMetricsPayload(file string, contents []byte) *central.TelemetryRespon
 	}
 }
 
-func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
-	subCtx, cancel := context.WithTimeout(ctx, gatherTimeout)
+func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,
+	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
+	subCtx, cancel := context.WithTimeout(ctx, diagnosticBundleTimeout)
 	defer cancel()
 
 	fileCb := func(ctx concurrency.ErrorWaitable, file string, contents []byte) error {
 		return sendMsgCb(ctx, createMetricsPayload(file, contents))
 	}
 	w := bytes.NewBuffer(nil)
-	err := prometheusutil.ExportText(w)
+	err := prometheusutil.ExportText(subCtx, w)
 	if err != nil {
 		return err
 	}
@@ -293,7 +331,7 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context, sendMsgCb
 		return err
 	}
 	w = bytes.NewBuffer(nil)
-	if err := pprof.WriteHeapProfile(w); err != nil {
+	if err := writeHeapProfile(subCtx, w); err != nil {
 		return err
 	}
 	if err := fileCb(subCtx, "heap.pb.gz", w.Bytes()); err != nil {
@@ -303,5 +341,20 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context, sendMsgCb
 }
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.PullTelemetryDataCap, centralsensor.CancelTelemetryPullCap, centralsensor.PullMetricsCap}
+	return []centralsensor.SensorCapability{
+		centralsensor.PullTelemetryDataCap,
+		centralsensor.CancelTelemetryPullCap,
+		centralsensor.PullMetricsCap,
+	}
+}
+
+// writeHeapProfile is a wrapper around pprof.WriteHeapProfile which respects context cancellation.
+func writeHeapProfile(ctx context.Context, w io.Writer) error {
+	var err error
+	if ctxErr := concurrency.DoInWaitable(ctx, func() {
+		err = pprof.WriteHeapProfile(w)
+	}); ctxErr != nil {
+		return ctxErr
+	}
+	return err
 }
