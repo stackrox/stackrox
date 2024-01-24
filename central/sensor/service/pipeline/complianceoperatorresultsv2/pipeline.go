@@ -41,7 +41,8 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
-	// Not currently deleting anything for historical purposes
+	// Not currently deleting anything for purposes of building a result history for trending
+	// and look back
 	return nil
 }
 
@@ -53,23 +54,11 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorCheckResultV2)
 
-	event := msg.GetEvent()
-	// If a sensor sends in a v1 compliance message we will still process it the v1 way in the event
-	// a sensor is not updated or does not have the flag on.
-	switch event.Resource.(type) {
-	case *central.SensorEvent_ComplianceOperatorResultV2:
-		if !features.ComplianceEnhancements.Enabled() {
-			return errors.New("Next gen compliance is disabled.  Message unexpected.")
-		}
-		return s.processV2ComplianceResult(ctx, event, clusterID)
+	if !features.ComplianceEnhancements.Enabled() {
+		return errors.New("Next gen compliance is disabled.  Message unexpected.")
 	}
 
-	return errors.Errorf("unexpected message %t.", event.Resource)
-}
-
-func (s *pipelineImpl) OnFinish(_ string) {}
-
-func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *central.SensorEvent, clusterID string) error {
+	event := msg.GetEvent()
 	checkResult := event.GetComplianceOperatorResultV2()
 	checkResult.ClusterId = clusterID
 
@@ -81,3 +70,5 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 		return s.v2Datastore.UpsertResult(ctx, internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID))
 	}
 }
+
+func (s *pipelineImpl) OnFinish(_ string) {}
