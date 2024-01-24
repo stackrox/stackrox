@@ -121,6 +121,12 @@ function AuthProviderForm({
                 }),
             })
         ),
+        requiredAttributes: yup.array().of(
+            yup.object().shape({
+                attributeKey: yup.string().required('Key is a required field'),
+                attributeValue: yup.string().required('Value is a required field'),
+            })
+        ),
         /* eslint-disable @typescript-eslint/no-unsafe-return */
         config: yup
             .object()
