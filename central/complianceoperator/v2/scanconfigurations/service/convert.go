@@ -51,6 +51,7 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}
 
 	return &v2.ComplianceScanConfiguration{
+		Id:       scanConfig.Id,
 		ScanName: scanConfig.GetScanConfigName(),
 		Clusters: clusters,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
