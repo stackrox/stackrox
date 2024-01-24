@@ -238,7 +238,7 @@ func (mr *MockDataStoreMockRecorder) UpsertDeployment(ctx, deployment any) *gomo
 }
 
 // WalkByQuery mocks base method.
-func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.RawQuery, fn func(*storage.Deployment) error) error {
+func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.Deployment) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
 	ret0, _ := ret[0].(error)
