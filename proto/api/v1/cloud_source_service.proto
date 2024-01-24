@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
+import "gogoproto/gogo.proto";
+
+package v1;
+
+// CloudSource is an integration which provides a source for discovered
+// clusters.
+message CloudSource {
+    string id                            = 1;
+    string name                          = 2;
+    string type                          = 3;
+    bool   skip_test_integration         = 4;
+
+    oneof Config {
+        PaladinCloudConfig paladin_cloud = 5;
+        OCMConfig          ocm           = 6;
+    }
+}
+
+// PaladinCloudConfig provides information required to fetch discovered
+// clusters from Paladin Cloud.
+message PaladinCloudConfig {
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+}
+
+// OCMConfig provides information required to fetch discovered clusters from
+// the OpenShift cluster manager.
+message OCMConfig {
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+}
+
+message CloudSourcesFilter {
+    // Matches cloud sources based on their type.
+    repeated string type = 1;
+}
+
+message CountCloudSourcesRequest {
+    // Filters cloud sources based on the requested fields.
+    CloudSourcesFilter filter = 1;
+}
+
+message CountCloudSourcesResponse {
+    int32 count = 1;
+}
+
+message GetCloudSourceRequest {
+    string id = 1;
+}
+
+message GetCloudSourceResponse {
+    CloudSource item = 1;
+}
+
+message ListCloudSourcesRequest {
+    // Divides the response into chunks.
+    Pagination pagination = 1;
+
+    // Filters cloud sources based on the requested fields.
+    CloudSourcesFilter filter = 2;
+}
+
+message ListCloudSourcesResponse {
+    repeated CloudSource items = 1;
+}
+
+message PostCloudSourceRequest {
+    CloudSource item = 1;
+}
+
+message PostCloudSourceResponse {
+    CloudSource item = 1;
+}
+
+message PutCloudSourceRequest {
+    CloudSource item     = 1;
+    bool update_password = 2;
+}
+
+message DeleteCloudSourceRequest {
+    string id = 1;
+}
+
+message TestCloudSourceRequest {
+    CloudSource item     = 1;
+    bool update_password = 2;
+}
+
+service CloudSourcesService {
+    // CountCloudSources returns the number of cloud sources after filtering by requested fields.
+    rpc CountCloudSources(CountCloudSourcesRequest) returns (CountCloudSourcesResponse) {
+        option (google.api.http) = {
+            get: "/v1/count/cloudsources"
+        };
+    }
+
+    // GetCloudSource retrieves a cloud source by ID.
+    rpc GetCloudSource(GetCloudSourceRequest) returns (GetCloudSourceResponse) {
+        option(google.api.http) = {
+            get: "/v1/cloudsources/{id}"
+        };
+    }
+
+    // ListCloudSources returns the list of cloud sources after filtered by requested fields.
+    rpc ListCloudSources(ListCloudSourcesRequest) returns (ListCloudSourcesResponse) {
+        option (google.api.http) = {
+            get: "/v1/cloudsources"
+        };
+    }
+
+    // PostCloudSource creates a cloud source.
+    rpc PostCloudSource (PostCloudSourceRequest) returns (PostCloudSourceResponse) {
+        option (google.api.http) = {
+            post: "/v1/cloudsources"
+            body: "*"
+        };
+    }
+
+    // PutCloudSource creates or replaces a cloud source.
+    rpc PutCloudSource (PutCloudSourceRequest) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/cloudsources/{item.id}"
+            body: "*"
+        };
+    }
+
+    // DeleteCloudSource removes a cloud source.
+    rpc DeleteCloudSource (DeleteCloudSourceRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/cloudsources/{id}"
+        };
+    }
+
+    // TestCloudSource tests a cloud source.
+    rpc TestCloudSource (TestCloudSourceRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/cloudsources/test"
+            body: "*"
+        };
+    }
+}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message CloudSource {
+    string id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string name                          = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+    string type                          = 3;
+    bool   skip_test_integration         = 4;
+
+    oneof Config {
+        PaladinCloudConfig paladin_cloud = 5;
+        OCMConfig          ocm           = 6;
+    }
+}
+
+message PaladinCloudConfig {
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+}
+
+message OCMConfig {
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+}
