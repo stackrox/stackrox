@@ -25,7 +25,10 @@ const DEPLOYMENT_COUNT_QUERY = gql`
 
 function useFetchDeploymentCount(
     searchFilter: SearchFilter,
-    queryOptions: QueryHookOptions<DeploymentCountResponse, DeploymentCountParameters> = {}
+    queryOptions: Omit<
+        QueryHookOptions<DeploymentCountResponse, DeploymentCountParameters>,
+        'variables'
+    > = {}
 ): UseFetchDeploymentCount {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     const options = { ...queryOptions, variables: { query } };
