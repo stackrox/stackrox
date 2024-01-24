@@ -210,7 +210,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
 	s.dependenciesMock.On("getServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	issueCertsResponse := testIssueCertsResponse(2,
-		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
+		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE, storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(issueCertsResponse, nil)
 	s.dependenciesMock.On("ensureServiceCertificates", mock.Anything,
 		issueCertsResponse.GetCertificates()).Once().Return(errCertRefresherForced)
@@ -265,8 +265,9 @@ func (m *dependenciesMock) getServiceCertificates(ctx context.Context) (*storage
 	return args.Get(0).(*storage.TypedServiceCertificateSet), args.Error(1)
 }
 
-func (m *dependenciesMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
-	return m.Called(ctx, certificates).Error(0)
+func (m *dependenciesMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
+	args := m.Called(ctx, certificates)
+	return certificates.ServiceCerts, args.Error(0)
 }
 
 func (m *dependenciesMock) getCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time.Time, error) {
