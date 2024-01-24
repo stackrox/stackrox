@@ -85,7 +85,8 @@ func AddConnectionFlags(c *cobra.Command) {
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
-// connect in plaintext mode.
+// connect in plaintext mode. As connection requires a port it deduces it from provided schema. If schema is not provided
+// the givenEndpoint must contain port or error is returned.
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
