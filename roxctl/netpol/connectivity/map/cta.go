@@ -3,7 +3,6 @@ package connectivitymap
 
 import (
 	goerrors "errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
-	"github.com/stackrox/rox/roxctl/netpol/netpolerrors"
+	"github.com/stackrox/rox/roxctl/netpol/resources"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
@@ -111,21 +110,6 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	return c
 }
 
-func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
-	b := resource.NewLocalBuilder().
-		Unstructured().
-		FilenameParam(false,
-			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
-		Flatten()
-	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
-	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
-	if !(failFast && treatWarningsAsErrors) {
-		b.ContinueOnError()
-	}
-	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
-	return b.Do().Infos()
-}
-
 func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
 	warns, errs := cmd.analyze(analyzer)
 	if cmd.treatWarningsAsErrors {
@@ -138,9 +122,7 @@ func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
 }
 
 func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
-	errHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
-	infos, err := getInfoObj(cmd.inputFolderPath, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
-	warns, errs := errHandler.HandleError(err)
+	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
 	if cmd.stopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.treatWarningsAsErrors)) {
 		return warns, errs
 	}
@@ -156,22 +138,12 @@ func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
 	if err := cmd.ouputConnList(connsStr); err != nil {
 		return warns, append(errs, errors.Wrap(err, "writing connectivity result"))
 	}
-	var roxerr error
-	for _, err := range analyzer.Errors() {
-		if err.IsSevere() {
-			errs = append(errs, fmt.Errorf("%s %s", err.Error(), err.Location()))
-			roxerr = npg.ErrErrors
-		} else {
-			warns = append(warns, fmt.Errorf("%s %s", err.Error(), err.Location()))
-			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = npg.ErrWarnings
-			}
-		}
+	errArr := make([]resources.ErrorLocationSeverity, len(analyzer.Errors()))
+	for i, processingError := range analyzer.Errors() {
+		errArr[i] = processingError
 	}
-	if roxerr != nil {
-		errs = append(errs, roxerr)
-	}
-	return warns, errs
+	w, e = resources.HandleNPGerrors(errArr, cmd.treatWarningsAsErrors)
+	return append(warns, w...), append(errs, e...)
 }
 
 func (cmd *Cmd) ouputConnList(connsStr string) error {

@@ -2,7 +2,6 @@ package generate
 
 import (
 	goerrors "errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
-	"github.com/stackrox/rox/roxctl/netpol/netpolerrors"
+	"github.com/stackrox/rox/roxctl/netpol/resources"
 	v1 "k8s.io/api/networking/v1"
 	"k8s.io/cli-runtime/pkg/resource"
 )
@@ -147,21 +146,6 @@ type netpolGenerator interface {
 	Errors() []npguard.FileProcessingError
 }
 
-func getInfoObj(path string, failFast, treatWarningsAsErrors bool) ([]*resource.Info, error) {
-	b := resource.NewLocalBuilder().
-		Unstructured().
-		FilenameParam(false,
-			&resource.FilenameOptions{Filenames: []string{path}, Recursive: true}).
-		Flatten()
-	// only for the combination of --fail & --strict, should not run with ContinueOnError, and stop on first warning.
-	// the only error which is not warning returned from this call is errox.NotFound, for which it already fails fast.
-	if !(failFast && treatWarningsAsErrors) {
-		b.ContinueOnError()
-	}
-	//nolint:wrapcheck // we do wrap the errors later in `errHandler.HandleErrors`
-	return b.Do().Infos()
-}
-
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
 	warns, errs := cmd.generate(synth)
 	if cmd.Options.TreatWarningsAsErrors {
@@ -174,9 +158,7 @@ func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
 }
 
 func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []error) {
-	errHandler := netpolerrors.NewErrHandler(cmd.Options.TreatWarningsAsErrors)
-	infos, err := getInfoObj(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
-	warns, errs := errHandler.HandleError(err)
+	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
 	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
 		return warns, errs
 	}
@@ -188,22 +170,12 @@ func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []er
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
 		return warns, append(errs, err)
 	}
-	var roxerr error
-	for _, err := range synth.Errors() {
-		if err.IsSevere() {
-			errs = append(errs, fmt.Errorf("%s %s", err.Error(), err.Location()))
-			roxerr = npg.ErrErrors
-		} else {
-			warns = append(warns, fmt.Errorf("%s %s", err.Error(), err.Location()))
-			if cmd.Options.TreatWarningsAsErrors && roxerr == nil {
-				roxerr = npg.ErrWarnings
-			}
-		}
+	errArr := make([]resources.ErrorLocationSeverity, len(synth.Errors()))
+	for i, processingError := range synth.Errors() {
+		errArr[i] = &processingError
 	}
-	if roxerr != nil {
-		errs = append(errs, roxerr)
-	}
-	return warns, errs
+	w, e = resources.HandleNPGerrors(errArr, cmd.Options.TreatWarningsAsErrors)
+	return append(warns, w...), append(errs, e...)
 }
 
 func (cmd *NetpolGenerateCmd) ouputNetpols(recommendedNetpols []*v1.NetworkPolicy) error {

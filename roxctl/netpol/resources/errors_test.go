@@ -1,4 +1,4 @@
-package netpolerrors
+package resources
 
 import (
 	"testing"

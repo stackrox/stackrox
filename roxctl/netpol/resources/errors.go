@@ -1,4 +1,4 @@
-package netpolerrors
+package resources
 
 import (
 	"regexp"
@@ -28,17 +28,10 @@ func NewErrHandler(treatWarningsAsErrors bool) *ErrorHandler {
 }
 
 // HandleError returns errors and warnings from the aggregated error
-func (e *ErrorHandler) HandleError(err1 error) ([]error, []error) {
+func (e *ErrorHandler) HandleError(err1 error) (warn []error, err []error) {
 	flatErrs := disaggregate(err1)
 	w, er := recognizeWarnings(flatErrs...)
 	return e.classifyErrors(w, er)
-}
-
-// HandleErrorPair handles errors after reading two locations with manifests (e.g. diff command)
-func (e *ErrorHandler) HandleErrorPair(err1, err2 error) ([]error, []error) {
-	war1, e1 := recognizeWarnings(disaggregate(err1)...)
-	war2, e2 := recognizeWarnings(disaggregate(err2)...)
-	return e.classifyErrors(append(war1, war2...), append(e1, e2...))
 }
 
 // classifyErrors assigns an error to either warnings or errors depending on user-provided settings

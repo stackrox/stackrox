@@ -9,8 +9,7 @@ import (
 	npgdiff "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common/npg"
-	"github.com/stackrox/rox/roxctl/netpol/netpolerrors"
+	"github.com/stackrox/rox/roxctl/netpol/resources"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
@@ -25,60 +24,49 @@ type diffAnalyzer interface {
 	Errors() []npgdiff.DiffError
 }
 
-func getInfoObjs(path string, failFast bool, treatWarningsAsErrors bool) ([]*resource.Info, error) {
-	b := resource.NewLocalBuilder().
-		Unstructured()
-	if !(failFast && treatWarningsAsErrors) {
-		b.ContinueOnError()
-	}
-	//nolint:wrapcheck // we do wrap the errors later in ErrorHandler
-	return b.Path(true, path).Do().IgnoreErrors().Infos()
-}
-
-func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*resource.Info, warnings error, errs error) {
-	info1, err1 := getInfoObjs(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
-	info2, err2 := getInfoObjs(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
-	inputErrHandler := netpolerrors.NewErrHandler(cmd.treatWarningsAsErrors)
-	w, e := inputErrHandler.HandleErrorPair(err1, err2)
-	return info1, info2, goerrors.Join(w...), goerrors.Join(e...)
+func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*resource.Info, warnings []error, errs []error) {
+	infos1, warns1, errs1 := resources.GetK8sInfos(cmd.inputFolderPath1, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	infos2, warns2, errs2 := resources.GetK8sInfos(cmd.inputFolderPath2, cmd.stopOnFirstError, cmd.treatWarningsAsErrors)
+	return infos1, infos2, append(warns1, warns2...), append(errs1, errs2...)
 }
 
 func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	info1, info2, warnings, err := cmd.processInput()
-	if err != nil {
-		return err
+	warns, errs := cmd.analyze(analyzer)
+	if cmd.treatWarningsAsErrors {
+		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
 	}
-	if warnings != nil {
-		cmd.env.Logger().WarnfLn("%v", warnings)
+	for _, warn := range warns {
+		cmd.env.Logger().WarnfLn("%v", warn)
+	}
+	return goerrors.Join(errs...)
+}
+
+func (cmd *diffNetpolCommand) analyze(analyzer diffAnalyzer) (w []error, e []error) {
+	info1, info2, warns, errs := cmd.processInput()
+	if cmd.stopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.treatWarningsAsErrors)) {
+		return warns, errs
 	}
 
 	connsDiff, err := analyzer.ConnDiffFromResourceInfos(info1, info2)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return errox.NotFound.Newf(err.Error())
+			return warns, append(errs, errox.NotFound.Newf(err.Error()))
 		}
-		return errors.Wrap(err, "error in connectivity diff analysis")
+		return warns, append(errs, errors.Wrap(err, "connectivity diff analysis"))
 	}
 	connsDiffStr, err := analyzer.ConnectivityDiffToString(connsDiff)
 	if err != nil {
-		return errors.Wrap(err, "error in formatting connectivity diff")
+		return warns, append(errs, errors.Wrap(err, "formatting connectivity diff"))
 	}
 	if err := cmd.outputConnsDiff(connsDiffStr); err != nil {
-		return err
+		return warns, append(errs, err)
 	}
-	var roxerr error
-	for _, e := range analyzer.Errors() {
-		if e.IsSevere() {
-			cmd.env.Logger().ErrfLn("%s %s", e.Error(), e.Location())
-			roxerr = npg.ErrErrors
-		} else {
-			cmd.env.Logger().WarnfLn("%s %s", e.Error(), e.Location())
-			if cmd.treatWarningsAsErrors && roxerr == nil {
-				roxerr = npg.ErrWarnings
-			}
-		}
+	errArr := make([]resources.ErrorLocationSeverity, len(analyzer.Errors()))
+	for i, processingError := range analyzer.Errors() {
+		errArr[i] = processingError
 	}
-	return roxerr
+	w, e = resources.HandleNPGerrors(errArr, cmd.treatWarningsAsErrors)
+	return append(warns, w...), append(errs, e...)
 }
 
 func (cmd *diffNetpolCommand) outputConnsDiff(connsDiffStr string) error {
