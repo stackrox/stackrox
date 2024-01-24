@@ -486,8 +486,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		},
 		"set persistence.persistentVolumeClaim": {
 			db: &platform.ScannerV4DB{
-				Persistence: &platform.Persistence{
-					PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+				Persistence: &platform.ScannerV4Persistence{
+					PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
 						ClaimName:        pointers.String("test"),
 						Size:             pointers.String("100GB"),
 						StorageClassName: pointers.String("testSC"),
@@ -509,7 +509,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		},
 		"set persistence.hostPath": {
 			db: &platform.ScannerV4DB{
-				Persistence: &platform.Persistence{
+				Persistence: &platform.ScannerV4Persistence{
 					HostPath: &platform.HostPathSpec{
 						Path: pointers.String("/test/path"),
 					},
@@ -525,8 +525,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		},
 		"err for invalid persistence": {
 			db: &platform.ScannerV4DB{
-				Persistence: &platform.Persistence{
-					PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+				Persistence: &platform.ScannerV4Persistence{
+					PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
 						ClaimName: pointers.String("test"),
 					},
 					HostPath: &platform.HostPathSpec{
