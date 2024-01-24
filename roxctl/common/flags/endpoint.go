@@ -114,7 +114,7 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 		defaultPort = 443
 		usePlaintext = false
 	default:
-		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, the scheme should be: http(s)://<endpoint>:<port>", u.Scheme)
+		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, use either 'http' or 'https'", u.Scheme)
 	}
 
 	if *plaintextSet ||

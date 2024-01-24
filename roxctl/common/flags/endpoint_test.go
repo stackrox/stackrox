@@ -52,7 +52,7 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 		},
 		{
 			endpoint: "128.66.0.1",
-			err:      "invalid endpoint: address 128.66.0.1: missing port in address, the scheme should be: http(s)://<endpoint>:<port>",
+			err:      "invalid endpoint: address 128.66.0.1: missing port in address",
 		},
 		{
 			endpoint: "example.com",
