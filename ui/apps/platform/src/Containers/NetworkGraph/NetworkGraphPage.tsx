@@ -27,6 +27,8 @@ import { isCompleteSearchFilter } from 'utils/searchUtils';
 import PageTitle from 'Components/PageTitle';
 import useInterval from 'hooks/useInterval';
 import useURLParameter from 'hooks/useURLParameter';
+import { SearchFilter } from 'types/search';
+
 import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NodeUpdateSection from './components/NodeUpdateSection';
@@ -54,6 +56,11 @@ const emptyModel = {
     edges: [],
 };
 
+const emptyModelState = {
+    activeModel: emptyModel,
+    extraneousModel: emptyModel,
+};
+
 // TODO: get real includePorts flag from user input
 const includePorts = true;
 
@@ -78,10 +85,7 @@ function NetworkGraphPage() {
         'selectionIndicator',
         'objectTypeLabel',
     ]);
-    const [models, setModels] = useState<Models>({
-        activeModel: emptyModel,
-        extraneousModel: emptyModel,
-    });
+    const [models, setModels] = useState<Models>(emptyModelState);
     const [previouslySelectedCluster, setPreviouslySelectedCluster] = useState<string | undefined>(
         undefined
     );
@@ -123,10 +127,29 @@ function NetworkGraphPage() {
         setSearchFilter(modifiedSearchObject);
     }
 
+    const onBreadcrumbScopeChange = (newFilter: SearchFilter) => {
+        // When the cluster/namespace filters are changed, if this results in no selection, clear the graph data
+        // to avoid showing stale data from the previous selection.
+        if (
+            (Array.isArray(newFilter.Cluster) && newFilter.Cluster.length === 0) ||
+            (Array.isArray(newFilter.Namespace) && newFilter.Namespace.length === 0)
+        ) {
+            setModels(emptyModelState);
+        }
+    };
+
     const selectedClusterId = clusterFromUrl.id;
 
     const { deploymentCount } = useFetchDeploymentCount(
-        getSearchFilterFromScopeHierarchy(scopeHierarchy)
+        getSearchFilterFromScopeHierarchy(scopeHierarchy),
+        {
+            onCompleted: ({ count }) => {
+                // If the selected scope has no deployments, clear the graph data to avoid showing stale data
+                if (count === 0) {
+                    setModels(emptyModelState);
+                }
+            },
+        }
     );
 
     const [prevEpochCount, setPrevEpochCount] = useState(0);
@@ -272,6 +295,7 @@ function NetworkGraphPage() {
                                 selectedCluster={clusterFromUrl}
                                 selectedNamespaces={namespacesFromUrl}
                                 selectedDeployments={deploymentsFromUrl}
+                                onScopeChange={onBreadcrumbScopeChange}
                             />
                         </ToolbarGroup>
                         {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
