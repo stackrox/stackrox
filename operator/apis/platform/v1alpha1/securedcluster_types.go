@@ -68,16 +68,20 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
+	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
+	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
@@ -86,15 +90,15 @@ type SecuredClusterSpec struct {
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
 
 	// Monitoring configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride string `json:"registryOverride,omitempty"`
 }
 
@@ -348,6 +352,24 @@ type LocalScannerComponentSpec struct {
 	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB"
 	DB *DeploymentSpec `json:"db,omitempty"`
+}
+
+// LocalScannerV4ComponentSpec defines settings for the "scanner V4" component in SecuredClusters
+type LocalScannerV4ComponentSpec struct {
+	// If you do not want to deploy the Red Hat Advanced Cluster Security local Scanner V4, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:default=AutoSense
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the indexer deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
+	Indexer *ScannerV4Component `json:"indexer,omitempty"`
+
+	// Settings pertaining to the DB deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
+	DB *ScannerV4DB `json:"db,omitempty"`
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
