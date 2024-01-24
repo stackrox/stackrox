@@ -109,31 +109,7 @@ _deploy_stackrox() {
 # shellcheck disable=SC2120
 _deploy_central() {
     local central_namespace=${1:-stackrox}
-    info "Deploying central to namespace ${central_namespace}"
-
-    # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
-    # deployed with strict checks
-    if is_nightly_run || pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
-        ci_export CGO_CHECKS "true"
-    fi
-
-    if pr_has_label ci-race-tests || [[ "${CI_JOB_NAME:-}" =~ race-condition ]]; then
-        ci_export IS_RACE_BUILD "true"
-    fi
-
-    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_central_via_operator "${central_namespace}"
-    else
-        if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
-            if pr_has_label ci-helm-deploy; then
-                ci_export OUTPUT_FORMAT helm
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
-    fi
-
+    deploy_central "${central_namespace}"
     patch_down_central "${central_namespace}"
 }
 
@@ -224,40 +200,8 @@ EOF
 _deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
-
-    info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
-
-    ci_export ROX_AFTERGLOW_PERIOD "15"
-
-    if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
-    else
-        if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
-            echo "Deploying Sensor using Helm ..."
-            ci_export SENSOR_HELM_DEPLOY "true"
-            ci_export ADMISSION_CONTROLLER "true"
-        else
-            echo "Deploying sensor using kubectl ... "
-            if [[ -n "${IS_RACE_BUILD:-}" ]]; then
-                # builds with -race are slow at generating the sensor bundle
-                # https://stack-rox.atlassian.net/browse/ROX-6987
-                ci_export ROXCTL_TIMEOUT "60s"
-            fi
-        fi
-
-        DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
-    fi
-
+    deploy_sensor "${sensor_namespace}" "${central_namespace}"
     patch_down_sensor "${sensor_namespace}"
-
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
-        # Sensor is CPU starved under OpenShift causing all manner of test failures:
-        # https://stack-rox.atlassian.net/browse/ROX-5334
-        # https://stack-rox.atlassian.net/browse/ROX-6891
-        # et al.
-        "${ORCH_CMD}" -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
-    fi
 }
 
 patch_down_sensor() {
