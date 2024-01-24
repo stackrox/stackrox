@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/npg"
-	"github.com/stackrox/rox/roxctl/netpol/connectivity/netpolerrors"
+	"github.com/stackrox/rox/roxctl/netpol/netpolerrors"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 

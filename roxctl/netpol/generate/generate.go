@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
-	"github.com/stackrox/rox/roxctl/netpol/connectivity/netpolerrors"
+	"github.com/stackrox/rox/roxctl/netpol/netpolerrors"
 	v1 "k8s.io/api/networking/v1"
 	"k8s.io/cli-runtime/pkg/resource"
 )
