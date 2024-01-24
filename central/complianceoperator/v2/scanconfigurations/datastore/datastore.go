@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -37,7 +36,7 @@ type DataStore interface {
 	DeleteScanConfiguration(ctx context.Context, id string) (string, error)
 
 	// UpdateClusterStatus updates the scan configuration with the cluster status
-	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error
+	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string, clusterName string) error
 
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
 	GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
@@ -50,19 +49,18 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
+func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store) DataStore {
 	ds := &datastoreImpl{
 		storage:       scanConfigStore,
 		statusStorage: scanConfigStatusStore,
-		clusterDS:     clusterDS,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
 	store := pgStore.New(pool)
 	statusStorage := statusStore.New(pool)
-	return New(store, statusStorage, clusterDS), nil
+	return New(store, statusStorage), nil
 }

@@ -29,7 +29,4 @@ type Manager interface {
 	ProcessRescanRequest(ctx context.Context, scanID string) error
 	// DeleteScan processes a request to delete an existing compliance scan configuration.
 	DeleteScan(ctx context.Context, scanID string) error
-
-	// Remove cluster from scan config
-	RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error
 }

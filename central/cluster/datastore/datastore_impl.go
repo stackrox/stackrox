@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
-	complianceManager "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	scanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -78,9 +79,9 @@ type datastoreImpl struct {
 	serviceAccountDataStore   serviceAccountDataStore.DataStore
 	roleDataStore             roleDataStore.DataStore
 	roleBindingDataStore      roleBindingDataStore.DataStore
+	scanSettingDatastore      scanSetting.DataStore
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
-	complianceManager         complianceManager.Manager
 
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
@@ -547,11 +548,6 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	ds.removeClusterPods(ctx, cluster)
 
-	// Remove scan config associated with cluster
-	if err := ds.complianceManager.RemoveClusterFromScanConfig(ctx, cluster.GetId()); err != nil {
-		log.Errorf("failed to remove scan config for cluster %s: %v", cluster.GetId(), err)
-	}
-
 	// Remove nodes associated with this cluster
 	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
@@ -559,6 +555,12 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
+	}
+
+	if features.ComplianceEnhancements.Enabled() {
+		if err := ds.scanSettingDatastore.RemoveClusterFromScanConfig(ctx, cluster.GetId()); err != nil {
+			log.Errorf("failed to delete scan config for cluster %s: %v", cluster.GetId(), err)
+		}
 	}
 
 	err := ds.networkBaselineMgr.ProcessPostClusterDelete(removedDeployments)

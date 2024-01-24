@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -24,7 +24,6 @@ var (
 type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
-	clusterDS     clusterDatastore.DataStore
 	keyedMutex    *concurrency.KeyedMutex
 }
 
@@ -151,6 +150,11 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
+	return ds.upsertNoLockScanConfiguration(ctx, scanConfig)
+}
+
+// upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
+func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = types.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
@@ -193,18 +197,9 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 }
 
 // UpdateClusterStatus updates the scan configuration with the cluster status
-func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error {
+func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string, clusterName string) error {
 	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(clusterID)) {
 		return sac.ErrResourceAccessDenied
-	}
-
-	// Look up the cluster, so we can store the name for convenience AND history
-	cluster, exists, err := ds.clusterDS.GetCluster(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Errorf("could not pull config for cluster %q because it does not exist", clusterID)
 	}
 
 	ds.keyedMutex.Lock(scanConfigID)
@@ -229,7 +224,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
 		Id:           statusKey,
 		ClusterId:    clusterID,
-		ClusterName:  cluster.GetName(),
+		ClusterName:  clusterName,
 		ScanConfigId: scanConfigID,
 		Errors:       []string{clusterStatus},
 	}
@@ -258,6 +253,30 @@ func getScopeKeys(scanClusters []*storage.ComplianceOperatorScanConfigurationV2_
 	return clusterScopeKeys
 }
 
+func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context, clusterID string, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+	ds.keyedMutex.Lock(scanConfig.GetId())
+	defer ds.keyedMutex.Unlock(scanConfig.GetId())
+
+	clusters := scanConfig.GetClusters()
+	filterFunction := func(cluster *storage.ComplianceOperatorScanConfigurationV2_Cluster) bool {
+		return cluster.GetClusterId() != clusterID
+	}
+	newClusters := sliceutils.Filter(clusters, filterFunction)
+	scanConfig.Clusters = newClusters
+
+	err := ds.upsertNoLockScanConfiguration(ctx, scanConfig)
+	if err != nil {
+		return err
+	}
+
+	_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfig.GetId()).ProtoQuery())
+	if err != nil {
+		return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scanConfig.GetId())
+	}
+	return nil
+}
+
 func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
@@ -265,26 +284,12 @@ func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, cluste
 	if err != nil {
 		return err
 	}
-	for _, scan := range scans {
-		clusters := scan.GetClusters()
-		newClusters := []*storage.ComplianceOperatorScanConfigurationV2_Cluster{}
-		for _, cluster := range clusters {
-			if cluster.GetClusterId() != clusterID {
-				newClusters = append(newClusters, cluster)
-			}
 
-		}
-		scan.Clusters = newClusters
-		err := ds.UpsertScanConfiguration(ctx, scan)
+	for _, scan := range scans {
+		err = ds.deleteClusterFromScanConfigWithLock(ctx, clusterID, scan)
 		if err != nil {
 			return err
 		}
-		_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
-			AddExactMatches(search.ComplianceOperatorScanConfig, scan.GetId()).ProtoQuery())
-		if err != nil {
-			return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scan.GetId())
-		}
 	}
-
 	return nil
 }
