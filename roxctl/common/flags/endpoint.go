@@ -90,14 +90,14 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
 		if _, _, err := net.SplitHostPort(endpoint); err != nil {
-			return "", false, errox.InvalidArgs.Newf("invalid endpoint: %s, the scheme should be: http(s)://<endpoint>:<port>", err.Error())
+			return "", false, errox.InvalidArgs.CausedBy(err)
 		}
 		return endpoint, plaintext, nil
 	}
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return "", false, errors.Wrap(err, "malformed endpoint URL")
+		return "", false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	if u.Path != "" && u.Path != "/" {
