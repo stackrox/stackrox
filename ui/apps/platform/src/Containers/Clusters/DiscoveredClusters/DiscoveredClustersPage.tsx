@@ -48,9 +48,9 @@ function DiscoveredClustersPage(): ReactElement {
         // const { filter } = listArg;
 
         Promise.all([countDiscoveredClusters(/* filter */), listDiscoveredClusters(/* listArg */)])
-            .then(([countArg, clustersArg]) => {
-                setClusters(clustersArg);
-                setCount(countArg);
+            .then(([countFromResponse, clustersFromResponse]) => {
+                setClusters(clustersFromResponse);
+                setCount(countFromResponse);
                 setErrorMessage('');
             })
             .catch((error) => {
