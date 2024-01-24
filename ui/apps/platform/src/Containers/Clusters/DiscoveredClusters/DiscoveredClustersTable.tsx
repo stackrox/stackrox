@@ -7,7 +7,7 @@ import { SearchFilter } from 'types/search';
 
 import DiscoveredClustersEmptyState from './DiscoveredClustersEmptyState';
 
-const colSpan = 4; // TODO separate Provider from Region?
+const colSpan = 4; // TODO separate Provider from
 
 export type DiscoveredClustersTableProps = {
     clusters: DiscoveredCluster[];
@@ -24,10 +24,10 @@ function DiscoveredClustersTable({
         <TableComposable variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th>Cluster</Th>
+                    <Th sort={getSortParams('TODO')}>Cluster</Th>
                     <Th>Type</Th>
                     <Th>Provider</Th>
-                    <Th sort={getSortParams('TODO')}>First discovered</Th>
+                    <Th>Region</Th>
                 </Tr>
             </Thead>
             {clusters.length === 0 ? (
@@ -43,12 +43,8 @@ function DiscoveredClustersTable({
                         <Tr key={id}>
                             <Td dataLabel="Cluster">{'TODO'}</Td>
                             <Td dataLabel="Type">{'TODO'}</Td>
-                            <Td dataLabel="Provider" modifier="nowrap">
-                                {'TODO'}
-                            </Td>
-                            <Td dataLabel="First discovered" modifier="nowrap">
-                                {'TODO'}
-                            </Td>
+                            <Td dataLabel="Provider">{'TODO'}</Td>
+                            <Td dataLabel="Region">{'TODO'}</Td>
                         </Tr>
                     );
                 })

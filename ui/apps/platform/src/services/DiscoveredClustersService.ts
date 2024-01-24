@@ -38,5 +38,5 @@ export function hasDiscoveredClustersFilter(searchFilter: SearchFilter) {
 export const sortFields = [];
 export const defaultSortOption: SortOption = {
     field: 'TODO',
-    direction: 'desc', // descending for most recently discovered?
+    direction: 'asc',
 };
