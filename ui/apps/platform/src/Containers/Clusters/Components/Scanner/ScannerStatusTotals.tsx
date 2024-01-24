@@ -31,18 +31,17 @@ const resolveDbHealthStatus = (desiredPods: number, readyPods: number) => {
 };
 
 const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) => {
-    // These total fields may be absent and yield NaN in the cast
-    // to number, the below lines convert any NaN's to 0.
-    let totalDesiredAnalyzerPods = scannerHealthInfo.totalDesiredAnalyzerPods || 0;
-    let totalReadyAnalyzerPods = scannerHealthInfo.totalReadyAnalyzerPods || 0;
-    let totalDesiredDbPods = scannerHealthInfo.totalDesiredDbPods || 0;
-    let totalReadyDbPods = scannerHealthInfo.totalReadyDbPods || 0;
-    let totalDesiredV4IndexerPods = scannerHealthInfo.totalDesiredV4IndexerPods || 0;
-    let totalReadyV4IndexerPods = scannerHealthInfo.totalReadyV4IndexerPods || 0;
-    let totalDesiredV4DbPods = scannerHealthInfo.totalDesiredV4DbPods || 0;
-    let totalReadyV4DbPods = scannerHealthInfo.totalReadyV4DbPods || 0;
-
-    let statusErrors = scannerHealthInfo.statusErrors;
+    let {
+        totalDesiredAnalyzerPods,
+        totalReadyAnalyzerPods,
+        totalDesiredDbPods,
+        totalReadyDbPods,
+        totalDesiredV4IndexerPods,
+        totalReadyV4IndexerPods,
+        totalDesiredV4DbPods,
+        totalReadyV4DbPods,
+        statusErrors,
+    } = scannerHealthInfo;
 
     return (
         <table data-testid="scannerHealthInfo">
@@ -55,7 +54,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                         <span>
                             {totalReadyAnalyzerPods === null
                                 ? notAvailable
-                                : totalReadyAnalyzerPods + totalReadyV4IndexerPods}
+                                : totalReadyAnalyzerPods + (totalReadyV4IndexerPods || 0)}
                         </span>
                     </td>
                 </tr>
@@ -66,7 +65,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                     <td className={tdClassName} data-testid="totalDesiredPods">
                         {totalDesiredAnalyzerPods === null
                             ? notAvailable
-                            : totalDesiredAnalyzerPods + totalDesiredV4IndexerPods}
+                            : totalDesiredAnalyzerPods + (totalDesiredV4IndexerPods || 0)}
                     </td>
                 </tr>
                 <tr className={trClassName} key="dbAvailable">
@@ -75,8 +74,8 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                     </th>
                     <td className={tdClassName} data-testid="dbAvailable">
                         {resolveDbHealthStatus(
-                            totalDesiredDbPods + totalDesiredV4DbPods,
-                            totalReadyDbPods + totalReadyV4DbPods
+                            totalDesiredDbPods + (totalDesiredV4DbPods || 0),
+                            totalReadyDbPods + (totalReadyV4DbPods || 0)
                         )}
                     </td>
                 </tr>
