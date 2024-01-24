@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -80,6 +81,12 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
 	// Update the last updated time
+	scanConfig.LastUpdatedTime = types.TimestampNow()
+	return ds.storage.Upsert(ctx, scanConfig)
+}
+
+// UpsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
+func (ds *datastoreImpl) UpsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
 	scanConfig.LastUpdatedTime = types.TimestampNow()
 	return ds.storage.Upsert(ctx, scanConfig)
 }
@@ -195,25 +202,23 @@ func (ds *datastoreImpl) RemoveClusterFromScanConfig(ctx context.Context, cluste
 		return err
 	}
 	for _, scan := range scans {
+		ds.keyedMutex.Lock(scan.GetId())
 		clusters := scan.GetClusters()
-		newClusters := []*storage.ComplianceOperatorScanConfigurationV2_Cluster{}
-		for _, cluster := range clusters {
-			if cluster.GetClusterId() != clusterID {
-				newClusters = append(newClusters, cluster)
-			}
-
+		filterFunction := func(cluster *storage.ComplianceOperatorScanConfigurationV2_Cluster) bool {
+			return cluster.GetClusterId() != clusterID
 		}
+		newClusters := sliceutils.Filter(clusters, filterFunction)
 		scan.Clusters = newClusters
-		err := ds.UpsertScanConfiguration(ctx, scan)
+		err := ds.UpsertNoLockScanConfiguration(ctx, scan)
 		if err != nil {
 			return err
 		}
+		ds.keyedMutex.Unlock(scan.GetId())
 		_, err = ds.statusStorage.DeleteByQuery(ctx, search.NewQueryBuilder().
 			AddExactMatches(search.ComplianceOperatorScanConfig, scan.GetId()).ProtoQuery())
 		if err != nil {
 			return errors.Wrapf(err, "Unable to delete scan status for scan configuration id %q", scan.GetId())
 		}
 	}
-
 	return nil
 }

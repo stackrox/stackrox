@@ -230,7 +230,6 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 
 	for _, cluster := range scanConfig1.Clusters {
 		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.ClusterId, "testing status"))
-
 	}
 
 	for _, cluster := range scanConfig2.Clusters {
@@ -239,13 +238,16 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 
 	err := s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.Clusters[0].GetClusterId())
 	s.Require().NoError(err)
+
 	newscanConfig, exists, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(exists, "scan config not found")
 	s.Require().Less(len(newscanConfig.GetClusters()), len(scanConfig1.GetClusters()))
+
 	scanConfigStatus, err := s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
 	s.Require().NoError(err)
 	s.Require().Empty(scanConfigStatus)
+	
 	newscanConfig, exists, err = s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.GetId())
 	s.Require().NoError(err)
 	s.Require().True(exists, "scan config not found")
