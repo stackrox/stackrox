@@ -22,6 +22,7 @@ func init() {
 		&storage.AuthMachineToMachineConfig{}:                   resources.Access,
 		&storage.AuthProvider{}:                                 resources.Access,
 		&storage.Blob{}:                                         resources.Administration,
+		&storage.CloudSource{}:                                  resources.Integration,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,
 		&storage.ClusterCVE{}:                                   resources.Cluster,
 		&storage.ClusterCVEEdge{}:                               resources.Cluster,
