@@ -13,6 +13,18 @@ export type SearchOptionValue =
     | 'Request Name'
     | 'Requester User Name';
 
+// Search fields that will default to regex search
+export const regexSearchOptions: SearchOptionValue[] = [
+    'CVE',
+    'IMAGE',
+    'DEPLOYMENT',
+    'NAMESPACE',
+    'CLUSTER',
+    'COMPONENT',
+    'Request Name',
+    'Requester User Name',
+] as const;
+
 export type SearchOption = { label: string; value: SearchOptionValue; category: SearchCategory };
 
 export const SEVERITY_SEARCH_OPTION = {

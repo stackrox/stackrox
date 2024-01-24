@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { debounce, Select, SelectOption, ToolbarGroup } from '@patternfly/react-core';
+import { debounce, Select, SelectOption, Skeleton, ToolbarGroup } from '@patternfly/react-core';
 import { useQuery } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';
@@ -7,12 +7,13 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { searchValueAsArray } from 'utils/searchUtils';
 import SearchOptionsDropdown from './SearchOptionsDropdown';
-import { SearchOption, SearchOptionValue } from '../searchOptions';
+import { applyRegexSearchModifiers } from '../WorkloadCves/searchUtils';
+import { SearchOption, SearchOptionValue, regexSearchOptions } from '../searchOptions';
 
 import './FilterAutocomplete.css';
 
-function getOptions(data: string[] | undefined): React.ReactElement[] | undefined {
-    return data?.map((value) => <SelectOption key={value} value={value} />);
+function getOptions(data: string[] | undefined): React.ReactElement[] {
+    return data?.map((value) => <SelectOption key={value} value={value} />) ?? [];
 }
 
 function getAutocompleteOptionsQueryString(searchFilter: SearchFilter): string {
@@ -57,17 +58,27 @@ function FilterAutocompleteSelect({
     const [isTyping, setIsTyping] = useState(false);
     const { isOpen, onToggle } = useSelectToggle();
 
-    // TODO Autocomplete requests for "Cluster" never return results if there is a 'CVE ID' or 'Severity' search filter
+    // Autocomplete requests for "Cluster" never return results if there is a 'CVE ID', 'Severity', or 'Fixable' search filter
     // included in the query. In this case we don't include the additional filters at all which leaves the cluster results
     // unfiltered. Not ideal, but better than no results.
-    const autocompleteSearchFilter =
-        searchOption.value === 'CLUSTER' && autocompleteSearchContext['CVE ID']
-            ? { [searchOption.value]: typeahead }
-            : {
-                  ...autocompleteSearchContext,
-                  ...searchFilter,
-                  [searchOption.value]: typeahead,
-              };
+    const useSearchContextForAutocomplete =
+        searchOption.value !== 'CLUSTER' ||
+        (!autocompleteSearchContext['CVE ID'] && !searchFilter.SEVERITY && !searchFilter.FIXABLE);
+
+    const autocompleteSearchFilterBase = useSearchContextForAutocomplete
+        ? { ...autocompleteSearchContext, ...searchFilter }
+        : {};
+
+    // If we are using regex matching, apply the regex modifier to the search filter
+    const autocompleteSearchFilter = applyRegexSearchModifiers(autocompleteSearchFilterBase);
+
+    // Append the current typeahead value to the search filter, use regex matching only if:
+    // 1. The typeahead is not empty
+    // 2. The search option supports regex matching
+    autocompleteSearchFilter[searchOption.value] =
+        typeahead !== '' && regexSearchOptions.some((option) => option === searchOption.value)
+            ? [`r/${typeahead}`]
+            : [typeahead];
 
     const variables = {
         query: getAutocompleteOptionsQueryString(autocompleteSearchFilter),
@@ -101,7 +112,19 @@ function FilterAutocompleteSelect({
         []
     );
 
-    const autocompleteOptions = loading || isTyping ? [] : getOptions(data?.searchAutocomplete);
+    function getSuggestedOptions() {
+        if (loading || isTyping) {
+            return [
+                <SelectOption
+                    key="autocomplete-options-loading"
+                    value="autocomplete-options-loading"
+                >
+                    <Skeleton screenreaderText="Loading suggested options" />
+                </SelectOption>,
+            ];
+        }
+        return getOptions(data?.searchAutocomplete);
+    }
 
     return (
         <ToolbarGroup
@@ -141,6 +164,7 @@ function FilterAutocompleteSelect({
                 variant="typeaheadmulti"
                 isCreatable
                 createText="Add"
+                onFilter={getSuggestedOptions}
                 // We set this as empty because we want to use SearchFilterChips to display the search values
                 selections={searchFilter[searchOption.value]}
                 onTypeaheadInputChanged={(val: string) => {
@@ -149,7 +173,7 @@ function FilterAutocompleteSelect({
                 }}
                 className="pf-u-flex-grow-1"
             >
-                {autocompleteOptions}
+                {getSuggestedOptions()}
             </Select>
         </ToolbarGroup>
     );
