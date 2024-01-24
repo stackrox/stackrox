@@ -454,7 +454,7 @@ replace (
 	// we currently depend on.
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
-	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20240123191306-0aef4aed2fdd
+	github.com/quay/claircore => github.com/RTann/claircore v0.0.0-20240124010924-3f84aa609a95
 
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20231206143943-626efb842da7
 

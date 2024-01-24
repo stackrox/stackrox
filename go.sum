@@ -678,8 +678,8 @@ github.com/PagerDuty/go-pagerduty v1.8.0/go.mod h1:nzIeAqyFSJAFkjWKvMzug0JtwDg+V
 github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8/go.mod h1:I0gYDMZ6Z5GRU7l58bNFSkPTFN6Yl12dsUlAZ8xy98g=
 github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c h1:kMFnB0vCcX7IL/m9Y5LO+KQYv+t1CQOiFe6+SV2J7bE=
 github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c/go.mod h1:EjAoLdwvbIOoOQr3ihjnSoLZRtE8azugULFRteWMNc0=
-github.com/RTann/claircore v0.0.0-20240123191306-0aef4aed2fdd h1:TbftiNeqqnJwbGYEsryPcsyZ3yfJYInHrj3UTcfbgi0=
-github.com/RTann/claircore v0.0.0-20240123191306-0aef4aed2fdd/go.mod h1:n6BVMsgP7oOcET79DS4s2xSGKJjj4IXt2hDJ1hpla9c=
+github.com/RTann/claircore v0.0.0-20240124010924-3f84aa609a95 h1:pitFT/SUjPxiuuhtsiOS+g9JKB502kioXwR9zUXGYUE=
+github.com/RTann/claircore v0.0.0-20240124010924-3f84aa609a95/go.mod h1:n6BVMsgP7oOcET79DS4s2xSGKJjj4IXt2hDJ1hpla9c=
 github.com/RoaringBitmap/roaring v1.7.0 h1:OZF303tJCER1Tj3x+aArx/S5X7hrT186ri6JjrGvG68=
 github.com/RoaringBitmap/roaring v1.7.0/go.mod h1:6AXUsoIEzDTFFQCe1RbGA6uFONMhvejWj5rqITANK90=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
