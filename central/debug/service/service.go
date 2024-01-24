@@ -633,47 +633,37 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		return
 	}
 
-	centralDataTasks := concPool.New().WithContext(debugDumpCtx)
+	diagBundleTasks := concPool.New().WithContext(debugDumpCtx)
 	if opts.withCentral {
-		centralDataTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return zipPrometheusMetrics(ctx, zipWriter,
 				"metrics-1")
 		})
-		centralDataTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getMemory(zipWriter)
 		})
-		centralDataTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getGoroutines(zipWriter)
 		})
-		centralDataTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getMutex(zipWriter)
 		})
-		centralDataTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getCentralDBData(ctx, zipWriter)
 		})
 		if opts.withCPUProfile {
-			centralDataTasks.Go(func(ctx context.Context) error {
+			diagBundleTasks.Go(func(ctx context.Context) error {
 				return getCPU(ctx, zipWriter, cpuProfileDuration)
 			})
-			centralDataTasks.Go(func(ctx context.Context) error {
+			diagBundleTasks.Go(func(ctx context.Context) error {
 				return zipPrometheusMetrics(ctx, zipWriter, "metrics-2")
 			})
 		}
-		if err := centralDataTasks.Wait(); err != nil {
-			// Short-circuit in case the context has been cancelled.
-			if concurrency.IsDone(debugDumpCtx) {
-				log.Warn("The context for collecting diagnostic bundle data has been cancelled")
-				return
-			}
-			log.Errorw("Failures during collecting central data for diagnostic bundle", logging.Err(err))
-		}
-		log.Info("Finished writing Central data to the diagnostic bundle")
 	}
 
-	centralTelemetryTasks := concPool.New().WithContext(debugDumpCtx)
 	var failureDuringDiagnostics bool
 	if opts.logs == fullK8sIntrospectionData {
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			// In case we fail to fetch K8S diagnostics, which also includes the collection of logs for Central,
 			// ensure we later on attempt to collect local logs as a safety net to at the very least have the
 			// Central logs contained in the diagnostic bundle.
@@ -683,7 +673,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			}
 			return nil
 		})
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			if err := s.pullSensorMetrics(ctx, zipWriter, opts); err != nil {
 				return err
 			}
@@ -691,45 +681,45 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		})
 	}
 	if s.telemetryGatherer != nil && opts.telemetryMode > noTelemetry {
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= telemetryCentralAndSensors,
 				opts.withCentral)
 			return writeTelemetryData(zipWriter, telemetryData)
 		})
 	}
 	if opts.withAccessControl {
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
 			return nil
 		})
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
 			return nil
 		})
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "access-control-roles.json", s.getRoles)
 			return nil
 		})
 	}
 	if opts.withNotifiers {
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			fetchAndAddJSONToZip(ctx, zipWriter, "notifiers.json", s.getNotifiers)
 			return nil
 		})
 	}
-	centralTelemetryTasks.Go(func(ctx context.Context) error {
+	diagBundleTasks.Go(func(ctx context.Context) error {
 		fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
 		return nil
 	})
 	if opts.withCentral && opts.withLogImbue {
-		centralTelemetryTasks.Go(func(ctx context.Context) error {
+		diagBundleTasks.Go(func(ctx context.Context) error {
 			return s.getLogImbue(ctx, zipWriter)
 		})
 	}
 
 	// Wait for the "all the rest" part of the tasks to construct the diagnostic bundle.
 	// This also respects context cancellations and returns any potential errors that occurred.
-	err := centralTelemetryTasks.Wait()
+	err := diagBundleTasks.Wait()
 	if err != nil {
 		// Short-circuit in case the context has been cancelled.
 		if concurrency.IsDone(debugDumpCtx) {
@@ -738,7 +728,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 		log.Errorw("Failures during gathering diagnostic bundle contents", logging.Err(err))
 	}
-	log.Info("Finished writing the telemetry and sensor data to the diagnostic bundle")
+	log.Info("Finished writing data to the diagnostic bundle")
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.withCentral && (opts.logs == localLogs || failureDuringDiagnostics) {
