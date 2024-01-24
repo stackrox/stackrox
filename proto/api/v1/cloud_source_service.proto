@@ -40,7 +40,7 @@ message OCMConfig {
 
 message CloudSourcesFilter {
     // Matches cloud sources based on their type.
-    repeated string type = 1;
+    repeated string types = 1;
 }
 
 message CountCloudSourcesRequest {

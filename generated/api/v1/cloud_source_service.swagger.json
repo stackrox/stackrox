@@ -76,7 +76,7 @@
             "type": "boolean"
           },
           {
-            "name": "filter.type",
+            "name": "filter.types",
             "description": "Matches cloud sources based on their type.",
             "in": "query",
             "required": false,
@@ -275,7 +275,7 @@
         },
         "parameters": [
           {
-            "name": "filter.type",
+            "name": "filter.types",
             "description": "Matches cloud sources based on their type.",
             "in": "query",
             "required": false,
@@ -377,7 +377,7 @@
     "v1CloudSourcesFilter": {
       "type": "object",
       "properties": {
-        "type": {
+        "types": {
           "type": "array",
           "items": {
             "type": "string"
