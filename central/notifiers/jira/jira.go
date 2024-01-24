@@ -488,7 +488,7 @@ func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		if req, err = client.NewRequest("GET", urlPath, nil); err != nil {
 			return nil, errors.Wrap(err, "could not create request to Jira")
 		}
-		if resp, err = client.Do(req, nil); err != nil {
+		if _, err = client.Do(req, nil); err != nil {
 			return nil, errors.Wrap(err, "Could not make authenticated request to Jira")
 		}
 		log.Debug("Successfully made request to jira using bearer auth")
