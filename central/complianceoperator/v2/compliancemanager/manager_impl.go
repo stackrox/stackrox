@@ -99,7 +99,6 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	if err != nil {
 		return nil, err
 	}
-	createScanRequest := false
 
 	var cron string
 	if scanRequest.GetSchedule() != nil {
@@ -117,13 +116,16 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 	}
 
+	createScanRequest := scanRequest.Id == ""
+
 	// No ID means an add so we need to make sure the name does not already exist
-	if scanRequest.Id == "" {
+	if createScanRequest {
 		// Check if scan configuration already exists by name.
 		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
 		if err != nil {
+			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 			log.Error(err)
-			return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+			return nil, err
 		}
 		if found {
 			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
@@ -131,7 +133,17 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 		scanRequest.Id = uuid.NewV4().String()
 		scanRequest.CreatedTime = types.TimestampNow()
-		createScanRequest = true
+	} else {
+		// Verify the scan configuration ID is valid
+		_, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+			log.Error(err)
+			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
+		}
 	}
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
@@ -148,13 +160,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		var sensorMessage *central.MsgToSensor
-		if createScanRequest {
-			sensorMessage = buildCreateScanConfig(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName())
-		} else {
-			sensorMessage = buildUpdateScanConfig(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName())
-		}
-
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {
