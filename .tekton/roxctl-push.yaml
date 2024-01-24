@@ -174,10 +174,6 @@ spec:
         value: $(params.output-image)
       - name: rebuild
         value: $(params.rebuild)
-      - name: pipelinerun-name
-        value: $(context.pipelineRun.name)
-      - name: pipelinerun-uid
-        value: $(context.pipelineRun.uid)
       taskRef:
         params:
         - name: name
