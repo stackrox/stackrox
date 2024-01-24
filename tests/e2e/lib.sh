@@ -768,7 +768,8 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
     local psps_supported=false
-    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding"
+    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
+    local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
 
     if [[ ${#namespaces[@]} == 0 ]]; then
         namespaces+=( "stackrox" )
@@ -802,6 +803,8 @@ remove_existing_stackrox_resources() {
             fi
             kubectl delete --ignore-not-found ns "$namespace" --wait
         done
+
+        kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
 
         helm list -o json | jq -r '.[] | .name' | while read -r name; do
             case "$name" in

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -269,6 +271,16 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 		results = append(results, obj.Clone())
 	}
 	return results, misses, nil
+}
+
+// WalkByQuery iterates over all the objects scoped by the query applies the closure.
+func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error {
+	if proto.Equal(q, search.EmptyQuery()) {
+		c.cacheLock.RLock()
+		defer c.cacheLock.RUnlock()
+		return c.walkCacheNoLock(ctx, fn)
+	}
+	return c.underlyingStore.Walk(ctx, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.

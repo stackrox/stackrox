@@ -118,37 +118,6 @@
         ]
       }
     },
-    "/v2/compliance/scan/configurations/execute/{id}": {
-      "get": {
-        "summary": "RunComplianceScanConfiguration launches scan for the specified scan configuration",
-        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      }
-    },
     "/v2/compliance/scan/configurations/{id}": {
       "get": {
         "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
@@ -239,6 +208,37 @@
             "schema": {
               "$ref": "#/definitions/v2ComplianceScanConfiguration"
             }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/run": {
+      "post": {
+        "summary": "RunComplianceScanConfiguration launches scan for the specified scan\nconfiguration, which will invoke scans to run for the applicable\nprofiles across the configured clusters.",
+        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [

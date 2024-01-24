@@ -165,7 +165,7 @@ defaults:
 
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
-    disable: true
+    disable: false
     matcher:
       metricsPort: 9090
       autoscaling:

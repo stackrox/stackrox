@@ -56,6 +56,8 @@ describe('Exception Management Request Details Page', () => {
             'contain',
             'The vulnerability request was successfully denied.'
         );
+        // should not be able to cancel a denied request
+        cy.get('button:contains("Cancel request")').should('not.exist');
     });
 
     it('should be able to see how many CVEs will be affected by a denial', () => {

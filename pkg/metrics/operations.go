@@ -47,4 +47,5 @@ const (
 	UpsertAll
 
 	Walk
+	WalkByQuery
 )

@@ -155,7 +155,7 @@ function ExceptionRequestDetailsPage() {
     const showApproveDenyButtons =
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
-    const showCancelButton = currentUser.userId === requester.id;
+    const showCancelButton = currentUser.userId === requester.id && status !== 'DENIED';
     const showUpdateButton =
         currentUser.userId === requester.id &&
         (status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');

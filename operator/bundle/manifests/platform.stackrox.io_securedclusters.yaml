@@ -753,7 +753,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:
@@ -935,6 +935,304 @@ spec:
                       Cluster Security Scanner, you can disable it here (not recommended).
                       If you do so, all the settings in this section will have no
                       effect.
+                    enum:
+                    - AutoSense
+                    - Disabled
+                    type: string
+                type: object
+              scannerV4:
+                description: Settings for the Scanner V4 component, which can run
+                  in addition to the previously existing Scanner components
+                properties:
+                  db:
+                    description: Settings pertaining to the DB deployment.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: If you want this component to only run on specific
+                          nodes, you can configure a node selector here.
+                        type: object
+                      persistence:
+                        description: ScannerV4Persistence defines persistence settings
+                          for scanner V4.
+                        properties:
+                          hostPath:
+                            description: Stores persistent data on a directory on
+                              the host. This is not recommended, and should only be
+                              used together with a node selector (only available in
+                              YAML view).
+                            properties:
+                              path:
+                                description: The path on the host running Central.
+                                type: string
+                            type: object
+                          persistentVolumeClaim:
+                            description: Uses a Kubernetes persistent volume claim
+                              (PVC) to manage the storage location of persistent data.
+                              Recommended for most users.
+                            properties:
+                              claimName:
+                                default: scanner-v4-db
+                                description: The name of the PVC to manage persistent
+                                  data. If no PVC with the given name exists, it will
+                                  be created. Defaults to "scanner-v4-db" if not set.
+                                type: string
+                              size:
+                                description: The size of the persistent volume when
+                                  created through the claim. If a claim was automatically
+                                  created, this can be used after the initial deployment
+                                  to resize (grow) the volume (only supported by some
+                                  storage class controllers).
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                type: string
+                              storageClassName:
+                                description: The name of the storage class to use
+                                  for the PVC. If your cluster is not configured with
+                                  a default storage class, you must select a value
+                                  here.
+                                type: string
+                            type: object
+                        type: object
+                      resources:
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
+                        properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                      tolerations:
+                        description: If you want this component to only run on specific
+                          nodes, you can configure tolerations of tainted nodes.
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  indexer:
+                    description: Settings pertaining to the indexer deployment.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: If you want this component to only run on specific
+                          nodes, you can configure a node selector here.
+                        type: object
+                      resources:
+                        description: Allows overriding the default resource settings
+                          for this component. Please consult the documentation for
+                          an overview of default resource requirements and a sizing
+                          guide.
+                        properties:
+                          claims:
+                            description: "Claims lists the names of resources, defined
+                              in spec.resourceClaims, that are used by this container.
+                              \n This is an alpha field and requires enabling the
+                              DynamicResourceAllocation feature gate. \n This field
+                              is immutable. It can only be set for containers."
+                            items:
+                              description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                              properties:
+                                name:
+                                  description: Name must match the name of one entry
+                                    in pod.spec.resourceClaims of the Pod where this
+                                    field is used. It makes that resource available
+                                    inside a container.
+                                  type: string
+                              required:
+                              - name
+                              type: object
+                            type: array
+                            x-kubernetes-list-map-keys:
+                            - name
+                            x-kubernetes-list-type: map
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            type: object
+                        type: object
+                      scaling:
+                        description: Controls the number of replicas and autoscaling
+                          for this component.
+                        properties:
+                          autoScaling:
+                            default: Enabled
+                            description: When enabled, the number of component replicas
+                              is managed dynamically based on the load, within the
+                              limits specified below.
+                            enum:
+                            - Enabled
+                            - Disabled
+                            type: string
+                          maxReplicas:
+                            default: 5
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          minReplicas:
+                            default: 2
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          replicas:
+                            default: 3
+                            description: When autoscaling is disabled, the number
+                              of replicas will always be configured to match this
+                              value.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                        type: object
+                      tolerations:
+                        description: If you want this component to only run on specific
+                          nodes, you can configure tolerations of tainted nodes.
+                        items:
+                          description: The pod this Toleration is attached to tolerates
+                            any taint that matches the triple <key,value,effect> using
+                            the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: Effect indicates the taint effect to match.
+                                Empty means match all taint effects. When specified,
+                                allowed values are NoSchedule, PreferNoSchedule and
+                                NoExecute.
+                              type: string
+                            key:
+                              description: Key is the taint key that the toleration
+                                applies to. Empty means match all taint keys. If the
+                                key is empty, operator must be Exists; this combination
+                                means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: Operator represents a key's relationship
+                                to the value. Valid operators are Exists and Equal.
+                                Defaults to Equal. Exists is equivalent to wildcard
+                                for value, so that a pod can tolerate all taints of
+                                a particular category.
+                              type: string
+                            tolerationSeconds:
+                              description: TolerationSeconds represents the period
+                                of time the toleration (which must be of effect NoExecute,
+                                otherwise this field is ignored) tolerates the taint.
+                                By default, it is not set, which means tolerate the
+                                taint forever (do not evict). Zero and negative values
+                                will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: Value is the taint value the toleration
+                                matches to. If the operator is Exists, the value should
+                                be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  scannerComponent:
+                    default: AutoSense
+                    description: If you do not want to deploy the Red Hat Advanced
+                      Cluster Security local Scanner V4, you can disable it here (not
+                      recommended). If you do so, all the settings in this section
+                      will have no effect.
                     enum:
                     - AutoSense
                     - Disabled

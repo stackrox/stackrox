@@ -36,6 +36,8 @@ func TestTranslation(t *testing.T) {
 func (s *TranslationTestSuite) TestImageOverrides() {
 	s.T().Setenv(images.ScannerSlim.EnvVar(), "stackrox/scanner:1.0.0")
 	s.T().Setenv(images.ScannerSlimDB.EnvVar(), "stackrox/scanner-db:1.0.0")
+	s.T().Setenv(images.ScannerV4DB.EnvVar(), "stackrox/scanner-v4-db:1.0.0")
+	s.T().Setenv(images.ScannerV4Indexer.EnvVar(), "stackrox/scanner-v4:1.0.0")
 
 	obj := platform.SecuredCluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,6 +60,14 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	scannerDbImage, err := vals.PathValue("image.scannerDb.fullRef")
 	s.Require().NoError(err)
 	s.Equal("stackrox/scanner-db:1.0.0", scannerDbImage)
+
+	scannerV4DbImage, err := vals.PathValue("image.scannerV4DB.fullRef")
+	s.Require().NoError(err)
+	s.Equal("stackrox/scanner-v4-db:1.0.0", scannerV4DbImage)
+
+	scannerV4Image, err := vals.PathValue("image.scannerV4.fullRef")
+	s.Require().NoError(err)
+	s.Equal("stackrox/scanner-v4:1.0.0", scannerV4Image)
 }
 
 func TestReadBaseValues(t *testing.T) {
@@ -131,6 +141,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
@@ -151,6 +164,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 					Spec: platform.SecuredClusterSpec{
 						ClusterName: "test-cluster",
 						Scanner: &platform.LocalScannerComponentSpec{
+							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
+						},
+						ScannerV4: &platform.LocalScannerV4ComponentSpec{
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
 					},
@@ -175,6 +191,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"openshift": map[string]interface{}{
 						"enabled": true,
 					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": true,
 				},
 			},
 		},
@@ -201,6 +220,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
 					"disable": false,
 				},
 				"sensor": map[string]interface{}{
@@ -350,6 +372,63 @@ func (s *TranslationTestSuite) TestTranslate() {
 									Requests: v1.ResourceList{
 										v1.ResourceCPU:    resource.MustParse("110"),
 										v1.ResourceMemory: resource.MustParse("120"),
+									},
+								},
+							},
+						},
+						ScannerV4: &platform.LocalScannerV4ComponentSpec{
+							Indexer: &platform.ScannerV4Component{
+								Scaling: &platform.ScannerComponentScaling{
+									AutoScaling: &scannerAutoScalingPolicy,
+									Replicas:    &scannerReplicas,
+									MinReplicas: &scannerMinReplicas,
+									MaxReplicas: &scannerMaxReplicas,
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									NodeSelector: map[string]string{
+										"scanner-v4-indexer-node-selector-label1": "scanner-v4-indexer-node-selector-value1",
+										"scanner-v4-indexer-node-selector-label2": "scanner-v4-indexer-node-selector-value2",
+									},
+									Tolerations: []*v1.Toleration{
+										{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+										{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+									},
+									Resources: &v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("110"),
+											v1.ResourceMemory: resource.MustParse("120"),
+										},
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("100"),
+											v1.ResourceMemory: resource.MustParse("110"),
+										},
+									},
+								},
+							},
+							DB: &platform.ScannerV4DB{
+								Persistence: &platform.ScannerV4Persistence{
+									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
+										ClaimName: pointer.String("scanner-v4-db-pvc"),
+									},
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									NodeSelector: map[string]string{
+										"scanner-v4-db-node-selector-label1": "scanner-v4-db-node-selector-value1",
+										"scanner-v4-db-node-selector-label2": "scanner-v4-db-node-selector-value2",
+									},
+									Tolerations: []*v1.Toleration{
+										{Key: "node.stackrox.io", Value: "false", Operator: v1.TolerationOpEqual},
+										{Key: "node-role.kubernetes.io/infra", Value: "", Operator: v1.TolerationOpExists},
+									},
+									Resources: &v1.ResourceRequirements{
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("110"),
+											v1.ResourceMemory: resource.MustParse("120"),
+										},
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("100"),
+											v1.ResourceMemory: resource.MustParse("110"),
+										},
 									},
 								},
 							},
@@ -505,6 +584,73 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 					},
 				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+					"indexer": map[string]interface{}{
+						"autoscaling": map[string]interface{}{
+							"disable":     false,
+							"minReplicas": int32(6),
+							"maxReplicas": int32(8),
+						},
+						"replicas": int32(7),
+						"resources": map[string]interface{}{
+							"limits": map[string]interface{}{
+								"cpu":    "110",
+								"memory": "120",
+							},
+							"requests": map[string]interface{}{
+								"cpu":    "100",
+								"memory": "110",
+							},
+						},
+						"nodeSelector": map[string]string{
+							"scanner-v4-indexer-node-selector-label1": "scanner-v4-indexer-node-selector-value1",
+							"scanner-v4-indexer-node-selector-label2": "scanner-v4-indexer-node-selector-value2",
+						},
+						"tolerations": []map[string]interface{}{
+							{
+								"key":      "node.stackrox.io",
+								"operator": "Equal",
+								"value":    "false",
+							}, {
+								"key":      "node-role.kubernetes.io/infra",
+								"operator": "Exists",
+							},
+						},
+					},
+					"db": map[string]interface{}{
+						"resources": map[string]interface{}{
+							"limits": map[string]interface{}{
+								"cpu":    "110",
+								"memory": "120",
+							},
+							"requests": map[string]interface{}{
+								"cpu":    "100",
+								"memory": "110",
+							},
+						},
+						"nodeSelector": map[string]string{
+							"scanner-v4-db-node-selector-label1": "scanner-v4-db-node-selector-value1",
+							"scanner-v4-db-node-selector-label2": "scanner-v4-db-node-selector-value2",
+						},
+						"tolerations": []map[string]interface{}{
+							{
+								"key":      "node.stackrox.io",
+								"operator": "Equal",
+								"value":    "false",
+							}, {
+								"key":      "node-role.kubernetes.io/infra",
+								"operator": "Exists",
+							},
+						},
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"claimName":   "scanner-v4-db-pvc",
+								"createClaim": true,
+							},
+						},
+					},
+				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"customize": map[string]interface{}{
@@ -582,6 +728,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
 				"sensor": map[string]interface{}{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
@@ -628,6 +777,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"scannerV4": map[string]interface{}{
 					"disable": false,
 				},
 				"sensor": map[string]interface{}{
