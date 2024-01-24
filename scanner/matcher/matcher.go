@@ -68,6 +68,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 
 	var success bool
 
+	// TODO: add retry mechanism
 	pool, err := ccpostgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
