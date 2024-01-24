@@ -29,8 +29,8 @@ jobs:
       run: |
         source './scripts/ci/lib.sh'
 
-        # TODO(ROX-21746): add arm64 back
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "ppc64le", "s390x"] } }'
+        # If goarch is updated, be sure to update architectures in push-manifests below.
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] } }'
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
@@ -128,8 +128,7 @@ jobs:
       run: |
         source ./scripts/ci/lib.sh
 
-        # If this is updated, be sure to update goarch in build-and-push above.
-        # TODO(ROX-21746): add arm64 back
-        architectures="amd64,ppc64le,s390x"
+        # If this is updated, be sure to update goarch in define-job-matrix above.
+        architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"
