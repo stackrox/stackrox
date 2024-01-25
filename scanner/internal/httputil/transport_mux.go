@@ -18,11 +18,6 @@ import (
 )
 
 var (
-	namespace = env.Namespace.Setting()
-
-	centralHost = fmt.Sprintf("central.%s.svc", namespace)
-	sensorHost  = fmt.Sprintf("sensor.%s.svc", namespace)
-
 	// defaultDialer is essentially copied from http.DefaultTransport from go1.20.10.
 	defaultDialer = net.Dialer{
 		Timeout:   30 * time.Second,
@@ -32,6 +27,10 @@ var (
 
 type options struct {
 	denySensor bool
+
+	// These are here for testing purposes.
+	centralTransport http.RoundTripper
+	sensorTransport  http.RoundTripper
 }
 
 // TransportOption configures options for HTTP transport.
@@ -56,18 +55,35 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 		opt(&o)
 	}
 
-	centralTransport, err := roxTransport(mtls.CentralSubject)
-	if err != nil {
-		return nil, fmt.Errorf("creating Central TLS config: %w", err)
+	return transportMux(defaultTransport, o)
+}
+
+func transportMux(defaultTransport http.RoundTripper, o options) (http.RoundTripper, error) {
+	centralTransport := o.centralTransport
+	if centralTransport == nil {
+		var err error
+		centralTransport, err = roxTransport(mtls.CentralSubject)
+		if err != nil {
+			return nil, fmt.Errorf("creating Central TLS config: %w", err)
+		}
 	}
 
 	sensorTransport := DenyTransport
 	if !o.denySensor {
-		sensorTransport, err = roxTransport(mtls.SensorSubject)
-		if err != nil {
-			return nil, fmt.Errorf("creating Sensor TLS config: %w", err)
+		sensorTransport = o.sensorTransport
+		if sensorTransport == nil {
+			var err error
+			sensorTransport, err = roxTransport(mtls.SensorSubject)
+			if err != nil {
+				return nil, fmt.Errorf("creating Sensor TLS config: %w", err)
+			}
 		}
 	}
+
+	// This is here instead of as a global variable for testing purposes.
+	namespace := env.Namespace.Setting()
+	centralHost := fmt.Sprintf("central.%s.svc", namespace)
+	sensorHost  := fmt.Sprintf("sensor.%s.svc", namespace)
 
 	return httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		switch req.URL.Host {

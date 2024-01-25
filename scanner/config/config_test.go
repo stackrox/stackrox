@@ -209,14 +209,24 @@ func Test_ProxyConfig_validate(t *testing.T) {
 		require.NoError(t, configFile.Close())
 	})
 
-	t.Run("when config dir does not exist then ok", func(t *testing.T) {
+	t.Run("when config dir not specified then ok", func(t *testing.T) {
 		c := ProxyConfig{}
 		err := c.validate()
 		assert.NoError(t, err)
+	})
+	t.Run("when config dir does not exist then error", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: "/does/not/exist"}
+		err := c.validate()
+		assert.Error(t, err)
 	})
 	t.Run("when config file specified then ok", func(t *testing.T) {
 		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "config.yaml"}
 		err := c.validate()
 		assert.NoError(t, err)
+	})
+	t.Run("when config file does not exist then error", func(t *testing.T) {
+		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "does-not-exist.yaml"}
+		err := c.validate()
+		assert.Error(t, err)
 	})
 }
