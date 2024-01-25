@@ -26,6 +26,8 @@ The following formats are supported:
 		Args: common.ExactArgsWithCustomErrMessage(1,
 			"Missing argument. Use one of the following: [man|md|yaml|rest]"),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Current caveat: in case the command is not within PATH, cmd.CommandPath will be appended to the
+			// given directory. This may result in errors during writing the docs to the specified output.
 			switch args[0] {
 			case "man":
 				return errors.Wrap(doc.GenManTree(cmd.Root(), &doc.GenManHeader{
