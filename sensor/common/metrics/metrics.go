@@ -153,6 +153,13 @@ var (
 		Help:      "A counter for the total number of events sent from Sensor to Central",
 	}, []string{"Action", "ResourceType", "Type"})
 
+	sensorMessageSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "sensor_max_message_size",
+		Help:      "A gauge for maximum message size seen when sending messages in sensor",
+	}, []string{"Type", "EventType"})
+
 	k8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
