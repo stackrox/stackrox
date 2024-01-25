@@ -29,7 +29,7 @@ const SystemHealthDashboardPage = () => {
     const hasReadAccessForIntegration = hasReadAccess('Integration');
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const hasAccessForScannerV4 = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
@@ -76,7 +76,7 @@ const SystemHealthDashboardPage = () => {
                             />
                         </GridItem>
                     )}
-                    {hasAccessForScannerV4 && hasReadAccessForAdministration && (
+                    {isScannerV4Enabled && hasReadAccessForAdministration && (
                         <GridItem span={12}>
                             <VulnerabilityDefinitionsHealthCard
                                 component="SCANNER_V4"
