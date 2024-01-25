@@ -104,6 +104,8 @@ func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 		return false, nil
 	}
 	if !env.CleanupNotifierCreds.BooleanSetting() {
+		// If cleanup is disabled, creds do not have to be cleaned when a notifier is secured.
+		// So just checking if the field NotifierSecret is non-empty is enough.
 		return notifier.GetNotifierSecret() != "", nil
 	}
 	creds, err := getCredentials(notifier)
