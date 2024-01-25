@@ -52,10 +52,11 @@ func (CloudSource_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 type CloudSource struct {
-	Id                  string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
-	Name                string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"`
-	Type                CloudSource_Type `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty"`
-	SkipTestIntegration bool             `protobuf:"varint,4,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
+	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`
+	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"`
+	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty"`
+	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
+	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are valid to be assigned to Config:
 	//	*CloudSource_PaladinCloud
 	//	*CloudSource_Ocm
@@ -106,10 +107,10 @@ type isCloudSource_Config interface {
 }
 
 type CloudSource_PaladinCloud struct {
-	PaladinCloud *PaladinCloudConfig `protobuf:"bytes,5,opt,name=paladin_cloud,json=paladinCloud,proto3,oneof" json:"paladin_cloud,omitempty"`
+	PaladinCloud *PaladinCloudConfig `protobuf:"bytes,6,opt,name=paladin_cloud,json=paladinCloud,proto3,oneof" json:"paladin_cloud,omitempty"`
 }
 type CloudSource_Ocm struct {
-	Ocm *OCMConfig `protobuf:"bytes,6,opt,name=ocm,proto3,oneof" json:"ocm,omitempty"`
+	Ocm *OCMConfig `protobuf:"bytes,7,opt,name=ocm,proto3,oneof" json:"ocm,omitempty"`
 }
 
 func (*CloudSource_PaladinCloud) isCloudSource_Config() {}
@@ -163,6 +164,13 @@ func (m *CloudSource) GetType() CloudSource_Type {
 	return CloudSource_UNSPECIFIED
 }
 
+func (m *CloudSource) GetCredentials() *CloudSource_Credentials {
+	if m != nil {
+		return m.Credentials
+	}
+	return nil
+}
+
 func (m *CloudSource) GetSkipTestIntegration() bool {
 	if m != nil {
 		return m.SkipTestIntegration
@@ -202,15 +210,84 @@ func (m *CloudSource) Clone() *CloudSource {
 	cloned := new(CloudSource)
 	*cloned = *m
 
+	cloned.Credentials = m.Credentials.Clone()
 	if m.Config != nil {
 		cloned.Config = m.Config.Clone()
 	}
 	return cloned
 }
 
+// Credentials may be encrypted at rest.
+type CloudSource_Credentials struct {
+	Secret               string   `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"`
+	IsEncrypted          bool     `protobuf:"varint,2,opt,name=is_encrypted,json=isEncrypted,proto3" json:"is_encrypted,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CloudSource_Credentials) Reset()         { *m = CloudSource_Credentials{} }
+func (m *CloudSource_Credentials) String() string { return proto.CompactTextString(m) }
+func (*CloudSource_Credentials) ProtoMessage()    {}
+func (*CloudSource_Credentials) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d0f224372f8cbe44, []int{0, 0}
+}
+func (m *CloudSource_Credentials) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloudSource_Credentials) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloudSource_Credentials.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloudSource_Credentials) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloudSource_Credentials.Merge(m, src)
+}
+func (m *CloudSource_Credentials) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloudSource_Credentials) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloudSource_Credentials.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloudSource_Credentials proto.InternalMessageInfo
+
+func (m *CloudSource_Credentials) GetSecret() string {
+	if m != nil {
+		return m.Secret
+	}
+	return ""
+}
+
+func (m *CloudSource_Credentials) GetIsEncrypted() bool {
+	if m != nil {
+		return m.IsEncrypted
+	}
+	return false
+}
+
+func (m *CloudSource_Credentials) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CloudSource_Credentials) Clone() *CloudSource_Credentials {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CloudSource_Credentials)
+	*cloned = *m
+
+	return cloned
+}
+
 type PaladinCloudConfig struct {
-	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent"`
-	Token                string   `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty" scrub:"always"`
+	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -256,13 +333,6 @@ func (m *PaladinCloudConfig) GetEndpoint() string {
 	return ""
 }
 
-func (m *PaladinCloudConfig) GetToken() string {
-	if m != nil {
-		return m.Token
-	}
-	return ""
-}
-
 func (m *PaladinCloudConfig) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -277,8 +347,7 @@ func (m *PaladinCloudConfig) Clone() *PaladinCloudConfig {
 }
 
 type OCMConfig struct {
-	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent"`
-	Token                string   `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty" scrub:"always"`
+	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -324,13 +393,6 @@ func (m *OCMConfig) GetEndpoint() string {
 	return ""
 }
 
-func (m *OCMConfig) GetToken() string {
-	if m != nil {
-		return m.Token
-	}
-	return ""
-}
-
 func (m *OCMConfig) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -347,6 +409,7 @@ func (m *OCMConfig) Clone() *OCMConfig {
 func init() {
 	proto.RegisterEnum("storage.CloudSource_Type", CloudSource_Type_name, CloudSource_Type_value)
 	proto.RegisterType((*CloudSource)(nil), "storage.CloudSource")
+	proto.RegisterType((*CloudSource_Credentials)(nil), "storage.CloudSource.Credentials")
 	proto.RegisterType((*PaladinCloudConfig)(nil), "storage.PaladinCloudConfig")
 	proto.RegisterType((*OCMConfig)(nil), "storage.OCMConfig")
 }
@@ -354,36 +417,38 @@ func init() {
 func init() { proto.RegisterFile("storage/cloud_source.proto", fileDescriptor_d0f224372f8cbe44) }
 
 var fileDescriptor_d0f224372f8cbe44 = []byte{
-	// 453 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x92, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0x86, 0x63, 0x27, 0x4d, 0xd3, 0x49, 0x5b, 0xd2, 0x2d, 0x15, 0x6e, 0x91, 0x92, 0x68, 0x85,
-	0xc0, 0x48, 0xe0, 0x8a, 0x94, 0x53, 0x6f, 0x8d, 0x53, 0x44, 0xa4, 0xb6, 0x89, 0xdc, 0xf6, 0xc2,
-	0xc5, 0x72, 0xed, 0xc5, 0xac, 0x92, 0xee, 0x6e, 0xbc, 0x6b, 0x41, 0xde, 0x84, 0x47, 0xe2, 0xc8,
-	0x13, 0x44, 0x28, 0xdc, 0x38, 0xe6, 0x09, 0x90, 0xd7, 0xae, 0x89, 0xc4, 0xb9, 0xb7, 0xd5, 0xfc,
-	0xdf, 0xbf, 0xff, 0xcc, 0x68, 0xe0, 0x48, 0x2a, 0x9e, 0x04, 0x31, 0x39, 0x0e, 0xa7, 0x3c, 0x8d,
-	0x7c, 0xc9, 0xd3, 0x24, 0x24, 0x8e, 0x48, 0xb8, 0xe2, 0x68, 0xb3, 0xd0, 0x8e, 0x9e, 0xc6, 0x3c,
-	0xe6, 0xba, 0x76, 0x9c, 0xbd, 0x72, 0x19, 0xff, 0x31, 0xa1, 0xe9, 0x66, 0xae, 0x6b, 0x6d, 0x42,
-	0xaf, 0xc0, 0xa4, 0x91, 0x65, 0x74, 0x0d, 0x7b, 0xab, 0xff, 0x6c, 0xb5, 0xe8, 0xec, 0xcb, 0xd9,
-	0xf4, 0x14, 0x8b, 0xc9, 0x1b, 0x35, 0x17, 0xc4, 0x4e, 0x53, 0x1a, 0xbd, 0xc6, 0x9e, 0x49, 0x23,
-	0xf4, 0x02, 0x6a, 0x2c, 0xb8, 0x27, 0x96, 0xa9, 0xd1, 0xd6, 0x6a, 0xd1, 0xd9, 0xd6, 0x68, 0xca,
-	0xe8, 0x2c, 0x25, 0xd8, 0xd3, 0x2a, 0x7a, 0x0b, 0xb5, 0xcc, 0x68, 0x55, 0xbb, 0x86, 0xbd, 0xdb,
-	0x3b, 0x74, 0x8a, 0x66, 0x9c, 0xb5, 0x48, 0xe7, 0x66, 0x2e, 0x88, 0xa7, 0x31, 0xd4, 0x83, 0x03,
-	0x39, 0xa1, 0xc2, 0x57, 0x44, 0x2a, 0x9f, 0x32, 0x45, 0xe2, 0x24, 0x50, 0x94, 0x33, 0xab, 0xd6,
-	0x35, 0xec, 0x86, 0xb7, 0x9f, 0x89, 0x37, 0x44, 0xaa, 0xe1, 0x3f, 0x09, 0xf5, 0x61, 0x47, 0x04,
-	0xd3, 0x20, 0xa2, 0xcc, 0xd7, 0xe3, 0x5b, 0x1b, 0x5d, 0xc3, 0x6e, 0xf6, 0x9e, 0x97, 0x59, 0xe3,
-	0x5c, 0xd5, 0x91, 0x2e, 0x67, 0x9f, 0x69, 0xfc, 0xb1, 0xe2, 0x6d, 0x8b, 0xb5, 0x2a, 0x7a, 0x09,
-	0x55, 0x1e, 0xde, 0x5b, 0x75, 0xed, 0x44, 0xa5, 0x73, 0xe4, 0x5e, 0x96, 0x86, 0x0c, 0xc0, 0x27,
-	0x50, 0xcb, 0xba, 0x45, 0x4f, 0xa0, 0x79, 0x7b, 0x75, 0x3d, 0x3e, 0x77, 0x87, 0x1f, 0x86, 0xe7,
-	0x83, 0x56, 0x05, 0xed, 0xc1, 0xce, 0xf8, 0xec, 0xe2, 0x6c, 0x30, 0xbc, 0xf2, 0xdd, 0x8b, 0xd1,
-	0xed, 0xa0, 0x65, 0xa0, 0x4d, 0xa8, 0x8e, 0xdc, 0xcb, 0x96, 0xd9, 0x6f, 0x40, 0x3d, 0xff, 0x05,
-	0xcf, 0x00, 0xfd, 0xdf, 0x0c, 0x7a, 0x07, 0x0d, 0xc2, 0x22, 0xc1, 0x29, 0x53, 0xc5, 0xe2, 0x0f,
-	0x56, 0x8b, 0xce, 0x9e, 0x0c, 0x93, 0xf4, 0xee, 0x14, 0x47, 0x44, 0x10, 0x16, 0x11, 0xa6, 0xb0,
-	0x57, 0x62, 0xc8, 0x86, 0x0d, 0xc5, 0x27, 0x84, 0x15, 0xdb, 0x47, 0xab, 0x45, 0x67, 0xb7, 0xe0,
-	0x83, 0xe9, 0xd7, 0x60, 0x2e, 0xb1, 0x97, 0x03, 0xf8, 0x0b, 0x6c, 0x95, 0x53, 0x3c, 0x6a, 0x52,
-	0xff, 0xfd, 0x8f, 0x65, 0xdb, 0xf8, 0xb9, 0x6c, 0x1b, 0xbf, 0x96, 0x6d, 0xe3, 0xfb, 0xef, 0x76,
-	0x05, 0x0e, 0x29, 0x77, 0xa4, 0x0a, 0xc2, 0x49, 0xc2, 0xbf, 0xe5, 0xe7, 0xf6, 0xb0, 0xd9, 0x4f,
-	0x0f, 0x57, 0x79, 0x57, 0xd7, 0xf5, 0x93, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xbe, 0x4f, 0x56,
-	0xd7, 0xc3, 0x02, 0x00, 0x00,
+	// 489 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0x51, 0x6e, 0xd3, 0x4c,
+	0x14, 0x85, 0xe3, 0x24, 0x7f, 0x92, 0x5e, 0xa7, 0xfd, 0xc3, 0x14, 0x84, 0x1b, 0xa4, 0xc4, 0x58,
+	0x88, 0x1a, 0x04, 0x2e, 0x4a, 0x79, 0xea, 0x5b, 0xed, 0x04, 0x11, 0xa9, 0x6d, 0x22, 0xb7, 0x7d,
+	0x41, 0x48, 0x96, 0x6b, 0x0f, 0xd6, 0x28, 0xee, 0x8c, 0xeb, 0x19, 0x0b, 0xb2, 0x07, 0x16, 0xc0,
+	0x92, 0x78, 0x64, 0x05, 0x11, 0x0a, 0x3b, 0xc8, 0x0a, 0x90, 0x27, 0x8e, 0x1b, 0x09, 0xc4, 0x9b,
+	0x7d, 0xcf, 0xf9, 0x74, 0xcf, 0x1c, 0x5d, 0xe8, 0x72, 0xc1, 0x52, 0x3f, 0xc2, 0x47, 0x41, 0xcc,
+	0xb2, 0xd0, 0xe3, 0x2c, 0x4b, 0x03, 0x6c, 0x25, 0x29, 0x13, 0x0c, 0x35, 0x0b, 0xad, 0xfb, 0x30,
+	0x62, 0x11, 0x93, 0xb3, 0xa3, 0xfc, 0x6b, 0x2d, 0x1b, 0x5f, 0xeb, 0xa0, 0x3a, 0x39, 0x75, 0x29,
+	0x21, 0x74, 0x08, 0x55, 0x12, 0x6a, 0x8a, 0xae, 0x98, 0x3b, 0xf6, 0xe3, 0xd5, 0xa2, 0xbf, 0xcf,
+	0xef, 0xe2, 0x13, 0x23, 0x99, 0xbd, 0x12, 0xf3, 0x04, 0x9b, 0x59, 0x46, 0xc2, 0x17, 0x86, 0x5b,
+	0x25, 0x21, 0x7a, 0x06, 0x75, 0xea, 0xdf, 0x62, 0xad, 0x2a, 0xad, 0x9d, 0xd5, 0xa2, 0xdf, 0x96,
+	0xd6, 0x8c, 0x92, 0xbb, 0x0c, 0x1b, 0xae, 0x54, 0xd1, 0x6b, 0xa8, 0xe7, 0xa0, 0x56, 0xd3, 0x15,
+	0x73, 0x6f, 0x70, 0x60, 0x15, 0x61, 0xac, 0xad, 0x95, 0xd6, 0xd5, 0x3c, 0xc1, 0xae, 0xb4, 0x21,
+	0x1b, 0xd4, 0x20, 0xc5, 0x21, 0xa6, 0x82, 0xf8, 0x31, 0xd7, 0xea, 0xba, 0x62, 0xaa, 0x03, 0xfd,
+	0xaf, 0x94, 0x73, 0xef, 0x73, 0xb7, 0x21, 0x34, 0x80, 0x47, 0x7c, 0x46, 0x12, 0x4f, 0x60, 0x2e,
+	0x3c, 0x42, 0x05, 0x8e, 0x52, 0x5f, 0x10, 0x46, 0xb5, 0xff, 0x74, 0xc5, 0x6c, 0xb9, 0xfb, 0xb9,
+	0x78, 0x85, 0xb9, 0x18, 0xdf, 0x4b, 0xc8, 0x86, 0xdd, 0xc4, 0x8f, 0xfd, 0x90, 0x50, 0x4f, 0x56,
+	0xa8, 0x35, 0xe4, 0xe6, 0x27, 0xe5, 0xe6, 0xe9, 0x5a, 0x95, 0x01, 0x1c, 0x46, 0x3f, 0x91, 0xe8,
+	0x7d, 0xc5, 0x6d, 0x27, 0x5b, 0x53, 0xf4, 0x1c, 0x6a, 0x2c, 0xb8, 0xd5, 0x9a, 0x92, 0x44, 0x25,
+	0x39, 0x71, 0xce, 0x4b, 0x20, 0x37, 0x74, 0x3f, 0x82, 0xba, 0x95, 0x1d, 0xbd, 0x84, 0x06, 0xc7,
+	0x41, 0x8a, 0x45, 0x51, 0x3a, 0x5a, 0x2d, 0xfa, 0x7b, 0x3c, 0x48, 0xb3, 0x9b, 0x13, 0xc3, 0x8f,
+	0x3f, 0xfb, 0x73, 0x6e, 0xb8, 0x85, 0x03, 0x3d, 0x85, 0x36, 0xe1, 0x1e, 0xa6, 0x41, 0x3a, 0x4f,
+	0x04, 0x0e, 0x65, 0xf7, 0x2d, 0x57, 0x25, 0x7c, 0xb4, 0x19, 0x19, 0xc7, 0x50, 0xcf, 0xfb, 0x44,
+	0xff, 0x83, 0x7a, 0x7d, 0x71, 0x39, 0x1d, 0x39, 0xe3, 0x77, 0xe3, 0xd1, 0xb0, 0x53, 0x41, 0x0f,
+	0x60, 0x77, 0x7a, 0x7a, 0x76, 0x3a, 0x1c, 0x5f, 0x78, 0xce, 0xd9, 0xe4, 0x7a, 0xd8, 0x51, 0x50,
+	0x13, 0x6a, 0x13, 0xe7, 0xbc, 0x53, 0xb5, 0x5b, 0xd0, 0x58, 0x67, 0x34, 0xde, 0x00, 0xfa, 0xf3,
+	0xa9, 0xa8, 0x0b, 0x2d, 0x4c, 0xc3, 0x84, 0x11, 0x5a, 0xa4, 0x74, 0xcb, 0x7f, 0xe3, 0x10, 0x76,
+	0xca, 0x27, 0xfe, 0xcb, 0x68, 0xbf, 0xfd, 0xbe, 0xec, 0x29, 0x3f, 0x96, 0x3d, 0xe5, 0xe7, 0xb2,
+	0xa7, 0x7c, 0xfb, 0xd5, 0xab, 0xc0, 0x01, 0x61, 0x16, 0x17, 0x7e, 0x30, 0x4b, 0xd9, 0x97, 0xf5,
+	0x39, 0x6e, 0x5a, 0xfb, 0xb0, 0xb9, 0xda, 0x9b, 0x86, 0x9c, 0x1f, 0xff, 0x0e, 0x00, 0x00, 0xff,
+	0xff, 0x7c, 0xe2, 0xb8, 0xb3, 0xe3, 0x02, 0x00, 0x00,
 }
 
 func (m *CloudSource) Marshal() (dAtA []byte, err error) {
@@ -427,7 +492,19 @@ func (m *CloudSource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x28
+	}
+	if m.Credentials != nil {
+		{
+			size, err := m.Credentials.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCloudSource(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
 	}
 	if m.Type != 0 {
 		i = encodeVarintCloudSource(dAtA, i, uint64(m.Type))
@@ -468,7 +545,7 @@ func (m *CloudSource_PaladinCloud) MarshalToSizedBuffer(dAtA []byte) (int, error
 			i = encodeVarintCloudSource(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x32
 	}
 	return len(dAtA) - i, nil
 }
@@ -489,10 +566,54 @@ func (m *CloudSource_Ocm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintCloudSource(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x3a
 	}
 	return len(dAtA) - i, nil
 }
+func (m *CloudSource_Credentials) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloudSource_Credentials) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloudSource_Credentials) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.IsEncrypted {
+		i--
+		if m.IsEncrypted {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Secret) > 0 {
+		i -= len(m.Secret)
+		copy(dAtA[i:], m.Secret)
+		i = encodeVarintCloudSource(dAtA, i, uint64(len(m.Secret)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *PaladinCloudConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -516,13 +637,6 @@ func (m *PaladinCloudConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Token) > 0 {
-		i -= len(m.Token)
-		copy(dAtA[i:], m.Token)
-		i = encodeVarintCloudSource(dAtA, i, uint64(len(m.Token)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if len(m.Endpoint) > 0 {
 		i -= len(m.Endpoint)
@@ -557,13 +671,6 @@ func (m *OCMConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Token) > 0 {
-		i -= len(m.Token)
-		copy(dAtA[i:], m.Token)
-		i = encodeVarintCloudSource(dAtA, i, uint64(len(m.Token)))
-		i--
-		dAtA[i] = 0x12
 	}
 	if len(m.Endpoint) > 0 {
 		i -= len(m.Endpoint)
@@ -603,6 +710,10 @@ func (m *CloudSource) Size() (n int) {
 	if m.Type != 0 {
 		n += 1 + sovCloudSource(uint64(m.Type))
 	}
+	if m.Credentials != nil {
+		l = m.Credentials.Size()
+		n += 1 + l + sovCloudSource(uint64(l))
+	}
 	if m.SkipTestIntegration {
 		n += 2
 	}
@@ -639,6 +750,25 @@ func (m *CloudSource_Ocm) Size() (n int) {
 	}
 	return n
 }
+func (m *CloudSource_Credentials) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Secret)
+	if l > 0 {
+		n += 1 + l + sovCloudSource(uint64(l))
+	}
+	if m.IsEncrypted {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *PaladinCloudConfig) Size() (n int) {
 	if m == nil {
 		return 0
@@ -646,10 +776,6 @@ func (m *PaladinCloudConfig) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Endpoint)
-	if l > 0 {
-		n += 1 + l + sovCloudSource(uint64(l))
-	}
-	l = len(m.Token)
 	if l > 0 {
 		n += 1 + l + sovCloudSource(uint64(l))
 	}
@@ -666,10 +792,6 @@ func (m *OCMConfig) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Endpoint)
-	if l > 0 {
-		n += 1 + l + sovCloudSource(uint64(l))
-	}
-	l = len(m.Token)
 	if l > 0 {
 		n += 1 + l + sovCloudSource(uint64(l))
 	}
@@ -798,6 +920,42 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Credentials", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCloudSource
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCloudSource
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCloudSource
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Credentials == nil {
+				m.Credentials = &CloudSource_Credentials{}
+			}
+			if err := m.Credentials.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SkipTestIntegration", wireType)
 			}
@@ -817,7 +975,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.SkipTestIntegration = bool(v != 0)
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PaladinCloud", wireType)
 			}
@@ -852,7 +1010,7 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 			}
 			m.Config = &CloudSource_PaladinCloud{v}
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Ocm", wireType)
 			}
@@ -887,6 +1045,109 @@ func (m *CloudSource) Unmarshal(dAtA []byte) error {
 			}
 			m.Config = &CloudSource_Ocm{v}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCloudSource(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCloudSource
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloudSource_Credentials) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCloudSource
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Credentials: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Credentials: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Secret", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCloudSource
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCloudSource
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCloudSource
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Secret = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsEncrypted", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCloudSource
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsEncrypted = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCloudSource(dAtA[iNdEx:])
@@ -970,38 +1231,6 @@ func (m *PaladinCloudConfig) Unmarshal(dAtA []byte) error {
 			}
 			m.Endpoint = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCloudSource
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCloudSource
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCloudSource
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCloudSource(dAtA[iNdEx:])
@@ -1084,38 +1313,6 @@ func (m *OCMConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Endpoint = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCloudSource
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCloudSource
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCloudSource
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

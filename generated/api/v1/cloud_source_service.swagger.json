@@ -362,6 +362,9 @@
         "type": {
           "$ref": "#/definitions/v1CloudSourceType"
         },
+        "credentials": {
+          "$ref": "#/definitions/v1CloudSourceCredentials"
+        },
         "skipTestIntegration": {
           "type": "boolean"
         },
@@ -373,6 +376,14 @@
         }
       },
       "description": "CloudSource is an integration which provides a source for discovered\nclusters."
+    },
+    "v1CloudSourceCredentials": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string"
+        }
+      }
     },
     "v1CloudSourceType": {
       "type": "string",
@@ -431,9 +442,6 @@
       "properties": {
         "endpoint": {
           "type": "string"
-        },
-        "token": {
-          "type": "string"
         }
       },
       "description": "OCMConfig provides information required to fetch discovered clusters from\nthe OpenShift cluster manager."
@@ -465,9 +473,6 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string"
-        },
-        "token": {
           "type": "string"
         }
       },

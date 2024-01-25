@@ -20,27 +20,31 @@ message CloudSource {
         PALADIN_CLOUD                    = 1;
         OCM                              = 2;
     }
-    Type   type                          = 3;
-    bool   skip_test_integration         = 4;
+    Type type                            = 3;
+
+    message Credentials {
+        string secret                    = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+    }
+    Credentials credentials              = 4;
+
+    bool skip_test_integration           = 5;
 
     oneof Config {
-        PaladinCloudConfig paladin_cloud = 5;
-        OCMConfig          ocm           = 6;
+        PaladinCloudConfig paladin_cloud = 6;
+        OCMConfig          ocm           = 7;
     }
 }
 
 // PaladinCloudConfig provides information required to fetch discovered
 // clusters from Paladin Cloud.
 message PaladinCloudConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
-    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+    string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
 }
 
 // OCMConfig provides information required to fetch discovered clusters from
 // the OpenShift cluster manager.
 message OCMConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
-    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+    string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
 }
 
 message CloudSourcesFilter {

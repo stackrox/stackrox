@@ -15,21 +15,27 @@ message CloudSource {
         PALADIN_CLOUD                    = 1;
         OCM                              = 2;
     }
-    Type   type                          = 3;
-    bool   skip_test_integration         = 4;
+    Type type                            = 3;
+
+    // Credentials may be encrypted at rest.
+    message Credentials {
+        string secret                    = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+        bool   is_encrypted              = 2;
+    }
+    Credentials credentials              = 4;
+
+    bool skip_test_integration           = 5;
 
     oneof Config {
-        PaladinCloudConfig paladin_cloud = 5;
-        OCMConfig          ocm           = 6;
+        PaladinCloudConfig paladin_cloud = 6;
+        OCMConfig          ocm           = 7;
     }
 }
 
 message PaladinCloudConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+    string endpoint = 1;
 }
 
 message OCMConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
+    string endpoint = 1;
 }
