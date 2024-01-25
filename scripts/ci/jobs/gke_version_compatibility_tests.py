@@ -100,7 +100,7 @@ sets[0]["pre_test"] = PreSystemTests()
 
 ClusterTestSetsRunner(
     cluster=GKECluster("compat-test",
-                       machine_type="e2-standard-8", num_nodes=3),
+                       machine_type="e2-standard-8", num_nodes=4),
     sets=sets,
     final_post=FinalPost(
         store_qa_tests_data=True,
