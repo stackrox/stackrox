@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stretchr/testify/require"
 )
@@ -17,7 +18,7 @@ func TestNexus(t *testing.T) {
 	}
 
 	typ, creator := Creator()
-	require.Equal(t, "nexus", typ)
+	require.Equal(t, types.NexusType, typ)
 
 	reg, err := creator(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{

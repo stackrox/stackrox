@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -255,7 +256,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 		Resource: &central.SensorEvent_ImageIntegration{
 			ImageIntegration: &storage.ImageIntegration{
 				Id:         uuid.NewV4().String(),
-				Type:       "ecr",
+				Type:       registryTypes.ECRType,
 				Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 				IntegrationConfig: &storage.ImageIntegration_Ecr{
 					Ecr: &storage.ECRConfig{
@@ -365,5 +366,4 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 		},
 	}
 	return event
-
 }
