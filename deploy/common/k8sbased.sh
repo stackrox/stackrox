@@ -464,6 +464,11 @@ function launch_central {
         exit 1
       fi
 
+      if [[ "$ROX_SCANNER_V4" == "true" ]]; then
+        echo "$ROX_SCANNER_V4=true is currently only supported in conjunction with OUTPUT_FORMAT=helm"
+        exit 1
+      fi
+
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
           if [[ -n "${REGISTRY_USERNAME}" ]]; then
