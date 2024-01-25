@@ -15,7 +15,7 @@ message CloudSource {
         PALADIN_CLOUD                    = 1;
         OCM                              = 2;
     }
-    Type type                            = 3;
+    Type type                            = 3 [(gogoproto.moretags) = 'search:"Integration Type,hidden"'];
 
     // Credentials may be encrypted at rest.
     message Credentials {

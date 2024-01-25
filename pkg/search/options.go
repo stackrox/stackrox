@@ -371,6 +371,9 @@ var (
 	EventLevel      = newFieldLabel("Event Level")
 	EventOccurrence = newFieldLabel("Event Occurrence")
 
+	// Integration fields.
+	IntegrationType = newFieldLabel("Integration Type")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
