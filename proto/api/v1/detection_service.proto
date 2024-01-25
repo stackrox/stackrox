@@ -59,6 +59,12 @@ message DeployDetectionResponse {
     repeated string remarks = 3;
 }
 
+// This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
+message ResultAggregation {
+    repeated storage.Alert alerts = 1;
+    repeated string remarks = 2;
+}
+
 
 
 // DetectionService APIs can be used to check for build and deploy time policy violations.
