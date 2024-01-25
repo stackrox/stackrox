@@ -28,6 +28,8 @@ import (
 //
 //go:generate mockgen-wrapper
 type Scanner interface {
+	GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error)
+
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
@@ -116,6 +118,31 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
 }
 
+func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "GetImageIndex",
+		"hash_id", hashID,
+	)
+	var ir *v4.IndexReport
+	// Get the IndexReport if it exists.
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
+		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
+		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
+			return nil
+		}
+		return err
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("get index: %w", err)
+	}
+	// Return not found if report doesn't exist or is unsuccessful.
+	if ir == nil || !ir.GetSuccess() {
+		return nil, false, nil
+	}
+	return ir, true, nil
+}
+
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
 // GetIndexReport, then if not found or if the report is not successful, then
 // call CreateIndexReport.
@@ -126,22 +153,12 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 	id := getImageManifestID(ref)
-	var ir *v4.IndexReport
-	// Get the IndexReport if it exists.
-	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
-		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: id})
-		if e, ok := status.FromError(err); ok {
-			if e.Code() == codes.NotFound {
-				return nil
-			}
-		}
-		return err
-	})
+	ir, exists, err := c.GetImageIndex(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("get index: %w", err)
+		return nil, err
 	}
-	// Returns if found and report is successful.
-	if ir != nil && ir.GetSuccess() {
+	// If the report already exists, then return it.
+	if exists {
 		return ir, nil
 	}
 	// Otherwise (re-)index the image.
