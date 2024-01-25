@@ -20,7 +20,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/datastore/postgres"
+	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
@@ -97,7 +98,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
+	store, err := ccpostgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
