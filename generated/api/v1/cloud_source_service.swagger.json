@@ -360,7 +360,7 @@
           "type": "string"
         },
         "type": {
-          "type": "string"
+          "$ref": "#/definitions/v1CloudSourceType"
         },
         "skipTestIntegration": {
           "type": "boolean"
@@ -373,6 +373,15 @@
         }
       },
       "description": "CloudSource is an integration which provides a source for discovered\nclusters."
+    },
+    "v1CloudSourceType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "PALADIN_CLOUD",
+        "OCM"
+      ],
+      "default": "UNSPECIFIED"
     },
     "v1CloudSourcesFilter": {
       "type": "object",

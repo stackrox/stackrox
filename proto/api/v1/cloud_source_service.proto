@@ -15,7 +15,12 @@ package v1;
 message CloudSource {
     string id                            = 1;
     string name                          = 2;
-    string type                          = 3;
+    enum Type {
+        UNSPECIFIED                      = 0;
+        PALADIN_CLOUD                    = 1;
+        OCM                              = 2;
+    }
+    Type   type                          = 3;
     bool   skip_test_integration         = 4;
 
     oneof Config {
