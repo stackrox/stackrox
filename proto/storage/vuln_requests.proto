@@ -111,8 +111,8 @@ message VulnerabilityRequest {
     // Indicates if this request is a historical request that is no longer in effect
     // due to deferral expiry, cancellation, or restarting cve observation.
     bool                             expired            = 4 [(gogoproto.moretags) = 'search:"Expired Request"'];
-    SlimUser                         requestor          = 5 [deprecated = true, (gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
-    repeated SlimUser                approvers          = 6 [deprecated = true, (gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    SlimUser                         requestor          = 5 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"', deprecated = true];
+    repeated SlimUser                approvers          = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"', deprecated = true];
     google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = 'search:"Created Time"'];
     google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
     repeated RequestComment          comments           = 9;
@@ -134,7 +134,7 @@ message VulnerabilityRequest {
 
     // 21 to 25 reserved for the updated request type oneof.
     oneof updated_req {
-        DeferralRequest              updated_deferral_req  = 21 [deprecated = true, (gogoproto.moretags) = 'search:"-"'];
+        DeferralRequest              updated_deferral_req  = 21 [(gogoproto.moretags) = 'search:"-"', deprecated = true];
         DeferralUpdate               deferral_update       = 22 [(gogoproto.moretags) = 'search:"-"'];
         FalsePositiveUpdate          false_positive_update = 23;
     }
