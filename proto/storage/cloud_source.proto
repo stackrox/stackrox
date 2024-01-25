@@ -24,11 +24,11 @@ message CloudSource {
 }
 
 message PaladinCloudConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
     string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
 }
 
 message OCMConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string endpoint = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
     string token    = 2 [(gogoproto.moretags) = 'scrub:"always"'];
 }
