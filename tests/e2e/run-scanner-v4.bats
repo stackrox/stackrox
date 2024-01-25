@@ -243,21 +243,7 @@ _deploy_central() {
 
 patch_down_central() {
    local central_namespace="$1"
-    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/central" --patch-file <(cat <<EOF
-spec:
-  template:
-    spec:
-      containers:
-        - name: central
-          resources:
-            requests:
-              memory: "1000Mi"
-              cpu: "500m"
-            limits:
-              memory: "4000Mi"
-              cpu: "1000m"
-EOF
-    )
+
     if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
         "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
