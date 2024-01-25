@@ -38,14 +38,14 @@ message ProfileShim {
     string profile_id      = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
 }
 
-// Next Tag: 13
+// Next Tag: 15
 message ComplianceOperatorProfileV2 {
     // The primary key is name-profile_version as that is guaranteed unique in the operator and how
     // the profile is referenced in scans and settings
     string              id               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string              profile_id       = 2 [(gogoproto.moretags) = 'search:"Compliance Profile ID,hidden"'];
-    string              name             = 3 [(gogoproto.moretags) = 'search:"Compliance Profile Name,hidden" sql:"index=category:unique;name:profile_unique_indicator"'];
-    string              profile_version  = 4 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden" sql:"index=category:unique;name:profile_unique_indicator"'];
+    string              name             = 3 [(gogoproto.moretags) = 'search:"Compliance Profile Name,hidden"'];
+    string              profile_version  = 4 [(gogoproto.moretags) = 'search:"Compliance Profile Version,hidden"'];
     string              product_type     = 5 [(gogoproto.moretags) = 'search:"Compliance Profile Product Type,hidden"'];
     string              standard         = 6 [(gogoproto.moretags) = 'search:"Compliance Standard,hidden"'];
     map<string, string> labels           = 7;
@@ -58,6 +58,7 @@ message ComplianceOperatorProfileV2 {
     string              product     = 11;
     string              title       = 12;
     repeated string     values      = 13;
+    string              cluster_id  = 14[(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 }
 
 // Next Tag: 15
@@ -88,7 +89,7 @@ message RuleControls {
     repeated string controls = 2;
 }
 
-// Next Tag: 16
+// Next Tag: 17
 message ComplianceOperatorScanConfigurationV2 {
     string                        id                       = 1 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"'];
     string                        scan_config_name         = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config Name" sql:"unique"'];
@@ -97,7 +98,10 @@ message ComplianceOperatorScanConfigurationV2 {
     bool                          one_time_scan            = 5;
     map<string, string>           labels                   = 6;
     map<string, string>           annotations              = 7;
-    repeated ProfileShim          profiles                 = 8;
+    message ProfileName {
+        string profile_name      = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"'];
+    }
+    repeated ProfileName         profiles                 = 8;
     repeated NodeRole             node_roles               = 9;
     // Will be configurable via env var
     bool                          strict_node_scan         = 10;
@@ -185,13 +189,4 @@ message ComplianceOperatorScanV2 {
     ScanStatus                 status             = 10;
     google.protobuf.Timestamp  created_time       = 11;
     google.protobuf.Timestamp  last_executed_time = 12 [(gogoproto.moretags) = 'search:"Compliance Scan Last Executed Time,hidden"'];
-}
-
-// ComplianceOperatorProfileClusterEdge maps which profiles exist on which clusters
-// Next Tag: 4
-message ComplianceOperatorProfileClusterEdge {
-    string        id          = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
-    string        profile_id  = 2[(gogoproto.moretags) = 'search:"Compliance Profile ID,hidden" sql:"fk(ComplianceOperatorProfileV2:id)"'];
-    string        profile_uid = 3[(gogoproto.moretags) = 'search:"Compliance Profile UID,hidden"'];
-    string        cluster_id  = 4[(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 }

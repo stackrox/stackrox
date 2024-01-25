@@ -207,9 +207,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
-						Profiles: []*storage.ProfileShim{
+						Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 							{
-								ProfileId: "ocp4-cis",
+								ProfileName: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -309,9 +309,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
-						Profiles: []*storage.ProfileShim{
+						Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 							{
-								ProfileId: "ocp4-cis",
+								ProfileName: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,

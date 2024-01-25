@@ -19,14 +19,7 @@ import (
 
 // ACS API test suite for integration testing for the Compliance Operator.
 func TestComplianceV2Integration(t *testing.T) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	client := v2.NewComplianceIntegrationServiceClient(conn)
-
-	q := &v2.RawQuery{Query: ""}
-	resp, err := client.ListComplianceIntegrations(context.TODO(), q)
-	if err != nil {
-		t.Fatal(err)
-	}
+	resp := getIntegrations(t)
 	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
 	assert.Equal(t, resp.Integrations[0].ClusterName, "remote", "failed to find integration for cluster called \"remote\"")
 	assert.Equal(t, resp.Integrations[0].Namespace, "openshift-compliance", "failed to find integration for \"openshift-compliance\" namespace")
@@ -35,6 +28,7 @@ func TestComplianceV2Integration(t *testing.T) {
 func TestComplianceV2ProfileCount(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
+
 	profileCount, err := client.GetComplianceProfileCount(context.TODO(), &v2.RawQuery{Query: ""})
 	if err != nil {
 		t.Fatal(err)
@@ -45,11 +39,52 @@ func TestComplianceV2ProfileCount(t *testing.T) {
 func TestComplianceV2ProfileGet(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
-	profile, err := client.GetComplianceProfile(context.TODO(), &v2.ResourceByID{Id: "ocp4-cis"})
+
+	// Get the clusters
+	resp := getIntegrations(t)
+	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
+
+	// Get the profiles for the cluster
+	clusterID := resp.Integrations[0].ClusterId
+	profileList, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clusterID})
+	assert.Greater(t, len(profileList.Profiles), 0, "failed to assert the cluster has profiles")
+
+	// Now take the ID from one of the cluster profiles to get the specific profile.
+	profile, err := client.GetComplianceProfile(context.TODO(), &v2.ResourceByID{Id: profileList.Profiles[0].Id})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Greater(t, len(profile.Rules), 0, "failed to verify ocp4-cis profile contains any rules")
+	assert.Greater(t, len(profile.Rules), 0, "failed to verify the selected profile contains any rules")
+}
+
+func TestComplianceV2ProfileGetSummaries(t *testing.T) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	client := v2.NewComplianceProfileServiceClient(conn)
+
+	// Get the clusters
+	resp := getIntegrations(t)
+	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
+
+	// Get the profiles for the cluster
+	clusterID := resp.Integrations[0].ClusterId
+	profileSummaries, err := client.ListProfileSummaries(context.TODO(), &v2.ClustersProfileSummaryRequest{ClusterIds: []string{clusterID}})
+	assert.NoError(t, err)
+	assert.Greater(t, len(profileSummaries.Profiles), 0, "failed to assert the cluster has profiles")
+}
+
+// Helper to get the integrations as the cluster id is needed in many API calls
+func getIntegrations(t *testing.T) *v2.ListComplianceIntegrationsResponse {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	client := v2.NewComplianceIntegrationServiceClient(conn)
+
+	q := &v2.RawQuery{Query: ""}
+	resp, err := client.ListComplianceIntegrations(context.TODO(), q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Len(t, resp.Integrations, 1, "failed to assert there is only a single compliance integration")
+
+	return resp
 }
 
 func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {

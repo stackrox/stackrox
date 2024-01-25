@@ -141,7 +141,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileId())
+		profiles = append(profiles, profile.GetProfileName())
 	}
 
 	for _, clusterID := range clusters {
