@@ -135,7 +135,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		scanRequest.CreatedTime = types.TimestampNow()
 	} else {
 		// Verify the scan configuration ID is valid
-		_, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
+		scanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
 		if err != nil {
 			err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
 			log.Error(err)
@@ -144,6 +144,9 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		if !found {
 			return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
 		}
+
+		// Use the created time from the DB
+		scanRequest.CreatedTime = scanConfig.GetCreatedTime()
 	}
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
