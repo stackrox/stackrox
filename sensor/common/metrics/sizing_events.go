@@ -21,20 +21,12 @@ func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
 	if msg.GetEvent() != nil {
 		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
 	}
-	gaugeValue := s.setIfHigher(s.metricKey(typ, eventType), float64(msg.Size()))
+	key := s.metricKey(typ, eventType)
+	s.maxSeen[key] = math.Max(s.maxSeen[key], float64(msg.Size()))
 	sensorMessageSize.With(prometheus.Labels{
 		"Type":      typ,
 		"EventType": eventType,
-	}).Set(gaugeValue)
-}
-
-// setIfHigher updates the map if size is higher than the maxSeen[key] value. Returns whichever is higher
-func (s *sizingEventStream) setIfHigher(key string, size float64) float64 {
-	if v, ok := s.maxSeen[key]; ok {
-		size = math.Max(v, size)
-	}
-	s.maxSeen[key] = size
-	return size
+	}).Set(s.maxSeen[key])
 }
 
 func (s *sizingEventStream) metricKey(typ, eventType string) string {
@@ -48,5 +40,5 @@ func (s *sizingEventStream) Send(msg *central.MsgFromSensor) error {
 
 // NewSizingEventStream returns a new SensorMessageStream that automatically updates size metrics.
 func NewSizingEventStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
-	return &sizingEventStream{stream: stream}
+	return &sizingEventStream{stream, map[string]float64{}}
 }
