@@ -121,7 +121,11 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 		// NodeInventory because the two should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
+<<<<<<< HEAD
 	case *central.SensorEvent_ComplianceOperatorScanV2:
+=======
+	case *central.SensorEvent_ComplianceOperatorProfileV2:
+>>>>>>> d5e02285cc (X-Smart-Squash: Squashed 4 commits:)
 		if !features.ComplianceEnhancements.Enabled() {
 			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
 			return
@@ -130,9 +134,15 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
 		// have been avoided by sending both messages from sensor during the transition, but
 		// that seemed like a lot of extra traffic.
+<<<<<<< HEAD
 		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorScan{})
 		if !s.reconciliationMap.IsClosed() {
 			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorScan{}, event.Id)
+=======
+		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorProfile{})
+		if !s.reconciliationMap.IsClosed() {
+			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorProfile{}, event.Id)
+>>>>>>> d5e02285cc (X-Smart-Squash: Squashed 4 commits:)
 		}
 	default:
 		if event.GetResource() == nil {
