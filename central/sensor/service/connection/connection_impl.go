@@ -72,6 +72,8 @@ type sensorConnection struct {
 	capabilities set.Set[centralsensor.SensorCapability]
 
 	hashDeduper hashManager.Deduper
+
+	maxSeenMessageSize map[string]float64
 }
 
 func newConnection(ctx context.Context,
@@ -106,6 +108,7 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 		complianceOperatorMgr:      complianceOperatorMgr,
+		maxSeenMessageSize:         map[string]float64{},
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -206,12 +209,19 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			c.stopSig.SignalWithError(errors.Wrap(server.Context().Err(), "context error"))
 			return
 		case msg := <-c.sendC:
-			if err := server.Send(msg); err != nil {
+			if err := c.sendWithSizingMetric(server, msg); err != nil {
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
 		}
 	}
+}
+
+func (c *sensorConnection) sendWithSizingMetric(server central.SensorService_CommunicateServer, msg *central.MsgToSensor) error {
+	typ := reflectutils.Type(msg)
+	c.maxSeenMessageSize[typ] = math.Max(c.maxSeenMessageSize[typ], float64(msg.Size()))
+	metrics.SetGRPCMaxMessageSizeGauge(typ, c.maxSeenMessageSize[typ])
+	return server.Send(msg)
 }
 
 func (c *sensorConnection) Scrapes() scrape.Controller {

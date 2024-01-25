@@ -31,5 +31,6 @@ func init() {
 		processQueueLengthGauge,
 		sensorEventsDeduperCounter,
 		sensorConnectedCounter,
+		grpcMaxMessageSize,
 	)
 }

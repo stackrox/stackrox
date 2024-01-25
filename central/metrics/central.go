@@ -191,15 +191,29 @@ var (
 		Name:      "pipeline_panics",
 		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
 	}, []string{"resource"})
+
 	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
 	}, []string{"ClusterID", "connection_state"})
+
+	grpcMaxMessageSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "central_grpc_max_message_size",
+		Help:      "A gauge for maximum message size seen when sending messages to sensor",
+	}, []string{"Type"})
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
+}
+
+func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
+	grpcMaxMessageSize.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
 }
 
 // SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource.
