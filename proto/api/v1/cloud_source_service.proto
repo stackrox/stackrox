@@ -81,8 +81,11 @@ message PostCloudSourceResponse {
 }
 
 message PutCloudSourceRequest {
-    CloudSource item     = 1;
-    bool update_password = 2;
+    CloudSource item        = 1;
+    // If true, item must include valid credentials.
+    // If false, the resource must already exist and
+    // credentials in item are ignored.
+    bool update_credentials = 2;
 }
 
 message DeleteCloudSourceRequest {
@@ -90,8 +93,11 @@ message DeleteCloudSourceRequest {
 }
 
 message TestCloudSourceRequest {
-    CloudSource item     = 1;
-    bool update_password = 2;
+    CloudSource item        = 1;
+    // If true, item must include valid credentials.
+    // If false, the resource must already exist and
+    // credentials in item are ignored.
+    bool update_credentials = 2;
 }
 
 service CloudSourcesService {

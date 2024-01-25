@@ -486,8 +486,9 @@
         "item": {
           "$ref": "#/definitions/v1CloudSource"
         },
-        "updatePassword": {
-          "type": "boolean"
+        "updateCredentials": {
+          "type": "boolean",
+          "description": "If true, item must include valid credentials.\nIf false, the resource must already exist and\ncredentials in item are ignored."
         }
       }
     },
@@ -512,8 +513,9 @@
         "item": {
           "$ref": "#/definitions/v1CloudSource"
         },
-        "updatePassword": {
-          "type": "boolean"
+        "updateCredentials": {
+          "type": "boolean",
+          "description": "If true, item must include valid credentials.\nIf false, the resource must already exist and\ncredentials in item are ignored."
         }
       }
     }
