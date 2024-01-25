@@ -96,11 +96,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: admin-pass
----
-apiVersion: v1
-kind: Secret
-metadata:
   name: central-db-password
 ---
 apiVersion: v1
