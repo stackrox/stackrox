@@ -107,6 +107,11 @@ type ComplianceClusterScanStats = {
     cluster: ComplianceScanCluster;
 };
 
+export interface ComplianceClusterOverallStats {
+    cluster: ComplianceScanCluster;
+    checkStats: ComplianceCheckStatusCount[];
+}
+
 export interface ComplianceScanResultsOverview {
     scanStats: ComplianceScanStatsShim;
     profileName: string[];
@@ -187,6 +192,54 @@ export function complianceResultsOverview(
     });
 }
 
+/**
+ * Fetches stats for all clusters
+ * Note: this function and getSingleClusterCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersCombinedStats(
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceClusterOverallStats[]> {
+    const searchFilter = {};
+    const sortOption = {
+        field: 'Cluster',
+        reversed: false,
+    };
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster
+ * Note: this function and getAllClustersCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterCombinedStats(
+    clusterId: string
+): Promise<ComplianceClusterOverallStats | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            const stats = response?.data?.scanStats;
+            return stats && stats.length > 0 ? stats[0] : null;
+        });
+}
+
 export function getComplianceClusterScanStats(
     page?: number,
     pageSize?: number
@@ -202,7 +255,7 @@ export function getComplianceClusterScanStats(
     return axios
         .get<{
             scanStats: ComplianceClusterScanStats[];
-        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
         });

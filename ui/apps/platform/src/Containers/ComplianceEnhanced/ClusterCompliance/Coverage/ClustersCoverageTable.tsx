@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { generatePath, Link } from 'react-router-dom';
 import {
     Alert,
     Bullseye,
@@ -21,13 +21,14 @@ import { SearchIcon } from '@patternfly/react-icons';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getComplianceClusterScanStats } from 'services/ComplianceEnhancedService';
+import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { complianceEnhancedCoverageClustersPath } from 'routePaths';
 
 import {
     calculateCompliancePercentage,
     getPassAndTotalCount,
-    getProgressBarVariant,
+    getCompliancePfClassName,
 } from './compliance.coverage.utils';
 
 function ClustersCoverageTable() {
@@ -35,7 +36,7 @@ function ClustersCoverageTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
 
     const listQuery = useCallback(
-        () => getComplianceClusterScanStats(page - 1, perPage),
+        () => getAllClustersCombinedStats(page - 1, perPage),
         [page, perPage]
     );
     const { data: clusterScanStats, loading: isLoading, error } = useRestQuery(listQuery);
@@ -48,8 +49,13 @@ function ClustersCoverageTable() {
             return (
                 <Tr key={cluster.clusterId}>
                     <Td>
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link to="#">{cluster.clusterName}</Link>
+                        <Link
+                            to={generatePath(complianceEnhancedCoverageClustersPath, {
+                                clusterId: cluster.clusterId,
+                            })}
+                        >
+                            {cluster.clusterName}
+                        </Link>
                     </Td>
                     <Td>WIP</Td>
                     <Td>WIP</Td>
@@ -58,7 +64,7 @@ function ClustersCoverageTable() {
                             id={`progress-bar-${index}`}
                             value={passPercentage}
                             measureLocation={ProgressMeasureLocation.outside}
-                            variant={getProgressBarVariant(passPercentage)}
+                            className={getCompliancePfClassName(passPercentage)}
                         />
                         <Tooltip
                             content={

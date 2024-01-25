@@ -1,9 +1,23 @@
-import { ProgressVariant } from '@patternfly/react-core';
-
 import {
     ComplianceCheckStatus,
     ComplianceCheckStatusCount,
 } from 'services/ComplianceEnhancedService';
+
+import { LabelProps } from '@patternfly/react-core';
+
+// Thresholds for compliance status
+const DANGER_THRESHOLD = 50;
+const WARNING_THRESHOLD = 75;
+
+type LabelColor = LabelProps['color'];
+
+export const ComplianceStatus = {
+    SUCCESS: 'success',
+    WARNING: 'warning',
+    DANGER: 'danger',
+} as const;
+
+export type ComplianceStatus = (typeof ComplianceStatus)[keyof typeof ComplianceStatus];
 
 export function getPassAndTotalCount(checkStats: ComplianceCheckStatusCount[]): {
     passCount: number;
@@ -23,17 +37,47 @@ export function getPassAndTotalCount(checkStats: ComplianceCheckStatusCount[]): 
 }
 
 export function calculateCompliancePercentage(passCount: number, totalCount: number): number {
-    return totalCount > 0 ? (passCount / totalCount) * 100 : 0;
+    return totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
 }
 
-export function getProgressBarVariant(passPercentage: number): ProgressVariant | undefined {
-    let progressVariant: ProgressVariant | undefined;
+function getComplianceStatus(passPercentage: number): ComplianceStatus {
+    let status: ComplianceStatus = ComplianceStatus.SUCCESS;
 
-    if (passPercentage < 50) {
-        progressVariant = ProgressVariant.danger;
-    } else if (passPercentage < 75) {
-        progressVariant = ProgressVariant.warning;
+    if (passPercentage < DANGER_THRESHOLD) {
+        status = ComplianceStatus.DANGER;
+    } else if (passPercentage < WARNING_THRESHOLD) {
+        status = ComplianceStatus.WARNING;
     }
 
-    return progressVariant;
+    return status;
+}
+
+export function getCompliancePfClassName(passPercentage: number): string {
+    const status = getComplianceStatus(passPercentage);
+
+    if (status === ComplianceStatus.DANGER) {
+        return 'pf-m-danger';
+    }
+    if (status === ComplianceStatus.WARNING) {
+        return 'pf-m-warning';
+    }
+    return '';
+}
+
+export function getComplianceLabelGroupColor(
+    passPercentage: number | undefined
+): LabelColor | undefined {
+    if (passPercentage === undefined) {
+        return undefined;
+    }
+
+    const status = getComplianceStatus(passPercentage);
+
+    if (status === ComplianceStatus.DANGER) {
+        return 'red';
+    }
+    if (status === ComplianceStatus.WARNING) {
+        return 'gold';
+    }
+    return 'blue';
 }
