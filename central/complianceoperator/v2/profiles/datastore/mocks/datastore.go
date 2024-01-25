@@ -86,19 +86,19 @@ func (mr *MockDataStoreMockRecorder) GetProfile(ctx, profileID any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockDataStore)(nil).GetProfile), ctx, profileID)
 }
 
-// GetProfileEdgesByCluster mocks base method.
-func (m *MockDataStore) GetProfileEdgesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorProfileClusterEdge, error) {
+// GetProfilesByClusters mocks base method.
+func (m *MockDataStore) GetProfilesByClusters(ctx context.Context, clusterIDs []string) ([]*storage.ComplianceOperatorProfileV2, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProfileEdgesByCluster", ctx, clusterID)
-	ret0, _ := ret[0].([]*storage.ComplianceOperatorProfileClusterEdge)
+	ret := m.ctrl.Call(m, "GetProfilesByClusters", ctx, clusterIDs)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorProfileV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetProfileEdgesByCluster indicates an expected call of GetProfileEdgesByCluster.
-func (mr *MockDataStoreMockRecorder) GetProfileEdgesByCluster(ctx, clusterID any) *gomock.Call {
+// GetProfilesByClusters indicates an expected call of GetProfilesByClusters.
+func (mr *MockDataStoreMockRecorder) GetProfilesByClusters(ctx, clusterIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileEdgesByCluster", reflect.TypeOf((*MockDataStore)(nil).GetProfileEdgesByCluster), ctx, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfilesByClusters", reflect.TypeOf((*MockDataStore)(nil).GetProfilesByClusters), ctx, clusterIDs)
 }
 
 // SearchProfiles mocks base method.
@@ -117,15 +117,15 @@ func (mr *MockDataStoreMockRecorder) SearchProfiles(ctx, query any) *gomock.Call
 }
 
 // UpsertProfile mocks base method.
-func (m *MockDataStore) UpsertProfile(ctx context.Context, result *storage.ComplianceOperatorProfileV2, clusterID, profileUID string) error {
+func (m *MockDataStore) UpsertProfile(ctx context.Context, result *storage.ComplianceOperatorProfileV2) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertProfile", ctx, result, clusterID, profileUID)
+	ret := m.ctrl.Call(m, "UpsertProfile", ctx, result)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertProfile indicates an expected call of UpsertProfile.
-func (mr *MockDataStoreMockRecorder) UpsertProfile(ctx, result, clusterID, profileUID any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertProfile(ctx, result any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProfile", reflect.TypeOf((*MockDataStore)(nil).UpsertProfile), ctx, result, clusterID, profileUID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProfile", reflect.TypeOf((*MockDataStore)(nil).UpsertProfile), ctx, result)
 }
