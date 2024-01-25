@@ -23,7 +23,7 @@ func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
 	}
 	key := s.metricKey(typ, eventType)
 	s.maxSeen[key] = math.Max(s.maxSeen[key], float64(msg.Size()))
-	sensorMessageSize.With(prometheus.Labels{
+	sensorGRPCMaxMessageSize.With(prometheus.Labels{
 		"Type":      typ,
 		"EventType": eventType,
 	}).Set(s.maxSeen[key])

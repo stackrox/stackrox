@@ -210,6 +210,7 @@ func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
 }
 
+// SetGRPCMaxMessageSizeGauge sets the maximum message size observed for message with type.
 func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
 	grpcMaxMessageSize.With(prometheus.Labels{
 		"Type": typ,

@@ -27,7 +27,7 @@ func init() {
 		processSignalBufferGauge,
 		processSignalDroppedCount,
 		sensorEvents,
-		sensorMessageSize,
+		sensorGRPCMaxMessageSize,
 		k8sObjectCounts,
 		k8sObjectProcessingDuration,
 		k8sObjectIngestionToSendDuration,
