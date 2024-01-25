@@ -302,6 +302,108 @@ func (m *ComplianceProfile) Clone() *ComplianceProfile {
 	return cloned
 }
 
+// Next Tag: 7
+type ComplianceProfileSummary struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ProductType          string   `protobuf:"bytes,2,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
+	Description          string   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Title                string   `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	RuleCount            int32    `protobuf:"varint,5,opt,name=rule_count,json=ruleCount,proto3" json:"rule_count,omitempty"`
+	ProfileVersion       string   `protobuf:"bytes,6,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ComplianceProfileSummary) Reset()         { *m = ComplianceProfileSummary{} }
+func (m *ComplianceProfileSummary) String() string { return proto.CompactTextString(m) }
+func (*ComplianceProfileSummary) ProtoMessage()    {}
+func (*ComplianceProfileSummary) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1a6d608d8e632533, []int{2}
+}
+func (m *ComplianceProfileSummary) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ComplianceProfileSummary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ComplianceProfileSummary.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ComplianceProfileSummary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ComplianceProfileSummary.Merge(m, src)
+}
+func (m *ComplianceProfileSummary) XXX_Size() int {
+	return m.Size()
+}
+func (m *ComplianceProfileSummary) XXX_DiscardUnknown() {
+	xxx_messageInfo_ComplianceProfileSummary.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ComplianceProfileSummary proto.InternalMessageInfo
+
+func (m *ComplianceProfileSummary) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ComplianceProfileSummary) GetProductType() string {
+	if m != nil {
+		return m.ProductType
+	}
+	return ""
+}
+
+func (m *ComplianceProfileSummary) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *ComplianceProfileSummary) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+func (m *ComplianceProfileSummary) GetRuleCount() int32 {
+	if m != nil {
+		return m.RuleCount
+	}
+	return 0
+}
+
+func (m *ComplianceProfileSummary) GetProfileVersion() string {
+	if m != nil {
+		return m.ProfileVersion
+	}
+	return ""
+}
+
+func (m *ComplianceProfileSummary) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ComplianceProfileSummary) Clone() *ComplianceProfileSummary {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ComplianceProfileSummary)
+	*cloned = *m
+
+	return cloned
+}
+
+// ListComplianceProfilesResponse provides a list of profiles
 type ListComplianceProfilesResponse struct {
 	Profiles             []*ComplianceProfile `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
@@ -313,7 +415,7 @@ func (m *ListComplianceProfilesResponse) Reset()         { *m = ListCompliancePr
 func (m *ListComplianceProfilesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceProfilesResponse) ProtoMessage()    {}
 func (*ListComplianceProfilesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{2}
+	return fileDescriptor_1a6d608d8e632533, []int{3}
 }
 func (m *ListComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -368,6 +470,73 @@ func (m *ListComplianceProfilesResponse) Clone() *ListComplianceProfilesResponse
 	return cloned
 }
 
+// ListComplianceProfileSummaryResponse provides a list of profiles summaries
+type ListComplianceProfileSummaryResponse struct {
+	Profiles             []*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *ListComplianceProfileSummaryResponse) Reset()         { *m = ListComplianceProfileSummaryResponse{} }
+func (m *ListComplianceProfileSummaryResponse) String() string { return proto.CompactTextString(m) }
+func (*ListComplianceProfileSummaryResponse) ProtoMessage()    {}
+func (*ListComplianceProfileSummaryResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1a6d608d8e632533, []int{4}
+}
+func (m *ListComplianceProfileSummaryResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListComplianceProfileSummaryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListComplianceProfileSummaryResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListComplianceProfileSummaryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListComplianceProfileSummaryResponse.Merge(m, src)
+}
+func (m *ListComplianceProfileSummaryResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListComplianceProfileSummaryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListComplianceProfileSummaryResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListComplianceProfileSummaryResponse proto.InternalMessageInfo
+
+func (m *ListComplianceProfileSummaryResponse) GetProfiles() []*ComplianceProfileSummary {
+	if m != nil {
+		return m.Profiles
+	}
+	return nil
+}
+
+func (m *ListComplianceProfileSummaryResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListComplianceProfileSummaryResponse) Clone() *ListComplianceProfileSummaryResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListComplianceProfileSummaryResponse)
+	*cloned = *m
+
+	if m.Profiles != nil {
+		cloned.Profiles = make([]*ComplianceProfileSummary, len(m.Profiles))
+		for idx, v := range m.Profiles {
+			cloned.Profiles[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
 // CountComplianceProfilesResponse gives count of compliance profiles
 type CountComplianceProfilesResponse struct {
 	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
@@ -380,7 +549,7 @@ func (m *CountComplianceProfilesResponse) Reset()         { *m = CountCompliance
 func (m *CountComplianceProfilesResponse) String() string { return proto.CompactTextString(m) }
 func (*CountComplianceProfilesResponse) ProtoMessage()    {}
 func (*CountComplianceProfilesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1a6d608d8e632533, []int{3}
+	return fileDescriptor_1a6d608d8e632533, []int{5}
 }
 func (m *CountComplianceProfilesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -429,11 +598,139 @@ func (m *CountComplianceProfilesResponse) Clone() *CountComplianceProfilesRespon
 	return cloned
 }
 
+type ProfilesForClusterRequest struct {
+	ClusterId            string   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ProfilesForClusterRequest) Reset()         { *m = ProfilesForClusterRequest{} }
+func (m *ProfilesForClusterRequest) String() string { return proto.CompactTextString(m) }
+func (*ProfilesForClusterRequest) ProtoMessage()    {}
+func (*ProfilesForClusterRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1a6d608d8e632533, []int{6}
+}
+func (m *ProfilesForClusterRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ProfilesForClusterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ProfilesForClusterRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ProfilesForClusterRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProfilesForClusterRequest.Merge(m, src)
+}
+func (m *ProfilesForClusterRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ProfilesForClusterRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProfilesForClusterRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProfilesForClusterRequest proto.InternalMessageInfo
+
+func (m *ProfilesForClusterRequest) GetClusterId() string {
+	if m != nil {
+		return m.ClusterId
+	}
+	return ""
+}
+
+func (m *ProfilesForClusterRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ProfilesForClusterRequest) Clone() *ProfilesForClusterRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ProfilesForClusterRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type ClustersProfileSummaryRequest struct {
+	ClusterIds           []string `protobuf:"bytes,1,rep,name=cluster_ids,json=clusterIds,proto3" json:"cluster_ids,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ClustersProfileSummaryRequest) Reset()         { *m = ClustersProfileSummaryRequest{} }
+func (m *ClustersProfileSummaryRequest) String() string { return proto.CompactTextString(m) }
+func (*ClustersProfileSummaryRequest) ProtoMessage()    {}
+func (*ClustersProfileSummaryRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1a6d608d8e632533, []int{7}
+}
+func (m *ClustersProfileSummaryRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClustersProfileSummaryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClustersProfileSummaryRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClustersProfileSummaryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClustersProfileSummaryRequest.Merge(m, src)
+}
+func (m *ClustersProfileSummaryRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClustersProfileSummaryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClustersProfileSummaryRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClustersProfileSummaryRequest proto.InternalMessageInfo
+
+func (m *ClustersProfileSummaryRequest) GetClusterIds() []string {
+	if m != nil {
+		return m.ClusterIds
+	}
+	return nil
+}
+
+func (m *ClustersProfileSummaryRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ClustersProfileSummaryRequest) Clone() *ClustersProfileSummaryRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ClustersProfileSummaryRequest)
+	*cloned = *m
+
+	if m.ClusterIds != nil {
+		cloned.ClusterIds = make([]string, len(m.ClusterIds))
+		copy(cloned.ClusterIds, m.ClusterIds)
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ComplianceRule)(nil), "v2.ComplianceRule")
 	proto.RegisterType((*ComplianceProfile)(nil), "v2.ComplianceProfile")
+	proto.RegisterType((*ComplianceProfileSummary)(nil), "v2.ComplianceProfileSummary")
 	proto.RegisterType((*ListComplianceProfilesResponse)(nil), "v2.ListComplianceProfilesResponse")
+	proto.RegisterType((*ListComplianceProfileSummaryResponse)(nil), "v2.ListComplianceProfileSummaryResponse")
 	proto.RegisterType((*CountComplianceProfilesResponse)(nil), "v2.CountComplianceProfilesResponse")
+	proto.RegisterType((*ProfilesForClusterRequest)(nil), "v2.ProfilesForClusterRequest")
+	proto.RegisterType((*ClustersProfileSummaryRequest)(nil), "v2.ClustersProfileSummaryRequest")
 }
 
 func init() {
@@ -441,46 +738,56 @@ func init() {
 }
 
 var fileDescriptor_1a6d608d8e632533 = []byte{
-	// 616 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x94, 0xc1, 0x6e, 0xd3, 0x4c,
-	0x10, 0xc7, 0x1b, 0xb7, 0x49, 0x93, 0x49, 0xd5, 0xef, 0x63, 0x29, 0x65, 0x1b, 0x4a, 0xda, 0x1a,
-	0x50, 0x73, 0x72, 0x84, 0x39, 0x70, 0x6f, 0x91, 0x10, 0x12, 0x07, 0x70, 0x11, 0x42, 0x5c, 0xa2,
-	0xc5, 0x9e, 0x96, 0x55, 0x5d, 0xaf, 0xd9, 0x5d, 0x9b, 0x46, 0x88, 0x0b, 0xaf, 0xc0, 0x85, 0x33,
-	0xaf, 0xc0, 0x4b, 0x70, 0x44, 0xe2, 0x05, 0x50, 0x81, 0xf7, 0x40, 0xde, 0x5d, 0x27, 0x6d, 0xd3,
-	0xf6, 0xe6, 0xf9, 0xcf, 0xec, 0xfc, 0x67, 0x7f, 0xa3, 0x35, 0x6c, 0xb3, 0x9c, 0x0f, 0xcb, 0x70,
-	0x18, 0x8b, 0xa3, 0x3c, 0xe5, 0x2c, 0x8b, 0x71, 0x94, 0x4b, 0xb1, 0xcf, 0x53, 0x1c, 0x29, 0x94,
-	0x25, 0x8f, 0x31, 0xc8, 0xa5, 0xd0, 0x82, 0x78, 0x65, 0xd8, 0x5b, 0x3f, 0x10, 0xe2, 0x20, 0xc5,
-	0x61, 0x75, 0x86, 0x65, 0x99, 0xd0, 0x4c, 0x73, 0x91, 0x29, 0x5b, 0xd1, 0xbb, 0x3e, 0x6d, 0x75,
-	0x24, 0x32, 0x27, 0xae, 0x39, 0x51, 0x21, 0x93, 0xf1, 0xdb, 0xd1, 0xbb, 0x02, 0xe5, 0xd8, 0xa6,
-	0xfc, 0xaf, 0x1e, 0x2c, 0xef, 0x4e, 0x6c, 0xa3, 0x22, 0x45, 0x42, 0x60, 0x21, 0x63, 0x47, 0x48,
-	0x1b, 0x9b, 0x8d, 0x41, 0x27, 0x32, 0xdf, 0x64, 0x0b, 0x96, 0x64, 0x91, 0xe2, 0xa8, 0x44, 0xa9,
-	0xb8, 0xc8, 0xa8, 0x67, 0x72, 0xdd, 0x4a, 0x7b, 0x69, 0x25, 0x72, 0x0b, 0x3a, 0xa6, 0x44, 0x8f,
-	0x73, 0xa4, 0xf3, 0x26, 0xdf, 0xae, 0x84, 0x17, 0xe3, 0x1c, 0x49, 0x0f, 0xda, 0x0a, 0x4b, 0x94,
-	0x5c, 0x8f, 0xe9, 0x82, 0xcd, 0xd5, 0xb1, 0xc9, 0x69, 0x96, 0x25, 0x4c, 0x26, 0xb4, 0xe9, 0x72,
-	0x2e, 0x26, 0x14, 0x16, 0x63, 0x91, 0x69, 0x29, 0x52, 0xda, 0x32, 0xa9, 0x3a, 0x24, 0x2b, 0xd0,
-	0xd4, 0x5c, 0xa7, 0x48, 0x17, 0x8d, 0x6e, 0x03, 0xb2, 0x09, 0xdd, 0x04, 0x55, 0x2c, 0x79, 0x5e,
-	0x41, 0xa1, 0x6d, 0x3b, 0xe6, 0x29, 0x89, 0xac, 0x43, 0x47, 0x1a, 0x62, 0x2c, 0x45, 0xda, 0x31,
-	0xf9, 0xa9, 0x50, 0x75, 0xdd, 0xe7, 0xc7, 0xa8, 0x28, 0xd8, 0xae, 0x26, 0xf0, 0xbf, 0x79, 0x70,
-	0x6d, 0x0a, 0xe9, 0x99, 0x5d, 0x0d, 0x59, 0x06, 0x8f, 0x27, 0x8e, 0x92, 0xc7, 0x93, 0x09, 0x37,
-	0xef, 0x14, 0xb7, 0x6d, 0xf8, 0xaf, 0xde, 0x64, 0x8d, 0xce, 0xa2, 0x59, 0x76, 0x72, 0x4d, 0x6f,
-	0x0b, 0x96, 0x72, 0x29, 0x92, 0x22, 0xd6, 0x16, 0xa0, 0x85, 0xd4, 0x75, 0xda, 0x84, 0xe1, 0x65,
-	0x9c, 0xce, 0xdd, 0xbb, 0x35, 0x7b, 0xef, 0x01, 0x34, 0xab, 0x6d, 0x28, 0xba, 0xb8, 0x39, 0x3f,
-	0xe8, 0x86, 0x24, 0x28, 0xc3, 0xe0, 0xec, 0xe2, 0x23, 0x5b, 0x50, 0x31, 0x77, 0xb6, 0x8e, 0x5f,
-	0x1d, 0x4e, 0x99, 0x77, 0x4e, 0x33, 0x5f, 0x85, 0x56, 0xc9, 0xd2, 0xc2, 0x40, 0x9b, 0x1f, 0x74,
-	0x22, 0x17, 0xf9, 0x7b, 0xd0, 0x7f, 0xca, 0x95, 0x9e, 0x01, 0xa7, 0x22, 0x54, 0xb9, 0xc8, 0x14,
-	0x92, 0xfb, 0xd0, 0x76, 0x18, 0x14, 0x6d, 0x98, 0xb1, 0x6e, 0x9c, 0x1d, 0xcb, 0x9d, 0x88, 0x26,
-	0x65, 0xfe, 0x43, 0xd8, 0xd8, 0x15, 0x45, 0x76, 0x55, 0xd7, 0x15, 0x68, 0xc6, 0x55, 0x89, 0x59,
-	0x4d, 0x33, 0xb2, 0x41, 0xf8, 0xd7, 0x03, 0x3a, 0x73, 0x68, 0xcf, 0xbe, 0x2e, 0x82, 0xb0, 0xf2,
-	0x18, 0x67, 0x7b, 0x92, 0xff, 0xab, 0x71, 0x22, 0x54, 0xa2, 0x90, 0x31, 0xee, 0x8c, 0x9f, 0x3c,
-	0xea, 0x5d, 0x3c, 0xa0, 0x7f, 0xf7, 0xd3, 0xcf, 0x3f, 0x9f, 0xbd, 0x3e, 0x59, 0x3f, 0xfb, 0x8c,
-	0x87, 0xf5, 0xdc, 0xc3, 0x0f, 0x3c, 0xf9, 0x48, 0x0e, 0x61, 0xf5, 0x62, 0x22, 0x64, 0xc9, 0x18,
-	0xb1, 0xf7, 0xcf, 0xab, 0xa7, 0xd9, 0xf3, 0xab, 0xe8, 0x6a, 0x76, 0xfe, 0x86, 0x71, 0x5c, 0x23,
-	0x37, 0x2f, 0x71, 0x24, 0x05, 0xac, 0x5d, 0x74, 0x27, 0x43, 0xef, 0x9c, 0xdf, 0x1d, 0x7b, 0xa9,
-	0x2b, 0xb1, 0xfa, 0xf7, 0x8c, 0xe1, 0x06, 0xb9, 0x7d, 0xce, 0xd0, 0xe0, 0x9d, 0xd8, 0xee, 0x04,
-	0xdf, 0x4f, 0xfa, 0x8d, 0x1f, 0x27, 0xfd, 0xc6, 0xaf, 0x93, 0x7e, 0xe3, 0xcb, 0xef, 0xfe, 0x1c,
-	0x50, 0x2e, 0x02, 0xa5, 0x59, 0x7c, 0x28, 0xc5, 0xb1, 0xfd, 0xeb, 0x04, 0x2c, 0xe7, 0x41, 0x19,
-	0xbe, 0xf6, 0xca, 0xf0, 0xd5, 0xdc, 0x9b, 0x96, 0xd1, 0x1e, 0xfc, 0x0b, 0x00, 0x00, 0xff, 0xff,
-	0x71, 0x67, 0x4a, 0x4f, 0x06, 0x05, 0x00, 0x00,
+	// 778 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x95, 0xcf, 0x6f, 0xd3, 0x48,
+	0x14, 0xc7, 0x6b, 0xe7, 0x47, 0xe3, 0x97, 0xaa, 0xbb, 0x3b, 0x9b, 0xad, 0xdc, 0xb4, 0x49, 0x1a,
+	0x77, 0x57, 0xcd, 0x29, 0xd1, 0x66, 0x0f, 0xbb, 0xda, 0xd3, 0xaa, 0x5d, 0x81, 0x2a, 0x71, 0x00,
+	0x17, 0x21, 0xc4, 0x25, 0x18, 0x7b, 0x5a, 0x46, 0x38, 0x1e, 0x77, 0xc6, 0x36, 0x8d, 0x10, 0x17,
+	0xc4, 0x11, 0x4e, 0x5c, 0x38, 0xf3, 0x2f, 0xf0, 0x4f, 0x70, 0x04, 0xf1, 0x0f, 0xa0, 0xc2, 0x1f,
+	0x82, 0x3c, 0x33, 0x76, 0x7e, 0x39, 0xe1, 0x96, 0xf7, 0x7d, 0xf3, 0xde, 0xbc, 0xf7, 0x79, 0x6f,
+	0x62, 0x38, 0x72, 0x42, 0x32, 0x48, 0x86, 0x03, 0x97, 0x8e, 0x43, 0x9f, 0x38, 0x81, 0x8b, 0x47,
+	0x21, 0xa3, 0xe7, 0xc4, 0xc7, 0x23, 0x8e, 0x59, 0x42, 0x5c, 0xdc, 0x0f, 0x19, 0x8d, 0x28, 0xd2,
+	0x93, 0x61, 0x73, 0xff, 0x82, 0xd2, 0x0b, 0x1f, 0x0f, 0xd2, 0x18, 0x27, 0x08, 0x68, 0xe4, 0x44,
+	0x84, 0x06, 0x5c, 0x9e, 0x68, 0xfe, 0x3a, 0x4d, 0x35, 0xa6, 0x81, 0x12, 0x77, 0x95, 0xc8, 0xb1,
+	0xc3, 0xdc, 0xc7, 0xa3, 0xcb, 0x18, 0xb3, 0x89, 0x74, 0x59, 0xef, 0x74, 0xd8, 0x3e, 0xc9, 0xaf,
+	0xb5, 0x63, 0x1f, 0x23, 0x04, 0xe5, 0xc0, 0x19, 0x63, 0x53, 0x3b, 0xd0, 0x7a, 0x86, 0x2d, 0x7e,
+	0xa3, 0x2e, 0x6c, 0xb1, 0xd8, 0xc7, 0xa3, 0x04, 0x33, 0x4e, 0x68, 0x60, 0xea, 0xc2, 0x57, 0x4f,
+	0xb5, 0x7b, 0x52, 0x42, 0x7b, 0x60, 0x88, 0x23, 0xd1, 0x24, 0xc4, 0x66, 0x49, 0xf8, 0x6b, 0xa9,
+	0x70, 0x77, 0x12, 0x62, 0xd4, 0x84, 0x1a, 0xc7, 0x09, 0x66, 0x24, 0x9a, 0x98, 0x65, 0xe9, 0xcb,
+	0x6c, 0xe1, 0x8b, 0x9c, 0xc0, 0x73, 0x98, 0x67, 0x56, 0x94, 0x4f, 0xd9, 0xc8, 0x84, 0x4d, 0x97,
+	0x06, 0x11, 0xa3, 0xbe, 0x59, 0x15, 0xae, 0xcc, 0x44, 0x0d, 0xa8, 0x44, 0x24, 0xf2, 0xb1, 0xb9,
+	0x29, 0x74, 0x69, 0xa0, 0x03, 0xa8, 0x7b, 0x98, 0xbb, 0x8c, 0x84, 0x29, 0x14, 0xb3, 0x26, 0xcb,
+	0x9c, 0x91, 0xd0, 0x3e, 0x18, 0x4c, 0x10, 0x73, 0x7c, 0x6c, 0x1a, 0xc2, 0x3f, 0x15, 0xd2, 0xac,
+	0xe7, 0xe4, 0x0a, 0x73, 0x13, 0x64, 0x56, 0x61, 0x58, 0xef, 0x75, 0xf8, 0x65, 0x0a, 0xe9, 0xb6,
+	0x1c, 0x0d, 0xda, 0x06, 0x9d, 0x78, 0x8a, 0x92, 0x4e, 0xbc, 0x9c, 0x9b, 0x3e, 0xc3, 0xed, 0x08,
+	0x7e, 0xca, 0x26, 0x99, 0xa1, 0x93, 0x68, 0xb6, 0x95, 0x9c, 0xd1, 0xeb, 0xc2, 0x56, 0xc8, 0xa8,
+	0x17, 0xbb, 0x91, 0x04, 0x28, 0x21, 0xd5, 0x95, 0x96, 0x33, 0x5c, 0xc5, 0x69, 0xa1, 0xef, 0xea,
+	0x72, 0xdf, 0x3d, 0xa8, 0xa4, 0xd3, 0xe0, 0xe6, 0xe6, 0x41, 0xa9, 0x57, 0x1f, 0xa2, 0x7e, 0x32,
+	0xec, 0xcf, 0x0f, 0xde, 0x96, 0x07, 0x52, 0xe6, 0xea, 0x5a, 0xc5, 0x2f, 0x33, 0xa7, 0xcc, 0x8d,
+	0x59, 0xe6, 0x3b, 0x50, 0x4d, 0x1c, 0x3f, 0x16, 0xd0, 0x4a, 0x3d, 0xc3, 0x56, 0x96, 0xf5, 0x49,
+	0x03, 0x73, 0x89, 0xda, 0x59, 0x3c, 0x1e, 0x3b, 0x6c, 0xb2, 0x6a, 0xc9, 0xe6, 0x18, 0xe8, 0xcb,
+	0x0c, 0x16, 0xfa, 0x2c, 0x2d, 0xf7, 0x99, 0xd7, 0x58, 0x9e, 0xad, 0xb1, 0x05, 0x20, 0x96, 0xd3,
+	0xa5, 0x71, 0x10, 0x09, 0x7a, 0x15, 0x5b, 0xac, 0xeb, 0x49, 0x2a, 0x14, 0x8d, 0xa9, 0x5a, 0x34,
+	0x26, 0xeb, 0x0c, 0xda, 0xb7, 0x08, 0x8f, 0x96, 0xda, 0xe2, 0x36, 0xe6, 0x21, 0x0d, 0x38, 0x46,
+	0x7f, 0x42, 0x4d, 0xc5, 0x70, 0x53, 0x13, 0xa8, 0x7f, 0x9b, 0x47, 0xad, 0x22, 0xec, 0xfc, 0x98,
+	0xf5, 0x10, 0x7e, 0x2f, 0x4c, 0xaa, 0x58, 0xe5, 0xa9, 0xff, 0x59, 0x4a, 0xbd, 0x5f, 0x98, 0x3a,
+	0x8b, 0x9b, 0xde, 0xf0, 0x37, 0x74, 0x44, 0xa3, 0x6b, 0xea, 0x6e, 0x40, 0x45, 0xc2, 0xd1, 0x04,
+	0x1c, 0x69, 0x58, 0xff, 0xc2, 0x6e, 0x76, 0xf2, 0x06, 0x65, 0x27, 0x7e, 0xcc, 0x23, 0xcc, 0x6c,
+	0x7c, 0x19, 0x63, 0x1e, 0xa5, 0x50, 0x5d, 0xa9, 0x8c, 0xf2, 0x87, 0x60, 0x28, 0xe5, 0xd4, 0xb3,
+	0xfe, 0x83, 0x96, 0x0a, 0xe0, 0x8b, 0x0d, 0xc9, 0xf8, 0x0e, 0xd4, 0xa7, 0xf1, 0xb2, 0x25, 0xc3,
+	0x86, 0x3c, 0x01, 0x1f, 0xbe, 0x2e, 0x17, 0x6d, 0x90, 0xfc, 0x47, 0x44, 0x1e, 0x34, 0x6e, 0xe2,
+	0xe5, 0x8e, 0xd0, 0xcf, 0x29, 0x13, 0x1b, 0x73, 0x1a, 0x33, 0x17, 0x1f, 0x4f, 0x4e, 0xff, 0x6f,
+	0x16, 0x0f, 0xc0, 0x3a, 0x7c, 0xf1, 0xf9, 0xdb, 0x1b, 0xbd, 0x85, 0xf6, 0xe6, 0xff, 0x7a, 0x07,
+	0x8a, 0xda, 0xe0, 0x19, 0xf1, 0x9e, 0xa3, 0x97, 0x1a, 0xec, 0x14, 0x4f, 0x1c, 0xb5, 0xd2, 0xb4,
+	0x2b, 0xe9, 0x34, 0xad, 0xd4, 0xbd, 0x7e, 0x59, 0xac, 0x23, 0x51, 0x42, 0x17, 0x75, 0x8a, 0x4b,
+	0xe0, 0x03, 0x05, 0x03, 0xbd, 0xd2, 0xa0, 0x91, 0xe6, 0x9a, 0x03, 0x49, 0x30, 0x47, 0x5d, 0xd1,
+	0xdb, 0x3a, 0xcc, 0xcd, 0xde, 0xca, 0x42, 0x16, 0x16, 0xec, 0xc7, 0xe5, 0x70, 0xf5, 0x7a, 0x63,
+	0xd8, 0x2d, 0x62, 0x2f, 0x1f, 0xd3, 0x96, 0x18, 0x80, 0xf3, 0xf4, 0x4e, 0xfa, 0x99, 0x69, 0x1e,
+	0x4a, 0xf8, 0x6b, 0x97, 0xcf, 0xfa, 0x43, 0x5c, 0xdc, 0x41, 0xad, 0x95, 0x1c, 0xd2, 0x04, 0xc7,
+	0xfd, 0x0f, 0xd7, 0x6d, 0xed, 0xe3, 0x75, 0x5b, 0xfb, 0x72, 0xdd, 0xd6, 0xde, 0x7e, 0x6d, 0x6f,
+	0x80, 0x49, 0x68, 0x9f, 0x47, 0x8e, 0xfb, 0x84, 0xd1, 0x2b, 0xf9, 0x45, 0xeb, 0x3b, 0x21, 0xe9,
+	0x27, 0xc3, 0x07, 0x7a, 0x32, 0xbc, 0xbf, 0xf1, 0xa8, 0x2a, 0xb4, 0xbf, 0xbe, 0x07, 0x00, 0x00,
+	0xff, 0xff, 0x77, 0x49, 0xdc, 0xc5, 0x62, 0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -497,8 +804,10 @@ const _ = grpc.SupportPackageIsVersion6
 type ComplianceProfileServiceClient interface {
 	// GetComplianceProfile retrieves the specified compliance profile
 	GetComplianceProfile(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceProfile, error)
-	// ListComplianceProfiles returns profiles matching given query
-	ListComplianceProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error)
+	// ListComplianceProfiles returns profiles matching given request
+	ListComplianceProfiles(ctx context.Context, in *ProfilesForClusterRequest, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error)
+	// ListProfileSummaries returns profiles matching each cluster and the given query
+	ListProfileSummaries(ctx context.Context, in *ClustersProfileSummaryRequest, opts ...grpc.CallOption) (*ListComplianceProfileSummaryResponse, error)
 	// GetComplianceProfileCount returns the number of profiles matching the given query
 	GetComplianceProfileCount(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountComplianceProfilesResponse, error)
 }
@@ -520,9 +829,18 @@ func (c *complianceProfileServiceClient) GetComplianceProfile(ctx context.Contex
 	return out, nil
 }
 
-func (c *complianceProfileServiceClient) ListComplianceProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error) {
+func (c *complianceProfileServiceClient) ListComplianceProfiles(ctx context.Context, in *ProfilesForClusterRequest, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error) {
 	out := new(ListComplianceProfilesResponse)
 	err := c.cc.Invoke(ctx, "/v2.ComplianceProfileService/ListComplianceProfiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceProfileServiceClient) ListProfileSummaries(ctx context.Context, in *ClustersProfileSummaryRequest, opts ...grpc.CallOption) (*ListComplianceProfileSummaryResponse, error) {
+	out := new(ListComplianceProfileSummaryResponse)
+	err := c.cc.Invoke(ctx, "/v2.ComplianceProfileService/ListProfileSummaries", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -542,8 +860,10 @@ func (c *complianceProfileServiceClient) GetComplianceProfileCount(ctx context.C
 type ComplianceProfileServiceServer interface {
 	// GetComplianceProfile retrieves the specified compliance profile
 	GetComplianceProfile(context.Context, *ResourceByID) (*ComplianceProfile, error)
-	// ListComplianceProfiles returns profiles matching given query
-	ListComplianceProfiles(context.Context, *RawQuery) (*ListComplianceProfilesResponse, error)
+	// ListComplianceProfiles returns profiles matching given request
+	ListComplianceProfiles(context.Context, *ProfilesForClusterRequest) (*ListComplianceProfilesResponse, error)
+	// ListProfileSummaries returns profiles matching each cluster and the given query
+	ListProfileSummaries(context.Context, *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error)
 	// GetComplianceProfileCount returns the number of profiles matching the given query
 	GetComplianceProfileCount(context.Context, *RawQuery) (*CountComplianceProfilesResponse, error)
 }
@@ -555,8 +875,11 @@ type UnimplementedComplianceProfileServiceServer struct {
 func (*UnimplementedComplianceProfileServiceServer) GetComplianceProfile(ctx context.Context, req *ResourceByID) (*ComplianceProfile, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfile not implemented")
 }
-func (*UnimplementedComplianceProfileServiceServer) ListComplianceProfiles(ctx context.Context, req *RawQuery) (*ListComplianceProfilesResponse, error) {
+func (*UnimplementedComplianceProfileServiceServer) ListComplianceProfiles(ctx context.Context, req *ProfilesForClusterRequest) (*ListComplianceProfilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceProfiles not implemented")
+}
+func (*UnimplementedComplianceProfileServiceServer) ListProfileSummaries(ctx context.Context, req *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProfileSummaries not implemented")
 }
 func (*UnimplementedComplianceProfileServiceServer) GetComplianceProfileCount(ctx context.Context, req *RawQuery) (*CountComplianceProfilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceProfileCount not implemented")
@@ -585,7 +908,7 @@ func _ComplianceProfileService_GetComplianceProfile_Handler(srv interface{}, ctx
 }
 
 func _ComplianceProfileService_ListComplianceProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RawQuery)
+	in := new(ProfilesForClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -597,7 +920,25 @@ func _ComplianceProfileService_ListComplianceProfiles_Handler(srv interface{}, c
 		FullMethod: "/v2.ComplianceProfileService/ListComplianceProfiles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceProfileServiceServer).ListComplianceProfiles(ctx, req.(*RawQuery))
+		return srv.(ComplianceProfileServiceServer).ListComplianceProfiles(ctx, req.(*ProfilesForClusterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceProfileService_ListProfileSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClustersProfileSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceProfileServiceServer).ListProfileSummaries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v2.ComplianceProfileService/ListProfileSummaries",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceProfileServiceServer).ListProfileSummaries(ctx, req.(*ClustersProfileSummaryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -631,6 +972,10 @@ var _ComplianceProfileService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListComplianceProfiles",
 			Handler:    _ComplianceProfileService_ListComplianceProfiles_Handler,
+		},
+		{
+			MethodName: "ListProfileSummaries",
+			Handler:    _ComplianceProfileService_ListProfileSummaries_Handler,
 		},
 		{
 			MethodName: "GetComplianceProfileCount",
@@ -844,6 +1189,73 @@ func (m *ComplianceProfile) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *ComplianceProfileSummary) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComplianceProfileSummary) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ComplianceProfileSummary) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ProfileVersion) > 0 {
+		i -= len(m.ProfileVersion)
+		copy(dAtA[i:], m.ProfileVersion)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.ProfileVersion)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.RuleCount != 0 {
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(m.RuleCount))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Title)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Description) > 0 {
+		i -= len(m.Description)
+		copy(dAtA[i:], m.Description)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Description)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.ProductType) > 0 {
+		i -= len(m.ProductType)
+		copy(dAtA[i:], m.ProductType)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.ProductType)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ListComplianceProfilesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -860,6 +1272,47 @@ func (m *ListComplianceProfilesResponse) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *ListComplianceProfilesResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Profiles) > 0 {
+		for iNdEx := len(m.Profiles) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Profiles[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintComplianceProfileService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListComplianceProfileSummaryResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListComplianceProfileSummaryResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListComplianceProfileSummaryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -913,6 +1366,76 @@ func (m *CountComplianceProfilesResponse) MarshalToSizedBuffer(dAtA []byte) (int
 		i = encodeVarintComplianceProfileService(dAtA, i, uint64(m.Count))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ProfilesForClusterRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ProfilesForClusterRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ProfilesForClusterRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClustersProfileSummaryRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClustersProfileSummaryRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClustersProfileSummaryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterIds) > 0 {
+		for iNdEx := len(m.ClusterIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ClusterIds[iNdEx])
+			copy(dAtA[i:], m.ClusterIds[iNdEx])
+			i = encodeVarintComplianceProfileService(dAtA, i, uint64(len(m.ClusterIds[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -1036,7 +1559,60 @@ func (m *ComplianceProfile) Size() (n int) {
 	return n
 }
 
+func (m *ComplianceProfileSummary) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	l = len(m.ProductType)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	l = len(m.Description)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	l = len(m.Title)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	if m.RuleCount != 0 {
+		n += 1 + sovComplianceProfileService(uint64(m.RuleCount))
+	}
+	l = len(m.ProfileVersion)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *ListComplianceProfilesResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Profiles) > 0 {
+		for _, e := range m.Profiles {
+			l = e.Size()
+			n += 1 + l + sovComplianceProfileService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListComplianceProfileSummaryResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1062,6 +1638,40 @@ func (m *CountComplianceProfilesResponse) Size() (n int) {
 	_ = l
 	if m.Count != 0 {
 		n += 1 + sovComplianceProfileService(uint64(m.Count))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ProfilesForClusterRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + sovComplianceProfileService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ClustersProfileSummaryRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ClusterIds) > 0 {
+		for _, s := range m.ClusterIds {
+			l = len(s)
+			n += 1 + l + sovComplianceProfileService(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1819,6 +2429,236 @@ func (m *ComplianceProfile) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *ComplianceProfileSummary) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceProfileService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ComplianceProfileSummary: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ComplianceProfileSummary: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProductType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProductType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Description", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Description = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Title = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuleCount", wireType)
+			}
+			m.RuleCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RuleCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ProfileVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ProfileVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ListComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1904,6 +2744,91 @@ func (m *ListComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *ListComplianceProfileSummaryResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceProfileService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListComplianceProfileSummaryResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListComplianceProfileSummaryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Profiles", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Profiles = append(m.Profiles, &ComplianceProfileSummary{})
+			if err := m.Profiles[len(m.Profiles)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *CountComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1952,6 +2877,172 @@ func (m *CountComplianceProfilesResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ProfilesForClusterRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceProfileService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ProfilesForClusterRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ProfilesForClusterRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClustersProfileSummaryRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowComplianceProfileService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClustersProfileSummaryRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClustersProfileSummaryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceProfileService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceProfileService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterIds = append(m.ClusterIds, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipComplianceProfileService(dAtA[iNdEx:])
