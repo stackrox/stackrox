@@ -29,6 +29,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 import { getAnyVulnerabilityIsFixable, getHighestVulnerabilitySeverity } from './table.utils';
 import DateDistanceTd from '../components/DatePhraseTd';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -218,12 +219,18 @@ function DeploymentVulnerabilitiesTable({
                             <Td />
                             <Td colSpan={6}>
                                 <ExpandableRowContent>
-                                    <p className="pf-u-mb-md">{summary}</p>
-                                    <DeploymentComponentVulnerabilitiesTable
-                                        images={images}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    />
+                                    {summary && images.length > 0 ? (
+                                        <>
+                                            <p className="pf-u-mb-md">{summary}</p>
+                                            <DeploymentComponentVulnerabilitiesTable
+                                                images={images}
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
+                                            />
+                                        </>
+                                    ) : (
+                                        <PartialCVEDataAlert />
+                                    )}
                                 </ExpandableRowContent>
                             </Td>
                         </Tr>

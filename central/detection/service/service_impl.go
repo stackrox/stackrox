@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -412,7 +413,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		if conn == nil {
 			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
 		}
-		deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, 30*time.Second)
+		deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, env.CentralDeploymentEnhancementTimeout.DurationSetting())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}

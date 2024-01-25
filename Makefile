@@ -123,6 +123,7 @@ all: deps style test image
 
 include make/gotools.mk
 
+$(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
@@ -181,6 +182,11 @@ else
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
+
+.PHONY: proto-style
+proto-style: $(BUF_BIN) deps
+	@echo "+ $@"
+	$(BUF_BIN) format --exit-code --diff -w
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -589,7 +595,6 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 main-image: all-builds
 	make docker-build-main-image
 
-kind_available := $(shell command -v kind && kind get clusters | grep -v "No kind clusters found.")
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir central-db-image
 	$(DOCKERBUILD) \
@@ -607,11 +612,6 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifneq ($(strip $(kind_available)),)
-	@echo "kind installed, loading images"
-	@echo "Loading image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) into kind"
-	kind load docker-image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG)
-endif
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:

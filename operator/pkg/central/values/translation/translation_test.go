@@ -272,7 +272,7 @@ func TestTranslate(t *testing.T) {
 						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
 							Analyzer: &platform.ScannerAnalyzerComponent{
-								Scaling: &platform.ScannerAnalyzerScaling{
+								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
 									Replicas:    &scannerReplicas,
 									MinReplicas: &scannerMinReplicas,
@@ -321,6 +321,86 @@ func TestTranslate(t *testing.T) {
 							},
 							Monitoring: &platform.Monitoring{
 								ExposeEndpoint: &monitoringExposeEndpointEnabled,
+							},
+						},
+						ScannerV4: &platform.ScannerV4ComponentSpec{
+							ScannerComponent: &scannerComponentPolicy,
+							Indexer: &platform.ScannerV4Component{
+								Scaling: &platform.ScannerComponentScaling{
+									AutoScaling: &scannerAutoScalingPolicy,
+									Replicas:    &scannerReplicas,
+									MinReplicas: &scannerMinReplicas,
+									MaxReplicas: &scannerMaxReplicas,
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									Resources: &corev1.ResourceRequirements{
+										Limits: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("90"),
+											corev1.ResourceMemory: resource.MustParse("100"),
+										},
+										Requests: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("110"),
+											corev1.ResourceMemory: resource.MustParse("120"),
+										},
+									},
+									NodeSelector: map[string]string{
+										"scanner-v4-indexer-node-selector": "test",
+									},
+									Tolerations: []*corev1.Toleration{
+										{Key: "scanner-v4-indexer-toleration", Operator: corev1.TolerationOpExists},
+									},
+								},
+							},
+							Matcher: &platform.ScannerV4Component{
+								Scaling: &platform.ScannerComponentScaling{
+									AutoScaling: &scannerAutoScalingPolicy,
+									Replicas:    &scannerReplicas,
+									MinReplicas: &scannerMinReplicas,
+									MaxReplicas: &scannerMaxReplicas,
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									Resources: &corev1.ResourceRequirements{
+										Limits: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("90"),
+											corev1.ResourceMemory: resource.MustParse("100"),
+										},
+										Requests: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("110"),
+											corev1.ResourceMemory: resource.MustParse("120"),
+										},
+									},
+									NodeSelector: map[string]string{
+										"scanner-v4-matcher-node-selector": "test",
+									},
+									Tolerations: []*corev1.Toleration{
+										{Key: "scanner-v4-matcher-toleration", Operator: corev1.TolerationOpExists},
+									},
+								},
+							},
+							DB: &platform.ScannerV4DB{
+								Persistence: &platform.ScannerV4Persistence{
+									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
+										ClaimName: pointer.String("scanner-v4-db-pvc"),
+									},
+								},
+								DeploymentSpec: platform.DeploymentSpec{
+									Resources: &corev1.ResourceRequirements{
+										Limits: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("90"),
+											corev1.ResourceMemory: resource.MustParse("100"),
+										},
+										Requests: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse("110"),
+											corev1.ResourceMemory: resource.MustParse("120"),
+										},
+									},
+									NodeSelector: map[string]string{
+										"scanner-v4-db-node-selector": "test",
+									},
+									Tolerations: []*corev1.Toleration{
+										{Key: "scanner-v4-db-toleration", Operator: corev1.TolerationOpExists},
+									},
+								},
 							},
 						},
 						Customize: &platform.CustomizeSpec{
@@ -533,6 +613,81 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": true,
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+					"indexer": map[string]interface{}{
+						"autoscaling": map[string]interface{}{
+							"disable":     false,
+							"minReplicas": int32(6),
+							"maxReplicas": int32(8),
+						},
+						"replicas": int32(7),
+						"resources": map[string]interface{}{
+							"limits": map[string]interface{}{
+								"cpu":    "90",
+								"memory": "100",
+							},
+							"requests": map[string]interface{}{
+								"cpu":    "110",
+								"memory": "120",
+							},
+						},
+						"nodeSelector": map[string]string{
+							"scanner-v4-indexer-node-selector": "test",
+						},
+						"tolerations": []map[string]interface{}{
+							{"key": "scanner-v4-indexer-toleration", "operator": "Exists"},
+						},
+					},
+					"matcher": map[string]interface{}{
+						"autoscaling": map[string]interface{}{
+							"disable":     false,
+							"minReplicas": int32(6),
+							"maxReplicas": int32(8),
+						},
+						"replicas": int32(7),
+						"resources": map[string]interface{}{
+							"limits": map[string]interface{}{
+								"cpu":    "90",
+								"memory": "100",
+							},
+							"requests": map[string]interface{}{
+								"cpu":    "110",
+								"memory": "120",
+							},
+						},
+						"nodeSelector": map[string]string{
+							"scanner-v4-matcher-node-selector": "test",
+						},
+						"tolerations": []map[string]interface{}{
+							{"key": "scanner-v4-matcher-toleration", "operator": "Exists"},
+						},
+					},
+					"db": map[string]interface{}{
+						"resources": map[string]interface{}{
+							"limits": map[string]interface{}{
+								"cpu":    "90",
+								"memory": "100",
+							},
+							"requests": map[string]interface{}{
+								"cpu":    "110",
+								"memory": "120",
+							},
+						},
+						"nodeSelector": map[string]string{
+							"scanner-v4-db-node-selector": "test",
+						},
+						"tolerations": []map[string]interface{}{
+							{"key": "scanner-v4-db-toleration", "operator": "Exists"},
+						},
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"claimName":   "scanner-v4-db-pvc",
+								"createClaim": true,
+							},
+						},
+					},
 				},
 			},
 		},

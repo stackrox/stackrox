@@ -36,7 +36,7 @@ var (
 		},
 	}
 
-	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 )
 
 func TestNIST443_Success(t *testing.T) {

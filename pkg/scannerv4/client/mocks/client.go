@@ -56,6 +56,21 @@ func (mr *MockScannerMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockScanner)(nil).Close))
 }
 
+// GetMatcherMetadata mocks base method.
+func (m *MockScanner) GetMatcherMetadata(arg0 context.Context) (*v4.Metadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMatcherMetadata", arg0)
+	ret0, _ := ret[0].(*v4.Metadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMatcherMetadata indicates an expected call of GetMatcherMetadata.
+func (mr *MockScannerMockRecorder) GetMatcherMetadata(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatcherMetadata", reflect.TypeOf((*MockScanner)(nil).GetMatcherMetadata), arg0)
+}
+
 // GetOrCreateImageIndex mocks base method.
 func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
 	m.ctrl.T.Helper()
@@ -69,6 +84,21 @@ func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth)
+}
+
+// GetVulnerabilities mocks base method.
+func (m *MockScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVulnerabilities", ctx, ref, contents)
+	ret0, _ := ret[0].(*v4.VulnerabilityReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVulnerabilities indicates an expected call of GetVulnerabilities.
+func (mr *MockScannerMockRecorder) GetVulnerabilities(ctx, ref, contents any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockScanner)(nil).GetVulnerabilities), ctx, ref, contents)
 }
 
 // IndexAndScanImage mocks base method.

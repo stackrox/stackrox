@@ -78,7 +78,7 @@ describe(Cypress.spec.relative, () => {
         // Another request should be made after the user stops typing
         cy.get('@autocomplete.all').should('have.length', 2);
         cy.get('@autocomplete').then(({ request }) => {
-            expect(request.body.variables.query).to.equal('CVE:CVE');
+            expect(request.body.variables.query).to.equal('CVE:r/CVE');
         });
 
         // No additional requests should be made as the user is typing
@@ -90,7 +90,7 @@ describe(Cypress.spec.relative, () => {
         // Another request should be made after the user stops typing
         cy.get('@autocomplete.all').should('have.length', 3);
         cy.get('@autocomplete').then(({ request }) => {
-            expect(request.body.variables.query).to.equal('CVE:CVE-123');
+            expect(request.body.variables.query).to.equal('CVE:r/CVE-123');
         });
 
         // Change the search category
@@ -113,7 +113,7 @@ describe(Cypress.spec.relative, () => {
         // Another request should be made after the user stops typing
         cy.get('@autocomplete.all').should('have.length', 5);
         cy.get('@autocomplete').then(({ request }) => {
-            expect(request.body.variables.query).to.equal('IMAGE:docker.io');
+            expect(request.body.variables.query).to.equal('IMAGE:r/docker.io');
         });
     });
 });

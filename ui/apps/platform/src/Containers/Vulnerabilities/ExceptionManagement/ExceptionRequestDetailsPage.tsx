@@ -42,6 +42,7 @@ import RequestApprovalButtonModal from './components/RequestApprovalButtonModal'
 import RequestDenialButtonModal from './components/RequestDenialButtonModal';
 import RequestCancelButtonModal from './components/RequestCancelButtonModal';
 import RequestUpdateButtonModal from './components/RequestUpdateButtonModal';
+import { getVulnerabilityState } from './utils';
 
 import './ExceptionRequestDetailsPage.css';
 
@@ -154,13 +155,15 @@ function ExceptionRequestDetailsPage() {
     const showApproveDenyButtons =
         hasWriteAccessForApproving &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
-    const showCancelButton = currentUser.userId === requester.id;
+    const showCancelButton = currentUser.userId === requester.id && status !== 'DENIED';
     const showUpdateButton =
         currentUser.userId === requester.id &&
         (status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
+
+    const vulnerabilityState = getVulnerabilityState(vulnerabilityException);
 
     return (
         <>
@@ -240,6 +243,7 @@ function ExceptionRequestDetailsPage() {
                         cves={relevantCVEs}
                         scope={scope}
                         expandedRowSet={expandedRowSet}
+                        vulnerabilityState={vulnerabilityState}
                     />
                 </PageSection>
             </PageSection>

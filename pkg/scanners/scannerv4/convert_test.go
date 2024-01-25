@@ -54,13 +54,26 @@ func TestConvert(t *testing.T) {
 	inReport := &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
 			Environments: map[string]*v4.Environment_List{
-				"1": {Environments: []*v4.Environment{
-					{IntroducedIn: "hash"},
-				}},
+				"1": {
+					Environments: []*v4.Environment{
+						{
+							PackageDb:    "maven:opt/java/pkg.jar",
+							IntroducedIn: "hash",
+						},
+					},
+				},
+			},
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "rhel",
+					VersionId: "9",
+				},
 			},
 			Packages: []*v4.Package{
 				{
-					Id: "1",
+					Id:      "1",
+					Name:    "my-java-pkg",
+					Version: "1.2.3",
 				},
 			},
 		},
@@ -73,13 +86,19 @@ func TestConvert(t *testing.T) {
 			},
 		},
 		PackageVulnerabilities: map[string]*v4.StringList{
-			"1": {Values: []string{"CVE1-ID"}},
+			"1": {
+				Values: []string{"CVE1-ID"},
+			},
 		},
 	}
 
 	expected := &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{
 			{
+				Name:          "my-java-pkg",
+				Version:       "1.2.3",
+				Source:        storage.SourceType_JAVA,
+				Location:      "opt/java/pkg.jar",
 				HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 				Vulns: []*storage.EmbeddedVulnerability{
 					{
@@ -91,11 +110,166 @@ func TestConvert(t *testing.T) {
 				},
 			},
 		},
-		OperatingSystem: "unknown",
+		OperatingSystem: "rhel:9",
 	}
 
 	actual := imageScan(inMetadata, inReport)
 
 	assert.Equal(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
+}
+
+func TestParsePackageDB(t *testing.T) {
+	testcases := []struct {
+		packageDB          string
+		expectedSourceType storage.SourceType
+		expectedLocation   string
+	}{
+		{
+			packageDB:          "var/lib/dpkg/status",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "var/lib/dpkg/status",
+		},
+		{
+			packageDB:          "sqlite:var/lib/rpm/rpmdb.sqlite",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "var/lib/rpm/rpmdb.sqlite",
+		},
+		{
+			packageDB:          "go:usr/local/bin/scanner",
+			expectedSourceType: storage.SourceType_GO,
+			expectedLocation:   "usr/local/bin/scanner",
+		},
+		{
+			packageDB:          "file:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "jar:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "maven:pkg.jar",
+			expectedSourceType: storage.SourceType_JAVA,
+			expectedLocation:   "pkg.jar",
+		},
+		{
+			packageDB:          "nodejs:package.json",
+			expectedSourceType: storage.SourceType_NODEJS,
+			expectedLocation:   "package.json",
+		},
+		{
+			packageDB:          "python:hello/.egg-info",
+			expectedSourceType: storage.SourceType_PYTHON,
+			expectedLocation:   "hello/.egg-info",
+		},
+		{
+			packageDB:          "ruby:opt/specifications/howdy.gemspec",
+			expectedSourceType: storage.SourceType_RUBY,
+			expectedLocation:   "opt/specifications/howdy.gemspec",
+		},
+		{
+			packageDB:          "h:e:llo",
+			expectedSourceType: storage.SourceType_OS,
+			expectedLocation:   "h:e:llo",
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.packageDB, func(t *testing.T) {
+			source, location := parsePackageDB(testcase.packageDB)
+			assert.Equal(t, testcase.expectedSourceType, source)
+			assert.Equal(t, testcase.expectedLocation, location)
+		})
+	}
+}
+
+func TestOS(t *testing.T) {
+	testcases := []struct {
+		expected string
+		report   *v4.VulnerabilityReport
+	}{
+		{
+			expected: "rhel:9",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "rhel",
+							VersionId: "9",
+							Version:   "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "ubuntu:22.04",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "ubuntu",
+							VersionId: "22.04",
+							Version:   "22.04 (Jammy)",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "debian:12",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "debian",
+							VersionId: "12",
+							Version:   "12 (bookworm)",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "alpine:3.18",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "alpine",
+							VersionId: "3.18",
+							Version:   "3.18",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "unknown",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: []*v4.Distribution{
+						{
+							Did:       "alpine",
+							VersionId: "3.18",
+							Version:   "3.18",
+						},
+						{
+							Did: "idk",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := os(testcase.report)
+			assert.Equal(t, testcase.expected, name)
+		})
+	}
 }

@@ -136,7 +136,7 @@ func TestNIST414_Success(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestNIST414_FAIL(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)

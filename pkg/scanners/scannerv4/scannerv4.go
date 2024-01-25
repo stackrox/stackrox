@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -15,18 +16,25 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 var (
-	_ types.Scanner = (*scannerv4)(nil)
+	_ types.Scanner                  = (*scannerv4)(nil)
+	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
-	defaultIndexerEndpoint    = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
-	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+	// DefaultIndexerEndpoint is the default gRPC endpoint for the indexer.
+	DefaultIndexerEndpoint = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
+
+	// DefaultMatcherEndpoint is the default gRPC endpoint for the matcher.
+	DefaultMatcherEndpoint = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+
 	defaultMaxConcurrentScans = int64(30)
 
-	scanTimeout = env.ScanTimeout.DurationSetting()
+	scanTimeout     = env.ScanTimeout.DurationSetting()
+	metadataTimeout = 1 * time.Minute
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -48,15 +56,15 @@ type scannerv4 struct {
 func newScanner(integration *storage.ImageIntegration, activeRegistries registries.Set) (*scannerv4, error) {
 	conf := integration.GetScannerV4()
 	if conf == nil {
-		return nil, errors.New("Scanner V4 configuration required")
+		return nil, errors.New("scanner V4 configuration required")
 	}
 
-	indexerEndpoint := defaultIndexerEndpoint
+	indexerEndpoint := DefaultIndexerEndpoint
 	if conf.IndexerEndpoint != "" {
 		indexerEndpoint = conf.IndexerEndpoint
 	}
 
-	matcherEndpoint := defaultMatcherEndpoint
+	matcherEndpoint := DefaultMatcherEndpoint
 	if conf.MatcherEndpoint != "" {
 		matcherEndpoint = conf.MatcherEndpoint
 	}
@@ -71,8 +79,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
-		// TODO(ROX-19050): Set the Scanner V4 TLS validation when certificates are ready.
-		// client.SkipTLSVerification,
 	)
 	if err != nil {
 		return nil, err
@@ -136,8 +142,17 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	// TODO(ROX-21040): Implementation dependent on the API existing.
-	return nil, errors.New("ScannerV4 - GetVulnDefinitionsInfo NOT Implemented")
+	ctx, cancel := context.WithTimeout(context.Background(), metadataTimeout)
+	defer cancel()
+
+	metadata, err := s.scannerClient.GetMatcherMetadata(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("pulling metadata from matcher: %w", err)
+	}
+
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: metadata.GetLastVulnerabilityUpdate(),
+	}, nil
 }
 
 func (s *scannerv4) Match(image *storage.ImageName) bool {
@@ -156,4 +171,33 @@ func (s *scannerv4) Test() error {
 
 func (s *scannerv4) Type() string {
 	return types.ScannerV4
+}
+
+func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.ScanComponents, _ []scannerv1.Note) (*storage.ImageScan, error) {
+	v4Contents := components.ScannerV4()
+
+	digest, err := pkgscanner.DigestFromImage(image)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
+	if err != nil {
+		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+
+	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+		image.GetName().GetFullName(),
+		vr.GetHashId(),
+		len(vr.GetContents().GetDistributions()),
+		len(vr.GetContents().GetEnvironments()),
+		len(vr.GetContents().GetPackages()),
+		len(vr.GetContents().GetRepositories()),
+		len(vr.GetPackageVulnerabilities()),
+		len(vr.GetVulnerabilities()),
+	)
+
+	return imageScan(image.GetMetadata(), vr), nil
 }

@@ -469,7 +469,7 @@ module.exports = [
         },
     },
     {
-        files: ['cypress/**/*.js'], // helpers (and so on) for integration tests
+        files: ['cypress/**/*.{js,ts}'], // helpers (and so on) for integration tests
 
         languageOptions: {
             ...parserAndOptions,
@@ -482,7 +482,7 @@ module.exports = [
     },
     {
         files: [
-            'cypress/integration/**/*.test.js', // integration tests
+            'cypress/integration/**/*.test.{js,ts}', // integration tests
             'src/**/*.cy.jsx', // component tests
         ],
 

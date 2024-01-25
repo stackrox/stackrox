@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
@@ -35,6 +37,12 @@ type Scanner interface {
 	// for that image does not exist, it is created. It returns the vulnerability
 	// report.
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator) (*v4.VulnerabilityReport, error)
+
+	// GetVulnerabilities will match vulnerabilities to the contents provided.
+	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error)
+
+	// GetMatcherMetadata returns metadata from the matcher.
+	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -100,7 +108,12 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		connOpt.TLS.UseClientCert = clientconn.MustUseClientCert
 		connOpt.TLS.ServerName = o.serverName
 	}
-	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt)
+
+	callOpts := []grpc.CallOption{
+		grpc.MaxCallRecvMsgSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+	}
+
+	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
@@ -173,16 +186,46 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 	if err != nil {
 		return nil, fmt.Errorf("get or create index: %w", err)
 	}
-	req := &v4.GetVulnerabilitiesRequest{HashId: ir.GetHashId()}
+
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
+}
+
+func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "GetVulnerabilities",
+		"image", ref.String(),
+	)
+
+	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents)
+}
+
+func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
-	err = retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
 		vr, err = c.matcher.GetVulnerabilities(ctx, req)
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
+
 	return vr, nil
+}
+
+func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
+	var m *v4.Metadata
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
+		var err error
+		m, err = c.matcher.GetMetadata(ctx, &types.Empty{})
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get metadata: %w", err)
+	}
+	return m, nil
 }
 
 func getImageManifestID(ref name.Digest) string {

@@ -120,7 +120,7 @@ type ImageEnricher interface {
 	EnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
 	// EnrichWithVulnerabilities will enrich an image with its components and their associated vulnerabilities only.
 	// This will always force re-enrichment and not take existing values into account.
-	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
+	EnrichWithVulnerabilities(image *storage.Image, components *scannerTypes.ScanComponents, notes []scannerV1.Note) (EnrichmentResult, error)
 	// EnrichWithSignatureVerificationData will enrich an image with signature verification results only.
 	// This will always force re-verification and not take existing values into account.
 	EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error)

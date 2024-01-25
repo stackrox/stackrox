@@ -8,16 +8,6 @@ export PATH
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-TAG := # make sure tag is never injectable as an env var
-
-ifdef CI
-ifneq ($(NIGHTLY_TAG),)
-	TAG := $(NIGHTLY_TAG)
-else ifneq ($(RELEASE_TAG),)
-	TAG := $(RELEASE_TAG)
-endif
-endif
-
 ifeq ($(TAG),)
 	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
 endif
@@ -33,7 +23,8 @@ GOOS := $(HOST_OS)
 GO_BUILD_FLAGS = CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${GOARCH}
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
-                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)"
+                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
+                   -tags=$(GOTAGS)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
@@ -140,10 +131,6 @@ db-image:
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
 ###########
-## Tests ##
-###########
-
-###########
 ## Tools ##
 ###########
 
@@ -164,6 +151,20 @@ SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
+
+#################
+## Integration ##
+#################
+
+integration-timeout := 20m
+
+db-integration-d := datastore/postgres
+db-integration-go-tag  := scanner_db_integration
+
+.PHONY: db-integration-test
+db-integration-test: $(build-deps-t)
+	@echo "+ $@"
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##

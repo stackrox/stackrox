@@ -25,7 +25,7 @@ func TestFetch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := u.Configure(ctx, func(_ interface{}) error { return nil }, srv.Client()); err != nil {
+		if err := u.Configure(ctx, func(_ any) error { return nil }, srv.Client()); err != nil {
 			t.Fatal(err)
 		}
 		rd, hint, err := u.Fetch(ctx, driver.Fingerprint(""))
@@ -58,7 +58,7 @@ func TestFetch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := u.Configure(ctx, func(_ interface{}) error { return nil }, srv.Client()); err != nil {
+		if err := u.Configure(ctx, func(_ any) error { return nil }, srv.Client()); err != nil {
 			t.Fatal(err)
 		}
 		rd, hint, err := u.Fetch(ctx, "")

@@ -7,6 +7,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -123,40 +124,126 @@ func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
 	return &globalMonitoring
 }
 
-// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
-func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
-	if analyzer.GetScaling() != nil {
-		scaling := analyzer.GetScaling()
-		sv.SetInt32("replicas", scaling.Replicas)
-
-		autoscaling := NewValuesBuilder()
-		if scaling.AutoScaling != nil {
-			switch *scaling.AutoScaling {
-			case platform.ScannerAutoScalingDisabled:
-				autoscaling.SetBoolValue("disable", true)
-			case platform.ScannerAutoScalingEnabled:
-				autoscaling.SetBoolValue("disable", false)
-			default:
-				autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
-			}
-		}
-		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
-		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
-		sv.AddChild("autoscaling", &autoscaling)
+// SetScannerComponentDisableValue sets the value for the 'disable' key for scanner values
+func SetScannerComponentDisableValue(sv *ValuesBuilder, scannerComponent *platform.ScannerComponentPolicy) {
+	if scannerComponent == nil {
+		return
 	}
 
-	if analyzer != nil {
-		sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
-		sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
-		sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+	switch *scannerComponent {
+	case platform.ScannerComponentDisabled:
+		sv.SetBoolValue("disable", true)
+	case platform.ScannerComponentEnabled:
+		sv.SetBoolValue("disable", false)
+	default:
+		sv.SetError(fmt.Errorf("invalid ScannerComponentPolicy %q", *scannerComponent))
 	}
 }
 
-// SetScannerDBValues sets values in "sb" based on "db".
+// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+	if analyzer == nil {
+		return
+	}
+	setScannerComponentScaling(sv, analyzer.GetScaling())
+	sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
+	sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+}
+
+// SetScannerDBValues sets values in "sv" based on "db".
 func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 	if db != nil {
 		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
 		sv.AddChild("dbResources", GetResources(db.Resources))
 		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
 	}
+}
+
+// SetScannerV4DBValues sets values in "sv" based on "db"
+func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
+	if db == nil {
+		return
+	}
+
+	dbVB := NewValuesBuilder()
+	dbVB.SetStringMap("nodeSelector", db.NodeSelector)
+	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
+	dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
+	setScannerV4DBPersistence(&dbVB, db.Persistence)
+
+	sv.AddChild("db", &dbVB)
+}
+
+func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV4Persistence) {
+	if persistence == nil {
+		return
+	}
+
+	hostPath := persistence.GetHostPath()
+	pvc := persistence.GetPersistentVolumeClaim()
+
+	if hostPath != "" && pvc != nil {
+		sv.SetError(errors.New("invalid persistence configuration, either hostPath or persistentVolumeClaim must be set, not both"))
+		return
+	}
+
+	persistenceVB := NewValuesBuilder()
+	if hostPath != "" {
+		persistenceVB.SetStringValue("hostPath", hostPath)
+	}
+
+	if pvc != nil {
+		// Unlike central-db's PVC we don't use the extension.ReconcilePVCExtension.
+		// The operator creates this PVC through the helm chart. This means it is managed
+		// by the default helm lifecycle, instead of the operator extension. The difference is
+		// that the extension prevents central DB's PVC deletion on deletion of the CR.
+		// Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
+		// through the helm uninstall if a CR is deleted.
+		pvcBuilder := NewValuesBuilder()
+		pvcBuilder.SetString("claimName", pvc.ClaimName)
+		pvcBuilder.SetBool("createClaim", pointer.Bool(true))
+		pvcBuilder.SetString("storageClass", pvc.StorageClassName)
+		pvcBuilder.SetString("size", pvc.Size)
+		persistenceVB.AddChild("persistentVolumeClaim", &pvcBuilder)
+	}
+
+	sv.AddChild("persistence", &persistenceVB)
+}
+
+// SetScannerV4ComponentValues sets values in "sv" based on "component"
+func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component) {
+	if component == nil {
+		return
+	}
+
+	componentVB := NewValuesBuilder()
+	setScannerComponentScaling(&componentVB, component.Scaling)
+	componentVB.SetStringMap("nodeSelector", component.NodeSelector)
+	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
+	componentVB.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+	sv.AddChild(componentKey, &componentVB)
+}
+
+func setScannerComponentScaling(sv *ValuesBuilder, scaling *platform.ScannerComponentScaling) {
+	if scaling == nil {
+		return
+	}
+
+	sv.SetInt32("replicas", scaling.Replicas)
+	autoscalingVB := NewValuesBuilder()
+	if scaling.AutoScaling != nil {
+		switch *scaling.AutoScaling {
+		case platform.ScannerAutoScalingDisabled:
+			autoscalingVB.SetBoolValue("disable", true)
+		case platform.ScannerAutoScalingEnabled:
+			autoscalingVB.SetBoolValue("disable", false)
+		default:
+			autoscalingVB.SetError(fmt.Errorf("invalid scanner autoscaling %q", *scaling.AutoScaling))
+		}
+	}
+
+	autoscalingVB.SetInt32("maxReplicas", scaling.MaxReplicas)
+	autoscalingVB.SetInt32("minReplicas", scaling.MinReplicas)
+	sv.AddChild("autoscaling", &autoscalingVB)
 }

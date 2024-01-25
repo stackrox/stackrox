@@ -43,7 +43,7 @@ type ImageScannerWithDataSource interface {
 // ImageVulnerabilityGetter is a scanner which can retrieve vulnerabilities
 // which exist in the given image components and the scan notes for the given image.
 type ImageVulnerabilityGetter interface {
-	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
+	GetVulnerabilities(image *storage.Image, components *ScanComponents, notes []scannerV1.Note) (*storage.ImageScan, error)
 }
 
 // NodeScanner is the interface all node scanners must implement

@@ -25,6 +25,10 @@ var (
 				GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
 
@@ -36,6 +40,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanConfigurationV2)(nil)), "compliance_operator_scan_configuration_v2")
 		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster":                     ClustersSchema,
 			"storage.ComplianceOperatorProfileV2": ComplianceOperatorProfileV2Schema,
 		}
 
@@ -43,6 +48,9 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, "complianceoperatorscanconfigurationv2", (*storage.ComplianceOperatorScanConfigurationV2)(nil)))
+		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_COMPLIANCE_SCAN_CONFIG,
+		}...)
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorScanConfigurationV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, schema)
@@ -55,6 +63,8 @@ const (
 	ComplianceOperatorScanConfigurationV2TableName = "compliance_operator_scan_configuration_v2"
 	// ComplianceOperatorScanConfigurationV2ProfilesTableName specifies the name of the table in postgres.
 	ComplianceOperatorScanConfigurationV2ProfilesTableName = "compliance_operator_scan_configuration_v2_profiles"
+	// ComplianceOperatorScanConfigurationV2ClustersTableName specifies the name of the table in postgres.
+	ComplianceOperatorScanConfigurationV2ClustersTableName = "compliance_operator_scan_configuration_v2_clusters"
 )
 
 // ComplianceOperatorScanConfigurationV2 holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2`.
@@ -69,6 +79,14 @@ type ComplianceOperatorScanConfigurationV2 struct {
 type ComplianceOperatorScanConfigurationV2Profiles struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
 	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2profiles_idx,type:btree"`
-	ProfileID                                string                                `gorm:"column:profileid;type:varchar"`
+	ProfileName                              string                                `gorm:"column:profilename;type:varchar"`
+	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// ComplianceOperatorScanConfigurationV2Clusters holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_clusters`.
+type ComplianceOperatorScanConfigurationV2Clusters struct {
+	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
+	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2clusters_idx,type:btree"`
+	ClusterID                                string                                `gorm:"column:clusterid;type:uuid;index:complianceoperatorscanconfigurationv2clusters_sac_filter,type:hash"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

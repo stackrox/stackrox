@@ -55,7 +55,7 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 	requestID := uuid.NewV4().String()
 
 	var timeoutMs int64
-	if deadline, ok := ctx.Deadline(); ok {
+	if deadline, ok := subCtx.Deadline(); ok {
 		timeoutMs = time.Until(deadline).Milliseconds()
 		if timeoutMs <= 0 {
 			return errors.New("deadline already expired")
@@ -86,8 +86,8 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		c.returnChans[requestID] = nil
 	})
 
-	if err := c.injector.InjectMessage(ctx, msg); err != nil {
-		return errors.Wrap(err, "could not pull telemetry data")
+	if err := c.injector.InjectMessage(subCtx, msg); err != nil {
+		return errors.Wrapf(err, "could not pull telemetry data for type %s", dataType.String())
 	}
 
 	hasEOS := false
@@ -107,8 +107,8 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 	for {
 		var resp *central.TelemetryResponsePayload
 		select {
-		case <-ctx.Done():
-			return errors.Wrap(ctx.Err(), "context error")
+		case <-subCtx.Done():
+			return errors.Wrap(subCtx.Err(), "context error")
 		case <-c.stopSig.Done():
 			return errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
 		case <-progressTicker.C:

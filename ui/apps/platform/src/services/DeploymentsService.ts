@@ -123,9 +123,9 @@ export function fetchDeploymentsWithProcessInfoLegacy(
     }
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(
-            `${deploymentsWithProcessUrl}?${params}`
-        )
+        .get<{
+            deployments: ListDeploymentWithProcessInfo[];
+        }>(`${deploymentsWithProcessUrl}?${params}`)
         .then((response) => response?.data?.deployments ?? []);
 }
 

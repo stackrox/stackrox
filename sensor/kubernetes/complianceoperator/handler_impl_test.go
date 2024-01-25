@@ -265,7 +265,7 @@ func (s *HandlerTestSuite) TestProcessDeleteScanConfigNotFound() {
 
 func (s *HandlerTestSuite) TestProcessRerunScanSuccess() {
 	// create
-	complianceScan := &v1alpha1.ComplianceScan{
+	complianceSuite := &v1alpha1.ComplianceSuite{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
@@ -275,9 +275,9 @@ func (s *HandlerTestSuite) TestProcessRerunScanSuccess() {
 			Namespace: "ns",
 		},
 	}
-	obj, err := runtimeObjToUnstructured(complianceScan)
+	obj, err := runtimeObjToUnstructured(complianceSuite)
 	s.Require().NoError(err)
-	_, err = s.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).
+	_, err = s.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).
 		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)
 
@@ -296,7 +296,7 @@ func (s *HandlerTestSuite) TestProcessRerunScanNotFound() {
 	msg := getTestRerunScanMsg("midnight")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
-		errSubstr: "namespaces/ns/compliancescans/midnight not found",
+		errSubstr: "namespaces/ns/compliancesuites/midnight not found",
 	}
 
 	s.statusInfo.EXPECT().GetNamespace().Return("ns")

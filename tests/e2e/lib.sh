@@ -17,27 +17,31 @@ export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 
 # shellcheck disable=SC2120
 deploy_stackrox() {
+    local tls_client_certs=${1:-}
+    local central_namespace=${2:-stackrox}
+    local sensor_namespace=${3:-stackrox}
+
     setup_podsecuritypolicies_config
 
     deploy_stackrox_operator
 
-    deploy_central
+    deploy_central "${central_namespace}"
 
     export_central_basic_auth_creds
-    wait_for_api
-    setup_client_TLS_certs "${1:-}"
-    record_build_info
+    wait_for_api "${central_namespace}"
+    setup_client_TLS_certs "${tls_client_certs}"
+    record_build_info "${central_namespace}"
 
-    deploy_sensor
+    deploy_sensor "${sensor_namespace}" "${central_namespace}"
     echo "Sensor deployed. Waiting for sensor to be up"
-    sensor_wait
+    sensor_wait "${sensor_namespace}"
 
     # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n stackrox delete pod -l app=collector --grace-period=0
+    kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
 
-    sensor_wait
+    sensor_wait "${sensor_namespace}"
 
-    wait_for_collectors_to_be_operational
+    wait_for_collectors_to_be_operational "${sensor_namespace}"
 
     touch "${STATE_DEPLOYED}"
 }
@@ -45,8 +49,13 @@ deploy_stackrox() {
 # shellcheck disable=SC2120
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
-        die "expected central chart version and sensor chart version as parameters in deploy_stackrox_with_custom_central_and_sensor_versions: deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
+        die "expected central chart version and sensor chart version as parameters in \
+          deploy_stackrox_with_custom_central_and_sensor_versions: \
+          deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
     fi
+    local central_version="$1"
+    local sensor_version="$2"
+
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
 
@@ -58,8 +67,8 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     current_tag="$(make tag --quiet --no-print-directory)"
 
     helm_charts="$(helm search repo "${helm_repo_name}" -l)"
-    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${CENTRAL_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${SENSOR_CHART_VERSION_OVERRIDE}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${central_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
+    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${sensor_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
 
     charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
 
@@ -68,10 +77,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if  [[ $helm_charts =~ $central_regex ]]; then
         central_chart="${helm_repo_name}/${chart_name}"
         ci_export CENTRAL_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${central_chart}" --version "${CENTRAL_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        helm pull "${central_chart}" --version "${central_version}" --untar --untardir "${charts_dir}"
         echo "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" != "$CENTRAL_CHART_VERSION_OVERRIDE" ]]; then
-        echo >&2 "${chart_name} helm chart for version ${CENTRAL_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the current tag."
+    elif [[ "$current_tag" != "${central_version}" ]]; then
+        echo >&2 "${chart_name} helm chart for version ${central_version} not found in ${helm_repo_name} repo nor is it the current tag."
         exit 1
     fi
 
@@ -82,18 +91,18 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ $helm_charts =~ $sensor_regex ]]; then
         sensor_chart="${helm_repo_name}/${chart_name}"
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${sensor_chart}" --version "${SENSOR_CHART_VERSION_OVERRIDE}" --untar --untardir "${charts_dir}"
+        helm pull "${sensor_chart}" --version "${sensor_version}" --untar --untardir "${charts_dir}"
         echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" == "$SENSOR_CHART_VERSION_OVERRIDE" ]]; then
+    elif [[ "$current_tag" == "${sensor_version}" ]]; then
         if [[ $(roxctl version) != "$current_tag" ]]; then
             echo >&2 "Reported roxctl version $(roxctl version) is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
             exit 1
         fi
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
         roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} to ${SENSOR_CHART_DIR_OVERRIDE}"
+        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE}"
     else
-        echo >&2 "${chart_name} helm chart for version ${SENSOR_CHART_VERSION_OVERRIDE} not found in ${helm_repo_name} repo nor is it the latest tag."
+        echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
     fi
 
@@ -140,6 +149,7 @@ export_test_environment() {
     ci_export ROX_SCANNER_V4_SUPPORT "${ROX_SCANNER_V4_SUPPORT:-true}"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
+    ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -173,7 +183,8 @@ deploy_stackrox_operator() {
 }
 
 deploy_central() {
-    info "Deploying central"
+    local central_namespace=${1:-stackrox}
+    info "Deploying central to namespace ${central_namespace}"
 
     # If we're running a nightly build or race condition check, then set CGO_CHECKS=true so that central is
     # deployed with strict checks
@@ -186,7 +197,7 @@ deploy_central() {
     fi
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_central_via_operator
+        deploy_central_via_operator "${central_namespace}"
     else
         if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
             if pr_has_label ci-helm-deploy; then
@@ -195,12 +206,14 @@ deploy_central() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/central.sh"
+        CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
 }
 
+# shellcheck disable=SC2120
 deploy_central_via_operator() {
-    info "Deploying central via operator"
+    local central_namespace=${1:-stackrox}
+    info "Deploying central via operator into namespace ${central_namespace}"
 
     make -C operator stackrox-image-pull-secret
 
@@ -246,6 +259,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_CREDENTIALS'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
+    customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -260,18 +275,22 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < "${CENTRAL_YAML_PATH}" | kubectl apply -n stackrox -f -
+      < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
-    wait_for_object_to_appear stackrox deploy/central 300
+    wait_for_object_to_appear "${central_namespace}" deploy/central 300
 }
 
+# shellcheck disable=SC2120
 deploy_sensor() {
-    info "Deploying sensor"
+    local sensor_namespace=${1:-stackrox}
+    local central_namespace=${2:-stackrox}
+
+    info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
     ci_export ROX_AFTERGLOW_PERIOD "15"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_sensor_via_operator
+        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
             echo "Deploying Sensor using Helm ..."
@@ -287,7 +306,7 @@ deploy_sensor() {
         fi
 
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
-        "$ROOT/${DEPLOY_DIR}/sensor.sh"
+        CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
@@ -295,19 +314,22 @@ deploy_sensor() {
         # https://stack-rox.atlassian.net/browse/ROX-5334
         # https://stack-rox.atlassian.net/browse/ROX-6891
         # et al.
-        kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+        kubectl -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
     fi
 }
 
+# shellcheck disable=SC2120
 deploy_sensor_via_operator() {
-    info "Deploying sensor via operator"
+    local sensor_namespace=${1:-stackrox}
+    local central_namespace=${2:-stackrox}
+    info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
-    kubectl -n stackrox exec deploy/central -- \
+    kubectl -n "${central_namespace}" exec deploy/central -- \
     roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
         --password "$ROX_PASSWORD" \
         --output-secrets - \
-    | kubectl -n stackrox apply -f -
+    | kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
        echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
@@ -319,18 +341,18 @@ deploy_sensor_via_operator() {
     env - \
       collection_method="$upper_case_collection_method" \
     envsubst \
-      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n stackrox -f -
+      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n "${sensor_namespace}" -f -
 
-    wait_for_object_to_appear stackrox deploy/sensor 300
-    wait_for_object_to_appear stackrox ds/collector 300
+    wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
+    wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then
-       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
 
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
-       kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-       kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       kubectl -n "${sensor_namespace}" set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
+       kubectl -n "${sensor_namespace}" set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 }
 
@@ -371,6 +393,8 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRole.yaml"
+        oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/complianceRoleBinding.yaml"
         wait_for_object_to_appear openshift-compliance deploy/compliance-operator
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
@@ -429,8 +453,10 @@ setup_podsecuritypolicies_config() {
 
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
 # to load kernel objects and create network connections.
+# shellcheck disable=SC2120
 wait_for_collectors_to_be_operational() {
-    info "Will wait for collectors to reach a ready state"
+    local sensor_namespace=${1:-stackrox}
+    info "Will wait for collectors to reach a ready state in namespace ${sensor_namespace}"
 
     local readiness_indicator="Successfully established GRPC stream for signals"
     local timeout=300
@@ -441,13 +467,13 @@ wait_for_collectors_to_be_operational() {
     local all_ready="false"
     while [[ "$all_ready" == "false" ]]; do
         all_ready="true"
-        for pod in $(kubectl -n stackrox get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
+        for pod in $(kubectl -n "${sensor_namespace}" get pods -l app=collector -o json | jq -r '.items[].metadata.name'); do
             echo "Checking readiness of $pod"
-            if kubectl -n stackrox logs -c collector "$pod" | grep "$readiness_indicator" > /dev/null 2>&1; then
+            if kubectl -n "${sensor_namespace}" logs -c collector "${pod}" | grep "${readiness_indicator}" > /dev/null 2>&1; then
                 echo "$pod is deemed ready"
             else
                 info "$pod is not ready"
-                kubectl -n stackrox logs -c collector "$pod"
+                kubectl -n "${sensor_namespace}" logs -c collector "$pod"
                 all_ready="false"
                 break
             fi
@@ -464,21 +490,23 @@ wait_for_collectors_to_be_operational() {
     done
 }
 
+# shellcheck disable=SC2120
 patch_resources_for_test() {
+    local central_namespace=${1:-stackrox}
     info "Patch the loadbalancer and netpol resources for endpoints test"
 
     require_environment "TEST_ROOT"
     require_environment "API_HOSTNAME"
 
-    kubectl -n stackrox patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
-    kubectl -n stackrox apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
+    kubectl -n "${central_namespace}" patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
+    kubectl -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
 
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
         check_endpoint_availability "$target_port"
     done
 
     # Ensure the API is available as well after patching the load balancer.
-    wait_for_api
+    wait_for_api "$central_namespace"
 }
 
 check_endpoint_availability() {
@@ -491,7 +519,6 @@ check_endpoint_availability() {
         sleep 1
     done
     die "Port ${target_port} did not become reachable in time"
-    exit 1
 }
 
 check_stackrox_logs() {
@@ -736,25 +763,62 @@ collect_and_check_stackrox_logs() {
 
 # remove_existing_stackrox_resources() This exists for smoother repeat runs of
 # system tests against the same cluster.
+# shellcheck disable=SC2120
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
+    local namespaces=( "$@" )
+    local psps_supported=false
+    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
+    local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
+
+    if [[ ${#namespaces[@]} == 0 ]]; then
+        namespaces+=( "stackrox" )
+    fi
+
+    info "Tearing down StackRox resources for namespaces ${namespaces[*]}..."
+
+    # Check API Server Capabilities.
+    if kubectl api-resources -o name | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
+        resource_types="${resource_types},SecurityContextConstraints"
+    fi
+    if kubectl api-resources -o name | grep -q "^podsecuritypolicies\.policy$"; then
+        psps_supported=true
+        resource_types="${resource_types},psp"
+    fi
 
     (
+        if [[ "$psps_supported" = "true" ]]; then
+            kubectl delete -R -f scripts/ci/psp --wait
+        fi
+
         # midstream ocp specific
-        kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app=rhacs-operator" --wait
-        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
-        # openshift specific:
-        kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
-        kubectl delete -R -f scripts/ci/psp --wait
-        kubectl delete ns stackrox --wait
-        kubectl delete ns stackrox-operator --wait
-        helm uninstall monitoring
-        helm uninstall central
-        helm uninstall scanner
-        helm uninstall sensor
-        kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
-    # (prefix output to avoid triggering prow log focus)
-    ) 2>&1 | sed -e 's/^/out: /' || true
+        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
+            kubectl -n stackrox-operator delete "$resource_types" -l "app=rhacs-operator" --wait
+        fi
+        kubectl delete --ignore-not-found ns stackrox-operator --wait
+
+        for namespace in "${namespaces[@]}"; do
+            if kubectl get ns "$namespace" >/dev/null 2>&1; then
+                kubectl -n "$namespace" delete "$resource_types" -l "app.kubernetes.io/name=stackrox" --wait
+            fi
+            kubectl delete --ignore-not-found ns "$namespace" --wait
+        done
+
+        kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
+
+        helm list -o json | jq -r '.[] | .name' | while read -r name; do
+            case "$name" in
+                monitoring | central | scanner | sensor)
+                    helm uninstall "$name"
+                    ;;
+            esac
+        done
+
+        kubectl get namespace -o name | grep -E '^namespace/qa' | while read -r namespace; do
+            kubectl delete --wait "$namespace"
+        done
+    ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
+    info "Finished tearing down resources."
 }
 
 remove_compliance_operator_resources() {
@@ -775,14 +839,16 @@ remove_compliance_operator_resources() {
     fi
 }
 
+# shellcheck disable=SC2120
 wait_for_api() {
-    info "Waiting for Central to be ready"
+    local central_namespace=${1:-stackrox}
+    info "Waiting for Central to be ready in namespace ${central_namespace}"
 
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
 
     while true; do
-        central_json="$(kubectl -n stackrox get deploy/central -o json)"
+        central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
         replicas="$(jq '.status.replicas' <<<"$central_json")"
         ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
         curr_time="$(date '+%s')"
@@ -796,8 +862,8 @@ wait_for_api() {
 
         # Timeout case
         if (( elapsed_seconds > max_seconds )); then
-            kubectl -n stackrox get pod -o wide
-            kubectl -n stackrox get deploy -o wide
+            kubectl -n "${central_namespace}" get pod -o wide
+            kubectl -n "${central_namespace}" get deploy -o wide
             echo >&2 "wait_for_api() timeout after $max_seconds seconds."
             exit 1
         fi
@@ -807,18 +873,18 @@ wait_for_api() {
         sleep 5
     done
 
-    info "Central deployment is ready."
+    info "Central deployment is ready in namespace ${central_namespace}."
     info "Waiting for Central API endpoint"
 
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        API_HOSTNAME=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host')
+        API_HOSTNAME=$(kubectl get routes/central -n "${central_namespace}" -o json | jq -r '.spec.host')
         API_PORT=443
     else
         API_HOSTNAME=localhost
         API_PORT=8000
         LOAD_BALANCER="${LOAD_BALANCER:-}"
         if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh "${central_namespace}")
             API_PORT=443
         fi
     fi
@@ -849,11 +915,11 @@ wait_for_api() {
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        info "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        info "Failed to connect to Central in namespace ${central_namespace}. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
         info "port-forwards:"
         pgrep port-forward
         info "pods:"
-        kubectl -n stackrox get pod
+        kubectl -n "${central_namespace}" get pod
         exit 1
     fi
     set -e
@@ -864,7 +930,8 @@ wait_for_api() {
 }
 
 record_build_info() {
-    _record_build_info || {
+    local central_namespace=${1:-stackrox}
+    _record_build_info "${central_namespace}" || {
         # Failure to gather metrics is not a test failure
         info "WARNING: Job build info record failed"
     }
@@ -874,6 +941,8 @@ _record_build_info() {
     if ! is_CI; then
         return
     fi
+
+    local central_namespace=${1:-stackrox}
 
     require_environment "ROX_PASSWORD"
 
@@ -891,7 +960,7 @@ _record_build_info() {
     # -race debug builds - use the image tag as the most reliable way to
     # determine the build under test.
     local central_image
-    central_image="$(kubectl -n stackrox get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
+    central_image="$(kubectl -n "${central_namespace}" get deploy central -o json | jq -r '.spec.template.spec.containers[0].image')"
     if [[ "${central_image}" =~ -rcd$ ]]; then
         build_info="${build_info},-race"
     fi
@@ -919,19 +988,21 @@ update_public_config() {
 }
 
 db_backup_and_restore_test() {
-    info "Running a central database backup and restore test"
+    local output_dir="$1"
+    local central_namespace=${2:-stackrox}
+
+    info "Running a central database backup and restore test (central is expected in namespace ${central_namespace})"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing args. usage: db_backup_and_restore_test <output dir>"
+        die "Missing args. Usage: db_backup_and_restore_test <output dir> [ <namespace> ]"
     fi
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
     # Ensure central is ready for requests after any previous tests
-    wait_for_api
+    wait_for_api "${central_namespace}"
 
-    local output_dir="$1"
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
@@ -949,7 +1020,7 @@ db_backup_and_restore_test() {
         fi
     fi
 
-    wait_for_api
+    wait_for_api "${central_namespace}"
 
     info "Checking to see if restore overwrote previous config"
 
@@ -1016,14 +1087,16 @@ setup_automation_flavor_e2e_cluster() {
 # reach ready. Often times out on OSD. If this call fails in CI we need to
 # identify the source of pull/scheduling latency, request throttling, etc.
 # I tried increasing the timeout from 5m to 20m for OSD but it did not help.
+# shellcheck disable=SC2120
 wait_for_central_db() {
-    info "Waiting for Central DB to start"
+    local central_namespace=${1:-stackrox}
+    info "Waiting for Central DB to start in namespace ${central_namespace}"
 
     start_time="$(date '+%s')"
     max_seconds=300
 
     while true; do
-        central_db_json="$(kubectl -n stackrox get deploy/central-db -o json)"
+        central_db_json="$(kubectl -n "${central_namespace}" get deploy/central-db -o json)"
         replicas="$(jq '.status.replicas' <<<"$central_db_json")"
         ready_replicas="$(jq '.status.readyReplicas' <<<"$central_db_json")"
         curr_time="$(date '+%s')"
@@ -1037,8 +1110,8 @@ wait_for_central_db() {
 
         # Timeout case
         if (( elapsed_seconds > max_seconds )); then
-            kubectl -n stackrox get pod -o wide
-            kubectl -n stackrox get deploy -o wide
+            kubectl -n "${central_namespace}" get pod -o wide
+            kubectl -n "${central_namespace}" get deploy -o wide
             echo >&2 "wait_for_central_db() timeout after $max_seconds seconds."
             exit 1
         fi
@@ -1048,7 +1121,7 @@ wait_for_central_db() {
         sleep 5
     done
 
-    info "Central DB deployment is ready."
+    info "Central DB deployment in namespace ${central_namespace} is ready."
 }
 
 wait_for_object_to_appear() {

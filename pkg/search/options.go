@@ -24,6 +24,7 @@ var (
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
+	ClusterType  = newFieldLabel("Cluster Type")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -212,16 +213,17 @@ var (
 	ComplianceOperatorProfileID            = newFieldLabel("Compliance Profile ID")
 	ComplianceOperatorProfileName          = newFieldLabel("Compliance Profile Name")
 	ComplianceOperatorProfileProductType   = newFieldLabel("Compliance Profile Product Type")
-	ComplianceOperatorProfileUID           = newFieldLabel("Compliance Profile UID")
 	ComplianceOperatorProfileVersion       = newFieldLabel("Compliance Profile Version")
 	ComplianceOperatorStandard             = newFieldLabel("Compliance Standard")
 	ComplianceOperatorScanConfig           = newFieldLabel("Compliance Scan Config ID")
 	ComplianceOperatorScanConfigName       = newFieldLabel("Compliance Scan Config Name")
 	ComplianceOperatorCheckID              = newFieldLabel("Compliance Check ID")
+	ComplianceOperatorCheckUID             = newFieldLabel("Compliance Check UID")
 	ComplianceOperatorCheckName            = newFieldLabel("Compliance Check Name")
 	ComplianceOperatorScanUpdateTime       = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime     = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime = newFieldLabel("Compliance Scan Last Executed Time")
+	ComplianceOperatorRuleType             = newFieldLabel("Compliance Rule Type")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")

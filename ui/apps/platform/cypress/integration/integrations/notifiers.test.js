@@ -253,12 +253,12 @@ describe('Notifier Integrations', () => {
             // Step 1, check empty fields
             getInputByLabel('Integration name').type(' ');
             getInputByLabel('Cloud SCC Source ID').type(' ');
-            getInputByLabel('Service Account Key (JSON)').type(' ').blur();
+            getInputByLabel('Service account key (JSON)').type(' ').blur();
 
             getHelperElementByLabel('Integration name').contains('An integration name is required');
             getHelperElementByLabel('Cloud SCC Source ID').contains('A source ID is required');
-            getHelperElementByLabel('Service Account Key (JSON)').contains(
-                'A service account is required'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
@@ -267,16 +267,14 @@ describe('Notifier Integrations', () => {
 
             // Step 2.1, enable workload identity, this should remove the service account field
             getInputByLabel('Use workload identity').click();
-            cy.get(
-                `.pf-c-form__group:has('.pf-c-form__control:contains("Service Account Key (JSON)")') textarea`
-            ).should('not.exist');
+            getInputByLabel('Service account key (JSON)').should('be.disabled');
             // Step 2.2, disable workload identity, this should render the service account field again
             getInputByLabel('Use workload identity').click();
-            getInputByLabel('Service Account Key (JSON)').should('be.visible');
+            getInputByLabel('Service account key (JSON)').should('be.enabled');
 
             // Step 3, check fields for invalid formats
             getInputByLabel('Cloud SCC Source ID').type('organization-123');
-            getInputByLabel('Service Account Key (JSON)')
+            getInputByLabel('Service account key (JSON)')
                 .type('{ "type": "service_account", "project_id": "123456"', {
                     parseSpecialCharSequences: false,
                 })
@@ -285,8 +283,8 @@ describe('Notifier Integrations', () => {
             getHelperElementByLabel('Cloud SCC Source ID').contains(
                 'SCC source ID must match the format: organizations/[0-9]+/sources/[0-9]+'
             );
-            getHelperElementByLabel('Service Account Key (JSON)').contains(
-                'Service account must be valid JSON'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
@@ -294,7 +292,7 @@ describe('Notifier Integrations', () => {
             // Step 4, check valid from and save
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
-            getInputByLabel('Service Account Key (JSON)')
+            getInputByLabel('Service account key (JSON)')
                 .clear()
                 .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
                 .blur();

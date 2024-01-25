@@ -19,6 +19,7 @@ import (
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/kocache"
@@ -34,6 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
 
@@ -210,6 +212,8 @@ func (s *Sensor) Start() {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
 		customRoutes = append(customRoutes, *route)
+
+		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
 	// Create grpc server with custom routes
@@ -293,7 +297,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.Cus
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
-		Authorizer:    idcheck.ScannerOnly(),
+		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly()),
 		ServerHandler: handler,
 	}, nil
 }

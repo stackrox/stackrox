@@ -162,6 +162,37 @@
         ]
       }
     },
+    "/v2/compliance/scan/result/{id}": {
+      "get": {
+        "summary": "GetComplianceScanCheckResult returns the specific result by ID",
+        "operationId": "ComplianceResultsService_GetComplianceScanCheckResult",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceCheckResult"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
     "/v2/compliance/scan/results": {
       "get": {
         "summary": "GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
@@ -247,6 +278,81 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/v2ListComplianceClusterScanStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/stats/overall/cluster": {
+      "get": {
+        "operationId": "ComplianceResultsService_GetComplianceOverallClusterStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceClusterOverallStatsResponse"
             }
           },
           "default": {
@@ -404,22 +510,12 @@
         "createdTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "checkUid": {
+          "type": "string"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"
-    },
-    "ComplianceScanStatsShimComplianceCheckStatusCount": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "status": {
-          "$ref": "#/definitions/v2ComplianceCheckStatus"
-        }
-      },
-      "title": "Group the number of occurrences by status"
     },
     "protobufAny": {
       "type": "object",
@@ -534,6 +630,34 @@
       ],
       "default": "UNSET_CHECK_STATUS"
     },
+    "v2ComplianceCheckStatusCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "status": {
+          "$ref": "#/definitions/v2ComplianceCheckStatus"
+        }
+      },
+      "title": "Group the number of occurrences by status"
+    },
+    "v2ComplianceClusterOverallStats": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/v2ComplianceScanCluster"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        }
+      },
+      "title": "ComplianceClusterOverallStats provides overall stats for cluster"
+    },
     "v2ComplianceClusterScanStats": {
       "type": "object",
       "properties": {
@@ -617,7 +741,7 @@
         "checkStats": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ComplianceScanStatsShimComplianceCheckStatusCount"
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
           }
         },
         "lastScan": {
@@ -636,6 +760,18 @@
         }
       },
       "title": "ComplianceScanResultsCount gives count of scan results"
+    },
+    "v2ListComplianceClusterOverallStatsResponse": {
+      "type": "object",
+      "properties": {
+        "scanStats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ComplianceClusterOverallStats"
+          }
+        }
+      },
+      "title": "ListComplianceCheckScanStatsResponse provides stats per cluster"
     },
     "v2ListComplianceClusterScanStatsResponse": {
       "type": "object",

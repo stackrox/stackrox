@@ -23,11 +23,17 @@ type DataStore interface {
 	// SearchComplianceCheckResults retrieves the scan results specified by query
 	SearchComplianceCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
 
-	// ComplianceCheckResultStats retrieves the scan results stats specified by query
-	ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
+	// ComplianceCheckResultStats retrieves the scan results stats specified by query for the scan configuration
+	ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error)
+
+	// ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
+	ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error)
 
 	// CountCheckResults returns number of scan results specified by query
 	CountCheckResults(ctx context.Context, q *v1.Query) (int, error)
+
+	// GetComplianceCheckResult returns the instance of the result specified by ID
+	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results

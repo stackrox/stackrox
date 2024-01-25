@@ -198,35 +198,53 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	// Conventionally, compliance scan can be rerun by applying an annotation to ComplianceScan CR. Note that the CRs
-	// created from a scan configuration have the same name as scan configuration.
-	resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
+	// Conventionally, compliance scan can be rerun by applying an
+	// annotation to ComplianceScan CR. The ComplianceScan CRs can be
+	// found from the ComplianceSuite CR. Note that the ComplianceSuite
+	// created from a scan configuration have the same name as scan
+	// configuration.
+	resI := m.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).Namespace(ns)
 	obj, err := resI.Get(m.ctx(), request.GetScanName(), v1.GetOptions{})
 	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, request.GetScanName())
+		err = errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	var complianceScan v1alpha1.ComplianceScan
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+	var complianceSuite v1alpha1.ComplianceSuite
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceSuite); err != nil {
+		err = errors.Wrap(err, "Could not convert unstructured to compliance suite")
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	// Apply annotation to indicate compliance scan be rerun.
-	if complianceScan.GetAnnotations() == nil {
-		complianceScan.Annotations = make(map[string]string)
-	}
-	complianceScan.Annotations[rescanAnnotation] = ""
+	for _, scan := range complianceSuite.Spec.Scans {
+		resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
+		obj, err := resI.Get(m.ctx(), scan.Name, v1.GetOptions{})
+		if err != nil || obj == nil {
+			err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+		var complianceScan v1alpha1.ComplianceScan
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
+			err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
 
-	obj, err = runtimeObjToUnstructured(&complianceScan)
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, request.GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		if complianceScan.GetAnnotations() == nil {
+			complianceScan.Annotations = make(map[string]string)
+		}
+		complianceScan.Annotations[rescanAnnotation] = ""
+
+		obj, err = runtimeObjToUnstructured(&complianceScan)
+		if err != nil {
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+		log.Infof("Rerunning compliance scan %s", complianceScan.Name)
+		_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+		if err != nil {
+			err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }

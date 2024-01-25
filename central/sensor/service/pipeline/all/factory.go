@@ -12,10 +12,14 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperator/complianceoperatorinfo"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofilesv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresults"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresultsv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrules"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorrulesv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscans"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscansettingbinding"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorscansv2"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/enhancements"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
@@ -32,7 +36,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -80,11 +83,13 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorscans.GetPipeline(),
 		nodeinventory.GetPipeline(),
 		enhancements.GetPipeline(),
+		complianceoperatorinfo.GetPipeline(),
+		complianceoperatorrulesv2.GetPipeline(),
+		complianceoperatorresultsv2.GetPipeline(),
+		complianceoperatorprofilesv2.GetPipeline(),
+		complianceoperatorscansv2.GetPipeline(),
 	}
 
-	if features.ComplianceEnhancements.Enabled() {
-		pipelines = append(pipelines, complianceoperatorinfo.GetPipeline())
-	}
 	deduper := s.manager.GetDeduper(ctx, clusterID)
 	return NewClusterPipeline(clusterID, deduper, pipelines...), nil
 }

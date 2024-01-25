@@ -1,5 +1,4 @@
 deploy/common/docker-auth.sh
-deploy/common/k8sbased.sh
 deploy/openshift/deploy-local.sh
 dev-tools/add-host-alias.sh
 dev-tools/roxctl.sh
@@ -40,7 +39,6 @@ scripts/ci/sensorbundle-label/list-resources.sh
 scripts/connect-ui.sh
 scripts/ensure_image.sh
 scripts/grab-data-from-central.sh
-scripts/k8s/kill-pod.sh
 scripts/k8s/local-port-forward.sh
 scripts/mergeswag.sh
 scripts/offline-bundle/image-bundle/import.sh

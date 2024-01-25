@@ -40,7 +40,7 @@ func (s *suiteImpl) TestFail() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, nil, testDeployments[1:], nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, nil, testDeployments[1:], nil)
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
@@ -66,7 +66,7 @@ func (s *suiteImpl) TestPass() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, nil, testDeployments[:1], nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, nil, testDeployments[:1], nil)
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)

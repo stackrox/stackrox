@@ -82,7 +82,7 @@ indexer:
     password_file: ""
   get_layer_timeout: 1m
   repository_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/repository-to-cpe.json
-  name_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
+  name_to_repos_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
 matcher:
   enable: true
   database:
@@ -95,7 +95,7 @@ log_level: info
 	reader := strings.NewReader(yamlData)
 	ic, err := loadIndexerConfig(reader)
 	require.NoError(t, err)
-	indexer, err := newLibindex(zlog.Test(ctx, t), ic, s, nil)
+	indexer, err := newLibindex(zlog.Test(ctx, t), ic, "", s, nil)
 	require.NoError(t, err)
 	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
 	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])

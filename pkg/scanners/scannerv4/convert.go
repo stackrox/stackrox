@@ -38,12 +38,25 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	for _, pkg := range report.GetContents().GetPackages() {
 		id := pkg.GetId()
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
+
+		var (
+			source   storage.SourceType
+			location string
+			layerIdx *storage.EmbeddedImageScanComponent_LayerIndex
+		)
+		env := environment(report, id)
+		if env != nil {
+			source, location = parsePackageDB(env.GetPackageDb())
+			layerIdx = layerIndex(layerSHAToIndex, env)
+		}
+
 		component := &storage.EmbeddedImageScanComponent{
 			Name:          pkg.GetName(),
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			Location:      pkg.GetPackageDb(),
-			HasLayerIndex: layerIndex(layerSHAToIndex, report, id),
+			Source:        source,
+			Location:      location,
+			HasLayerIndex: layerIdx,
 		}
 
 		components = append(components, component)
@@ -52,20 +65,58 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	return components
 }
 
-func layerIndex(layerSHAToIndex map[string]int32, report *v4.VulnerabilityReport, pkgID string) *storage.EmbeddedImageScanComponent_LayerIndex {
-	// TODO(ROX-21377): Confirm with Clair team how handle multiple environments
-	envList := report.GetContents().GetEnvironments()[pkgID]
-	if len(envList.GetEnvironments()) > 0 {
-		env := envList.GetEnvironments()[0]
+func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+	envList, ok := report.GetContents().GetEnvironments()[id]
+	if !ok {
+		return nil
+	}
 
-		if val, ok := layerSHAToIndex[env.GetIntroducedIn()]; ok {
-			return &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: val,
-			}
-		}
+	envs := envList.GetEnvironments()
+	if len(envs) > 0 {
+		// Just use the first environment.
+		return envs[0]
 	}
 
 	return nil
+}
+
+func parsePackageDB(packageDB string) (storage.SourceType, string) {
+	prefix, path, found := strings.Cut(packageDB, ":")
+	if !found {
+		// All currently know language packages have a prefix, so this must be an OS package.
+		return storage.SourceType_OS, packageDB
+	}
+
+	switch prefix {
+	case "go":
+		return storage.SourceType_GO, path
+	case "file", "jar", "maven":
+		return storage.SourceType_JAVA, path
+	case "nodejs":
+		return storage.SourceType_NODEJS, path
+	case "python":
+		return storage.SourceType_PYTHON, path
+	case "ruby":
+		return storage.SourceType_RUBY, path
+	case "bdb", "sqlite", "ndb":
+		// RPM databases are prefixed with the DB kind.
+		return storage.SourceType_OS, path
+	default:
+		// ":" is a valid character in a file path.
+		// We could not identify a known prefix, so just return the entire path.
+		return storage.SourceType_OS, packageDB
+	}
+}
+
+func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.EmbeddedImageScanComponent_LayerIndex {
+	idx, ok := layerSHAToIndex[env.GetIntroducedIn()]
+	if !ok {
+		return nil
+	}
+
+	return &storage.EmbeddedImageScanComponent_LayerIndex{
+		LayerIndex: idx,
+	}
 }
 
 func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
@@ -186,11 +237,11 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // If there are zero known distributions for the image or if there are multiple distributions,
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
-	if len(report.GetContents().GetDistributions()) == 1 {
-		for _, dist := range report.GetContents().GetDistributions() {
-			return dist.Did + ":" + dist.VersionId
-		}
+	dists := report.GetContents().GetDistributions()
+	if len(dists) != 1 {
+		return "unknown"
 	}
 
-	return "unknown"
+	dist := dists[0]
+	return dist.Did + ":" + dist.VersionId
 }

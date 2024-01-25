@@ -37,32 +37,32 @@ func TestReconcileScannerDBPassword(t *testing.T) {
 
 	cases := map[string]secretReconciliationTestCase{
 		"When no db password secret exists and scanner is disabled, no secrets should be created": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			ExpectedCreatedSecrets: nil,
 		},
 		"When no db password secret exists and scanner is enabled, a managed secret should be created": {
-			Spec: basicSpecWithScanner(true),
+			Spec: basicSpecWithScanner(true, false),
 			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 				"scanner-db-password": verifyScannerDBPassword,
 			},
 		},
 		"When no db password secret exists and scanner is enabled, and the CR is being deleted, no secrets should be created": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			Deleted:                true,
 			ExpectedCreatedSecrets: nil,
 		},
 		"When an unmanaged db password secret exists and scanner is enabled, no secrets should be created or deleted": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			Existing:               []*v1.Secret{existingScannerDBPassword},
 			ExpectedCreatedSecrets: nil,
 		},
 		"When an unmanaged db password secret exists and scanner is disabled, the secret should be left intact": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			Existing:               []*v1.Secret{existingScannerDBPassword},
 			ExpectedCreatedSecrets: nil,
 		},
 		"When an unmanaged db password secret exists and scanner is enabled, and the CR is being deleted, the secret should be left intact": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			Deleted:                true,
 			Existing:               []*v1.Secret{existingScannerDBPassword},
 			ExpectedCreatedSecrets: nil,
@@ -70,17 +70,17 @@ func TestReconcileScannerDBPassword(t *testing.T) {
 
 		// Malformed pre-existing secret
 		"When a malformed unmanaged secret exists, an error is expected": {
-			Spec:          basicSpecWithScanner(true),
+			Spec:          basicSpecWithScanner(true, false),
 			Existing:      []*v1.Secret{existingMalformedScannerDBPassword},
 			ExpectedError: "scanner-db-password secret must contain a non-empty",
 		},
 		"When a malformed unmanaged secret exists, no error is expected": {
-			Spec:                   basicSpecWithScanner(false),
+			Spec:                   basicSpecWithScanner(false, false),
 			Existing:               []*v1.Secret{existingMalformedScannerDBPassword},
 			ExpectedCreatedSecrets: nil,
 		},
 		"When a malformed unmanaged secret exists, and the CR is being deleted, no error is expected": {
-			Spec:                   basicSpecWithScanner(true),
+			Spec:                   basicSpecWithScanner(true, false),
 			Deleted:                true,
 			Existing:               []*v1.Secret{existingMalformedScannerDBPassword},
 			ExpectedCreatedSecrets: nil,

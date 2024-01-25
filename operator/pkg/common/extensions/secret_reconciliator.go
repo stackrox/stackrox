@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/types"
@@ -64,11 +65,8 @@ func (r *SecretReconciliator) DeleteSecret(ctx context.Context, name string) err
 
 // EnsureSecret makes sure a secret with the given name exists.
 // If the validateSecretDataFunc returns an error, then this function calls generateSecretDataFunc to get new secret data and updates the secret to "fix" it.
-// If fixExisting is set to false, an already existing secret will never be overwritten. This is useful only when
-// changing an invalid secret can bring more harm than good.
-// In this case this function will return an error if "validate" rejects the secret.
-// Also note that (regardless of the value of "fixExisting") this function will never touch a secret which is not owned by the object passed to the constructor.
-func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc, fixExisting bool) error {
+// Also note that this function will refuse to touch a secret which is not owned by the object passed to the constructor.
+func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, validate validateSecretDataFunc, generate generateSecretDataFunc) error {
 	secret := &coreV1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: r.obj.GetNamespace(), Name: name}
 	if err := r.Client().Get(ctx, key, secret); err != nil {
@@ -79,17 +77,19 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	}
 
 	var oldData types.SecretDataMap
+	var validateErr error
 	if secret != nil {
 		isManaged := metav1.IsControlledBy(secret, r.obj)
-		validateErr := validate(secret.Data, isManaged)
+		validateErr = validate(secret.Data, isManaged)
 
 		if validateErr == nil {
 			return nil // validation of existing secret successful - no reconciliation needed
 		}
-		// If the secret is unmanaged, we cannot fix it, so we should fail. The same applies if
-		// the caller told us not to attempt to fix it.
-		if !isManaged || !fixExisting {
-			return errors.Wrapf(validateErr, "existing %s secret is invalid, please delete the secret to allow fixing the issue", name)
+		// If the secret is unmanaged, we cannot fix it, so we should fail.
+		if !isManaged {
+			return errors.Wrapf(validateErr,
+				"existing %s secret is invalid (%s), but not owned by the CR, please delete the secret to allow fixing the issue",
+				validateErr.Error(), name)
 		}
 		oldData = secret.Data
 	}
@@ -97,7 +97,11 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 	// Try to generate the secret, in order to fix it.
 	data, err := generate(oldData)
 	if err != nil {
-		return errors.Wrapf(err, "generating data for new %s secret", name)
+		extraInfo := "new"
+		if validateErr != nil {
+			extraInfo = fmt.Sprintf("invalid (%s)", validateErr.Error())
+		}
+		return errors.Wrapf(err, "error generating data for %s %s secret", extraInfo, name)
 	}
 	newSecret := &coreV1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,12 +116,12 @@ func (r *SecretReconciliator) EnsureSecret(ctx context.Context, name string, val
 
 	if secret == nil {
 		if err := r.Client().Create(ctx, newSecret); err != nil {
-			return errors.Wrapf(err, "creating new %s secret", name)
+			return errors.Wrapf(err, "creating new %s secret failed", name)
 		}
 	} else {
 		newSecret.ResourceVersion = secret.ResourceVersion
 		if err := r.Client().Update(ctx, newSecret); err != nil {
-			return errors.Wrapf(err, "updating %s secret because existing instance failed validation", secret.Name)
+			return errors.Wrapf(err, "updating invalid %s secret (%s) failed", secret.Name, validateErr)
 		}
 	}
 	return nil
