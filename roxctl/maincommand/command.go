@@ -19,6 +19,7 @@ import (
 	connectivitymapDeprecated "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
+	"github.com/stackrox/rox/roxctl/doc"
 	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
@@ -89,6 +90,9 @@ func Command() *cobra.Command {
 	}
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		c.AddCommand(declarativeconfig.Command(cliEnvironment))
+	}
+	if !buildinfo.ReleaseBuild {
+		c.AddCommand(doc.Command(cliEnvironment))
 	}
 
 	return c
