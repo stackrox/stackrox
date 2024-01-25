@@ -86,11 +86,8 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorinfo.GetPipeline(),
 		complianceoperatorrulesv2.GetPipeline(),
 		complianceoperatorresultsv2.GetPipeline(),
-<<<<<<< HEAD
 		complianceoperatorprofilesv2.GetPipeline(),
-=======
 		complianceoperatorscansv2.GetPipeline(),
->>>>>>> d5e02285cc (X-Smart-Squash: Squashed 4 commits:)
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

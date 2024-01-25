@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -121,29 +120,6 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 		// NodeInventory because the two should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
-<<<<<<< HEAD
-	case *central.SensorEvent_ComplianceOperatorScanV2:
-=======
-	case *central.SensorEvent_ComplianceOperatorProfileV2:
->>>>>>> d5e02285cc (X-Smart-Squash: Squashed 4 commits:)
-		if !features.ComplianceEnhancements.Enabled() {
-			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
-			return
-		}
-		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
-		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
-		// have been avoided by sending both messages from sensor during the transition, but
-		// that seemed like a lot of extra traffic.
-<<<<<<< HEAD
-		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorScan{})
-		if !s.reconciliationMap.IsClosed() {
-			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorScan{}, event.Id)
-=======
-		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorProfile{})
-		if !s.reconciliationMap.IsClosed() {
-			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorProfile{}, event.Id)
->>>>>>> d5e02285cc (X-Smart-Squash: Squashed 4 commits:)
-		}
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
