@@ -20,6 +20,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import PageTitle from 'Components/PageTitle';
 import {
     RequestIDLink,
     RequestedAction,
@@ -111,6 +112,7 @@ function ApprovedFalsePositives() {
 
     return (
         <PageSection>
+            <PageTitle title="Exception Management - Approved False Positives" />
             <Toolbar>
                 <ToolbarContent>
                     <FilterAutocompleteSelect

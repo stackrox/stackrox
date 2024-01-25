@@ -33,6 +33,7 @@ import {
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
 
+import PageTitle from 'Components/PageTitle';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import RequestCVEsTable from './components/RequestCVEsTable';
@@ -167,6 +168,7 @@ function ExceptionRequestDetailsPage() {
 
     return (
         <>
+            <PageTitle title="Exception Management - Request Details" />
             {successMessage && (
                 <Alert
                     variant={AlertVariant.success}
