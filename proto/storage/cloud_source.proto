@@ -10,7 +10,11 @@ package storage;
 message CloudSource {
     string id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                          = 2 [(gogoproto.moretags) = 'sql:"unique"'];
-    string type                          = 3;
+    enum Type {
+        PALADIN_CLOUD                    = 0;
+        OCM                              = 1;
+    }
+    Type   type                          = 3;
     bool   skip_test_integration         = 4;
 
     oneof Config {
