@@ -309,7 +309,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 
 		if newSettings.GetCentralEndpoint() != "" {
-			conn, err := clientconn.AuthenticatedGRPCConnection(newSettings.GetCentralEndpoint(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+			conn, err := clientconn.AuthenticatedGRPCConnection(context.Background(), newSettings.GetCentralEndpoint(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 			if err != nil {
 				log.Errorf("Could not create connection to Central: %v", err)
 			} else {

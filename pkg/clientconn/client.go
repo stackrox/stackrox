@@ -171,6 +171,7 @@ type connectionOptions struct {
 	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
 	rootCAs             *x509.CertPool
+	serverName          string
 	maxMsgRecvSize      int
 }
 
@@ -199,6 +200,18 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 		for _, c := range certs {
 			opts.rootCAs.AddCert(c)
 		}
+		return nil
+	})
+}
+
+// ServerName sets the server name to verify against on the returned certificate
+// unless UseInsecureNoTLS(true) is called.
+//
+// The server name defaults to the host name found in the destination endpoint, unless
+// it's an IP address. In that case, the name is derived from the mtls.Subject.
+func ServerName(server string) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.serverName = server
 		return nil
 	})
 }
@@ -244,9 +257,13 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 		}
 	}
 
-	host, _, _, err := netutil.ParseEndpoint(endpoint)
-	if err != nil {
-		return Options{}, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
+	host := connOpts.serverName
+	if host == "" {
+		var err error
+		host, _, _, err = netutil.ParseEndpoint(endpoint)
+		if err != nil {
+			return Options{}, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
+		}
 	}
 
 	clientConnOpts := Options{
@@ -274,7 +291,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
+func AuthenticatedGRPCConnection(ctx context.Context, endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
 	if strings.HasPrefix(endpoint, "ws://") || strings.HasPrefix(endpoint, "wss://") {
 		_, endpoint = stringutils.Split2(endpoint, "://")
 		extraConnOpts = append(extraConnOpts, UseDialTLSFunc(DialTLSWebSocket))
@@ -297,7 +314,7 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
 	}
 
-	return GRPCConnection(context.Background(), server, endpoint, clientConnOpts, dialOpts...)
+	return GRPCConnection(ctx, server, endpoint, clientConnOpts, dialOpts...)
 }
 
 // HTTPTransport returns a RoundTripper for talking to the specified endpoint. The RoundTripper accepts requests with

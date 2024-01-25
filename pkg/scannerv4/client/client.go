@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,6 +27,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Scanner interface {
+	// GetImageIndex fetches an existing index report for the given ID.
 	GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error)
 
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
@@ -94,28 +94,13 @@ func (c *gRPCScanner) Close() error {
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
-	connOpt := clientconn.Options{
-		TLS: clientconn.TLSConfigOptions{
-			GRPCOnly:           true,
-			InsecureSkipVerify: true,
-		},
-	}
-	if !o.skipTLS {
-		ca, err := mtls.LoadDefaultCA()
-		if err != nil {
-			return nil, fmt.Errorf("creating CA: %w", err)
-		}
-		connOpt.TLS.InsecureSkipVerify = false
-		connOpt.TLS.RootCAs = ca.CertPool()
-		connOpt.TLS.UseClientCert = clientconn.MustUseClientCert
-		connOpt.TLS.ServerName = o.serverName
+	connOpts := []clientconn.ConnectionOption{
+		clientconn.UseInsecureNoTLS(o.skipTLS),
+		clientconn.ServerName(o.serverName),
+		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
 	}
 
-	callOpts := []grpc.CallOption{
-		grpc.MaxCallRecvMsgSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
-	}
-
-	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
+	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
 }
 
 func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
@@ -125,7 +110,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 		"hash_id", hashID,
 	)
 	var ir *v4.IndexReport
-	// Get the IndexReport if it exists.
+	// Get the IndexReport, if it exists.
 	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
 		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
 		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
