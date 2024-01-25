@@ -2,7 +2,7 @@
   "id": "886c3c94-3a6a-4f2b-82fc-d6bf5a310840",
   "name": "No CPU request or memory limit specified",
   "description": "Alert on deployments that have containers without CPU request or memory limit",
-  "rationale": "If a container does not have CPU request specified it may not get any CPU time while if it does not not have memory limit specified the host may become over-provisioned.",
+  "rationale": "A container without a specified CPU request may be starved for CPU time, while a container without a specified memory limit may cause the host to become over-provisioned.",
   "remediation": "Specify CPU request and memory limit for your deployment.",
   "categories": [
     "DevOps Best Practices",
