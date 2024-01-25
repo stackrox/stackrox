@@ -70,6 +70,24 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	return nil
 }
 
+// JSONRemarks pipes out the violated alerts and remarks as JSON.
+func JSONRemarks(output io.Writer, alerts []*storage.Alert, remarks []string) error {
+	// This object is really just a filler because its a wrapper around the alerts
+	// this is required because jsonpb can only marshal proto.Message
+	bdr := &v1.ResultAggregation{
+		Alerts:  alerts,
+		Remarks: remarks,
+	}
+	marshaler := jsonpb.Marshaler{Indent: "  "}
+	if err := marshaler.Marshal(output, bdr); err != nil {
+		return errors.Wrap(err, "could not marshal alerts")
+	}
+	if _, err := output.Write([]byte{'\n'}); err != nil {
+		return errors.Wrap(err, "could not write alerts")
+	}
+	return nil
+}
+
 // PrettyWithResourceName renders the given list of policies in a human-friendly format, and
 // writes that to the output stream.
 func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType, resourceName string, printAllViolations bool) error {

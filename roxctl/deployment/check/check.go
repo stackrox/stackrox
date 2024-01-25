@@ -283,7 +283,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	}
 
 	if d.json {
-		return errors.Wrap(report.JSON(d.env.InputOutput().Out(), alerts), "could not print JSON report")
+		return errors.Wrap(report.JSONRemarks(d.env.InputOutput().Out(), alerts, remarks), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
