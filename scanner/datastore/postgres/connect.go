@@ -10,9 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 )
 
-const connTries = 30
-
-var interval = 10 * time.Second
+const (
+	connTries = 30
+	interval  = 10 * time.Second
+)
 
 // Connect is a wrapper around ClairCore's postgres.Connect which retries the connection upon failure.
 //
