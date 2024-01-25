@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
-	edge "github.com/stackrox/rox/central/complianceoperator/v2/profiles/profileclusteredge/store/postgres"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,32 +22,29 @@ type DataStore interface {
 	SearchProfiles(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorProfileV2, error)
 
 	// UpsertProfile adds the profile to the database
-	UpsertProfile(ctx context.Context, result *storage.ComplianceOperatorProfileV2, clusterID string, profileUID string) error
+	UpsertProfile(ctx context.Context, result *storage.ComplianceOperatorProfileV2) error
 
 	// DeleteProfileForCluster removes a profile from the database
 	DeleteProfileForCluster(ctx context.Context, uid string, clusterID string) error
 
-	// GetProfileEdgesByCluster gets the list of profile edges for a given cluster
-	GetProfileEdgesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorProfileClusterEdge, error)
+	// GetProfilesByClusters gets the list of profiles for a given clusters
+	GetProfilesByClusters(ctx context.Context, clusterIDs []string) ([]*storage.ComplianceOperatorProfileV2, error)
 
 	// CountProfiles returns count of profiles matching query
 	CountProfiles(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.
-func New(complianceProfileStorage pgStore.Store, profileEdgeStore edge.Store, pool postgres.DB, searcher search.Searcher) DataStore {
-	ds := &datastoreImpl{
-		store:            complianceProfileStorage,
-		profileEdgeStore: profileEdgeStore,
-		db:               pool,
-		searcher:         searcher,
+func New(complianceProfileStorage pgStore.Store, pool postgres.DB, searcher search.Searcher) DataStore {
+	return &datastoreImpl{
+		store:    complianceProfileStorage,
+		db:       pool,
+		searcher: searcher,
 	}
-	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, searcher search.Searcher) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, searcher search.Searcher) DataStore {
 	store := pgStore.New(pool)
-	edgeStore := edge.New(pool)
-	return New(store, edgeStore, pool, searcher), nil
+	return New(store, pool, searcher)
 }

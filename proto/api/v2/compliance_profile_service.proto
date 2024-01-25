@@ -37,8 +37,25 @@ message ComplianceProfile {
     repeated string               values            = 10;
 }
 
+// Next Tag: 7
+message ComplianceProfileSummary {
+    string  name              = 1;
+    string  product_type      = 2;
+    string  description       = 3;
+    string  title             = 4;
+    int32   rule_count        = 5;
+    string  profile_version   = 6;
+}
+
+
+// ListComplianceProfilesResponse provides a list of profiles
 message ListComplianceProfilesResponse {
     repeated ComplianceProfile profiles = 1;
+}
+
+// ListComplianceProfileSummaryResponse provides a list of profiles summaries
+message ListComplianceProfileSummaryResponse {
+    repeated ComplianceProfileSummary profiles = 1;
 }
 
 // CountComplianceProfilesResponse gives count of compliance profiles
@@ -46,25 +63,40 @@ message CountComplianceProfilesResponse {
     int32 count = 1;
 }
 
+message ProfilesForClusterRequest {
+    string   cluster_id = 1;
+}
+
+message ClustersProfileSummaryRequest {
+    repeated string cluster_ids = 1;
+}
+
 service ComplianceProfileService {
     // GetComplianceProfile retrieves the specified compliance profile
     rpc GetComplianceProfile (ResourceByID) returns (ComplianceProfile) {
         option (google.api.http) = {
-            get: "/v2/compliance/profiles/{id}"
+            get: "/v2/compliance/profile/{id}"
         };
     }
 
-    // ListComplianceProfiles returns profiles matching given query
-    rpc ListComplianceProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
+    // ListComplianceProfiles returns profiles matching given request
+    rpc ListComplianceProfiles (ProfilesForClusterRequest) returns (ListComplianceProfilesResponse) {
         option (google.api.http) = {
-            get: "/v2/compliance/profiles"
+            get: "/v2/compliance/profiles/cluster"
+        };
+    }
+
+    // ListProfileSummaries returns profiles matching each cluster and the given query
+    rpc ListProfileSummaries (ClustersProfileSummaryRequest) returns (ListComplianceProfileSummaryResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/profiles/summary"
         };
     }
 
     // GetComplianceProfileCount returns the number of profiles matching the given query
     rpc GetComplianceProfileCount(RawQuery) returns (CountComplianceProfilesResponse){
         option (google.api.http) = {
-            get: "/v2/compliance/count/profiles"
+            get: "/v2/compliance/profiles/count"
         };
     }
 }
