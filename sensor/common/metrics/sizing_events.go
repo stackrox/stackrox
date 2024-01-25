@@ -38,7 +38,7 @@ func (s *sizingEventStream) Send(msg *central.MsgFromSensor) error {
 	return s.stream.Send(msg)
 }
 
-// NewSizingEventStream returns a new SensorMessageStream that automatically updates size metrics.
+// NewSizingEventStream returns a new SensorMessageStream that automatically updates max message size sent metric.
 func NewSizingEventStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
-	return &sizingEventStream{stream, map[string]float64{}}
+	return &sizingEventStream{stream, make(map[string]float64)}
 }

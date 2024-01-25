@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/connection/messagestream"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -201,6 +202,9 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 }
 
 func (c *sensorConnection) runSend(server central.SensorService_CommunicateServer) {
+
+	wrappedStream := messagestream.NewSizingEventStream(server)
+
 	for !c.stopSig.IsDone() {
 		select {
 		case <-c.stopSig.Done():
@@ -209,20 +213,12 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			c.stopSig.SignalWithError(errors.Wrap(server.Context().Err(), "context error"))
 			return
 		case msg := <-c.sendC:
-			if err := c.sendWithSizingMetric(server, msg); err != nil {
+			if err := wrappedStream.Send(msg); err != nil {
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
 		}
 	}
-}
-
-func (c *sensorConnection) sendWithSizingMetric(server central.SensorService_CommunicateServer, msg *central.MsgToSensor) error {
-	typ := reflectutils.Type(msg)
-	gaugeValue := math.Max(c.maxSeenMessageSize[typ], float64(msg.Size()))
-	metrics.SetGRPCMaxMessageSizeGauge(typ, gaugeValue)
-	c.maxSeenMessageSize[typ] = gaugeValue
-	return server.Send(msg)
 }
 
 func (c *sensorConnection) Scrapes() scrape.Controller {
