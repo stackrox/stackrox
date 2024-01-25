@@ -507,7 +507,6 @@ wait_for_ready_pods() {
     local timeout_seconds="${3:-300}" # 5 minutes
 
     start_time="$(date '+%s')"
-    local start_time
     local deployment_json
     local num_replicas
     local num_ready_replicas
@@ -521,7 +520,7 @@ wait_for_ready_pods() {
       num_ready_replicas="$(jq '.status.readyReplicas' <<<"${deployment_json}")"
       echo "${deployment} replicas: ${num_replicas}"
       echo "${deployment} readyReplicas: ${num_ready_replicas}"
-      if (( num_ready_replicas > 1 )); then
+      if (( num_ready_replicas >  0 )); then
         break
       fi
       now=$(date '+%s')
