@@ -11,7 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/cloudsources": {
+    "/v1/cloud-sources": {
       "get": {
         "summary": "ListCloudSources returns the list of cloud sources after filtered by requested fields.",
         "operationId": "CloudSourcesService_ListCloudSources",
@@ -123,7 +123,7 @@
         ]
       }
     },
-    "/v1/cloudsources/test": {
+    "/v1/cloud-sources/test": {
       "post": {
         "summary": "TestCloudSource tests a cloud source.",
         "operationId": "CloudSourcesService_TestCloudSource",
@@ -156,7 +156,46 @@
         ]
       }
     },
-    "/v1/cloudsources/{id}": {
+    "/v1/cloud-sources/{cloudSource.id}": {
+      "put": {
+        "summary": "PutCloudSource creates or replaces a cloud source.",
+        "operationId": "CloudSourcesService_PutCloudSource",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cloudSource.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PutCloudSourceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CloudSourcesService"
+        ]
+      }
+    },
+    "/v1/cloud-sources/{id}": {
       "get": {
         "summary": "GetCloudSource retrieves a cloud source by ID.",
         "operationId": "CloudSourcesService_GetCloudSource",
@@ -216,46 +255,7 @@
         ]
       }
     },
-    "/v1/cloudsources/{item.id}": {
-      "put": {
-        "summary": "PutCloudSource creates or replaces a cloud source.",
-        "operationId": "CloudSourcesService_PutCloudSource",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "item.id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PutCloudSourceRequest"
-            }
-          }
-        ],
-        "tags": [
-          "CloudSourcesService"
-        ]
-      }
-    },
-    "/v1/count/cloudsources": {
+    "/v1/count/cloud-sources": {
       "get": {
         "summary": "CountCloudSources returns the number of cloud sources after filtering by requested fields.",
         "operationId": "CloudSourcesService_CountCloudSources",
@@ -401,7 +401,7 @@
     "v1GetCloudSourceResponse": {
       "type": "object",
       "properties": {
-        "item": {
+        "cloudSource": {
           "$ref": "#/definitions/v1CloudSource"
         }
       }
@@ -409,7 +409,7 @@
     "v1ListCloudSourcesResponse": {
       "type": "object",
       "properties": {
-        "items": {
+        "cloudSources": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1CloudSource"
@@ -467,7 +467,7 @@
     "v1PostCloudSourceRequest": {
       "type": "object",
       "properties": {
-        "item": {
+        "cloudSource": {
           "$ref": "#/definitions/v1CloudSource"
         }
       }
@@ -475,7 +475,7 @@
     "v1PostCloudSourceResponse": {
       "type": "object",
       "properties": {
-        "item": {
+        "cloudSource": {
           "$ref": "#/definitions/v1CloudSource"
         }
       }
@@ -483,12 +483,12 @@
     "v1PutCloudSourceRequest": {
       "type": "object",
       "properties": {
-        "item": {
+        "cloudSource": {
           "$ref": "#/definitions/v1CloudSource"
         },
         "updateCredentials": {
           "type": "boolean",
-          "description": "If true, item must include valid credentials.\nIf false, the resource must already exist and\ncredentials in item are ignored."
+          "description": "If true, cloud_source must include valid credentials.\nIf false, the resource must already exist and\ncredentials in cloud_source are ignored."
         }
       }
     },
@@ -510,12 +510,12 @@
     "v1TestCloudSourceRequest": {
       "type": "object",
       "properties": {
-        "item": {
+        "cloudSource": {
           "$ref": "#/definitions/v1CloudSource"
         },
         "updateCredentials": {
           "type": "boolean",
-          "description": "If true, item must include valid credentials.\nIf false, the resource must already exist and\ncredentials in item are ignored."
+          "description": "If true, cloud_source must include valid credentials.\nIf false, the resource must already exist and\ncredentials in cloud_source are ignored."
         }
       }
     }

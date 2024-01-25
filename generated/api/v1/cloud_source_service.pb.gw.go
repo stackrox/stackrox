@@ -212,15 +212,15 @@ func request_CloudSourcesService_PutCloudSource_0(ctx context.Context, marshaler
 		_   = err
 	)
 
-	val, ok = pathParams["item.id"]
+	val, ok = pathParams["cloud_source.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "item.id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cloud_source.id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "item.id", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "cloud_source.id", val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "item.id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cloud_source.id", err)
 	}
 
 	msg, err := client.PutCloudSource(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -247,15 +247,15 @@ func local_request_CloudSourcesService_PutCloudSource_0(ctx context.Context, mar
 		_   = err
 	)
 
-	val, ok = pathParams["item.id"]
+	val, ok = pathParams["cloud_source.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "item.id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cloud_source.id")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "item.id", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "cloud_source.id", val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "item.id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cloud_source.id", err)
 	}
 
 	msg, err := server.PutCloudSource(ctx, &protoReq)
@@ -703,19 +703,19 @@ func RegisterCloudSourcesServiceHandlerClient(ctx context.Context, mux *runtime.
 }
 
 var (
-	pattern_CloudSourcesService_CountCloudSources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "count", "cloudsources"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_CountCloudSources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "count", "cloud-sources"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_GetCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloudsources", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_GetCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloud-sources", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_ListCloudSources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cloudsources"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_ListCloudSources_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cloud-sources"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_PostCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cloudsources"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_PostCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "cloud-sources"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_PutCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloudsources", "item.id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_PutCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloud-sources", "cloud_source.id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_DeleteCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloudsources", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_DeleteCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "cloud-sources", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_CloudSourcesService_TestCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cloudsources", "test"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_CloudSourcesService_TestCloudSource_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cloud-sources", "test"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

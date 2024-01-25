@@ -57,7 +57,7 @@ message GetCloudSourceRequest {
 }
 
 message GetCloudSourceResponse {
-    CloudSource item = 1;
+    CloudSource cloud_source = 1;
 }
 
 message ListCloudSourcesRequest {
@@ -69,23 +69,23 @@ message ListCloudSourcesRequest {
 }
 
 message ListCloudSourcesResponse {
-    repeated CloudSource items = 1;
+    repeated CloudSource cloud_sources = 1;
 }
 
 message PostCloudSourceRequest {
-    CloudSource item = 1;
+    CloudSource cloud_source = 1;
 }
 
 message PostCloudSourceResponse {
-    CloudSource item = 1;
+    CloudSource cloud_source = 1;
 }
 
 message PutCloudSourceRequest {
-    CloudSource item        = 1;
-    // If true, item must include valid credentials.
+    CloudSource cloud_source = 1;
+    // If true, cloud_source must include valid credentials.
     // If false, the resource must already exist and
-    // credentials in item are ignored.
-    bool update_credentials = 2;
+    // credentials in cloud_source are ignored.
+    bool update_credentials  = 2;
 }
 
 message DeleteCloudSourceRequest {
@@ -93,39 +93,39 @@ message DeleteCloudSourceRequest {
 }
 
 message TestCloudSourceRequest {
-    CloudSource item        = 1;
-    // If true, item must include valid credentials.
+    CloudSource cloud_source = 1;
+    // If true, cloud_source must include valid credentials.
     // If false, the resource must already exist and
-    // credentials in item are ignored.
-    bool update_credentials = 2;
+    // credentials in cloud_source are ignored.
+    bool update_credentials  = 2;
 }
 
 service CloudSourcesService {
     // CountCloudSources returns the number of cloud sources after filtering by requested fields.
     rpc CountCloudSources(CountCloudSourcesRequest) returns (CountCloudSourcesResponse) {
         option (google.api.http) = {
-            get: "/v1/count/cloudsources"
+            get: "/v1/count/cloud-sources"
         };
     }
 
     // GetCloudSource retrieves a cloud source by ID.
     rpc GetCloudSource(GetCloudSourceRequest) returns (GetCloudSourceResponse) {
         option(google.api.http) = {
-            get: "/v1/cloudsources/{id}"
+            get: "/v1/cloud-sources/{id}"
         };
     }
 
     // ListCloudSources returns the list of cloud sources after filtered by requested fields.
     rpc ListCloudSources(ListCloudSourcesRequest) returns (ListCloudSourcesResponse) {
         option (google.api.http) = {
-            get: "/v1/cloudsources"
+            get: "/v1/cloud-sources"
         };
     }
 
     // PostCloudSource creates a cloud source.
     rpc PostCloudSource (PostCloudSourceRequest) returns (PostCloudSourceResponse) {
         option (google.api.http) = {
-            post: "/v1/cloudsources"
+            post: "/v1/cloud-sources"
             body: "*"
         };
     }
@@ -133,7 +133,7 @@ service CloudSourcesService {
     // PutCloudSource creates or replaces a cloud source.
     rpc PutCloudSource (PutCloudSourceRequest) returns (Empty) {
         option (google.api.http) = {
-            put: "/v1/cloudsources/{item.id}"
+            put: "/v1/cloud-sources/{cloud_source.id}"
             body: "*"
         };
     }
@@ -141,14 +141,14 @@ service CloudSourcesService {
     // DeleteCloudSource removes a cloud source.
     rpc DeleteCloudSource (DeleteCloudSourceRequest) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v1/cloudsources/{id}"
+            delete: "/v1/cloud-sources/{id}"
         };
     }
 
     // TestCloudSource tests a cloud source.
     rpc TestCloudSource (TestCloudSourceRequest) returns (Empty) {
         option (google.api.http) = {
-            post: "/v1/cloudsources/test"
+            post: "/v1/cloud-sources/test"
             body: "*"
         };
     }
