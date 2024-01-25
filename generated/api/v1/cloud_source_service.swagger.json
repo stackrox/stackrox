@@ -82,7 +82,12 @@
             "required": false,
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "UNSPECIFIED",
+                "PALADIN_CLOUD",
+                "OCM"
+              ]
             },
             "collectionFormat": "multi"
           }
@@ -281,7 +286,12 @@
             "required": false,
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "UNSPECIFIED",
+                "PALADIN_CLOUD",
+                "OCM"
+              ]
             },
             "collectionFormat": "multi"
           }
@@ -400,7 +410,7 @@
         "types": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/v1CloudSourceType"
           },
           "description": "Matches cloud sources based on their type."
         }
