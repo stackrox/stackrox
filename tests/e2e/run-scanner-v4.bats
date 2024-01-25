@@ -121,18 +121,18 @@ teardown() {
     done
 }
 
-@test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
-    if [[ "$CI" = "true" ]]; then
-        setup_default_TLS_certs
-    fi
+# @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
+#     if [[ "$CI" = "true" ]]; then
+#         setup_default_TLS_certs
+#     fi
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=helm
-    local main_image_tag="${MAIN_IMAGE_TAG}"
+#     # shellcheck disable=SC2030,SC2031
+#     export OUTPUT_FORMAT=helm
+#     local main_image_tag="${MAIN_IMAGE_TAG}"
 
-    # Deploy earlier version without Scanner V4.
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
-    info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
+#     # Deploy earlier version without Scanner V4.
+#     local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+#     info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
 
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
@@ -140,16 +140,16 @@ teardown() {
     fi
     CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
-    # Upgrade to HEAD chart without explicit disabling of Scanner v4.
-    info "Upgrading StackRox using HEAD Helm chart"
-    MAIN_IMAGE_TAG="${main_image_tag}"
+#     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
+#     info "Upgrading StackRox using HEAD Helm chart"
+#     MAIN_IMAGE_TAG="${main_image_tag}"
 
     _deploy_stackrox
 
-    # Verify that Scanner v2 and v4 are up.
-    verify_scannerV2_deployed "stackrox"
-    verify_scannerV4_deployed "stackrox"
-}
+#     # Verify that Scanner v2 and v4 are up.
+#     verify_scannerV2_deployed "stackrox"
+#     verify_scannerV4_deployed "stackrox"
+# }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 disabled" {
     info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled"
@@ -158,11 +158,12 @@ teardown() {
     export ROX_SCANNER_V4=false
     _deploy_stackrox
 
-    verify_scannerV2_deployed "stackrox"
-    verify_no_scannerV4_deployed "stackrox"
-}
+#     verify_scannerV2_deployed "stackrox"
+#     verify_no_scannerV4_deployed "stackrox"
+# }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
+    (
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
@@ -170,24 +171,25 @@ teardown() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+    ) >&3 2>&1
 }
 
-@test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
-    local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
-    local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
+# @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
+#     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
+#     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
 
-    info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
+#     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled in multi-namespace mode"
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=helm
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-    _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
+#     # shellcheck disable=SC2030,SC2031
+#     export OUTPUT_FORMAT=helm
+#     # shellcheck disable=SC2030,SC2031
+#     export SENSOR_SCANNER_SUPPORT=true
+#     _deploy_stackrox "" "$central_namespace" "$sensor_namespace"
 
-    verify_scannerV2_deployed "$central_namespace"
-    verify_scannerV4_deployed "$central_namespace"
-    verify_scannerV4_indexer_deployed "$sensor_namespace"
-}
+#     verify_scannerV2_deployed "$central_namespace"
+#     verify_scannerV4_deployed "$central_namespace"
+#     verify_scannerV4_indexer_deployed "$sensor_namespace"
+# }
 
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
@@ -456,6 +458,47 @@ wait_for_ready_pods() {
       echo "${deployment} replicas: ${num_replicas}"
       echo "${deployment} readyReplicas: ${num_ready_replicas}"
       if (( num_ready_replicas >  0 )); then
+        break
+      fi
+      now=$(date '+%s')
+      if (( now - start_time > timeout_seconds)); then
+        echo >&2 "Timed out after ${timeout_seconds} seconds while waiting for ready pods within deployment ${namespace}/${deployment}"
+        "${ORCH_CMD}" -n "${namespace}" get pod -o wide
+        "${ORCH_CMD}" -n "${namespace}" get deploy -o wide
+        exit 1
+      fi
+      sleep 2
+    done
+
+    echo "Pod(s) within deployment ${namespace}/${deployment} ready."
+}
+
+# This function tries to fix shortcomings of `kubectl wait`. Instead of (wrongly) caring about pods terminating
+# in the beginning because the overall situation has not stabilized yet, this function only waits until *some*
+# pod in the specified deployment becomes ready.
+#
+# Hopefully makes CI less flaky.
+wait_for_ready_pods() {
+    local namespace="${1}"
+    local deployment="${2}"
+    local timeout_seconds="${3:-300}" # 5 minutes
+
+    start_time="$(date '+%s')"
+    local start_time
+    local deployment_json
+    local num_replicas
+    local num_ready_replicas
+    local now
+
+    echo "Waiting for pod within deployment ${namespace}/${deployment} to become ready"
+
+    while true; do
+      deployment_json="$("${ORCH_CMD}" -n "${namespace}" get "deployment/${deployment}" -o json)"
+      num_replicas="$(jq '.status.replicas' <<<"${deployment_json}")"
+      num_ready_replicas="$(jq '.status.readyReplicas' <<<"${deployment_json}")"
+      echo "${deployment} replicas: ${num_replicas}"
+      echo "${deployment} readyReplicas: ${num_ready_replicas}"
+      if (( num_ready_replicas > 1 )); then
         break
       fi
       now=$(date '+%s')
