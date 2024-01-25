@@ -159,7 +159,7 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	}
 
 	return &v1.VulnDefinitionsInfo{
-		LastUpdatedTimestamp: metadata.GetLastVulnerabilityUpdate(),
+		LastUpdatedTimestamp: lastTms,
 	}, nil
 }
 
