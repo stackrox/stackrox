@@ -1,13 +1,12 @@
 package generate
 
 import (
+	goerrors "errors"
 	"testing"
 
-	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,8 +23,8 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	cases := map[string]struct {
 		inputFolderPath       string
 		expectedSynthError    string
+		expectedSynthWarning  string
 		expectedValidateError error
-		strict                bool
 		stopOnFirstErr        bool
 		outFile               string
 		outDir                string
@@ -39,15 +38,16 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			inputFolderPath:    "testdata/minimal",
 			expectedSynthError: "",
 		},
-		"treating warnings as errors": {
-			inputFolderPath:    "testdata/empty-yamls",
-			expectedSynthError: npg.ErrWarnings.Error(),
-			strict:             true,
+		"empty yamls should yield error no kubernetes resources found": {
+			inputFolderPath:      "testdata/empty-yamls",
+			expectedSynthError:   "could not find any Kubernetes workload resources",
+			expectedSynthWarning: "Object 'Kind' is missing in",
 		},
 		"stopOnFirstError": {
-			inputFolderPath:    "testdata/dirty",
-			expectedSynthError: (&npguard.NoK8sResourcesFoundError{}).Error(),
-			stopOnFirstErr:     true,
+			inputFolderPath:      "testdata/dirty",
+			expectedSynthError:   "could not find any Kubernetes workload resources",
+			expectedSynthWarning: "error parsing",
+			stopOnFirstErr:       true,
 		},
 		"output should be written to a single file": {
 			inputFolderPath:    "testdata/minimal",
@@ -84,7 +84,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			generateNetpolCmd := NetpolGenerateCmd{
 				Options: NetpolGenerateOptions{
 					StopOnFirstError:      tt.stopOnFirstErr,
-					TreatWarningsAsErrors: tt.strict,
+					TreatWarningsAsErrors: false, // this is tested in netpol/resources/npg_test.go
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
@@ -112,12 +112,18 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			}
 			d.Assert().NoError(err)
 
-			err = generateNetpolCmd.generateNetpol(generator)
+			warns, errs := generateNetpolCmd.generateNetpol(generator)
 			if tt.expectedSynthError != "" {
-				d.Require().Error(err)
-				d.Assert().ErrorContains(err, tt.expectedSynthError)
+				d.Require().Error(goerrors.Join(errs...))
+				d.Assert().ErrorContains(goerrors.Join(errs...), tt.expectedSynthError)
 			} else {
-				d.Assert().NoError(err)
+				d.Assert().NoError(goerrors.Join(errs...))
+			}
+			if tt.expectedSynthWarning != "" {
+				d.Require().Error(goerrors.Join(warns...))
+				d.Assert().ErrorContains(goerrors.Join(warns...), tt.expectedSynthWarning)
+			} else {
+				d.Assert().NoError(goerrors.Join(warns...))
 			}
 		})
 	}

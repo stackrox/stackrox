@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
+	"github.com/stackrox/rox/roxctl/netpol/resources"
 )
 
 type diffNetpolCommand struct {
@@ -45,7 +46,12 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			if err := diffNetpolCmd.validate(); err != nil {
 				return err
 			}
-			return diffNetpolCmd.analyzeConnectivityDiff(analyzer)
+			warns, errs := diffNetpolCmd.analyzeConnectivityDiff(analyzer)
+			err = resources.SummarizeErrors(warns, errs, diffNetpolCmd.treatWarningsAsErrors, diffNetpolCmd.env.Logger())
+			if err != nil {
+				return errors.Wrap(err, "running command")
+			}
+			return nil
 		},
 	}
 

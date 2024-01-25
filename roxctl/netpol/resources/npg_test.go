@@ -5,37 +5,23 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common/npg"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type error1 struct {
-	err      error
-	location string
-	isSevere bool
-}
-
-func (e *error1) Error() error {
-	return e.err
-}
-
-func (e *error1) Location() string {
-	return e.location
-}
-
-func (e *error1) IsSevere() bool {
-	return e.isSevere
-}
-
-func warning(txt, loc string) *error1 {
-	return &error1{
+func warning(txt, loc string) *standardNPGuardError {
+	return &standardNPGuardError{
 		err:      errors.New(txt),
 		location: loc,
 		isSevere: false,
 	}
 }
-func err(txt, loc string) *error1 {
-	return &error1{
+func err(txt, loc string) *standardNPGuardError {
+	return &standardNPGuardError{
 		err:      errors.New(txt),
 		location: loc,
 		isSevere: true,
@@ -44,40 +30,36 @@ func err(txt, loc string) *error1 {
 
 func TestHandleNPGerrors(t *testing.T) {
 	tests := map[string]struct {
-		errors                []ErrorLocationSeverity
-		treatWarningsAsErrors bool
-		wantWarns             []string
-		wantErrs              []string
+		errors    []*standardNPGuardError
+		wantWarns []string
+		wantErrs  []string
 	}{
-		"errors and warnings are correctly classified": {
-			errors: []ErrorLocationSeverity{
+		"warnings have location correctly attached": {
+			errors: []*standardNPGuardError{
 				warning("foo", "/root"),
 				warning("bar", "/root"),
 			},
-			treatWarningsAsErrors: false,
-			wantWarns:             []string{"foo", "bar"},
+			wantWarns: []string{"foo (at \"/root\")", "bar (at \"/root\")"},
 		},
-		"errors should get a marker error added": {
-			errors: []ErrorLocationSeverity{
+		"errors have location correctly attached": {
+			errors: []*standardNPGuardError{
+				err("foo", "/root"),
+			},
+			wantErrs:  []string{"foo (at \"/root\")"},
+			wantWarns: []string{},
+		},
+		"warnings and errors are correctly classified": {
+			errors: []*standardNPGuardError{
 				err("foo", "/root"),
 				warning("bar", "/root"),
 			},
-			treatWarningsAsErrors: false,
-			wantErrs:              []string{"foo", "there were errors"},
-			wantWarns:             []string{"bar"},
-		},
-		"warnings should get a marker error added when run with treatWarningsAsErrors": {
-			errors: []ErrorLocationSeverity{
-				warning("foo", "/root"),
-			},
-			treatWarningsAsErrors: true,
-			wantErrs:              []string{"there were warnings"},
-			wantWarns:             []string{"foo"},
+			wantErrs:  []string{"foo (at \"/root\")"},
+			wantWarns: []string{"bar (at \"/root\")"},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotWarns, gotErrs := HandleNPGerrors(tt.errors, tt.treatWarningsAsErrors)
+			gotWarns, gotErrs := HandleNPGerrors(tt.errors)
 			require.Lenf(t, gotWarns, len(tt.wantWarns), "got: %v", goerrors.Join(gotWarns...))
 			require.Lenf(t, gotErrs, len(tt.wantErrs), "got: %v", goerrors.Join(gotErrs...))
 
@@ -87,6 +69,55 @@ func TestHandleNPGerrors(t *testing.T) {
 			for i, we := range tt.wantErrs {
 				assert.ErrorContains(t, gotErrs[i], we)
 			}
+		})
+	}
+}
+
+func TestSummarizeErrors(t *testing.T) {
+	logio, _, _, _ := io.TestIO()
+	l := logger.NewLogger(logio, printer.DefaultColorPrinter())
+
+	tests := map[string]struct {
+		warns                 []error
+		errs                  []error
+		treatWarningsAsErrors bool
+		wantErr               error
+	}{
+		"error marker is added when errors are present": {
+			warns:                 nil,
+			errs:                  []error{errors.New("foo")},
+			treatWarningsAsErrors: false,
+			wantErr:               npg.ErrErrors,
+		},
+		"warning marker is added when warnings are present and treatWarningsAsErrors is true": {
+			warns:                 []error{errors.New("foo")},
+			errs:                  nil,
+			treatWarningsAsErrors: true,
+			wantErr:               npg.ErrWarnings,
+		},
+		"no marker is added when warnings are present and treatWarningsAsErrors is false": {
+			warns:                 []error{errors.New("foo")},
+			errs:                  nil,
+			treatWarningsAsErrors: false,
+			wantErr:               nil,
+		},
+		"no marker is added for no warnings and no errors": {
+			warns:                 nil,
+			errs:                  nil,
+			treatWarningsAsErrors: false,
+			wantErr:               nil,
+		},
+		"error marker has precedence over the warning marker": {
+			warns:                 []error{errors.New("foo")},
+			errs:                  []error{errors.New("bar")},
+			treatWarningsAsErrors: true,
+			wantErr:               npg.ErrErrors,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotErr := SummarizeErrors(tt.warns, tt.errs, tt.treatWarningsAsErrors, l)
+			assert.ErrorIs(t, gotErr, tt.wantErr)
 		})
 	}
 }

@@ -19,5 +19,5 @@ func getK8sInfos(path string, failFast bool, treatWarningsAsErrors bool) ([]*res
 		b.ContinueOnError()
 	}
 	//nolint:wrapcheck // we do wrap the errors later in ErrorHandler
-	return b.Path(true, path).Do().IgnoreErrors().Infos()
+	return b.Path(true, path).Flatten().Do().IgnoreErrors().Infos()
 }

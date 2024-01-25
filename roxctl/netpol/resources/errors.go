@@ -3,7 +3,6 @@ package resources
 import (
 	"regexp"
 
-	"github.com/stackrox/rox/roxctl/common/npg"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -43,9 +42,7 @@ func (e *ErrorHandler) classifyErrors(inWarnings []error, inErrors []error) (out
 	outWarn = inWarnings
 
 	if e.treatWarningsAsErrors {
-		outErr = append(outErr, inWarnings...)
-		outErr = append(outErr, npg.ErrWarnings)
-		return []error{}, outErr
+		return []error{}, append(outErr, inWarnings...)
 	}
 	return outWarn, outErr
 }

@@ -4,7 +4,6 @@ import (
 	goerrors "errors"
 	"testing"
 
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,13 +31,13 @@ func TestProcessInput(t *testing.T) {
 			inputFolderPath1:      "testdata/empty-yamls",
 			treatWarningsAsErrors: true,
 			expectedWarn:          "",
-			expectedErr:           npg.ErrWarnings.Error(),
+			expectedErr:           "Object 'Kind' is missing in",
 		},
 		"Treating warnings as errors should result in error of type 'npg.ErrWarnings'": {
 			inputFolderPath1:      "testdata/contains-invalid-doc",
 			treatWarningsAsErrors: true,
 			expectedWarn:          "",
-			expectedErr:           npg.ErrWarnings.Error(),
+			expectedErr:           "Object 'Kind' is missing in",
 		},
 		"Warnings on invalid input docs without using strict flag should not be treated as errors": {
 			inputFolderPath1:      "testdata/contains-invalid-doc",
@@ -58,7 +57,7 @@ func TestProcessInput(t *testing.T) {
 			stopOnFirstError:      true,
 			treatWarningsAsErrors: true,
 			expectedWarn:          "",
-			expectedErr:           npg.ErrWarnings.Error(),
+			expectedErr:           "error parsing testdata/dirty",
 		},
 		"Testing Diff between two dirs should run successfully without errors": {
 			inputFolderPath1: "testdata/valid-minimal",

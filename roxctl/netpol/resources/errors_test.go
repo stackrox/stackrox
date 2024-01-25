@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -61,8 +60,6 @@ func TestErrorHandler_HandleError(t *testing.T) {
 				// next warnings classified as errors
 				errors.New("unable to decode \"/var/folders/gn/_c1mk30n4w71g65nq_zb58w40000gn/T/tmp.eWb132tVAW/templated-01-XXXXXX-file1.yaml\": json: cannot unmarshal string into Go value of type unstructured.detector"),
 				errors.New("error parsing /var/folders/gn/_c1mk30n4w71g65nq_zb58w40000gn/T/tmp.eWb132tVAW/templated-01-XXXXXX-file1.yaml: error converting YAML to JSON: yaml: line 16: found character that cannot start any token"),
-				// marker error at the end
-				npg.ErrWarnings,
 			},
 		},
 	}

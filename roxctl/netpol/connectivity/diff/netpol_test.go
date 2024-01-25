@@ -7,10 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -95,30 +93,35 @@ func (d *diffAnalyzeNetpolTestSuite) TestValidDiffCommand() {
 
 func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 	cases := map[string]struct {
-		name                   string
-		inputFolderPath1       string
-		inputFolderPath2       string
-		strict                 bool
-		stopOnFirstErr         bool
-		expectedAnalyzerErrors []error
-		expectedError          error
+		name                     string
+		inputFolderPath1         string
+		inputFolderPath2         string
+		strict                   bool
+		stopOnFirstErr           bool
+		expectedAnalyzerErrors   []string
+		expectedAnalyzerWarnings []string
 	}{
 		"Testing Diff between two empty dirs should return analysis error": {
 			inputFolderPath1: "testdata/empty-yamls",
 			inputFolderPath2: "testdata/empty-yamls",
-			expectedAnalyzerErrors: []error{
-				errors.New("at dir1: no relevant Kubernetes network policy resources found"),
-				errors.New("at dir2: no relevant Kubernetes network policy resources found"),
-				errors.New("at dir1: no relevant Kubernetes workload resources found"),
-				errors.New("at dir2: no relevant Kubernetes workload resources found"),
+			expectedAnalyzerErrors: []string{
+				"at dir1: no relevant Kubernetes workload resources found",
+				"at dir2: no relevant Kubernetes workload resources found",
 			},
-			expectedError: npg.ErrErrors,
+			expectedAnalyzerWarnings: []string{
+				"at dir1: no relevant Kubernetes network policy resources found",
+				"at dir2: no relevant Kubernetes network policy resources found",
+				"unable to decode \"testdata/empty-yamls/empty.yaml\"",
+				"unable to decode \"testdata/empty-yamls/empty.yaml\"",
+				"unable to decode \"testdata/empty-yamls/empty2.yaml\"",
+				"unable to decode \"testdata/empty-yamls/empty2.yaml\"",
+			},
 		},
 		"Testing Diff between two dirs should run successfully without errors": {
-			inputFolderPath1:       "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:       "testdata/netpol-diff-example-minimal",
-			expectedAnalyzerErrors: []error{},
-			expectedError:          nil,
+			inputFolderPath1:         "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2:         "testdata/netpol-diff-example-minimal",
+			expectedAnalyzerErrors:   []string{},
+			expectedAnalyzerWarnings: []string{},
 		},
 	}
 
@@ -140,28 +143,26 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffAnalyzerBehaviour() {
 			err = diffNetpolCmd.validate()
 			d.NoError(err)
 
-			err = diffNetpolCmd.analyzeConnectivityDiff(analyzer)
-			if tt.expectedError != nil {
-				d.Require().Error(err)
-				d.ErrorIs(err, tt.expectedError)
-			} else {
-				d.NoError(err, "expected no error, but got: %v", err)
-			}
+			warns, errs := diffNetpolCmd.analyzeConnectivityDiff(analyzer)
+			d.Require().Lenf(errs, len(tt.expectedAnalyzerErrors), "number errors should be %d", len(tt.expectedAnalyzerErrors))
+			d.Require().Lenf(warns, len(tt.expectedAnalyzerWarnings), "number warnings should be %d", len(tt.expectedAnalyzerWarnings))
 
-			// convert custom errors to common errors
-			analyzerErrors := make([]error, len(analyzer.Errors()))
-			for i, diffError := range analyzer.Errors() {
-				analyzerErrors[i] = diffError.Error()
+			for _, expError := range tt.expectedAnalyzerErrors {
+				if expError != "" {
+					d.Require().Error(goerrors.Join(errs...))
+					d.Assert().ErrorContains(goerrors.Join(errs...), expError)
+				} else {
+					d.Assert().NoError(goerrors.Join(errs...))
+				}
 			}
-
-			for _, err2 := range tt.expectedAnalyzerErrors {
-				d.ErrorContains(goerrors.Join(analyzerErrors...), err2.Error())
+			for _, expWarn := range tt.expectedAnalyzerWarnings {
+				if expWarn != "" {
+					d.Require().Error(goerrors.Join(warns...))
+					d.Assert().ErrorContains(goerrors.Join(warns...), expWarn)
+				} else {
+					d.Assert().NoError(goerrors.Join(warns...))
+				}
 			}
-
-			if tt.expectedAnalyzerErrors == nil || len(tt.expectedAnalyzerErrors) == 0 {
-				d.NoError(err, "expected no analyser error, but got: %v", goerrors.Join(analyzerErrors...))
-			}
-
 		})
 	}
 }
@@ -184,21 +185,21 @@ func (d *diffAnalyzeNetpolTestSuite) assertFileContentsMatch(expectedString, fil
 func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
 	outFileName := d.createOutFile()
 	cases := []struct {
-		name                           string
-		inputFolderPath1               string
-		inputFolderPath2               string
-		outFile                        string
-		removeOutputPath               bool
-		outputFormat                   string
-		expectedWrongFormatErrContains string
+		name             string
+		inputFolderPath1 string
+		inputFolderPath2 string
+		outFile          string
+		removeOutputPath bool
+		outputFormat     string
+		expectedError    string
 	}{
 		{
-			name:                           "Not supported output format should result an error in formatting connectivity diff",
-			inputFolderPath1:               "testdata/netpol-analysis-example-minimal",
-			inputFolderPath2:               "testdata/netpol-diff-example-minimal",
-			outFile:                        "",
-			outputFormat:                   "docx",
-			expectedWrongFormatErrContains: "docx output format is not supported.",
+			name:             "Not supported output format should result an error in formatting connectivity diff",
+			inputFolderPath1: "testdata/netpol-analysis-example-minimal",
+			inputFolderPath2: "testdata/netpol-diff-example-minimal",
+			outFile:          "",
+			outputFormat:     "docx",
+			expectedError:    "docx output format is not supported.",
 		},
 		{
 			name:             "Existing output file input with using remove flag should override existing output file",
@@ -272,13 +273,14 @@ func (d *diffAnalyzeNetpolTestSuite) TestDiffOutput() {
 			err = diffNetpolCmd.validate()
 			d.NoError(err)
 
-			err = diffNetpolCmd.analyzeConnectivityDiff(analyzer)
-			if tt.expectedWrongFormatErrContains != "" {
-				d.Require().Error(err)
-				d.ErrorContains(err, tt.expectedWrongFormatErrContains)
-				return
+			_, errs := diffNetpolCmd.analyzeConnectivityDiff(analyzer)
+			if tt.expectedError != "" {
+				d.Require().Error(goerrors.Join(errs...))
+				d.Assert().ErrorContains(goerrors.Join(errs...), tt.expectedError)
+				return // we got an error, so there is no need to test the diff result
 			}
-			d.NoError(err)
+
+			d.Assert().NoError(goerrors.Join(errs...))
 
 			formatSuffix := tt.outputFormat
 			if formatSuffix == "" {

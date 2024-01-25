@@ -1,13 +1,13 @@
 package connectivitymap
 
 import (
+	goerrors "errors"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,6 +20,66 @@ type analyzeNetpolTestSuite struct {
 	suite.Suite
 }
 
+func (d *analyzeNetpolTestSuite) TestValidate() {
+	cases := []struct {
+		name               string
+		inputFolderPath    string
+		expectedErr        error
+		writeDummyToOutput bool
+		removeOutputPath   bool
+	}{
+		{
+			name:             "output should be written to a single file",
+			inputFolderPath:  "testdata/minimal",
+			expectedErr:      nil,
+			removeOutputPath: false,
+		},
+		{
+			name:               "should return error that the file already exists",
+			inputFolderPath:    "testdata/minimal",
+			expectedErr:        errox.AlreadyExists,
+			writeDummyToOutput: true,
+			removeOutputPath:   false,
+		},
+		{
+			name:             "should override existing file",
+			inputFolderPath:  "testdata/minimal",
+			expectedErr:      nil,
+			removeOutputPath: true,
+		},
+	}
+
+	for _, tt := range cases {
+		tt := tt
+		d.Run(tt.name, func() {
+			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
+			analyzeNetpolCmd := Cmd{
+				stopOnFirstError:      false,
+				treatWarningsAsErrors: false,
+				inputFolderPath:       tt.inputFolderPath,
+				outputFilePath:        d.T().TempDir() + "/out.txt",
+				removeOutputPath:      tt.removeOutputPath,
+				outputToFile:          false,
+				focusWorkload:         "",
+				outputFormat:          "",
+				env:                   env,
+			}
+
+			if tt.writeDummyToOutput {
+				d.Require().NoError(os.WriteFile(analyzeNetpolCmd.outputFilePath, []byte("hello\n"), 0644))
+			}
+
+			err := analyzeNetpolCmd.validate()
+			if tt.expectedErr != nil {
+				d.Require().Error(err)
+				d.Assert().ErrorIs(err, tt.expectedErr)
+				return
+			}
+			d.Assert().NoError(err)
+		})
+	}
+}
+
 func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 	tmpOutFileName := d.T().TempDir() + "/out"
 	outFileTxt := tmpOutFileName + ".txt"
@@ -27,11 +87,8 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 	outFileMD := tmpOutFileName + ".md"
 	outFileCSV := tmpOutFileName + ".csv"
 	outFileDOT := tmpOutFileName + ".dot"
-	cases := []struct {
-		name                  string
+	cases := map[string]struct {
 		inputFolderPath       string
-		expectedAnalysisError string
-		expectedValidateError error
 		treatWarningsAsErrors bool
 		stopOnFirstErr        bool
 		outFile               string
@@ -39,151 +96,134 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 		focusWorkload         string
 		outputFormat          string
 		removeOutputPath      bool
+
+		expectedErrors   []string
+		expectedWarnings []string
 	}{
-		{
-			name:                  "Not existing inputFolderPath should print error about path not existing but attempt analysis",
+		"Not existing inputFolderPath should print error about path not existing but attempt analysis": {
 			inputFolderPath:       "/tmp/xxx",
 			stopOnFirstErr:        false,
 			treatWarningsAsErrors: false,
-			expectedAnalysisError: "there were errors",
+			expectedErrors: []string{
+				"the path \"/tmp/xxx\" does not exist",
+				"no relevant Kubernetes workload resources found"},
+			expectedWarnings: []string{"no relevant Kubernetes network policy resources found"},
 		},
-		{
-			name:                  "Not existing inputFolderPath should stop on first error about path not existing",
-			inputFolderPath:       "/tmp/xxx",
-			stopOnFirstErr:        true,
-			treatWarningsAsErrors: false,
-			expectedAnalysisError: "does not exist",
+		"errors with no resources found": {
+			inputFolderPath: "testdata/empty-yamls",
+			expectedErrors:  []string{"no relevant Kubernetes workload resources found"},
+			expectedWarnings: []string{
+				"unable to decode \"testdata/empty-yamls/empty.yaml\": Object 'Kind' is missing in",
+				"unable to decode \"testdata/empty-yamls/empty2.yaml\": Object 'Kind' is missing in",
+				"no relevant Kubernetes network policy resources found",
+			},
 		},
-		{
-			name:                  "happyPath",
-			inputFolderPath:       "testdata/minimal",
-			expectedAnalysisError: "",
-		},
-		{
-			name:                  "errors with no resources found",
-			inputFolderPath:       "testdata/empty-yamls",
-			expectedAnalysisError: npg.ErrErrors.Error(),
-		},
-		{
-			name:                  "treating warnings as errors",
+		"treating warnings as errors": {
 			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedAnalysisError: npg.ErrWarnings.Error(),
+			expectedErrors:        []string{"unable to decode \"testdata/minimal-with-invalid-doc/resources.yaml\""},
+			expectedWarnings:      []string{},
 			treatWarningsAsErrors: true,
 		},
-		{
-			name:                  "warnings not indicated without strict",
-			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedAnalysisError: "",
+		"warnings not indicated without strict": {
+			inputFolderPath:  "testdata/minimal-with-invalid-doc",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal-with-invalid-doc/resources.yaml\": Object 'Kind' is missing in"},
 		},
-		{
-			name:                  "stopOnFistError",
-			inputFolderPath:       "testdata/dirty", // yaml document malformed
-			expectedAnalysisError: npg.ErrErrors.Error(),
-			stopOnFirstErr:        true,
+		"stopOnFistError": {
+			inputFolderPath: "testdata/dirty",
+			stopOnFirstErr:  true,
+			expectedErrors:  []string{"no relevant Kubernetes workload resources found"},
+			expectedWarnings: []string{
+				"error parsing testdata/dirty/backend.yaml: error converting YAML to JSON",
+				"error parsing testdata/dirty/frontend.yaml: error converting YAML to JSON",
+				"no relevant Kubernetes network policy resources found",
+			},
 		},
-		{
-			name:                  "output should be written to a single file",
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
-			outFile:               outFileTxt,
-			removeOutputPath:      false,
+		"should override existing file": {
+			inputFolderPath:  "testdata/minimal",
+			outFile:          outFileTxt,
+			removeOutputPath: true,
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
 		},
-		{
-			name:                  "should return error that the file already exists",
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: errox.AlreadyExists,
-			expectedAnalysisError: "",
-			outFile:               outFileTxt,
-			removeOutputPath:      false,
+		"output should be written to default txt output file": {
+			inputFolderPath:  "testdata/minimal",
+			outputToFile:     true,
+			outputFormat:     defaultOutputFormat,
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
 		},
-		{
-			name:                  "should override existing file",
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
-			outFile:               outFileTxt,
-			removeOutputPath:      true,
+		"output should be focused to a workload": {
+			inputFolderPath:  "testdata/minimal",
+			focusWorkload:    "default/backend",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
 		},
-		{
-			name:                  "output should be written to default txt output file",
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
-			outputToFile:          true,
-			outputFormat:          defaultOutputFormat,
+		"not supported output format": {
+			inputFolderPath:  "testdata/minimal",
+			outputFormat:     "docx",
+			expectedErrors:   []string{"docx output format is not supported."},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
 		},
-		{
-			name:                  "output should be focused to a workload",
-			inputFolderPath:       "testdata/minimal",
-			focusWorkload:         "default/backend",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
+		"generate output in json format": {
+			inputFolderPath:  "testdata/minimal",
+			outputFormat:     "json",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+
+			outFile: outFileJSON,
 		},
-		{
-			name:                  "not supported output format",
-			inputFolderPath:       "testdata/minimal",
-			outputFormat:          "docx",
-			expectedAnalysisError: "docx output format is not supported.",
+		"generate output in md format": {
+			inputFolderPath:  "testdata/minimal",
+			outputFormat:     "md",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+
+			outFile: outFileMD,
 		},
-		{
-			name:                  "generate output in json format",
-			inputFolderPath:       "testdata/minimal",
-			outputFormat:          "json",
-			expectedAnalysisError: "",
-			expectedValidateError: nil,
-			outFile:               outFileJSON,
+		"generate output in csv format": {
+			inputFolderPath:  "testdata/minimal",
+			outputFormat:     "csv",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+
+			outFile: outFileCSV,
 		},
-		{
-			name:                  "generate output in md format",
-			inputFolderPath:       "testdata/minimal",
-			outputFormat:          "md",
-			expectedAnalysisError: "",
-			expectedValidateError: nil,
-			outFile:               outFileMD,
+		"generate output in dot format": {
+			inputFolderPath:  "testdata/minimal",
+			outputFormat:     "dot",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+
+			outFile: outFileDOT,
 		},
-		{
-			name:                  "generate output in csv format",
-			inputFolderPath:       "testdata/minimal",
-			outputFormat:          "csv",
-			expectedAnalysisError: "",
-			expectedValidateError: nil,
-			outFile:               outFileCSV,
+		"openshift resources are recognized by the serializer with k8s resources": {
+			inputFolderPath: "testdata/frontend-security",
+			expectedErrors:  []string{},
+			expectedWarnings: []string{
+				"Route resource frontend/asset-cache specified workload frontend/asset-cache[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload. Connectivity map will not include a possibly allowed connection between the ingress controller and this workload.",
+				"Route resource frontend/webapp specified workload frontend/webapp[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload. Connectivity map will not include a possibly allowed connection between the ingress controller and this workload.",
+			},
 		},
-		{
-			name:                  "generate output in dot format",
-			inputFolderPath:       "testdata/minimal",
-			outputFormat:          "dot",
-			expectedAnalysisError: "",
-			expectedValidateError: nil,
-			outFile:               outFileDOT,
+		"output should be written to default json output file": {
+			inputFolderPath:  "testdata/minimal",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+
+			outputToFile: true,
+			outputFormat: "json",
 		},
-		{
-			name:                  "openshift resources are recognized by the serializer with k8s resources",
-			inputFolderPath:       "testdata/frontend-security",
-			expectedAnalysisError: "",
-			expectedValidateError: nil,
-		},
-		{
-			name:                  "output should be written to default json output file",
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
-			outputToFile:          true,
-			outputFormat:          "json",
-		},
-		{
-			name:                  "generate connections list with ingress controller",
-			inputFolderPath:       "testdata/acs-security-demos",
-			expectedValidateError: nil,
-			expectedAnalysisError: "",
-			outputToFile:          true,
+		"generate connections list with ingress controller": {
+			inputFolderPath:  "testdata/acs-security-demos",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{},
+			outputToFile:     true,
 		},
 	}
 
-	for _, tt := range cases {
+	for name, tt := range cases {
 		tt := tt
-		d.Run(tt.name, func() {
+		d.Run(name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{
 				stopOnFirstError:      tt.stopOnFirstErr,
@@ -199,29 +239,36 @@ func (d *analyzeNetpolTestSuite) TestAnalyzeNetpol() {
 
 			analyzer, err := analyzeNetpolCmd.construct([]string{tt.inputFolderPath})
 			d.Assert().NoError(err)
+			d.Assert().NoError(analyzeNetpolCmd.validate())
+			warns, errs := analyzeNetpolCmd.analyze(analyzer)
+			d.Require().Lenf(errs, len(tt.expectedErrors), "number of errors should be %d", len(tt.expectedErrors))
+			d.Require().Lenf(warns, len(tt.expectedWarnings), "number of warnings should be %d", len(tt.expectedWarnings))
 
-			err = analyzeNetpolCmd.validate()
-			if tt.expectedValidateError != nil {
-				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedValidateError)
-				return
+			for _, expError := range tt.expectedErrors {
+				if expError != "" {
+					d.Require().Error(goerrors.Join(errs...))
+					d.Assert().ErrorContainsf(goerrors.Join(errs...), expError,
+						"Expected errors to contain %s", tt.expectedErrors)
+				} else {
+					d.Assert().NoError(goerrors.Join(errs...))
+				}
 			}
-			d.Assert().NoError(err)
-
-			err = analyzeNetpolCmd.analyzeNetpols(analyzer)
-			if tt.expectedAnalysisError != "" {
-				d.Require().Error(err)
-				d.Assert().Contains(err.Error(), tt.expectedAnalysisError)
-			} else {
-				d.Assert().NoError(err)
+			for _, expWarn := range tt.expectedWarnings {
+				if expWarn != "" {
+					d.Require().Error(goerrors.Join(warns...))
+					d.Assert().ErrorContainsf(goerrors.Join(warns...), expWarn,
+						"Expected warnings to contain %s", tt.expectedWarnings)
+				} else {
+					d.Assert().NoError(goerrors.Join(warns...))
+				}
 			}
 
-			if tt.outFile != "" && tt.expectedAnalysisError == "" && tt.expectedValidateError == nil {
+			if tt.outFile != "" && len(tt.expectedErrors) == 0 {
 				_, err := os.Stat(tt.outFile)
 				d.Assert().NoError(err) // out file should exist
 			}
 
-			if tt.outputToFile && tt.outFile == "" && tt.expectedAnalysisError == "" && tt.expectedValidateError == nil {
+			if tt.outputToFile && tt.outFile == "" && len(tt.expectedErrors) == 0 && len(tt.expectedWarnings) == 0 {
 				defaultFile := analyzeNetpolCmd.getDefaultFileName()
 				formatSuffix := ""
 				if tt.outputFormat != "" {

@@ -2,7 +2,6 @@
 package diff
 
 import (
-	goerrors "errors"
 	"os"
 	"path/filepath"
 
@@ -30,18 +29,7 @@ func (cmd *diffNetpolCommand) processInput() (info1 []*resource.Info, info2 []*r
 	return infos1, infos2, append(warns1, warns2...), append(errs1, errs2...)
 }
 
-func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) error {
-	warns, errs := cmd.analyze(analyzer)
-	if cmd.treatWarningsAsErrors {
-		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
-	}
-	for _, warn := range warns {
-		cmd.env.Logger().WarnfLn("%v", warn)
-	}
-	return goerrors.Join(errs...)
-}
-
-func (cmd *diffNetpolCommand) analyze(analyzer diffAnalyzer) (w []error, e []error) {
+func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) (w []error, e []error) {
 	info1, info2, warns, errs := cmd.processInput()
 	if cmd.stopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.treatWarningsAsErrors)) {
 		return warns, errs
@@ -61,11 +49,8 @@ func (cmd *diffNetpolCommand) analyze(analyzer diffAnalyzer) (w []error, e []err
 	if err := cmd.outputConnsDiff(connsDiffStr); err != nil {
 		return warns, append(errs, err)
 	}
-	errArr := make([]resources.ErrorLocationSeverity, len(analyzer.Errors()))
-	for i, processingError := range analyzer.Errors() {
-		errArr[i] = processingError
-	}
-	w, e = resources.HandleNPGerrors(errArr, cmd.treatWarningsAsErrors)
+
+	w, e = resources.HandleNPGerrors(resources.ConvertDiffError(analyzer.Errors()))
 	return append(warns, w...), append(errs, e...)
 }
 

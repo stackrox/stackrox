@@ -2,7 +2,6 @@
 package connectivitymap
 
 import (
-	goerrors "errors"
 	"os"
 	"path/filepath"
 
@@ -95,7 +94,12 @@ func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
 	if err := cmd.validate(); err != nil {
 		return err
 	}
-	return cmd.analyzeNetpols(analyzer)
+	warns, errs := cmd.analyze(analyzer)
+	err = resources.SummarizeErrors(warns, errs, cmd.treatWarningsAsErrors, cmd.env.Logger())
+	if err != nil {
+		return errors.Wrap(err, "running command")
+	}
+	return nil
 }
 
 // AddFlags is for parsing flags and storing their values
@@ -108,17 +112,6 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "focus on connections of specified workload name in the output")
 	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "configure the connections list in specific format, supported formats: txt|json|md|dot|csv")
 	return c
-}
-
-func (cmd *Cmd) analyzeNetpols(analyzer netpolAnalyzer) error {
-	warns, errs := cmd.analyze(analyzer)
-	if cmd.treatWarningsAsErrors {
-		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
-	}
-	for _, warn := range warns {
-		cmd.env.Logger().WarnfLn("%v", warn)
-	}
-	return goerrors.Join(errs...)
 }
 
 func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
@@ -138,11 +131,7 @@ func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
 	if err := cmd.ouputConnList(connsStr); err != nil {
 		return warns, append(errs, errors.Wrap(err, "writing connectivity result"))
 	}
-	errArr := make([]resources.ErrorLocationSeverity, len(analyzer.Errors()))
-	for i, processingError := range analyzer.Errors() {
-		errArr[i] = processingError
-	}
-	w, e = resources.HandleNPGerrors(errArr, cmd.treatWarningsAsErrors)
+	w, e = resources.HandleNPGerrors(resources.ConvertConnlistError(analyzer.Errors()))
 	return append(warns, w...), append(errs, e...)
 }
 

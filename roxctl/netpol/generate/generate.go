@@ -1,7 +1,6 @@
 package generate
 
 import (
-	goerrors "errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,7 +96,12 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	if err := cmd.validate(); err != nil {
 		return err
 	}
-	return cmd.generateNetpol(synth)
+	warns, errs := cmd.generateNetpol(synth)
+	err = resources.SummarizeErrors(warns, errs, cmd.Options.TreatWarningsAsErrors, cmd.env.Logger())
+	if err != nil {
+		return errors.Wrap(err, "running command")
+	}
+	return nil
 }
 
 func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
@@ -146,18 +150,7 @@ type netpolGenerator interface {
 	Errors() []npguard.FileProcessingError
 }
 
-func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) error {
-	warns, errs := cmd.generate(synth)
-	if cmd.Options.TreatWarningsAsErrors {
-		return goerrors.Join(goerrors.Join(warns...), goerrors.Join(errs...))
-	}
-	for _, warn := range warns {
-		cmd.env.Logger().WarnfLn("%v", warn)
-	}
-	return goerrors.Join(errs...)
-}
-
-func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []error) {
+func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
 	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
 	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
 		return warns, errs
@@ -170,12 +163,7 @@ func (cmd *NetpolGenerateCmd) generate(synth netpolGenerator) (w []error, e []er
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
 		return warns, append(errs, err)
 	}
-	errArr := make([]resources.ErrorLocationSeverity, len(synth.Errors()))
-	for i, processingError := range synth.Errors() {
-		cp := processingError
-		errArr[i] = &cp
-	}
-	w, e = resources.HandleNPGerrors(errArr, cmd.Options.TreatWarningsAsErrors)
+	w, e = resources.HandleNPGerrors(resources.ConvertFileProcessingError(synth.Errors()))
 	return append(warns, w...), append(errs, e...)
 }
 
