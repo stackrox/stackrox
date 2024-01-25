@@ -44,7 +44,7 @@ func TestTransportMux(t *testing.T) {
 		Transport: tr,
 	}
 
-	for _, testcase := range []struct{
+	for _, testcase := range []struct {
 		name string
 		url  string
 	}{

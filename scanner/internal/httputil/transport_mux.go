@@ -83,7 +83,7 @@ func transportMux(defaultTransport http.RoundTripper, o options) (http.RoundTrip
 	// This is here instead of as a global variable for testing purposes.
 	namespace := env.Namespace.Setting()
 	centralHost := fmt.Sprintf("central.%s.svc", namespace)
-	sensorHost  := fmt.Sprintf("sensor.%s.svc", namespace)
+	sensorHost := fmt.Sprintf("sensor.%s.svc", namespace)
 
 	return httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		switch req.URL.Host {
