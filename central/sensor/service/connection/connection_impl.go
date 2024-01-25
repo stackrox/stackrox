@@ -108,7 +108,7 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 		complianceOperatorMgr:      complianceOperatorMgr,
-		maxSeenMessageSize:         map[string]float64{},
+		maxSeenMessageSize:         make(map[string]float64),
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -219,8 +219,9 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 
 func (c *sensorConnection) sendWithSizingMetric(server central.SensorService_CommunicateServer, msg *central.MsgToSensor) error {
 	typ := reflectutils.Type(msg)
-	c.maxSeenMessageSize[typ] = math.Max(c.maxSeenMessageSize[typ], float64(msg.Size()))
-	metrics.SetGRPCMaxMessageSizeGauge(typ, c.maxSeenMessageSize[typ])
+	gaugeValue := math.Max(c.maxSeenMessageSize[typ], float64(msg.Size()))
+	metrics.SetGRPCMaxMessageSizeGauge(typ, gaugeValue)
+	c.maxSeenMessageSize[typ] = gaugeValue
 	return server.Send(msg)
 }
 

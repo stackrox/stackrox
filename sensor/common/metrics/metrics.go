@@ -156,7 +156,7 @@ var (
 	sensorGRPCMaxMessageSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "sensor_grpc_max_message_size",
+		Name:      "max_message_size_sent",
 		Help:      "A gauge for maximum message size seen when sending messages in sensor",
 	}, []string{"Type", "EventType"})
 
