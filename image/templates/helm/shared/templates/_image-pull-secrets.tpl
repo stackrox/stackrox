@@ -17,11 +17,14 @@
 
      The list contains the following secrets:
 
-     - Secrets referenced via $imagePullSecrets.useExisting.
+     - Secrets referenced via $imagePullSecrets.useExisting (unconditonally).
      - Image pull secrets associated with the default service account (unless
        $imagePullSecrets.useFromDefaultServiceAccount was set to false by the user).
-     - $secretResourceName.
-     - $defaultSecretNames.
+     - $secretResourceName, i.e. the secret optionally created by the chart templates. This name will be included
+       in the list either if username/password is provided (i.e. whe the chart ensures presence of the secret) OR
+       if the resource already exists in the namespace (for backward compatibility with versions 4.3 or earlier).
+     - $defaultSecretNames, only if the corresponding secrets already exist in the namespace (again, for backward
+       compatibility).
 
   Additionally, this function fails execution if the list resulting from first three bullet points
   combined is empty.
@@ -85,7 +88,16 @@
   {{ include "srox.fail" $msg }}
 {{ end }}
 
-{{ $imagePullSecretNames = concat (append $imagePullSecretNames $secretResourceName) $defaultSecretNames | uniq | sortAlpha }}
+{{/* For backward compatibility, include those secrets which already exist. */}}
+{{ range $secretName := (append $defaultSecretNames $secretResourceName) }}
+  {{ $secret := dict }}
+  {{ include "srox.safeLookup" (list $ $secret "v1" "Secret" $namespace $secretName) }}
+  {{ if $secret.result }}
+    {{ $imagePullSecretNames = append $imagePullSecretNames $secretName }}
+  {{ end }}
+{{ end }}
+
+{{ $imagePullSecretNames = $imagePullSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
 
 {{ end }}
