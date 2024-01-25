@@ -32,4 +32,6 @@ const (
 	ComplianceOperatorRule
 	ComplianceOperatorScan
 	ComplianceOperatorInfo
+	ComplianceOperatorCheckResultV2
+	ComplianceOperatorRuleV2
 )
