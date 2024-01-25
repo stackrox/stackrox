@@ -31,6 +31,7 @@ var (
 		&central.SensorEvent_OrchestratorMetadata{},
 		&central.SensorEvent_ImageIntegration{},
 		&central.SensorEvent_ComplianceOperatorResult{},
+		&central.SensorEvent_ComplianceOperatorResultV2{},
 		&central.SensorEvent_ComplianceOperatorProfile{},
 		&central.SensorEvent_ComplianceOperatorRule{},
 		&central.SensorEvent_ComplianceOperatorRuleV2{},
