@@ -192,7 +192,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			if queue == nil {
 				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
 				s.workerQueues[workerType] = queue
-				go queue.run(ctx, s.stopSig, s.deduper, s.handleMessages)
+				go queue.run(ctx, s.stopSig, s.handleMessages)
 			}
 		})
 	}
