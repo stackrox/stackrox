@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -140,6 +142,9 @@ func (s *FixableSearchTestSuite) TestImageSearch() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.skip {
+				t.SkipNow()
+			}
 			results, err := s.imageDataStore.Search(s.ctx, tc.q)
 			s.NoError(err)
 			actual := search.ResultsToIDs(results)
@@ -248,6 +253,9 @@ func (s *FixableSearchTestSuite) TestCVESearch() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.skip {
+				t.SkipNow()
+			}
 			results, err := s.cveDataStore.Search(s.ctx, tc.q)
 			s.NoError(err)
 			actual := search.ResultsToIDs(results)
