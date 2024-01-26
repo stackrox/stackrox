@@ -15,7 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	maxPaginationLimit = 1000
 )
 
 var (
@@ -23,7 +28,6 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceProfileService/GetComplianceProfile",
 			"/v2.ComplianceProfileService/ListComplianceProfiles",
-			"/v2.ComplianceProfileService/ListProfileSummaries",
 			"/v2.ComplianceProfileService/GetComplianceProfileCount",
 		},
 	})
@@ -75,34 +79,23 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 }
 
 // ListComplianceProfiles returns profiles matching given query
-func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.ProfilesForClusterRequest) (*v2.ListComplianceProfilesResponse, error) {
-	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
+func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceProfilesResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	profiles, err := s.complianceProfilesDS.GetProfilesByClusters(ctx, []string{request.GetClusterId()})
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for cluster %v", request.GetClusterId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for query %v", query)
 	}
 
 	return &v2.ListComplianceProfilesResponse{
 		Profiles: storagetov2.ComplianceV2Profiles(profiles),
-	}, nil
-}
-
-// ListProfileSummaries returns profile summaries matching incoming clusters
-func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.ClustersProfileSummaryRequest) (*v2.ListComplianceProfileSummaryResponse, error) {
-	if len(request.GetClusterIds()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "cluster is required")
-	}
-
-	profiles, err := s.complianceProfilesDS.GetProfilesByClusters(ctx, request.GetClusterIds())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for clusters %v", request.GetClusterIds())
-	}
-
-	return &v2.ListComplianceProfileSummaryResponse{
-		Profiles: storagetov2.ComplianceProfileSummary(profiles),
 	}, nil
 }
 

@@ -12,8 +12,7 @@ import (
 
 var (
 	// ProfileUID -- profile UID used in test objects
-	ProfileUID  = uuid.NewV4().String()
-	profileUID2 = uuid.NewV4().String()
+	ProfileUID = uuid.NewV4().String()
 
 	profileID     = uuid.NewV4().String()
 	values        = []string{"value-1", "value-2"}
@@ -99,7 +98,7 @@ func GetProfileV2SensorMsg(_ *testing.T) *central.ComplianceOperatorProfileV2 {
 // GetProfileV2Storage -- returns a V2 storage object
 func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 	return &storage.ComplianceOperatorProfileV2{
-		Id:             ProfileUID,
+		Id:             "ocp-cis-4.2",
 		ProfileId:      profileID,
 		Name:           "ocp-cis",
 		ProfileVersion: "4.2",
@@ -112,7 +111,6 @@ func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 		Standard:       "",
 		Product:        "",
 		Values:         values,
-		ClusterId:      fixtureconsts.Cluster1,
 	}
 }
 
@@ -120,7 +118,7 @@ func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
 func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 	return []*storage.ComplianceOperatorProfileV2{
 		{
-			Id:             ProfileUID,
+			Id:             "ocp-cis-4.2",
 			ProfileId:      profileID,
 			Name:           "ocp-cis",
 			ProfileVersion: "4.2",
@@ -133,10 +131,9 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Standard:       "",
 			Product:        "",
 			Values:         values,
-			ClusterId:      fixtureconsts.Cluster1,
 		},
 		{
-			Id:             profileUID2,
+			Id:             "rhcos-moderate-4.1.2",
 			ProfileId:      profileID,
 			Name:           "rhcos-moderate",
 			ProfileVersion: "4.1.2",
@@ -149,7 +146,6 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 			Standard:       "",
 			Product:        "",
 			Values:         values,
-			ClusterId:      fixtureconsts.Cluster1,
 		},
 	}
 }
@@ -157,7 +153,7 @@ func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
 // GetProfileV2Api returns a V2 API profile that matches GetProfileV2Storage
 func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
 	return &v2.ComplianceProfile{
-		Id:             ProfileUID,
+		Id:             "ocp-cis-4.2",
 		Name:           "ocp-cis",
 		ProfileVersion: "4.2",
 		Description:    "this is a test",
@@ -174,7 +170,7 @@ func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
 func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 	return []*v2.ComplianceProfile{
 		{
-			Id:             ProfileUID,
+			Id:             "ocp-cis-4.2",
 			Name:           "ocp-cis",
 			ProfileVersion: "4.2",
 			Description:    "this is a test",
@@ -186,7 +182,7 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Values:         values,
 		},
 		{
-			Id:             profileUID2,
+			Id:             "rhcos-moderate-4.1.2",
 			Name:           "rhcos-moderate",
 			ProfileVersion: "4.1.2",
 			Description:    "this is a test",

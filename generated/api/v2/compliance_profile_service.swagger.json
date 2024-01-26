@@ -11,69 +11,7 @@
     "application/json"
   ],
   "paths": {
-    "/v2/compliance/profile/{id}": {
-      "get": {
-        "summary": "GetComplianceProfile retrieves the specified compliance profile",
-        "operationId": "ComplianceProfileService_GetComplianceProfile",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceProfile"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceProfileService"
-        ]
-      }
-    },
-    "/v2/compliance/profiles/cluster": {
-      "get": {
-        "summary": "ListComplianceProfiles returns profiles matching given request",
-        "operationId": "ComplianceProfileService_ListComplianceProfiles",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ListComplianceProfilesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "clusterId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceProfileService"
-        ]
-      }
-    },
-    "/v2/compliance/profiles/count": {
+    "/v2/compliance/count/profiles": {
       "get": {
         "summary": "GetComplianceProfileCount returns the number of profiles matching the given query",
         "operationId": "ComplianceProfileService_GetComplianceProfileCount",
@@ -149,15 +87,15 @@
         ]
       }
     },
-    "/v2/compliance/profiles/summary": {
+    "/v2/compliance/profiles": {
       "get": {
-        "summary": "ListProfileSummaries returns profiles matching each cluster and the given query",
-        "operationId": "ComplianceProfileService_ListProfileSummaries",
+        "summary": "ListComplianceProfiles returns profiles matching given query",
+        "operationId": "ComplianceProfileService_ListComplianceProfiles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ListComplianceProfileSummaryResponse"
+              "$ref": "#/definitions/v2ListComplianceProfilesResponse"
             }
           },
           "default": {
@@ -169,14 +107,86 @@
         },
         "parameters": [
           {
-            "name": "clusterIds",
+            "name": "query",
             "in": "query",
             "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceProfileService"
+        ]
+      }
+    },
+    "/v2/compliance/profiles/{id}": {
+      "get": {
+        "summary": "GetComplianceProfile retrieves the specified compliance profile",
+        "operationId": "ComplianceProfileService_GetComplianceProfile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceProfile"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -282,31 +292,6 @@
       },
       "title": "Next Tag: 11"
     },
-    "v2ComplianceProfileSummary": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "productType": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "ruleCount": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "profileVersion": {
-          "type": "string"
-        }
-      },
-      "title": "Next Tag: 7"
-    },
     "v2ComplianceRule": {
       "type": "object",
       "properties": {
@@ -353,18 +338,6 @@
       },
       "title": "CountComplianceProfilesResponse gives count of compliance profiles"
     },
-    "v2ListComplianceProfileSummaryResponse": {
-      "type": "object",
-      "properties": {
-        "profiles": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ComplianceProfileSummary"
-          }
-        }
-      },
-      "title": "ListComplianceProfileSummaryResponse provides a list of profiles summaries"
-    },
     "v2ListComplianceProfilesResponse": {
       "type": "object",
       "properties": {
@@ -374,8 +347,7 @@
             "$ref": "#/definitions/v2ComplianceProfile"
           }
         }
-      },
-      "title": "ListComplianceProfilesResponse provides a list of profiles"
+      }
     },
     "v2Pagination": {
       "type": "object",

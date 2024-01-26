@@ -48,14 +48,16 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	existingIDs := set.NewStringSet()
 
-	profiles, err := s.v2ProfileDatastore.GetProfilesByClusters(ctx, []string{clusterID})
+	// For nextgen compliance, reconciliation means disassociating a profile with a cluster.
+	// The profile itself will still remain.
+	profileEdges, err := s.v2ProfileDatastore.GetProfileEdgesByCluster(ctx, clusterID)
 	if err != nil {
 		return err
 	}
 
-	for _, profile := range profiles {
+	for _, profileEdge := range profileEdges {
 		// The UID is used for reconciliation
-		existingIDs.Add(profile.GetId())
+		existingIDs.Add(profileEdge.GetProfileUid())
 	}
 
 	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorProfileV2)(nil))
@@ -83,7 +85,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.v2ProfileDatastore.DeleteProfileForCluster(ctx, profile.Id, clusterID)
 	default:
-		return s.v2ProfileDatastore.UpsertProfile(ctx, internaltov2storage.ComplianceOperatorProfileV2(profile, clusterID))
+		return s.v2ProfileDatastore.UpsertProfile(ctx, internaltov2storage.ComplianceOperatorProfileV2(profile), clusterID, profile.GetId())
 	}
 }
 

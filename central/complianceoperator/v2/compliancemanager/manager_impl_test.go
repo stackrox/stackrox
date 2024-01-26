@@ -309,9 +309,9 @@ func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
-		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+		Profiles: []*storage.ProfileShim{
 			{
-				ProfileName: "ocp4-cis",
+				ProfileId: "ocp4-cis",
 			},
 		},
 		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{

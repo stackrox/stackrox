@@ -57,7 +57,6 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
-
 	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorProfile)(nil))
 	return reconciliation.Perform(store, existingIDs, "complianceoperatorprofiles", func(id string) error {
 		return s.datastore.Delete(ctx, id)

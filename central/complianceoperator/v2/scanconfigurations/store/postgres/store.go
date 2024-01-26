@@ -122,16 +122,16 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 	return nil
 }
 
-func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
+func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 		idx,
-		obj.GetProfileName(),
+		obj.GetProfileId(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2_profiles (compliance_operator_scan_configuration_v2_Id, idx, ProfileName) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_scan_configuration_v2_Id, idx) DO UPDATE SET compliance_operator_scan_configuration_v2_Id = EXCLUDED.compliance_operator_scan_configuration_v2_Id, idx = EXCLUDED.idx, ProfileName = EXCLUDED.ProfileName"
+	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2_profiles (compliance_operator_scan_configuration_v2_Id, idx, ProfileId) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_scan_configuration_v2_Id, idx) DO UPDATE SET compliance_operator_scan_configuration_v2_Id = EXCLUDED.compliance_operator_scan_configuration_v2_Id, idx = EXCLUDED.idx, ProfileId = EXCLUDED.ProfileId"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -224,7 +224,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 	return nil
 }
 
-func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ComplianceOperatorScanConfigurationV2_ProfileName) error {
+func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanConfigurationV2ID string, objs ...*storage.ProfileShim) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -234,7 +234,7 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 	copyCols := []string{
 		"compliance_operator_scan_configuration_v2_id",
 		"idx",
-		"profilename",
+		"profileid",
 	}
 
 	for idx, obj := range objs {
@@ -246,7 +246,7 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 			idx,
-			obj.GetProfileName(),
+			obj.GetProfileId(),
 		})
 
 		// if we hit our batch size we need to push the data
