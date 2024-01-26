@@ -129,13 +129,13 @@ teardown() {
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
-    CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" deploy_stackrox
+    CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
     info "Upgrading StackRox using HEAD Helm chart"
     MAIN_IMAGE_TAG="${main_image_tag}"
 
-    deploy_stackrox
+    _deploy_stackrox
 
     # Verify that Scanner v2 and v4 are up.
     verify_scannerV2_deployed "stackrox"
@@ -147,7 +147,7 @@ teardown() {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     export ROX_SCANNER_V4=false
-    deploy_stackrox
+    _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
@@ -158,7 +158,7 @@ teardown() {
 
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
-    deploy_stackrox
+    _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
