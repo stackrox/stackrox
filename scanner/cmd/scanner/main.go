@@ -12,6 +12,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -64,7 +65,7 @@ func main() {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
-	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
+	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
 
 	// If certs was specified, configure the identity environment.
 	if p := cfg.MTLS.CertsDir; p != "" {
