@@ -293,6 +293,51 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	s.Contains(integrations, testIntegrations[2])
 }
 
+func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {
+	testIntegrations := getDefaultTestIntegrations()
+	ids := s.addBaseIntegrations(testIntegrations)
+	for i, id := range ids {
+		testIntegrations[i].Id = id
+	}
+
+	testCases := []struct {
+		desc           string
+		query          *apiV1.Query
+		scopeKey       string
+		expectedResult int
+	}{
+		{
+			desc:           "Empty Query - Full access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.UnrestrictedReadCtx,
+			expectedResult: len(testIntegrations),
+		},
+		{
+			desc:           "Empty query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedResult: 1,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster2ReadWriteCtx,
+			expectedResult: 1,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedResult: 0,
+		},
+	}
+	for _, tc := range testCases {
+		count, err := s.dataStore.CountIntegrations(s.testContexts[tc.scopeKey], tc.query)
+		s.NoError(err)
+		s.Equal(tc.expectedResult, count)
+	}
+}
+
 func (s *complianceIntegrationDataStoreTestSuite) addBaseIntegrations(testIntegrations []*storage.ComplianceIntegration) []string {
 	var ids []string
 	for _, integration := range testIntegrations {
