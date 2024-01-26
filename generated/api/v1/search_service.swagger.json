@@ -105,8 +105,7 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
-                "COMPLIANCE_RULES"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -211,8 +210,7 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
-                "COMPLIANCE_RULES"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -311,8 +309,7 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
-                "COMPLIANCE_RULES"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
               ]
             },
             "collectionFormat": "multi"
@@ -460,8 +457,7 @@
         "COMPLIANCE_SCAN_CONFIG_STATUS",
         "ADMINISTRATION_USAGE",
         "COMPLIANCE_PROFILES",
-        "COMPLIANCE_PROFILE_CLUSTER_EDGE",
-        "COMPLIANCE_RULES"
+        "COMPLIANCE_PROFILE_CLUSTER_EDGE"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 65"
