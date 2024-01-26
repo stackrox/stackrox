@@ -116,3 +116,37 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		})
 	}
 }
+
+func (s *ComplianceIntegrationServiceTestSuite) TestGetComplianceIntegrationsCount() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	testCases := []struct {
+		desc      string
+		query     *apiV2.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+		},
+		{
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Cluster ID:test-cluster"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "test-cluster").ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+
+			s.complianceIntegrationDataStore.EXPECT().CountIntegrations(allAccessContext, tc.expectedQ).
+				Return(1, nil).Times(1)
+
+			integrations, err := s.service.GetComplianceIntegrationsCount(allAccessContext, tc.query)
+			s.Require().NoError(err)
+			s.Require().Equal(int32(1), integrations.Count)
+		})
+	}
+
+}

@@ -56,6 +56,21 @@ func (mr *MockDataStoreMockRecorder) AddComplianceIntegration(ctx, integration a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddComplianceIntegration", reflect.TypeOf((*MockDataStore)(nil).AddComplianceIntegration), ctx, integration)
 }
 
+// CountIntegrations mocks base method.
+func (m *MockDataStore) CountIntegrations(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountIntegrations", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountIntegrations indicates an expected call of CountIntegrations.
+func (mr *MockDataStoreMockRecorder) CountIntegrations(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountIntegrations", reflect.TypeOf((*MockDataStore)(nil).CountIntegrations), ctx, q)
+}
+
 // GetComplianceIntegration mocks base method.
 func (m *MockDataStore) GetComplianceIntegration(ctx context.Context, id string) (*storage.ComplianceIntegration, bool, error) {
 	m.ctrl.T.Helper()
