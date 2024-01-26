@@ -22,54 +22,78 @@ type generateNetpolTestSuite struct {
 func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 	cases := map[string]struct {
 		inputFolderPath       string
-		expectedSynthError    string
-		expectedSynthWarning  string
-		expectedValidateError error
 		stopOnFirstErr        bool
+		treatWarningsAsErrors bool
 		outFile               string
 		outDir                string
 		removeOutputPath      bool
+
+		expectedValidationError error
+		expectedWarnings        []string
+		expectedErrors          []string
 	}{
 		"not existing inputFolderPath should raise 'does not exist' error": {
-			inputFolderPath:    "/tmp/xxx",
-			expectedSynthError: "the path \"/tmp/xxx\" does not exist",
+			inputFolderPath: "/tmp/xxx",
+
+			expectedValidationError: nil,
+			expectedWarnings:        []string{},
+			expectedErrors: []string{
+				"the path \"/tmp/xxx\" does not exist",
+				"error generating network policies: could not find any Kubernetes workload resources",
+			},
 		},
 		"happyPath": {
-			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: "",
+			inputFolderPath:         "testdata/minimal",
+			expectedValidationError: nil,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
 		},
 		"empty yamls should yield error no kubernetes resources found": {
-			inputFolderPath:      "testdata/empty-yamls",
-			expectedSynthError:   "could not find any Kubernetes workload resources",
-			expectedSynthWarning: "Object 'Kind' is missing in",
+			inputFolderPath:         "testdata/empty-yamls",
+			expectedValidationError: nil,
+			expectedWarnings: []string{
+				"unable to decode \"testdata/empty-yamls/empty.yaml\": Object 'Kind' is missing in",
+				"unable to decode \"testdata/empty-yamls/empty2.yaml\": Object 'Kind' is missing in"},
+			expectedErrors: []string{"could not find any Kubernetes workload resources"},
 		},
-		"stopOnFirstError": {
-			inputFolderPath:      "testdata/dirty",
-			expectedSynthError:   "could not find any Kubernetes workload resources",
-			expectedSynthWarning: "error parsing",
-			stopOnFirstErr:       true,
+		"generation should stop on first warning when warnings are treated as errors ": {
+			inputFolderPath:         "testdata/dirty",
+			stopOnFirstErr:          true,
+			treatWarningsAsErrors:   true,
+			expectedValidationError: nil,
+			expectedErrors:          []string{"could not find any Kubernetes workload resources"},
+			expectedWarnings: []string{
+				"error parsing testdata/dirty/backend.yaml",
+				"error parsing testdata/dirty/frontend.yaml",
+			},
 		},
 		"output should be written to a single file": {
-			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: "",
-			outFile:            d.T().TempDir() + "/out.yaml",
-			outDir:             "",
-			removeOutputPath:   false,
+			inputFolderPath:         "testdata/minimal",
+			outFile:                 d.T().TempDir() + "/out.yaml",
+			outDir:                  "",
+			removeOutputPath:        false,
+			expectedValidationError: nil,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
 		},
 		"output should be written to files in a directory": {
-			inputFolderPath:    "testdata/minimal",
-			expectedSynthError: "",
-			outFile:            "",
-			outDir:             d.T().TempDir(),
-			removeOutputPath:   true,
+			inputFolderPath:         "testdata/minimal",
+			outFile:                 "",
+			outDir:                  d.T().TempDir(),
+			removeOutputPath:        true,
+			expectedValidationError: nil,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
 		},
 		"should return error that the dir already exists": {
-			inputFolderPath:       "testdata/minimal",
-			expectedValidateError: errox.AlreadyExists,
-			expectedSynthError:    "",
-			outFile:               "",
-			outDir:                d.T().TempDir(),
-			removeOutputPath:      false,
+			inputFolderPath:  "testdata/minimal",
+			outFile:          "",
+			outDir:           d.T().TempDir(),
+			removeOutputPath: false,
+
+			expectedValidationError: errox.AlreadyExists,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
 		},
 	}
 
@@ -105,25 +129,34 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			d.Assert().NoError(err)
 
 			err = generateNetpolCmd.validate()
-			if tt.expectedValidateError != nil {
-				d.Require().Error(err)
-				d.Assert().ErrorIs(err, tt.expectedValidateError)
+			if tt.expectedValidationError != nil {
+				d.Require().Error(err, "validation error is expected")
+				d.Assert().ErrorIs(err, tt.expectedValidationError)
 				return
 			}
 			d.Assert().NoError(err)
 
 			warns, errs := generateNetpolCmd.generateNetpol(generator)
-			if tt.expectedSynthError != "" {
-				d.Require().Error(goerrors.Join(errs...))
-				d.Assert().ErrorContains(goerrors.Join(errs...), tt.expectedSynthError)
-			} else {
-				d.Assert().NoError(goerrors.Join(errs...))
+			d.Require().Lenf(errs, len(tt.expectedErrors), "number of errors should be %d", len(tt.expectedErrors))
+			d.Require().Lenf(warns, len(tt.expectedWarnings), "number of warnings should be %d", len(tt.expectedWarnings))
+
+			for _, expError := range tt.expectedErrors {
+				if expError != "" {
+					d.Require().Error(goerrors.Join(errs...))
+					d.Assert().ErrorContainsf(goerrors.Join(errs...), expError,
+						"Expected errors to contain %s", tt.expectedErrors)
+				} else {
+					d.Assert().NoError(goerrors.Join(errs...))
+				}
 			}
-			if tt.expectedSynthWarning != "" {
-				d.Require().Error(goerrors.Join(warns...))
-				d.Assert().ErrorContains(goerrors.Join(warns...), tt.expectedSynthWarning)
-			} else {
-				d.Assert().NoError(goerrors.Join(warns...))
+			for _, expWarn := range tt.expectedWarnings {
+				if expWarn != "" {
+					d.Require().Error(goerrors.Join(warns...))
+					d.Assert().ErrorContainsf(goerrors.Join(warns...), expWarn,
+						"Expected warnings to contain %s", tt.expectedWarnings)
+				} else {
+					d.Assert().NoError(goerrors.Join(warns...))
+				}
 			}
 		})
 	}

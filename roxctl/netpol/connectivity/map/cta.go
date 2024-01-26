@@ -146,7 +146,7 @@ func (cmd *Cmd) ouputConnList(connsStr string) error {
 		}
 	}
 
-	cmd.printConnList(connsStr)
+	cmd.env.Logger().PrintfLn(connsStr)
 	return nil
 }
 
@@ -155,10 +155,6 @@ func writeFile(outputPath string, content string) error {
 		return errors.Wrapf(err, "error creating directory for file %q", outputPath)
 	}
 	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
-}
-
-func (cmd *Cmd) printConnList(connlist string) {
-	cmd.env.Logger().PrintfLn(connlist)
 }
 
 func (cmd *Cmd) getDefaultFileName() string {
