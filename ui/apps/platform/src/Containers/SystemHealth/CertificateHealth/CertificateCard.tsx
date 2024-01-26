@@ -9,8 +9,9 @@ import {
     Flex,
     FlexItem,
 } from '@patternfly/react-core';
-import { DownloadIcon, ExternalLinkAltIcon } from '@patternfly/react-icons';
+import { DownloadIcon } from '@patternfly/react-icons';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import { generateCertSecretForComponent } from 'services/CertGenerationService';
@@ -129,25 +130,18 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                         </FlexItem>
                         {version && (
                             <FlexItem align={{ default: 'alignRight' }}>
-                                <Button
-                                    variant="link"
-                                    isInline
-                                    component="a"
-                                    href={getVersionedDocs(
-                                        version,
-                                        'configuration/reissue-internal-certificates.html'
-                                    )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    <Flex
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                        spaceItems={{ default: 'spaceItemsSm' }}
+                                <ExternalLink>
+                                    <a
+                                        href={getVersionedDocs(
+                                            version,
+                                            'configuration/reissue-internal-certificates.html'
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                     >
-                                        <span>Reissuing internal certificates</span>
-                                        <ExternalLinkAltIcon color="var(--pf-global--link--Color)" />
-                                    </Flex>
-                                </Button>
+                                        Reissuing internal certificates
+                                    </a>
+                                </ExternalLink>
                             </FlexItem>
                         )}
                     </Flex>

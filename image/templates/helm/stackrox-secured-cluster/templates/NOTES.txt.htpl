@@ -13,9 +13,9 @@ Secured Cluster Configuration Summary:
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
   Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
 [<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
-  Scanner v4 Installation Method:              {{ ._rox.scannerV4._installMode }}
+  Scanner V4 Installation Method:              {{ ._rox.scannerV4._installMode }}
 {{- if ._rox._scannerV4Volume }}
-  Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+  Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
 {{- end }}
 [<- end >]
 

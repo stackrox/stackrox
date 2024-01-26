@@ -162,6 +162,37 @@
         ]
       }
     },
+    "/v2/compliance/scan/result/{id}": {
+      "get": {
+        "summary": "GetComplianceScanCheckResult returns the specific result by ID",
+        "operationId": "ComplianceResultsService_GetComplianceScanCheckResult",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceCheckResult"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsService"
+        ]
+      }
+    },
     "/v2/compliance/scan/results": {
       "get": {
         "summary": "GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query\nOptional RawQuery query fields can be combined.\nCommonly used ones include but are not limited to\n- scan: id(s) of the compliance scan\n- cluster: id(s) of the cluster\n- profile: id(s) of the profile",
@@ -479,6 +510,9 @@
         "createdTime": {
           "type": "string",
           "format": "date-time"
+        },
+        "checkUid": {
+          "type": "string"
         }
       },
       "title": "ClusterCheckStatus groups the result of the check by cluster"

@@ -149,6 +149,7 @@ export_test_environment() {
     ci_export ROX_SCANNER_V4_SUPPORT "${ROX_SCANNER_V4_SUPPORT:-true}"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
+    ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -257,6 +258,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLOUD_CREDENTIALS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
@@ -765,7 +768,8 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
     local psps_supported=false
-    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding"
+    local resource_types="cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pvc,role,rolebinding"
+    local global_resource_types="pv,validatingwebhookconfigurations,clusterrole,clusterrolebinding"
 
     if [[ ${#namespaces[@]} == 0 ]]; then
         namespaces+=( "stackrox" )
@@ -799,6 +803,8 @@ remove_existing_stackrox_resources() {
             fi
             kubectl delete --ignore-not-found ns "$namespace" --wait
         done
+
+        kubectl delete "${global_resource_types}" -l "app.kubernetes.io/name=stackrox" --wait
 
         helm list -o json | jq -r '.[] | .name' | while read -r name; do
             case "$name" in

@@ -417,9 +417,9 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 //   - AWS SecurityHub is reachable
 //
 // If either of the checks fails, an error is returned.
-func (n *notifier) Test(ctx context.Context) error {
+func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 	if n.stoppedSig.IsDone() {
-		return errNotRunning
+		return notifiers.NewNotifierError(errNotRunning.Error(), nil)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
@@ -437,7 +437,7 @@ func (n *notifier) Test(ctx context.Context) error {
 		MaxResults: aws.Int64(1),
 	})
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
+		return notifiers.NewNotifierError("get findings from AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 
 	testAlert := &storage.Alert{
@@ -478,7 +478,7 @@ func (n *notifier) Test(ctx context.Context) error {
 	})
 
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
+		return notifiers.NewNotifierError("import test findings to AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 	return nil
 }

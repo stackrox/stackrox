@@ -22,9 +22,6 @@ import (
 )
 
 const (
-	// GenericDockerRegistryType exposes the default registry type
-	GenericDockerRegistryType = "docker"
-
 	registryTimeout  = 5 * time.Second
 	repoListInterval = 10 * time.Minute
 )
@@ -33,7 +30,7 @@ var log = logging.LoggerForModule()
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
-	return GenericDockerRegistryType,
+	return types.DockerType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := NewDockerRegistry(integration, false)
 			return reg, err
@@ -43,7 +40,7 @@ func Creator() (string, types.Creator) {
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
-	return GenericDockerRegistryType,
+	return types.DockerType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := NewDockerRegistry(integration, true)
 			return reg, err

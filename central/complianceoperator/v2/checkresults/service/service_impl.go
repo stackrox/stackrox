@@ -32,6 +32,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceClusterScanStats",
 			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
+			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 		},
 	})
 )
@@ -154,4 +155,21 @@ func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *
 	return &v2.CountComplianceScanResults{
 		Count: int32(count),
 	}, nil
+}
+
+// GetComplianceScanCheckResult returns the specific result by ID
+func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceCheckResult, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "compliance check result ID is required for retrieval")
+	}
+
+	scanResult, found, err := s.complianceResultsDS.GetComplianceCheckResult(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve compliance check result with id %q.", req.GetId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult), nil
 }

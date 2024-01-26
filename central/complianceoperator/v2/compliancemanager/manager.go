@@ -26,7 +26,7 @@ type Manager interface {
 	HandleScanRequestResponse(ctx context.Context, requestID string, clusterID string, responsePayload string) error
 
 	// ProcessRescanRequest processes a request to rerun an existing compliance scan configuration.
-	ProcessRescanRequest(ctx context.Context, rescanRequest interface{}) error
+	ProcessRescanRequest(ctx context.Context, scanID string) error
 	// DeleteScan processes a request to delete an existing compliance scan configuration.
 	DeleteScan(ctx context.Context, scanID string) error
 }

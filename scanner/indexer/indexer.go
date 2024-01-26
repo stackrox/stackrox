@@ -3,7 +3,6 @@ package indexer
 import (
 	"context"
 	"crypto/sha512"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,9 +17,10 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/datastore/postgres"
+	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
 	ccindexer "github.com/quay/claircore/indexer"
@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
@@ -76,71 +77,110 @@ type Indexer interface {
 // localIndexer is the Indexer implementation that runs libindex locally.
 type localIndexer struct {
 	libIndex        *libindex.Libindex
+	pool            *pgxpool.Pool
+	root            string
 	getLayerTimeout time.Duration
 }
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewIndexer")
+
+	var success bool
+
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
-	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
+	defer func() {
+		if !success {
+			pool.Close()
+		}
+	}()
+
+	store, err := ccpostgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = store.Close(ctx)
+		}
+	}()
+
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
+		}
+	}()
 
-	indexer, err := newLibindex(ctx, cfg, store, locker)
+	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating indexer root directory: %w", err)
+	}
+	defer func() {
+		if !success {
+			_ = os.RemoveAll(root)
+		}
+	}()
+
+	indexer, err := newLibindex(ctx, cfg, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
 
+	success = true
 	return &localIndexer{
 		libIndex:        indexer,
+		pool:            pool,
+		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
 }
 
-func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+func castToConfig[T any](f func(cfg T)) func(o any) error {
+	return func(o any) error {
+		cfg, ok := o.(T)
+		if !ok {
+			return errors.New("internal error: casting failed")
+		}
+		f(cfg)
+		return nil
+	}
+}
+
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
 	// TODO: Update the HTTP client.
 	c := http.DefaultClient
-	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
-	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
-	if err != nil {
-		return nil, fmt.Errorf("creating indexer root directory: %w", err)
-	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(faRoot)
-		}
-		return nil
-	})
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		FetchArena:           libindex.NewRemoteFetchArena(c, root),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
 		Ecosystems:           ecosystems(ctx),
+		ScannerConfig: struct {
+			Package, Dist, Repo, File map[string]func(any) error
+		}{
+			Repo: map[string]func(any) error{
+				"rhel-repository-scanner": castToConfig(func(cfg *rhel.RepositoryScannerConfig) {
+					cfg.Repo2CPEMappingURL = indexerCfg.RepositoryToCPEURL
+					cfg.Repo2CPEMappingFile = indexerCfg.RepositoryToCPEFile
+				}),
+			},
+			Package: map[string]func(any) error{
+				"rhel_containerscanner": castToConfig(func(cfg *rhcc.ScannerConfig) {
+					cfg.Name2ReposMappingURL = indexerCfg.NameToReposURL
+					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile
+				}),
+			},
+		},
 	}
-	opts.ScannerConfig.Repo = map[string]func(interface{}) error{
-		"rhel-repository-scanner": deserializeFunc([]byte(fmt.Sprintf(`
-{
-  "repo2cpe_mapping_url": "%s",
-  "repo2cpe_mapping_file": "%s"
-}`, indexerCfg.RepositoryToCPEURL, indexerCfg.RepositoryToCPEFile)))}
-	opts.ScannerConfig.Package = map[string]func(interface{}) error{
-		"rhel_containerscanner": deserializeFunc([]byte(fmt.Sprintf(`
-{
-  "name2repos_mapping_url": "%s",
-  "name2repos_mapping_file": "%s"
-}`, indexerCfg.NameToReposURL, indexerCfg.NameToReposFile)))}
-
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
@@ -151,7 +191,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, store cci
 
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
-	return i.libIndex.Close(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	i.pool.Close()
+	return err
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
@@ -365,10 +408,4 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
-}
-
-func deserializeFunc(jsonData []byte) func(interface{}) error {
-	return func(v interface{}) error {
-		return json.Unmarshal(jsonData, v)
-	}
 }

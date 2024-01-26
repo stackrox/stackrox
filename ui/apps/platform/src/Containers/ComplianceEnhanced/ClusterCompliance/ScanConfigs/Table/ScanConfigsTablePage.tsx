@@ -29,7 +29,11 @@ import {
 } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
-import { complianceEnhancedScanConfigsPath, complianceEnhancedCoveragePath } from 'routePaths';
+import {
+    complianceEnhancedScanConfigsPath,
+    complianceEnhancedScanConfigDetailPath,
+    complianceEnhancedCoveragePath,
+} from 'routePaths';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
@@ -88,8 +92,8 @@ function ScanConfigsTablePage({
                 <Tr key={id}>
                     <Td>
                         <Link
-                            to={generatePath(complianceEnhancedScanConfigsPath, {
-                                policyId: id,
+                            to={generatePath(complianceEnhancedScanConfigDetailPath, {
+                                scanConfigId: id,
                             })}
                         >
                             {scanName}

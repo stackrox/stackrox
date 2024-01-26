@@ -14,6 +14,8 @@ export type ImageDetails = {
     } | null;
     dataSource: { name: string } | null;
     scanTime: string | null;
+    scanNotes: string[];
+    notes: string[];
 };
 
 export const imageDetailsFragment = gql`
@@ -29,6 +31,8 @@ export const imageDetailsFragment = gql`
             name
         }
         scanTime
+        scanNotes
+        notes
     }
 `;
 

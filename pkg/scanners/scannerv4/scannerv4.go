@@ -25,8 +25,12 @@ var (
 
 	log = logging.LoggerForModule()
 
-	defaultIndexerEndpoint    = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
-	defaultMatcherEndpoint    = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+	// DefaultIndexerEndpoint is the default gRPC endpoint for the indexer.
+	DefaultIndexerEndpoint = fmt.Sprintf("scanner-v4-indexer.%s.svc:8443", env.Namespace.Setting())
+
+	// DefaultMatcherEndpoint is the default gRPC endpoint for the matcher.
+	DefaultMatcherEndpoint = fmt.Sprintf("scanner-v4-matcher.%s.svc:8443", env.Namespace.Setting())
+
 	defaultMaxConcurrentScans = int64(30)
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
@@ -55,12 +59,12 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		return nil, errors.New("scanner V4 configuration required")
 	}
 
-	indexerEndpoint := defaultIndexerEndpoint
+	indexerEndpoint := DefaultIndexerEndpoint
 	if conf.IndexerEndpoint != "" {
 		indexerEndpoint = conf.IndexerEndpoint
 	}
 
-	matcherEndpoint := defaultMatcherEndpoint
+	matcherEndpoint := DefaultMatcherEndpoint
 	if conf.MatcherEndpoint != "" {
 		matcherEndpoint = conf.MatcherEndpoint
 	}
@@ -75,8 +79,6 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithIndexerAddress(indexerEndpoint),
 		client.WithMatcherAddress(matcherEndpoint),
-		// TODO(ROX-19050): Set the Scanner V4 TLS validation when certificates are ready.
-		// client.SkipTLSVerification,
 	)
 	if err != nil {
 		return nil, err

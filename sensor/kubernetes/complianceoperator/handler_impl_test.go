@@ -265,7 +265,7 @@ func (s *HandlerTestSuite) TestProcessDeleteScanConfigNotFound() {
 
 func (s *HandlerTestSuite) TestProcessRerunScanSuccess() {
 	// create
-	complianceScan := &v1alpha1.ComplianceScan{
+	complianceSuite := &v1alpha1.ComplianceSuite{
 		TypeMeta: v1.TypeMeta{
 			Kind:       complianceoperator.ScanSetting.Kind,
 			APIVersion: complianceoperator.GetGroupVersion().String(),
@@ -275,9 +275,9 @@ func (s *HandlerTestSuite) TestProcessRerunScanSuccess() {
 			Namespace: "ns",
 		},
 	}
-	obj, err := runtimeObjToUnstructured(complianceScan)
+	obj, err := runtimeObjToUnstructured(complianceSuite)
 	s.Require().NoError(err)
-	_, err = s.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).
+	_, err = s.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).
 		Namespace("ns").Create(context.Background(), obj, v1.CreateOptions{})
 	s.Require().NoError(err)
 
@@ -296,7 +296,7 @@ func (s *HandlerTestSuite) TestProcessRerunScanNotFound() {
 	msg := getTestRerunScanMsg("midnight")
 	expected := expectedResponse{
 		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
-		errSubstr: "namespaces/ns/compliancescans/midnight not found",
+		errSubstr: "namespaces/ns/compliancesuites/midnight not found",
 	}
 
 	s.statusInfo.EXPECT().GetNamespace().Return("ns")
@@ -356,6 +356,39 @@ func (s *HandlerTestSuite) TestProcessResumingScanNotFound() {
 	}
 
 	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanSuccess() {
+	// create a scheduled scan first so we can update it
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	// Now do the update
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	msg = getTestUpdateScanRequestMsg("midnight", "* * * * *", "ocp4-cis")
+	expected = expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual = s.sendMessage(1, msg)
+	s.assert(expected, actual)
+}
+
+func (s *HandlerTestSuite) TestProcessUpdateScheduledScanInvalid() {
+	msg := getTestUpdateScanRequestMsg("error", "error")
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "compliance profiles not specified, schedule is not valid",
+	}
+
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
 }
@@ -434,6 +467,30 @@ func getTestScheduledScanRequestMsg(name, cron string, profiles ...string) *cent
 						Id: uuid.NewV4().String(),
 						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
 							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
+								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+									ScanName:       name,
+									StrictNodeScan: true,
+									Profiles:       profiles,
+								},
+								Cron: cron,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTestUpdateScanRequestMsg(name, cron string, profiles ...string) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ComplianceRequest{
+			ComplianceRequest: &central.ComplianceRequest{
+				Request: &central.ComplianceRequest_ApplyScanConfig{
+					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+						Id: uuid.NewV4().String(),
+						ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
+							UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
 								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 									ScanName:       name,
 									StrictNodeScan: true,

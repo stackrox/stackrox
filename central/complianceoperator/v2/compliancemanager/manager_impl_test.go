@@ -40,6 +40,7 @@ type processScanConfigTestCase struct {
 	expectedErr error
 	testContext context.Context
 	clusters    []string
+	testRequest *storage.ComplianceOperatorScanConfigurationV2
 }
 
 func TestComplianceManager(t *testing.T) {
@@ -178,6 +179,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 	cases := []processScanConfigTestCase{
 		{
 			desc:        "Successful creation of scan configuration",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
@@ -190,16 +192,18 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		},
 		{
 			desc:        "Scan configuration already exists",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(true, nil).Times(1)
 			},
 			isErrorTest: true,
 			expectedErr: errors.Errorf("Scan Configuration named %q already exists.", mockScanName),
 		},
 		{
 			desc:        "Unable to store scan configuration",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
@@ -211,6 +215,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		},
 		{
 			desc:        "Error from sensor",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
@@ -223,6 +228,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		},
 		{
 			desc:        "Error due to not having write access",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
@@ -232,6 +238,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		},
 		{
 			desc:        "Error due to only having write access to one of the clusters",
+			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.Cluster1ReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1, testconsts.Cluster2},
 			setMocks: func() {
@@ -239,12 +246,25 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			isErrorTest: true,
 			expectedErr: errors.New("access to resource denied"),
 		},
+		{
+			desc:        "Successful update of scan configuration",
+			testRequest: getTestRec(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "")
+			},
+			isErrorTest: false,
+		},
 	}
 	for _, tc := range cases {
 		suite.T().Run(tc.desc, func(t *testing.T) {
 			tc.setMocks()
 
-			config, err := suite.manager.ProcessScanRequest(tc.testContext, getTestRec(), tc.clusters)
+			config, err := suite.manager.ProcessScanRequest(tc.testContext, tc.testRequest, tc.clusters)
 			if tc.isErrorTest {
 				suite.Require().NotNil(err)
 				suite.Require().Nil(config)
@@ -307,9 +327,78 @@ func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
-		Profiles: []*storage.ProfileShim{
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
 			{
-				ProfileId: "ocp4-cis",
+				ProfileName: "ocp4-cis",
+			},
+		},
+		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			{ClusterId: testconsts.Cluster1},
+		},
+		StrictNodeScan: false,
+	}
+}
+
+func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
+	multiCluster := getTestRec()
+	multiCluster.Clusters = append(multiCluster.Clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: testconsts.Cluster3})
+	cases := []processScanConfigTestCase{
+		{
+			desc: "Rerun existing scan config succeeds",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+		{
+			desc: "Rerun non-existent scan config fails",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(nil, false, nil).Times(1)
+			},
+			isErrorTest: true,
+		},
+		{
+			desc: "Rerun scan config fails when data store returns an error finding scan config",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(nil, false, errors.New("Unable to retrieve data")).Times(1)
+			},
+			isErrorTest: true,
+		},
+		{
+			desc: "Rerun scan config continues when sensor message fails and logs message",
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(multiCluster, true, nil).Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Failed to send message to sensor")).Times(1)
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), mockScanID, testconsts.Cluster1, "Failed to send message to sensor").Times(1)
+				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster3, gomock.Any()).Return(nil).Times(1)
+			},
+			isErrorTest: false,
+		},
+	}
+	for _, tc := range cases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			err := suite.manager.ProcessRescanRequest(suite.hasWriteCtx, mockScanID)
+			if tc.isErrorTest {
+				suite.Require().NotNil(err)
+			} else {
+				suite.Require().NoError(err)
+			}
+		})
+	}
+}
+
+func getTestRecNoID() *storage.ComplianceOperatorScanConfigurationV2 {
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		ScanConfigName:         mockScanName,
+		AutoApplyRemediations:  false,
+		AutoUpdateRemediations: false,
+		OneTimeScan:            false,
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			{
+				ProfileName: "ocp4-cis",
 			},
 		},
 		StrictNodeScan: false,

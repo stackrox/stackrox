@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.api.v2";
 
 import "google/protobuf/timestamp.proto";
 import weak "google/api/annotations.proto";
+import "api/v2/common.proto";
 import "api/v2/search_query.proto";
 
 package v2;
@@ -35,6 +36,7 @@ message ComplianceCheckResult {
         ComplianceScanCluster      cluster      = 1;
         ComplianceCheckStatus      status       = 2;
         google.protobuf.Timestamp  created_time = 3;
+        string                     check_uid    = 4;
     }
     repeated ClusterCheckStatus clusters     = 3;
     string                      description  = 4;
@@ -48,9 +50,9 @@ message ComplianceCheckResult {
 
 // ComplianceScanResult provides the results of a scan
 message ComplianceScanResult {
-    string                         scan_name     = 1;
-    string                         profile_name  = 2;
-    repeated ComplianceCheckResult check_results = 3;
+    string                         scan_name       = 1;
+    string                         profile_name    = 2;
+    repeated ComplianceCheckResult check_results   = 3;
 }
 
 // Group the number of occurrences by status
@@ -122,6 +124,13 @@ message CountComplianceScanResults{
 }
 
 service ComplianceResultsService {
+    // GetComplianceScanCheckResult returns the specific result by ID
+    rpc GetComplianceScanCheckResult (ResourceByID) returns (ComplianceCheckResult) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/result/{id}"
+        };
+    }
+
     // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
     // Optional RawQuery query fields can be combined.
     // Commonly used ones include but are not limited to

@@ -33,7 +33,13 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
 
 const validationSchema = yup.object().shape({
     parameters: yup.object().shape({
-        name: yup.string().required('Scan name is required'),
+        name: yup
+            .string()
+            .required('Scan name is required')
+            .matches(
+                /^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/,
+                "Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
+            ),
         description: yup.string(),
         intervalType: yup.string().required('Frequency is required'),
         time: yup.string().required('Time is required'),

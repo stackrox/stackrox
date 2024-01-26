@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, AlertVariant, Button, Flex, Modal, Spinner, Text } from '@patternfly/react-core';
+import { Alert, AlertVariant, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import {
     VulnerabilityException,
@@ -8,7 +8,6 @@ import {
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useModal from 'hooks/useModal';
 import useRestMutation from 'hooks/useRestMutation';
-import useRequestCVEsDetails from '../hooks/useRequestCVEsDetails';
 
 type RequestCancelButtonModalProps = {
     exception: VulnerabilityException;
@@ -17,8 +16,6 @@ type RequestCancelButtonModalProps = {
 
 function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonModalProps) {
     const cancelRequestMutation = useRestMutation(cancelVulnerabilityException);
-    const { isLoading: isRequestCVEsDetailsLoading, totalAffectedImageCount } =
-        useRequestCVEsDetails(exception);
 
     const { isModalOpen, openModal, closeModal } = useModal();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,8 +35,6 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
         });
     }
 
-    const isCancelRequestDisabled = isRequestCVEsDetailsLoading || cancelRequestMutation.isLoading;
-
     return (
         <>
             <Button variant="secondary" onClick={openModal}>
@@ -55,7 +50,7 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
                         key="approve"
                         variant="primary"
                         isLoading={cancelRequestMutation.isLoading}
-                        isDisabled={isCancelRequestDisabled}
+                        isDisabled={cancelRequestMutation.isLoading}
                         onClick={cancelRequest}
                     >
                         Cancel request
@@ -76,18 +71,6 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
                         title="Cancelling the request will return the CVEs to the 'Observed' status."
                     >
                         <Text>CVE count: {exception.cves.length}</Text>
-                        <Text>
-                            Affected images:{' '}
-                            {isRequestCVEsDetailsLoading ? (
-                                <Spinner
-                                    isSVG
-                                    size="md"
-                                    aria-label="Loading affected images count"
-                                />
-                            ) : (
-                                totalAffectedImageCount
-                            )}
-                        </Text>
                     </Alert>
                 </Flex>
             </Modal>

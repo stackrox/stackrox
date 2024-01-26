@@ -1,0 +1,152 @@
+name: Scanner build and push images
+
+on:
+  workflow_call:
+  push:
+    tags:
+    - '*-nightly-*'
+    branches:
+    - master
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+jobs:
+  define-job-matrix:
+    outputs:
+      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Define the matrix for build jobs
+      id: define-job-matrix
+      run: |
+        source './scripts/ci/lib.sh'
+
+        # If goarch is updated, be sure to update architectures in push-manifests below.
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] }, "push_manifests": { "name":["default"] } }'
+
+        # Conditionally add a prerelease build (binaries built with GOTAGS=release)
+        if ! is_tagged; then
+          if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
+            matrix="$(jq '.build_and_push.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
+          fi
+        fi
+
+        echo "Job matrix after conditionals:"
+        jq <<< "$matrix"
+
+        condensed="$(jq -c <<< "$matrix")"
+        echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    needs: define-job-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      # Supports two go binary builds:
+      # default    - built with environment defaults (see handle-tagged-build & env.mk)
+      # prerelease - built with GOTAGS=release
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Setup Go build environment for release
+      if: |
+        contains(github.event.pull_request.labels.*.name, 'ci-release-build')
+          ||
+        matrix.name == 'prerelease'
+      run: echo "GOTAGS=release" >> "$GITHUB_ENV"
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+    - name: Build Scanner and ScannerDB images
+      run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
+
+    - name: Push Scanner and ScannerDB images
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+        push_scanner_image_set ${{ matrix.goarch }}
+
+  push-manifests:
+    needs:
+    - define-job-matrix
+    - build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      # Supports two image builds:
+      # default
+      # prerelease
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_manifests }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Set build tag for prerelease images
+      if: matrix.name == 'prerelease'
+      run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-prerelease" >> "$GITHUB_ENV"
+
+    - name: Push Scanner and ScannerDB image manifests
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+
+        # If this is updated, be sure to update goarch in define-job-matrix above.
+        architectures="amd64,arm64,ppc64le,s390x"
+
+        push_scanner_image_manifest_lists "$architectures"

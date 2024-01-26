@@ -21,9 +21,16 @@ const (
 )
 
 var (
-	complianceCheckID1 = uuid.NewV4().String()
-	complianceCheckID2 = uuid.NewV4().String()
-	complianceCheckID3 = uuid.NewV4().String()
+	complianceCheckID1  = uuid.NewV4().String()
+	complianceCheckID2  = uuid.NewV4().String()
+	complianceCheckID3  = uuid.NewV4().String()
+	complianceCheckUID1 = uuid.NewV4().String()
+	complianceCheckUID2 = uuid.NewV4().String()
+	complianceCheckUID3 = uuid.NewV4().String()
+	complianceCheckUID4 = uuid.NewV4().String()
+	complianceCheckUID5 = uuid.NewV4().String()
+	complianceCheckUID6 = uuid.NewV4().String()
+	complianceCheckUID7 = uuid.NewV4().String()
 
 	complianceCheckName1 = "check1"
 	complianceCheckName2 = "check2"
@@ -42,7 +49,7 @@ var (
 func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorCheckResultV2 {
 	return []*storage.ComplianceOperatorCheckResultV2{
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID1,
 			CheckId:        complianceCheckID1,
 			CheckName:      complianceCheckName1,
 			ClusterId:      fixtureconsts.Cluster1,
@@ -53,7 +60,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName1,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID2,
 			CheckId:        complianceCheckID1,
 			CheckName:      complianceCheckName1,
 			ClusterId:      fixtureconsts.Cluster2,
@@ -64,7 +71,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName1,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID3,
 			CheckId:        complianceCheckID2,
 			CheckName:      complianceCheckName2,
 			ClusterId:      fixtureconsts.Cluster2,
@@ -75,7 +82,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName1,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID4,
 			CheckId:        complianceCheckID2,
 			CheckName:      complianceCheckName2,
 			ClusterId:      fixtureconsts.Cluster1,
@@ -86,7 +93,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName2,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID5,
 			CheckId:        complianceCheckID3,
 			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster1,
@@ -97,7 +104,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName3,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID6,
 			CheckId:        complianceCheckID3,
 			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster2,
@@ -108,7 +115,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 			ScanConfigName: scanConfigName3,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID7,
 			CheckId:        complianceCheckID3,
 			CheckName:      complianceCheckName3,
 			ClusterId:      fixtureconsts.Cluster3,
@@ -125,7 +132,7 @@ func GetComplianceStorageResults(_ *testing.T) []*storage.ComplianceOperatorChec
 func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*storage.ComplianceOperatorCheckResultV2 {
 	return []*storage.ComplianceOperatorCheckResultV2{
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID1,
 			CheckId:        complianceCheckID1,
 			CheckName:      complianceCheckName1,
 			ClusterId:      clusterID,
@@ -136,7 +143,7 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			ScanConfigName: scanConfigName1,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID2,
 			CheckId:        complianceCheckID2,
 			CheckName:      complianceCheckName2,
 			ClusterId:      clusterID,
@@ -147,7 +154,7 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 			ScanConfigName: scanConfigName2,
 		},
 		{
-			Id:             uuid.NewV4().String(),
+			Id:             complianceCheckUID3,
 			CheckId:        complianceCheckID3,
 			CheckName:      complianceCheckName3,
 			ClusterId:      clusterID,
@@ -175,14 +182,16 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 								ClusterId:   fixtureconsts.Cluster1,
 								ClusterName: clusterName1,
 							},
-							Status: v2.ComplianceCheckStatus_INFO,
+							CheckUid: complianceCheckUID1,
+							Status:   v2.ComplianceCheckStatus_INFO,
 						},
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster2,
 								ClusterName: clusterName2,
 							},
-							Status: v2.ComplianceCheckStatus_PASS,
+							CheckUid: complianceCheckUID2,
+							Status:   v2.ComplianceCheckStatus_PASS,
 						},
 					},
 					Description:  "description 1",
@@ -197,7 +206,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 								ClusterId:   fixtureconsts.Cluster2,
 								ClusterName: clusterName2,
 							},
-							Status: v2.ComplianceCheckStatus_PASS,
+							CheckUid: complianceCheckUID3,
+							Status:   v2.ComplianceCheckStatus_PASS,
 						},
 					},
 					Description:  "description 2",
@@ -217,7 +227,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 								ClusterId:   fixtureconsts.Cluster1,
 								ClusterName: clusterName1,
 							},
-							Status: v2.ComplianceCheckStatus_INFO,
+							CheckUid: complianceCheckUID4,
+							Status:   v2.ComplianceCheckStatus_INFO,
 						},
 					},
 					Description:  "description 2",
@@ -237,21 +248,24 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 								ClusterId:   fixtureconsts.Cluster1,
 								ClusterName: clusterName1,
 							},
-							Status: v2.ComplianceCheckStatus_INFO,
+							CheckUid: complianceCheckUID5,
+							Status:   v2.ComplianceCheckStatus_INFO,
 						},
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster2,
 								ClusterName: clusterName2,
 							},
-							Status: v2.ComplianceCheckStatus_FAIL,
+							CheckUid: complianceCheckUID6,
+							Status:   v2.ComplianceCheckStatus_FAIL,
 						},
 						{
 							Cluster: &v2.ComplianceScanCluster{
 								ClusterId:   fixtureconsts.Cluster3,
 								ClusterName: clusterName3,
 							},
-							Status: v2.ComplianceCheckStatus_INFO,
+							CheckUid: complianceCheckUID7,
+							Status:   v2.ComplianceCheckStatus_INFO,
 						},
 					},
 					Description:  "description 3",
@@ -373,5 +387,40 @@ func GetComplianceClusterV2Count(_ *testing.T, clusterID string) *v2.ComplianceC
 				Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
 			},
 		},
+	}
+}
+
+// GetComplianceStorageResult creates a mock check results for testing
+func GetComplianceStorageResult(_ *testing.T) *storage.ComplianceOperatorCheckResultV2 {
+	return &storage.ComplianceOperatorCheckResultV2{
+		Id:             complianceCheckUID1,
+		CheckId:        complianceCheckID1,
+		CheckName:      complianceCheckName1,
+		ClusterId:      fixtureconsts.Cluster1,
+		ClusterName:    clusterName1,
+		Status:         storage.ComplianceOperatorCheckResultV2_INFO,
+		Description:    "description 1",
+		Instructions:   "instructions 1",
+		ScanConfigName: scanConfigName1,
+	}
+}
+
+// GetConvertedComplianceResult retrieves results that match GetComplianceStorageResult
+func GetConvertedComplianceResult(_ *testing.T) *v2.ComplianceCheckResult {
+	return &v2.ComplianceCheckResult{
+		CheckId:   complianceCheckID1,
+		CheckName: complianceCheckName1,
+		Clusters: []*v2.ComplianceCheckResult_ClusterCheckStatus{
+			{
+				Cluster: &v2.ComplianceScanCluster{
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: clusterName1,
+				},
+				Status:   v2.ComplianceCheckStatus_INFO,
+				CheckUid: complianceCheckUID1,
+			},
+		},
+		Description:  "description 1",
+		Instructions: "instructions 1",
 	}
 }

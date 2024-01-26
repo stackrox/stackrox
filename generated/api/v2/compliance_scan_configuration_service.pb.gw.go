@@ -492,7 +492,7 @@ func RegisterComplianceScanConfigurationServiceHandlerServer(ctx context.Context
 
 	})
 
-	mux.Handle("GET", pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -679,7 +679,7 @@ func RegisterComplianceScanConfigurationServiceHandlerClient(ctx context.Context
 
 	})
 
-	mux.Handle("GET", pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -733,7 +733,7 @@ var (
 
 	pattern_ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "configurations", "execute", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v2", "compliance", "scan", "configurations", "id", "run"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "count", "configurations"}, "", runtime.AssumeColonVerbOpt(false)))
 )
