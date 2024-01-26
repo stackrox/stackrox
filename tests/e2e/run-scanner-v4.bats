@@ -76,11 +76,39 @@ setup() {
 }
 
 teardown() {
-    local namespaces=( "stackrox" "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" )
-    for namespace in "${namespaces[@]}"; do
-        if kubectl get ns "${namespace}" >/dev/null 2>&1; then
-            run remove_existing_stackrox_resources "${namespace}"
+    local central_namespace=""
+    local sensor_namespace=""
+    local namespaces=( )
+
+    if "${ORCH_CMD}" get ns "stackrox" >/dev/null 2>&1; then
+        central_namespace="stackrox"
+        sensor_namespace="stackrox"
+        namespaces=( "stackrox" "${namespaces[@]}" )
+    fi
+    if "${ORCH_CMD}" get ns "${CUSTOM_CENTRAL_NAMESPACE}" >/dev/null 2>&1; then
+        central_namespace="${CUSTOM_CENTRAL_NAMESPACE}"
+        namespaces=( "${central_namespace}" "${namespaces[@]}" )
+    fi
+    if "${ORCH_CMD}" get ns "${CUSTOM_SENSOR_NAMESPACE}" >/dev/null 2>&1; then
+        sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
+        if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
+            namespaces=( "${sensor_namespace}" "${namespaces[@]}" )
         fi
+    fi
+
+    if [[ -z "${BATS_TEST_COMPLETED:-}" ]]; then
+        # Test failed, collect some analysis data.
+        info "Pods in namespace ${central_namespace}:"
+        "${ORCH_CMD}" -n "${central_namespace}" get pods
+
+        if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
+            info "Pods in namespace ${sensor_namespace}:"
+            "${ORCH_CMD}" -n "${sensor_namespace}" get pods
+        fi
+    fi
+
+    for namespace in "${namespaces[@]}"; do
+        run remove_existing_stackrox_resources "${namespace}"
     done
 }
 
