@@ -431,7 +431,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching userinfo claims: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
 		},
 		"mode fragment with id_token only": {
 			config: map[string]string{
@@ -592,7 +592,7 @@ func TestBackend(t *testing.T) {
 				"id_token":     suppliedClaims,
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\t* failed to authenticate with ID token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\n",
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching userinfo claims: simulated UserInfo endpoint failure\n\t* failed to authenticate with ID token: fetching userinfo claims: fetching userinfo claims: simulated UserInfo endpoint failure\n\n",
 		},
 		"legacy no mode setting, equal to fragment, with access token only": {
 			config: map[string]string{

@@ -177,7 +177,7 @@ func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken str
 		AccessToken: rawAccessToken,
 	}))
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching user info claims")
+		return nil, errors.Wrap(err, "fetching userinfo claims")
 	}
 
 	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
