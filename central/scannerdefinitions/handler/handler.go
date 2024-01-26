@@ -65,7 +65,7 @@ var (
 
 	v4FileMapping = map[string]string{
 		"name2repos": "repomapping-tmp/container-name-repos-map.json",
-		"repo2cpe": "repomapping-tmp/repository-to-cpe.json",
+		"repo2cpe":   "repomapping-tmp/repository-to-cpe.json",
 	}
 )
 
