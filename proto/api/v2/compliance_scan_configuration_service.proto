@@ -95,12 +95,10 @@ service ComplianceScanConfigurationService {
         };
     }
 
-    // RunComplianceScanConfiguration launches scan for the specified scan
-    // configuration, which will invoke scans to run for the applicable
-    // profiles across the configured clusters.
+    // RunComplianceScanConfiguration launches scan for the specified scan configuration
     rpc RunComplianceScanConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            post: "/v2/compliance/scan/configurations/{id}/run"
+            get: "/v2/compliance/scan/configurations/execute/{id}"
         };
     }
 

@@ -46,12 +46,6 @@ var (
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})
-	ComplianceSuite = registerAPIResource(v1.APIResource{
-		Name:    "compliancesuites",
-		Kind:    "ComplianceSuite",
-		Group:   GetGroupVersion().Group,
-		Version: GetGroupVersion().Version,
-	})
 	ComplianceCheckResult = registerAPIResource(v1.APIResource{
 		Name:    "compliancecheckresults",
 		Kind:    "ComplianceCheckResult",

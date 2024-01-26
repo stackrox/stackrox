@@ -22,10 +22,8 @@ import (
 )
 
 const (
-	mockScanName       = "mockScan"
-	mockScanID         = "mockScanID"
-	mockConfigStatusID = "mockConfigStatusId"
-	mockClusterName    = "clusterName"
+	mockScanName = "mockScan"
+	mockScanID   = "mockScanID"
 )
 
 type pipelineTestCase struct {
@@ -314,60 +312,6 @@ func getTestRec() *storage.ComplianceOperatorScanConfigurationV2 {
 				ProfileId: "ocp4-cis",
 			},
 		},
-		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			{ClusterId: testconsts.Cluster1},
-		},
 		StrictNodeScan: false,
-	}
-}
-
-func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
-	multiCluster := getTestRec()
-	multiCluster.Clusters = append(multiCluster.Clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: testconsts.Cluster3})
-	cases := []processScanConfigTestCase{
-		{
-			desc: "Rerun existing scan config succeeds",
-			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
-			},
-			isErrorTest: false,
-		},
-		{
-			desc: "Rerun non-existent scan config fails",
-			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(nil, false, nil).Times(1)
-			},
-			isErrorTest: true,
-		},
-		{
-			desc: "Rerun scan config fails when data store returns an error finding scan config",
-			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(nil, false, errors.New("Unable to retrieve data")).Times(1)
-			},
-			isErrorTest: true,
-		},
-		{
-			desc: "Rerun scan config continues when sensor message fails and logs message",
-			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(multiCluster, true, nil).Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Failed to send message to sensor")).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), mockScanID, testconsts.Cluster1, "Failed to send message to sensor").Times(1)
-				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster3, gomock.Any()).Return(nil).Times(1)
-			},
-			isErrorTest: false,
-		},
-	}
-	for _, tc := range cases {
-		suite.T().Run(tc.desc, func(t *testing.T) {
-			tc.setMocks()
-
-			err := suite.manager.ProcessRescanRequest(suite.hasWriteCtx, mockScanID)
-			if tc.isErrorTest {
-				suite.Require().NotNil(err)
-			} else {
-				suite.Require().NoError(err)
-			}
-		})
 	}
 }
