@@ -119,7 +119,7 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 		return nil, errors.New("did not receive an identity token in exchange for the refresh token")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, token.AccessToken, dontVerifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying ID token after refresh")
 	}
@@ -170,7 +170,8 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, rawAccessToken string,
+	nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
 	idToken, err := p.idTokenVerifier.Verify(p.injectHTTPClient(ctx), rawIDToken)
 	if err != nil {
 		return nil, err
@@ -185,6 +186,16 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, err
 	}
 
+	// Special case: in the case of an ID token being presented which has an empty group attribute, we attempt to
+	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
+	// (i.e. GitLab) only present the complete group membership in the userinfo endpoint, not within the ID token.
+	if hasEmptyGroups(externalClaims) && rawAccessToken != "" {
+		externalClaims, err = p.fetchUserInfoClaims(ctx, rawAccessToken)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching user info claims")
+		}
+	}
+
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
@@ -192,18 +203,10 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 }
 
 func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
-	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: rawAccessToken,
-	}))
+	externalClaims, err := p.fetchUserInfoClaims(ctx, rawAccessToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching updated userinfo")
+		return nil, errors.Wrap(err, "fetching user info claims")
 	}
-
-	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
-	}
-
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
@@ -396,7 +399,11 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.C
 		return nil, errors.New("no id_token field found in response")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
+	// For the implicit flow, according to the spec an access token _should_ be sent which should be valid for
+	// calling the user info endpoint, however we currently cannot take that assumption. Since the indirection
+	// for the ID token claims not containing groups and requiring fetching the user info endpoint claims is only
+	// observed for the code flow, we for the time being skipped the indirection in the implicit flow.
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, "", verifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "id token verification failed")
 	}
@@ -443,7 +450,7 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, token.GetAccessToken(), verifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "ID token verification failed")
 	}
@@ -537,15 +544,6 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 	return nil, combinedErr
 }
 
-func translateErrorCode(idpError string) string {
-	switch idpError {
-	case "unauthorized_client":
-		return "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method."
-	default:
-		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
-	}
-}
-
 func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	var values url.Values
 	switch r.Method {
@@ -573,6 +571,27 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 
 // Helpers
 ///////////
+
+func (p *backendImpl) fetchUserInfoClaims(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim,
+	error) {
+	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: rawAccessToken,
+	}))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching updated userinfo")
+	}
+
+	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
+	}
+
+	return externalClaims, nil
+}
+
+func hasEmptyGroups(claims *tokens.ExternalUserClaim) bool {
+	return len(claims.Attributes[authproviders.GroupsAttribute]) == 0
+}
 
 func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
 	if p.httpClient != nil {
@@ -696,4 +715,13 @@ func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (
 	}
 	log.Warnf("Suspicious loop exit while extracting claim from path %q", fromClaimName)
 	return nil, errors.Errorf("no value on path %q", fromClaimName)
+}
+
+func translateErrorCode(idpError string) string {
+	switch idpError {
+	case "unauthorized_client":
+		return "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method."
+	default:
+		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
+	}
 }
