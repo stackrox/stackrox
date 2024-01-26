@@ -10,15 +10,3 @@ meta:
   useLookup: false
 allowNonstandardReleaseName: true
 allowNonstandardNamespace: true
-scannerV4:
-  indexer:
-    serviceTLS:
-      generate: false
-  matcher:
-    serviceTLS:
-      generate: false
-  db:
-    password:
-      generate: false
-    serviceTLS:
-      generate: false
