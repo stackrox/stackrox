@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	integrationsSearch "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/search"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +20,8 @@ var (
 )
 
 type datastoreImpl struct {
-	storage postgres.Store
+	storage  postgres.Store
+	searcher integrationsSearch.Searcher
 }
 
 // GetComplianceIntegration is pass-through to the underlying store.
@@ -94,4 +96,9 @@ func (ds *datastoreImpl) RemoveComplianceIntegrationByCluster(ctx context.Contex
 	_, storeErr := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 	return storeErr
+}
+
+// CountIntegrations returns count of integrations matching query
+func (d *datastoreImpl) CountIntegrations(ctx context.Context, q *v1.Query) (int, error) {
+	return d.searcher.Count(ctx, q)
 }
