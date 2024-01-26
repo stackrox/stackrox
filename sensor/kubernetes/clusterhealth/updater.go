@@ -204,7 +204,7 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 
 	var result storage.ScannerHealthInfo
 
-	// It's possible that both Scanner and Scanner V4 are both installed in the secured cluster
+	// It's possible that both Scanner and Scanner V4 are installed in the secured cluster
 	// at the same time, but only one will be used by Sensor at any given time, therefore
 	// only report the health of the active scanner.
 	scannerV4Active := features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported)
