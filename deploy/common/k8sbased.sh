@@ -470,6 +470,10 @@ function launch_central {
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
+          if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+            echo "Deploying ScannerV4..."
+            launch_service "${unzip_dir}" scanner-v4
+          fi
 
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
