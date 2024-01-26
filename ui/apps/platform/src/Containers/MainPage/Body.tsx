@@ -13,6 +13,7 @@ import {
     clustersDiscoveredClustersPath,
     clustersInitBundlesPathWithParam,
     clustersPathWithParam,
+    clustersSecureClusterPath,
     collectionsPath,
     complianceEnhancedBasePath,
     compliancePath,
@@ -105,6 +106,13 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'clusters/init-bundles': {
         component: asyncComponent(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
         path: clustersInitBundlesPathWithParam,
+    },
+    // Cluster secure-a-cluster must precede generic Clusters.
+    'clusters/secure-a-cluster': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/InitBundles/SecureClusterPage')
+        ),
+        path: clustersSecureClusterPath,
     },
     clusters: {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
