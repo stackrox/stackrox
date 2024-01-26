@@ -9,21 +9,6 @@ testRunSelector:
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: central-db-use-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: central-prometheus-k8s
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: central-sts-config-reader
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
   name: central-use-scc
 ---
 apiVersion: authorization.openshift.io/v1
@@ -34,32 +19,22 @@ metadata:
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: scanner-v4-use-scc
+  name: stackrox-central-diagnostics
 ---
 apiVersion: authorization.openshift.io/v1
 kind: RoleBinding
 metadata:
-  name: stackrox-central-diagnostics
+  name: stackrox-central-psp
 ---
 apiVersion: authorization.openshift.io/v1
-kind: Role
+kind: RoleBinding
 metadata:
-  name: central-prometheus-k8s
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: central-sts-config-reader
+  name: stackrox-scanner-psp
 ---
 apiVersion: authorization.openshift.io/v1
 kind: Role
 metadata:
   name: stackrox-central-diagnostics
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-central-db-scc
 ---
 apiVersion: authorization.openshift.io/v1
 kind: Role
@@ -70,11 +45,6 @@ apiVersion: authorization.openshift.io/v1
 kind: Role
 metadata:
   name: use-scanner-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-scanner-v4-scc
 ---
 apiVersion: route.openshift.io/v1
 kind: Route

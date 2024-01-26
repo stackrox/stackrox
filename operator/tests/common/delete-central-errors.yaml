@@ -21,17 +21,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: central-db-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: central-endpoints
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: central-external-db
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -44,29 +34,9 @@ metadata:
   name: scanner-config
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: scanner-v4-db-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: scanner-v4-indexer-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: scanner-v4-matcher-config
----
-apiVersion: v1
 kind: Endpoints
 metadata:
   name: central
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: central-db
 ---
 apiVersion: v1
 kind: Endpoints
@@ -79,39 +49,9 @@ metadata:
   name: scanner-db
 ---
 apiVersion: v1
-kind: Endpoints
-metadata:
-  name: scanner-v4-db
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: scanner-v4-indexer
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: scanner-v4-matcher
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: central-db-password
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: central-db-tls
----
-apiVersion: v1
 kind: Secret
 metadata:
   name: central-htpasswd
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: central-monitoring-tls
 ---
 apiVersion: v1
 kind: Secret
@@ -136,26 +76,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: scanner-v4-db-password
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: scanner-v4-db-tls
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: scanner-v4-indexer-tls
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: scanner-v4-matcher-tls
----
-apiVersion: v1
-kind: Secret
-metadata:
   name: sh.helm.release.v1.stackrox-central-services.v1
 ---
 apiVersion: v1
@@ -166,27 +86,12 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: central-db
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
   name: scanner
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: scanner-v4
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: central
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: central-db
 ---
 apiVersion: v1
 kind: Service
@@ -198,30 +103,10 @@ kind: Service
 metadata:
   name: scanner-db
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: scanner-v4-db
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: scanner-v4-indexer
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: scanner-v4-matcher
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: central-db
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -233,20 +118,10 @@ kind: Deployment
 metadata:
   name: scanner-db
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
 metadata:
-  name: scanner-v4-db
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-v4-indexer
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scanner-v4-matcher
+  name: scanner
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -256,16 +131,6 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: central-db
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: central-monitoring-tls
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
   name: scanner
 ---
 apiVersion: networking.k8s.io/v1
@@ -273,40 +138,10 @@ kind: NetworkPolicy
 metadata:
   name: scanner-db
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: scanner-v4-db
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: scanner-v4-indexer
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: scanner-v4-matcher
----
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: central-db-use-scc
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: central-prometheus-k8s
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: central-sts-config-reader
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -321,32 +156,22 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: scanner-v4-use-scc
+  name: stackrox-central-diagnostics
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: stackrox-central-diagnostics
+  name: stackrox-central-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: RoleBinding
 metadata:
-  name: central-prometheus-k8s
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: central-sts-config-reader
+  name: stackrox-scanner-psp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: stackrox-central-diagnostics
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: use-central-db-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -361,4 +186,9 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-scanner-v4-scc
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
