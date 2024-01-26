@@ -184,8 +184,11 @@ func (s *serviceImpl) GetConsumers(ctx context.Context, request *v1.ResourceByID
 	// TODO: This query below should work to reecive all report configurations with a foreign key = request.GetID()
 
 	// List all reports which have collection as ID
-	query := search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId()).ProtoQuery()
-	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, query)
+	queryBuilder := search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId())
+	pagination := search.NewPagination().AddSortOption().Offset()
+	queryBuilder.WithPagination(pagination)
+
+	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, queryBuilder.ProtoQuery())
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
 	}

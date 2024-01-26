@@ -18,7 +18,7 @@ message ResourceCollection {
 
   string id                                                = 1 [(gogoproto.moretags) = 'search:"Collection ID" sql:"pk"']; // primary key
   string name                                              = 2 [(gogoproto.moretags) = 'search:"Collection Name" sql:"unique"'];
-  string description                                       = 3;
+  string description                                       = 3 [(gogoproto.moretags) = 'search:"Description"'];
   google.protobuf.Timestamp created_at                     = 4;
   google.protobuf.Timestamp last_updated                   = 5;
   SlimUser created_by                                      = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
