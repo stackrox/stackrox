@@ -116,18 +116,38 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 	}
 
-	// Check if scan configuration already exists.
-	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
-	if err != nil {
-		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-	if found {
-		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
-	}
+	createScanRequest := scanRequest.Id == ""
 
-	scanRequest.Id = uuid.NewV4().String()
-	scanRequest.CreatedTime = types.TimestampNow()
+	// No ID means an add so we need to make sure the name does not already exist
+	if createScanRequest {
+		// Check if scan configuration already exists by name.
+		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+			log.Error(err)
+			return nil, err
+		}
+		if found {
+			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
+		}
+
+		scanRequest.Id = uuid.NewV4().String()
+		scanRequest.CreatedTime = types.TimestampNow()
+	} else {
+		// Verify the scan configuration ID is valid
+		scanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+			log.Error(err)
+			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
+		}
+
+		// Use the created time from the DB
+		scanRequest.CreatedTime = scanConfig.GetCreatedTime()
+	}
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -143,28 +163,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_ApplyScanConfig{
-						ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-							Id: sensorRequestID,
-							ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-								ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
-									ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-										ScanName:       scanRequest.GetScanConfigName(),
-										StrictNodeScan: true,
-										Profiles:       profiles,
-									},
-									Cron: cron,
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {
