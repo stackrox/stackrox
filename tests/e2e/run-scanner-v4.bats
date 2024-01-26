@@ -405,8 +405,8 @@ wait_for_ready_pods() {
 
     while true; do
       deployment_json="$("${ORCH_CMD}" -n "${namespace}" get "deployment/${deployment}" -o json)"
-      num_replicas="$(jq '.status.replicas' <<<"${deployment_json}")"
-      num_ready_replicas="$(jq '.status.readyReplicas' <<<"${deployment_json}")"
+      num_replicas="$(jq '.status.replicas // 0' <<<"${deployment_json}")"
+      num_ready_replicas="$(jq '.status.readyReplicas // 0' <<<"${deployment_json}")"
       echo "${deployment} replicas: ${num_replicas}"
       echo "${deployment} readyReplicas: ${num_ready_replicas}"
       if (( num_ready_replicas >  0 )); then
