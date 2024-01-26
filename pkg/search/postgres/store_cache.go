@@ -280,7 +280,7 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn fu
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
 	}
-	return c.underlyingStore.Walk(ctx, fn)
+	return c.underlyingStore.WalkByQuery(ctx, q, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
