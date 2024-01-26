@@ -1,9 +1,9 @@
+import { LabelProps } from '@patternfly/react-core';
+
 import {
     ComplianceCheckStatus,
     ComplianceCheckStatusCount,
 } from 'services/ComplianceEnhancedService';
-
-import { LabelProps } from '@patternfly/react-core';
 
 // Thresholds for compliance status
 const DANGER_THRESHOLD = 50;

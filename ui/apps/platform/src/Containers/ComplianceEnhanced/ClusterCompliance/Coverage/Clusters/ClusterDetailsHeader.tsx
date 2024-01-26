@@ -26,7 +26,7 @@ function ClusterDetailsHeader({ clusterStats }: ClusterDetailsHeaderProps) {
     return (
         <>
             <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
-                <Title headingLevel="h1" className="pf-u-mb-sm">
+                <Title headingLevel="h1">
                     {!clusterStats ? (
                         <Skeleton
                             fontSize="2xl"

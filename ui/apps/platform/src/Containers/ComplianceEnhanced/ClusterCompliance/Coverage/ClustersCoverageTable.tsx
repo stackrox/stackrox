@@ -18,17 +18,17 @@ import {
 import { TableComposable, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
 import { SearchIcon } from '@patternfly/react-icons';
 
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService';
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { complianceEnhancedCoverageClustersPath } from 'routePaths';
+import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService';
 
 import {
     calculateCompliancePercentage,
-    getPassAndTotalCount,
     getCompliancePfClassName,
+    getPassAndTotalCount,
 } from './compliance.coverage.utils';
 
 function ClustersCoverageTable() {
