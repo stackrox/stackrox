@@ -1,4 +1,4 @@
-package resources
+package npg
 
 import (
 	goerrors "errors"
@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,13 +108,13 @@ func TestSummarizeErrors(t *testing.T) {
 			warns:                 nil,
 			errs:                  []error{errors.New("foo")},
 			treatWarningsAsErrors: false,
-			wantErr:               npg.ErrErrors,
+			wantErr:               ErrErrors,
 		},
 		"warning marker is added when warnings are present and treatWarningsAsErrors is true": {
 			warns:                 []error{errors.New("foo")},
 			errs:                  nil,
 			treatWarningsAsErrors: true,
-			wantErr:               npg.ErrWarnings,
+			wantErr:               ErrWarnings,
 		},
 		"no marker is added when warnings are present and treatWarningsAsErrors is false": {
 			warns:                 []error{errors.New("foo")},
@@ -133,7 +132,7 @@ func TestSummarizeErrors(t *testing.T) {
 			warns:                 []error{errors.New("foo")},
 			errs:                  []error{errors.New("bar")},
 			treatWarningsAsErrors: true,
-			wantErr:               npg.ErrErrors,
+			wantErr:               ErrErrors,
 		},
 	}
 	for name, tt := range tests {

@@ -97,7 +97,7 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 		return err
 	}
 	warns, errs := cmd.generateNetpol(synth)
-	err = resources.SummarizeErrors(warns, errs, cmd.Options.TreatWarningsAsErrors, cmd.env.Logger())
+	err = npg.SummarizeErrors(warns, errs, cmd.Options.TreatWarningsAsErrors, cmd.env.Logger())
 	if err != nil {
 		return errors.Wrap(err, "running command")
 	}
@@ -152,12 +152,12 @@ type netpolGenerator interface {
 
 // handleFileProcessingError temporary added function to handle inconsistency in error types exported form npg pkgs.
 func handleFileProcessingError(src []npguard.FileProcessingError) (warns []error, errs []error) {
-	arr := make([]resources.NPGuardErrorType, len(src))
+	arr := make([]npg.NPGuardErrorType, len(src))
 	for i, processingError := range src {
 		tmp := processingError // avoid G601: Implicit memory aliasing in for loop
 		arr[i] = &tmp
 	}
-	return resources.HandleNPGuardErrors(arr)
+	return npg.HandleNPGuardErrors(arr)
 }
 
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
