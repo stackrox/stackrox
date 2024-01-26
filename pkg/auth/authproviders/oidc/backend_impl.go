@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -119,7 +120,7 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 		return nil, errors.New("did not receive an identity token in exchange for the refresh token")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, token.AccessToken, dontVerifyNonce)
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, token.AccessToken, dontVerifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying ID token after refresh")
 	}
@@ -132,7 +133,7 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 }
 
 func (p *backendImpl) refreshWithAccessToken(ctx context.Context, accessToken string) (*authproviders.AuthResponse, error) {
-	return p.fetchUserInfo(ctx, accessToken)
+	return p.authFromUserInfo(ctx, accessToken)
 }
 
 func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) error {
@@ -170,17 +171,25 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, rawAccessToken string,
-	nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
-	idToken, err := p.idTokenVerifier.Verify(p.injectHTTPClient(ctx), rawIDToken)
+func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim,
+	error) {
+	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: rawAccessToken,
+	}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "fetching user info claims")
 	}
 
-	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.GetNonce()) {
-		return nil, errors.New("invalid token")
+	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
 	}
 
+	return externalClaims, nil
+}
+
+func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken,
+	rawAccessToken string) (*tokens.ExternalUserClaim, error) {
 	externalClaims, err := p.extractExternalClaims(idToken)
 	if err != nil {
 		return nil, err
@@ -190,10 +199,34 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, rawA
 	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
 	// (i.e. GitLab) only present the complete group membership in the userinfo endpoint, not within the ID token.
 	if hasEmptyGroups(externalClaims) && rawAccessToken != "" {
-		externalClaims, err = p.fetchUserInfoClaims(ctx, rawAccessToken)
+		userInfoClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 		if err != nil {
-			return nil, errors.Wrap(err, "fetching user info claims")
+			return nil, errors.Wrap(err, "fetching userinfo claims")
 		}
+
+		if !hasEmptyGroups(userInfoClaims) {
+			externalClaims.Attributes[authproviders.GroupsAttribute] =
+				userInfoClaims.Attributes[authproviders.GroupsAttribute]
+		}
+	}
+
+	return externalClaims, nil
+}
+
+// authFromIDToken returns an auth response from the given raw ID token.
+// It will verify the ID token according to the given nonceVerificationSetting, extract claims
+// from the given ID token, and potentially enrich the claims of the ID token with the userinfo claims
+// iff the ID token claims do not contain groups.
+func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, rawAccessToken string,
+	nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
+	idToken, err := p.verifyIDToken(ctx, rawIDToken, nonceVerification)
+	if err != nil {
+		return nil, errors.Wrap(err, "verifying ID token")
+	}
+
+	externalClaims, err := p.claimsFromIDToken(ctx, idToken, rawAccessToken)
+	if err != nil {
+		return nil, err
 	}
 
 	return &authproviders.AuthResponse{
@@ -202,10 +235,24 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, rawA
 	}, nil
 }
 
-func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
-	externalClaims, err := p.fetchUserInfoClaims(ctx, rawAccessToken)
+func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string,
+	nonceVerification nonceVerificationSetting) (oidcIDToken, error) {
+	idToken, err := p.idTokenVerifier.Verify(p.injectHTTPClient(ctx), rawIDToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching user info claims")
+		return nil, err
+	}
+
+	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.GetNonce()) {
+		return nil, errox.InvalidArgs.New("invalid token")
+	}
+
+	return idToken, nil
+}
+
+func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
+	externalClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching userinfo claims")
 	}
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
@@ -400,12 +447,11 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.C
 	}
 
 	// For the implicit flow, according to the spec an access token _should_ be sent which should be valid for
-	// calling the user info endpoint, however we currently cannot take that assumption. Since the indirection
-	// for the ID token claims not containing groups and requiring fetching the user info endpoint claims is only
-	// observed for the code flow, we for the time being skipped the indirection in the implicit flow.
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, "", verifyNonce)
+	// calling the userinfo endpoint. If no access token is given, the auth response will not contain the enriched
+	// groups claim from the userinfo endpoint (in case the ID token does not have groups present).
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, responseData.Get("access_token"), verifyNonce)
 	if err != nil {
-		return nil, errors.Wrap(err, "id token verification failed")
+		return nil, errors.Wrap(err, "failed to authenticate with ID token")
 	}
 
 	return authResp, nil
@@ -417,9 +463,9 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithAccessToken(ctx conte
 		return nil, errors.New("no access_token field found in response")
 	}
 
-	authResp, err := p.fetchUserInfo(ctx, rawToken)
+	authResp, err := p.authFromUserInfo(ctx, rawToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching user info with access token")
+		return nil, errors.Wrap(err, "failed to authenticate with access token")
 	}
 
 	authResp.RefreshTokenData = authproviders.RefreshTokenData{
@@ -450,9 +496,9 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, token.GetAccessToken(), verifyNonce)
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, token.GetAccessToken(), verifyNonce)
 	if err != nil {
-		return nil, errors.Wrap(err, "ID token verification failed")
+		return nil, errors.Wrap(err, "failed to authenticate with ID token")
 	}
 
 	if token.GetRefreshToken() != "" {
@@ -572,27 +618,6 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-func (p *backendImpl) fetchUserInfoClaims(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim,
-	error) {
-	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: rawAccessToken,
-	}))
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching updated userinfo")
-	}
-
-	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
-	}
-
-	return externalClaims, nil
-}
-
-func hasEmptyGroups(claims *tokens.ExternalUserClaim) bool {
-	return len(claims.Attributes[authproviders.GroupsAttribute]) == 0
-}
-
 func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
 	if p.httpClient != nil {
 		return oidc.ClientContext(ctx, p.httpClient)
@@ -603,7 +628,7 @@ func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
 func (p *backendImpl) extractExternalClaims(extractor claimExtractor) (*tokens.ExternalUserClaim, error) {
 	var userInfo userInfoType
 	if err := extractor.Claims(&userInfo); err != nil {
-		return nil, errors.Wrap(err, "failed to extract user info claims")
+		return nil, errors.Wrap(err, "failed to extract userinfo claims")
 	}
 
 	externalClaims := userInfoToExternalClaims(&userInfo)
@@ -724,4 +749,8 @@ func translateErrorCode(idpError string) string {
 	default:
 		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
 	}
+}
+
+func hasEmptyGroups(claims *tokens.ExternalUserClaim) bool {
+	return len(claims.Attributes[authproviders.GroupsAttribute]) == 0
 }

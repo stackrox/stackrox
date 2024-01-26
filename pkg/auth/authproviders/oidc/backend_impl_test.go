@@ -346,7 +346,7 @@ func TestBackend(t *testing.T) {
 				"code": literalValue{mockAuthorizationCode},
 			},
 			exchangedTokenClaims:        &suppliedClaims,
-			wantProcessIDPResponseError: "1 error occurred:\n\t* ID token verification failed: invalid token\n\n",
+			wantProcessIDPResponseError: "1 error occurred:\n\t* failed to authenticate with ID token: verifying ID token: invalid token\n\n",
 		},
 		"mode query": {
 			config: map[string]string{
@@ -431,7 +431,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* fetching user info with access token: fetching user info claims: fetching updated userinfo: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
 		},
 		"mode fragment with id_token only": {
 			config: map[string]string{
@@ -472,7 +472,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"id_token": suppliedClaims,
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* no access_token field found in response\n\t* id token verification failed: invalid token\n\n",
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* no access_token field found in response\n\t* failed to authenticate with ID token: verifying ID token: invalid token\n\n",
 		},
 		"mode fragment with both token and id_token": {
 			config: map[string]string{
@@ -592,6 +592,7 @@ func TestBackend(t *testing.T) {
 				"id_token":     suppliedClaims,
 				"access_token": literalValue{mockAccessToken},
 			},
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* failed to authenticate with access token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\t* failed to authenticate with ID token: fetching userinfo claims: fetching user info claims: simulated UserInfo endpoint failure\n\n",
 		},
 		"legacy no mode setting, equal to fragment, with access token only": {
 			config: map[string]string{
