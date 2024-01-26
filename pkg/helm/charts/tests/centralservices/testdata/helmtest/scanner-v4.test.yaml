@@ -241,7 +241,7 @@ tests:
     scannerV4.disable: false
   expect: |
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe")
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=name2cpe")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=name2repos")
 
 - name: "Scanner V4 is installed by default"
   set:
