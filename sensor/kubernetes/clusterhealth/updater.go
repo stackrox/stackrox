@@ -241,7 +241,7 @@ func (u *updaterImpl) populateScannerInfo(result *storage.ScannerHealthInfo, ana
 	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), dbDeployName, metav1.GetOptions{})
 	if err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("unable to find %q deployment in namespace %q", dbDeployName, u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q: %v", u.namespace, err))
+		result.StatusErrors = append(result.StatusErrors, err.Error())
 	} else {
 		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
 			TotalDesiredDbPods: localScannerDB.Status.Replicas,
