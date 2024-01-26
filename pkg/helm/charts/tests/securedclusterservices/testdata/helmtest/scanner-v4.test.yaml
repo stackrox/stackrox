@@ -165,7 +165,7 @@ tests:
     scannerV4.disable: false
   expect: |
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe")
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=name2cpe")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=name2repos")
 
 - name: "indexer should not allow ingress from central and matcher when deployed as a secured-cluster-service"
   set:
