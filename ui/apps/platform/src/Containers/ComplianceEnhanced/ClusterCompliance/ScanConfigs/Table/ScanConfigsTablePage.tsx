@@ -30,9 +30,9 @@ import {
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
 import {
-    complianceEnhancedScanConfigsPath,
-    complianceEnhancedScanConfigDetailPath,
     complianceEnhancedCoveragePath,
+    complianceEnhancedScanConfigDetailPath,
+    complianceEnhancedScanConfigsPath,
 } from 'routePaths';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
@@ -40,10 +40,9 @@ import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getScanConfigs, Schedule } from 'services/ComplianceEnhancedService';
+import { getScanConfigs, getScanConfigsCount } from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
-import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -59,8 +58,11 @@ const CreateScanConfigButton = () => {
     );
 };
 
-const sortFields = ['Name', 'Last Run'];
-const defaultSortOption = { field: 'Name', direction: 'asc' } as SortOption;
+const sortFields = ['Compliance Scan Config Name'];
+const defaultSortOption = {
+    field: 'Compliance Scan Config Name',
+    direction: 'asc',
+} as SortOption;
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
@@ -76,6 +78,9 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: scanSchedules, loading: isLoading, error } = useRestQuery(listQuery);
+
+    const countQuery = useCallback(() => getScanConfigsCount(), []);
+    const { data: scanSchedulesCount } = useRestQuery(countQuery);
 
     const scanConfigActions = (): IAction[] => [
         {
@@ -190,8 +195,7 @@ function ScanConfigsTablePage({
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                                 <Pagination
-                                    isCompact
-                                    itemCount={scanSchedules ? scanSchedules.length : 0}
+                                    itemCount={scanSchedulesCount ?? 0}
                                     page={page}
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
@@ -204,9 +208,9 @@ function ScanConfigsTablePage({
                     <TableComposable>
                         <Thead noWrap>
                             <Tr>
-                                <Th sort={getSortParams('Name')}>Name</Th>
+                                <Th sort={getSortParams('Compliance Scan Config Name')}>Name</Th>
                                 <Th>Schedule</Th>
-                                <Th sort={getSortParams('Last Run')}>Last run</Th>
+                                <Th>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 <Td />
