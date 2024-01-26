@@ -30,6 +30,19 @@ something: unexpected
 `,
 			wantErr: "field something not found",
 		},
+		{
+			name: "when stackrox_services is enabled then set it for indexer and matcher",
+			yaml: `---
+stackrox_services: true
+`,
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.StackRoxServices = true
+				cfg.Indexer.StackRoxServices = true
+				cfg.Matcher.StackRoxServices = true
+				return &cfg
+			}(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
