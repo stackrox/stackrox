@@ -19,21 +19,32 @@ export const ComplianceStatus = {
 
 export type ComplianceStatus = (typeof ComplianceStatus)[keyof typeof ComplianceStatus];
 
-export function getPassAndTotalCount(checkStats: ComplianceCheckStatusCount[]): {
+export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
     passCount: number;
+    failCount: number;
+    otherCount: number;
     totalCount: number;
 } {
-    let totalCount = 0;
     let passCount = 0;
+    let failCount = 0;
+    let otherCount = 0;
+    let totalCount = 0;
 
-    checkStats.forEach((stat) => {
-        totalCount += stat.count;
-        if (stat.status === ComplianceCheckStatus.PASS) {
-            passCount += stat.count;
+    checkStats.forEach((statusInfo) => {
+        totalCount += statusInfo.count;
+        switch (statusInfo.status) {
+            case ComplianceCheckStatus.PASS:
+                passCount += statusInfo.count;
+                break;
+            case ComplianceCheckStatus.FAIL:
+                failCount += statusInfo.count;
+                break;
+            default:
+                otherCount += statusInfo.count;
         }
     });
 
-    return { passCount, totalCount };
+    return { passCount, failCount, otherCount, totalCount };
 }
 
 export function calculateCompliancePercentage(passCount: number, totalCount: number): number {

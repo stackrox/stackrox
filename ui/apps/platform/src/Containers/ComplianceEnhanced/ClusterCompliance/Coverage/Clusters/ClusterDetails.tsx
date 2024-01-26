@@ -4,39 +4,91 @@ import {
     Alert,
     Breadcrumb,
     BreadcrumbItem,
+    Bullseye,
     Divider,
     PageSection,
     Skeleton,
+    Spinner,
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import { complianceEnhancedCoveragePath } from 'routePaths';
-import { getSingleClusterCombinedStats } from 'services/ComplianceEnhancedService';
+import {
+    getSingleClusterCombinedStats,
+    getSingleClusterStatsByScanConfig,
+} from 'services/ComplianceEnhancedService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterDetailsHeader from './ClusterDetailsHeader';
+import ClusterDetailsContent from './ClusterDetailsContent';
 
 function ClusterDetails() {
     const { clusterId } = useParams();
 
-    const listQuery = useCallback(() => getSingleClusterCombinedStats(clusterId), [clusterId]);
-    const { data: clusterStats, loading: isLoadingClusterInfo, error } = useRestQuery(listQuery);
+    const clusterStatsListQuery = useCallback(
+        () => getSingleClusterCombinedStats(clusterId),
+        [clusterId]
+    );
+    const {
+        data: clusterStats,
+        loading: isLoadingClusterStats,
+        error: clusterStatsError,
+    } = useRestQuery(clusterStatsListQuery);
+
+    const scanConfigStats = useCallback(
+        () => getSingleClusterStatsByScanConfig(clusterId),
+        [clusterId]
+    );
+    const {
+        data: scanStats,
+        loading: isLoadingScanStats,
+        error: scanStatsError,
+    } = useRestQuery(scanConfigStats);
+
+    const hasError = clusterStatsError || scanStatsError;
 
     const renderClusterNameBreadcrumb = () => {
-        if (error) {
+        if (clusterStatsError) {
             return null;
         }
 
         return (
             <BreadcrumbItem isActive>
-                {isLoadingClusterInfo ? (
+                {isLoadingClusterStats ? (
                     <Skeleton screenreaderText="Loading cluster name" width="150px" />
                 ) : (
                     clusterStats?.cluster.clusterName
                 )}
             </BreadcrumbItem>
+        );
+    };
+
+    const renderErrors = () => {
+        return (
+            <>
+                {clusterStatsError && (
+                    <Alert
+                        variant="warning"
+                        title="Unable to fetch cluster details"
+                        component="div"
+                        isInline
+                    >
+                        {getAxiosErrorMessage(clusterStatsError)}
+                    </Alert>
+                )}
+                {scanStatsError && (
+                    <Alert
+                        variant="warning"
+                        title="Unable to fetch scan details"
+                        component="div"
+                        isInline
+                    >
+                        {getAxiosErrorMessage(scanStatsError)}
+                    </Alert>
+                )}
+            </>
         );
     };
 
@@ -52,18 +104,29 @@ function ClusterDetails() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            {error || clusterStats === null ? (
-                <Alert variant="warning" title="Unable to cluster details" component="div" isInline>
-                    {getAxiosErrorMessage(error)}
-                </Alert>
+            {hasError ? (
+                renderErrors()
             ) : (
                 <>
-                    <PageSection variant="light">
-                        <ClusterDetailsHeader clusterStats={clusterStats} />
-                    </PageSection>
-                    <Divider component="div" />
-                    <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                        <div>table here</div>
+                    {clusterStats !== null && (
+                        <PageSection variant="light">
+                            <ClusterDetailsHeader
+                                clusterStats={clusterStats}
+                                isLoading={isLoadingClusterStats}
+                            />
+                        </PageSection>
+                    )}
+                    <PageSection>
+                        {isLoadingScanStats ? (
+                            <Bullseye>
+                                <Spinner isSVG />
+                            </Bullseye>
+                        ) : (
+                            scanStats &&
+                            scanStats.length > 0 && (
+                                <ClusterDetailsContent scanRecords={scanStats} />
+                            )
+                        )}
                     </PageSection>
                 </>
             )}
