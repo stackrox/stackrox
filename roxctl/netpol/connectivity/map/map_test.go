@@ -1,12 +1,12 @@
 package connectivitymap
 
 import (
-	goerrors "errors"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/npg"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -180,27 +180,8 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 			d.Assert().NoError(err)
 			d.Assert().NoError(analyzeNetpolCmd.validate())
 			warns, errs := analyzeNetpolCmd.analyze(analyzer)
-			d.Require().Lenf(errs, len(tt.expectedErrors), "number of errors should be %d", len(tt.expectedErrors))
-			d.Require().Lenf(warns, len(tt.expectedWarnings), "number of warnings should be %d", len(tt.expectedWarnings))
-
-			for _, expError := range tt.expectedErrors {
-				if expError != "" {
-					d.Require().Error(goerrors.Join(errs...))
-					d.Assert().ErrorContainsf(goerrors.Join(errs...), expError,
-						"Expected errors to contain %s", tt.expectedErrors)
-				} else {
-					d.Assert().NoError(goerrors.Join(errs...))
-				}
-			}
-			for _, expWarn := range tt.expectedWarnings {
-				if expWarn != "" {
-					d.Require().Error(goerrors.Join(warns...))
-					d.Assert().ErrorContainsf(goerrors.Join(warns...), expWarn,
-						"Expected warnings to contain %s", tt.expectedWarnings)
-				} else {
-					d.Assert().NoError(goerrors.Join(warns...))
-				}
-			}
+			npg.AssertErrorsContain(d.T(), tt.expectedErrors, errs, "errors")
+			npg.AssertErrorsContain(d.T(), tt.expectedWarnings, warns, "warnings")
 
 			if tt.outFile != "" && len(tt.expectedErrors) == 0 {
 				_, err := os.Stat(tt.outFile)

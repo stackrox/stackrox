@@ -2,9 +2,6 @@
 package connectivitymap
 
 import (
-	"os"
-	"path/filepath"
-
 	npguard "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -77,20 +74,13 @@ func (cmd *Cmd) ouputConnList(connsStr string) error {
 			cmd.outputFilePath = cmd.getDefaultFileName()
 		}
 
-		if err := writeFile(cmd.outputFilePath, connsStr); err != nil {
+		if err := npg.WriteFile(cmd.outputFilePath, connsStr); err != nil {
 			return errors.Wrap(err, "error writing connlist output")
 		}
 	}
 
 	cmd.env.Logger().PrintfLn(connsStr)
 	return nil
-}
-
-func writeFile(outputPath string, content string) error {
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return errors.Wrapf(err, "error creating directory for file %q", outputPath)
-	}
-	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
 }
 
 func (cmd *Cmd) getDefaultFileName() string {

@@ -3,7 +3,6 @@ package diff
 
 import (
 	"os"
-	"path/filepath"
 
 	npgdiff "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
 	"github.com/pkg/errors"
@@ -61,24 +60,13 @@ func (cmd *diffNetpolCommand) outputConnsDiff(connsDiffStr string) error {
 			cmd.outputFilePath = cmd.getDefaultFileName()
 		}
 
-		if err := writeFile(cmd.outputFilePath, connsDiffStr); err != nil {
+		if err := npg.WriteFile(cmd.outputFilePath, connsDiffStr); err != nil {
 			return errors.Wrap(err, "error writing connections diff output")
 		}
 	}
 
-	cmd.printConnsDiff(connsDiffStr)
+	cmd.env.Logger().PrintfLn(connsDiffStr)
 	return nil
-}
-
-func writeFile(outputPath string, content string) error {
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
-		return errors.Wrapf(err, "error creating directory for file %q", outputPath)
-	}
-	return errors.Wrap(os.WriteFile(outputPath, []byte(content), os.FileMode(0644)), "error writing file")
-}
-
-func (cmd *diffNetpolCommand) printConnsDiff(connsDiff string) {
-	cmd.env.Logger().PrintfLn(connsDiff)
 }
 
 func (cmd *diffNetpolCommand) getDefaultFileName() string {
