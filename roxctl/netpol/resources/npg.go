@@ -1,70 +1,21 @@
 package resources
 
 import (
-	npganalyzer "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
-	npgconnlist "github.com/np-guard/netpol-analyzer/pkg/netpol/connlist"
-	npgdiff "github.com/np-guard/netpol-analyzer/pkg/netpol/diff"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
 
-type standardNPGuardError struct {
-	err      error
-	location string
-	isSevere bool
+// NPGuardErrorType summarizes commonalities of three types of errors returned by NP-Guard
+type NPGuardErrorType interface {
+	Error() error
+	Location() string
+	IsSevere() bool
 }
 
-func (e *standardNPGuardError) Error() error {
-	return e.err
-}
-
-func (e *standardNPGuardError) Location() string {
-	return e.location
-}
-
-func (e *standardNPGuardError) IsSevere() bool {
-	return e.isSevere
-}
-
-func ConvertDiffError(input []npgdiff.DiffError) []*standardNPGuardError {
-	errArr := make([]*standardNPGuardError, len(input))
-	for i, err := range input {
-		errArr[i] = &standardNPGuardError{
-			err:      err.Error(),
-			location: err.Location(),
-			isSevere: err.IsSevere(),
-		}
-	}
-	return errArr
-}
-
-func ConvertConnlistError(input []npgconnlist.ConnlistError) []*standardNPGuardError {
-	errArr := make([]*standardNPGuardError, len(input))
-	for i, err := range input {
-		errArr[i] = &standardNPGuardError{
-			err:      err.Error(),
-			location: err.Location(),
-			isSevere: err.IsSevere(),
-		}
-	}
-	return errArr
-}
-
-func ConvertFileProcessingError(input []npganalyzer.FileProcessingError) []*standardNPGuardError {
-	errArr := make([]*standardNPGuardError, len(input))
-	for i, err := range input {
-		errArr[i] = &standardNPGuardError{
-			err:      err.Error(),
-			location: err.Location(),
-			isSevere: err.IsSevere(),
-		}
-	}
-	return errArr
-}
-
-// HandleNPGerrors classifies NP-Guard errors as warnings or errors and ensures proper error location display
-func HandleNPGerrors(src []*standardNPGuardError) (warns []error, errs []error) {
+// HandleNPGuardErrors classifies NP-Guard errors as warnings or errors and ensures
+// that error-related location is included in the error message
+func HandleNPGuardErrors[T NPGuardErrorType](src []T) (warns []error, errs []error) {
 	for _, err := range src {
 		e := err.Error()
 		if err.Location() != "" {
@@ -79,6 +30,8 @@ func HandleNPGerrors(src []*standardNPGuardError) (warns []error, errs []error) 
 	return warns, errs
 }
 
+// SummarizeErrors returns appropriate error-marker if the operation should be considered as erroneous.
+// It displays errors and warnings using the provided logger
 func SummarizeErrors(warns []error, errs []error, treatWarningsAsErrors bool, logger logger.Logger) error {
 	var errToReturn error
 	if len(errs) > 0 {

@@ -131,7 +131,7 @@ func (cmd *Cmd) analyze(analyzer netpolAnalyzer) (w []error, e []error) {
 	if err := cmd.ouputConnList(connsStr); err != nil {
 		return warns, append(errs, errors.Wrap(err, "writing connectivity result"))
 	}
-	w, e = resources.HandleNPGerrors(resources.ConvertConnlistError(analyzer.Errors()))
+	w, e = resources.HandleNPGuardErrors(analyzer.Errors())
 	return append(warns, w...), append(errs, e...)
 }
 

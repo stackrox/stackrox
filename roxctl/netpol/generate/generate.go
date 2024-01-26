@@ -104,7 +104,7 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	return nil
 }
 
-func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (netpolGenerator, error) {
+func (cmd *NetpolGenerateCmd) construct(args []string, c *cobra.Command) (*npguard.PoliciesSynthesizer, error) {
 	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
@@ -150,6 +150,16 @@ type netpolGenerator interface {
 	Errors() []npguard.FileProcessingError
 }
 
+// handleFileProcessingError temporary added function to handle inconsistency in error types exported form npg pkgs.
+func handleFileProcessingError(src []npguard.FileProcessingError) (warns []error, errs []error) {
+	arr := make([]resources.NPGuardErrorType, len(src))
+	for i, processingError := range src {
+		tmp := processingError // avoid G601: Implicit memory aliasing in for loop
+		arr[i] = &tmp
+	}
+	return resources.HandleNPGuardErrors(arr)
+}
+
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
 	infos, warns, errs := resources.GetK8sInfos(cmd.inputFolderPath, cmd.Options.StopOnFirstError, cmd.Options.TreatWarningsAsErrors)
 	if cmd.Options.StopOnFirstError && (len(errs) > 0 || (len(warns) > 0 && cmd.Options.TreatWarningsAsErrors)) {
@@ -163,7 +173,8 @@ func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, 
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
 		return warns, append(errs, err)
 	}
-	w, e = resources.HandleNPGerrors(resources.ConvertFileProcessingError(synth.Errors()))
+	// TODO: change to HandleNPGuardErrors when `FileProcessingError` is unified with other exported errors
+	w, e = handleFileProcessingError(synth.Errors())
 	return append(warns, w...), append(errs, e...)
 }
 

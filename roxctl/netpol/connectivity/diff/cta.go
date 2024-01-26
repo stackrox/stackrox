@@ -50,7 +50,7 @@ func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) (w 
 		return warns, append(errs, err)
 	}
 
-	w, e = resources.HandleNPGerrors(resources.ConvertDiffError(analyzer.Errors()))
+	w, e = resources.HandleNPGuardErrors(analyzer.Errors())
 	return append(warns, w...), append(errs, e...)
 }
 

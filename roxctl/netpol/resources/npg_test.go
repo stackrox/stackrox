@@ -13,6 +13,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type standardNPGuardError struct {
+	err      error
+	location string
+	isSevere bool
+}
+
+func (e *standardNPGuardError) IsFatal() bool {
+	return false
+}
+
+func (e *standardNPGuardError) Error() error {
+	return e.err
+}
+
+func (e *standardNPGuardError) Location() string {
+	return e.location
+}
+
+func (e *standardNPGuardError) IsSevere() bool {
+	return e.isSevere
+}
+
 func warning(txt, loc string) *standardNPGuardError {
 	return &standardNPGuardError{
 		err:      errors.New(txt),
@@ -59,7 +81,7 @@ func TestHandleNPGerrors(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotWarns, gotErrs := HandleNPGerrors(tt.errors)
+			gotWarns, gotErrs := HandleNPGuardErrors(tt.errors)
 			require.Lenf(t, gotWarns, len(tt.wantWarns), "got: %v", goerrors.Join(gotWarns...))
 			require.Lenf(t, gotErrs, len(tt.wantErrs), "got: %v", goerrors.Join(gotErrs...))
 
