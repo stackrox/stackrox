@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -21,5 +22,5 @@ func denyTransport(req *http.Request) (*http.Response, error) {
 		Str("method", req.Method).
 		Str("url", req.URL.String()).
 		Msg("denied HTTP request")
-	return nil, errTrafficDenied
+	return nil, utils.ShouldErr(errTrafficDenied)
 }

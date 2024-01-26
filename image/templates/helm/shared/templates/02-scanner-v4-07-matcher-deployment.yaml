@@ -107,6 +107,9 @@ spec:
         - name: config-volume
           mountPath: /etc/scanner
           readOnly: true
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
         - name: tmp-volume
           mountPath: /tmp
         - name: db-password
@@ -132,6 +135,10 @@ spec:
       - name: config-volume
         configMap:
           name: scanner-v4-matcher-config
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
       - name: tmp-volume
         emptyDir: {}
       - name: db-password

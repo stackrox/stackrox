@@ -37,6 +37,8 @@ type options struct {
 type TransportOption func(o *options)
 
 // WithDenySensor configures whether the transport should deny traffic to Sensor.
+//
+// Default: false
 func WithDenySensor(deny bool) TransportOption {
 	return func(o *options) {
 		o.denySensor = deny

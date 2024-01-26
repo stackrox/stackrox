@@ -62,6 +62,20 @@ func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	return es
 }
 
+// remoteTransport is the http.RoundTripper to use when talking to image registries.
+var remoteTransport = proxiedRemoteTransport()
+
+func proxiedRemoteTransport() http.RoundTripper {
+	tr, ok := remote.DefaultTransport.(*http.Transport)
+	if !ok {
+		// The proxy function was already modified to proxy.TransportFunc.
+		// See scanner/cmd/scanner/main.go.
+		return http.DefaultTransport
+	}
+	tr.Proxy = proxy.TransportFunc
+	return tr
+}
+
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
@@ -263,20 +277,6 @@ func (i *localIndexer) IndexContainerImage(
 		})
 	}
 	return i.libIndex.Index(ctx, manifest)
-}
-
-// remoteTransport is the http.RoundTripper to use when talking to image registries.
-var remoteTransport = proxiedRemoteTransport()
-
-func proxiedRemoteTransport() http.RoundTripper {
-	tr, ok := remote.DefaultTransport.(*http.Transport)
-	if !ok {
-		// The proxy function was already modified to proxy.TransportFunc.
-		// See scanner/cmd/scanner/main.go.
-		return http.DefaultTransport
-	}
-	tr.Proxy = proxy.TransportFunc
-	return tr
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
