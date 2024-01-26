@@ -202,8 +202,6 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		return nil
 	}
 
-	var result storage.ScannerHealthInfo
-
 	// It's possible that both Scanner and Scanner V4 are installed in the secured cluster
 	// at the same time, but only one will be used by Sensor at any given time, therefore
 	// only report the health of the active scanner.
@@ -216,15 +214,17 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		dbDeploymentName = localScannerV4DBDeploymentName
 	}
 
-	u.populateScannerInfo(&result, analyzerDeploymentName, dbDeploymentName)
+	result := u.getScannerHealthInfo(analyzerDeploymentName, dbDeploymentName)
 	if len(result.StatusErrors) > 0 {
 		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
 	}
 
-	return &result
+	return result
 }
 
-func (u *updaterImpl) populateScannerInfo(result *storage.ScannerHealthInfo, analyzerDeployName string, dbDeployName string) {
+func (u *updaterImpl) getScannerHealthInfo(analyzerDeployName string, dbDeployName string) *storage.ScannerHealthInfo {
+	var result storage.ScannerHealthInfo
+
 	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
 	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), analyzerDeployName, metav1.GetOptions{})
 	if err != nil {
@@ -250,6 +250,8 @@ func (u *updaterImpl) populateScannerInfo(result *storage.ScannerHealthInfo, ana
 			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
 		}
 	}
+
+	return &result
 }
 
 func getSensorNamespace() string {
