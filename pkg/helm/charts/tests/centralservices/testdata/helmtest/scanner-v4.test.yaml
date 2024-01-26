@@ -261,7 +261,7 @@ tests:
     .deployments["scanner"] | assertThat(. != null)
     .deployments["scanner-db"] | assertThat(. != null)
 
-- name: "indexer should allow ingress from central and matcher when deployed as a central-service"
+- name: "indexer should allow ingress from central, sensor, and matcher when deployed as a central-service"
   set:
     scannerV4.disable: false
   expect: |
