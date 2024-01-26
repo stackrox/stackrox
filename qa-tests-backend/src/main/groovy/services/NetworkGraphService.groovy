@@ -91,10 +91,11 @@ class NetworkGraphService extends BaseService {
         while (t.IsValid()) {
             try {
                 GetExternalNetworkEntitiesRequest request =
-                        GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
+                        GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).setQuery("External Source Name:${entityName}").build()
                 GetExternalNetworkEntitiesResponse response =
                         getNetworkGraphClient().getExternalNetworkEntities(request)
 
+                // TODO: We can remove the filter if the query above works
                 // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
                 NetworkEntity matchingEntity =
                         response
