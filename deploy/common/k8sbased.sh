@@ -460,12 +460,7 @@ function launch_central {
       fi
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
-        echo "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
-        exit 1
-      fi
-
-      if [[ "$ROX_SCANNER_V4" == "true" ]]; then
-        echo "$ROX_SCANNER_V4=true is currently only supported in conjunction with OUTPUT_FORMAT=helm"
+        echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1
       fi
 
