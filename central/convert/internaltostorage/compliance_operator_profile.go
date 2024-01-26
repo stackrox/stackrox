@@ -1,4 +1,4 @@
-package internaltov2storage
+package internaltostorage
 
 import (
 	"fmt"
@@ -36,5 +36,26 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
 		Title:          internalMsg.GetTitle(),
 		Values:         internalMsg.GetValues(),
+	}
+}
+
+// ComplianceOperatorProfileV1 converts V2 internal api profiles to V1 storage profiles
+func ComplianceOperatorProfileV1(internalMsg *central.ComplianceOperatorProfileV2, clusterID string) *storage.ComplianceOperatorProfile {
+	var rules []*storage.ComplianceOperatorProfile_Rule
+	for _, r := range internalMsg.GetRules() {
+		rules = append(rules, &storage.ComplianceOperatorProfile_Rule{
+			Name: r.GetRuleName(),
+		})
+	}
+
+	return &storage.ComplianceOperatorProfile{
+		Id:          internalMsg.GetId(),
+		ProfileId:   internalMsg.GetProfileId(),
+		Name:        internalMsg.GetName(),
+		ClusterId:   clusterID,
+		Labels:      internalMsg.GetLabels(),
+		Annotations: internalMsg.GetAnnotations(),
+		Description: internalMsg.GetDescription(),
+		Rules:       rules,
 	}
 }
