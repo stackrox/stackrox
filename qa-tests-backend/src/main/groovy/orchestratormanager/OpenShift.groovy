@@ -48,10 +48,12 @@ class OpenShift extends Kubernetes {
 
         try {
             String sccName = "anyuid"
+            log.debug "CI_JOB_NAME=" + Env.CI_JOB_NAME
             if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
                 log.debug "Using a non default SCC"
                 sccName = "qatest-anyuid"
             }
+            log.debug "sccName=" + sccName
             SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
             if (anyuid != null &&
                     (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
