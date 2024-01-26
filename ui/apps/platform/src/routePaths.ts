@@ -29,6 +29,7 @@ export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-imag
 export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
+export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
@@ -155,6 +156,8 @@ export type RouteKey =
     | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
+    // Cluster secure-a-cluster must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/secure-a-cluster'
     | 'clusters'
     | 'collections'
     | 'compliance'
@@ -210,6 +213,11 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'clusters/init-bundles': {
         featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+    },
+    // Clusters secure-a-cluster must precede generic Clusters in Body and so here for consistency.
+    'clusters/secure-a-cluster': {
+        featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
+        resourceAccessRequirements: everyResource([]),
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
