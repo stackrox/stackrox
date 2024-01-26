@@ -71,7 +71,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorRuleV2)
+	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorRule)
 
 	if !features.ComplianceEnhancements.Enabled() {
 		return errors.New("Next gen compliance is disabled.  Message unexpected.")
