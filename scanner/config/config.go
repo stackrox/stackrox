@@ -52,13 +52,14 @@ var (
 
 // Config represents the Scanner configuration parameters.
 type Config struct {
-	Indexer        IndexerConfig `yaml:"indexer"`
-	Matcher        MatcherConfig `yaml:"matcher"`
-	HTTPListenAddr string        `yaml:"http_listen_addr"`
-	GRPCListenAddr string        `yaml:"grpc_listen_addr"`
-	MTLS           MTLSConfig    `yaml:"mtls"`
-	Proxy          ProxyConfig   `yaml:"proxy"`
-	LogLevel       LogLevel      `yaml:"log_level"`
+	StackRoxServices bool          `yaml:"stackrox_services"`
+	Indexer          IndexerConfig `yaml:"indexer"`
+	Matcher          MatcherConfig `yaml:"matcher"`
+	HTTPListenAddr   string        `yaml:"http_listen_addr"`
+	GRPCListenAddr   string        `yaml:"grpc_listen_addr"`
+	MTLS             MTLSConfig    `yaml:"mtls"`
+	Proxy            ProxyConfig   `yaml:"proxy"`
+	LogLevel         LogLevel      `yaml:"log_level"`
 }
 
 func (c *Config) validate() error {
@@ -91,6 +92,8 @@ func (c *Config) validate() error {
 
 // IndexerConfig provides Scanner Indexer configuration.
 type IndexerConfig struct {
+	// StackRoxServices specifies whether Indexer is deployed alongside StackRox services.
+	StackRoxServices bool
 	// Database provides indexer's database configuration.
 	Database Database `yaml:"database"`
 	// Enable if false disables the Indexer service.
@@ -145,6 +148,8 @@ func (c *IndexerConfig) validate() error {
 
 // MatcherConfig provides Scanner Matcher configuration.
 type MatcherConfig struct {
+	// StackRoxServices specifies whether Matcher is deployed alongside StackRox services.
+	StackRoxServices bool
 	// Database provides matcher's database configuration.
 	Database Database `yaml:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
@@ -305,6 +310,10 @@ func Load(r io.Reader) (*Config, error) {
 	if err := yd.Decode(&cfg); err != nil {
 		msg := strings.TrimPrefix(err.Error(), `yaml: `)
 		return nil, fmt.Errorf("malformed yaml: %v", msg)
+	}
+	if cfg.StackRoxServices {
+		cfg.Indexer.StackRoxServices = true
+		cfg.Matcher.StackRoxServices = true
 	}
 	return &cfg, cfg.validate()
 }

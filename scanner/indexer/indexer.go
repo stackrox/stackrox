@@ -146,7 +146,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
-	t, err := httputil.TransportMux(http.DefaultTransport)
+	t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	}

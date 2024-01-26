@@ -126,8 +126,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	if buildinfo.ReleaseBuild {
 		defaultTransport = httputil.DenyTransport
 	}
-	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is denied.
-	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenySensor(true))
+	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is always denied.
+	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices), httputil.WithDenySensor(true))
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	}

@@ -26,7 +26,8 @@ var (
 )
 
 type options struct {
-	denySensor bool
+	denyCentral bool
+	denySensor  bool
 
 	// These are here for testing purposes.
 	centralTransport http.RoundTripper
@@ -35,6 +36,25 @@ type options struct {
 
 // TransportOption configures options for HTTP transport.
 type TransportOption func(o *options)
+
+// WithDenyStackRoxServices configures whether the transport should deny traffic to all StackRox services.
+//
+// Default: false
+func WithDenyStackRoxServices(deny bool) TransportOption {
+	return func(o *options) {
+		WithDenyCentral(deny)(o)
+		WithDenySensor(deny)(o)
+	}
+}
+
+// WithDenyCentral configures whether the transport should deny traffic to Central.
+//
+// Default: false
+func WithDenyCentral(deny bool) TransportOption {
+	return func(o *options) {
+		o.denyCentral = deny
+	}
+}
 
 // WithDenySensor configures whether the transport should deny traffic to Sensor.
 //
@@ -61,12 +81,15 @@ func TransportMux(defaultTransport http.RoundTripper, opts ...TransportOption) (
 }
 
 func transportMux(defaultTransport http.RoundTripper, o options) (http.RoundTripper, error) {
-	centralTransport := o.centralTransport
-	if centralTransport == nil {
-		var err error
-		centralTransport, err = roxTransport(mtls.CentralSubject)
-		if err != nil {
-			return nil, fmt.Errorf("creating Central TLS config: %w", err)
+	centralTransport := DenyTransport
+	if !o.denyCentral {
+		centralTransport = o.centralTransport
+		if centralTransport == nil {
+			var err error
+			centralTransport, err = roxTransport(mtls.CentralSubject)
+			if err != nil {
+				return nil, fmt.Errorf("creating Central TLS config: %w", err)
+			}
 		}
 	}
 

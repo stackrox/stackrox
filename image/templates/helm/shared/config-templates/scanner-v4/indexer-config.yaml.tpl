@@ -6,6 +6,7 @@
      */ -}}
 
 # Configuration file for Scanner v4 Indexer.
+stackrox_services: true
 indexer:
   enable: true
   database:
