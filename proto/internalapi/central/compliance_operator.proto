@@ -229,3 +229,22 @@ message ComplianceOperatorScanStatusV2 {
     google.protobuf.Timestamp  start_time        = 7;
     google.protobuf.Timestamp  end_time          = 8;
 }
+
+message ComplianceOperatorScanSettingBindingV2 {
+      string                                  id                  = 1;
+      string                                  name                = 2;
+      repeated string                         profile_names       = 3;
+      string                                  scan_setting_name   = 4;
+
+      message Condition {
+          string                      type                  = 1;
+          string                      status                = 2;
+          string                      reason                = 3;
+          string                      message               = 4;
+          google.protobuf.Timestamp	  last_transition_time  = 5;
+      }
+
+      repeated Condition conditions                               = 5;
+      map<string, string> labels                                  = 6;
+      map<string, string> annotations                             = 7;
+}
