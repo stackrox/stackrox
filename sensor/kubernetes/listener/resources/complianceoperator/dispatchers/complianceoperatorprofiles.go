@@ -44,44 +44,6 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	// useful for the deduping from sensor.
 	uid := string(complianceProfile.UID)
 
-	// We probably could have gotten away with re-using the storage proto here for the time being.
-	// But we have a new field coming on for profiles and using the storage object even in an internal api
-	// is a bad practice, so we will make that split now.  V1 and V2 compliance will both need to work for a period
-	// of time.  However, we should not need to send the same profile twice, the pipeline can convert the V2 sensor message
-	// so V1 and V2 objects can both be stored.
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		protoProfile := &central.ComplianceOperatorProfileV2{
-			Id:             uid,
-			ProfileId:      complianceProfile.ID,
-			Name:           complianceProfile.Name,
-			ProfileVersion: "", // TODO(ROX-20536)
-			Labels:         complianceProfile.Labels,
-			Annotations:    complianceProfile.Annotations,
-			Description:    complianceProfile.Description,
-		}
-
-		for _, r := range complianceProfile.Rules {
-			protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
-				RuleName: string(r),
-			})
-		}
-
-		for _, v := range complianceProfile.Values {
-			protoProfile.Values = append(protoProfile.Values, string(v))
-		}
-
-		events := []*central.SensorEvent{
-			{
-				Id:     uid,
-				Action: action,
-				Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-					ComplianceOperatorProfileV2: protoProfile,
-				},
-			}}
-
-		return component.NewEvent(events...)
-	}
-
 	protoProfile := &storage.ComplianceOperatorProfile{
 		Id:          uid,
 		ProfileId:   complianceProfile.ID,
@@ -104,6 +66,37 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 				ComplianceOperatorProfile: protoProfile,
 			},
 		},
+	}
+
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		protoProfile := &central.ComplianceOperatorProfileV2{
+			Id:             uid,
+			ProfileId:      complianceProfile.ID,
+			Name:           complianceProfile.Name,
+			ProfileVersion: complianceProfile.Version,
+			Labels:         complianceProfile.Labels,
+			Annotations:    complianceProfile.Annotations,
+			Description:    complianceProfile.Description,
+			Title:          complianceProfile.Title,
+		}
+
+		for _, r := range complianceProfile.Rules {
+			protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
+				RuleName: string(r),
+			})
+		}
+
+		for _, v := range complianceProfile.Values {
+			protoProfile.Values = append(protoProfile.Values, string(v))
+		}
+
+		events = append(events, &central.SensorEvent{
+			Id:     uid,
+			Action: action,
+			Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+				ComplianceOperatorProfileV2: protoProfile,
+			},
+		})
 	}
 
 	return component.NewEvent(events...)

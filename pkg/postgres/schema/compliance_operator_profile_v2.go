@@ -36,6 +36,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorProfileV2)(nil)), "compliance_operator_profile_v2")
 		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster":                  ClustersSchema,
 			"storage.ComplianceOperatorRuleV2": ComplianceOperatorRuleV2Schema,
 		}
 
@@ -61,10 +62,11 @@ const (
 type ComplianceOperatorProfileV2 struct {
 	ID             string `gorm:"column:id;type:varchar;primaryKey"`
 	ProfileID      string `gorm:"column:profileid;type:varchar"`
-	Name           string `gorm:"column:name;type:varchar;uniqueIndex:profile_unique_indicator"`
-	ProfileVersion string `gorm:"column:profileversion;type:varchar;uniqueIndex:profile_unique_indicator"`
+	Name           string `gorm:"column:name;type:varchar"`
+	ProfileVersion string `gorm:"column:profileversion;type:varchar"`
 	ProductType    string `gorm:"column:producttype;type:varchar"`
 	Standard       string `gorm:"column:standard;type:varchar"`
+	ClusterID      string `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }
 

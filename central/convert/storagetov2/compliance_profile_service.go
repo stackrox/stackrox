@@ -37,3 +37,20 @@ func ComplianceV2Profiles(incoming []*storage.ComplianceOperatorProfileV2) []*v2
 
 	return v2Profiles
 }
+
+// ComplianceProfileSummary converts summary object to V2 API summary object
+func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2) []*v2.ComplianceProfileSummary {
+	summaries := make([]*v2.ComplianceProfileSummary, 0, len(incoming))
+	for _, summary := range incoming {
+		summaries = append(summaries, &v2.ComplianceProfileSummary{
+			Name:           summary.Name,
+			ProductType:    summary.ProductType,
+			Description:    summary.Description,
+			Title:          summary.Title,
+			RuleCount:      int32(len(summary.Rules)),
+			ProfileVersion: summary.ProfileVersion,
+		})
+	}
+
+	return summaries
+}

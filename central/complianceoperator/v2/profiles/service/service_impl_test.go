@@ -81,7 +81,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestGetComplianceProfileNotFound() 
 func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 	testCases := []struct {
 		desc         string
-		query        *apiV2.RawQuery
+		query        *apiV2.ProfilesForClusterRequest
 		expectedResp []*apiV2.ComplianceProfile
 		expectedErr  error
 		found        bool
@@ -89,59 +89,21 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 	}{
 		{
 			desc:         "Empty query",
-			query:        &apiV2.RawQuery{Query: ""},
+			query:        &apiV2.ProfilesForClusterRequest{},
+			expectedErr:  errors.Wrap(errox.InvalidArgs, "cluster is required"),
+			expectedResp: []*apiV2.ComplianceProfile(nil),
+			found:        true,
+			setMocks: func() {
+			},
+		},
+		{
+			desc:         "Query with cluster 1",
+			query:        &apiV2.ProfilesForClusterRequest{ClusterId: fixtureconsts.Cluster1},
 			expectedErr:  nil,
 			expectedResp: convertUtils.GetProfilesV2Api(s.T()),
 			found:        true,
 			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), expectedQ).Return(convertUtils.GetProfilesV2Storage(s.T()), nil).Times(1)
-			},
-		},
-		{
-			desc:         "Query with search field",
-			query:        &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
-			expectedErr:  nil,
-			expectedResp: convertUtils.GetProfilesV2Api(s.T()),
-			found:        true,
-			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-
-				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), expectedQ).Return(convertUtils.GetProfilesV2Storage(s.T()), nil).Times(1)
-			},
-		},
-		{
-			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
-				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
-			},
-			expectedErr: nil,
-			expectedResp: []*apiV2.ComplianceProfile{
-				convertUtils.GetProfileV2Api(s.T()),
-			},
-			found: true,
-			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery()
-				returnResults := []*storage.ComplianceOperatorProfileV2{
-					convertUtils.GetProfileV2Storage(s.T()),
-				}
-
-				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
-			},
-		},
-		{
-			desc:         "Query with non-existent field",
-			query:        &apiV2.RawQuery{Query: "Cluster ID:id"},
-			expectedErr:  errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
-			expectedResp: nil,
-			found:        false,
-			setMocks: func() {
-				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
-					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
-
-				s.profileDatastore.EXPECT().SearchProfiles(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+				s.profileDatastore.EXPECT().GetProfilesByClusters(gomock.Any(), []string{fixtureconsts.Cluster1}).Return(convertUtils.GetProfilesV2Storage(s.T()), nil).Times(1)
 			},
 		},
 	}
@@ -151,6 +113,88 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 			tc.setMocks()
 
 			results, err := s.service.ListComplianceProfiles(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp, results.GetProfiles())
+			}
+		})
+	}
+}
+
+func (s *ComplianceProfilesServiceTestSuite) TestListProfileSummaries() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.ClustersProfileSummaryRequest
+		expectedResp []*apiV2.ComplianceProfileSummary
+		expectedErr  error
+		found        bool
+		setMocks     func()
+	}{
+		{
+			desc:         "Empty query",
+			query:        &apiV2.ClustersProfileSummaryRequest{},
+			expectedErr:  errors.Wrap(errox.InvalidArgs, "cluster is required"),
+			expectedResp: []*apiV2.ComplianceProfileSummary(nil),
+			found:        true,
+			setMocks: func() {
+			},
+		},
+		{
+			desc:        "Query with cluster 1",
+			query:       &apiV2.ClustersProfileSummaryRequest{ClusterIds: []string{fixtureconsts.Cluster1}},
+			expectedErr: nil,
+			expectedResp: []*apiV2.ComplianceProfileSummary{
+				{
+					Name:           "ocp4",
+					ProductType:    "platform",
+					Description:    "this is a test",
+					Title:          "A Title",
+					ProfileVersion: "version 1",
+					RuleCount:      5,
+				},
+			},
+			found: true,
+			setMocks: func() {
+				s.profileDatastore.EXPECT().GetProfilesByClusters(gomock.Any(), []string{fixtureconsts.Cluster1}).Return([]*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "ocp4",
+						ProductType:    "platform",
+						Description:    "this is a test",
+						Title:          "A Title",
+						ProfileVersion: "version 1",
+						Rules: []*storage.ComplianceOperatorProfileV2_Rule{
+							{
+								RuleName: "test 1",
+							},
+							{
+								RuleName: "test 2",
+							},
+							{
+								RuleName: "test 3",
+							},
+							{
+								RuleName: "test 4",
+							},
+							{
+								RuleName: "test 5",
+							},
+						},
+					},
+				}, nil).Times(1)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.ListProfileSummaries(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
 			} else {

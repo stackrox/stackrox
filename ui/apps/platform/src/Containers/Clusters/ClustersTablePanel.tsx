@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
     Bullseye,
@@ -20,6 +20,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -38,7 +39,11 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
-import { clustersBasePath, clustersDelegatedScanningPath } from 'routePaths';
+import {
+    clustersBasePath,
+    clustersDelegatedScanningPath,
+    clustersSecureClusterPath,
+} from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import ManageTokensButton from './Components/ManageTokensButton';
@@ -62,6 +67,9 @@ function ClustersTablePanel({
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
 
@@ -169,8 +177,13 @@ function ClustersTablePanel({
         </PageHeader>
     );
 
+    /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
-        version ? (
+        isMoveInitBundlesEnabled ? (
+            <DropdownItem key="init-bundle">
+                <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
+            </DropdownItem>
+        ) : version ? (
             <DropdownItem
                 key="link"
                 description="Cluster installation guides"
@@ -186,9 +199,10 @@ function ClustersTablePanel({
             </DropdownItem>
         ),
         <DropdownItem key="add" onClick={onAddCluster}>
-            New cluster
+            {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
         </DropdownItem>,
     ];
+    /* eslint-enable no-nested-ternary */
 
     function refreshClusterList(restSearch?: RestSearchOption[]) {
         setFetchingClusters(true);
@@ -324,7 +338,7 @@ function ClustersTablePanel({
                                 toggleVariant="secondary"
                                 onToggle={onToggleInstallMenu}
                             >
-                                Install cluster
+                                Secure a cluster
                             </DropdownToggle>
                         }
                         position={DropdownPosition.right}
