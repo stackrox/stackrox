@@ -164,7 +164,6 @@ teardown() {
 # }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
-    (
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
@@ -172,7 +171,6 @@ teardown() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
-    ) >&3 2>&1
 }
 
 # @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
