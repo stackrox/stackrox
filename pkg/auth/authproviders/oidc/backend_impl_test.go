@@ -242,8 +242,10 @@ func TestBackend(t *testing.T) {
 				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
-				responseTypesSupported: allResponseTypes,
-				responseModesSupported: allResponseModes,
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				userInfoAssertAccessToken:  mockAccessToken,
+				claimsFromUserInfoEndpoint: suppliedClaims,
 			},
 			assertInsecureClient: true,
 			wantBackend: &wantBackend{
@@ -270,8 +272,10 @@ func TestBackend(t *testing.T) {
 				ModeConfigKey:         "post",
 			},
 			oidcProvider: &mockOIDCProvider{
-				responseTypesSupported: allResponseTypes,
-				responseModesSupported: allResponseModes,
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				userInfoAssertAccessToken:  mockAccessToken,
+				claimsFromUserInfoEndpoint: suppliedClaims,
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "form_post",
@@ -352,8 +356,10 @@ func TestBackend(t *testing.T) {
 				ModeConfigKey:         "query",
 			},
 			oidcProvider: &mockOIDCProvider{
-				responseTypesSupported: allResponseTypes,
-				responseModesSupported: allResponseModes,
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				userInfoAssertAccessToken:  mockAccessToken,
+				claimsFromUserInfoEndpoint: suppliedClaims,
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "query",
@@ -425,7 +431,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: "2 errors occurred:\n\t* fetching user info with access token: fetching updated userinfo: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* fetching user info with access token: fetching user info claims: fetching updated userinfo: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
 		},
 		"mode fragment with id_token only": {
 			config: map[string]string{
@@ -635,8 +641,10 @@ func TestBackend(t *testing.T) {
 				ModeConfigKey:         "auto",
 			},
 			oidcProvider: &mockOIDCProvider{
-				responseTypesSupported: allResponseTypes,
-				responseModesSupported: allResponseModes,
+				responseTypesSupported:     allResponseTypes,
+				responseModesSupported:     allResponseModes,
+				userInfoAssertAccessToken:  mockAccessToken,
+				claimsFromUserInfoEndpoint: suppliedClaims,
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "form_post",
