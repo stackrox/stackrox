@@ -56,6 +56,22 @@ func (mr *MockScannerMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockScanner)(nil).Close))
 }
 
+// GetImageIndex mocks base method.
+func (m *MockScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageIndex", ctx, hashID)
+	ret0, _ := ret[0].(*v4.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetImageIndex indicates an expected call of GetImageIndex.
+func (mr *MockScannerMockRecorder) GetImageIndex(ctx, hashID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIndex", reflect.TypeOf((*MockScanner)(nil).GetImageIndex), ctx, hashID)
+}
+
 // GetMatcherMetadata mocks base method.
 func (m *MockScanner) GetMatcherMetadata(arg0 context.Context) (*v4.Metadata, error) {
 	m.ctrl.T.Helper()
