@@ -24,10 +24,10 @@ indexer:
   get_layer_timeout: 1m
   {{- if ._rox.env.centralServices }}
   repository_to_cpe_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=repo2cpe
-  name_to_repos_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=name2cpe
+  name_to_repos_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?file=name2repos
   {{- else }}
   repository_to_cpe_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=repo2cpe
-  name_to_repos_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=name2cpe
+  name_to_repos_url: https://sensor.{{ .Release.Namespace }}.svc/scanner/definitions?file=name2repos
   {{- end }}
   repository_to_cpe_file: /run/mappings/repository-to-cpe.json
   name_to_repos_file: /run/mappings/container-name-repos-map.json
