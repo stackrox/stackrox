@@ -94,7 +94,7 @@ func (s *serviceImpl) GetComplianceIntegrationsCount(ctx context.Context, reques
 
 	integrationCount, err := s.complianceMetaDataStore.CountIntegrations(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
+		return nil, errors.Wrap(err, "unable to determine number of compliance operator integrations")
 	}
 
 	return &v2.CountComplianceIntegrationsResponse{
