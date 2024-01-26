@@ -45,7 +45,6 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_ComplianceOperatorRuleV2": 0,
         "*central.SensorEvent_ComplianceOperatorScanSettingBinding": 0,
         "*central.SensorEvent_ComplianceOperatorScan": 0,
-        "*central.SensorEvent_ComplianceOperatorScanV2": 0,
     ]
 
     private Set<String> getPodsInCluster() {
