@@ -13,10 +13,6 @@ type ScannerStatusTotalsProps = {
         totalReadyAnalyzerPods: number;
         totalDesiredDbPods: number;
         totalReadyDbPods: number;
-        totalDesiredV4IndexerPods: number;
-        totalReadyV4IndexerPods: number;
-        totalDesiredV4DbPods: number;
-        totalReadyV4DbPods: number;
         statusErrors: string[];
     };
 };
@@ -27,7 +23,7 @@ const resolveDbHealthStatus = (desiredPods: number, readyPods: number) => {
     if (!desiredPods) {
         return notAvailable;
     }
-    return healthStatusLabels[readyPods === desiredPods ? 'HEALTHY' : 'UNHEALTHY'];
+    return healthStatusLabels[readyPods ? 'HEALTHY' : 'UNHEALTHY'];
 };
 
 const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) => {
@@ -36,10 +32,6 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
         totalReadyAnalyzerPods,
         totalDesiredDbPods,
         totalReadyDbPods,
-        totalDesiredV4IndexerPods,
-        totalReadyV4IndexerPods,
-        totalDesiredV4DbPods,
-        totalReadyV4DbPods,
         statusErrors,
     } = scannerHealthInfo;
 
@@ -54,7 +46,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                         <span>
                             {totalReadyAnalyzerPods === null
                                 ? notAvailable
-                                : totalReadyAnalyzerPods + (totalReadyV4IndexerPods || 0)}
+                                : totalReadyAnalyzerPods}
                         </span>
                     </td>
                 </tr>
@@ -65,7 +57,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                     <td className={tdClassName} data-testid="totalDesiredPods">
                         {totalDesiredAnalyzerPods === null
                             ? notAvailable
-                            : totalDesiredAnalyzerPods + (totalDesiredV4IndexerPods || 0)}
+                            : totalDesiredAnalyzerPods}
                     </td>
                 </tr>
                 <tr className={trClassName} key="dbAvailable">
@@ -73,10 +65,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                         Database:
                     </th>
                     <td className={tdClassName} data-testid="dbAvailable">
-                        {resolveDbHealthStatus(
-                            totalDesiredDbPods + (totalDesiredV4DbPods || 0),
-                            totalReadyDbPods + (totalReadyV4DbPods || 0)
-                        )}
+                        {resolveDbHealthStatus(totalDesiredDbPods, totalReadyDbPods)}
                     </td>
                 </tr>
                 {statusErrors && statusErrors.length > 0 && (

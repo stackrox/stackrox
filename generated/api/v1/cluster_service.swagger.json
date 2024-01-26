@@ -783,22 +783,6 @@
           "type": "integer",
           "format": "int32"
         },
-        "totalDesiredV4IndexerPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalReadyV4IndexerPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalDesiredV4DbPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalReadyV4DbPods": {
-          "type": "integer",
-          "format": "int32"
-        },
         "statusErrors": {
           "type": "array",
           "items": {

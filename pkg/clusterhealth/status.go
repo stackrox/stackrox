@@ -123,30 +123,15 @@ func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInf
 	desiredPods := localScannerHealthInfo.GetTotalDesiredAnalyzerPods()
 	readyPods := localScannerHealthInfo.GetTotalReadyAnalyzerPods()
 
-	v4DesiredPods := localScannerHealthInfo.GetTotalDesiredV4IndexerPods()
-	v4ReadyPods := localScannerHealthInfo.GetTotalReadyV4IndexerPods()
-
-	if desiredPods == 0 && v4DesiredPods == 0 {
+	if desiredPods == 0 {
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
-	if localScannerHealthInfo.GetTotalReadyDbPods() != localScannerHealthInfo.GetTotalDesiredDbPods() {
-		// If V2 database is not ready, then overall status is unhealthy.
-		return storage.ClusterHealthStatus_UNHEALTHY
-	}
-	if localScannerHealthInfo.GetTotalReadyV4DbPods() != localScannerHealthInfo.GetTotalDesiredV4DbPods() {
-		// If V4 database is not ready, then overall status is unhealthy.
+	if localScannerHealthInfo.GetTotalReadyDbPods() == 0 {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 
 	fraction := float64(readyPods) / float64(desiredPods)
-	if fraction < degradedLocalScannerThreshold {
-		return storage.ClusterHealthStatus_UNHEALTHY
-	}
-	if fraction < healthyLocalScannerThreshold {
-		return storage.ClusterHealthStatus_DEGRADED
-	}
 
-	fraction = float64(v4ReadyPods) / float64(v4DesiredPods)
 	if fraction < degradedLocalScannerThreshold {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}

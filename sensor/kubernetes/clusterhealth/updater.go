@@ -201,12 +201,35 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
 		return nil
 	}
+
 	var result storage.ScannerHealthInfo
+
+	// It's possible that both Scanner and Scanner V4 are both installed in the secured cluster
+	// at the same time, but only one will be used by Sensor at any given time, therefore
+	// only report the health of the active scanner.
+	scannerV4Active := features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported)
+
+	analyzerDeploymentName := localScannerDeploymentName
+	dbDeploymentName := localScannerDBDeploymentName
+	if scannerV4Active {
+		analyzerDeploymentName = localScannerV4IndexerDeploymentName
+		dbDeploymentName = localScannerV4DBDeploymentName
+	}
+
+	u.populateScannerInfo(&result, analyzerDeploymentName, dbDeploymentName)
+	if len(result.StatusErrors) > 0 {
+		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
+	}
+
+	return &result
+}
+
+func (u *updaterImpl) populateScannerInfo(result *storage.ScannerHealthInfo, analyzerDeployName string, dbDeployName string) {
 	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
-	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDeploymentName, metav1.GetOptions{})
+	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), analyzerDeployName, metav1.GetOptions{})
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner deployment in namespace %q", u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner deployment in namespace %q: %v", u.namespace, err))
+		err = errors.Wrap(err, fmt.Sprintf("unable to find %q deployment in namespace %q", analyzerDeployName, u.namespace))
+		result.StatusErrors = append(result.StatusErrors, err.Error())
 	} else {
 		result.TotalDesiredAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{
 			TotalDesiredAnalyzerPods: localScanner.Status.Replicas,
@@ -215,9 +238,9 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 			TotalReadyAnalyzerPods: localScanner.Status.ReadyReplicas,
 		}
 	}
-	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDBDeploymentName, metav1.GetOptions{})
+	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), dbDeployName, metav1.GetOptions{})
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q", u.namespace))
+		err = errors.Wrap(err, fmt.Sprintf("unable to find %q deployment in namespace %q", dbDeployName, u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q: %v", u.namespace, err))
 	} else {
 		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
@@ -225,48 +248,6 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 		}
 		result.TotalReadyDbPodsOpt = &storage.ScannerHealthInfo_TotalReadyDbPods{
 			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
-		}
-	}
-
-	u.populateScannerV4Info(&result)
-
-	if len(result.StatusErrors) > 0 {
-		log.Errorf("Errors while getting local scanner info: %v", result.StatusErrors)
-	}
-
-	return &result
-}
-
-// populateScannerV4Info will add the state of the Scanner V4 related pods to
-// result if appropriate.
-func (u *updaterImpl) populateScannerV4Info(result *storage.ScannerHealthInfo) {
-	if !features.ScannerV4.Enabled() || !centralcaps.Has(centralsensor.ScannerV4Supported) {
-		return
-	}
-
-	indexer, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerV4IndexerDeploymentName, metav1.GetOptions{})
-	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner v4 indexer deployment in namespace %q", u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner v4 indexer deployment in namespace %q: %v", u.namespace, err))
-	} else {
-		result.TotalDesiredV4IndexerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredV4IndexerPods{
-			TotalDesiredV4IndexerPods: indexer.Status.Replicas,
-		}
-		result.TotalReadyV4IndexerPodsOpt = &storage.ScannerHealthInfo_TotalReadyV4IndexerPods{
-			TotalReadyV4IndexerPods: indexer.Status.ReadyReplicas,
-		}
-	}
-
-	db, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerV4DBDeploymentName, metav1.GetOptions{})
-	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner v4 db deployment in namespace %q", u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner v4 db deployment in namespace %q: %v", u.namespace, err))
-	} else {
-		result.TotalDesiredV4DbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredV4DbPods{
-			TotalDesiredV4DbPods: db.Status.Replicas,
-		}
-		result.TotalReadyV4DbPodsOpt = &storage.ScannerHealthInfo_TotalReadyV4DbPods{
-			TotalReadyV4DbPods: db.Status.ReadyReplicas,
 		}
 	}
 }
