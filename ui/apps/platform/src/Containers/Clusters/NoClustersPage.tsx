@@ -24,6 +24,7 @@ import { clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
 
 /*
  * Comments about data flow:
+ *
  * 1. It is important that /main/clusters NoClustersPage **Create bundle**
  *    goes to /main/clusters/init-bundles InitBundlesWizard in the same tab,
  *    so when **Download** goes back, NoClustersPage makes a new GET /v1/init-bundles request
