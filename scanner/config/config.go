@@ -52,6 +52,7 @@ var (
 
 // Config represents the Scanner configuration parameters.
 type Config struct {
+	// StackRoxServices indicates the Scanner is deployed alongside StackRox services.
 	StackRoxServices bool          `yaml:"stackrox_services"`
 	Indexer          IndexerConfig `yaml:"indexer"`
 	Matcher          MatcherConfig `yaml:"matcher"`
