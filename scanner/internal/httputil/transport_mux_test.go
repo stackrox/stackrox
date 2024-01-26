@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stretchr/testify/assert"
@@ -114,6 +115,11 @@ func TestTransportMux_deny(t *testing.T) {
 	} {
 		t.Run(testcase.name, func(t *testing.T) {
 			if testcase.wantPanic {
+				if buildinfo.ReleaseBuild {
+					_, err := c.Get(testcase.url)
+					assert.Error(t, err)
+					return
+				}
 				assert.Panics(t, func() {
 					_, _ = c.Get(testcase.url)
 				})
