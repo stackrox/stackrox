@@ -58,7 +58,7 @@ func (c *Compliance) Start() {
 	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
 
 	// Set up Compliance <-> Sensor connection
-	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
+	conn, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.AdvertisedEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
 		log.Fatal(err)
 	}

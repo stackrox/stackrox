@@ -113,7 +113,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	// set by gRPC lib.
 	opts = append(opts, clientconn.MaxMsgReceiveSize(grpc.MaxMsgSizeSetting.IntegerSetting()))
 
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
 		return
