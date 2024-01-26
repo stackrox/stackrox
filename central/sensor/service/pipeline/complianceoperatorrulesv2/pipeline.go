@@ -43,9 +43,8 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	// Nothing to do in this case
 	if !features.ComplianceEnhancements.Enabled() {
-		return nil
+		return errors.New("Next gen compliance is disabled.  Message unexpected.")
 	}
 
 	existingIDs := set.NewStringSet()
