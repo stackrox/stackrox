@@ -99,6 +99,6 @@ func (ds *datastoreImpl) RemoveComplianceIntegrationByCluster(ctx context.Contex
 }
 
 // CountIntegrations returns count of integrations matching query
-func (d *datastoreImpl) CountIntegrations(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+func (ds *datastoreImpl) CountIntegrations(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.searcher.Count(ctx, q)
 }
