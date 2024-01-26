@@ -31,4 +31,5 @@ scannerV4:
 scannerV4DBPVCDefaults:
   claimName: "scanner-v4-db"
   size: "10Gi"
+  createClaim: true
 [<- end >]
