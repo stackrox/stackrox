@@ -505,14 +505,9 @@ wait_for_ready_pods() {
     local namespace="${1}"
     local deployment="${2}"
     local timeout_seconds="${3:-300}" # 5 minutes
-
     start_time="$(date '+%s')"
-    local deployment_json
-    local num_replicas
-    local num_ready_replicas
-    local now
 
-    echo "Waiting for pod within deployment ${namespace}/${deployment} to become ready"
+    echo "Waiting for pod within deployment ${namespace}/${deployment} to become ready in ${timeout_seconds} seconds"
 
     while true; do
       deployment_json="$("${ORCH_CMD}" -n "${namespace}" get "deployment/${deployment}" -o json)"
