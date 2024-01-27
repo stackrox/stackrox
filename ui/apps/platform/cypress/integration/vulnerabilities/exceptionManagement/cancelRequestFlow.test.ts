@@ -4,7 +4,6 @@ import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
     markFalsePositiveAndVisitRequestDetails,
-    pendingRequestsPath,
 } from './ExceptionManagement.helpers';
 import { approveRequest } from './approveRequestFlow.test';
 
@@ -55,10 +54,14 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(pendingRequestsPath);
-        });
-        cy.get('table tbody tr').should('not.exist');
+        cy.get('div[aria-label="Success Alert"]').should(
+            'contain',
+            'The vulnerability request was successfully canceled.'
+        );
+        cy.get('div[aria-label="Warning Alert"]').should(
+            'contain',
+            'You are viewing a canceled request. If this cancelation was not intended, please submit a new request'
+        );
     });
 
     it('should be able to see how many CVEs will be affected by a cancel', () => {

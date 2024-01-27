@@ -17,7 +17,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
@@ -76,7 +76,6 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
 
 function ExceptionRequestDetailsPage() {
     const { requestId } = useParams();
-    const history = useHistory();
     const { hasReadWriteAccess } = usePermissions();
     const { currentUser } = useAuthStatus();
     const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
@@ -112,8 +111,7 @@ function ExceptionRequestDetailsPage() {
 
     function onCancelSuccess() {
         refetch();
-        // @TODO: Awaiting UX decision on the best way to handle a successful cancel. See https://redhat-internal.slack.com/archives/C03JMGWJYMD/p1701372644906699
-        history.push(exceptionManagementPath);
+        setSuccessMessage(`The vulnerability request was successfully canceled.`);
     }
 
     function onUpdateSuccess() {
@@ -149,14 +147,16 @@ function ExceptionRequestDetailsPage() {
         );
     }
 
-    const { status, cves, scope, requester } = vulnerabilityException;
+    const { status, cves, scope, requester, expired } = vulnerabilityException;
 
     const isApprovedPendingUpdate = status === 'APPROVED_PENDING_UPDATE';
     const showApproveDenyButtons =
         hasWriteAccessForApproving &&
+        !expired &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
-    const showCancelButton = currentUser.userId === requester.id && status !== 'DENIED';
+    const showCancelButton = !expired && currentUser.userId === requester.id && status !== 'DENIED';
     const showUpdateButton =
+        !expired &&
         currentUser.userId === requester.id &&
         (status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
@@ -174,6 +174,12 @@ function ExceptionRequestDetailsPage() {
                     title={successMessage}
                     actionClose={<AlertActionCloseButton onClose={() => setSuccessMessage(null)} />}
                 />
+            )}
+            {expired && (
+                <Alert variant={AlertVariant.warning} isInline title="Request Canceled.">
+                    You are viewing a canceled request. If this cancelation was not intended, please
+                    submit a new request
+                </Alert>
             )}
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
