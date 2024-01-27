@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 24
+// Next Tag: 25
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -29,6 +29,7 @@ message ImageIntegration {
         ClairConfig       clair      = 14;
         ClairV4Config     clair_v4   = 22;
         IBMRegistryConfig ibm        = 20;
+        AzureConfig       azure      = 24;
     }
     reserved 7, 12, 17; // Previously Docker Trusted Registry, Tenable, and Anchore respectively
 
@@ -129,6 +130,14 @@ message ScannerV4Config {
     int32  num_concurrent_scans = 1;
     string indexer_endpoint     = 2;
     string matcher_endpoint     = 3;
+}
+
+message AzureConfig {
+    string endpoint  = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+    string username  = 2 [(gogoproto.moretags) = 'scrub:"dependent"'];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
+    string password  = 3 [(gogoproto.moretags) = 'scrub:"always"'];
+    bool wif_enabled = 4;
 }
 
 enum ImageIntegrationCategory {

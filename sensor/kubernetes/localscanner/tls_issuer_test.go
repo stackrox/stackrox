@@ -562,7 +562,7 @@ func (m *certsRepoMock) getServiceCertificates(ctx context.Context) (*storage.Ty
 	return args.Get(0).(*storage.TypedServiceCertificateSet), args.Error(1)
 }
 
-func (m *certsRepoMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error {
+func (m *certsRepoMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return args.Error(0)
+	return certificates.ServiceCerts, args.Error(0)
 }

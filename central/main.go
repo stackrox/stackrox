@@ -86,6 +86,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
@@ -612,6 +613,7 @@ func startGRPCServer() {
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(externalbackupsDS.Gather)
+				gs.AddGatherer(imageintegrationsDS.Gather)
 			}
 		}
 	}

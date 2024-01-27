@@ -12,6 +12,7 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Walk(ctx context.Context, fn func(*storage.Alert) error) error
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(*storage.Alert) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.Alert, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error)

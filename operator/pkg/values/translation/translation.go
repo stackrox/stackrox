@@ -175,7 +175,7 @@ func SetScannerV4DBValues(sv *ValuesBuilder, db *platform.ScannerV4DB) {
 	sv.AddChild("db", &dbVB)
 }
 
-func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.Persistence) {
+func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV4Persistence) {
 	if persistence == nil {
 		return
 	}

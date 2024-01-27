@@ -15,6 +15,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -98,7 +99,12 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig))
+	scannerV4AutoSenseConfig, err := scanner.AutoSenseLocalScannerV4Config(ctx, t.client, sc)
+	if err != nil {
+		return nil, err
+	}
+
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig))
 
 	if sc.Spec.AdmissionControl != nil {
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
@@ -113,6 +119,9 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
+	if sc.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
+		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(sc, scannerV4AutoSenseConfig))
+	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 
@@ -176,7 +185,7 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if sensor != nil {
@@ -185,8 +194,8 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config
 		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
 	}
 
-	if config.EnableLocalImageScanning {
-		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(config.EnableLocalImageScanning))
+	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
+		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(true))
 	}
 
 	return &sv
@@ -353,10 +362,22 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 	return &sv
 }
 
+func (t Translator) getLocalScannerV4ComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	s := securedCluster.Spec.ScannerV4
+	sv.SetBoolValue("disable", !config.DeployScannerResources)
+
+	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
+	translation.SetScannerV4DBValues(&sv, s.DB)
+
+	return &sv
+}
+
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
+	scanner.SetScannerV4Defaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}

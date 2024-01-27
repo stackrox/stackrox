@@ -64,8 +64,8 @@ var (
 	log = logging.LoggerForModule()
 
 	v4FileMapping = map[string]string{
-		"name2cpe": "repomapping-tmp/container-name-repos-map.json",
-		"repo2cpe": "repomapping-tmp/repository-to-cpe.json",
+		"name2repos": "repomapping-tmp/container-name-repos-map.json",
+		"repo2cpe":   "repomapping-tmp/repository-to-cpe.json",
 	}
 )
 
@@ -122,29 +122,40 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
-	if fileType := r.URL.Query().Get("file"); fileType != "" {
-		if v4FileName, exists := v4FileMapping[fileType]; exists {
+	uuid := r.URL.Query().Get(`uuid`)
+	fileName := r.URL.Query().Get(`file`)
+
+	// If only file is requested, then this is for Scanner v4.
+	if fileName != "" && uuid == "" {
+		if v4FileName, exists := v4FileMapping[fileName]; exists {
 			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
 			return
 		}
-		if fileType == "cvss" {
+		if fileName == "cvss" {
 			h.getV4Files(w, r, cvssUpdaterKey, "")
 			return
 		}
 		writeErrorNotFound(w)
+		return
 	}
 
-	// Open the most recent definitions file for the provided `uuid`.
-	uuid := r.URL.Query().Get(`uuid`)
+	// At this point, we assume the request is from Scanner v2.
+
+	if uuid == "" {
+		writeErrorBadRequest(w)
+		return
+	}
+
+	// Open the most recent definitions file for the provided uuid.
 	f, err := h.openMostRecentDefinitions(r.Context(), uuid)
 	if err != nil {
 		writeErrorForFile(w, err, uuid)
 		return
 	}
 
-	// It is possible no offline Scanner definitions were uploaded, or Central cannot
-	// reach the definitions object, or there is no definitions for the given
-	// `uuid`; in any of those cases, `f` will be `nil`.
+	// It is possible no offline Scanner definitions were uploaded, Central cannot
+	// reach the definitions object, or there are no definitions for the given
+	// uuid; in any of those cases, f will be nil.
 	if f == nil {
 		writeErrorNotFound(w)
 		return
@@ -152,13 +163,13 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 
 	defer utils.IgnoreError(f.Close)
 
-	fileName := r.URL.Query().Get(`file`)
+	// No specific file was requested, so return all definitions.
 	if fileName == "" {
 		serveContent(w, r, f.Name(), f.modTime, f)
 		return
 	}
 
-	// If `file` was provided, extract from definitions' bundle to a
+	// A specific file was requested, so extract from definitions bundle to a
 	// temporary file and serve that instead.
 	namedFile, err := openFromArchive(f.Name(), fileName)
 	if err != nil {
@@ -172,6 +183,11 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 func writeErrorNotFound(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNotFound)
 	_, _ = w.Write([]byte("No scanner definitions found"))
+}
+
+func writeErrorBadRequest(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {

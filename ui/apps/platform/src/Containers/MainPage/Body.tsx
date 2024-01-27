@@ -10,8 +10,10 @@ import {
     apidocsPath,
     apidocsPathV2,
     clustersDelegatedScanningPath,
+    clustersDiscoveredClustersPath,
     clustersInitBundlesPathWithParam,
     clustersPathWithParam,
+    clustersSecureClusterPath,
     collectionsPath,
     complianceEnhancedBasePath,
     compliancePath,
@@ -93,10 +95,24 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: clustersDelegatedScanningPath,
     },
+    // Discovered clusters must precede generic Clusters.
+    'clusters/discovered-clusters': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/DiscoveredClusters/DiscoveredClustersPage')
+        ),
+        path: clustersDiscoveredClustersPath,
+    },
     // Cluster init bundles must precede generic Clusters.
     'clusters/init-bundles': {
         component: asyncComponent(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
         path: clustersInitBundlesPathWithParam,
+    },
+    // Cluster secure-a-cluster must precede generic Clusters.
+    'clusters/secure-a-cluster': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/InitBundles/SecureClusterPage')
+        ),
+        path: clustersSecureClusterPath,
     },
     clusters: {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),

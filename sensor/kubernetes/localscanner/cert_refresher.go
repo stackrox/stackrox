@@ -2,6 +2,7 @@ package localscanner
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ type serviceCertificatesRepo interface {
 	// getServiceCertificates retrieves the certificates from permanent storage.
 	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
 	// ensureServiceCertificates persists the certificates on permanent storage.
-	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) error
+	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error)
 }
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
@@ -80,7 +81,8 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 	}
 	certificates := response.GetCertificates()
 
-	if putErr := repository.ensureServiceCertificates(ctx, certificates); putErr != nil {
+	persistedCertificates, putErr := repository.ensureServiceCertificates(ctx, certificates)
+	if putErr != nil {
 		return 0, putErr
 	}
 
@@ -89,8 +91,17 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 		// send the error to the ticker, so it retries with backoff.
 		return 0, err
 	}
-	log.Infof("successfully refreshed %v", certsDescription)
+	serviceTypeNames := getServiceTypeNames(persistedCertificates)
+	log.Infof("successfully refreshed %v for: %v", certsDescription, strings.Join(serviceTypeNames, ", "))
 	return time.Until(renewalTime), nil
+}
+
+func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
+	serviceTypeNames := make([]string, 0, len(serviceCertificates))
+	for _, c := range serviceCertificates {
+		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+	}
+	return serviceTypeNames
 }
 
 func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,

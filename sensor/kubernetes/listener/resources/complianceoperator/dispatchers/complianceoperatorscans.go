@@ -44,6 +44,25 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	// is a bad practice, so we will make that split now.  V1 and V2 compliance will both need to work for a period
 	// of time.  However, we should not need to send the same profile twice, the pipeline can convert the V2 sensor message
 	// so V1 and V2 objects can both be stored.
+
+	protoScan := &storage.ComplianceOperatorScan{
+		Id:          uid,
+		Name:        complianceScan.Name,
+		ProfileId:   complianceScan.Spec.Profile,
+		Labels:      complianceScan.Labels,
+		Annotations: complianceScan.Annotations,
+	}
+	events := []*central.SensorEvent{
+		{
+			Id:     protoScan.GetId(),
+			Action: action,
+			Resource: &central.SensorEvent_ComplianceOperatorScan{
+				ComplianceOperatorScan: protoScan,
+			},
+		},
+	}
+
+	// Build a V2 event if central is capable of receiving it
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		startTime, err := types.TimestampProto(complianceScan.CreationTimestamp.Time)
 		if err != nil {
@@ -78,33 +97,14 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			ScanType:    string(complianceScan.Spec.ScanType),
 			Status:      protoStatus,
 		}
-		events := []*central.SensorEvent{
-			{
-				Id:     protoScan.GetId(),
-				Action: action,
-				Resource: &central.SensorEvent_ComplianceOperatorScanV2{
-					ComplianceOperatorScanV2: protoScan,
-				},
-			},
-		}
-		return component.NewEvent(events...)
-	}
-
-	protoScan := &storage.ComplianceOperatorScan{
-		Id:          uid,
-		Name:        complianceScan.Name,
-		ProfileId:   complianceScan.Spec.Profile,
-		Labels:      complianceScan.Labels,
-		Annotations: complianceScan.Annotations,
-	}
-	events := []*central.SensorEvent{
-		{
+		events = append(events, &central.SensorEvent{
 			Id:     protoScan.GetId(),
 			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorScan{
-				ComplianceOperatorScan: protoScan,
+			Resource: &central.SensorEvent_ComplianceOperatorScanV2{
+				ComplianceOperatorScanV2: protoScan,
 			},
-		},
+		})
 	}
+
 	return component.NewEvent(events...)
 }

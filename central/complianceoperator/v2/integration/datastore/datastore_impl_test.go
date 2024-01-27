@@ -6,7 +6,9 @@ import (
 	"context"
 	"testing"
 
+	integrationSearch "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/search"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
+	integrationStorage "github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -59,11 +61,11 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Compliance)
 
 	s.db = pgtest.ForT(s.T())
-	var err error
 	s.storage = postgres.New(s.db)
-	s.Require().NoError(err)
+	indexer := integrationStorage.NewIndexer(s.db)
+	searcher := integrationSearch.New(s.storage, indexer)
 
-	s.dataStore = New(s.storage)
+	s.dataStore = New(s.storage, searcher)
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
@@ -289,6 +291,51 @@ func (s *complianceIntegrationDataStoreTestSuite) TestRemoveComplianceIntegratio
 	s.NotContains(integrations, testIntegrations[0])
 	s.Contains(integrations, testIntegrations[1])
 	s.Contains(integrations, testIntegrations[2])
+}
+
+func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {
+	testIntegrations := getDefaultTestIntegrations()
+	ids := s.addBaseIntegrations(testIntegrations)
+	for i, id := range ids {
+		testIntegrations[i].Id = id
+	}
+
+	testCases := []struct {
+		desc           string
+		query          *apiV1.Query
+		scopeKey       string
+		expectedResult int
+	}{
+		{
+			desc:           "Empty Query - Full access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.UnrestrictedReadCtx,
+			expectedResult: len(testIntegrations),
+		},
+		{
+			desc:           "Empty query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedResult: 1,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 2 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster2ReadWriteCtx,
+			expectedResult: 1,
+		},
+		{
+			desc:           "Cluster 2 query - Only cluster 1 access",
+			query:          search.NewQueryBuilder().AddStrings(search.ClusterID, testconsts.Cluster2).ProtoQuery(),
+			scopeKey:       testutils.Cluster1ReadWriteCtx,
+			expectedResult: 0,
+		},
+	}
+	for _, tc := range testCases {
+		count, err := s.dataStore.CountIntegrations(s.testContexts[tc.scopeKey], tc.query)
+		s.NoError(err)
+		s.Equal(tc.expectedResult, count)
+	}
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) addBaseIntegrations(testIntegrations []*storage.ComplianceIntegration) []string {

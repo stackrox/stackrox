@@ -24,19 +24,19 @@ import (
 )
 
 const (
-	baseTable = "compliance_operator_profile_cluster_edges"
-	storeName = "ComplianceOperatorProfileClusterEdge"
+	baseTable = "compliance_operator_scan_setting_binding_v2"
+	storeName = "ComplianceOperatorScanSettingBindingV2"
 )
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceOperatorProfileClusterEdgesSchema
+	schema         = pkgSchema.ComplianceOperatorScanSettingBindingV2Schema
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorProfileClusterEdge
+type storeType = storage.ComplianceOperatorScanSettingBindingV2
 
-// Store is the interface to interact with the storage for storage.ComplianceOperatorProfileClusterEdge
+// Store is the interface to interact with the storage for storage.ComplianceOperatorScanSettingBindingV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -53,6 +53,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -61,8 +62,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoComplianceOperatorProfileClusterEdges,
-		copyFromComplianceOperatorProfileClusterEdges,
+		insertIntoComplianceOperatorScanSettingBindingV2,
+		copyFromComplianceOperatorScanSettingBindingV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
@@ -96,12 +97,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 		}
 	}
 	if len(deniedIDs) != 0 {
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceOperatorProfileClusterEdges with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying complianceOperatorScanSettingBindingV2s with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
 	}
 	return nil
 }
 
-func insertIntoComplianceOperatorProfileClusterEdges(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileClusterEdge) error {
+func insertIntoComplianceOperatorScanSettingBindingV2(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingBindingV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -111,19 +112,18 @@ func insertIntoComplianceOperatorProfileClusterEdges(batch *pgx.Batch, obj *stor
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetProfileId(),
-		obj.GetProfileUid(),
+		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_cluster_edges (Id, ProfileId, ProfileUid, ClusterId, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, ProfileUid = EXCLUDED.ProfileUid, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_binding_v2 (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorProfileClusterEdge) error {
+func copyFromComplianceOperatorScanSettingBindingV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorScanSettingBindingV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -136,8 +136,7 @@ func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSear
 
 	copyCols := []string{
 		"id",
-		"profileid",
-		"profileuid",
+		"name",
 		"clusterid",
 		"serialized",
 	}
@@ -155,8 +154,7 @@ func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSear
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetProfileId(),
-			obj.GetProfileUid(),
+			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
@@ -175,7 +173,7 @@ func copyFromComplianceOperatorProfileClusterEdges(ctx context.Context, s pgSear
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profile_cluster_edges"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_binding_v2"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -198,11 +196,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableComplianceOperatorProfileClusterEdges(ctx, db)
+	dropTableComplianceOperatorScanSettingBindingV2(ctx, db)
 }
 
-func dropTableComplianceOperatorProfileClusterEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_profile_cluster_edges CASCADE")
+func dropTableComplianceOperatorScanSettingBindingV2(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_setting_binding_v2 CASCADE")
 
 }
 

@@ -73,6 +73,7 @@ function DeniedRequests() {
                 {
                     ...searchFilter,
                     'Request Status': ['DENIED'],
+                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,

@@ -8,7 +8,7 @@ import (
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, types.Creator) {
-	return "nexus",
+	return types.NexusType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := docker.NewRegistryWithoutManifestCall(integration, false)
 			return reg, err
@@ -18,7 +18,7 @@ func Creator() (string, types.Creator) {
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
-	return "nexus",
+	return types.NexusType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			reg, err := docker.NewRegistryWithoutManifestCall(integration, true)
 			return reg, err
