@@ -73,6 +73,20 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		return nil, errors.Wrap(err, "could not issue scanner db cert")
 	}
 	dbPassword := []byte(renderer.CreatePassword())
+	v4DBPassword := []byte(renderer.CreatePassword())
+
+	scannerV4IndexerCert, err := mtls.IssueNewCert(mtls.ScannerV4IndexerSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Indexer")
+	}
+	scannerV4MatcherCert, err := mtls.IssueNewCert(mtls.ScannerV4MatcherSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 Matcher")
+	}
+	scannerV4DBCert, err := mtls.IssueNewCert(mtls.ScannerV4DBSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certifiate for Scanner V4 DB")
+	}
 
 	flavor := defaults.GetImageFlavorFromEnv()
 	config := renderer.Config{
@@ -93,6 +107,16 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 			"scanner-db-cert.pem": scannerDBCert.CertPEM,
 			"scanner-db-key.pem":  scannerDBCert.KeyPEM,
 			"scanner-db-password": dbPassword,
+
+			"scanner-v4-db-cert.pem": scannerV4DBCert.CertPEM,
+			"scanner-v4-db-key.pem":  scannerV4DBCert.KeyPEM,
+			"scanner-v4-db-password": v4DBPassword,
+
+			"scanner-v4-indexer-cert.pem": scannerV4IndexerCert.CertPEM,
+			"scanner-v4-indexer-key.pem":  scannerV4IndexerCert.KeyPEM,
+
+			"scanner-v4-matcher-cert.pem": scannerV4MatcherCert.CertPEM,
+			"scanner-v4-matcher-key.pem":  scannerV4MatcherCert.KeyPEM,
 		},
 		EnablePodSecurityPolicies: !params.DisablePodSecurityPolicies,
 	}
