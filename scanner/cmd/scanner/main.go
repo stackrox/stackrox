@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	grpcmetrics "github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -44,6 +45,12 @@ type Backends struct {
 }
 
 func init() {
+	// Set the http.DefaultTransport's Proxy function to one which reads from the proxy configuration file.
+	// Note: http.DefaultClient uses http.DefaultTransport.
+	if !proxy.UseWithDefaultTransport() {
+		golog.Println("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+	}
+
 	memlimit.SetMemoryLimit()
 }
 
@@ -74,6 +81,15 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(p, mtls.CAKeyFileName)))
 		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(p, mtls.ServiceCertFileName)))
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(p, mtls.ServiceKeyFileName)))
+	}
+
+	//  If proxy path is set, periodically check for updates.
+	if cfg.Proxy.ConfigDir != "" {
+		zlog.Info(ctx).
+			Str("dir", cfg.Proxy.ConfigDir).
+			Str("file", cfg.Proxy.ConfigFile).
+			Msg("proxy configured")
+		proxy.WatchProxyConfig(ctx, cfg.Proxy.ConfigDir, cfg.Proxy.ConfigFile, true)
 	}
 
 	// Initialize metrics and metrics server.

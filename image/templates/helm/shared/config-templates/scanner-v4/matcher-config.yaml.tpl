@@ -6,6 +6,7 @@
      */ -}}
 
 # Configuration file for Scanner v4 Matcher.
+stackrox_services: true
 indexer:
   enable: false
 matcher:
@@ -26,3 +27,6 @@ matcher:
 log_level: info
 grpc_listen_addr: 0.0.0.0:8443
 http_listen_addr: 0.0.0.0:9443
+proxy:
+  config_dir: /run/secrets/stackrox.io/proxy-config
+  config_file: config.yaml
