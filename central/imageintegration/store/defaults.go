@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -14,7 +15,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "10d3b4dc-8295-41bc-bb50-6da5484cdb1a",
 		Name:       "Public DockerHub",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -25,7 +26,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "c6a1a26d-8947-4cb0-a50d-a018856f9390",
 		Name:       "Public Kubernetes GCR (deprecated)",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -36,7 +37,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "f6ce8982-1a75-4430-96f3-9b22b4b66604",
 		Name:       "Public Kubernetes Registry",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -47,7 +48,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "05fea766-e2f8-44b3-9959-eaa61a4f7466",
 		Name:       "Public GCR",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -58,7 +59,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "6d7fc3f3-03d0-4b61-bf9f-34982a77bd56",
 		Name:       "Public GKE GCR",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -70,7 +71,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "e50087f1-6840-4d15-aeca-21ba636f0878",
 		Name:       "Public Quay.io",
-		Type:       "quay",
+		Type:       registryTypes.QuayType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Quay{
 			Quay: &storage.QuayConfig{
@@ -81,7 +82,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "4b36a1c3-2d6f-452e-a70f-6c388a0ff947",
 		Name:       "Public Microsoft Container Registry",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -92,7 +93,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "5febb194-a21d-4109-9fad-6880dd632adc",
 		Name:       "Public Amazon ECR",
-		Type:       "docker",
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -103,7 +104,7 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "54107745-5717-49c1-9073-a2b72f7a3b49",
 		Name:       "registry.access.redhat.com",
-		Type:       "rhel",
+		Type:       registryTypes.RedHatType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{

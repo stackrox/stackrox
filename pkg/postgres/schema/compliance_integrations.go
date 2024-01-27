@@ -30,8 +30,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceIntegration)(nil)), "compliance_integrations")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":           ClustersSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.Cluster": ClustersSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -39,7 +38,6 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, "complianceintegration", (*storage.ComplianceIntegration)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
-			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		schema.ScopingResource = resources.Compliance

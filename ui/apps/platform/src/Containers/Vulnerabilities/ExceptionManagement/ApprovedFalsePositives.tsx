@@ -67,6 +67,7 @@ function ApprovedFalsePositives() {
                     ...searchFilter,
                     'Request Status': ['APPROVED', 'APPROVED_PENDING_UPDATE'],
                     'Requested Vulnerability State': 'FALSE_POSITIVE',
+                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,

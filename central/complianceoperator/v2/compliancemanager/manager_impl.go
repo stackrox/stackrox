@@ -95,17 +95,12 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, errors.Errorf("Compliance is disabled. Cannot process scan request: %q", scanRequest.GetScanConfigName())
 	}
 
-	// User MUST have permissions on all clusters being applied.
-	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(clusters))
-	for _, cluster := range clusters {
-		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(cluster)})
-	}
-	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopeKeys) {
-		return nil, sac.ErrResourceAccessDenied
+	err := validateClusterAccess(ctx, clusters)
+	if err != nil {
+		return nil, err
 	}
 
 	var cron string
-	var err error
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
 		if err != nil {
@@ -121,18 +116,38 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 	}
 
-	// Check if scan configuration already exists.
-	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
-	if err != nil {
-		log.Error(err)
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-	if found {
-		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
-	}
+	createScanRequest := scanRequest.Id == ""
 
-	scanRequest.Id = uuid.NewV4().String()
-	scanRequest.CreatedTime = types.TimestampNow()
+	// No ID means an add so we need to make sure the name does not already exist
+	if createScanRequest {
+		// Check if scan configuration already exists by name.
+		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+			log.Error(err)
+			return nil, err
+		}
+		if found {
+			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
+		}
+
+		scanRequest.Id = uuid.NewV4().String()
+		scanRequest.CreatedTime = types.TimestampNow()
+	} else {
+		// Verify the scan configuration ID is valid
+		scanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanRequest.GetId())
+		if err != nil {
+			err = errors.Wrapf(err, "Unable to find scan configuration with ID %q.", scanRequest.GetId())
+			log.Error(err)
+			return nil, err
+		}
+		if !found {
+			return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
+		}
+
+		// Use the created time from the DB
+		scanRequest.CreatedTime = scanConfig.GetCreatedTime()
+	}
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -141,35 +156,14 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileId())
+		profiles = append(profiles, profile.GetProfileName())
 	}
 
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_ApplyScanConfig{
-						ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-							Id: sensorRequestID,
-							ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-								ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
-									ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-										ScanName:       scanRequest.GetScanConfigName(),
-										StrictNodeScan: true,
-										Profiles:       profiles,
-									},
-									Cron: cron,
-								},
-							},
-						},
-					},
-				},
-			},
-		}
-
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {
@@ -240,11 +234,58 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 	return nil
 }
 
-func (m *managerImpl) ProcessRescanRequest(_ context.Context, _ interface{}) error {
-	// TODO(ROX-18091):
-	// 1. Validate config exists in database
-	// 2. Push request to Sensor
-	panic("implement me")
+func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) error {
+	if !features.ComplianceEnhancements.Enabled() {
+		return errors.Errorf("Compliance is disabled. Cannot run compliance scan for configuration with ID %s", scanID)
+	}
+
+	scanConfig, found, err := m.scanSettingDS.GetScanConfiguration(ctx, scanID)
+	if err != nil {
+		return errors.Errorf("Encountered error attempting to find scan configuration with ID: %s", scanID)
+	} else if !found {
+		return errors.Errorf("Failed to find scan configuration by ID: %s", scanID)
+	}
+
+	clusters := scanConfig.GetClusters()
+	var cs []string
+	for _, c := range clusters {
+		cs = append(cs, c.GetClusterId())
+	}
+	err = validateClusterAccess(ctx, cs)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range clusters {
+		msg := &central.MsgToSensor{
+			Msg: &central.MsgToSensor_ComplianceRequest{
+				ComplianceRequest: &central.ComplianceRequest{
+					Request: &central.ComplianceRequest_ApplyScanConfig{
+						ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
+							Id: uuid.NewV4().String(),
+							ScanRequest: &central.ApplyComplianceScanConfigRequest_RerunScan{
+								RerunScan: &central.ApplyComplianceScanConfigRequest_RerunScheduledScan{
+									ScanName: scanConfig.GetScanConfigName(),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		err := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
+		if err != nil {
+			log.Errorf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), err)
+			// Update status in DB
+			err = m.scanSettingDS.UpdateClusterStatus(ctx, scanConfig.GetId(), c.GetClusterId(), err.Error())
+			if err != nil {
+				log.Error(err)
+				return errors.Errorf("Unable to save scan configuration status for scan configuration %q.", scanConfig.GetScanConfigName())
+			}
+		}
+	}
+
+	return nil
 }
 
 // DeleteScan processes a request to delete an existing compliance scan configuration.
@@ -275,5 +316,20 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 	}
 	m.sensorConnMgr.BroadcastMessage(sensorMessage)
 
+	return nil
+}
+
+// validateClusterAccess accepts a context and a slice of cluster strings, and
+// returns if the user associated with the context has write permissions on
+// each cluster. If not, then a permission error is returned.
+func validateClusterAccess(ctx context.Context, clusters []string) error {
+	// User MUST have permissions on all clusters being applied.
+	clusterScopeKeys := make([][]sac.ScopeKey, 0, len(clusters))
+	for _, cluster := range clusters {
+		clusterScopeKeys = append(clusterScopeKeys, []sac.ScopeKey{sac.ClusterScopeKey(cluster)})
+	}
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopeKeys) {
+		return sac.ErrResourceAccessDenied
+	}
 	return nil
 }

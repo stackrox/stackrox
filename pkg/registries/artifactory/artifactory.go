@@ -8,7 +8,7 @@ import (
 
 // Creator provides the type and registries.Creator to add to the registry of image registries.
 func Creator() (string, types.Creator) {
-	return "artifactory",
+	return types.ArtifactoryType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			return docker.NewDockerRegistry(integration, false)
 		}
@@ -17,7 +17,7 @@ func Creator() (string, types.Creator) {
 // CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
 // Populating the internal repo list will be disabled.
 func CreatorWithoutRepoList() (string, types.Creator) {
-	return "artifactory",
+	return types.ArtifactoryType,
 		func(integration *storage.ImageIntegration, _ ...types.CreatorOption) (types.Registry, error) {
 			return docker.NewDockerRegistry(integration, true)
 		}

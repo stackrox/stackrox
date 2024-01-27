@@ -4228,7 +4228,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile Name,hidden,store\"sql:\"index=category:unique;name:profile_unique_indicator\""
+                    "value": "search:\"Compliance Profile Name,hidden,store\""
                   }
                 ]
               },
@@ -4239,7 +4239,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile Version,hidden,store\"sql:\"index=category:unique;name:profile_unique_indicator\""
+                    "value": "search:\"Compliance Profile Version,hidden,store\""
                   }
                 ]
               },
@@ -4291,6 +4291,17 @@
                 "name": "values",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
               }
             ],
             "maps": [
@@ -4505,7 +4516,7 @@
               {
                 "id": 8,
                 "name": "profiles",
-                "type": "ProfileShim",
+                "type": "ProfileName",
                 "is_repeated": true
               },
               {
@@ -4576,6 +4587,22 @@
               }
             ],
             "messages": [
+              {
+                "name": "ProfileName",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "profile_name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"-\"sql:\"fk(ComplianceOperatorProfileV2:name),no-fk-constraint\""
+                      }
+                    ]
+                  }
+                ]
+              },
               {
                 "name": "Cluster",
                 "fields": [
@@ -4948,55 +4975,6 @@
                   "name": "annotations",
                   "type": "string"
                 }
-              }
-            ]
-          },
-          {
-            "name": "ComplianceOperatorProfileClusterEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,id\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "profile_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile ID,store,hidden\"sql:\"fk(ComplianceOperatorProfileV2:id)\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "profile_uid",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Compliance Profile UID,store,hidden\""
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "cluster_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
-                  }
-                ]
               }
             ]
           }

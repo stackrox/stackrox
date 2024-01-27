@@ -27,6 +27,7 @@ func validateScanName(req scanNameGetter) error {
 	}
 	return nil
 }
+
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
@@ -82,6 +83,41 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	}
 }
 
+func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, request *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) *v1alpha1.ScanSetting {
+	// TODO: Add ACS labels.
+	// TODO:  Update additional fields as ACS capability expands
+	scanSetting.Roles = []string{masterRole, workerRole}
+	scanSetting.ComplianceSuiteSettings = v1alpha1.ComplianceSuiteSettings{
+		AutoApplyRemediations:  false,
+		AutoUpdateRemediations: false,
+		Schedule:               request.GetCron(),
+	}
+	scanSetting.ComplianceScanSettings = v1alpha1.ComplianceScanSettings{
+		StrictNodeScan:    pointers.Bool(false),
+		ShowNotApplicable: false,
+		Timeout:           env.ComplianceScanTimeout.Setting(),
+		MaxRetryOnTimeout: env.ComplianceScanRetries.IntegerSetting(),
+	}
+
+	return scanSetting
+}
+
+func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
+	for _, profile := range request.GetProfiles() {
+		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+			Name:     profile,
+			Kind:     complianceoperator.Profile.Kind,
+			APIGroup: complianceoperator.GetGroupVersion().String(),
+		})
+	}
+
+	// TODO:  Update additional fields as ACS capability expands
+	scanSettingBinding.Profiles = profileRefs
+
+	return scanSettingBinding
+}
+
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
 	if req == nil {
 		return errors.New("apply scan configuration request is empty")
@@ -102,8 +138,24 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	return errList.ToError()
 }
 
-func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {
-	return validateScanName(req)
+func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) error {
+	if req == nil {
+		return errors.New("update scan configuration request is empty")
+	}
+	var errList errorhelpers.ErrorList
+	if req.GetScanSettings().GetScanName() == "" {
+		errList.AddStrings("no name provided for the scan")
+	}
+	if len(req.GetScanSettings().GetProfiles()) == 0 {
+		errList.AddStrings("compliance profiles not specified")
+	}
+	if req.GetCron() != "" {
+		cron := gronx.New()
+		if !cron.IsValid(req.GetCron()) {
+			errList.AddStrings("schedule is not valid")
+		}
+	}
+	return errList.ToError()
 }
 
 func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) error {
@@ -112,6 +164,16 @@ func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanCo
 
 func validateApplyResumeScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) error {
 	return validateScanName(req)
+}
+
+func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {
+	if req == nil {
+		return errors.New("apply scan configuration request is empty")
+	}
+	if req.GetScanName() == "" {
+		return errors.New("no name provided for the scan")
+	}
+	return nil
 }
 
 func runtimeObjToUnstructured(obj runtime.Object) (*unstructured.Unstructured, error) {

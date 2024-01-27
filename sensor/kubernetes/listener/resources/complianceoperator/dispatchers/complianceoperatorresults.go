@@ -94,35 +94,6 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 	}
 
 	id := string(complianceCheckResult.UID)
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		events := []*central.SensorEvent{
-			{
-				Id:     id,
-				Action: action,
-				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-						Id:           id,
-						CheckId:      complianceCheckResult.ID,
-						CheckName:    complianceCheckResult.GetName(),
-						Status:       statusToV2Status(complianceCheckResult.Status),
-						Severity:     severityToV2Severity(complianceCheckResult.Severity),
-						Description:  complianceCheckResult.Description,
-						Instructions: complianceCheckResult.Instructions,
-						Labels:       complianceCheckResult.GetLabels(),
-						Annotations:  complianceCheckResult.GetAnnotations(),
-						CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
-						ScanName:     getScanName(complianceCheckResult.GetLabels()),
-						SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
-						Rationale:    complianceCheckResult.Rationale,
-						ValuesUsed:   complianceCheckResult.ValuesUsed,
-						Warnings:     complianceCheckResult.Warnings,
-					},
-				},
-			},
-		}
-		return component.NewEvent(events...)
-	}
-
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
@@ -141,5 +112,32 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 			},
 		},
 	}
+
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		events = append(events, &central.SensorEvent{
+			Id:     id,
+			Action: action,
+			Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+				ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
+					Id:           id,
+					CheckId:      complianceCheckResult.ID,
+					CheckName:    complianceCheckResult.GetName(),
+					Status:       statusToV2Status(complianceCheckResult.Status),
+					Severity:     severityToV2Severity(complianceCheckResult.Severity),
+					Description:  complianceCheckResult.Description,
+					Instructions: complianceCheckResult.Instructions,
+					Labels:       complianceCheckResult.GetLabels(),
+					Annotations:  complianceCheckResult.GetAnnotations(),
+					CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
+					ScanName:     getScanName(complianceCheckResult.GetLabels()),
+					SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
+					Rationale:    complianceCheckResult.Rationale,
+					ValuesUsed:   complianceCheckResult.ValuesUsed,
+					Warnings:     complianceCheckResult.Warnings,
+				},
+			},
+		})
+	}
+
 	return component.NewEvent(events...)
 }

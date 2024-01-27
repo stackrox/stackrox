@@ -430,10 +430,15 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 }
 
 func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*jiraLib.Client, error) {
+	var (
+		err  error
+		resp *jiraLib.Response
+		req  *http.Request
+	)
+
 	conf := notifier.GetJira()
 	decCreds := conf.GetPassword()
 
-	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
 		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
 		if err != nil {
@@ -457,45 +462,36 @@ func createClient(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 		return nil, errors.Wrap(err, "could not create JIRA client")
 	}
 
-	// Test auth
-
+	// Test auth to Jira
 	urlPath := "rest/api/2/configuration"
-
-	req, err := client.NewRequest("GET", urlPath, nil)
-	if err != nil {
-		return nil, err
+	if req, err = client.NewRequest("GET", urlPath, nil); err != nil {
+		return nil, errors.Wrap(err, "could not create request to Jira")
 	}
 
-	log.Debugf("Making request to %s", urlPath)
-	resp, err := client.Do(req, nil)
-
-	if err != nil {
-		if resp.StatusCode == 401 || resp.StatusCode == 403 {
-			log.Debug("Retrying request using bearer auth")
-			httpClient := &http.Client{
-				Timeout: timeout,
-				Transport: &jiraLib.BearerAuthTransport{
-					Token:     decCreds,
-					Transport: proxy.RoundTripper(),
-				},
-			}
-
-			client, err = jiraLib.NewClient(httpClient, url)
-			if err != nil {
-				return nil, errors.Wrap(err, "could not create JIRA client")
-			}
-
-			req, err = client.NewRequest("GET", urlPath, nil)
-			if err != nil {
-				return nil, err
-			}
-			resp, err = client.Do(req, nil)
+	log.Debugf("Making request to Jira at %s", urlPath)
+	if resp, err = client.Do(req, nil); err != nil {
+		// If the underlying http.Client.Do() returns an error, the Jira response will be nil.
+		if resp == nil || (resp.StatusCode != 401 && resp.StatusCode != 403) {
+			return nil, errors.Wrap(err, "Could not make request to Jira")
 		}
-		if err != nil {
-			if resp.StatusCode == 401 || resp.StatusCode == 403 {
-				return nil, errors.Wrap(err, "Could not authenticate to Jira")
-			}
+		log.Debug("Retrying request to Jira using Bearer auth")
+		httpClient = &http.Client{
+			Timeout: timeout,
+			Transport: &jiraLib.BearerAuthTransport{
+				Token:     decCreds,
+				Transport: proxy.RoundTripper(),
+			},
 		}
+		if client, err = jiraLib.NewClient(httpClient, url); err != nil {
+			return nil, errors.Wrap(err, "could not create Jira client with bearer auth")
+		}
+		if req, err = client.NewRequest("GET", urlPath, nil); err != nil {
+			return nil, errors.Wrap(err, "could not create request to Jira")
+		}
+		if _, err = client.Do(req, nil); err != nil {
+			return nil, errors.Wrap(err, "Could not make authenticated request to Jira")
+		}
+		log.Debug("Successfully made request to jira using bearer auth")
 	}
 
 	return client, nil

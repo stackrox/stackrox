@@ -33,11 +33,15 @@ func _() {
 	_ = x[ComplianceOperatorRule-22]
 	_ = x[ComplianceOperatorScan-23]
 	_ = x[ComplianceOperatorInfo-24]
+	_ = x[ComplianceOperatorCheckResultV2-25]
+	_ = x[ComplianceOperatorRuleV2-26]
+	_ = x[ComplianceOperatorProfileV2-27]
+	_ = x[ComplianceOperatorScanV2-28]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfo"
+const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {

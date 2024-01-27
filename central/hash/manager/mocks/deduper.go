@@ -77,6 +77,18 @@ func (mr *MockDeduperMockRecorder) ProcessSync() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessSync", reflect.TypeOf((*MockDeduper)(nil).ProcessSync))
 }
 
+// RemoveMessage mocks base method.
+func (m *MockDeduper) RemoveMessage(msg *central.MsgFromSensor) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveMessage", msg)
+}
+
+// RemoveMessage indicates an expected call of RemoveMessage.
+func (mr *MockDeduperMockRecorder) RemoveMessage(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMessage", reflect.TypeOf((*MockDeduper)(nil).RemoveMessage), msg)
+}
+
 // ShouldProcess mocks base method.
 func (m *MockDeduper) ShouldProcess(msg *central.MsgFromSensor) bool {
 	m.ctrl.T.Helper()

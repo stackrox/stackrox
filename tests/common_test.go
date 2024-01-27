@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -260,13 +261,18 @@ func teardownNginxLatestTagDeployment(t *testing.T) {
 	teardownDeployment(t, nginxDeploymentName)
 }
 
-func createK8sClient(t *testing.T) kubernetes.Interface {
+func getConfig(t *testing.T) *rest.Config {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	require.NoError(t, err, "could not load default Kubernetes client config")
 
 	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 	require.NoError(t, err, "could not get REST client config from kubernetes config")
 
+	return restCfg
+}
+
+func createK8sClient(t *testing.T) kubernetes.Interface {
+	restCfg := getConfig(t)
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 

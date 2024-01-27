@@ -403,7 +403,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 	ii := &storage.ImageIntegration{
 		Id:         registry,
 		Name:       fmt.Sprintf("NoAuth/reg:%v", registry),
-		Type:       docker.GenericDockerRegistryType,
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{

@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,6 +27,9 @@ import (
 //
 //go:generate mockgen-wrapper
 type Scanner interface {
+	// GetImageIndex fetches an existing index report for the given ID.
+	GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error)
+
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
@@ -92,28 +94,38 @@ func (c *gRPCScanner) Close() error {
 }
 
 func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
-	connOpt := clientconn.Options{
-		TLS: clientconn.TLSConfigOptions{
-			GRPCOnly:           true,
-			InsecureSkipVerify: true,
-		},
+	connOpts := []clientconn.ConnectionOption{
+		clientconn.UseInsecureNoTLS(o.skipTLS),
+		clientconn.ServerName(o.serverName),
+		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
 	}
-	if !o.skipTLS {
-		ca, err := mtls.LoadDefaultCA()
-		if err != nil {
-			return nil, fmt.Errorf("creating CA: %w", err)
+
+	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
+}
+
+func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "GetImageIndex",
+		"hash_id", hashID,
+	)
+	var ir *v4.IndexReport
+	// Get the IndexReport, if it exists.
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
+		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
+		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
+			return nil
 		}
-		connOpt.TLS.InsecureSkipVerify = false
-		connOpt.TLS.RootCAs = ca.CertPool()
-		connOpt.TLS.UseClientCert = clientconn.MustUseClientCert
-		connOpt.TLS.ServerName = o.serverName
+		return err
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("get index: %w", err)
 	}
-
-	callOpts := []grpc.CallOption{
-		grpc.MaxCallRecvMsgSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+	// Return not found if report doesn't exist or is unsuccessful.
+	if ir == nil || !ir.GetSuccess() {
+		return nil, false, nil
 	}
-
-	return clientconn.GRPCConnection(ctx, o.mTLSSubject, o.address, connOpt, grpc.WithDefaultCallOptions(callOpts...))
+	return ir, true, nil
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
@@ -126,22 +138,12 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 	id := getImageManifestID(ref)
-	var ir *v4.IndexReport
-	// Get the IndexReport if it exists.
-	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
-		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: id})
-		if e, ok := status.FromError(err); ok {
-			if e.Code() == codes.NotFound {
-				return nil
-			}
-		}
-		return err
-	})
+	ir, exists, err := c.GetImageIndex(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("get index: %w", err)
+		return nil, err
 	}
-	// Returns if found and report is successful.
-	if ir != nil && ir.GetSuccess() {
+	// If the report already exists, then return it.
+	if exists {
 		return ir, nil
 	}
 	// Otherwise (re-)index the image.
