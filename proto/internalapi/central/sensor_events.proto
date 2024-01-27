@@ -94,10 +94,12 @@ message SensorEvent {
         storage.ComplianceOperatorScan               compliance_operator_scan                 = 24;
 
         // V2 Compliance
-        ComplianceOperatorCheckResultV2   compliance_operator_result_v2  = 27;
-        ComplianceOperatorProfileV2       compliance_operator_profile_v2 = 28;
-        ComplianceOperatorRuleV2          compliance_operator_rule_v2    = 29;
-        ComplianceOperatorScanV2          compliance_operator_scan_v2    = 30;
+        ComplianceOperatorCheckResultV2                 compliance_operator_result_v2  = 27;
+        ComplianceOperatorProfileV2                     compliance_operator_profile_v2 = 28;
+        ComplianceOperatorRuleV2                        compliance_operator_rule_v2    = 29;
+        ComplianceOperatorScanV2                        compliance_operator_scan_v2    = 30;
+        ComplianceOperatorScanSettingBindingV2          compliance_operator_scan_setting_binding_v2         = 31;
+
     }
 }
 

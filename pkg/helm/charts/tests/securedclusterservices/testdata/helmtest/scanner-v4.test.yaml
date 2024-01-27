@@ -30,10 +30,29 @@ tests:
     set:
       env.openshift: 3
 
-- name: "scanner V4 is disabled should not be installed by default"
+- name: "scanner V4 disabled should not be installed by default"
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. == null)
+
+- name: "scanner V4 enabled should only deploy indexer and db"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "no matcher resources should exist"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .secrets["scanner-v4-matcher-tls"] | assertThat(. == null)
+    .configmaps["scanner-v4-matcher-config"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)
+    .services["scanner-v4-matcher"] | assertThat(. == null)
+    .horizontalpodautoscalers["scanner-v4-matcher"] | assertThat(. == null)
 
 - name: "scanner can override image config"
   set:
@@ -140,3 +159,18 @@ tests:
       disable: false
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
+
+- name: "indexer should be using sensor endpoints when deployed as part of secured-cluster-services"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=name2repos")
+
+- name: "indexer should not allow ingress from central and matcher when deployed as a secured-cluster-service"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .networkpolicys["scanner-v4-indexer"].spec.ingress | assertThat(length == 1)
+    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)
+    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")

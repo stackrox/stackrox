@@ -90,6 +90,27 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
 }
 
+func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.Empty, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required")
+	}
+
+	// Convert to storage type
+	scanConfig := convertV2ScanConfigToStorage(ctx, req)
+
+	// grab clusters
+	var clusterIDs []string
+	clusterIDs = append(clusterIDs, req.GetClusters()...)
+
+	// Process scan request, config may be updated in the event of errors from sensor.
+	_, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+	}
+
+	return &v2.Empty{}, nil
+}
+
 func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")

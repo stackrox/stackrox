@@ -157,7 +157,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		c.centralHTTPClient = &http.Client{
 			Transport: transport,
 		}
-		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(context.Background(), config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to initialize gRPC connection to Central")
 		}

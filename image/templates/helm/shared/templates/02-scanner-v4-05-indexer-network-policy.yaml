@@ -14,6 +14,7 @@ spec:
     matchLabels:
       app: scanner-v4-indexer
   ingress:
+  {{- if ._rox.env.centralServices }}
   - from:
     - podSelector:
         matchLabels:
@@ -28,6 +29,7 @@ spec:
     ports:
     - port: 8443
       protocol: TCP
+  {{- end }}
   - from:
     - podSelector:
         matchLabels:
