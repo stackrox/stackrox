@@ -19,13 +19,15 @@
     ]
   },
   "editable": true,
-  "fiscalYearStartMonth": 0,
+  "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1649713043902,
+  "id": 3,
+  "iteration": 1706378576225,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
+      "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -33,38 +35,42 @@
         "y": 0
       },
       "id": 26,
+      "panels": [],
       "title": "CPU and Memory",
       "type": "row"
     },
     {
+      "datasource": null,
       "description": "Pod CPU seconds over the last minute",
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "stepAfter",
-            "barAlignment": 0,
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": true,
-            "showPoints": "never",
-            "pointSize": 5,
-            "axisPlacement": "auto",
-            "axisLabel": "CPU seconds",
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "hideFrom": {
-              "tooltip": false,
-              "graph": false,
-              "legend": false,
-              "viz": false
-            }
-          },
           "color": {
             "mode": "palette-classic"
           },
+          "custom": {
+            "axisLabel": "CPU seconds",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -78,8 +84,6 @@
               }
             ]
           },
-          "mappings": [],
-          "links": [],
           "unit": "short"
         },
         "overrides": []
@@ -93,192 +97,6 @@
       "id": 23763571992,
       "interval": "",
       "options": {
-        "tooltipOptions": {
-          "mode": "single"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "8.4.5",
-      "targets": [
-        {
-          "expr": "sum by(pod)(\n  increase(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|sensor|compliance|admission-control|node-inventory|central|central-db|scanner|scanner-db)\"}[1m])\n)",
-          "legendFormat": "{{container}}",
-          "interval": "",
-          "exemplar": true,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "instant": false,
-          "intervalFactor": 1,
-          "refId": "A"
-        }
-      ],
-      "title": "CPU Usage",
-      "type": "timeseries",
-      "datasource": null
-    },
-    {
-      "description": "Pod Memory Usage",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "stepAfter",
-            "barAlignment": 0,
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "spanNulls": true,
-            "showPoints": "never",
-            "pointSize": 5,
-            "axisPlacement": "auto",
-            "axisLabel": "Memory Usage",
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "hideFrom": {
-              "tooltip": false,
-              "graph": false,
-              "legend": false,
-              "viz": false
-            }
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "mappings": [],
-          "links": [],
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "id": 23763571993,
-      "interval": "",
-      "options": {
-        "tooltipOptions": {
-          "mode": "single"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "8.4.5",
-      "targets": [
-        {
-          "expr": "sum by(pod)(\ncontainer_memory_usage_bytes{namespace=\"stackrox\", container=~\"(collector|sensor|compliance|admission-control|node-inventory|central|central-db|scanner|scanner-db)\"}\n)",
-          "legendFormat": "{{container}}",
-          "interval": "",
-          "exemplar": true,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "instant": false,
-          "intervalFactor": 1,
-          "refId": "A"
-        }
-      ],
-      "title": "Memory Usage",
-      "type": "timeseries",
-      "datasource": null
-    },
-    {
-      "description": "Process CPU seconds over the last minute",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "CPU seconds",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "stepAfter",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "links": [],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "id": 2,
-      "interval": "",
-      "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
@@ -287,6 +105,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -297,18 +118,19 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "increase(process_cpu_seconds_total{instance=~\"$Instance\",job!=\"kubernetes-pods\"}[1m])",
+          "expr": "sum by(pod)(\n  increase(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|sensor|compliance|admission-control|node-inventory|central|central-db|scanner|scanner-db)\"}[1m])\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{job}}",
+          "legendFormat": "{{container}}",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage",
+      "title": "Pod CPU Usage",
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -322,6 +144,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -333,14 +156,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -377,6 +193,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -419,52 +238,34 @@
       "type": "timeseries"
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 10
-      },
-      "id": 24,
-      "panels": [],
-      "title": "DB Metrics",
-      "type": "row"
-    },
-    {
-      "description": "Number of key/value pairs in each bucket.",
+      "datasource": null,
+      "description": "Pod Memory Usage",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "# Keys in bucket",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "linear",
+            "lineInterpolation": "stepAfter",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -489,9 +290,10 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 10
       },
-      "id": 6,
+      "id": 23763571993,
+      "interval": "",
       "options": {
         "legend": {
           "calcs": [],
@@ -501,53 +303,59 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
       "targets": [
         {
-          "expr": "rox_central_bolt_bucket_key_n",
-          "legendFormat": "{{Bucket}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "sum by(pod)(\ncontainer_memory_usage_bytes{namespace=\"stackrox\", container=~\"(collector|sensor|compliance|admission-control|node-inventory|central|central-db|scanner|scanner-db)\"}\n)",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{container}}",
           "refId": "A"
         }
       ],
-      "title": "Bolt Object Count",
+      "title": "Pod Memory Usage",
       "type": "timeseries"
     },
     {
-      "description": "RocksDB prefix size (equivalent to bolt bucket).",
+      "datasource": null,
+      "description": "Process CPU seconds over the last minute",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Prefix size",
+            "axisLabel": "CPU seconds",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "lineInterpolation": "linear",
+            "lineInterpolation": "stepAfter",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -572,9 +380,10 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 10
       },
-      "id": 8,
+      "id": 2,
+      "interval": "",
       "options": {
         "legend": {
           "calcs": [],
@@ -584,33 +393,61 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
       "targets": [
         {
-          "expr": "rox_central_rocksdb_prefix_size",
-          "legendFormat": "{{Prefix}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "increase(process_cpu_seconds_total{instance=~\"$Instance\",job!=\"kubernetes-pods\"}[1m])",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
-      "title": "RocksDB Object Count",
+      "title": "Process CPU Usage",
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 24,
+      "panels": [],
+      "title": "DB Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": null,
+      "description": "Number of key/value pairs in each bucket.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "# Operations",
+            "axisLabel": "# Keys in bucket",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -622,14 +459,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -656,6 +486,167 @@
         "x": 0,
         "y": 20
       },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "expr": "rox_central_bolt_bucket_key_n",
+          "legendFormat": "{{Bucket}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Bolt Object Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "RocksDB prefix size (equivalent to bolt bucket).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Prefix size",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "8.4.5",
+      "targets": [
+        {
+          "expr": "rox_central_rocksdb_prefix_size",
+          "legendFormat": "{{Prefix}}",
+          "refId": "A"
+        }
+      ],
+      "title": "RocksDB Object Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "# Operations",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
       "id": 14,
       "options": {
         "legend": {
@@ -666,6 +657,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -686,6 +680,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -699,6 +694,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -710,14 +706,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -742,7 +731,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 29
       },
       "id": 16,
       "options": {
@@ -754,6 +743,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -774,6 +766,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -787,6 +780,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -798,14 +792,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -830,7 +817,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 38
       },
       "id": 10,
       "options": {
@@ -842,6 +829,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -862,6 +852,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -876,6 +867,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -887,14 +879,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -919,7 +904,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 29
+        "y": 38
       },
       "id": 12,
       "options": {
@@ -931,6 +916,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -951,6 +939,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -964,6 +953,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -975,14 +965,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -1007,7 +990,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 38
+        "y": 47
       },
       "id": 18,
       "options": {
@@ -1019,6 +1002,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -1039,6 +1025,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1052,6 +1039,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1063,14 +1051,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -1095,7 +1076,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 38
+        "y": 47
       },
       "id": 20,
       "options": {
@@ -1107,6 +1088,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -1132,11 +1116,12 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 56
       },
       "id": 22,
       "panels": [],
@@ -1144,6 +1129,7 @@
       "type": "row"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1157,6 +1143,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1168,14 +1155,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -1200,7 +1180,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 48
+        "y": 57
       },
       "id": 28,
       "options": {
@@ -1212,6 +1192,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -1226,6 +1209,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1239,6 +1223,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -1250,14 +1235,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "links": [],
           "mappings": [],
@@ -1282,7 +1260,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 48
+        "y": 57
       },
       "id": 30,
       "options": {
@@ -1294,6 +1272,9 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "pluginVersion": "8.4.5",
@@ -1315,19 +1296,22 @@
     }
   ],
   "refresh": false,
-  "schemaVersion": 35,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
+        "datasource": null,
         "definition": "label_values(instance)",
         "description": "",
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Instance",
@@ -1342,15 +1326,23 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 5,
-        "type": "query"
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       },
       {
+        "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
+        "datasource": null,
         "definition": "label_values(Operation)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Operation",
@@ -1365,15 +1357,23 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 5,
-        "type": "query"
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       },
       {
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
+        "datasource": null,
         "definition": "label_values(Type)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Type",
@@ -1388,7 +1388,11 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 5,
-        "type": "query"
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },
@@ -1412,6 +1416,5 @@
   "timezone": "",
   "title": "Core Dashboard",
   "uid": "P0Ulb58nk",
-  "version": 1,
-  "weekStart": ""
+  "version": 1
 }
