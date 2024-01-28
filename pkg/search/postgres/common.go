@@ -732,7 +732,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		return nil, nil
 	}
 	return pgutils.Retry2(func() ([]searchPkg.Result, error) {
-
+		log.Errorf("SQL::: %s", query.AsSQL())
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
 	})
 }

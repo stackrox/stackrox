@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -162,6 +163,89 @@ func (s *serviceImpl) DeleteCollection(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+// GetConsumers returns all consumer for a collection
+// Consumer Model
+
+// type ConsumerType string
+//
+// const (
+//
+//	CollectionType      ConsumerType = "collection"
+//	VulnerabilityReport ConsumerType = "vulnerability_report"
+//
+// )
+//
+//	type CollectionConsumer struct {
+//		ConsumerType ConsumerType
+//	}
+func (s *serviceImpl) GetConsumers(ctx context.Context, request *v1.ResourceByID) (*v1.CollectionConsumerListResponse, error) {
+	// TODO: This query below should work to reecive all report configurations with a foreign key = request.GetID()
+
+	// List all reports which have collection as ID
+	queryBuilder := search.NewQueryBuilder().AddExactMatches(search.CollectionID, request.GetId())
+	pagination := search.NewPagination().AddSortOption().Offset()
+	queryBuilder.WithPagination(pagination)
+
+	reports, err := s.reportConfigDatastore.GetReportConfigurations(ctx, queryBuilder.ProtoQuery())
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to check for Report Configuration usages")
+	}
+	response := &v1.CollectionConsumerListResponse{}
+	for _, report := range reports {
+		fmt.Printf("Report test %s \n", report.Name)
+		response.CollectionConsumer = append(response.CollectionConsumer, &v1.CollectionConsumer{
+			Id:           report.Id,
+			ConsumerType: "vulnerability_report",
+			Name:         report.GetName(),
+		})
+	}
+
+	// List all collections which attach this collection
+	listResponse, err := s.ListCollections(ctx, &v1.ListCollectionsRequest{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list")
+	}
+
+	// TODO: Implement as a upwards tree walk until the leave node is reached
+	var parentResourceCollections []*storage.ResourceCollection
+	var parentIDs []string
+	for _, parentCollection := range listResponse.GetCollections() {
+		for _, embeddedCollection := range parentCollection.GetEmbeddedCollections() {
+			if embeddedCollection.GetId() == request.GetId() {
+				parentResourceCollections = append(parentResourceCollections, parentCollection)
+				parentIDs = append(parentIDs, parentCollection.GetId())
+			}
+		}
+	}
+
+	for _, parentResourceCollection := range parentResourceCollections {
+		response.CollectionConsumer = append(response.CollectionConsumer, &v1.CollectionConsumer{
+			Id:           parentResourceCollection.GetId(),
+			ConsumerType: "collection",
+			Name:         parentResourceCollection.GetName(),
+		})
+	}
+
+	includeIndirects := true
+	if includeIndirects {
+		indirectQuery := search.NewQueryBuilder().AddExactMatches(search.CollectionID, parentIDs...).ProtoQuery()
+		indirectReportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(ctx, indirectQuery)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not list indirect reports")
+		}
+
+		for _, indirectReportConfig := range indirectReportConfigs {
+			response.CollectionConsumer = append(response.CollectionConsumer, &v1.CollectionConsumer{
+				Id:           indirectReportConfig.GetId(),
+				ConsumerType: "indirect_vulnerability_report",
+				Name:         indirectReportConfig.GetName(),
+			})
+		}
+	}
+
+	return response, nil
 }
 
 // CreateCollection creates a new collection from the given request

@@ -369,7 +369,7 @@ func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 	return qb.AddStrings(k, NullString)
 }
 
-// AddStrings adds a key value pair to the query.
+// AddStrings adds a key value pair to the query to do a prefix match.
 func (qb *QueryBuilder) AddStrings(k FieldLabel, v ...string) *QueryBuilder {
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], v...)
 	return qb

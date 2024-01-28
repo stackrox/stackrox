@@ -26,6 +26,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 	// since we do a lot of casting and other operations that could potentially panic in this code.
 	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
 	// the usual way.
+	log.Errorf("LOG LOG LOG %v", query.AsSQL())
 	defer func() {
 		if r := recover(); r != nil {
 			if query != nil {
