@@ -50,6 +50,7 @@ export type ObservedCVEsTableProps = {
     registry: string;
     remote: string;
     tag: string;
+    digest: string;
     itemCount: number;
     updateTable: () => void;
     searchFilter: SearchFilter;
@@ -63,6 +64,7 @@ function ObservedCVEsTable({
     registry,
     remote,
     tag,
+    digest,
     itemCount,
     page,
     perPage,
@@ -90,12 +92,14 @@ function ObservedCVEsTable({
         registry,
         remote,
         tag,
+        digest,
     });
     const requestFalsePositive = useMarkFalsePositive({
         cves: cvesToBeAssessed?.cves || [],
         registry,
         remote,
         tag,
+        digest,
     });
     const { hasReadWriteAccess } = usePermissions();
 

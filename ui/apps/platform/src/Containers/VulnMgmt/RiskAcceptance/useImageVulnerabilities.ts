@@ -8,7 +8,7 @@ import {
 function useImageVulnerabilities({ imageId, vulnsQuery, pagination }) {
     const client = useApolloClient();
     const queryToUse = GET_IMAGE_VULNERABILITIES;
-
+    
     const {
         loading: isLoading,
         data,

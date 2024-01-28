@@ -50,13 +50,15 @@ function ObservedCVEs({ imageId, showComponentDetails }: ObservedCVEsProps): Rea
     const registry = data?.image?.name?.registry || '';
     const remote = data?.image?.name?.remote || '';
     const tag = data?.image?.name?.tag || '';
-
+    const digest = imageId;
+    
     return (
         <ObservedCVEsTable
             rows={rows}
             registry={registry}
             remote={remote}
             tag={tag}
+            digest={digest}
             isLoading={isLoading}
             itemCount={itemCount}
             page={page}

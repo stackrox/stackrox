@@ -33,6 +33,7 @@ const EXPIRES_ON = {
 const IMAGE_APPLIES_TO = {
     ALL_TAGS_WITHIN_IMAGE: 'All tags within image',
     ONLY_THIS_IMAGE_TAG: 'Only this image tag',
+    ONLY_THIS_IMAGE_DIGEST: 'Only this image digest',
 };
 
 const validationSchema = yup.object().shape({
@@ -100,7 +101,7 @@ function DeferralFormModal({
             });
     }
 
-    function onCancelHandler() {
+    function onCancelHandler() {        
         setMessage(null);
         formik.resetForm();
         onCancelDeferral();
@@ -211,6 +212,16 @@ function DeferralFormModal({
                         value={IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG}
                         isChecked={
                             formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_TAG
+                        }
+                        onChange={onImageAppliesToOnChange}
+                    />
+                    <Radio
+                        id="appliesToOnlyThisImageDigest"
+                        name="imageAppliesTo"
+                        label={IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_DIGEST}
+                        value={IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_DIGEST}
+                        isChecked={
+                            formik.values.imageAppliesTo === IMAGE_APPLIES_TO.ONLY_THIS_IMAGE_DIGEST
                         }
                         onChange={onImageAppliesToOnChange}
                     />

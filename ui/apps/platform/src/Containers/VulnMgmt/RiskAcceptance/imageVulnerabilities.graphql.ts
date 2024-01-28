@@ -52,6 +52,7 @@ export type GetImageVulnerabilitiesData = {
             registry: string;
             remote: string;
             tag: string;
+            digest: string;
         };
         vulnCount: number;
         vulns: Vulnerability[];
@@ -130,6 +131,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                             registry
                             remote
                             tag
+                            digest
                         }
                     }
                     cves {

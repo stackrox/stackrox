@@ -321,6 +321,7 @@ var (
 	ImageRegistryScope          = newFieldLabel("Image Registry Scope")
 	ImageRemoteScope            = newFieldLabel("Image Remote Scope")
 	ImageTagScope               = newFieldLabel("Image Tag Scope")
+	ImageDigestScope			= newFieldLabel("Image Digest Scope")
 	RequesterUserID             = newFieldLabel("Requester User ID")
 	RequesterUserName           = newFieldLabel("Requester User Name")
 	ApproverUserID              = newFieldLabel("Approver User ID")

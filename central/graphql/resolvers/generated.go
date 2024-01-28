@@ -1427,6 +1427,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"images: VulnReqImageScope",
 	}))
 	utils.Must(builder.AddInput("VulnReqImageScope", []string{
+		"digest: String",
 		"registry: String",
 		"remote: String",
 		"tag: String",
@@ -1450,6 +1451,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
+		"digest: String!",
 		"registry: String!",
 		"remote: String!",
 		"tag: String!",
@@ -15579,6 +15581,11 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_ImagesWithContext(ctx c
 		output[i] = &vulnerabilityRequest_Scope_ImageResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_ImageResolver) Digest(ctx context.Context) string {
+	value := resolver.data.GetDigest()
+	return value
 }
 
 func (resolver *vulnerabilityRequest_Scope_ImageResolver) Registry(ctx context.Context) string {
