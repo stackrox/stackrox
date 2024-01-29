@@ -61,7 +61,7 @@ function ScanConfigWizardFooter({
         );
     }
 
-    function renderModal() {
+    function renderModal(leaveWizard: () => void) {
         return (
             <Modal
                 variant="small"
@@ -69,7 +69,7 @@ function ScanConfigWizardFooter({
                 isOpen={isModalOpen}
                 onClose={closeModal}
                 actions={[
-                    <Button key="confirm" variant="primary" onClick={closeModal}>
+                    <Button key="confirm" variant="primary" onClick={leaveWizard}>
                         Confirm
                     </Button>,
                     <Button key="cancel" variant="secondary" onClick={closeModal}>
@@ -88,10 +88,10 @@ function ScanConfigWizardFooter({
     return (
         <WizardFooter>
             <WizardContextConsumer>
-                {({ activeStep, onNext, onBack }) => (
+                {({ activeStep, onNext, onBack, onClose }) => (
                     <>
                         {renderButtons(activeStep.id, onNext, onBack)}
-                        {renderModal()}
+                        {renderModal(onClose)}
                     </>
                 )}
             </WizardContextConsumer>
