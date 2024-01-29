@@ -17,6 +17,8 @@ func WithModifyDeclarativeResource(ctx context.Context) context.Context {
 	return context.WithValue(ctx, originCheckerKey{}, allowOnlyDeclarativeOperations)
 }
 
+// WithModifyDeclarativeOrImperative returns a context that is a child of the given context and allows to modify
+// proto messages with the traits origin == DECLARATIVE or DECLARATIVE_ORPHANED or IMPERATIVE
 func WithModifyDeclarativeOrImperative(ctx context.Context) context.Context {
 	return context.WithValue(ctx, originCheckerKey{}, allowModifyDeclarativeOrImperative)
 }
