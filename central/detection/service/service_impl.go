@@ -228,11 +228,13 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
-	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
-	if err != nil {
-		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
-	} else {
-		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+	if enrichmentContext.ClusterID != "" {
+		appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+		if err != nil {
+			log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
+		} else {
+			log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+		}
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
@@ -406,7 +408,6 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
 	}
 
-	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
 	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
 	if eCtx.ClusterID != "" && s.connManager.GetConnection(eCtx.ClusterID).HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
