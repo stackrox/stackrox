@@ -21,7 +21,7 @@ type ClusterStatusObject = {
 export type ScanConfigParameters = {
     name: string;
     description: string;
-    intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | null;
+    intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'UNSET';
     time: string;
     daysOfWeek: DayOfWeek[];
     daysOfMonth: DayOfMonth[];
@@ -97,93 +97,43 @@ export function convertFormikParametersToSchedule(parameters: ScanConfigParamete
     }
 }
 
-// TODO: is there a saner way to let TS know string from a subset of numbers is string of that same subset?
-function getDayOfWeekString(day): DayOfWeek {
-    if (day === 0) {
-        return '0';
-    }
-    if (day === 1) {
-        return '1';
-    }
-    if (day === 2) {
-        return '2';
-    }
-    if (day === 3) {
-        return '3';
-    }
-    if (day === 4) {
-        return '4';
-    }
-    if (day === 5) {
-        return '5';
-    }
-    if (day === 6) {
-        return '6';
-    }
-    return '0'; // fallback, default to first day of week
-}
-// TODO: is there a saner way to let TS know string from a subset of numbers is string of that same subset?
-function getDayOfMonthString(day): DayOfMonth {
-    if (day === 1) {
-        return '1';
-    }
-    if (day === 15) {
-        return '15';
-    }
-    return '1'; // fallback, default to first day of month
-}
-
 export function convertScheduleToFormikParameters(
     scanSchedule: Schedule
 ): Pick<ScanConfigParameters, 'intervalType' | 'time' | 'daysOfWeek' | 'daysOfMonth'> {
-    const { intervalType, hour, minute } = scanSchedule;
+    const { hour, minute } = scanSchedule;
 
     // eslint-disable-next-line no-nested-ternary
     const adjustedHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-
     const suffix = hour > 12 ? 'PM' : 'AM';
+    const time = `${adjustedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
 
-    const timeString = `${adjustedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
+    let intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'UNSET' = 'UNSET';
+    let daysOfWeek: DayOfWeek[] = [];
+    let daysOfMonth: DayOfMonth[] = [];
 
-    switch (intervalType) {
-        case 'WEEKLY': {
-            return {
-                intervalType: 'WEEKLY',
-                time: timeString,
-                daysOfWeek: scanSchedule.daysOfWeek.days.map((day) => getDayOfWeekString(day)),
-                daysOfMonth: [],
-            };
-        }
-
-        case 'MONTHLY': {
-            return {
-                intervalType: 'MONTHLY',
-                time: timeString,
-                daysOfWeek: [],
-                daysOfMonth: scanSchedule.daysOfMonth.days.map((day) => getDayOfMonthString(day)),
-            };
-        }
-
-        case 'DAILY': {
-            return {
-                intervalType: 'DAILY',
-                time: timeString,
-                daysOfWeek: [],
-                daysOfMonth: [],
-            };
-        }
-
+    switch (scanSchedule.intervalType) {
+        case 'WEEKLY':
+            intervalType = 'WEEKLY';
+            daysOfWeek = scanSchedule.daysOfWeek.days.map(String) as DayOfWeek[];
+            break;
+        case 'MONTHLY':
+            intervalType = 'MONTHLY';
+            daysOfMonth = scanSchedule.daysOfMonth.days.map(String) as DayOfMonth[];
+            break;
+        case 'DAILY':
+            intervalType = 'DAILY';
+            break;
         case 'UNSET':
-        case null:
-        default: {
-            return {
-                intervalType: null,
-                time: timeString,
-                daysOfWeek: [],
-                daysOfMonth: [],
-            };
-        }
+        default:
+            break;
     }
+
+    return {
+        intervalType,
+        daysOfWeek,
+        daysOfMonth,
+        time,
+    };
 }
 
 export function convertFormikToScanConfig(formikValues: ScanConfigFormValues) {

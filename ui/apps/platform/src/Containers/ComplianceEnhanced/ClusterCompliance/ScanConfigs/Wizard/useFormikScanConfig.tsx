@@ -7,7 +7,7 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
     parameters: {
         name: '',
         description: '',
-        intervalType: null,
+        intervalType: 'DAILY',
         time: '',
         daysOfWeek: [],
         daysOfMonth: [],
