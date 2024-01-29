@@ -19,7 +19,7 @@ collectors:
 - type: pod
   selector: app=scanner-v4-matcher
   tail: -1
-  - type: pod
+- type: pod
   selector: app=scanner-v4-db
   tail: -1
 - command: kubectl describe pod -n $NAMESPACE -l app=central
