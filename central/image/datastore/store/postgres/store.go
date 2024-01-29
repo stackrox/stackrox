@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -46,6 +47,8 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
+
+	cursorBatchSize = 50
 )
 
 var (
@@ -1148,6 +1151,56 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 		}
 	}
 	return elems, missingIndices, nil
+}
+
+// WalkByQuery returns the objects specified by the query
+func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
+
+	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Errorf("error rolling back: %v", err)
+		}
+	}()
+
+	ctxWithTx := postgres.ContextWithTx(ctx, tx)
+	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Image, *storage.Image](ctxWithTx, pkgSchema.ImagesSchema, q, s.db)
+	if err != nil {
+		return err
+	}
+	defer closer()
+	for {
+		rows, err := fetcher(cursorBatchSize)
+		if err != nil {
+			return pgutils.ErrNilIfNoRows(err)
+		}
+		for _, data := range rows {
+			img, exists, err := s.getFullImage(ctx, tx, data.GetId())
+			if err != nil {
+				return err
+			}
+			if !exists {
+				continue
+			}
+			if err := fn(img); err != nil {
+				return err
+			}
+		}
+		if len(rows) != cursorBatchSize {
+			break
+		}
+	}
+	return nil
 }
 
 //// Used for testing

@@ -17,10 +17,10 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		return nil
 	}
 
-	for idx, so := range pagination.GetSortOptions() {
-		if idx != 0 && so.GetSearchAfter() != "" {
-			return errors.New("search after for pagination must be defined for only the first sort option")
-		}
+	for _, so := range pagination.GetSortOptions() {
+		//if idx != 0 && so.GetSearchAfter() != "" {
+		//	return errors.New("search after for pagination must be defined for only the first sort option")
+		//}
 		if so.GetField() == searchPkg.DocID.String() {
 			var cast string
 			if schema.ID().SQLType == "uuid" {
@@ -81,18 +81,19 @@ func applyPaginationForSearchAfter(query *query) error {
 	if len(pagination.OrderBys) == 0 {
 		return nil
 	}
-	firstOrderBy := pagination.OrderBys[0]
-	if firstOrderBy.SearchAfter == "" {
-		return nil
+	for _, ob := range pagination.OrderBys {
+		if ob.SearchAfter == "" {
+			continue
+		}
+		if query.Where != "" {
+			query.Where += " and "
+		}
+		operand := ">"
+		if ob.Descending {
+			operand = "<"
+		}
+		query.Where += fmt.Sprintf("%s %s $$", ob.Field.SelectPath, operand)
+		query.Data = append(query.Data, ob.SearchAfter)
 	}
-	if query.Where != "" {
-		query.Where += " and "
-	}
-	operand := ">"
-	if firstOrderBy.Descending {
-		operand = "<"
-	}
-	query.Where += fmt.Sprintf("%s %s $$", firstOrderBy.Field.SelectPath, operand)
-	query.Data = append(query.Data, firstOrderBy.SearchAfter)
 	return nil
 }

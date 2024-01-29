@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/export"
 )
 
 // Command defines the central command tree
@@ -31,6 +32,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
 		login.Command(cliEnvironment),
+		export.Command(cliEnvironment),
 	)
 	return c
 }

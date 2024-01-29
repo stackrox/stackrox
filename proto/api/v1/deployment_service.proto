@@ -43,6 +43,15 @@ message GetDeploymentWithRiskResponse {
   storage.Risk risk = 2;
 }
 
+message ExportDeploymentRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportDeploymentResponse {
+  storage.Deployment deployment = 1;
+}
+
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
   // GetDeployment returns a deployment given its ID.
@@ -73,5 +82,9 @@ service DeploymentService {
   // GetLabels returns the labels used by deployments.
   rpc GetLabels(Empty) returns (DeploymentLabelsResponse) {
     option (google.api.http) = {get: "/v1/deployments/metadata/labels"};
+  }
+
+  rpc Export(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
+    option (google.api.http) = {get: "/v1/export/deployments"};
   }
 }

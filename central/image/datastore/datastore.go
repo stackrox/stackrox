@@ -30,6 +30,7 @@ type DataStore interface {
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
 	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
 	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error

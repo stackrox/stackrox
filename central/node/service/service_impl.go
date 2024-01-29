@@ -24,6 +24,7 @@ var (
 		user.With(permissions.View(resources.Node)): {
 			"/v1.NodeService/GetNode",
 			"/v1.NodeService/ListNodes",
+			"/v1.NodeService/Export",
 		},
 	})
 )
@@ -79,4 +80,17 @@ func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (
 		return nil, errors.Wrapf(errox.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
 	return node, nil
+}
+
+func (s *nodeServiceImpl) Export(req *v1.ExportNodeRequest, srv v1.NodeService_ExportServer) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	return s.nodeDatastore.WalkByQuery(srv.Context(), parsedQuery, func(node *storage.Node) error {
+		if err := srv.Send(&v1.ExportNodeResponse{Node: node}); err != nil {
+			return err
+		}
+		return nil
+	})
 }

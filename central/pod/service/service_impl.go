@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -26,6 +27,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			"/v1.PodService/GetPods",
+			"/v1.PodService/Export",
 		},
 	})
 )
@@ -71,4 +73,17 @@ func (s *serviceImpl) GetPods(ctx context.Context, request *v1.RawQuery) (*v1.Po
 	return &v1.PodsResponse{
 		Pods: pods,
 	}, nil
+}
+
+func (s *serviceImpl) Export(req *v1.ExportPodRequest, srv v1.PodService_ExportServer) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	return s.datastore.WalkByQuery(srv.Context(), parsedQuery, func(p *storage.Pod) error {
+		if err := srv.Send(&v1.ExportPodResponse{Pod: p}); err != nil {
+			return err
+		}
+		return nil
+	})
 }

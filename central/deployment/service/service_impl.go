@@ -43,6 +43,7 @@ var (
 			"/v1.DeploymentService/ListDeployments",
 			"/v1.DeploymentService/GetLabels",
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
+			"/v1.DeploymentService/Export",
 		},
 	})
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
@@ -58,6 +59,19 @@ type serviceImpl struct {
 	processBaselineResults processBaselineResultsStore.DataStore
 	risks                  riskDataStore.DataStore
 	manager                manager.Manager
+}
+
+func (s *serviceImpl) Export(request *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportServer) error {
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	return s.datastore.WalkByQuery(srv.Context(), parsedQuery, func(d *storage.Deployment) error {
+		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d}); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessBaselineResults, error) {

@@ -178,6 +178,11 @@ func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
 	return p
 }
 
+// Proto returns the proto version of the pagination query
+func (p *Pagination) Proto() *v1.QueryPagination {
+	return p.qp
+}
+
 // SortOption describes the way to sort the query
 type SortOption struct {
 	field       FieldLabel
