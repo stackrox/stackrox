@@ -96,7 +96,6 @@ func newManager(standardsRegistry *standards.Registry, complianceOperatorManager
 }
 
 func (m *manager) createDomain(ctx context.Context, clusterID string) (framework.ComplianceDomain, error) {
-	t := time.Now()
 	cluster, ok, err := m.clusterStore.GetCluster(ctx, clusterID)
 	if err == nil && !ok {
 		err = errors.New("cluster not found")
@@ -106,7 +105,6 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	}
 
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	t = time.Now()
 	results, err := m.nodeStore.Search(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
@@ -116,13 +114,11 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	t = time.Now()
 	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
 
-	t = time.Now()
 	machineConfigs, err := m.complianceOperatorManager.GetMachineConfigs(clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting machine configs for cluster %s", clusterID)
@@ -338,12 +334,10 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 				sac.ResourceScopeKeys(resources.Compliance),
 			),
 		)
-		log.Infof("Storing domain for %s", clusterID)
 		err = m.resultsStore.StoreComplianceDomain(domainWriteCtx, domainPB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)
 		}
-		log.Infof("Stored domain for %s", clusterID)
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
 		perClusterDataRepoOnce := &perClusterDataRepoFactory{
