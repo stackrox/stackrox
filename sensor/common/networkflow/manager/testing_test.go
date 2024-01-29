@@ -34,7 +34,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
 		finished:          &sync.WaitGroup{},
-		activeConnections: make(map[connection]networkConnIndicator),
+		activeConnections: make(map[connection]*networkConnIndicator),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }

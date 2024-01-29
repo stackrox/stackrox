@@ -215,7 +215,7 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		finished:          &sync.WaitGroup{},
-		activeConnections: make(map[connection]networkConnIndicator),
+		activeConnections: make(map[connection]*networkConnIndicator),
 	}
 
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -240,7 +240,7 @@ type networkFlowManager struct {
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
-	activeConnections map[connection]networkConnIndicator
+	activeConnections map[connection]*networkConnIndicator
 
 	done          concurrency.Signal
 	sensorUpdates chan *message.ExpiringMessage
@@ -454,7 +454,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			if activeConn, found := m.activeConnections[*conn]; found {
-				enrichedConnections[activeConn] = timestamp.Now()
+				enrichedConnections[*activeConn] = timestamp.Now()
 				delete(m.activeConnections, *conn)
 				flowMetrics.SetActiveFlowsTrackerSizeGauge(len(m.activeConnections))
 				return
@@ -558,7 +558,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
 				enrichedConnections[indicator] = status.lastSeen
 				if status.lastSeen == timestamp.InfiniteFuture {
-					m.activeConnections[*conn] = indicator
+					m.activeConnections[*conn] = &indicator
 					flowMetrics.SetActiveFlowsTrackerSizeGauge(len(m.activeConnections))
 				} else {
 					delete(m.activeConnections, *conn)
