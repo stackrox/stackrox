@@ -5,7 +5,7 @@ out_dir=""
 templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
-    [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+    delete-outdated-binaries "$(roxctl-development version)"
     echo "Testing roxctl version: '$(roxctl-development version)'" >&3
 }
 
