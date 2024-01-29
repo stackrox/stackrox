@@ -63,10 +63,11 @@ func (s *handlerTestSuite) SetupTest() {
 func (s *handlerTestSuite) TearDownSuite() {
 	entries, err := os.ReadDir(s.tmpDir)
 	s.NoError(err)
-	s.LessOrEqual(len(entries), 2)
-	if len(entries) == 2 {
+	s.LessOrEqual(len(entries), 3)
+	if len(entries) == 3 {
 		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
 		s.True(strings.HasPrefix(entries[1].Name(), definitionsBaseDir))
+		s.True(strings.HasPrefix(entries[2].Name(), definitionsBaseDir))
 	}
 
 	s.testDB.Teardown(s.T())
@@ -84,6 +85,14 @@ func (s *handlerTestSuite) mustGetRequest(t *testing.T) *http.Request {
 
 func (s *handlerTestSuite) getRequestWithJSONFile(t *testing.T, file string) *http.Request {
 	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?file=%s", file)
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
+	require.NoError(t, err)
+
+	return req
+}
+
+func (s *handlerTestSuite) getRequestWithVersionedFile(t *testing.T, v string) *http.Request {
+	centralURL := fmt.Sprintf("https://central.stackrox.svc/scannerdefinitions?version=%s", v)
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, centralURL, nil)
 	require.NoError(t, err)
 
@@ -177,6 +186,32 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotModified, w.Code)
 	assert.Empty(t, w.Data.String())
+}
+
+func (s *handlerTestSuite) TestServeHTTP_Online_ZSTD_Bundle_Get() {
+	t := s.T()
+	h := New(s.datastore, handlerOpts{})
+
+	w := mock.NewResponseWriter()
+
+	req := s.getRequestWithVersionedFile(t, "randomName")
+	h.ServeHTTP(w, req)
+	// If the version is invalid or versioned bundle cannot be found, it's a 500
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	// Should get zstd file from online update.
+	req = s.getRequestWithVersionedFile(t, "dev")
+	w.Data.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
+
+	// Should get mapping json file from online update.
+	req = s.getRequestWithVersionedFile(t, "4.3.x-nightly-20240105")
+	w.Data.Reset()
+	h.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
