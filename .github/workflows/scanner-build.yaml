@@ -16,7 +16,7 @@ on:
 jobs:
   define-scanner-job-matrix:
     outputs:
-      matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+      matrix: ${{ steps.define-scanner-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -25,7 +25,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Define the matrix for build jobs
-      id: define-job-matrix
+      id: define-scanner-job-matrix
       run: |
         source './scripts/ci/lib.sh'
 
@@ -146,7 +146,7 @@ jobs:
       run: |
         source ./scripts/ci/lib.sh
 
-        # If this is updated, be sure to update goarch in define-job-matrix above.
+        # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
         architectures="amd64,arm64,ppc64le,s390x"
 
         push_scanner_image_manifest_lists "$architectures"
