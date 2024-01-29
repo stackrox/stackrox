@@ -143,11 +143,16 @@ export type RequestScopeProps = {
 
 export function RequestScope({ scope }: RequestScopeProps) {
     const { registry, remote, tag } = scope.imageScope;
-    const text =
-        registry === '.*' && remote === '.*' && tag === '.*'
-            ? '.*'
-            : `${registry}/${remote}:${tag}`;
-    return <div>{text}</div>;
+
+    if (registry === '.*' && remote === '.*' && tag === '.*') {
+        return <div>.*</div>;
+    }
+    if (tag === '') {
+        // If tag is empty, the image is referenced by hash, which is unsupported by the backend. This
+        // is effectively the same as .*, so we adjust the text here for clarity.
+        return <div>{`${registry}/${remote}:.*`}</div>;
+    }
+    return <div>{`${registry}/${remote}:${tag}`}</div>;
 }
 
 export type RequestedItemsProps = {
