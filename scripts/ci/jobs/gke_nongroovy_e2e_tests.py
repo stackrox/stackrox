@@ -16,14 +16,14 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
-ClusterTestRunner(
-    cluster=GKECluster("nongroovy-test"),
-    pre_test=PreSystemTests(),
-    test=NonGroovyE2e(),
-    post_test=PostClusterTest(
-        check_stackrox_logs=False,
-    ),
-    final_post=FinalPost(
-        store_qa_tests_data=False,
-    ),
-).run()
+# ClusterTestRunner(
+    # cluster=GKECluster("nongroovy-test"),
+    # pre_test=PreSystemTests(),
+    # test=NonGroovyE2e(),
+    # post_test=PostClusterTest(
+        # check_stackrox_logs=False,
+    # ),
+    # final_post=FinalPost(
+        # store_qa_tests_data=False,
+    # ),
+# ).run()

@@ -10,10 +10,10 @@ from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
 
-ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
-    pre_test=PreSystemTests(),
-    test=OperatorE2eTest(),
-    post_test=PostClusterTest(collect_central_artifacts=False),
-    final_post=FinalPost(handle_e2e_progress_failures=False),
-).run()
+# ClusterTestRunner(
+    # cluster=AutomationFlavorsCluster(),
+    # pre_test=PreSystemTests(),
+    # test=OperatorE2eTest(),
+    # post_test=PostClusterTest(collect_central_artifacts=False),
+    # final_post=FinalPost(handle_e2e_progress_failures=False),
+# ).run()

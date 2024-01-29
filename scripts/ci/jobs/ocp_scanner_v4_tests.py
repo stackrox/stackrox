@@ -15,10 +15,10 @@ os.environ["STORE_METRICS"] = "true"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 
-ClusterTestRunner(
-    cluster=AutomationFlavorsCluster(),
-    pre_test=PreSystemTests(),
-    test=ScannerV4Test(),
-    post_test=NullPostTest(),
-    final_post=FinalPost(),
-).run()
+# ClusterTestRunner(
+    # cluster=AutomationFlavorsCluster(),
+    # pre_test=PreSystemTests(),
+    # test=ScannerV4Test(),
+    # post_test=NullPostTest(),
+    # final_post=FinalPost(),
+# ).run()

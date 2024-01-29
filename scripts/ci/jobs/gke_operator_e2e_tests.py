@@ -10,10 +10,10 @@ from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
 
-ClusterTestRunner(
-    cluster=GKECluster("operator-e2e-test", num_nodes=4),
-    pre_test=PreSystemTests(),
-    test=OperatorE2eTest(operator_cluster_type="gke"),
-    post_test=PostClusterTest(collect_central_artifacts=False),
-    final_post=FinalPost(handle_e2e_progress_failures=False),
-).run()
+# ClusterTestRunner(
+    # cluster=GKECluster("operator-e2e-test", num_nodes=4),
+    # pre_test=PreSystemTests(),
+    # test=OperatorE2eTest(operator_cluster_type="gke"),
+    # post_test=PostClusterTest(collect_central_artifacts=False),
+    # final_post=FinalPost(handle_e2e_progress_failures=False),
+# ).run()

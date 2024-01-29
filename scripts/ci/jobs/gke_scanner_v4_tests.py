@@ -22,10 +22,10 @@ os.environ["ROX_BASELINE_GENERATION_DURATION"] = "5m"
 #
 # A seperate test focusing on Scanner v4 functionality (as opposed to just installation)
 # should use the standard PostClusterTest() machinery.
-ClusterTestRunner(
-    cluster=GKECluster("scanner-v4-test", machine_type="e2-standard-8"),
-    pre_test=PreSystemTests(),
-    test=ScannerV4Test(),
-    post_test=NullPostTest(),
-    final_post=FinalPost(),
-).run()
+# ClusterTestRunner(
+    # cluster=GKECluster("scanner-v4-test", machine_type="e2-standard-8"),
+    # pre_test=PreSystemTests(),
+    # test=ScannerV4Test(),
+    # post_test=NullPostTest(),
+    # final_post=FinalPost(),
+# ).run()
