@@ -96,14 +96,14 @@ export type ComplianceCheckStatusCount = {
     status: ComplianceCheckStatus;
 };
 
-type ComplianceScanStatsShim = {
+export type ComplianceScanStatsShim = {
     scanName: string;
     checkStats: ComplianceCheckStatusCount[];
     lastScan: string; // ISO 8601 date string
 };
 
-type ComplianceClusterScanStats = {
-    checkStats: ComplianceCheckStatusCount[];
+export type ComplianceClusterScanStats = {
+    scanStats: ComplianceScanStatsShim;
     cluster: ComplianceScanCluster;
 };
 
@@ -240,7 +240,12 @@ export function getSingleClusterCombinedStats(
         });
 }
 
-export function getComplianceClusterScanStats(
+/**
+ * Fetches stats for all clusters grouped by scan config
+ * Note: this function and getSingleClusterStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersStatsByScanConfig(
     page?: number,
     pageSize?: number
 ): Promise<ComplianceClusterScanStats[]> {
@@ -251,6 +256,28 @@ export function getComplianceClusterScanStats(
         reversed: false,
     };
     const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterScanStats[];
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster grouped by scan config
+ * Note: this function and getAllClustersStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterStatsByScanConfig(
+    clusterId: string
+): Promise<ComplianceClusterScanStats[] | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
 
     return axios
         .get<{

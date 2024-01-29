@@ -28,7 +28,7 @@ import { getAllClustersCombinedStats } from 'services/ComplianceEnhancedService'
 import {
     calculateCompliancePercentage,
     getCompliancePfClassName,
-    getPassAndTotalCount,
+    getStatusCounts,
 } from './compliance.coverage.utils';
 
 function ClustersCoverageTable() {
@@ -43,7 +43,7 @@ function ClustersCoverageTable() {
 
     const renderTableContent = () => {
         return clusterScanStats?.map(({ cluster, checkStats }, index) => {
-            const { passCount, totalCount } = getPassAndTotalCount(checkStats);
+            const { passCount, totalCount } = getStatusCounts(checkStats);
             const passPercentage = calculateCompliancePercentage(passCount, totalCount);
 
             return (
