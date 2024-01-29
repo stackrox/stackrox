@@ -27,11 +27,24 @@ message ListComplianceIntegrationsResponse {
     repeated ComplianceIntegration integrations = 1;
 }
 
+// CountComplianceIntegrationsResponse gives count of compliance integrations
+message CountComplianceIntegrationsResponse {
+    int32 count = 1;
+}
+
 service ComplianceIntegrationService {
     // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
     rpc ListComplianceIntegrations (RawQuery) returns (ListComplianceIntegrationsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/integrations"
+        };
+    }
+
+    // GetComplianceIntegrationsCount returns the number of compliance operator integrations
+    // matching the given query
+    rpc GetComplianceIntegrationsCount(RawQuery) returns (CountComplianceIntegrationsResponse){
+        option (google.api.http) = {
+            get: "/v2/compliance/integrations/count"
         };
     }
 }

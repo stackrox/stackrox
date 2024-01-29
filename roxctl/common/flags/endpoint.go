@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -83,16 +85,20 @@ func AddConnectionFlags(c *cobra.Command) {
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
-// connect in plaintext mode.
+// connect in plaintext mode. As connection requires a port it deduces it from provided schema. If schema is not provided
+// the givenEndpoint must contain port or error is returned.
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
+		if _, _, err := net.SplitHostPort(endpoint); err != nil {
+			return "", false, errox.InvalidArgs.CausedBy(err)
+		}
 		return endpoint, plaintext, nil
 	}
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return "", false, errors.Wrap(err, "malformed endpoint URL")
+		return "", false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	if u.Path != "" && u.Path != "/" {
@@ -100,13 +106,16 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	}
 
 	var usePlaintext bool
+	var defaultPort int
 	switch u.Scheme {
 	case "http":
+		defaultPort = 80
 		usePlaintext = true
 	case "https":
+		defaultPort = 443
 		usePlaintext = false
 	default:
-		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, the scheme should be: http(s)://<endpoint>:<port>", u.Scheme)
+		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, use either 'http' or 'https'", u.Scheme)
 	}
 
 	if *plaintextSet ||
@@ -114,6 +123,10 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 		if booleanFlagOrSettingValue(plaintext, *plaintextSet, env.PlaintextEnv) != usePlaintext {
 			return "", false, errox.InvalidArgs.Newf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
 		}
+	}
+
+	if u.Port() == "" {
+		u.Host = fmt.Sprintf("%s:%d", u.Host, defaultPort)
 	}
 
 	return u.Host, usePlaintext, nil

@@ -1,4 +1,4 @@
-syntax = "proto3";
+    syntax = "proto3";
 
 option go_package = "v2";
 option java_package = "io.stackrox.proto.api.v2";

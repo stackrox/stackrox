@@ -74,6 +74,7 @@ function ApprovedDeferrals() {
                     ...searchFilter,
                     'Request Status': ['APPROVED', 'APPROVED_PENDING_UPDATE'],
                     'Requested Vulnerability State': 'DEFERRED',
+                    'Expired Request': 'false',
                 },
                 sortOption,
                 page - 1,
