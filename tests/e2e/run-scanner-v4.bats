@@ -75,6 +75,18 @@ setup() {
     export ROX_SCANNER_V4=true
 }
 
+describe_pods_in_namespace() {
+    local namespace="$1"
+    info "Pods in namespace ${namespace}:"
+    "${ORCH_CMD}" -n "${namespace}" get pods
+    echo
+    "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
+      echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
+      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
+      echo
+    done
+}
+
 teardown() {
     local central_namespace=""
     local sensor_namespace=""
@@ -96,14 +108,11 @@ teardown() {
         fi
     fi
 
-    if [[ -z "${BATS_TEST_COMPLETED:-}" ]]; then
-        # Test failed, collect some analysis data.
-        info "Pods in namespace ${central_namespace}:"
-        "${ORCH_CMD}" -n "${central_namespace}" get pods
-
+    if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" ]]; then
+        # Test did not "complete" and was not skipped. Collect some analysis data.
+        describe_pods_in_namespace "${central_namespace}"
         if [[ "${central_namespace}" != "${sensor_namespace}" ]]; then
-            info "Pods in namespace ${sensor_namespace}:"
-            "${ORCH_CMD}" -n "${sensor_namespace}" get pods
+            describe_pods_in_namespace "${sensor_namespace}"
         fi
     fi
 
