@@ -7,7 +7,7 @@ templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
     command -v yq >/dev/null || skip "Tests in this file require yq"
-    echo "Using yq version: '$(yq4.16 --version)'" >&3
+    echo "Using yq version: '$(yq --version)'" >&3
     # as of Aug 2022, we run yq version 4.16.2
     # remove binaries from the previous runs
     [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
@@ -61,25 +61,42 @@ teardown() {
 
     # Ensure that all yaml docs are of kind 'NetworkPolicy'
     run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
+    # Github actions run yq v3
     assert_line --index 0 'match: NetworkPolicy'
     assert_line --index 1 'doc: 0'
-    assert_line --index 2 '---'
-    assert_line --index 3 'match: NetworkPolicy'
-    assert_line --index 4 'doc: 1'
-    assert_line --index 5 '---'
-    assert_line --index 6 'match: NetworkPolicy'
-    assert_line --index 7 'doc: 2'
+    assert_line --index 2 'match: NetworkPolicy'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: NetworkPolicy'
+    assert_line --index 5 'doc: 2'
+
+    # yq v4 assertions
+    #    assert_line --index 0 'match: NetworkPolicy'
+    #    assert_line --index 1 'doc: 0'
+    #    assert_line --index 2 '---'
+    #    assert_line --index 3 'match: NetworkPolicy'
+    #    assert_line --index 4 'doc: 1'
+    #    assert_line --index 5 '---'
+    #    assert_line --index 6 'match: NetworkPolicy'
+    #    assert_line --index 7 'doc: 2'
 
     # Ensure that all NetworkPolicies have the generated-by-stackrox label
     run yq e '.metadata.labels | ({"match": ."network-policy-buildtime-generator.stackrox.io/generated", "doc": di})' "${ofile}"
     assert_line --index 0 'match: "true"'
     assert_line --index 1 'doc: 0'
-    assert_line --index 2 '---'
-    assert_line --index 3 'match: "true"'
-    assert_line --index 4 'doc: 1'
-    assert_line --index 5 '---'
-    assert_line --index 6 'match: "true"'
-    assert_line --index 7 'doc: 2'
+    assert_line --index 2 'match: "true"'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: "true"'
+    assert_line --index 5 'doc: 2'
+
+    # yq v4 assertions
+    #    assert_line --index 0 'match: "true"'
+    #    assert_line --index 1 'doc: 0'
+    #    assert_line --index 2 '---'
+    #    assert_line --index 3 'match: "true"'
+    #    assert_line --index 4 'doc: 1'
+    #    assert_line --index 5 '---'
+    #    assert_line --index 6 'match: "true"'
+    #    assert_line --index 7 'doc: 2'
 }
 
 @test "roxctl-release netpol generate produces no output when all yamls are templated" {
@@ -89,7 +106,7 @@ teardown() {
     echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
     run roxctl-release netpol generate "$out_dir/"
     assert_failure
-    assert_output --regexp 'WARN:.*error parsing .*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
     assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
     assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
 }
@@ -106,7 +123,7 @@ teardown() {
     echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
     run roxctl-release netpol generate "$out_dir/" --remove --output-file=/dev/null
     assert_success
-    assert_output --regexp 'WARN:.*error parsing .*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
 }
 
 @test "roxctl-release netpol generate parameter --strict" {

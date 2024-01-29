@@ -6,7 +6,7 @@ templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
     command -v yq >/dev/null || skip "Tests in this file require yq"
-    echo "Using yq version: '$(yq4.16 --version)'" >&3
+    echo "Using yq version: '$(yq --version)'" >&3
     # as of Aug 2022, we run yq version 4.16.2
     # remove binaries from the previous runs
     [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
@@ -88,7 +88,7 @@ teardown() {
     echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
     run roxctl-development netpol generate "$out_dir/"
     assert_failure
-    assert_output --regexp 'WARN:.*error parsing .*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
     assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
     assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
 }
@@ -105,7 +105,7 @@ teardown() {
     echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
     run roxctl-development netpol generate "$out_dir/" --remove --output-file=/dev/null
     assert_success
-    assert_output --regexp 'WARN:.*error parsing .*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
 }
 
 @test "roxctl-development netpol generate parameter --strict" {

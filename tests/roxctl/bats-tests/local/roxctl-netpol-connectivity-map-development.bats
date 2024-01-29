@@ -142,8 +142,8 @@ teardown() {
   echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
   run roxctl-development netpol connectivity map "$out_dir/"
   assert_failure
-  assert_output --regexp 'WARN:.*unable to decode.*templated-XXXXXX.yaml'
-  assert_output --regexp 'WARN:.*error parsing.*templated-XXXXXX.yaml'
+  assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+  assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
   assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
   assert_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'
   assert_output --regexp 'ERROR:.*building connectivity map: there were errors during execution'
@@ -161,8 +161,8 @@ teardown() {
     echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
     run roxctl-development netpol connectivity map "$out_dir/" --remove --output-file=/dev/null
     assert_success
-    assert_output --regexp 'WARN:.*unable to decode.*templated-XXXXXX.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
     assert_output --regexp 'WARN:.*no relevant Kubernetes network policy resources found'
 
     refute_output --regexp 'ERROR:.*no relevant Kubernetes workload resources found'

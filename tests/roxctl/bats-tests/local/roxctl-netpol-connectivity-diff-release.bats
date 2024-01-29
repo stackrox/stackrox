@@ -58,10 +58,10 @@ teardown() {
     assert_failure
     assert_line --regexp "INFO:.*No connections diff"
 
-    assert_output --regexp 'WARN:.*unable to decode.*templated-01-XXXXXX-file1.yaml'
-    assert_output --regexp 'WARN:.*unable to decode.*templated-02-XXXXXX-file2.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-01-XXXXXX-file1.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-02-XXXXXX-file2.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-01-.*-file1.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-02-.*-file2.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-01-.*-file1.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-02-.*-file2.yaml'
 
     assert_line --regexp "WARN:.*at dir1: no relevant Kubernetes network policy resources found"
     refute_output --regexp "WARN:.*at dir2: no relevant Kubernetes network policy resources found"
@@ -80,10 +80,10 @@ teardown() {
     assert_failure
     assert_line --regexp "INFO:.*No connections diff"
 
-    assert_output --regexp 'WARN:.*unable to decode.*templated-01-XXXXXX-file1.yaml'
-    assert_output --regexp 'WARN:.*unable to decode.*templated-02-XXXXXX-file2.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-01-XXXXXX-file1.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-02-XXXXXX-file2.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-01-.*-file1.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-02-.*-file2.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-01-.*-file1.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-02-.*-file2.yaml'
 
     assert_line --regexp "WARN:.*at dir1: no relevant Kubernetes network policy resources found"
     assert_line --regexp "WARN:.*at dir2: no relevant Kubernetes network policy resources found"
@@ -102,8 +102,8 @@ teardown() {
     assert_failure
     assert_line --regexp "INFO:.*No connections diff"
 
-    assert_output --regexp 'WARN:.*unable to decode.*templated-XXXXXX.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
 
     assert_line --regexp "WARN:.*at dir1: no relevant Kubernetes network policy resources found"
     assert_line --regexp "WARN:.*at dir2: no relevant Kubernetes network policy resources found"
@@ -126,8 +126,8 @@ teardown() {
     run roxctl-release netpol connectivity diff --dir1="$out_dir/" --dir2="$out_dir/" --remove --output-file=/dev/null --fail
     assert_success
     assert_line --regexp "INFO:.*No connections diff"
-    assert_output --regexp 'WARN:.*unable to decode.*templated-XXXXXX.yaml'
-    assert_output --regexp 'WARN:.*error parsing.*templated-XXXXXX.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*templated-.*.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*templated-.*.yaml'
     assert_line --regexp "WARN:.*at dir1: no relevant Kubernetes network policy resources found"
     assert_line --regexp "WARN:.*at dir2: no relevant Kubernetes network policy resources found"
 }
