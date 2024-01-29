@@ -13,7 +13,8 @@ export function setClock(currentDatetime) {
 
 // visit
 
-export const integrationHealthVulnDefinitionsAlias = 'integrationhealth/vulndefinitions';
+export const integrationHealthVulnDefinitionsAlias =
+    'integrationhealth/vulndefinitions?component=*';
 export const integrationHealthDeclarativeConfigsAlias = 'declarative-config/health';
 
 const SystemHealthHeadingSelector = 'h1:contains("System Health")';
