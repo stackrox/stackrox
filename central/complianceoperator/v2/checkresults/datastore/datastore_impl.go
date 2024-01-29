@@ -149,6 +149,27 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	return countResults, nil
 }
 
+// ComplianceClusterStatsCount retrieves the scan result stats specified by query for the clusters
+func (d *datastoreImpl) ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error) {
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return 0, err
+	}
+
+	cloned := query.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ClusterID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+
+	//countQuery := d.withCountByResultSelectQuery(cloned, search.ClusterID)
+	//countResults, err := pgSearch.RunSelectRequestForSchema[ResultStatusCountByCluster](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, countQuery)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "unable to retrieve data")
+	//}
+	return d.searcher.Count(ctx, cloned)
+}
+
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
 }

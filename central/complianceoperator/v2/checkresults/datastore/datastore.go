@@ -29,6 +29,8 @@ type DataStore interface {
 	// ComplianceClusterStats retrieves the scan result stats specified by query for the clusters
 	ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error)
 
+	ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error)
+
 	// CountCheckResults returns number of scan results specified by query
 	CountCheckResults(ctx context.Context, q *v1.Query) (int, error)
 
