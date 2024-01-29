@@ -1,23 +1,23 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "gogoproto/gogo.proto";
 
-package storage;
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
 
 message SignatureIntegration {
-    string id   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+  string id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
 
-    CosignPublicKeyVerification cosign = 3;
+  CosignPublicKeyVerification cosign = 3;
 }
 
 message CosignPublicKeyVerification {
-    message PublicKey {
-        string name               = 1;
-        string public_key_pem_enc = 2;
-    }
-    repeated PublicKey public_keys = 3;
+  message PublicKey {
+    string name = 1;
+    string public_key_pem_enc = 2;
+  }
+  repeated PublicKey public_keys = 3;
 }

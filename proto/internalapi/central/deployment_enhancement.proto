@@ -1,20 +1,20 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/deployment.proto";
 
-package central;
+option go_package = "central";
 
-message DeploymentEnhancementMessage{
-    string id = 1;
-    repeated storage.Deployment deployments = 2;
+message DeploymentEnhancementMessage {
+  string id = 1;
+  repeated storage.Deployment deployments = 2;
 }
 
-message DeploymentEnhancementRequest{
-     DeploymentEnhancementMessage msg = 1;
+message DeploymentEnhancementRequest {
+  DeploymentEnhancementMessage msg = 1;
 }
 
-message DeploymentEnhancementResponse{
-    DeploymentEnhancementMessage msg = 1;
+message DeploymentEnhancementResponse {
+  DeploymentEnhancementMessage msg = 1;
 }

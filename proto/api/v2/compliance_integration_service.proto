@@ -1,50 +1,46 @@
 syntax = "proto3";
 
+package v2;
+
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+
 option go_package = "v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-import weak "google/api/annotations.proto";
-import "api/v2/search_query.proto";
-
-package v2;
-
 // Next Tag: 6
 message ComplianceIntegration {
-    string id                     = 1;
-    string version                = 2;
-    string cluster_id             = 3;
-    string cluster_name           = 4;
-    string namespace              = 5;
-    // Collection of errors that occurred while trying to obtain compliance operator health info.
-    repeated string status_errors = 6;
+  string id = 1;
+  string version = 2;
+  string cluster_id = 3;
+  string cluster_name = 4;
+  string namespace = 5;
+  // Collection of errors that occurred while trying to obtain compliance operator health info.
+  repeated string status_errors = 6;
 }
 
 message ComplianceIntegrationStatusRequest {
-    string cluster_id = 1;
+  string cluster_id = 1;
 }
 
 message ListComplianceIntegrationsResponse {
-    repeated ComplianceIntegration integrations = 1;
+  repeated ComplianceIntegration integrations = 1;
 }
 
 // CountComplianceIntegrationsResponse gives count of compliance integrations
 message CountComplianceIntegrationsResponse {
-    int32 count = 1;
+  int32 count = 1;
 }
 
 service ComplianceIntegrationService {
-    // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
-    rpc ListComplianceIntegrations (RawQuery) returns (ListComplianceIntegrationsResponse) {
-        option (google.api.http) = {
-            get: "/v2/compliance/integrations"
-        };
-    }
+  // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
+  rpc ListComplianceIntegrations(RawQuery) returns (ListComplianceIntegrationsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/integrations"};
+  }
 
-    // GetComplianceIntegrationsCount returns the number of compliance operator integrations
-    // matching the given query
-    rpc GetComplianceIntegrationsCount(RawQuery) returns (CountComplianceIntegrationsResponse){
-        option (google.api.http) = {
-            get: "/v2/compliance/integrations/count"
-        };
-    }
+  // GetComplianceIntegrationsCount returns the number of compliance operator integrations
+  // matching the given query
+  rpc GetComplianceIntegrationsCount(RawQuery) returns (CountComplianceIntegrationsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/integrations/count"};
+  }
 }
