@@ -104,7 +104,6 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
-	log.Infof("Took %d milliseconds to get cluster", time.Since(t).Milliseconds())
 
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	t = time.Now()
@@ -116,21 +115,18 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
-	log.Infof("Took %d milliseconds to search nodes", time.Since(t).Milliseconds())
 
 	t = time.Now()
 	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
-	log.Infof("Took %d milliseconds to search deployments", time.Since(t).Milliseconds())
 
 	t = time.Now()
 	machineConfigs, err := m.complianceOperatorManager.GetMachineConfigs(clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting machine configs for cluster %s", clusterID)
 	}
-	log.Infof("Took %d milliseconds to get machine configs", time.Since(t).Milliseconds())
 	return framework.NewComplianceDomain(cluster, nodes, deployments, machineConfigs), nil
 }
 
@@ -328,12 +324,10 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 	var runs []*runInstance
 	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
 	for clusterID, standardImpls := range standardsByClusterID {
-		log.Infof("Creating domain for %s", clusterID)
 		domain, err := m.createDomain(elevatedCtx, clusterID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
-		log.Infof("Created domain for %s", clusterID)
 		domainPB := getDomainProto(domain)
 		// Domain is indirectly scoped, and checks global permissions for write operations.
 		// Temporarily elevating the privileges to write the domain informations.
