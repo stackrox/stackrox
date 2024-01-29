@@ -6,7 +6,7 @@ out_dir=""
 
 setup_file() {
   # remove binaries from the previous runs
-  [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+  delete-outdated-binaries "$(roxctl-development version)"
 
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
