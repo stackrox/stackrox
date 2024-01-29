@@ -127,7 +127,7 @@ function NetworkGraphPage() {
         setSearchFilter(modifiedSearchObject);
     }
 
-    const onBreadcrumbScopeChange = (newFilter: SearchFilter) => {
+    const clearGraphOnEmptyScope = (newFilter: SearchFilter) => {
         // When the cluster/namespace filters are changed, if this results in no selection, clear the graph data
         // to avoid showing stale data from the previous selection.
         if (
@@ -295,7 +295,7 @@ function NetworkGraphPage() {
                                 selectedCluster={clusterFromUrl}
                                 selectedNamespaces={namespacesFromUrl}
                                 selectedDeployments={deploymentsFromUrl}
-                                onScopeChange={onBreadcrumbScopeChange}
+                                onScopeChange={clearGraphOnEmptyScope}
                             />
                         </ToolbarGroup>
                         {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
