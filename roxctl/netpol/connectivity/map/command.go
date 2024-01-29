@@ -37,7 +37,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			return errors.Wrap(cmd.RunE(c, args), "building connectivity map")
+			return cmd.RunE(c, args)
 		},
 	}
 	return cmd.AddFlags(c)
@@ -72,7 +72,7 @@ func (cmd *Cmd) RunE(_ *cobra.Command, args []string) error {
 	warns, errs := cmd.analyze(analyzer)
 	err = npg.SummarizeErrors(warns, errs, cmd.treatWarningsAsErrors, cmd.env.Logger())
 	if err != nil {
-		return errors.Wrap(err, "running command")
+		return errors.Wrap(err, "building connectivity map")
 	}
 	return nil
 }

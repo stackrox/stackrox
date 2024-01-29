@@ -1,7 +1,6 @@
 package netpol
 
 import (
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/netpol/generate"
@@ -19,7 +18,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return cobra.ExactArgs(1)(cmd, args)
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return errors.Wrap(cmd.RunE(c, args), "generating netpols")
+			//nolint:wrapcheck // this is alias command, so it is not considered as separate pkg
+			return cmd.RunE(c, args)
 		},
 	}
 	return cmd.AddFlags(c)

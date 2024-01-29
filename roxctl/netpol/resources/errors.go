@@ -14,40 +14,12 @@ var (
 	}
 )
 
-// ErrorHandler handles errors returned by k8s.io/cli-runtime/pkg/resource when reading manifests
-type ErrorHandler struct {
-	treatWarningsAsErrors bool
+// handleAggregatedError returns errors and warnings from the aggregated error
+func handleAggregatedError(err1 error) (warn []error, err []error) {
+	return recognizeWarnings(disaggregate(err1)...)
 }
 
-// NewErrHandler returns ErrorHandler
-func NewErrHandler(treatWarningsAsErrors bool) *ErrorHandler {
-	return &ErrorHandler{
-		treatWarningsAsErrors: treatWarningsAsErrors,
-	}
-}
-
-// HandleError returns errors and warnings from the aggregated error
-func (e *ErrorHandler) HandleError(err1 error) (warn []error, err []error) {
-	flatErrs := disaggregate(err1)
-	w, er := recognizeWarnings(flatErrs...)
-	return e.classifyErrors(w, er)
-}
-
-// classifyErrors assigns an error to either warnings or errors depending on user-provided settings
-func (e *ErrorHandler) classifyErrors(inWarnings []error, inErrors []error) (outWarn []error, outErr []error) {
-	if len(inErrors)+len(inWarnings) == 0 {
-		return
-	}
-	outErr = inErrors
-	outWarn = inWarnings
-
-	if e.treatWarningsAsErrors {
-		return []error{}, append(outErr, inWarnings...)
-	}
-	return outWarn, outErr
-}
-
-// recognizeWarnings reads errors returned k8s.io/cli-runtime and decides about treating it as a warning or error
+// recognizeWarnings reads errors returned k8s.io/cli-runtime and recognizes it as a warning or en error
 func recognizeWarnings(inErrs ...error) (warnings []error, outErrs []error) {
 	for _, err := range inErrs {
 		if err == nil {

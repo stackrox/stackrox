@@ -99,7 +99,7 @@ func (cmd *NetpolGenerateCmd) RunE(c *cobra.Command, args []string) error {
 	warns, errs := cmd.generateNetpol(synth)
 	err = npg.SummarizeErrors(warns, errs, cmd.Options.TreatWarningsAsErrors, cmd.env.Logger())
 	if err != nil {
-		return errors.Wrap(err, "running command")
+		return errors.Wrap(err, "generating netpols")
 	}
 	return nil
 }

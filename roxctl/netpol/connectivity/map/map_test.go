@@ -59,9 +59,9 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 		},
 		"treating warnings as errors": {
 			inputFolderPath:       "testdata/minimal-with-invalid-doc",
-			expectedErrors:        []string{"unable to decode \"testdata/minimal-with-invalid-doc/resources.yaml\""},
-			expectedWarnings:      []string{},
 			treatWarningsAsErrors: true,
+			expectedErrors:        []string{},
+			expectedWarnings:      []string{"unable to decode \"testdata/minimal-with-invalid-doc/resources.yaml\""},
 		},
 		"warnings not indicated without strict": {
 			inputFolderPath:  "testdata/minimal-with-invalid-doc",

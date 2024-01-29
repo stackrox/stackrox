@@ -38,21 +38,24 @@ func (d *diffAnalyzeNetpolTestSuite) TestAnalyzeConnectivityDiffWarningsErrors()
 				"at dir1: no relevant Kubernetes network policy resources found",
 			},
 		},
-		"Warnings with stopOnFirstError and treatWarningsAsErrors should return warnings as errors and stop the analysis on first warning": {
+		"Warnings with stopOnFirstError and treatWarningsAsErrors should stop the analysis on first warning": {
 			inputFolderPath1:      "testdata/mixed",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			stopOnFirstError:      true,
 			treatWarningsAsErrors: true,
-			expectedErrors:        []string{"error parsing testdata/mixed/dirty.yaml"},
-			expectedWarnings:      []string{},
+			expectedErrors:        []string{},
+			expectedWarnings:      []string{"error parsing testdata/mixed/dirty.yaml"},
 		},
-		"Warnings with treatWarningsAsErrors should return warnings as errors": {
+		"Warnings with treatWarningsAsErrors should not add any marker-error at this stage": {
 			inputFolderPath1:      "testdata/mixed",
 			inputFolderPath2:      "testdata/netpol-diff-example-minimal",
 			stopOnFirstError:      false,
 			treatWarningsAsErrors: true,
-			expectedErrors:        []string{"error parsing testdata/mixed/dirty.yaml"},
-			expectedWarnings:      []string{"at dir1: no relevant Kubernetes network policy resources found"},
+			expectedErrors:        []string{},
+			expectedWarnings: []string{
+				"error parsing testdata/mixed/dirty.yaml",
+				"at dir1: no relevant Kubernetes network policy resources found",
+			},
 		},
 		"Diff should be attempted despite of warnings when treatWarningsAsErrors is false": {
 			inputFolderPath1:      "testdata/mixed",

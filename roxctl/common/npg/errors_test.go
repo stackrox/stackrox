@@ -110,6 +110,12 @@ func TestSummarizeErrors(t *testing.T) {
 			treatWarningsAsErrors: false,
 			wantErr:               ErrErrors,
 		},
+		"warning marker in the errors array should be treated as an error": {
+			warns:                 nil,
+			errs:                  []error{ErrWarnings},
+			treatWarningsAsErrors: false,
+			wantErr:               ErrErrors,
+		},
 		"warning marker is added when warnings are present and treatWarningsAsErrors is true": {
 			warns:                 []error{errors.New("foo")},
 			errs:                  nil,

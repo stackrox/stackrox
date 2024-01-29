@@ -6,9 +6,8 @@ import (
 
 // GetK8sInfos reads location on disk and returns k8s objects with warnings and errors
 func GetK8sInfos(path string, failFast bool, treatWarningsAsErrors bool) (nfos []*resource.Info, warns []error, errs []error) {
-	errHandler := NewErrHandler(treatWarningsAsErrors)
 	infos, err := getK8sInfos(path, failFast, treatWarningsAsErrors)
-	warns, errs = errHandler.HandleError(err)
+	warns, errs = handleAggregatedError(err)
 	return infos, warns, errs
 }
 

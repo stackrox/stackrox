@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	// ErrErrors errors indicator message
+	// ErrErrors is a marker-error message that marks occurrence of errors
 	ErrErrors = errors.New("there were errors during execution")
-	// ErrWarnings warnings indicator message
+	// ErrWarnings is a marker-error message that marks occurrence of warnings
 	ErrWarnings = errors.New("there were warnings during execution")
 )
 
