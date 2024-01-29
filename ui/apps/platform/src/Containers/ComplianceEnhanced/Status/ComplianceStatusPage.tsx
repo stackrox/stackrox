@@ -2,9 +2,9 @@ import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 
 import {
-    complianceEnhancedStatusClustersPath,
+    complianceEnhancedCoverageClustersPath,
     complianceEnhancedStatusPath,
-    complianceEnhancedStatusProfilesPath,
+    complianceEnhancedCoverageProfilesPath,
     complianceEnhancedStatusScansPath,
 } from 'routePaths';
 
@@ -18,11 +18,11 @@ function ComplianceStatusPage() {
         <>
             <Switch>
                 <Route
-                    path={complianceEnhancedStatusClustersPath}
+                    path={complianceEnhancedCoverageClustersPath}
                     component={ComplianceReportsClusterPage}
                 />
                 <Route
-                    path={complianceEnhancedStatusProfilesPath}
+                    path={complianceEnhancedCoverageProfilesPath}
                     component={ComplianceReportsProfilePage}
                 />
                 <Route
