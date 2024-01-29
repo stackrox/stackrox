@@ -155,7 +155,6 @@ teardown() {
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
     info "Installing StackRox using HEAD Helm chart with Scanner v4 enabled"
-
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
     _deploy_stackrox
@@ -289,7 +288,8 @@ spec:
 EOF
         )
     fi
-    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
   template:
@@ -304,8 +304,10 @@ spec:
               memory: "4600Mi"
               cpu: "1000m"
 EOF
-    )
-    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
+        )
+    fi
+    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-matcher >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
 spec:
   replicas: 1
   template:
@@ -320,8 +322,10 @@ spec:
               memory: "2000Mi"
               cpu: "6000m"
 EOF
-    )
-    "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
+        )
+    fi
+    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-db >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
 spec:
   template:
     spec:
@@ -335,7 +339,8 @@ spec:
               memory: "1000Mi"
               cpu: "1000m"
 EOF
-    )
+        )
+    fi
 }
 
 # shellcheck disable=SC2120
@@ -379,7 +384,8 @@ spec:
 EOF
         )
     fi
-    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-db >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-db" --patch-file <(cat <<EOF
 spec:
   template:
     spec:
@@ -393,8 +399,10 @@ spec:
               memory: "1000Mi"
               cpu: "1000m"
 EOF
-    )
-    "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+        )
+    fi
+    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
   template:
@@ -409,7 +417,8 @@ spec:
               memory: "4600Mi"
               cpu: "1000m"
 EOF
-    )
+        )
+    fi
 }
 
 # This function tries to fix shortcomings of `kubectl wait`. Instead of (wrongly) caring about pods terminating
