@@ -753,6 +753,11 @@ func (b *sendNetflowsSuite) expectLookups(n int) {
 	})()
 }
 
+func (b *sendNetflowsSuite) expectFailedLookup(n int) {
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
+	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{}, false)()
+}
+
 func (b *sendNetflowsSuite) expectDetections(n int) {
 	expectDetectorHelper(b.mockDetector, n)()
 }
@@ -763,18 +768,46 @@ func (b *sendNetflowsSuite) TestUpdateConnectionGeneratesNetflow() {
 
 	b.updateConn(createConnectionPair())
 	b.thenTickerTicks()
-	b.assertOneUpdatedConnection()
+	b.assertOneUpdatedOpenConnection()
+}
+
+func (b *sendNetflowsSuite) TestCloseConnection() {
+	b.expectLookups(1)
+	b.expectDetections(1)
+
+	b.updateConn(createConnectionPair().lastSeen(timestamp.Now()))
+	b.thenTickerTicks()
+	b.assertOneUpdatedCloseConnection()
+}
+
+func (b *sendNetflowsSuite) TestCloseConnectionFailedLookup() {
+	b.expectFailedLookup(1)
+
+	b.updateConn(createConnectionPair().lastSeen(timestamp.Now()))
+	b.thenTickerTicks()
+	mustNotRead(b.T(), b.m.sensorUpdates)
+}
+
+func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
+	b.expectFailedLookup(1)
+	b.expectDetections(1)
+
+	pair := createConnectionPair().
+		firstSeen(timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		lastSeen(timestamp.Now())
+	b.m.activeConnections[*pair.conn] = &networkConnIndicator{}
+	b.updateConn(pair)
+	b.thenTickerTicks()
+	b.assertOneUpdatedCloseConnection()
 }
 
 func (b *sendNetflowsSuite) TestUnchangedConnection() {
 	b.expectLookups(2)
 	b.expectDetections(1)
 
-	pair := createConnectionPair()
-	pair.status.lastSeen = timestamp.InfiniteFuture
-	b.updateConn(pair)
+	b.updateConn(createConnectionPair().lastSeen(timestamp.InfiniteFuture))
 	b.thenTickerTicks()
-	b.assertOneUpdatedConnection()
+	b.assertOneUpdatedOpenConnection()
 
 	// There should be no second update, the connection did not change
 	b.thenTickerTicks()
@@ -786,16 +819,14 @@ func (b *sendNetflowsSuite) TestSendTwoUpdatesOnConnectionChanged() {
 	b.expectDetections(2)
 
 	pair := createConnectionPair()
-	oneHourAgo := timestamp.NowMinus(time.Hour)
-	pair.status.lastSeen = timestamp.FromProtobuf(oneHourAgo)
-	b.updateConn(pair)
+	b.updateConn(pair.lastSeen(timestamp.FromProtobuf(timestamp.NowMinus(time.Hour))))
 	b.thenTickerTicks()
-	b.assertOneUpdatedConnection()
+	b.assertOneUpdatedCloseConnection()
 
-	pair.status.lastSeen = timestamp.Now()
+	pair.lastSeen(timestamp.Now())
 	b.updateConn(pair)
 	b.thenTickerTicks()
-	b.assertOneUpdatedConnection()
+	b.assertOneUpdatedCloseConnection()
 }
 
 func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
@@ -805,16 +836,14 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 	// four times without reading
 	for i := 0; i < 4; i++ {
 		ts := timestamp.NowMinus(time.Duration(4-i) * time.Hour)
-		pair := createConnectionPair()
-		pair.status.lastSeen = timestamp.FromProtobuf(ts)
-		b.updateConn(pair)
+		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 		time.Sleep(100 * time.Millisecond) // Immediately ticking without waiting causes unexpected behavior
 	}
 
 	// should be able to read four buffered updates in sequence
 	for i := 0; i < 4; i++ {
-		b.assertOneUpdatedConnection()
+		b.assertOneUpdatedCloseConnection()
 	}
 }
 
@@ -824,16 +853,14 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 
 	for i := 0; i < 6; i++ {
 		ts := timestamp.NowMinus(time.Duration(6-i) * time.Hour)
-		pair := createConnectionPair()
-		pair.status.lastSeen = timestamp.FromProtobuf(ts)
-		b.updateConn(pair)
+		b.updateConn(createConnectionPair().lastSeen(timestamp.FromProtobuf(ts)))
 		b.thenTickerTicks()
 		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Will only store 5 network flow updates, as it's the maximum buffer size in the test
 	for i := 0; i < 5; i++ {
-		b.assertOneUpdatedConnection()
+		b.assertOneUpdatedCloseConnection()
 	}
 
 	mustNotRead(b.T(), b.m.sensorUpdates)
@@ -843,11 +870,20 @@ func (b *sendNetflowsSuite) thenTickerTicks() {
 	mustSendWithoutBlock(b.T(), b.fakeTicker, time.Now())
 }
 
-func (b *sendNetflowsSuite) assertOneUpdatedConnection() {
+func (b *sendNetflowsSuite) assertOneUpdatedOpenConnection() {
 	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
 	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
 	b.Require().True(ok, "message is NetworkFlowUpdate")
-	b.Assert().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
+	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
+	b.Assert().Equal(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdated()[0].GetLastSeenTimestamp().GetNanos(), "the connection should be open")
+}
+
+func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
+	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+	b.Require().True(ok, "message is NetworkFlowUpdate")
+	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
+	b.Assert().NotEqual(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdated()[0].GetLastSeenTimestamp().GetNanos(), "the connection should not be open")
 }
 
 func mustNotRead[T any](t *testing.T, ch chan T) {

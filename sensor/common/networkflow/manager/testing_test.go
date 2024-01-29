@@ -93,6 +93,11 @@ func createConnectionPair() *connectionPair {
 	}
 }
 
+func (c *connectionPair) lastSeen(lastSeen timestamp.MicroTS) *connectionPair {
+	c.status.lastSeen = lastSeen
+	return c
+}
+
 func (c *connectionPair) containerID(id string) *connectionPair {
 	c.conn.containerID = id
 	return c
