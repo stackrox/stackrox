@@ -254,6 +254,28 @@ teardown() {
     verify_scannerV4_deployed "stackrox"
 }
 
+@test "Upgrade from old version without Scanner V4 support to the latest version with Scanner v4 enabled" {
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+
+    info "Installing old StackRox version without Scanner V4 support using roxctl"
+    if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
+    fi
+    _deploy_stackrox
+
+    info "Upgrading StackRox using roxctl with Scanner V4 enabled"
+    MAIN_IMAGE_TAG=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="true"
+
+    _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
+}
+
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
     verify_no_scannerV4_indexer_deployed "$namespace"
