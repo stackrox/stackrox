@@ -19,7 +19,7 @@ import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import { getTimeHoursMinutes } from 'utils/dateUtils';
 
-import { ScanConfigFormValues } from './useFormikScanConfig';
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 function ScanConfigOptions(): ReactElement {
     const formik: FormikContextType<ScanConfigFormValues> = useFormikContext();

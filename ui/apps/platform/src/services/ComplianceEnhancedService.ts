@@ -306,12 +306,17 @@ export function getScanConfig(
 /*
  * Create a Scan Schedule.
  */
-export function createScanConfig(
+export function saveScanConfig(
     complianceScanConfiguration: ComplianceScanConfiguration
 ): Promise<ComplianceScanConfiguration> {
-    return axios
-        .post<ComplianceScanConfiguration>(`${scanScheduleUrl}`, complianceScanConfiguration)
-        .then((response) => response.data);
+    const promise = complianceScanConfiguration.id
+        ? axios.put<ComplianceScanConfiguration>(
+              `${scanScheduleUrl}/${complianceScanConfiguration.id}`,
+              complianceScanConfiguration
+          )
+        : axios.post<ComplianceScanConfiguration>(scanScheduleUrl, complianceScanConfiguration);
+
+    return promise.then((response) => response.data);
 }
 
 /*
