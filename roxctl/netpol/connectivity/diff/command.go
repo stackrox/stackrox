@@ -48,7 +48,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			warns, errs := diffNetpolCmd.analyzeConnectivityDiff(analyzer)
 			err = npg.SummarizeErrors(warns, errs, diffNetpolCmd.treatWarningsAsErrors, diffNetpolCmd.env.Logger())
 			if err != nil {
-				return errors.Wrap(err, "running command")
+				return errors.Wrap(err, "analyzing connectivity diff")
 			}
 			return nil
 		},
