@@ -35,6 +35,7 @@ func (s *NodeComponentEdgesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE node_component_edges CASCADE")
 	s.T().Log("node_component_edges", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

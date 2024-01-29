@@ -31,6 +31,7 @@ type Evaluator interface {
 	// GetGraph returns the network policy graph. If `queryDeploymentIDs` is nil, it is assumed that all deployments are queried/relevant.
 	GetGraph(clusterID string, queryDeploymentIDs set.StringSet, clusterDeployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph
 	GetAppliedPolicies(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy
+	GetApplyingPoliciesPerDeployment(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy
 	IncrementEpoch(clusterID string)
 	Epoch(clusterID string) uint32
 }
@@ -88,6 +89,11 @@ func (g *evaluatorImpl) GetGraph(clusterID string, queryDeploymentIDs set.String
 		Epoch: g.Epoch(clusterID),
 		Nodes: nodes,
 	}
+}
+
+// GetApplyingPoliciesPerDeployment creates a map of deployment IDs to the applying network policies
+func (g *evaluatorImpl) GetApplyingPoliciesPerDeployment(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy {
+	return newGraphBuilder(nil, deployments, networkTree, g.getNamespacesByID()).GetApplyingPoliciesPerDeployment(networkPolicies)
 }
 
 // GetAppliedPolicies creates a filtered list of policies from the input network policies, composed of only the policies

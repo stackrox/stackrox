@@ -69,9 +69,8 @@ func (s *networkBaselineDatastoreSACTestSuite) TearDownTest() {
 }
 
 type crudTest struct {
-	scopeKey      string
-	expectedError error
-	expectFound   bool
+	scopeKey    string
+	expectFound bool
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) cleanupNetworkBaseline(ID string) {

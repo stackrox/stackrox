@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deploymentenvs"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,10 +13,6 @@ import (
 
 const (
 	fetchMetadataTimeout = 60 * time.Second
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type manager struct {

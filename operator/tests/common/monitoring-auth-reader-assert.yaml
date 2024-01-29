@@ -1,0 +1,31 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+# We do this in a separate step because kuttl supports
+# only one TestAssert object per step.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+# Test that Central auth reader rolebinding exists in kube-system.
+- command: kubectl get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+status:
+  conditions:
+  - status: "True"
+    type: Deployed
+  - status: "True"
+    type: Initialized
+  - status: "False"
+    type: Irreconcilable
+  - status: "False"
+    type: ProxyConfigFailed
+  - status: "False"
+    type: ReleaseFailed

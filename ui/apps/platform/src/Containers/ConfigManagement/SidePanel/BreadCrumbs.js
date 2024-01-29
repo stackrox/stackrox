@@ -85,7 +85,10 @@ const getMaxWidthClass = (length) => {
 };
 
 const BreadCrumbLinks = (props) => {
+    // disable because unused history might be specified for rest spread idiom.
+    /* eslint-disable no-unused-vars */
     const { className, match, location, history, ...params } = props;
+    /* eslint-enable no-unused-vars */
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) {
         return null;
@@ -147,7 +150,10 @@ BreadCrumbLinks.defaultProps = {
 };
 
 const BreadCrumbs = (props) => {
+    // disable because unused className, match, location might be specified for rest spread idiom.
+    /* eslint-disable no-unused-vars */
     const { className, match, location, ...params } = props;
+    /* eslint-enable no-unused-vars */
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
 
     const relatedEntityType = entityListType2 || entityType2;

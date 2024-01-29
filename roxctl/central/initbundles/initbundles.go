@@ -20,6 +20,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 
 	return c
 }

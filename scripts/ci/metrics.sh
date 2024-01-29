@@ -8,6 +8,11 @@ source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
+# Possible outcome field values.
+export OUTCOME_PASSED="passed"
+export OUTCOME_FAILED="failed"
+export OUTCOME_CANCELED="canceled"
+
 _TABLE_NAME="acs-san-stackroxci.ci_metrics.stackrox_jobs"
 
 create_job_record() {
@@ -40,7 +45,7 @@ _create_job_record() {
     fi
 
     # exported to handle updates and finalization
-    export METRICS_JOB_ID="$id"
+    set_ci_shared_export "METRICS_JOB_ID" "$id"
 
     local repo
     repo="$(get_repo_full_name)"
@@ -98,6 +103,8 @@ _update_job_record() {
 }
 
 bq_update_job_record() {
+    setup_gcp
+
     local update_set=""
     while [[ "$#" -ne 0 ]]; do
         local field="$1"
@@ -127,55 +134,78 @@ _EO_UPDATE_
     bq query --use_legacy_sql=false "$sql"
 }
 
-finalize_job_record() {
-    _finalize_job_record "$@" || {
-        # Failure to gather metrics is not a test failure
-        info "WARNING: Job record creation failed"
-    }
-}
-
-_finalize_job_record() {
-    info "Finalizing a job record for this test run"
-
-    if [[ "$#" -ne 2 ]]; then
-        die "missing arg. usage: finalize_job_record <exit code> <canceled (true|false)"
-    fi
-
-    if is_OPENSHIFT_CI && [[ -z "${BUILD_ID:-}" ]]; then
-        info "Skipping job record finalization for jobs without a BUILD_ID (bin, images)"
-        return
-    fi
-
-    if [[ -z "${METRICS_JOB_ID:-}" ]]; then
-        info "WARNING: Skipping job record finalization as no initial record was created"
-        return
-    fi
+slack_top_10_failures() {
+    local job_name_match="${1:-qa}"
+    local subject="${2:-Top 10 QA E2E Test failures for the last 7 days}"
+    local is_test="${3:-false}"
 
     local sql
-    read -r -d '' sql <<- _EO_CHECK_ || true
-SELECT outcome 
-FROM ${_TABLE_NAME}
-WHERE id='${METRICS_JOB_ID}'
-_EO_CHECK_
+    # shellcheck disable=SC2016
+    sql='
+SELECT
+    COUNT(*) AS `#`,
+    IF(LENGTH(Classname) > 20, CONCAT(RPAD(Classname, 20), "..."), Classname) AS `Suite`,
+    IF(LENGTH(Name) > 40, CONCAT(RPAD(Name, 40), "..."), Name) AS `Case`
+FROM
+    `acs-san-stackroxci.ci_metrics.stackrox_tests__extended_view`
+WHERE
+    CONTAINS_SUBSTR(ShortName, "'"${job_name_match}"'")
+    AND Status = "failed"
+    AND NOT IsPullRequest
+    AND CONTAINS_SUBSTR(JobName, "master")
+    AND NOT CONTAINS_SUBSTR(JobName, "ibmcloudz")
+    AND NOT CONTAINS_SUBSTR(JobName, "powervs")
+    AND DATE(Timestamp) >= DATE_SUB(DATE_TRUNC(CURRENT_DATE(), WEEK(MONDAY)), INTERVAL 1 WEEK)
+GROUP BY
+    Classname,
+    Name
+ORDER BY
+    COUNT(*) DESC
+LIMIT
+    10
+'
 
-    local outcome
-    outcome="$(bq --quiet --format=json query --use_legacy_sql=false "$sql" | jq -r '.[0].outcome')"
+    local data
+    echo "Running query with job match name $job_name_match"
+    data="$(bq --quiet --format=pretty query --use_legacy_sql=false "$sql" 2> /dev/null)" || {
+        echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n${data}"
+        exit 1
+    }
 
-    if [[ "$outcome" != "null" ]]; then
-        info "WARNING: This jobs record is already finalized ($outcome), will not overwrite"
-        return
+    if [[ -z "${data}" ]]; then
+        data="No failures!"
     fi
+    echo "$data"
 
-    local exit_code="$1"
-    local canceled="$2"
-
-    if [[ "$canceled" == "true" ]]; then
-        outcome="canceled"
-    elif [[ "$exit_code" == "0" ]]; then
-        outcome="passed"
+    local webhook_url
+    if [[ "${is_test}" == "true" ]]; then
+        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
     else
-        outcome="failed"
+        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
     fi
 
-    update_job_record outcome "$outcome" stopped_at "CURRENT_TIMESTAMP()"
+    local body
+    # shellcheck disable=SC2016
+    body='
+{
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "'"${subject}"'"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "```\n\($data)\n```"
+            }
+        }
+    ]
+}'
+
+    echo "Posting data to slack"
+    jq -n --arg data "$data" "$body" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 }

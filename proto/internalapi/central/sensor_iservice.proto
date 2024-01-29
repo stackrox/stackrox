@@ -18,12 +18,13 @@ import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/local_scanner.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
+import "internalapi/central/deployment_enhancement.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
 package central;
 
-// next available tag: 18
+// next available tag: 19
 message MsgFromSensor {
     string hash_key                                                     = 7;
     string dedupe_key                                                   = 8;
@@ -43,6 +44,7 @@ message MsgFromSensor {
         ProcessListeningOnPortsUpdate process_listening_on_port_update  = 14;
         ComplianceOperatorInfo        compliance_operator_info          = 16;
         ComplianceResponse            compliance_response               = 17;
+        DeploymentEnhancementResponse deployment_enhancement_response   = 18;
     }
 }
 
@@ -50,7 +52,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
-// next available tag: 27
+// next available tag: 28
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;
@@ -79,6 +81,7 @@ message MsgToSensor {
         ComplianceRequest              compliance_request                 = 24;
         ClusterHealthResponse          cluster_health_response            = 25;
         DeduperState                   deduper_state                      = 26;
+        DeploymentEnhancementRequest   deployment_enhancement_request     = 27;
     }
 }
 

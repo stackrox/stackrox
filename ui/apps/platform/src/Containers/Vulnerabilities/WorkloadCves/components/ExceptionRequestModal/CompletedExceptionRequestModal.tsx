@@ -11,7 +11,7 @@ import {
     Text,
     pluralize,
 } from '@patternfly/react-core';
-import differenceInDays from 'date-fns/difference_in_days';
+import differenceInCalendarDays from 'date-fns/difference_in_calendar_days';
 
 import {
     BaseVulnerabilityException,
@@ -45,7 +45,7 @@ function expiryDisplay(
         case 'TIME': {
             if (expiry.expiresOn) {
                 // Since the expiry here will always be in the future, we don't need to check which date is earlier
-                const daysUntilExpiration = differenceInDays(expiry.expiresOn, new Date());
+                const daysUntilExpiration = differenceInCalendarDays(expiry.expiresOn, new Date());
                 return `${getDate(expiry.expiresOn)} (${pluralize(daysUntilExpiration, 'day')})`;
             }
             return 'Never';
@@ -56,11 +56,13 @@ function expiryDisplay(
 }
 
 export type CompletedExceptionRequestModalProps = {
+    isUpdate?: boolean;
     exceptionRequest: BaseVulnerabilityException;
     onClose: () => void;
 };
 
 function CompletedExceptionRequestModal({
+    isUpdate = false,
     exceptionRequest,
     onClose,
 }: CompletedExceptionRequestModalProps) {
@@ -68,11 +70,19 @@ function CompletedExceptionRequestModal({
     let requestedAction = '';
 
     if (isDeferralException(exceptionRequest)) {
-        title = 'Request for deferral has been submitted';
+        if (isUpdate) {
+            title = 'Request for deferral update has been submitted';
+        } else {
+            title = 'Request for deferral has been submitted';
+        }
         requestedAction = 'Deferral';
     }
     if (isFalsePositiveException(exceptionRequest)) {
-        title = 'Request for false positive has been submitted';
+        if (isUpdate) {
+            title = 'Request for false positive update has been submitted';
+        } else {
+            title = 'Request for false positive has been submitted';
+        }
         requestedAction = 'False positive';
     }
 

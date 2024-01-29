@@ -3,7 +3,6 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	pgStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -11,8 +10,6 @@ var (
 	once sync.Once
 
 	singleton DataStore
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {

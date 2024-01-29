@@ -40,7 +40,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, "complianceoperatorclusterscanconfigstatus", (*storage.ComplianceOperatorClusterScanConfigStatus)(nil)))
-		schema.ScopingResource = resources.ComplianceOperator
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorClusterScanConfigStatusesStmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, schema)
 		return schema
@@ -54,8 +54,9 @@ const (
 
 // ComplianceOperatorClusterScanConfigStatuses holds the Gorm model for Postgres table `compliance_operator_cluster_scan_config_statuses`.
 type ComplianceOperatorClusterScanConfigStatuses struct {
-	ClusterID       string     `gorm:"column:clusterid;type:uuid;primaryKey"`
-	ScanID          string     `gorm:"column:scanid;type:varchar"`
+	ID              string     `gorm:"column:id;type:uuid;primaryKey"`
+	ClusterID       string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorclusterscanconfigstatuses_sac_filter,type:hash"`
+	ScanConfigID    string     `gorm:"column:scanconfigid;type:uuid"`
 	LastUpdatedTime *time.Time `gorm:"column:lastupdatedtime;type:timestamp"`
 	Serialized      []byte     `gorm:"column:serialized;type:bytea"`
 }

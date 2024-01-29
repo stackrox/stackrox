@@ -1,5 +1,10 @@
 import { History } from 'react-router-dom';
-import { getTheme, ChartThemeColor, ChartBarProps } from '@patternfly/react-charts';
+import {
+    ChartBarProps,
+    ChartLabelProps,
+    ChartThemeColor,
+    getTheme,
+} from '@patternfly/react-charts';
 import merge from 'lodash/merge';
 
 import { policySeverityColorMap } from 'constants/severityColors';
@@ -55,7 +60,7 @@ type ChartEventHandler = ValueOf<ChartEventProp['eventHandlers']>;
 export function navigateOnClickEvent(
     history: History,
     /** A function that generates the link to navigate to when the entity is clicked */
-    linkWith: (props: any) => string,
+    linkWith: (props: ChartLabelProps) => string,
     /** An array of Victory onClick event handlers that will be called before navigation is initiated */
     defaultOnClicks: ChartEventHandler[] = []
 ): ChartEventProp {

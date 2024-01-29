@@ -6,9 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/secret/internal/index"
-	"github.com/stackrox/rox/central/secret/internal/store"
-	secretSearch "github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -28,9 +25,6 @@ func TestSecretDataStore(t *testing.T) {
 type SecretDataStoreTestSuite struct {
 	suite.Suite
 
-	indexer   index.Indexer
-	searcher  secretSearch.Searcher
-	storage   store.Store
 	datastore DataStore
 
 	pool postgres.DB

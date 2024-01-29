@@ -303,6 +303,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     <Td isActionCell>
                                         {isDownloadAvailable && (
                                             <ActionsColumn
+                                                menuAppendTo={() => document.body}
                                                 items={rowActions}
                                                 isDisabled={areDownloadActionsDisabled}
                                             />

@@ -286,8 +286,9 @@ describe('Policies table', () => {
 
         const policyName = generateNameWithDate('A test policy');
 
-        // getInputByLabel('Name').clear().type(policyName);
-        cy.get('input#name').clear().type(policyName);
+        // getInputByLabel('Name')
+        cy.get('input#name').clear();
+        cy.get('input#name').type(policyName);
 
         cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
             'POST_policies'

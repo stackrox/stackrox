@@ -4,31 +4,17 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { AnyAction, Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 import { ApolloProvider } from '@apollo/client';
-import 'react-toastify/dist/ReactToastify.css';
-import 'app.tw.css'; // this file is the main Tailwind entrypoint handled by react-scripts
-import '@patternfly/react-core/dist/styles/base.css';
-import '@patternfly/react-styles/css/utilities/Accessibility/accessibility.css';
-import '@patternfly/react-styles/css/utilities/Alignment/alignment.css';
-import '@patternfly/react-styles/css/utilities/BackgroundColor/BackgroundColor.css';
-import '@patternfly/react-styles/css/utilities/BoxShadow/box-shadow';
-import '@patternfly/react-styles/css/utilities/Display/display.css';
-import '@patternfly/react-styles/css/utilities/Flex/flex.css';
-import '@patternfly/react-styles/css/utilities/Sizing/sizing.css';
-import '@patternfly/react-styles/css/utilities/Spacing/spacing.css';
-import '@patternfly/react-styles/css/utilities/Text/text.css';
+
+import 'css.imports';
+
 import { configure as mobxConfigure } from 'mobx';
 import { setDiagnosticsOptions } from 'monaco-yaml';
-
-// Advanced Cluster Security extensions to PatternFly styles
-import 'css/acs.css';
-// We need the following file, to smooth out rough edges, as we migrate to PatternFly
-import 'css/trumps.css';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
@@ -61,6 +47,7 @@ mobxConfigure({ isolateGlobalState: true });
 installRaven();
 
 const rootNode = document.getElementById('root');
+const root = createRoot(rootNode);
 const history = createHistory();
 const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
@@ -74,7 +61,7 @@ dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
 dispatch(fetchCentralCapabilitiesThunk());
 
-ReactDOM.render(
+root.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
             <ConnectedRouter history={history}>
@@ -85,6 +72,5 @@ ReactDOM.render(
                 </ThemeProvider>
             </ConnectedRouter>
         </ApolloProvider>
-    </Provider>,
-    rootNode
+    </Provider>
 );

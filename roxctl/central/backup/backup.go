@@ -46,13 +46,16 @@ You can use it to restore central service and the database.`,
 If the provided path is a file path, the backup will be written to the file, overwriting it if it already exists. (The directory MUST exist.)
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
 If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
+	c.Flags().BoolVar(&centralBackupCmd.certsOnly, "certs-only", false, `only backs up the certs.
+If using an external database this will be how a backup bundle with certs is generated.`)
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
 	return c
 }
 
 type centralBackupCommand struct {
 	// Properties that are bound to cobra flags.
-	output string
+	output    string
+	certsOnly bool
 
 	// Properties that are injected or constructed.
 	env environment.Environment
@@ -113,7 +116,9 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 	deadline := time.Now().Add(timeout)
 
 	var endpoint string
-	if full {
+	if cmd.certsOnly {
+		endpoint = "/api/extensions/certs/backup"
+	} else if full {
 		endpoint = "/api/extensions/backup"
 	} else {
 		endpoint = "/db/backup"

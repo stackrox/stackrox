@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	baseTable = "simple_access_scopes"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

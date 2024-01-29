@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/auditlog_manager.go github.com/stackrox/rox/sensor/common/compliance AuditLogCollectionManager
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

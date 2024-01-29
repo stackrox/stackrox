@@ -33,11 +33,13 @@ func _() {
 	_ = x[UpdateMany-22]
 	_ = x[Upsert-23]
 	_ = x[UpsertAll-24]
+	_ = x[Walk-25]
+	_ = x[WalkByQuery-26]
 }
 
-const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetFlowsForDeploymentGetByQueryGetGroupedGetProcessListeningOnPortListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAll"
+const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetFlowsForDeploymentGetByQueryGetGroupedGetProcessListeningOnPortListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAllWalkWalkByQuery"
 
-var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 64, 74, 84, 109, 113, 118, 123, 129, 135, 145, 168, 174, 178, 184, 194, 200, 209}
+var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 64, 74, 84, 109, 113, 118, 123, 129, 135, 145, 168, 174, 178, 184, 194, 200, 209, 213, 224}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {

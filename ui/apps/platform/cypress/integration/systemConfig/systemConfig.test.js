@@ -20,12 +20,14 @@ function editBaseConfig(type) {
 
 function editBannerConfig(type) {
     cy.get(selectors[type].config.colorPickerButton).click();
-    cy.get(selectors[type].config.colorInput).clear().type(text.color);
+    cy.get(selectors[type].config.colorInput).clear();
+    cy.get(selectors[type].config.colorInput).type(text.color);
     cy.get(selectors[type].widget).click();
     cy.get(selectors[type].config.size.input).click();
     cy.get(selectors[type].config.size.options).first().click();
     cy.get(selectors[type].config.backgroundColorPickerButton).click();
-    cy.get(selectors[type].config.colorInput).clear().type(text.backgroundColor);
+    cy.get(selectors[type].config.colorInput).clear();
+    cy.get(selectors[type].config.colorInput).type(text.backgroundColor);
     cy.get(selectors[type].widget).click();
 }
 
@@ -87,26 +89,30 @@ describe('System Configuration', () => {
 
         // If you reran the test without setting these random values first, it won’t save.
         // The save button is disabled when the form is pristine (ie. already 0)
-        cy.get(getNumericInputByLabel('All runtime violations')).clear().type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments'))
-            .clear()
-            .type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Resolved deploy-phase violations'))
-            .clear()
-            .type(getRandomNumber());
-        cy.get(getNumericInputByLabel('Images no longer deployed')).clear().type(getRandomNumber());
+        cy.get(getNumericInputByLabel('All runtime violations')).clear();
+        cy.get(getNumericInputByLabel('All runtime violations')).type(getRandomNumber());
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments')).clear();
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments')).type(
+            getRandomNumber()
+        );
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).clear();
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).type(getRandomNumber());
+        cy.get(getNumericInputByLabel('Images no longer deployed')).clear();
+        cy.get(getNumericInputByLabel('Images no longer deployed')).type(getRandomNumber());
 
         saveSystemConfiguration();
 
         // Change input values to 0 to set it to "never delete"
         cy.get('button:contains("Edit")').click();
 
-        cy.get(getNumericInputByLabel('All runtime violations')).clear().type(0);
-        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments'))
-            .clear()
-            .type(0);
-        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).clear().type(0);
-        cy.get(getNumericInputByLabel('Images no longer deployed')).clear().type(0);
+        cy.get(getNumericInputByLabel('All runtime violations')).clear();
+        cy.get(getNumericInputByLabel('All runtime violations')).type(0);
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments')).clear();
+        cy.get(getNumericInputByLabel('Runtime violations for deleted deployments')).type(0);
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).clear();
+        cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).type(0);
+        cy.get(getNumericInputByLabel('Images no longer deployed')).clear();
+        cy.get(getNumericInputByLabel('Images no longer deployed')).type(0);
 
         saveSystemConfiguration();
 

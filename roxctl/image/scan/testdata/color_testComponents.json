@@ -1,9 +1,9 @@
 {
   "result": {
     "summary": {
-      "[31;1mCRITICAL[0m": 3,
+      "[31;1mCRITICAL[0;22m": 3,
       "[31mIMPORTANT[0m": 3,
-      "[34;2mLOW[0m": 2,
+      "[34;2mLOW[0;22m": 2,
       "MODERATE": 3,
       "TOTAL-COMPONENTS": 5,
       "TOTAL-VULNERABILITIES": 11
@@ -11,23 +11,23 @@
     "vulnerabilities": [
       {
         "cveId": "CVE-789-CRIT",
-        "cveSeverity": "[31;1mCRITICAL[0m",
+        "cveSeverity": "[31;1mCRITICAL[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "apt",
         "componentVersion": "1.0",
         "componentFixedVersion": "1.3"
       },
       {
-        "cveId": "CVE-123-[34;2mLOW[0m",
-        "cveSeverity": "[34;2mLOW[0m",
+        "cveId": "CVE-123-[34;2mLOW[0;22m",
+        "cveSeverity": "[34;2mLOW[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "apt",
         "componentVersion": "1.0",
         "componentFixedVersion": "1.1"
       },
       {
-        "cveId": "CVE-789-[34;2mLOW[0m",
-        "cveSeverity": "[34;2mLOW[0m",
+        "cveId": "CVE-789-[34;2mLOW[0;22m",
+        "cveSeverity": "[34;2mLOW[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "apt",
         "componentVersion": "1.0",
@@ -35,7 +35,7 @@
       },
       {
         "cveId": "CVE-123-CRIT",
-        "cveSeverity": "[31;1mCRITICAL[0m",
+        "cveSeverity": "[31;1mCRITICAL[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "bash",
         "componentVersion": "4.2",
@@ -43,7 +43,7 @@
       },
       {
         "cveId": "CVE-456-CRIT",
-        "cveSeverity": "[31;1mCRITICAL[0m",
+        "cveSeverity": "[31;1mCRITICAL[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "bash",
         "componentVersion": "4.2",
@@ -51,7 +51,7 @@
       },
       {
         "cveId": "CVE-789-CRIT",
-        "cveSeverity": "[31;1mCRITICAL[0m",
+        "cveSeverity": "[31;1mCRITICAL[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "bash",
         "componentVersion": "4.2",
@@ -83,7 +83,7 @@
       },
       {
         "cveId": "CVE-789-CRIT",
-        "cveSeverity": "[31;1mCRITICAL[0m",
+        "cveSeverity": "[31;1mCRITICAL[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "openssl",
         "componentVersion": "1.1.1k",
@@ -114,8 +114,8 @@
         "componentFixedVersion": "1.2"
       },
       {
-        "cveId": "CVE-123-[34;2mLOW[0m",
-        "cveSeverity": "[34;2mLOW[0m",
+        "cveId": "CVE-123-[34;2mLOW[0;22m",
+        "cveSeverity": "[34;2mLOW[0;22m",
         "cveInfo": "<some-link-to-nvd>",
         "componentName": "openssl",
         "componentVersion": "1.1.1k",

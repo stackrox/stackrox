@@ -2,6 +2,12 @@ import pluralize from 'pluralize';
 import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
 
+import {
+    policyConfigurationDescriptor,
+    auditLogDescriptor,
+    imageSigningCriteriaName,
+    Descriptor,
+} from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
 import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
 import { ClusterScopeObject } from 'services/RolesService';
@@ -23,7 +29,6 @@ import {
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
-import { imageSigningCriteriaName, Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -371,10 +376,14 @@ export function parseValueStr(value, fieldName): ValueObj {
 
 function preFormatNestedPolicyFields(policy: Policy): ClientPolicy {
     if (!policy.policySections) {
-        return policy as ClientPolicy;
+        // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+        // If this was intentional, convert the expression to 'unknown' first.
+        return policy as unknown as ClientPolicy;
     }
 
-    const clientPolicy = cloneDeep(policy) as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
     clientPolicy.serverPolicySections = policy.policySections;
     // itreating through each value in a policy group in a policy section to parse value string
     policy.policySections.forEach((policySection, sectionIdx) => {
@@ -411,10 +420,14 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
 
 function postFormatNestedPolicyFields(policy: ClientPolicy): Policy {
     if (!policy.policySections) {
-        return policy;
+        // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+        // If this was intentional, convert the expression to 'unknown' first.
+        return policy as unknown as Policy;
     }
 
-    const serverPolicy = cloneDeep(policy) as Policy;
+    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const serverPolicy = cloneDeep(policy) as unknown as Policy;
     if (policy.criteriaLocked) {
         serverPolicy.policySections = policy.serverPolicySections;
     } else {
@@ -447,7 +460,9 @@ function postFormatNestedPolicyFields(policy: ClientPolicy): Policy {
  */
 function preFormatExclusionField(policy: Policy): ClientPolicy {
     const { exclusions } = policy;
-    const clientPolicy = { ...policy } as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = { ...policy } as unknown as ClientPolicy;
 
     clientPolicy.excludedImageNames = [];
 
@@ -467,14 +482,16 @@ function preFormatExclusionField(policy: Policy): ClientPolicy {
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
 export function postFormatExclusionField(policy: ClientPolicy): Policy {
-    const serverPolicy = { ...policy } as Policy;
+    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const serverPolicy = { ...policy } as unknown as Policy;
     serverPolicy.exclusions = [];
 
     const { excludedDeploymentScopes } = policy;
     if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
             excludedDeploymentScopes.map(
-                (deployment) => ({ deployment } as PolicyDeploymentExclusion)
+                (deployment) => ({ deployment }) as PolicyDeploymentExclusion
             )
         );
     }
@@ -482,7 +499,7 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
     const { excludedImageNames } = policy;
     if (excludedImageNames && excludedImageNames.length > 0) {
         serverPolicy.exclusions = serverPolicy.exclusions.concat(
-            excludedImageNames.map((name) => ({ image: { name } } as PolicyImageExclusion))
+            excludedImageNames.map((name) => ({ image: { name } }) as PolicyImageExclusion)
         );
     }
 
@@ -491,10 +508,14 @@ export function postFormatExclusionField(policy: ClientPolicy): Policy {
 
 export function preFormatImageSigningPolicyGroup(policy: Policy): ClientPolicy {
     if (!policy.policySections) {
-        return policy as ClientPolicy;
+        // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+        // If this was intentional, convert the expression to 'unknown' first.
+        return policy as unknown as ClientPolicy;
     }
 
-    const clientPolicy = cloneDeep(policy) as ClientPolicy;
+    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
+    // If this was intentional, convert the expression to 'unknown' first.
+    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
         policyGroups.forEach((policyGroup, groupIdx) => {
@@ -515,10 +536,10 @@ export function preFormatImageSigningPolicyGroup(policy: Policy): ClientPolicy {
 
 export function postFormatImageSigningPolicyGroup(policy: ClientPolicy): Policy {
     if (!policy.policySections) {
-        return policy;
+        return policy as unknown as Policy;
     }
 
-    const serverPolicy = cloneDeep(policy) as Policy;
+    const serverPolicy = cloneDeep(policy) as unknown as Policy;
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
         policyGroups.forEach((policyGroup, groupIdx) => {
@@ -688,6 +709,29 @@ export function getLifeCyclesUpdates(
     return changedValues;
 }
 
+export function getPolicyDescriptors(
+    isFeatureFlagEnabled: (string) => boolean,
+    eventSource: PolicyEventSource,
+    lifecycleStages: LifecycleStage[]
+) {
+    const unfilteredDescriptors =
+        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyConfigurationDescriptor;
+
+    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
+        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+        }
+        return true;
+    });
+
+    const descriptorsFilteredByLifecycle = getCriteriaAllowedByLifecycle(
+        descriptors,
+        lifecycleStages
+    );
+
+    return descriptorsFilteredByLifecycle;
+}
+
 export function getCriteriaAllowedByLifecycle(
     criteria: Descriptor[],
     lifecycleStages: LifecycleStage[]
@@ -697,4 +741,19 @@ export function getCriteriaAllowedByLifecycle(
     );
 
     return filteredCriteria;
+}
+
+export function getEmptyPolicyFieldCard(fieldKey) {
+    const defaultValue = fieldKey.defaultValue !== undefined ? fieldKey.defaultValue : '';
+    return {
+        fieldName: fieldKey.name,
+        booleanOperator: 'OR',
+        values: [
+            {
+                value: defaultValue,
+            },
+        ],
+        negate: false,
+        fieldKey,
+    };
 }

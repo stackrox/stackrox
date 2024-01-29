@@ -3,12 +3,11 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,8 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -101,15 +100,8 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), networkFlowsTable)
-
 	// We begin to process in batches after this number of records
 	batchAfter = 100
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 
 	deleteTimeout = env.PostgresDefaultNetworkFlowDeleteTimeout.DurationSetting()
 
@@ -169,8 +161,11 @@ func (s *flowStoreImpl) insertIntoNetworkflow(ctx context.Context, tx *postgres.
 }
 
 func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx, objs ...*storage.NetworkFlow) error {
-
-	inputRows := [][]interface{}{}
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
+	inputRows := make([][]interface{}, 0, batchSize)
 	var err error
 
 	copyCols := []string{

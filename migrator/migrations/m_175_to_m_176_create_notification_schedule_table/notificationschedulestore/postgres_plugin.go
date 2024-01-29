@@ -7,12 +7,9 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
-	baseTable = "notification_schedules"
-
 	getStmt    = "SELECT serialized FROM notification_schedules LIMIT 1"
 	deleteStmt = "DELETE FROM notification_schedules"
 )
@@ -25,8 +22,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db    postgres.DB
-	mutex sync.Mutex
+	db postgres.DB
 }
 
 // New returns a new Store instance using the provided sql instance.

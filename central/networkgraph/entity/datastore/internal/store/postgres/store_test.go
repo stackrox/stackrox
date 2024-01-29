@@ -35,6 +35,7 @@ func (s *NetworkEntitiesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE network_entities CASCADE")
 	s.T().Log("network_entities", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

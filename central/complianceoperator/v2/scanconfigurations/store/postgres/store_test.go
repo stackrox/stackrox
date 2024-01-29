@@ -42,6 +42,7 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2 CASCADE")
 	s.T().Log("compliance_operator_scan_configuration_v2", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
@@ -93,7 +94,7 @@ func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorScanConfigurationV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanConfigurationV2.GetId()), sac.ErrResourceAccessDenied)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorScanConfigurationV2.GetId()))
 
 	var complianceOperatorScanConfigurationV2s []*storage.ComplianceOperatorScanConfigurationV2
 	var complianceOperatorScanConfigurationV2IDs []string

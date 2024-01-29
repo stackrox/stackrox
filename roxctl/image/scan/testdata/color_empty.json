@@ -1,9 +1,9 @@
 {
   "result": {
     "summary": {
-      "[31;1mCRITICAL[0m": 0,
+      "[31;1mCRITICAL[0;22m": 0,
       "[31mIMPORTANT[0m": 0,
-      "[34;2mLOW[0m": 0,
+      "[34;2mLOW[0;22m": 0,
       "MODERATE": 0,
       "TOTAL-COMPONENTS": 0,
       "TOTAL-VULNERABILITIES": 0

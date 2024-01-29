@@ -60,10 +60,10 @@ func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
 
 	statusErrors := []string{"compliance operator not ready.  Only 2 pods are ready when 5 are desired."}
 	expectedInfo := &storage.ComplianceIntegration{
-		Version:      "22",
-		ClusterId:    fixtureconsts.Cluster1,
-		Namespace:    fixtureconsts.Namespace1,
-		StatusErrors: statusErrors,
+		Version:             "22",
+		ClusterId:           fixtureconsts.Cluster1,
+		ComplianceNamespace: fixtureconsts.Namespace1,
+		StatusErrors:        statusErrors,
 	}
 
 	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)

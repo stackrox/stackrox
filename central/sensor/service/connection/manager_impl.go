@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -56,6 +58,9 @@ type connectionAndUpgradeController struct {
 type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
+
+	// connectionPreference stores preferences based on sensor connections
+	connectionPreference sync.Map
 
 	clusters                   common.ClusterManager
 	networkEntities            common.NetworkEntityManager
@@ -289,7 +294,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	}
 
 	err = conn.Run(ctx, server, conn.capabilities)
-	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
+	m.handleConnectionError(clusterID, err)
 
 	// Address the scenario in which the sensor loses its connection during
 	// the initial synchronization process.
@@ -304,6 +309,34 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	})
 
 	return err
+}
+
+func (m *manager) handleConnectionError(clusterID string, err error) {
+	if e, ok := status.FromError(err); ok {
+		if e.Code() == codes.ResourceExhausted {
+			log.Warnf("gRPC connection received a payload too large to be processed: %s", err)
+			log.Warnf("Increase ROX_GRPC_MAX_MESSAGE_SIZE to allow larger payloads. Central will temporarily disable client reconciliation to avoid receiving large payloads from Sensor.")
+			pref := m.GetConnectionPreference(clusterID)
+			pref.SendDeduperState = false
+			m.connectionPreference.Store(clusterID, pref)
+		}
+	}
+	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
+}
+
+// GetConnectionPreference returns the connection preference for cluster ID.
+func (m *manager) GetConnectionPreference(clusterID string) Preferences {
+	var p Preferences
+	var ok bool
+	if pref, exists := m.connectionPreference.Load(clusterID); !exists {
+		p = Preferences{
+			SendDeduperState: true,
+		}
+		m.connectionPreference.Store(clusterID, p)
+	} else if p, ok = (pref).(Preferences); !ok {
+		log.Warnf("Incorrect entry in Connection preferences map for cluster ID: %s", clusterID)
+	}
+	return p
 }
 
 func (m *manager) getOrCreateUpgradeCtrl(clusterID string) (upgradecontroller.UpgradeController, error) {

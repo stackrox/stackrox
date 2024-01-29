@@ -68,20 +68,25 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
+	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
+	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
+	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
@@ -275,10 +280,12 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
-	// The method for system-level data collection. EBPF is recommended.
+	// The method for system-level data collection. CORE_BPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
-	//+kubebuilder:default=EBPF
+	// The value is a subject of conversion by the operator if needed, e.g. to
+	// remove deprecated methods.
+	//+kubebuilder:default=CORE_BPF
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
@@ -290,7 +297,15 @@ type CollectorContainerSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// When the "collection" field is set to the deprecated value "EBPF", then
+	// setting this to "true" prevents conversion of the collection method to
+	// "CORE_BPF". This could be used in exceptional situations when "EBPF" has
+	// to be used.
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	ForceCollection *bool `json:"forceCollection,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	ContainerSpec `json:",inline"`
 }
 
@@ -337,6 +352,24 @@ type LocalScannerComponentSpec struct {
 	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB"
 	DB *DeploymentSpec `json:"db,omitempty"`
+}
+
+// LocalScannerV4ComponentSpec defines settings for the "scanner V4" component in SecuredClusters
+type LocalScannerV4ComponentSpec struct {
+	// If you do not want to deploy the Red Hat Advanced Cluster Security local Scanner V4, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:default=AutoSense
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the indexer deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
+	Indexer *ScannerV4Component `json:"indexer,omitempty"`
+
+	// Settings pertaining to the DB deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense"}
+	DB *ScannerV4DB `json:"db,omitempty"`
 }
 
 // LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.

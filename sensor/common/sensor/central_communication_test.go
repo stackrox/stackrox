@@ -19,7 +19,6 @@ import (
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/common/reconciliation"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
@@ -103,14 +102,16 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	})
 
 	reachable := concurrency.Flag{}
+	syncDone := concurrency.NewSignal()
 	// Start the go routine with the mocked client
-	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Pretend that a component (listener) is sending the sync event
 	responsesC <- message.New(syncMessage())
 	select {
 	case <-ch:
+		c.Assert().True(syncDone.IsDone(), "syncDone signal was not triggered")
 		break
 	case <-time.After(5 * time.Second):
 		c.Fail("timeout reached waiting for the sync event")
@@ -128,8 +129,9 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	})
 
 	reachable := concurrency.Flag{}
+	syncDone := concurrency.NewSignal()
 	// Start the go routine with the mocked client
-	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Stop CentralCommunication
@@ -246,8 +248,9 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 			c.mockService.client.EXPECT().CloseSend().AnyTimes()
 
 			reachable := concurrency.Flag{}
+			syncDone := concurrency.NewSignal()
 			// Start the go routine with the mocked client
-			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+			c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
 			c.mockService.connected.Wait()
 
 			for _, msg := range tc.componentMessages {
@@ -308,11 +311,12 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 			})
 
 			reachable := concurrency.Flag{}
+			syncDone := concurrency.NewSignal()
 			if tc.reducedTimeout {
 				c.comm.(*centralCommunicationImpl).syncTimeout = 10 * time.Millisecond
 			}
 			// Start the go routine with the mocked client
-			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+			c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
 			c.mockService.connected.Wait()
 
 			select {
@@ -387,7 +391,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(reconciliation.NewDeduperStateProcessor(c.mockReconciliation), false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),

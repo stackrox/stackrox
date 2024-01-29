@@ -47,3 +47,9 @@ func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStat
 	}
 	return &statements
 }
+
+// ResetPGStatStatements resets the pg_stat_statements via pg_stat_statements_reset()
+func ResetPGStatStatements(ctx context.Context, db postgres.DB) error {
+	_, err := db.Exec(ctx, "select pg_stat_statements_reset()")
+	return err
+}

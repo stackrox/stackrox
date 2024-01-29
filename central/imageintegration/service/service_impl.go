@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
@@ -27,8 +28,10 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scanners"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 )
@@ -153,6 +156,11 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new image integration")
 	}
 
+	// Do not allow manual creation of a scanner v4 integration.
+	if request.GetType() == scannerTypes.ScannerV4 {
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be manually created")
+	}
+
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -185,6 +193,11 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	ii, existed, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
+	}
+
+	// Do not allow manual deletion of a scanner v4 integration.
+	if existed && ii.GetType() == scannerTypes.ScannerV4 {
+		return nil, errors.Wrap(errox.InvalidArgs, "scanner V4 integration cannot be deleted")
 	}
 
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
@@ -271,7 +284,7 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 }
 
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
-	registry, err := s.registryFactory.CreateRegistry(integration)
+	registry, err := s.registryFactory.CreateRegistry(integration, types.WithGCPTokenManager(gcp.Singleton()))
 	if err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -332,6 +345,27 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
+	var integration *storage.ImageIntegration
+	var exists bool
+	var err error
+
+	// Use the presence of ID to determine if this request is for an updated integration.
+	if updateRequest.GetConfig().GetId() != "" {
+		integration, exists, err = s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return errors.Wrapf(errox.NotFound, "image integration %q not found", updateRequest.GetConfig().GetId())
+		}
+
+		newType := updateRequest.GetConfig().GetType()
+		oldType := integration.GetType()
+		if newType != oldType && (newType == scannerTypes.ScannerV4 || oldType == scannerTypes.ScannerV4) {
+			return errors.Wrap(errox.InvalidArgs, "cannot change integration type to/from scanner V4")
+		}
+	}
+
 	if updateRequest.GetUpdatePassword() {
 		return nil
 	}
@@ -340,13 +374,6 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 	}
 	if updateRequest.GetConfig().GetId() == "" {
 		return errors.Wrap(errox.InvalidArgs, "id required for stored credential reconciliation")
-	}
-	integration, exists, err := s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
 	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())

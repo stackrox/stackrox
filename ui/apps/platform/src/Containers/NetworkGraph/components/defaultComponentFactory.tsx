@@ -20,7 +20,7 @@ const defaultComponentFactory: ComponentFactory = (
     kind: CustomModelKind,
     type: string
 ):
-    | ComponentType<{ element: GraphElement }>
+    | ComponentType<React.PropsWithChildren<{ element: GraphElement }>>
     | typeof DefaultGroup
     | typeof GraphComponent
     | typeof DefaultNode

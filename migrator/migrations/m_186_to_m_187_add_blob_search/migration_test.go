@@ -18,10 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	validFilePath = "2.4.0/collector-4.9.24-coreos.ko.gz"
-)
-
 type blobMigrationTestSuite struct {
 	suite.Suite
 	ctx context.Context

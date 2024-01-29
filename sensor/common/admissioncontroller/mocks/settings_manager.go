@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/settings_manager.go -source settings_manager.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -86,7 +86,7 @@ function ReportFormWizardFooter({
                             >
                                 <p>
                                     Are you sure you want to cancel? Any unsaved changes will be
-                                    lost. You&apos;ll be taken back to the list of reports.
+                                    lost. You will be taken back to the list of reports.
                                 </p>
                             </Modal>
                         </>

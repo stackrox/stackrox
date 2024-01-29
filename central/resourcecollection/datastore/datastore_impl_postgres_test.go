@@ -19,7 +19,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/gorm"
 )
 
 func TestCollectionDataStoreWithPostgres(t *testing.T) {
@@ -31,7 +30,6 @@ type CollectionPostgresDataStoreTestSuite struct {
 
 	ctx       context.Context
 	testDB    *pgtest.TestPostgres
-	gormDB    *gorm.DB
 	store     pgStore.Store
 	datastore DataStore
 	qr        QueryResolver

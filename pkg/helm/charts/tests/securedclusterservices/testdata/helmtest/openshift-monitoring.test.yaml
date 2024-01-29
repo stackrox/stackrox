@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 server:
   availableSchemas:
   - openshift-4.1.0

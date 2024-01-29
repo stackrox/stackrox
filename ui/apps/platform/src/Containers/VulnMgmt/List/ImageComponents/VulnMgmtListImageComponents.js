@@ -89,7 +89,6 @@ export function getComponentTableColumns() {
                 Header: `Active`,
                 headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
                 Cell: ({ original }) => {
                     return original.activeState?.state || 'Undetermined';
                 },

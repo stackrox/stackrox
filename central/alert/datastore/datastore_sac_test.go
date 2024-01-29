@@ -80,7 +80,6 @@ type crudTest struct {
 	scopeKey      string
 	expectedError error
 	expectError   bool
-	expectedFound bool
 }
 
 func (s *alertDatastoreSACTestSuite) cleanupAlert(ID string) {

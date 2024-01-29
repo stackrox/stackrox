@@ -108,11 +108,7 @@ func (i *Image) GetChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.Cha
 	}
 
 	chartTpl, err := helmTemplate.Load(chartTplFiles)
-	if err != nil {
-		return nil, errors.Wrapf(err, "loading %s helmtpl", chartPrefixPath)
-	}
-
-	return chartTpl, nil
+	return chartTpl, errors.Wrapf(err, "loading %s helm chart template", chartPrefixPath)
 }
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
@@ -152,14 +148,9 @@ var (
 // LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
 func (i *Image) LoadAndInstantiateChartTemplate(chartPrefixPath ChartPrefix, metaVals *charts.MetaValues) ([]*loader.BufferedFile, error) {
-	chartTplFiles, err := i.getChartFiles(chartPrefixPath)
+	chartTpl, err := i.GetChartTemplate(chartPrefixPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", chartPrefixPath)
-	}
-
-	chartTpl, err := helmTemplate.Load(chartTplFiles)
-	if err != nil {
-		return nil, errors.Wrapf(err, "loading %s helmtpl", chartPrefixPath)
+		return nil, err
 	}
 
 	// Render template files.
@@ -245,20 +236,9 @@ func (i *Image) LoadChart(chartPrefix ChartPrefix, metaValues *charts.MetaValues
 	return c, nil
 }
 
-// GetSensorChartTemplate loads the Sensor helmtpl meta-template
-func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
-	chartTplFiles, err := i.getChartFiles(SecuredClusterServicesChartPrefix)
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
-	}
-
-	load, err := helmTemplate.Load(chartTplFiles)
-	return load, errors.Wrap(err, "could not load chart template")
-}
-
 // GetSensorChart returns the Helm chart for sensor
 func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
-	chartTpl, err := i.GetSensorChartTemplate()
+	chartTpl, err := i.GetSecuredClusterServicesChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading sensor chart template")
 	}
@@ -293,10 +273,9 @@ func (i *Image) addScripts(values *charts.MetaValues) ([]*loader.BufferedFile, e
 		return i.scripts(values, k8sScriptsFileMap)
 	} else if values.ClusterType == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
 		return i.scripts(values, osScriptsFileMap)
-	} else {
-		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
-			values.ClusterName)
 	}
+	return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
+		values.ClusterName)
 }
 
 func (i *Image) scripts(values *charts.MetaValues, filenameMap map[string]string) ([]*loader.BufferedFile, error) {

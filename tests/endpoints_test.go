@@ -32,8 +32,6 @@ type authMode int
 const (
 	timeout = 30 * time.Second
 
-	portOffset = 10000
-
 	userPKIProviderName = "test-userpki"
 )
 

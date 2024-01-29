@@ -10,7 +10,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -22,8 +21,6 @@ import (
 
 var (
 	ctx = sac.WithAllAccess(context.Background())
-
-	log = logging.LoggerForModule()
 )
 
 type SingleUUIDIndexSuite struct {

@@ -42,7 +42,7 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
-		schema.ScopingResource = resources.Integration
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceIntegrationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, schema)
 		return schema
@@ -56,10 +56,8 @@ const (
 
 // ComplianceIntegrations holds the Gorm model for Postgres table `compliance_integrations`.
 type ComplianceIntegrations struct {
-	ID          string `gorm:"column:id;type:uuid;primaryKey"`
-	Version     string `gorm:"column:version;type:varchar"`
-	ClusterID   string `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:btree"`
-	Namespace   string `gorm:"column:namespace;type:varchar;index:complianceintegrations_sac_filter,type:btree"`
-	NamespaceID string `gorm:"column:namespaceid;type:uuid"`
-	Serialized  []byte `gorm:"column:serialized;type:bytea"`
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
+	Version    string `gorm:"column:version;type:varchar"`
+	ClusterID  string `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator;index:complianceintegrations_sac_filter,type:hash"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

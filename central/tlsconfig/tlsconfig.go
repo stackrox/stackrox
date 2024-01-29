@@ -34,7 +34,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {
-			log.Infof("Additional CA directory %q does not exist: skipping", additionalCADir)
+			log.Debugf("Additional CA directory %q does not exist: skipping", additionalCADir)
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, fmt.Sprintf("Failed to read additional CAs directory %q", additionalCADir))
@@ -48,7 +48,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 		filePath := path.Join(additionalCADir, entryName)
 
 		if directoryEntry.IsDir() {
-			log.Infof("Skipping additional CA directory entry %q because it is a directory", entryName)
+			log.Debugf("Skipping additional CA directory entry %q because it is a directory", entryName)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func GetAdditionalCAFilePaths() ([]string, error) {
 				continue
 			}
 			if fileInfo.IsDir() {
-				log.Infof("Skipping additional CA file %q because it is a symlink that resolved to a directory", filePath)
+				log.Debugf("Skipping additional CA file %q because it is a symlink that resolved to a directory", filePath)
 				continue
 			}
 		}
@@ -152,7 +152,7 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 			log.Warnw("Error checking if default TLS certificate file exists", logging.Err(err))
 			return nil, err
 		}
-		log.Infof("Default TLS certificate file %q does not exist. Skipping", certFile)
+		log.Debugf("Default TLS certificate file %q does not exist. Skipping", certFile)
 		return nil, nil
 	}
 
@@ -161,7 +161,7 @@ func MaybeGetDefaultTLSCertificateFromDirectory(dir string) (*tls.Certificate, e
 			log.Warnw("Error checking if default TLS key file exists", logging.Err(err))
 			return nil, err
 		}
-		log.Infof("Default TLS key file %q does not exist. Skipping", keyFile)
+		log.Debugf("Default TLS key file %q does not exist. Skipping", keyFile)
 		return nil, nil
 	}
 

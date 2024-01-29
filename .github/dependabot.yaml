@@ -54,6 +54,13 @@ updates:
     ignore:
       - dependency-name: "github.com/aws/aws-sdk-go"
         update-types: ["version-update:semver-patch"]
+      # This version of ClairCore does not build on Darwin.
+      - dependency-name: "github.com/quay/claircore"
+        versions: ["1.5.20"]
+    groups:
+      k8s.io:
+        patterns:
+          - "k8s.io/*"
 
   - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
@@ -66,6 +73,21 @@ updates:
     - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/tools/proto/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -90,7 +112,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/operator"
@@ -106,7 +128,7 @@ updates:
     schedule:
       interval: 'weekly'
       day: 'wednesday'
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     labels:
     - "dependencies"
     - "area/scanner"
@@ -204,3 +226,7 @@ updates:
     commit-message:
       include: scope
       prefix: chore
+    groups:
+      actions:
+        patterns:
+          - "actions/*"

@@ -19,6 +19,7 @@ import (
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/kocache"
@@ -34,7 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
-	"github.com/stackrox/rox/sensor/common/reconciliation"
+	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
 
@@ -76,10 +77,9 @@ type Sensor struct {
 
 	stoppedSig concurrency.ErrorSignal
 
-	notifyList            []common.Notifiable
-	reconnect             atomic.Bool
-	reconcile             atomic.Bool
-	deduperStateProcessor *reconciliation.DeduperStateProcessor
+	notifyList []common.Notifiable
+	reconnect  atomic.Bool
+	reconcile  atomic.Bool
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -88,18 +88,16 @@ func NewSensor(
 	detector detector.Detector,
 	imageService image.Service,
 	centralConnectionFactory centralclient.CentralConnectionFactory,
-	deduperStateProcessor *reconciliation.DeduperStateProcessor,
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		configHandler:         configHandler,
-		detector:              detector,
-		imageService:          imageService,
-		deduperStateProcessor: deduperStateProcessor,
-		components:            append(components, detector, configHandler, deduperStateProcessor), // Explicitly add the config handler
+		configHandler: configHandler,
+		detector:      detector,
+		imageService:  imageService,
+		components:    append(components, detector, configHandler), // Explicitly add the config handler
 
 		centralConnectionFactory: centralConnectionFactory,
 		centralConnection:        grpcUtil.NewLazyClientConn(),
@@ -214,6 +212,8 @@ func (s *Sensor) Start() {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
 		customRoutes = append(customRoutes, *route)
+
+		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
 	// Create grpc server with custom routes
@@ -297,7 +297,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.Cus
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
-		Authorizer:    idcheck.ScannerOnly(),
+		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly()),
 		ServerHandler: handler,
 	}, nil
 }
@@ -337,9 +337,11 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, false, false, s.components...)
+	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
 
-	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
+	syncDone := concurrency.NewSignal()
+	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+	go s.notifySyncDone(&syncDone, s.centralCommunication)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)
@@ -373,6 +375,19 @@ func wrapOrNewError(err error, message string) error {
 	return errors.Wrap(err, message)
 }
 
+func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
+	select {
+	case <-syncDone.Done():
+		s.currentStateMtx.Lock()
+		defer s.currentStateMtx.Unlock()
+		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
+	case <-centralCommunication.Stopped().WaitC():
+		return
+	case <-s.stoppedSig.WaitC():
+		return
+	}
+}
+
 func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurrency.Flag) {
 	// Attempt a simple restart strategy: if connection broke, re-establish the connection with exponential back-offs.
 	// This approach does not consider messages that were already sent to central_sender but weren't written to the stream.
@@ -383,10 +398,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
-	if features.SensorReconciliationOnReconnect.Enabled() {
-		s.reconcile.Store(true)
-	}
-
+	s.reconcile.Store(true)
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
@@ -402,8 +414,11 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, s.reconnect.Load(), s.reconcile.Load(), s.components...)
-		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
+		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		syncDone := concurrency.NewSignal()
+		s.centralCommunication = centralCommunication
+		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
+		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
 		select {

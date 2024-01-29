@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/reports/config/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -17,8 +16,6 @@ import (
 
 var (
 	reportConfigSAC = sac.ForResource(resources.WorkflowAdministration)
-
-	log = logging.LoggerForModule()
 )
 
 type dataStoreImpl struct {

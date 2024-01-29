@@ -285,6 +285,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
 	cmd.Flags().String("format", "", "")
 	cmd.Flags().String("output", "", "")
 
@@ -366,6 +367,7 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
+			cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
 			cmd.Flag("output").Changed = c.outputChanged
 
@@ -377,7 +379,6 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 			}
 		})
 	}
-
 }
 
 func (s *imageScanTestSuite) TestValidate() {
@@ -527,7 +528,8 @@ func (s *imageScanTestSuite) TestScan_LegacyJSONOutput() {
 // helpers to run output formats tests either for legacy formats or printer.ObjectPrinter supported formats
 
 func (s *imageScanTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
-	standardizedFormat bool) {
+	standardizedFormat bool,
+) {
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		s.Run(name, func() {

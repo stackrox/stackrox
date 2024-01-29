@@ -35,6 +35,7 @@ func (s *NetworkpolicyapplicationundorecordsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE networkpolicyapplicationundorecords CASCADE")
 	s.T().Log("networkpolicyapplicationundorecords", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

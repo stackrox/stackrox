@@ -16,8 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -153,9 +153,9 @@ func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
 // DockerConfigToImageIntegration creates an image integration for a given
 // registry URL and docker config.
 func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
-	registryType := docker.GenericDockerRegistryType
+	registryType := types.DockerType
 	if rhel.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
-		registryType = rhel.RedHatRegistryType
+		registryType = types.RedHatType
 	}
 
 	var id string
@@ -358,11 +358,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	events := component.NewEvent(sensorEvents...)
 	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
 
-	if env.ResyncDisabled.BooleanSetting() {
-		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
-		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
-		events.AddDeploymentReference(resolver.ResolveAllDeployments())
-	}
+	// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+	// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+	events.AddDeploymentReference(resolver.ResolveAllDeployments())
 
 	return events
 }

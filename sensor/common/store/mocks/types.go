@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/types.go -source types.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -13,8 +14,8 @@ import (
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
+	deduperkey "github.com/stackrox/rox/pkg/deduperkey"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
-	deduper "github.com/stackrox/rox/sensor/common/deduper"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
 	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
@@ -74,6 +75,18 @@ func (m *MockDeploymentStore) CountDeploymentsForNamespace(namespaceName string)
 func (mr *MockDeploymentStoreMockRecorder) CountDeploymentsForNamespace(namespaceName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDeploymentsForNamespace", reflect.TypeOf((*MockDeploymentStore)(nil).CountDeploymentsForNamespace), namespaceName)
+}
+
+// EnhanceDeploymentReadOnly mocks base method.
+func (m *MockDeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnhanceDeploymentReadOnly", d, dependencies)
+}
+
+// EnhanceDeploymentReadOnly indicates an expected call of EnhanceDeploymentReadOnly.
+func (mr *MockDeploymentStoreMockRecorder) EnhanceDeploymentReadOnly(d, dependencies any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnhanceDeploymentReadOnly", reflect.TypeOf((*MockDeploymentStore)(nil).EnhanceDeploymentReadOnly), d, dependencies)
 }
 
 // FindDeploymentIDsByImages mocks base method.
@@ -159,6 +172,20 @@ func (m *MockDeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment
 func (mr *MockDeploymentStoreMockRecorder) GetBuiltDeployment(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBuiltDeployment", reflect.TypeOf((*MockDeploymentStore)(nil).GetBuiltDeployment), id)
+}
+
+// GetSnapshot mocks base method.
+func (m *MockDeploymentStore) GetSnapshot(id string) *storage.Deployment {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSnapshot", id)
+	ret0, _ := ret[0].(*storage.Deployment)
+	return ret0
+}
+
+// GetSnapshot indicates an expected call of GetSnapshot.
+func (mr *MockDeploymentStoreMockRecorder) GetSnapshot(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSnapshot", reflect.TypeOf((*MockDeploymentStore)(nil).GetSnapshot), id)
 }
 
 // MockPodStore is a mock of PodStore interface.
@@ -695,7 +722,7 @@ func (m *MockHashReconciler) EXPECT() *MockHashReconcilerMockRecorder {
 }
 
 // ProcessHashes mocks base method.
-func (m *MockHashReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
+func (m *MockHashReconciler) ProcessHashes(h map[deduperkey.Key]uint64) []central.MsgFromSensor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessHashes", h)
 	ret0, _ := ret[0].([]central.MsgFromSensor)

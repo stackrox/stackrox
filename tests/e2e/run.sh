@@ -22,8 +22,6 @@ test_e2e() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-    # TODO(ROX-18827) turn off new compliance for now
-    ci_export ROX_COMPLIANCE_ENHANCEMENTS "false"
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
@@ -33,6 +31,7 @@ test_e2e() {
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
+    info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
     deploy_stackrox
@@ -137,6 +136,9 @@ run_roxctl_tests() {
 
     junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
         "$ROOT/tests/roxctl/istio-support.sh"
+
+    junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
+        "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
 
     junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
         "$ROOT/tests/roxctl/helm-chart-generation.sh"

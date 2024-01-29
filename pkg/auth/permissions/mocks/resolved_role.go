@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/resolved_role.go -source resolved_role.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

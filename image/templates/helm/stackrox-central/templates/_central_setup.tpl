@@ -71,6 +71,9 @@
   {{ if $pvcCfg.createClaim }}
     {{ $_ = set $centralCfg.persistence "_pvcCfg" $pvcCfg }}
   {{ end }}
+  {{ if $pvcCfg.storageClass}}
+    {{ $_ = set $._rox._state "referencedStorageClasses" (mustAppend $._rox._state.referencedStorageClasses $pvcCfg.storageClass | uniq) }}
+  {{ end }}
 {{ end }}
 
 {{/*
@@ -96,6 +99,9 @@
   {{ $_ = set $dbVolumeCfg "persistentVolumeClaim" (dict "claimName" $dbPVCCfg.claimName) }}
   {{ if $dbPVCCfg.createClaim }}
     {{ $_ = set $centralDBCfg.persistence "_pvcCfg" $dbPVCCfg }}
+  {{ end }}
+  {{ if $dbPVCCfg.storageClass}}
+    {{ $_ = set $._rox._state "referencedStorageClasses" (mustAppend $._rox._state.referencedStorageClasses $dbPVCCfg.storageClass | uniq) }}
   {{ end }}
 {{ end }}
 {{ end }}

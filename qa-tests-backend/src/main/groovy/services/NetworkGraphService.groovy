@@ -17,6 +17,8 @@ import util.Timer
 class NetworkGraphService extends BaseService {
     static getNetworkGraphClient() {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
+            .withMaxInboundMessageSize(2*4194304) // Twice the default size
+            .withMaxOutboundMessageSize(2*4194304)
     }
 
     static getNetworkGraph(Timestamp since = null, String query = null, String scopeQuery = null) {
@@ -92,6 +94,8 @@ class NetworkGraphService extends BaseService {
                         GetExternalNetworkEntitiesRequest.newBuilder().setClusterId(clusterId).build()
                 GetExternalNetworkEntitiesResponse response =
                         getNetworkGraphClient().getExternalNetworkEntities(request)
+
+                // Calling response.getEntitiesList() may cause io.grpc.StatusRuntimeException: RESOURCE_EXHAUSTED
                 NetworkEntity matchingEntity =
                         response
                                 .getEntitiesList()

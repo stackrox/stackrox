@@ -4,28 +4,48 @@ import cloneDeep from 'lodash/cloneDeep';
 import { useFormik, FormikProvider } from 'formik';
 import { Globe } from 'react-feather';
 
+import useAnalytics, { WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED } from 'hooks/useAnalytics';
 import { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../types';
+
+function analyticsTrackDefaultFilters(
+    analyticsTrack: ReturnType<typeof useAnalytics>['analyticsTrack'],
+    filters: DefaultFilters
+) {
+    analyticsTrack({
+        event: WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED,
+        properties: {
+            SEVERITY_CRITICAL: filters.SEVERITY.includes('Critical') ? 1 : 0,
+            SEVERITY_IMPORTANT: filters.SEVERITY.includes('Important') ? 1 : 0,
+            SEVERITY_MODERATE: filters.SEVERITY.includes('Moderate') ? 1 : 0,
+            SEVERITY_LOW: filters.SEVERITY.includes('Low') ? 1 : 0,
+            CVE_STATUS_FIXABLE: filters.FIXABLE.includes('Fixable') ? 1 : 0,
+            CVE_STATUS_NOT_FIXABLE: filters.FIXABLE.includes('Not fixable') ? 1 : 0,
+        },
+    });
+}
 
 type DefaultFilterModalProps = {
     defaultFilters: DefaultFilters;
-    setLocalStorage: (values) => void;
+    setLocalStorage: (values: DefaultFilters) => void;
 };
 
 function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterModalProps) {
+    const { analyticsTrack } = useAnalytics();
     const [isOpen, setIsOpen] = useState(false);
-    const totalFilters = defaultFilters.Severity.length + defaultFilters.Fixable.length;
+    const totalFilters = defaultFilters.SEVERITY.length + defaultFilters.FIXABLE.length;
 
     const formik = useFormik({
         initialValues: cloneDeep(defaultFilters),
         onSubmit: (values: DefaultFilters) => {
             setLocalStorage(values);
             setIsOpen(false);
+            analyticsTrackDefaultFilters(analyticsTrack, values);
         },
     });
 
     const { submitForm, values, setFieldValue, setValues } = formik;
-    const severityValues = values.Severity;
-    const fixableValues = values.Fixable;
+    const severityValues = values.SEVERITY;
+    const fixableValues = values.FIXABLE;
 
     function handleModalToggle() {
         if (isOpen) {
@@ -41,7 +61,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         } else {
             newSeverityValues = newSeverityValues.filter((val) => val !== severity);
         }
-        setFieldValue('Severity', newSeverityValues).catch(() => {});
+        setFieldValue('SEVERITY', newSeverityValues).catch(() => {});
     }
 
     function handleFixableChange(fixable: FixableStatus, isChecked: boolean) {
@@ -51,7 +71,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         } else {
             newFixableValues = newFixableValues.filter((val) => val !== fixable);
         }
-        setFieldValue('Fixable', newFixableValues).catch(() => {});
+        setFieldValue('FIXABLE', newFixableValues).catch(() => {});
     }
 
     return (

@@ -104,13 +104,6 @@ class AdmissionControllerTest extends BaseSpecification {
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
     }
 
-    def setup() {
-        // https://stack-rox.atlassian.net/browse/ROX-7026 - Disable ChaosMonkey
-        // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
-        // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
-        // chaosMonkey = new ChaosMonkey(orchestrator, 1, 10L)
-    }
-
     def cleanup() {
         if (chaosMonkey) {
             chaosMonkey.stop()
@@ -495,12 +488,8 @@ class AdmissionControllerTest extends BaseSpecification {
         def timer = new Timer(30, 1)
         def deleted = false
         while (!deleted && timer.IsValid()) {
-            try {
-                orchestrator.deleteDeployment(deployment)
-                deleted = true
-            } catch (NullPointerException ignore) {
-                log.info "Caught NPE while deleting deployment, retrying in 1s..."
-            }
+            orchestrator.deleteDeployment(deployment)
+            deleted = true
         }
         if (!deleted) {
             log.warn "Failed to delete deployment. Subsequent tests may be affected ..."

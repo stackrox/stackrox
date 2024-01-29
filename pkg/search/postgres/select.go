@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -31,9 +30,11 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanResults",
 			"/v2.ComplianceResultsService/GetComplianceProfileScanStats",
 			"/v2.ComplianceResultsService/GetComplianceClusterScanStats",
+			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
+			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
+			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 		},
 	})
-	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -44,7 +45,7 @@ func New(complianceResultsDS complianceDS.DataStore) Service {
 }
 
 type serviceImpl struct {
-	v2.UnimplementedComplianceScanConfigurationServiceServer
+	v2.UnimplementedComplianceResultsServiceServer
 
 	complianceResultsDS complianceDS.DataStore
 }
@@ -117,4 +118,58 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, query *
 	return &v2.ListComplianceClusterScanStatsResponse{
 		ScanStats: storagetov2.ComplianceV2ClusterStats(scanResults),
 	}, nil
+}
+
+// GetComplianceOverallClusterStats lists current scan stats grouped by cluster
+func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceClusterOverallStatsResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	scanResults, err := s.complianceResultsDS.ComplianceClusterStats(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", query)
+	}
+
+	return &v2.ListComplianceClusterOverallStatsResponse{
+		ScanStats: storagetov2.ComplianceV2ClusterOverallStats(scanResults),
+	}, nil
+}
+
+// GetComplianceScanResultsCount returns scan results count
+func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
+	}
+	return &v2.CountComplianceScanResults{
+		Count: int32(count),
+	}, nil
+}
+
+// GetComplianceScanCheckResult returns the specific result by ID
+func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceCheckResult, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "compliance check result ID is required for retrieval")
+	}
+
+	scanResult, found, err := s.complianceResultsDS.GetComplianceCheckResult(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve compliance check result with id %q.", req.GetId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
+	}
+
+	return storagetov2.ComplianceV2CheckResult(scanResult), nil
 }

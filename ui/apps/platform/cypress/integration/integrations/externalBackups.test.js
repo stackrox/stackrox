@@ -100,15 +100,15 @@ describe('Backup Integrations', () => {
             getInputByLabel('Integration name').type(' ');
             getInputByLabel('Backups to retain').clear(); // clear the default value of 1
             getInputByLabel('Bucket').type(' ');
-            getInputByLabel('Service account (JSON)').type(' ').blur();
+            getInputByLabel('Service account key (JSON)').type(' ').blur();
 
             getHelperElementByLabel('Integration name').contains('Integration name is required');
             getHelperElementByLabel('Backups to retain').contains(
                 'Number of backups to keep is required'
             );
             getHelperElementByLabel('Bucket').contains('Bucket is required');
-            getHelperElementByLabel('Service account (JSON)').contains(
-                'Valid JSON is required for service account'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
@@ -117,22 +117,31 @@ describe('Backup Integrations', () => {
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Bucket').type('stackrox');
             getInputByLabel('Backups to retain').type('0').blur(); // enter too low a value
-            getInputByLabel('Service account (JSON)').type('{').blur(); // enter invalid JSON
+            getInputByLabel('Service account key (JSON)').type('{').blur(); // enter invalid JSON
 
             getHelperElementByLabel('Backups to retain').contains(
                 'Number of backups to keep must be 1 or greater'
             );
-            getHelperElementByLabel('Service account (JSON)').contains(
-                'Valid JSON is required for service account'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid from and save
+            // Step 3, check conditional fields
+
+            // Step 3.1, enable workload identity, this should remove the service account field
+            getInputByLabel('Use workload identity').click();
+            getInputByLabel('Service account key (JSON)').should('be.disabled');
+            // Step 3.2, disable workload identity, this should render the service account field again
+            getInputByLabel('Use workload identity').click();
+            getInputByLabel('Service account key (JSON)').should('be.enabled');
+
+            // Step 4, check valid from and save
             getInputByLabel('Use workload identity').click().click(); // clear service account, then re-enable it
             getInputByLabel('Object prefix').clear().type('acs-');
             getInputByLabel('Backups to retain').clear().type(1).blur();
-            getInputByLabel('Service account (JSON)')
+            getInputByLabel('Service account key (JSON)')
                 .type('{ "type": "service_account" }', {
                     parseSpecialCharSequences: false,
                 })

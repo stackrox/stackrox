@@ -30,17 +30,13 @@ const (
 	requestTimeout = 10 * time.Second
 
 	maxOccurrenceResults = 1000
-
-	typeString = "google"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Google, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -65,6 +61,12 @@ func validate(google *storage.GoogleConfig) error {
 	}
 	if google.GetProject() == "" {
 		errorList.AddString("ProjectID must be specified for Google Container Analysis")
+	}
+	// Workload identities are only supported for registry image integrations. This is because
+	// we intend to remove the Google scanner in the future, and want to keep its features
+	// minimal for the time being.
+	if google.GetWifEnabled() {
+		errorList.AddString("Workload identities are not supported for Scanner integrations")
 	}
 	return errorList.ToError()
 }
@@ -262,7 +264,7 @@ func (c *googleScanner) Match(image *storage.ImageName) bool {
 }
 
 func (c *googleScanner) Type() string {
-	return typeString
+	return types.Google
 }
 
 func (c *googleScanner) Name() string {

@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 release:
   isInstall: false
   isUpgrade: true

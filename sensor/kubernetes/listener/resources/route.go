@@ -3,7 +3,6 @@ package resources
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -44,14 +43,8 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if existingService == nil {
 		return nil
 	}
-	// If re-sync is disabled, we do not call UpdateExposuresForMatchingDeployments,
-	// and instead we send all matching deployments to reprocess.
-	if env.ResyncDisabled.BooleanSetting() {
-		// We do not append any Route event here because Routes, just like Services, are not tracked by central.
-		event := component.NewEvent()
-		event.AddDeploymentReference(resolver.ResolveDeploymentLabels(existingService.GetNamespace(), existingService.selector))
-		return event
-	}
-	events := r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)
-	return component.NewEvent(events...)
+	// We do not append any Route event here because Routes, just like Services, are not tracked by central.
+	event := component.NewEvent()
+	event.AddDeploymentReference(resolver.ResolveDeploymentLabels(existingService.GetNamespace(), existingService.selector))
+	return event
 }

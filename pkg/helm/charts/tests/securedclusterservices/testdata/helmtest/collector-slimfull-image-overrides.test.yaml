@@ -7,6 +7,8 @@ values:
     collector:
       registry: docker.io/stackrox
       name: collector
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "slim mode"
   set:

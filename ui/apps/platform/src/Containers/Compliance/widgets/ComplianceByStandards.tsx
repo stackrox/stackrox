@@ -45,8 +45,8 @@ function ComplianceByStandards({
     const standards = !data?.results
         ? []
         : !entityType
-        ? data.results
-        : data.results.filter(({ scopes }) => scopes.includes(entityType));
+          ? data.results
+          : data.results.filter(({ scopes }) => scopes.includes(entityType));
     /* eslint-enable no-nested-ternary */
 
     return (

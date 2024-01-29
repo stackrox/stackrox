@@ -7,7 +7,7 @@ OUTPUT_DIR=$LOCAL_SENSOR_DIR/out
 
 K8S_EVENTS_FILE=$OUTPUT_DIR/trace.jsonl
 FAKE_WORKLOAD_FILE=$STACKROX_DIR/scale/workloads/default.yaml
-POLICIES_FILE=$STACKROX_DIR/sensor/tests/replay/data/policies.json
+POLICIES_FILE=$STACKROX_DIR/sensor/tests/data/policies.json
 TIME_FILE=$OUTPUT_DIR/time.txt
 LOCAL_SENSOR_BIN=local-sensor
 EXEC=$OUTPUT_DIR/$LOCAL_SENSOR_BIN
@@ -32,7 +32,7 @@ function build_local_sensor() {
 
 function generate_k8s_events() {
   [[ "$VERBOSE" == "false" ]] || echo "Generating k8s events file: $K8S_EVENTS_FILE"
-  $EXEC -record -record-out="$K8S_EVENTS_FILE" -with-fakeworkload="$FAKE_WORKLOAD_FILE" -resync=0s -central-out=/dev/null -no-cpu-prof -no-mem-prof > "$OUTPUT_DIR"/generate.log 2>&1 &
+  $EXEC -record -record-out="$K8S_EVENTS_FILE" -with-fakeworkload="$FAKE_WORKLOAD_FILE" -central-out=/dev/null -no-cpu-prof -no-mem-prof > "$OUTPUT_DIR"/generate.log 2>&1 &
   PID=$!
   [[ "$VERBOSE" == "false" ]] || echo "$LOCAL_SENSOR_BIN PID: $PID"
   sleep $GENERATE_TIMEOUT
@@ -43,7 +43,7 @@ function generate_k8s_events() {
 function run_test() {
   [[ "$VERBOSE" == "false" ]] || echo "Running tests with: $K8S_EVENTS_FILE"
   export ROX_METRICS_PORT=$ROX_METRICS_PORT
-  { time $EXEC -replay -replay-in="$K8S_EVENTS_FILE" -resync=10s -delay=0s -with-metrics -with-policies="$POLICIES_FILE" -central-out=/dev/null > "$OUTPUT_DIR"/test.log 2>&1 ; } > "$TIME_FILE" 2>&1 &
+  { time $EXEC -replay -replay-in="$K8S_EVENTS_FILE" -delay=0s -with-metrics -with-policies="$POLICIES_FILE" -central-out=/dev/null > "$OUTPUT_DIR"/test.log 2>&1 ; } > "$TIME_FILE" 2>&1 &
   TIME_PID=$!
   SENSOR_PID=$(pgrep -P $TIME_PID)
   [[ "$VERBOSE" == "false" ]] || echo "time PID: $TIME_PID"

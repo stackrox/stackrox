@@ -38,9 +38,15 @@ import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelec
 import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const cveListQuery = gql`
-    query getImageCVEList($query: String, $pagination: Pagination) {
+    query getImageCVEList(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         imageCVEs(query: $query, pagination: $pagination) {
             cve
             affectedImageCountBySeverity {
@@ -66,6 +72,7 @@ export const cveListQuery = gql`
                 cvss
                 scoreVersion
             }
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
 `;
@@ -75,6 +82,10 @@ export const unfilteredImageCountQuery = gql`
         imageCount
     }
 `;
+
+export type CVEListQueryResult = {
+    imageCVEs: ImageCVE[];
+};
 
 type ImageCVE = {
     cve: string;
@@ -93,6 +104,7 @@ type ImageCVE = {
         cvss: number;
         scoreVersion: string;
     }[];
+    pendingExceptionCount: number;
 };
 
 export type CVEsTableProps = {
@@ -103,7 +115,11 @@ export type CVEsTableProps = {
     filteredSeverities?: VulnerabilitySeverityLabel[];
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
+    createTableActions?: (cve: {
+        cve: string;
+        summary: string;
+        numAffectedImages: number;
+    }) => IAction[];
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
 };
 
@@ -176,6 +192,7 @@ function CVEsTable({
                         affectedImageCount,
                         firstDiscoveredInSystem,
                         distroTuples,
+                        pendingExceptionCount,
                     },
                     rowIndex
                 ) => {
@@ -212,10 +229,21 @@ function CVEsTable({
                                         rowIndex={rowIndex}
                                         cve={cve}
                                         summary={summary}
+                                        numAffectedImages={affectedImageCount}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
-                                    <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                <Td dataLabel="CVE" modifier="nowrap">
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={pendingExceptionCount > 0}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    >
+                                        <Link
+                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                        >
+                                            {cve}
+                                        </Link>
+                                    </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td dataLabel="Images by severity">
                                     <SeverityCountLabels
@@ -251,16 +279,21 @@ function CVEsTable({
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn
-                                            items={createTableActions({ cve, summary })}
+                                            menuAppendTo={() => document.body}
+                                            items={createTableActions({
+                                                cve,
+                                                summary,
+                                                numAffectedImages: affectedImageCount,
+                                            })}
                                         />
                                     </Td>
                                 )}
                             </Tr>
                             <Tr isExpanded={isExpanded}>
                                 <Td />
-                                <Td colSpan={colSpan}>
+                                <Td colSpan={colSpan - 1}>
                                     <ExpandableRowContent>
-                                        {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
+                                        {summary ? <Text>{summary}</Text> : <PartialCVEDataAlert />}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

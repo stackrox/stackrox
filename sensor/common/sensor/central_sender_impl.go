@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -16,13 +17,12 @@ type centralSenderImpl struct {
 	senders             []common.SensorComponent
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
-	initialDeduperState map[deduper.Key]uint64
-	onSync              func()
+	initialDeduperState map[deduperkey.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
 	s.initialDeduperState = initialDeduperState
-	go s.send(stream, onStops...)
+	go s.send(stream, sendUnchangedIDs, onStops...)
 }
 
 func (s *centralSenderImpl) Stop(_ error) {
@@ -31,10 +31,6 @@ func (s *centralSenderImpl) Stop(_ error) {
 
 func (s *centralSenderImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return s.stopper.Client().Stopped()
-}
-
-func (s *centralSenderImpl) OnSync(fn func()) {
-	s.onSync = fn
 }
 
 func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessage, to chan<- *message.ExpiringMessage) {
@@ -55,7 +51,7 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 	}
 }
 
-func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
 	defer func() {
 		s.stopper.Flow().ReportStopped()
 		runAll(s.stopper.Client().Stopped().Err(), onStops...)
@@ -64,7 +60,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState)
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, sendUnchangedIDs)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 
@@ -112,10 +108,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if msg.GetEvent().GetSynced() != nil {
-				log.Info("Sending synced signal to Central")
-				if s.onSync != nil {
-					go s.onSync()
-				}
+				log.Infof("Sending synced signal to Central")
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {

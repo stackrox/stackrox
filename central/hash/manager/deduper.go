@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -10,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -26,6 +24,8 @@ type Deduper interface {
 	// MarkSuccessful marks the message if necessary as being successfully processed, so it can be committed to the database
 	// It will promote the message from the received map to the successfully processed map
 	MarkSuccessful(msg *central.MsgFromSensor)
+	// RemoveMessage deletes the msg from the received map in order to allow future messages a chance to be successfully processed
+	RemoveMessage(msg *central.MsgFromSensor)
 	// StartSync is called once a new Sensor connection is initialized
 	StartSync()
 	// ProcessSync processes the Sensor sync message and reconciles the successfully processed and received maps
@@ -117,19 +117,6 @@ func (d *deduperImpl) shouldReprocess(hashKey string, hash uint64) bool {
 	return prevValue == hash
 }
 
-func getIDFromKey(key string) string {
-	return stringutils.GetAfter(key, ":")
-}
-
-func buildKey(typ, id string) string {
-	return fmt.Sprintf("%s:%s", typ, id)
-}
-
-func getKey(msg *central.MsgFromSensor) string {
-	event := msg.GetEvent()
-	return buildKey(eventPkg.GetEventTypeWithoutPrefix(event.GetResource()), event.GetId())
-}
-
 // StartSync is called when Sensor starts a new connection
 func (d *deduperImpl) StartSync() {
 	d.hashLock.Lock()
@@ -145,6 +132,18 @@ func (d *deduperImpl) StartSync() {
 	}
 }
 
+// RemoveMessage removes a message that was unsuccessfully processed and purges any values for it from the deduper.
+// This only applies when the message had an unretryable error such as context canceled
+func (d *deduperImpl) RemoveMessage(msg *central.MsgFromSensor) {
+	if skipDedupe(msg) {
+		return
+	}
+	key := eventPkg.GetKeyFromMessage(msg)
+	concurrency.WithLock(&d.hashLock, func() {
+		delete(d.received, key)
+	})
+}
+
 // MarkSuccessful marks a message as successfully processed
 func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	// If the object isn't eligible for deduping then do not mark it as being successfully processed
@@ -152,7 +151,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	if skipDedupe(msg) {
 		return
 	}
-	key := getKey(msg)
+	key := eventPkg.GetKeyFromMessage(msg)
 
 	d.hashLock.Lock()
 	defer d.hashLock.Unlock()
@@ -205,7 +204,7 @@ func (d *deduperImpl) ProcessSync() {
 			delete(d.successfullyProcessed, k)
 			// If a deployment is being removed due to reconciliation, then we will need to remove the alerts too
 			if strings.HasPrefix(k, deploymentResourceKey) {
-				alertKey := buildKey(alertResourceKey, getIDFromKey(k))
+				alertKey := eventPkg.FormatKey(alertResourceKey, eventPkg.ParseIDFromKey(k))
 				delete(d.successfullyProcessed, alertKey)
 			}
 		}
@@ -218,7 +217,7 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 		return true
 	}
 	event := msg.GetEvent()
-	key := getKey(msg)
+	key := eventPkg.GetKeyFromMessage(msg)
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.hashLock.Lock()

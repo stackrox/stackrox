@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	frozenSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v74"
-	"github.com/stackrox/rox/migrator/migrations/loghelper"
 	policyCategoryEdgePostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategoryedgepostgresstore"
 	policyCategoryPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policycategorypostgresstore"
 	policyPostgresStore "github.com/stackrox/rox/migrator/migrations/m_170_to_m_171_create_policy_categories_and_edges/policypostgresstore"
@@ -35,9 +34,6 @@ var (
 			return nil
 		},
 	}
-
-	batchSize = 500
-	log       = loghelper.LogWrapper{}
 
 	defaultCategories = []*storage.PolicyCategory{
 		{

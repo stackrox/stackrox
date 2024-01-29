@@ -4,7 +4,6 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    Bullseye,
     Button,
     Divider,
     Flex,
@@ -14,7 +13,6 @@ import {
     Grid,
     GridItem,
     PageSection,
-    Spinner,
     Split,
     SplitItem,
     Switch,
@@ -22,20 +20,18 @@ import {
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import get from 'lodash/get';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { FormikHandlers, useFormik } from 'formik';
 import * as yup from 'yup';
 
-import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { VulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import usePermissions from 'hooks/usePermissions';
 
-import { useVulnerabilitiesExceptionConfig } from './useVulnerabilitiesExceptionConfig';
+import { UseVulnerabilitiesExceptionConfigReturn } from './useVulnerabilitiesExceptionConfig';
 
 type BaseSettingProps = {
     fieldId: string;
@@ -121,24 +117,6 @@ function BooleanSetting({
     );
 }
 
-function getDefaultConfig(): VulnerabilitiesExceptionConfig {
-    return {
-        expiryOptions: {
-            dayOptions: [
-                { numDays: 1, enabled: false },
-                { numDays: 1, enabled: false },
-                { numDays: 1, enabled: false },
-                { numDays: 1, enabled: false },
-            ],
-            fixableCveOptions: {
-                allFixable: false,
-                anyFixable: false,
-            },
-            customDate: false,
-        },
-    };
-}
-
 const validationSchema = yup.object({
     expiryOptions: yup.object({
         dayOptions: yup
@@ -189,8 +167,8 @@ const validationSchema = yup.object({
                 anyFixable: yup.boolean().required(),
             })
             .required(),
-        // TODO Need 'Indefinitely' added to validation once it is available in the API
         customDate: yup.boolean().required(),
+        indefinite: yup.boolean().required(),
     }),
 });
 
@@ -212,16 +190,22 @@ function ensureMinimumDayOptions(
     };
 }
 
-function VulnerabilitiesConfiguration() {
+export type VulnerabilitiesConfigurationProps = {
+    config: VulnerabilitiesExceptionConfig;
+    updateConfig: UseVulnerabilitiesExceptionConfigReturn['updateConfig'];
+    isUpdateInProgress: boolean;
+};
+
+function VulnerabilitiesConfiguration({
+    config,
+    updateConfig,
+    isUpdateInProgress,
+}: VulnerabilitiesConfigurationProps) {
     const { toasts, addToast, removeToast } = useToasts();
 
-    const { config, isConfigLoading, isUpdateInProgress, configLoadError, updateConfig } =
-        useVulnerabilitiesExceptionConfig();
-
-    const exceptionConfig = ensureMinimumDayOptions(config ?? getDefaultConfig());
+    const exceptionConfig = ensureMinimumDayOptions(config);
 
     const { values, handleChange, errors, submitForm } = useFormik({
-        enableReinitialize: true,
         // Ensure that there are at least 4 day options in case this array was set to zero via the API
         initialValues: exceptionConfig,
         validationSchema,
@@ -246,7 +230,7 @@ function VulnerabilitiesConfiguration() {
     const isConfigDirty = !isEqual(exceptionConfig, values);
     const hasFormError = Object.keys(errors).length > 0;
 
-    const { dayOptions, fixableCveOptions, customDate } = values.expiryOptions;
+    const { dayOptions, fixableCveOptions, customDate, indefinite } = values.expiryOptions;
 
     return (
         <>
@@ -272,78 +256,58 @@ function VulnerabilitiesConfiguration() {
             <Divider component="div" />
             <PageSection variant="light" component="div">
                 <Title headingLevel="h2">Configure exception times</Title>
-                {isConfigLoading && (
-                    <Bullseye>
-                        <Spinner aria-label="Loading current vulnerability exception configuration" />
-                    </Bullseye>
-                )}
-                {configLoadError && (
-                    <Bullseye>
-                        <EmptyStateTemplate
-                            title="Error loading vulnerability exception configuration"
-                            headingLevel="h2"
-                            icon={ExclamationCircleIcon}
-                            iconClassName="pf-u-danger-color-100"
-                        >
-                            {getAxiosErrorMessage(configLoadError)}
-                        </EmptyStateTemplate>
-                    </Bullseye>
-                )}
-                {!isConfigLoading && !configLoadError && (
-                    <Form className="pf-u-py-lg">
-                        <Grid hasGutter>
-                            {dayOptions.map(({ numDays, enabled }, index) => {
-                                const fieldIdPrefix = `expiryOptions.dayOptions[${index}]`;
-                                const fieldError = get(errors, `${fieldIdPrefix}.numDays`);
-                                const validated = fieldError ? 'error' : 'default';
-                                return (
-                                    <NumericSetting
-                                        // Note, if we ever support removing or reordering day options, we'll need to
-                                        // use a non-index key here.
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        key={index}
-                                        fieldId={fieldIdPrefix}
-                                        value={numDays}
-                                        isSettingEnabled={enabled}
-                                        isDisabled={!hasWriteAccessForPage}
-                                        handleChange={handleChange}
-                                        validated={validated}
-                                        helperTextInvalid={fieldError}
-                                    />
-                                );
-                            })}
-                            {/* TODO Need 'Indefinitely' added to the API */}
-                            <BooleanSetting
-                                fieldId="TODO"
-                                label="Indefinitely (TODO)"
-                                isSettingEnabled={false}
-                                isDisabled={!hasWriteAccessForPage}
-                                handleChange={handleChange}
-                            />
-                            <BooleanSetting
-                                fieldId="expiryOptions.fixableCveOptions.allFixable"
-                                label="Expires when all CVEs fixable"
-                                isSettingEnabled={fixableCveOptions.allFixable}
-                                isDisabled={!hasWriteAccessForPage}
-                                handleChange={handleChange}
-                            />
-                            <BooleanSetting
-                                fieldId="expiryOptions.fixableCveOptions.anyFixable"
-                                label="Expires when any CVE fixable"
-                                isSettingEnabled={fixableCveOptions.anyFixable}
-                                isDisabled={!hasWriteAccessForPage}
-                                handleChange={handleChange}
-                            />
-                            <BooleanSetting
-                                fieldId="expiryOptions.customDate"
-                                label="Allow custom date"
-                                isSettingEnabled={customDate}
-                                isDisabled={!hasWriteAccessForPage}
-                                handleChange={handleChange}
-                            />
-                        </Grid>
-                    </Form>
-                )}
+                <Form className="pf-u-py-lg">
+                    <Grid hasGutter>
+                        {dayOptions.map(({ numDays, enabled }, index) => {
+                            const fieldIdPrefix = `expiryOptions.dayOptions[${index}]`;
+                            const fieldError = get(errors, `${fieldIdPrefix}.numDays`);
+                            const validated = fieldError ? 'error' : 'default';
+                            return (
+                                <NumericSetting
+                                    // Note, if we ever support removing or reordering day options, we'll need to
+                                    // use a non-index key here.
+                                    // eslint-disable-next-line react/no-array-index-key
+                                    key={index}
+                                    fieldId={fieldIdPrefix}
+                                    value={numDays}
+                                    isSettingEnabled={enabled}
+                                    isDisabled={!hasWriteAccessForPage}
+                                    handleChange={handleChange}
+                                    validated={validated}
+                                    helperTextInvalid={fieldError}
+                                />
+                            );
+                        })}
+                        <BooleanSetting
+                            fieldId="expiryOptions.indefinite"
+                            label="Indefinitely"
+                            isSettingEnabled={indefinite}
+                            isDisabled={!hasWriteAccessForPage}
+                            handleChange={handleChange}
+                        />
+                        <BooleanSetting
+                            fieldId="expiryOptions.fixableCveOptions.allFixable"
+                            label="Expires when all CVEs fixable"
+                            isSettingEnabled={fixableCveOptions.allFixable}
+                            isDisabled={!hasWriteAccessForPage}
+                            handleChange={handleChange}
+                        />
+                        <BooleanSetting
+                            fieldId="expiryOptions.fixableCveOptions.anyFixable"
+                            label="Expires when any CVE fixable"
+                            isSettingEnabled={fixableCveOptions.anyFixable}
+                            isDisabled={!hasWriteAccessForPage}
+                            handleChange={handleChange}
+                        />
+                        <BooleanSetting
+                            fieldId="expiryOptions.customDate"
+                            label="Allow custom date"
+                            isSettingEnabled={customDate}
+                            isDisabled={!hasWriteAccessForPage}
+                            handleChange={handleChange}
+                        />
+                    </Grid>
+                </Form>
             </PageSection>
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (

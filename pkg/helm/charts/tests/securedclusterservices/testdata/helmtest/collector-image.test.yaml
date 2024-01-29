@@ -4,6 +4,9 @@ defs: |
 
   def collectorImageFromConfig:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig.collectorImage;
+values:
+  imagePullSecrets:
+    allowNone: true
 
 expect: |
   # The image in the config should at least be a prefix (sans tag) of the sensor image

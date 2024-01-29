@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
@@ -56,8 +57,8 @@ func (t *throttleImpl) schedule(f func()) {
 		return
 	}
 
-	t.lock.Lock()
-	t.scheduled = false
-	t.lock.Unlock()
+	concurrency.WithLock(&t.lock, func() {
+		t.scheduled = false
+	})
 	f()
 }

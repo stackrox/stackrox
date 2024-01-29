@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -21,10 +23,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
-	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -40,7 +40,7 @@ type centralCommunicationImpl struct {
 	sender              CentralSender
 	components          []common.SensorComponent
 	clientReconcile     bool
-	initialDeduperState map[deduper.Key]uint64
+	initialDeduperState map[deduperkey.Key]uint64
 	syncTimeout         time.Duration
 
 	stopper concurrency.Stopper
@@ -48,8 +48,7 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect           bool
-	deduperStateProcessor *reconciliation.DeduperStateProcessor
+	isReconnect bool
 }
 
 var (
@@ -60,8 +59,8 @@ var (
 	errIncorrectEventOrder           = errors.Wrap(errCantReconcile, "central sent incorrect order of events")
 )
 
-func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
-	go s.sendEvents(client, centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector) {
+	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(_ error) {
@@ -113,7 +112,7 @@ func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorSt
 	return central.SensorHello_STARTUP
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
@@ -139,17 +138,14 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
 		SensorState:              s.getSensorState(),
+		RequestDeduperState:      s.clientReconcile,
 	}
+
 	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	if s.clientReconcile {
-		log.Info("Sensor is capable of doing client reconciliation")
-		capsSet.Add(centralsensor.SensorReconciliationOnReconnect)
-	} else {
-		log.Info("Sensor has client reconciliation disabled")
-	}
+	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -191,19 +187,13 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
-
-	if s.clientReconcile {
-		s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
-		s.sender.OnSync(func() {
-			s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
-		})
-	}
+	syncDone.Signal()
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.clientReconcile, s.initialDeduperState, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.
@@ -253,6 +243,16 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	centralCaps := centralHello.GetCapabilities()
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
 
+	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
+	s.clientReconcile = s.clientReconcile &&
+		centralcaps.Has(centralsensor.SendDeduperStateOnReconnect) &&
+		centralHello.GetSendDeduperState()
+
+	log.Infof("Sensor client reconciliation state=%s (centralCapability=%s, centralHello.SendDeduperState=%s)",
+		strconv.FormatBool(s.clientReconcile),
+		strconv.FormatBool(centralcaps.Has(centralsensor.SendDeduperStateOnReconnect)),
+		strconv.FormatBool(centralHello.GetSendDeduperState()))
+
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
@@ -278,8 +278,8 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 }
 
 func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
-	// If client reconciliation is disabled or cental does not support it, don't expect a deduper sync message to arrive
-	if !s.clientReconcile || !centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) {
+	// If client reconciliation is disabled don't expect a deduper sync message to arrive
+	if !s.clientReconcile {
 		log.Info("Skipping client reconciliation. Sensor will not wait for deduper state")
 		return nil
 	}
@@ -327,7 +327,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		}
 		current++
 	}
-	s.initialDeduperState = deduper.ParseDeduperState(deduperState)
+	s.initialDeduperState = deduperkey.ParseDeduperState(deduperState)
 	return nil
 }
 

@@ -27,7 +27,6 @@ function HorizontalBarChart({ passingRateData }: HorizontalBarChartProps) {
     return (
         <div ref={setWidgetContainer}>
             <Chart
-                animate={{ duration: 300 }}
                 domainPadding={{ x: [20, 20] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width}

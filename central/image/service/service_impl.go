@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -34,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -373,7 +375,9 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		Metadata:       request.GetMetadata(),
 		IsClusterLocal: request.GetIsClusterLocal(),
 	}
-	_, err = s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+
+	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
+	_, err = s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
@@ -429,8 +433,6 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
 		}
-		// This is safe even if img is nil.
-		scanTime := existingImg.GetScan().GetScanTime()
 
 		// Check whether too much time has passed, if yes we have to do a signature verification update via the
 		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
@@ -444,8 +446,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				Add(reprocessInterval).After(timestamp.Now())
 		}
 
-		// If the scan exists and not too much time has passed, we don't need to update scans.
-		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+		forceScanUpdate = shouldUpdateExistingScan(imgExists, existingImg, request)
 
 		// If the image exists and scan / signature verification results do not need an update yet, return it.
 		// Otherwise, reprocess the image.
@@ -469,7 +470,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	if !hasErrors {
 		if forceScanUpdate {
-			if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil && imgExists {
+			if err := s.enrichWithVulnerabilities(img, request); err != nil && imgExists {
 				// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
 				// central, since it could lead to us overriding an enriched image with a non-enriched image.
 				s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -508,6 +509,43 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	return internalScanRespFromImage(img), nil
 }
 
+func (s *serviceImpl) enrichWithVulnerabilities(img *storage.Image, request *v1.EnrichLocalImageInternalRequest) error {
+	comps := scannerTypes.NewScanComponents(request.GetIndexerVersion(), request.GetComponents(), request.GetV4Contents())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
+	return err
+}
+
+// shouldUpdateExistingScan will return true if an image should be scanned / re-scanned, false otherwise.
+func shouldUpdateExistingScan(imgExists bool, existingImg *storage.Image, request *v1.EnrichLocalImageInternalRequest) bool {
+	if !imgExists || existingImg.GetScan() == nil {
+		return true
+	}
+
+	scanTime := existingImg.GetScan().GetScanTime()
+	scanExpired := !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+
+	if !features.ScannerV4.Enabled() {
+		return scanExpired
+	}
+
+	v4MatchRequest := scannerTypes.ScannerV4IndexerVersion(request.GetIndexerVersion())
+	v4ExistingScan := existingImg.GetScan().GetDataSource().GetId() == iiStore.DefaultScannerV4Integration.GetId()
+	if v4ExistingScan && !v4MatchRequest {
+		// Do not overwrite a V4 scan with a Clairify scan regardless of expiration.
+		log.Debugf("Not updating cached Scanner V4 scan with Clairify scan for image %q", request.GetImageName().GetFullName())
+		return false
+	}
+
+	if !v4ExistingScan && v4MatchRequest {
+		// If the existing scan is NOT from Scanner V4 but the request is from Scanner V4,
+		// then scan regardless of expiration.
+		log.Debugf("Forcing overwrite of cached Clairify scan with Scanner V4 scan for image %q", request.GetImageName().GetFullName())
+		return true
+	}
+
+	return scanExpired
+}
+
 // buildNames returns a slice containing the known image names from the various parameters.
 func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
 	names := []*storage.ImageName{srcImage}
@@ -532,7 +570,7 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 		return
 	}
 
-	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
+	if err := s.scanWaiterManager.Send(reqID, img.Clone(), scanErr); err != nil {
 		log.Errorw("Failed to send results to scan waiter",
 			logging.String("request_id", reqID), logging.Err(err))
 	}

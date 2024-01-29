@@ -3,12 +3,10 @@ package resources
 import (
 	"sort"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 )
@@ -50,22 +48,6 @@ var _ store.NodeStore = (*nodeStoreImpl)(nil)
 type nodeStoreImpl struct {
 	mutex sync.RWMutex
 	nodes map[string]*nodeWrap
-}
-
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypeNode.String() {
-		return "", errors.Errorf("Invalid resource type: %v", resType)
-	}
-	for _, n := range s.getNodes() {
-		if string(n.UID) == resID {
-			return "", nil
-		}
-	}
-	// Resource on Central but not on Sensor, send for deletion
-	return resID, nil
 }
 
 func newNodeStore() *nodeStoreImpl {

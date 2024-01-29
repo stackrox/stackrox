@@ -1,0 +1,48 @@
+export function mockListComplianceProfiles() {
+    return [
+        {
+            id: 'ocp4-cis',
+            name: 'CIS OpenShift',
+            profile_version: '1.4.0',
+            product_type: ['Container Orchestration'],
+            standard: 'CIS',
+            description: 'OpenShift 4 clusters based on CIS benchmarks.',
+            rules: [],
+            product: 'OpenShift',
+            title: 'CIS Benchmark for OpenShift 4',
+        },
+        {
+            id: 'ocp4-pci-dss',
+            name: 'PCI DSS OpenShift',
+            profile_version: '3.2.1',
+            product_type: ['Container Orchestration'],
+            standard: 'PCI DSS',
+            description: 'OpenShift 4 clusters ensuring PCI DSS compliance.',
+            rules: [],
+            product: 'OpenShift',
+            title: 'PCI DSS Compliance for OpenShift 4',
+        },
+        {
+            id: 'rhcos4-nerc-cip',
+            name: 'NERC CIP RHCOS',
+            profile_version: '1.0',
+            product_type: ['Operating System'],
+            standard: 'NERC CIP',
+            description: 'Red Hat CoreOS configurations for NERC CIP compliance.',
+            rules: [],
+            product: 'Red Hat CoreOS',
+            title: 'NERC CIP Compliance for Red Hat CoreOS',
+        },
+        {
+            id: 'rhcos4-stig',
+            name: 'STIG RHCOS',
+            profile_version: 'V1R1',
+            product_type: ['Operating System'],
+            standard: 'STIG',
+            description: 'Red Hat CoreOS compliance with Security Technical Implementation Guides.',
+            rules: [],
+            product: 'Red Hat CoreOS',
+            title: 'STIG Compliance for Red Hat CoreOS',
+        },
+    ];
+}

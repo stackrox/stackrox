@@ -37,24 +37,29 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Scanner Component Settings"
 	Scanner *ScannerComponentSpec `json:"scanner,omitempty"`
 
+	// Settings for the Scanner V4 component, which can run in addition to the previously existing Scanner components
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Scanner V4 Component Settings"
+	ScannerV4 *ScannerV4ComponentSpec `json:"scannerV4,omitempty"`
+
 	// Settings related to outgoing network traffic.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Egress *Egress `json:"egress,omitempty"`
 
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
+	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
@@ -175,9 +180,9 @@ func (c *CentralComponentSpec) GetAdminPasswordGenerationDisabled() bool {
 	return pointer.BoolDeref(c.AdminPasswordGenerationDisabled, false)
 }
 
-// IsExternalDB returns true if central DB is not managed by the Operator
-func (c *CentralComponentSpec) IsExternalDB() bool {
-	return c != nil && c.DB.IsExternal()
+// ShouldManageDB returns true if central DB should be managed by the Operator.
+func (c *CentralComponentSpec) ShouldManageDB() bool {
+	return c == nil || c.DB == nil || c.DB.ConnectionStringOverride == nil
 }
 
 // GetNotifierSecretsEncryptionEnabled provides a way to retrieve the NotifierSecretsEncryption.Enabled setting that is safe to use on a nil receiver object.
@@ -201,9 +206,7 @@ type DeclarativeConfiguration struct {
 
 // NotifierSecretsEncryption defines settings for encrypting notifier secrets in the Central DB.
 type NotifierSecretsEncryption struct {
-	// Enables the encryption of notifier secrets stored in the Central DB. An encryption key must be
-	// provided in a secret called `central-encryption-key` in the Central namespace, with the key stored in
-	// the `encryption-key` data field.
+	// Enables the encryption of notifier secrets stored in the Central DB.
 	//+kubebuilder:default=false
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
@@ -228,11 +231,10 @@ type CentralDBSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	PasswordSecret *LocalSecretReference `json:"passwordSecret,omitempty"`
 
-	// NOTE: Connecting to an external database is in Technology Preview.
-	// Specify a connection string that corresponds to an external database. If set, the operator will not manage Central DB.
+	// Specify a connection string that corresponds to a database managed elsewhere. If set, the operator will not manage the Central DB.
 	// When using this option, you must explicitly set a password secret; automatically generating a password will not
 	// be supported.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String (Technology Preview)"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Connection String"
 	ConnectionStringOverride *string `json:"connectionString,omitempty"`
 
 	// Configures how Central DB should store its persistent data. You can choose between using a persistent
@@ -275,14 +277,6 @@ func (c *CentralDBSpec) GetPasswordSecret() *LocalSecretReference {
 		return nil
 	}
 	return c.PasswordSecret
-}
-
-// IsExternal specifies that the database should not be managed by the Operator
-func (c *CentralDBSpec) IsExternal() bool {
-	if c == nil {
-		return false
-	}
-	return c.ConnectionStringOverride != nil
 }
 
 // GetPersistence returns the persistence for Central DB
@@ -516,6 +510,40 @@ type ScannerComponentSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
+// ScannerV4ComponentSpec defines settings for the central "scanner V4" component.
+type ScannerV4ComponentSpec struct {
+	// If you don't want to deploy the Red Hat Advanced Cluster Security Scanner V4, you can disable it here
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 Component"
+	ScannerComponent *ScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the indexer deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Indexer *ScannerV4Component `json:"indexer,omitempty"`
+
+	// Settings pertaining to the matcher deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	Matcher *ScannerV4Component `json:"matcher,omitempty"`
+
+	// Settings pertaining to the DB deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled"}
+	DB *ScannerV4DB `json:"db,omitempty"`
+
+	// Configures monitoring endpoint for Scanner V4. The monitoring endpoint
+	// allows other services to collect metrics from Scanner V4, provided in
+	// Prometheus compatible format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+}
+
+// IsEnabled checks whether scanner is enabled. This method is safe to be used with nil receivers.
+func (s *ScannerV4ComponentSpec) IsEnabled() bool {
+	if s == nil || s.ScannerComponent == nil {
+		return true // enabled by default
+	}
+	return *s.ScannerComponent == ScannerComponentEnabled
+}
+
 // GetAnalyzer returns the analyzer component even if receiver is nil
 func (s *ScannerComponentSpec) GetAnalyzer() *ScannerAnalyzerComponent {
 	if s == nil {
@@ -607,4 +635,9 @@ var (
 // IsScannerEnabled returns true if scanner is enabled.
 func (c *Central) IsScannerEnabled() bool {
 	return c.Spec.Scanner.IsEnabled()
+}
+
+// IsScannerV4Enabled returns true if scanner V4 is enabled.
+func (c *Central) IsScannerV4Enabled() bool {
+	return c.Spec.ScannerV4.IsEnabled()
 }

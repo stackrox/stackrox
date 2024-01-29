@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mathutil"
 )
 
 var attackVectorMap = map[string]storage.CVSSV2_AttackVector{
@@ -93,4 +95,20 @@ func Severity(score float32) storage.CVSSV2_Severity {
 		return storage.CVSSV2_HIGH
 	}
 	return storage.CVSSV2_UNKNOWN
+}
+
+// CalculateScores calculates and sets CVSS scores based on the current vector string.
+func CalculateScores(cvssV2 *storage.CVSSV2) error {
+	vec, err := cvss2.VectorFromString(cvssV2.GetVector())
+	if err != nil {
+		return fmt.Errorf("parsing: %w", err)
+	}
+	err = vec.Validate()
+	if err != nil {
+		return fmt.Errorf("validating: %w", err)
+	}
+	cvssV2.Score = float32(vec.BaseScore())
+	cvssV2.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
+	cvssV2.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1))
+	return nil
 }

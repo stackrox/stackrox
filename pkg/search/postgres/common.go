@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -52,6 +52,7 @@ const (
 	COUNT
 	DELETE
 	SELECT
+	DELETERETURNINGIDS
 )
 
 func replaceVars(s string) string {
@@ -85,6 +86,7 @@ type query struct {
 	QueryType        QueryType
 	PrimaryKeyFields []pgsearch.SelectQueryField
 	SelectedFields   []pgsearch.SelectQueryField
+	ReturningFields  []pgsearch.SelectQueryField
 	From             string
 	Where            string
 	Data             []interface{}
@@ -192,7 +194,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 
 func (q *query) getPortionBeforeFromClause() string {
 	switch q.QueryType {
-	case DELETE:
+	case DELETE, DELETERETURNINGIDS:
 		return "delete"
 	case COUNT:
 		countOn := "*"
@@ -287,6 +289,14 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" having ")
 		querySB.WriteString(q.Having)
 	}
+	if len(q.ReturningFields) > 0 {
+		querySB.WriteString(" returning ")
+		returnedColumnPaths := make([]string, 0, len(q.ReturningFields))
+		for _, f := range q.ReturningFields {
+			returnedColumnPaths = append(returnedColumnPaths, f.PathForSelectPortion())
+		}
+		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
+	}
 	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
 		querySB.WriteString(" ")
 		querySB.WriteString(paginationSQL)
@@ -375,6 +385,10 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 
 	// Populate primary key select fields once so that we do not have to evaluate multiple times.
 	parsedQuery.populatePrimaryKeySelectFields()
+
+	if queryType == DELETERETURNINGIDS {
+		parsedQuery.ReturningFields = parsedQuery.PrimaryKeyFields
+	}
 
 	return parsedQuery, nil
 }
@@ -647,7 +661,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "could not scan row")
 		}
 
 		idParts := make([]string, 0, numPrimaryKeys)
@@ -864,6 +878,61 @@ func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		}
 		return err
 	})
+}
+
+// RunDeleteRequestReturningIDsForSchema executes a request for the delete query against the database returning IDs.
+func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]string, error) {
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, DELETERETURNINGIDS)
+	if err != nil || query == nil {
+		return nil, err
+	}
+
+	queryStr := query.AsSQL()
+	// Assumes that ids are strings.
+	numPrimaryKeys := len(schema.PrimaryKeys())
+	numSelectFieldsForPrimaryKey := len(query.PrimaryKeyFields)
+	primaryKeysComposite := numPrimaryKeys > 1 && len(query.PrimaryKeyFields) == 1
+	bufferToScanRowInto := make([]interface{}, numSelectFieldsForPrimaryKey)
+	if primaryKeysComposite {
+		var outputSlice []interface{}
+		bufferToScanRowInto[0] = &outputSlice
+	} else {
+		for i := 0; i < numPrimaryKeys; i++ {
+			bufferToScanRowInto[i] = pointers.String("")
+		}
+	}
+	returnedIDs := make([]string, 0)
+	dbErr := pgutils.Retry(func() error {
+		rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+		if err != nil {
+			return errors.Wrapf(err, "could not delete from %q with query %s", schema.Table, queryStr)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			if err := rows.Scan(bufferToScanRowInto...); err != nil {
+				return errors.Wrap(err, "could not scan row")
+			}
+
+			idParts := make([]string, 0, numPrimaryKeys)
+			if primaryKeysComposite {
+				for _, elem := range *bufferToScanRowInto[0].(*[]interface{}) {
+					idParts = append(idParts, elem.(string))
+				}
+			} else {
+				for i := 0; i < numPrimaryKeys; i++ {
+					idParts = append(idParts, valueFromStringPtrInterface(bufferToScanRowInto[i]))
+				}
+			}
+
+			id := IDFromPks(idParts)
+			returnedIDs = append(returnedIDs, id)
+		}
+		return err
+	})
+	if dbErr != nil {
+		return nil, err
+	}
+	return returnedIDs, nil
 }
 
 // helper functions

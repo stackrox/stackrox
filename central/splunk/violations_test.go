@@ -1264,10 +1264,6 @@ func (s *violationsTestSuite) prepare() *requestBuilder {
 		pagination: defaultPaginationSettings,
 	}
 }
-func (rb *requestBuilder) setContext(ctx context.Context) *requestBuilder {
-	rb.ctx = ctx
-	return rb
-}
 func (rb *requestBuilder) setCheckpoint(checkpointParams ...string) *requestBuilder {
 	rb.checkpointParams = checkpointParams
 	return rb

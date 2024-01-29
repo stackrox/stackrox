@@ -9,6 +9,7 @@ import (
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -86,9 +87,9 @@ func (ndl *nodeLoaderImpl) FullNodeWithID(ctx context.Context, id string) (*stor
 		return node, nil
 	}
 
-	ndl.lock.Lock()
-	delete(ndl.loaded, id)
-	ndl.lock.Unlock()
+	concurrency.WithLock(&ndl.lock, func() {
+		delete(ndl.loaded, id)
+	})
 
 	nodes, err := ndl.load(ctx, []string{id}, true)
 	if err != nil {

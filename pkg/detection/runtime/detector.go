@@ -7,11 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.
@@ -86,7 +81,7 @@ func (d *detectorImpl) detectForDeployment(
 	var cacheReceptable booleanpolicy.CacheReceptacle
 	deployment := enhancedDeployment.Deployment
 
-	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images, nil)
+	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
 	if err != nil {
 		return nil, err
 	}

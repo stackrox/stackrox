@@ -248,6 +248,28 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
 }
 
+func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error) {
+	ok, err := clusterSAC.ReadAllowed(ctx)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+	}
+	var clusters []*storage.Cluster
+	walkFn := func() error {
+		clusters = clusters[:0]
+		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
+			clusters = append(clusters, cluster)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+
+	return clusters, nil
+}
+
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return "", false, err
@@ -323,7 +345,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", err
 	}
 
-	trackClusterRegistered(ctx, cluster)
+	trackClusterRegistered(cluster)
 
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -949,7 +971,7 @@ func addDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set, or set
 	// to KERNEL_MODULE (which is unsupported) then honor defaults for runtime support
 	if collectionMethod == storage.CollectionMethod_UNSET_COLLECTION || collectionMethod == storage.CollectionMethod_KERNEL_MODULE {
-		cluster.CollectionMethod = storage.CollectionMethod_EBPF
+		cluster.CollectionMethod = storage.CollectionMethod_CORE_BPF
 	}
 	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
 
@@ -1013,7 +1035,7 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	walkFn := func() error {
 		clusters = clusters[:0]
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			clusters = append(clusters, cluster)
+			clusters = append(clusters, cluster.Clone())
 			return nil
 		})
 	}

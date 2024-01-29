@@ -83,8 +83,9 @@ test_part_1() {
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     rm -f FAIL
-    local test_target
+    remove_qa_test_results
 
+    local test_target
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         test_target="bat-test"

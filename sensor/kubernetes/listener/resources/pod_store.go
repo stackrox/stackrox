@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
@@ -13,29 +13,21 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypePod.String() {
-		return "", nil
-	}
-	ps.lock.RLock()
-	defer ps.lock.RUnlock()
-	for _, p := range ps.getAllNoLock() {
-		if p.GetId() == resID {
-			// Resource exists on central and Sensor, nothing to do
-			return "", nil
+func (ps *PodStore) updateMetrics() {
+	for ns, data := range ps.pods {
+		podsInNamespace := 0
+		for _, pods := range data {
+			podsInNamespace += len(pods)
 		}
+		metrics.UpdateNumberPodsInStored(ns, podsInNamespace)
 	}
-	// Resource exists on central but not on Sensor, send delete event
-	return resID, nil
 }
 
 // Cleanup deletes all entries from store
 func (ps *PodStore) Cleanup() {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	ps.pods = make(map[string]map[string]map[string]*storage.Pod)
 }
@@ -50,6 +42,7 @@ func newPodStore() *PodStore {
 func (ps *PodStore) addOrUpdatePod(pod *storage.Pod) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	nsMap := ps.pods[pod.GetNamespace()]
 	if nsMap == nil {
@@ -67,6 +60,7 @@ func (ps *PodStore) addOrUpdatePod(pod *storage.Pod) {
 func (ps *PodStore) removePod(namespace, deploymentID, podID string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods[namespace][deploymentID], podID)
 }
@@ -100,6 +94,7 @@ func (ps *PodStore) getContainersForDeployment(ns, deploymentID string) set.Stri
 func (ps *PodStore) OnNamespaceDeleted(ns string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods, ns)
 }
@@ -108,6 +103,7 @@ func (ps *PodStore) OnNamespaceDeleted(ns string) {
 func (ps *PodStore) onDeploymentRemove(wrap *deploymentWrap) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods[wrap.GetNamespace()], wrap.GetId())
 }

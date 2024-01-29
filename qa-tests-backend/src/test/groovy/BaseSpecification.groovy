@@ -187,13 +187,6 @@ class BaseSpecification extends Specification {
                 ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
             }
 
-            try {
-                orchestrator.cleanup()
-            } catch (Exception e) {
-                LOG.error("Failed to clean up orchestrator", e)
-                throw e
-            }
-
             // ROX-9950 Limit to GKE due to issues on other providers.
             if (orchestrator.isGKE()) {
                 compareResourcesAtRunEnd(orchestrator)

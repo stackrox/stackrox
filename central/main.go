@@ -28,7 +28,9 @@ import (
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
+	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
+	"github.com/stackrox/rox/central/cloudproviders/gcp"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
@@ -42,6 +44,7 @@ import (
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
+	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -67,6 +70,7 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
+	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -82,13 +86,13 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
-	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	"github.com/stackrox/rox/central/metrics/telemetry"
@@ -101,6 +105,7 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -181,6 +186,7 @@ import (
 	authnUserpki "github.com/stackrox/rox/pkg/grpc/authn/userpki"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -189,6 +195,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/memlimit"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
@@ -234,6 +241,8 @@ func init() {
 	if !proxy.UseWithDefaultTransport() {
 		log.Warn("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
 	}
+
+	memlimit.SetMemoryLimit()
 }
 
 func runSafeMode() {
@@ -268,7 +277,7 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	log.Warn("The following permission resources have been replaced:\n" +
-		"	Access replaces AuthProvider, Group, Licenses, Role, and User\n" +
+		"	Access replaces AuthProvider, Group, Role, and User\n" +
 		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
@@ -353,6 +362,10 @@ func startServices() {
 		administrationEventHandler.Singleton().Start()
 	}
 
+	if features.CloudCredentials.Enabled() {
+		gcp.Singleton().Start()
+	}
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -364,7 +377,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
-		backupService.Singleton(),
 		centralHealthService.Singleton(),
 		certgen.ServiceSingleton(),
 		clusterInitService.Singleton(),
@@ -383,7 +395,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		helmcharts.NewService(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		licenseService.New(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),
@@ -424,6 +435,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
+	// The scheduled backup service is not applicable when using an external database
+	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
+		servicesToRegister = append(servicesToRegister, backupService.Singleton())
+	}
+
 	if features.VulnReportingEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 	} else {
@@ -434,6 +450,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
 		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceResults.Singleton())
+		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 	}
 
 	if features.AdministrationEvents.Enabled() {
@@ -594,6 +611,9 @@ func startGRPCServer() {
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(clusterDataStore.Gather)
 				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
+				gs.AddGatherer(notifierDS.Gather)
+				gs.AddGatherer(externalbackupsDS.Gather)
+				gs.AddGatherer(imageintegrationsDS.Gather)
 			}
 		}
 	}
@@ -799,6 +819,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
 			Compression:   true,
 		},
+		{
+			Route:         "/api/extensions/certs/backup",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -814,9 +840,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.SensorOr(
-					or.ScannerOr(
-						user.With(permissions.View(resources.Administration)))): {
+				or.Or(
+					idcheck.SensorsOnly(),
+					idcheck.ScannerOnly(),
+					or.ScannerV4(),
+					user.With(permissions.View(resources.Administration)),
+				): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
 				user.With(permissions.Modify(resources.Administration)): {
@@ -892,6 +921,10 @@ func waitForTerminationSignal() {
 
 	if features.AdministrationEvents.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
+	}
+
+	if features.CloudCredentials.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{gcp.Singleton(), "GCP cloud credentials manager"})
 	}
 
 	var wg sync.WaitGroup

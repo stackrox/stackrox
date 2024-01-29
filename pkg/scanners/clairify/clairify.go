@@ -37,9 +37,6 @@ import (
 )
 
 const (
-	// TypeString is the name of the Clairify scanner.
-	TypeString = "clairify"
-
 	// defaultClientTimeout default timeout for scanner calls.
 	defaultClientTimeout = 5 * time.Minute
 
@@ -65,14 +62,14 @@ func GetScannerEndpoint() string {
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
-	return TypeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
 		return newScanner(integration, set)
 	}
 }
 
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
 func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
-	return TypeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
 		return newNodeScanner(integration)
 	}
 }
@@ -405,9 +402,11 @@ func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 
 // GetVulnerabilities retrieves the vulnerabilities present in the given image
 // represented by the given components and scan notes.
-func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRPCV1.Components, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerTypes.ScanComponents, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+	clairComponents := components.Clairify()
+
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
-		Components: components,
+		Components: clairComponents,
 		Notes:      notes,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
@@ -483,7 +482,7 @@ func (c *clairify) Match(image *storage.ImageName) bool {
 
 // Type returns the stringified type of this scanner
 func (c *clairify) Type() string {
-	return TypeString
+	return scannerTypes.Clairify
 }
 
 // Name returns the integration's name
@@ -505,7 +504,7 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner
 func OrchestratorScannerCreator() (string, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error)) {
-	return TypeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
 		return newOrchestratorScanner(integration)
 	}
 }

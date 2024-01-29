@@ -150,7 +150,6 @@ func defaultConf() Config {
 }
 
 type testHandler struct {
-	name     string
 	received *concurrency.Signal
 }
 

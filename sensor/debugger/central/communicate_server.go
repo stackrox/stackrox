@@ -3,6 +3,7 @@ package central
 import (
 	"io"
 	"log"
+	"sync/atomic"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -40,6 +41,10 @@ type FakeService struct {
 
 	onShutdown func()
 
+	deduperStateLock    sync.RWMutex
+	deduperStateEnabled atomic.Bool
+	deduperState        *central.DeduperState
+
 	t *testing.T
 }
 
@@ -73,16 +78,18 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		messageCallback:      func(_ *central.MsgFromSensor) { /* noop */ },
 		messageCallbackLock:  sync.RWMutex{},
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
+		deduperState:         &central.DeduperState{ResourceHashes: make(map[string]uint64)},
 	}
 }
 
 func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
-	s.receivedLock.Lock()
-	s.receivedMessages = append(s.receivedMessages, msg)
-	s.receivedLock.Unlock()
-	s.messageCallbackLock.RLock()
-	s.messageCallback(msg)
-	s.messageCallbackLock.RUnlock()
+	concurrency.WithLock(&s.receivedLock, func() {
+		s.receivedMessages = append(s.receivedMessages, msg)
+	})
+
+	concurrency.WithRLock(&s.messageCallbackLock, func() {
+		s.messageCallback(msg)
+	})
 }
 
 func (s *FakeService) startCentralStub(stream central.SensorService_CommunicateServer) {
@@ -159,6 +166,15 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 		}
 	}
 
+	if s.deduperStateEnabled.Load() {
+		if err := stream.Send(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_DeduperState{DeduperState: s.deduperState},
+		}); err != nil {
+			s.t.Errorf("sending deduper state to sensor")
+			return err
+		}
+	}
+
 	s.ConnectionStarted.Signal()
 	go s.startInputIngestion(stream)
 	go s.startCentralStub(stream)
@@ -170,8 +186,9 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 // for each message received. This can be used to log in stdout the messages that sensor is sending to central.
 func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
 	s.messageCallbackLock.Lock()
+	defer s.messageCallbackLock.Unlock()
+
 	s.messageCallback = callback
-	s.messageCallbackLock.Unlock()
 }
 
 // Stop kills fake central.
@@ -179,4 +196,17 @@ func (s *FakeService) Stop() {
 	if s.onShutdown != nil {
 		s.onShutdown()
 	}
+}
+
+// EnableDeduperState will make fake central send a deduper state message to sensor.
+func (s *FakeService) EnableDeduperState(v bool) {
+	s.deduperStateEnabled.Store(v)
+}
+
+// SetDeduperState overwrites the deduper state that is going to be sent to Sensor.
+func (s *FakeService) SetDeduperState(state *central.DeduperState) {
+	s.deduperStateLock.Lock()
+	defer s.deduperStateLock.Unlock()
+
+	s.deduperState = state
 }

@@ -164,6 +164,7 @@ const memoryResource = (label: string): GroupDescriptor => ({
 
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
+export const mountPropagationCriteriaName = 'Mount Propagation';
 
 // A form descriptor for every option (key) on the policy criteria form page.
 /*
@@ -763,7 +764,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
-        name: 'Mount Propagation',
+        name: mountPropagationCriteriaName,
         shortName: 'Mount propagation',
         longName: 'Mount propagation is',
         negatedName: 'Mount propagation is not',

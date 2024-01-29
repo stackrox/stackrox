@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/features"
@@ -20,7 +21,9 @@ func Singleton() DataStore {
 	once.Do(func() {
 		db := globaldb.GetPostgres()
 		storage := pgStore.New(db)
-		ds = New(storage, db)
+		indexer := pgStore.NewIndexer(db)
+		searcher := checkresultsSearch.New(storage, indexer)
+		ds = New(storage, db, searcher)
 	})
 	return ds
 }

@@ -9,22 +9,31 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
-	"github.com/stackrox/rox/scanner/services/converters"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
+
+var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
+	idcheck.CentralOnly(): {
+		"/scanner.v4.Matcher/GetVulnerabilities",
+		"/scanner.v4.Matcher/GetMetadata",
+	},
+})
 
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
 	v4.UnimplementedMatcherServer
 	// indexer is used to retrieve index reports.
-	indexer indexer.Indexer
+	indexer indexer.ReportGetter
 	// matcher is used to match vulnerabilities with index contents.
 	matcher matcher.Matcher
 	// disableEmptyContents allows the vulnerability matching API to reject requests with empty contents.
@@ -32,8 +41,8 @@ type matcherService struct {
 }
 
 // NewMatcherService creates a new vulnerability matcher gRPC service, to enable
-// empty content in enrich requests, pass a nil indexer.
-func NewMatcherService(matcher matcher.Matcher, indexer indexer.Indexer) *matcherService {
+// empty content in enrich requests, pass a non-nil indexer.
+func NewMatcherService(matcher matcher.Matcher, indexer indexer.ReportGetter) *matcherService {
 	return &matcherService{
 		matcher:              matcher,
 		indexer:              indexer,
@@ -42,10 +51,11 @@ func NewMatcherService(matcher matcher.Matcher, indexer indexer.Indexer) *matche
 }
 
 func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetVulnerabilities")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
+	ctx = zlog.ContextWithValues(ctx, "hash_id", req.GetHashId())
 	// Get an index report to enrich: either using the indexer, or provided in the request.
 	var ir *claircore.IndexReport
 	var err error
@@ -63,13 +73,15 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	if err != nil {
 		return nil, err
 	}
-	zlog.Info(ctx).Msg("getting vulnerabilities")
+	zlog.Info(ctx).Msgf("getting vulnerabilities for index report %q", req.GetHashId())
 	ccReport, err := s.matcher.GetVulnerabilities(ctx, ir)
 	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	report, err := converters.ToProtoV4VulnerabilityReport(ctx, ccReport)
+	report, err := mappers.ToProtoV4VulnerabilityReport(ctx, ccReport)
 	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
 		return nil, err
 	}
 	report.HashId = req.GetHashId()
@@ -78,11 +90,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 
 // retrieveIndexReport will pull an index report from the Indexer backend.
 func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashID)
-	if err != nil {
-		return nil, fmt.Errorf("internal error: %w", err)
-	}
-	ir, found, err := s.indexer.GetIndexReport(ctx, manifestDigest)
+	ir, found, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -94,7 +102,7 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 
 // parseIndexReport will generate an index report from a Contents payload.
 func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
-	ir, err := converters.ToClairCoreIndexReport(contents)
+	ir, err := mappers.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
 		return nil, fmt.Errorf("internal error: %w", err)
@@ -102,8 +110,20 @@ func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.Ind
 	return ir, nil
 }
 
-func (s *matcherService) GetMetadata(_ context.Context, _ *types.Empty) (*v4.Metadata, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetMetadata not implemented")
+func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.Metadata, error) {
+	lastVulnUpdate, err := s.matcher.GetLastVulnerabilityUpdate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting last vulnerability update time: %w", err)
+	}
+
+	timestamp, err := types.TimestampProto(lastVulnUpdate)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: %w", err)
+	}
+	return &v4.Metadata{
+		// TODO(ROX-21362): Set scanner version.
+		LastVulnerabilityUpdate: timestamp,
+	}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -113,8 +133,12 @@ func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *matcherService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// TODO: Setup permissions for matcher.
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	auth := matcherAuth
+	// If this a dev build, allow anonymous traffic for testing purposes.
+	if !buildinfo.ReleaseBuild {
+		auth = allow.Anonymous()
+	}
+	return ctx, auth.Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.

@@ -29,7 +29,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		policyDetector:    mockDetector,
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
-		sensorUpdates:     make(chan *message.ExpiringMessage),
+		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
@@ -57,14 +57,6 @@ func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityS
 func expectEntityLookupEndpointHelper(mockEntityStore *mocksManager.MockEntityStore, times int, retVal []clusterentities.LookupResult) expectFn {
 	return func() {
 		mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(times).DoAndReturn(func(_ any) []clusterentities.LookupResult {
-			return retVal
-		})
-	}
-}
-
-func expectExternalLookupHelper(mockExternalStore *mocksExternalSrc.MockStore, times int, retVal *storage.NetworkEntityInfo) expectFn {
-	return func() {
-		mockExternalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(times).DoAndReturn(func(_ any) *storage.NetworkEntityInfo {
 			return retVal
 		})
 	}

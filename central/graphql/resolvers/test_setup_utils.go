@@ -25,7 +25,6 @@ import (
 	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -37,7 +36,6 @@ import (
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
 	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	namespacePostgres "github.com/stackrox/rox/central/namespace/store/postgres"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
@@ -54,6 +52,8 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
+	vulnReqDatastore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -98,7 +98,8 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			resolver.NodeDataStore = ds
 		case clusterDataStore.DataStore:
 			resolver.ClusterDataStore = ds
-
+		case vulnReqDatastore.DataStore:
+			resolver.vulnReqStore = ds
 		case imageCVEEdgeDS.DataStore:
 			resolver.ImageCVEEdgeDataStore = ds
 		case clusterCVEEdgeDataStore.DataStore:
@@ -128,10 +129,12 @@ func CreateTestImageDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *g
 	ctx := context.Background()
 	imagePostgres.Destroy(ctx, testDB.DB)
 
+	risks := mockRisks.NewMockDataStore(ctrl)
+	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageDS.NewWithPostgres(
 		imagePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t), false),
 		imagePostgres.NewIndexer(testDB.DB),
-		mockRisks.NewMockDataStore(ctrl),
+		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
 	)
@@ -195,12 +198,18 @@ func CreateTestImageCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) 
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
 func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller, imageDatastore imageDS.DataStore) deploymentDatastore.DataStore {
-	ctx := context.Background()
-	deploymentPostgres.Destroy(ctx, testDB.DB)
-
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
-	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
-	ds, err := deploymentDatastore.NewTestDataStore(t, deploymentStore, testDB.DB, imageDatastore, nil, nil, mockRisk, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ds, err := deploymentDatastore.NewTestDataStore(
+		t,
+		testDB,
+		&deploymentDatastore.DeploymentTestStoreParams{
+			ImagesDataStore:  imageDatastore,
+			RisksDataStore:   mockRisk,
+			ClusterRanker:    ranking.ClusterRanker(),
+			NamespaceRanker:  ranking.NamespaceRanker(),
+			DeploymentRanker: ranking.DeploymentRanker(),
+		},
+	)
 	assert.NoError(t, err)
 	return ds
 }
@@ -233,12 +242,7 @@ func CreateTestClusterCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres
 
 // CreateTestNamespaceDatastore creates namespace datastore for testing
 func CreateTestNamespaceDatastore(t testing.TB, testDB *pgtest.TestPostgres) namespaceDataStore.DataStore {
-	ctx := context.Background()
-	namespacePostgres.Destroy(ctx, testDB.DB)
-
-	storage := namespacePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	indexer := namespacePostgres.NewIndexer(testDB.DB)
-	datastore := namespaceDataStore.New(storage, indexer, nil, ranking.NamespaceRanker())
+	datastore := namespaceDataStore.NewTestDataStore(t, testDB, nil, ranking.NamespaceRanker())
 	return datastore
 }
 
@@ -310,6 +314,11 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 	indexer := nodeComponentCVEEdgePostgres.NewIndexer(testDB.DB)
 	searcher := nodeComponentCVEEdgeSearch.New(storage, indexer)
 	return nodeComponentCVEEdgeDataStore.New(storage, searcher)
+}
+
+// TestVulnReqDatastore return test vulnerability request datastore.
+func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) vulnReqDatastore.DataStore {
+	return vulnReqDatastore.GetTestPostgresDataStore(t, testDB, cache.New(), cache.New())
 }
 
 func registerImageLoader(_ testing.TB, ds imageDS.DataStore) {

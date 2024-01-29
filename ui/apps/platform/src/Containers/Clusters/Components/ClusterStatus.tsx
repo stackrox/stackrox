@@ -1,10 +1,12 @@
 import React, { ReactElement } from 'react';
 import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
-import { ExclamationCircleIcon, ExternalLinkAltIcon } from '@patternfly/react-icons/dist/esm/icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons/dist/esm/icons';
 
-import { healthStatusLabels } from 'messages/common';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
+import { healthStatusLabels } from 'messages/common';
 import { getVersionedDocs } from 'utils/versioning';
+
 import HealthStatus from './HealthStatus';
 import ClusterStatusPill from './ClusterStatusPill';
 import { healthStatusStyles } from '../cluster.helpers';
@@ -31,21 +33,18 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
 
     const unhealthyClusterDetailAvailable = overallHealthStatus === 'UNHEALTHY';
     const bodyContent = version ? (
-        <Button
-            component="a"
-            href={getVersionedDocs(
-                version,
-                'troubleshooting/retrieving-and-analyzing-the-collector-logs-and-pod-status.html'
-            )}
-            variant="link"
-            target="_blank"
-            rel="noopener noreferrer"
-            icon={<ExternalLinkAltIcon />}
-            iconPosition="right"
-            isSmall
-        >
-            Troubleshooting collector
-        </Button>
+        <ExternalLink>
+            <a
+                href={getVersionedDocs(
+                    version,
+                    'troubleshooting/retrieving-and-analyzing-the-collector-logs-and-pod-status.html'
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Troubleshooting collector
+            </a>
+        </ExternalLink>
     ) : (
         <span>Documentation not available; version missing</span>
     );

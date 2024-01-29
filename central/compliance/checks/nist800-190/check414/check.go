@@ -4,15 +4,10 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	standardID = "NIST_800_190:4_1_4"
-)
-
-var (
-	log = logging.ModuleForName(standardID).Logger()
 )
 
 func init() {

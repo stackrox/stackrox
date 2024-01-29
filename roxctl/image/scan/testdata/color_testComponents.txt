@@ -1,20 +1,20 @@
 Scan results for image: nginx:test
-(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 11, [34;2mLOW[0m: 2, MODERATE: 3, [31mIMPORTANT[0m: 3, [31;1mCRITICAL[0m: 3)
+(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 11, [34;2mLOW[0;22m: 2, MODERATE: 3, [31mIMPORTANT[0m: 3, [31;1mCRITICAL[0;22m: 3)
 
 +-----------+------------+--------------+-----------+--------------------+
 | COMPONENT |  VERSION   |     CVE      | SEVERITY  |        LINK        |
 +-----------+------------+--------------+-----------+--------------------+
-|    apt    |    1.0     | CVE-789-CRIT | [31;1mCRITICAL[0m  | <some-link-to-nvd> |
+|    apt    |    1.0     | CVE-789-CRIT | [31;1mCRITICAL[0;22m  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-[34;2mLOW[0m  |    [34;2mLOW[0m    | <some-link-to-nvd> |
+|           |            | CVE-123-[34;2mLOW[0;22m  |    [34;2mLOW[0;22m    | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-[34;2mLOW[0m  |    [34;2mLOW[0m    | <some-link-to-nvd> |
+|           |            | CVE-789-[34;2mLOW[0;22m  |    [34;2mLOW[0;22m    | <some-link-to-nvd> |
 +-----------+------------+--------------+-----------+--------------------+
-|   bash    |    4.2     | CVE-123-CRIT | [31;1mCRITICAL[0m  | <some-link-to-nvd> |
+|   bash    |    4.2     | CVE-123-CRIT | [31;1mCRITICAL[0;22m  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
-|           |            | CVE-456-CRIT | [31;1mCRITICAL[0m  | <some-link-to-nvd> |
+|           |            | CVE-456-CRIT | [31;1mCRITICAL[0;22m  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
-|           |            | CVE-789-CRIT | [31;1mCRITICAL[0m  | <some-link-to-nvd> |
+|           |            | CVE-789-CRIT | [31;1mCRITICAL[0;22m  | <some-link-to-nvd> |
 +-----------+------------+--------------+-----------+--------------------+
 |   curl    |  7.0-rc1   | CVE-123-IMP  | [31mIMPORTANT[0m | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
@@ -22,7 +22,7 @@ Scan results for image: nginx:test
 +           +            +--------------+-----------+--------------------+
 |           |            | CVE-789-IMP  | [31mIMPORTANT[0m | <some-link-to-nvd> |
 +-----------+------------+--------------+-----------+--------------------+
-|  openssl  |   1.1.1k   | CVE-789-CRIT | [31;1mCRITICAL[0m  | <some-link-to-nvd> |
+|  openssl  |   1.1.1k   | CVE-789-CRIT | [31;1mCRITICAL[0;22m  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
 |           |            | CVE-123-IMP  | [31mIMPORTANT[0m | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
@@ -30,7 +30,7 @@ Scan results for image: nginx:test
 +           +            +--------------+-----------+--------------------+
 |           |            | CVE-456-MED  | MODERATE  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+
-|           |            | CVE-123-[34;2mLOW[0m  |    [34;2mLOW[0m    | <some-link-to-nvd> |
+|           |            | CVE-123-[34;2mLOW[0;22m  |    [34;2mLOW[0;22m    | <some-link-to-nvd> |
 +-----------+------------+--------------+-----------+--------------------+
 |  systemd  | 1.3-debu49 | CVE-123-MED  | MODERATE  | <some-link-to-nvd> |
 +           +            +--------------+-----------+--------------------+

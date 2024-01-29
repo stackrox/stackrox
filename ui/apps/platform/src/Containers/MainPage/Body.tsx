@@ -10,6 +10,7 @@ import {
     apidocsPath,
     apidocsPathV2,
     clustersDelegatedScanningPath,
+    clustersDiscoveredClustersPath,
     clustersInitBundlesPathWithParam,
     clustersPathWithParam,
     collectionsPath,
@@ -44,7 +45,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
-import { HasReadAccess } from 'hooks/usePermissions';
+import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
@@ -92,6 +93,13 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
         ),
         path: clustersDelegatedScanningPath,
+    },
+    // Discovered clusters must precede generic Clusters.
+    'clusters/discovered-clusters': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/DiscoveredClusters/DiscoveredClustersPage')
+        ),
+        path: clustersDiscoveredClustersPath,
     },
     // Cluster init bundles must precede generic Clusters.
     'clusters/init-bundles': {
@@ -219,6 +227,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     useEffect(() => {
         analyticsPageVisit('Page Viewed', '', { path: location.pathname });
     }, [location, analyticsPageVisit]);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForInviting = hasReadWriteAccess('Access');
 
     const { isDarkMode } = useTheme();
 
@@ -244,7 +254,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
-                <InviteUsersModal />
+                {hasWriteAccessForInviting && <InviteUsersModal />}
             </ErrorBoundary>
         </div>
     );

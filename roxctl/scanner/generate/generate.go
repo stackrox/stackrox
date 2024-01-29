@@ -115,6 +115,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 
 	return c
 }

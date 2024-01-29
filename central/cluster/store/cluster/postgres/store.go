@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,11 +26,6 @@ import (
 const (
 	baseTable = "clusters"
 	storeName = "Cluster"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -46,7 +41,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
@@ -58,11 +53,15 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	// Use of pgSearch.NewGenericStoreWithCache can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -70,6 +69,8 @@ func New(db postgres.DB) Store {
 		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
+		metricsSetCacheOperationDurationTime,
+
 		isUpsertAllowed,
 		targetResource,
 	)
@@ -88,6 +89,11 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if scopeChecker.IsAllowed() {
@@ -118,10 +124,11 @@ func insertIntoClusters(batch *pgx.Batch, obj *storage.Cluster) error {
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
+		obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, Status_ProviderMetadata_Cluster_Type, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, Status_ProviderMetadata_Cluster_Type = EXCLUDED.Status_ProviderMetadata_Cluster_Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

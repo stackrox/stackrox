@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/scope_checker_core.go -source scope_checker_core.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

@@ -47,7 +47,7 @@ func TestRegistryMatch(t *testing.T) {
 				registry:             tc.registry,
 				repositoryList:       tc.repoList,
 				repositoryListTicker: time.NewTicker(repoListInterval),
-				cfg:                  Config{DisableRepoList: tc.disableRepoList},
+				cfg:                  &Config{DisableRepoList: tc.disableRepoList},
 			}
 
 			match := r.Match(img)

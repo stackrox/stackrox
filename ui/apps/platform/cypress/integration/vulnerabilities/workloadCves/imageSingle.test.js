@@ -1,16 +1,15 @@
-import upperFirst from 'lodash/upperFirst';
-
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     applyLocalSeverityFilters,
-    selectResourceFilterType,
-    typeAndSelectResourceFilterValue,
+    typeAndSelectSearchFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
+    typeAndSelectCustomSearchFilterValue,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image Single page', () => {
     withAuth();
@@ -21,11 +20,30 @@ describe('Workload CVE Image Single page', () => {
         }
     });
 
-    it('should correctly handle Image single page specific behavior', () => {
+    function visitFirstImage() {
         visitWorkloadCveOverview();
 
         selectEntityTab('Image');
+
+        // Clear any filters that may be applied to increase the likelihood of finding valid data
+        if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            cy.get(vulnSelectors.clearFiltersButton).click();
+        }
+
+        // If unified deferrals are not enabled, there is a good chance none of the visible images will
+        // have CVEs, so we apply a wildcard filter to ensure only images with CVEs are visible
+        if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
+            typeAndSelectCustomSearchFilterValue('CVE', '.*');
+        }
+
+        // Ensure the data in the table has settled
+        cy.get(selectors.isUpdatingTable).should('not.exist');
+
         cy.get('tbody tr td[data-label="Image"] a').first().click();
+    }
+
+    it('should contain the correct search filters in the toolbar', () => {
+        visitFirstImage();
 
         // Check that only applicable resource menu items are present in the toolbar
         cy.get(selectors.searchOptionsDropdown).click();
@@ -38,15 +56,7 @@ describe('Workload CVE Image Single page', () => {
     });
 
     it('should display consistent data between the cards and the table test', () => {
-        visitWorkloadCveOverview();
-
-        selectEntityTab('Image');
-        // Find any image with at least one CVE
-        cy.get(
-            `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts}) td[data-label="Image"] a`
-        )
-            .first()
-            .click();
+        visitFirstImage();
 
         // Check that the CVEs by severity totals in the card match the number in the "results found" text
         const cardSelector = selectors.summaryCard('CVEs by severity');
@@ -83,105 +93,55 @@ describe('Workload CVE Image Single page', () => {
         });
     });
 
-    it('should correctly apply severity filters', () => {
-        visitWorkloadCveOverview();
+    it('should correctly apply a severity filter', () => {
+        visitFirstImage();
+        // Check that no severities are hidden by default
+        cy.get(selectors.summaryCard('CVEs by severity'))
+            .find("*:contains('Results hidden')")
+            .should('not.exist');
 
-        selectEntityTab('Image');
+        const severityFilter = 'Critical';
 
-        // Find any image with at least one CVE
-        cy.get(
-            `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts})`
-        )
-            .first()
-            .then(([$rowWithCves]) => {
-                // Get a nonzero count and severity from the table for the selected image
-                cy.wrap($rowWithCves)
-                    .get(selectors.nonZeroCveSeverityCounts)
-                    .then(([$nonZeroSeverityLabel]) => {
-                        const ariaLabel = $nonZeroSeverityLabel.getAttribute('aria-label');
-                        const [, countRaw, severityRaw] = ariaLabel.match(/(\d+) (\w+)/);
-                        const count = parseInt(countRaw, 10);
-                        const severity = upperFirst(severityRaw);
+        applyLocalSeverityFilters(severityFilter);
 
-                        const bySeverityCard = selectors.summaryCard('CVEs by severity');
-                        const byStatusCard = selectors.summaryCard('CVEs by status');
+        // Check that summary card severities are hidden correctly
+        cy.get(`${selectors.severityIcon('Critical')} + *:contains("Results hidden")`).should(
+            'not.exist'
+        );
+        cy.get(`${selectors.severityIcon('Important')} + *:contains("Results hidden")`);
+        cy.get(`${selectors.severityIcon('Moderate')} + *:contains("Results hidden")`);
+        cy.get(`${selectors.severityIcon('Low')} + *:contains("Results hidden")`);
 
-                        // Click the link in the table to visit the image page
-                        cy.wrap($rowWithCves).find('td[data-label="Image"] a').click();
+        // Check that table rows are filtered
+        cy.get(selectors.filteredViewLabel);
 
-                        // Check the severity and count in the summary card against the data from the original table
-                        cy.get(`${bySeverityCard} ${selectors.iconText(`${count} ${severity}`)}`);
+        // Ensure the table is not in a loading state
+        cy.get(selectors.isUpdatingTable).should('not.exist');
 
-                        // Apply a severity filter that matches the chosen severity
-                        applyLocalSeverityFilters(severity);
-
-                        // Check that all of the other severities in the card read "Results hidden"
-                        cy.get(`${bySeverityCard} ${selectors.iconText(severity)}`);
-                        cy.get(`${bySeverityCard} ${selectors.iconText('Results hidden')}`).should(
-                            'have.length',
-                            3
-                        );
-
-                        // Check that the filtered view label is present
-                        cy.get(selectors.filteredViewLabel);
-
-                        // Check that the row count in the header above the table matches the CVE count for the image
-                        cy.get(`*:contains("${count} results found")`);
-
-                        // Check that the count and severity in the summary card still match after the filter is applied
-                        cy.get(`${bySeverityCard} ${selectors.iconText(`${count} ${severity}`)}`);
-
-                        // Check that the total number of fixable + not fixable matches the total number of CVEs
-                        cy.get(
-                            [
-                                `${byStatusCard} ${selectors.iconText('with available fixes')}`,
-                                `${byStatusCard} ${selectors.iconText('without fixes')}`,
-                            ].join(',')
-                        ).then(([$fixable, $notFixable]) => {
-                            const fixableCount = parseInt(
-                                $fixable.innerText.replace(/\D/g, ''),
-                                10
-                            );
-                            const notFixableCount = parseInt(
-                                $notFixable.innerText.replace(/\D/g, ''),
-                                10
-                            );
-                            expect(fixableCount + notFixableCount).to.equal(count);
-                        });
-
-                        // Check that every row in the table has the correct severity
-                        cy.get(`table tbody tr td[data-label="CVE severity"]`).each(($severity) => {
-                            expect($severity.text()).to.equal(severity);
-                        });
-                    });
+        // Check that every row in the table has the correct severity
+        // Query for table rows via jQuery to avoid a Cypress error in the case where there are no rows
+        cy.get('table tbody').then(($table) => {
+            const $cells = $table.find('tr td[data-label="CVE severity"]');
+            // This tests the invariant that if a single severity filter is applied, all rows in the table
+            // will have that same severity. This check also holds if the filter removes all rows from the table.
+            $cells.each((_, $cell) => {
+                const severity = $cell.innerText;
+                expect(severity).to.equal(severityFilter);
             });
+        });
     });
 
     // This test should correctly apply a CVE name filter to the CVEs table
     it('should correctly apply CVE name filters', () => {
-        // Visit the workload CVE overview page
-        visitWorkloadCveOverview();
-
-        selectEntityTab('Image');
-
-        // Select any image that has CVEs in the table
-        // and click the link in the row to visit the image page
-        cy.get(
-            `tbody tr:has(td[data-label="CVEs by severity"] ${selectors.nonZeroCveSeverityCounts})`
-        )
-            .first()
-            .find('td[data-label="Image"] a')
-            .click();
+        visitFirstImage();
 
         // Get any table row and extract the CVE name from the column with the CVE data label
         cy.get('tbody tr td[data-label="CVE"]')
             .first()
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
-                // Select CVE from the entity dropdown
-                selectResourceFilterType('CVE');
                 // Enter the CVE name into the CVE filter
-                typeAndSelectResourceFilterValue('CVE', cveName);
+                typeAndSelectSearchFilterValue('CVE', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name

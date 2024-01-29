@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/mcuadros/go-syslog.v2"
 )
@@ -63,9 +64,9 @@ func syslogServer() {
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
 			log.Println(logParts)
-			lock.Lock()
-			dataPosted = append(dataPosted, fmt.Sprint(logParts))
-			lock.Unlock()
+			concurrency.WithLock(&lock, func() {
+				dataPosted = append(dataPosted, fmt.Sprint(logParts))
+			})
 		}
 	}(channel)
 	server.Wait()

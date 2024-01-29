@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -114,6 +115,21 @@ func (m *MockDataStore) GetNamespace(ctx context.Context, id string) (*storage.N
 func (mr *MockDataStoreMockRecorder) GetNamespace(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockDataStore)(nil).GetNamespace), ctx, id)
+}
+
+// GetNamespacesForSAC mocks base method.
+func (m *MockDataStore) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespacesForSAC", ctx)
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNamespacesForSAC indicates an expected call of GetNamespacesForSAC.
+func (mr *MockDataStoreMockRecorder) GetNamespacesForSAC(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespacesForSAC", reflect.TypeOf((*MockDataStore)(nil).GetNamespacesForSAC), ctx)
 }
 
 // RemoveNamespace mocks base method.

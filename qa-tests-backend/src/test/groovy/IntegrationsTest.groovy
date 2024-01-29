@@ -351,8 +351,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
-            notifier.validateViolationResolution()
-            notifier.cleanup()
             notifier.deleteNotifier()
         }
 
@@ -463,7 +461,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
-            notifier.cleanup()
             notifier.deleteNotifier()
         }
         ClusterService.updateAdmissionController(oldAdmCtrlConfig)
@@ -584,8 +581,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
 
-        notifier.validateViolationResolution()
-        notifier.cleanup()
         notifier.deleteNotifier()
 
         if (namespaceAnnotation != null) {

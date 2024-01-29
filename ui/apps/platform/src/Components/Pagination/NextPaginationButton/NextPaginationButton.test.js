@@ -35,7 +35,7 @@ test('can press the next button when on the first page', async () => {
     const button = screen.getByRole('button', options);
 
     // button should not be disabled
-    expect(button).not.toHaveAttribute('disabled');
+    expect(button).toBeEnabled();
 });
 
 test('can not press the next button when on the last page', async () => {
@@ -43,7 +43,7 @@ test('can not press the next button when on the last page', async () => {
     const button = screen.getByRole('button', options);
 
     // button should be disabled
-    expect(button).toHaveAttribute('disabled');
+    expect(button).toBeDisabled();
 });
 
 test('pressing the button increases the page count', async () => {

@@ -2,12 +2,14 @@ package scanners
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries"
 	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
 	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
 	clairV4Scanner "github.com/stackrox/rox/pkg/scanners/clairv4"
 	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
 	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -40,6 +42,12 @@ func NewFactory(set registries.Set) Factory {
 
 	quayScannerType, quayScannerCreator := quayScanner.Creator()
 	reg.creators[quayScannerType] = quayScannerCreator
+
+	// Only allow creation of the Scanner V4 scanner if installed/enabled.
+	if features.ScannerV4.Enabled() {
+		scannerV4Type, scannerV4Creator := scannerv4.Creator(set)
+		reg.creators[scannerV4Type] = scannerV4Creator
+	}
 
 	return reg
 }

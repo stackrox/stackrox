@@ -35,7 +35,7 @@ test('should show a clustered generic event marker', () => {
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-generic-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-generic-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -61,7 +61,7 @@ test('should show a clustered policy violation event marker', () => {
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-policy-violation-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-policy-violation-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -91,7 +91,7 @@ test('should show a clustered process activity event marker', () => {
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-process-activity-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-process-activity-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -122,7 +122,7 @@ test('should show a clustered process in baseline activity event marker', () => 
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-process-in-baseline-activity-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-process-in-baseline-activity-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -148,7 +148,7 @@ test('should show a clustered container restart event marker', () => {
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-restart-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-restart-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });
 
@@ -175,6 +175,6 @@ test('should show a container termination event marker', () => {
             />
         </svg>
     );
-    expect(screen.getByTestId('clustered-termination-event')).not.toBeNull();
+    expect(screen.getByTestId('clustered-termination-event')).toBeInTheDocument();
     expect(asFragment()).toMatchSnapshot();
 });

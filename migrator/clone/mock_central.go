@@ -60,7 +60,6 @@ type mockCentral struct {
 	// May need to run both databases if testing case of upgrading from rocks version to a postgres version
 	runBoth    bool
 	updateBoth bool
-	gc         migGorm.Config
 }
 
 // createCentral - creates a central that runs Rocks OR Postgres OR both.  Need to cover
@@ -380,18 +379,6 @@ func (m *mockCentral) verifyMigrationVersionPostgres(clone string, ver *versionP
 	assert.Equal(m.t, ver.seqNum, migVer.SeqNum)
 	assert.Equal(m.t, ver.minSeqNum, migVer.MinimumSeqNum)
 	require.Equal(m.t, ver.version, migVer.MainVersion)
-}
-
-func (m *mockCentral) getCloneVersion(clone string) (*migrations.MigrationVersion, error) {
-	return migVer.ReadVersionPostgres(m.ctx, clone)
-}
-
-func (m *mockCentral) verifyDBVersion(dbPath string, seqNum int) {
-	bytes, err := os.ReadFile(filepath.Join(dbPath, "db"))
-	require.NoError(m.t, err)
-	dbSeq, err := strconv.Atoi(string(bytes))
-	require.NoError(m.t, err)
-	require.Equal(m.t, seqNum, dbSeq)
 }
 
 func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {

@@ -17,6 +17,11 @@ func (s *IntegerSetting) EnvVar() string {
 	return s.envVar
 }
 
+// DefaultValue returns the default vaule for the setting
+func (s *IntegerSetting) DefaultValue() int {
+	return s.defaultValue
+}
+
 // Setting returns the string form of the integer environment variable
 func (s *IntegerSetting) Setting() string {
 	return fmt.Sprintf("%d", s.IntegerSetting())

@@ -76,6 +76,20 @@ var (
 		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
 	})
 
+	networkFlowBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_buffer_size",
+		Help:      "A gauge of the current size of the Network Flow buffer in Sensor (updated every 30s)",
+	})
+
+	entitiesNotFound = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_network_flow_entity_not_found",
+		Help:      "Total number of entities not found when processing Network Flows",
+	}, []string{"kind", "orientation"})
+
 	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -118,6 +132,20 @@ var (
 		Help:      "A counter of the total number of processes received by Sensor from Collector",
 	})
 
+	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_signal_buffer_size",
+		Help:      "A gauge of the current size of the Process Indicator buffer in Sensor",
+	})
+
+	processSignalDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "process_signal_dropper_counter",
+		Help:      "A counter of the total number of process indicators that were dropped if the buffer was full",
+	})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -131,6 +159,20 @@ var (
 		Name:      "k8s_events",
 		Help:      "A counter for the total number of typed k8s events processed by Sensor",
 	}, []string{"Action", "Resource"})
+
+	resourcesSyncedUnchaged = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resources_synced_unchanged",
+		Help:      "A counter to track how many resources were sent in ResourcesSynced message as stub ids",
+	})
+
+	resourcesSyncedMessageSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resources_synced_size",
+		Help:      "A gauge to track how large ResourcesSynced message is",
+	})
 
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -202,6 +244,14 @@ var (
 	)
 )
 
+// IncrementEntityNotFound increments an instance of entity not found
+func IncrementEntityNotFound(kind, orientation string) {
+	entitiesNotFound.With(prometheus.Labels{
+		"kind":        kind,
+		"orientation": orientation,
+	}).Inc()
+}
+
 // IncrementDetectorCacheHit increments the number of deployments deduped by the detector
 func IncrementDetectorCacheHit() {
 	detectorDedupeCacheHits.Inc()
@@ -232,6 +282,21 @@ func RegisterSensorIndicatorChannelFullCounter() {
 	sensorIndicatorChannelFullCounter.Inc()
 }
 
+// IncrementTotalResourcesSyncSent sets the number of resources synced transmitted in the last sync event
+func IncrementTotalResourcesSyncSent(value int) {
+	resourcesSyncedUnchaged.Add(float64(value))
+}
+
+// SetResourcesSyncedSize sets the latest resources synced message size transmitted to central.
+func SetResourcesSyncedSize(size int) {
+	resourcesSyncedMessageSize.Set(float64(size))
+}
+
+// SetNetworkFlowBufferSizeGauge set network flow buffer size gauge.
+func SetNetworkFlowBufferSizeGauge(v int) {
+	networkFlowBufferGauge.Set(float64(v))
+}
+
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
 func IncrementTotalNetworkFlowsSentCounter(numberOfFlows int) {
 	totalNetworkFlowsSentCounter.Add(float64(numberOfFlows))
@@ -260,6 +325,16 @@ func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 // IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
 	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
+}
+
+// SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
+func SetProcessSignalBufferSizeGauge(number int) {
+	processSignalBufferGauge.Set(float64(number))
+}
+
+// IncrementProcessSignalDroppedCount increments the number of times the process signal was dropped.
+func IncrementProcessSignalDroppedCount() {
+	processSignalDroppedCount.Inc()
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.

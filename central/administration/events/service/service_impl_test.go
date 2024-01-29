@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math"
 	"testing"
 	"time"
 
@@ -30,9 +29,6 @@ var (
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
-	}
-	maxPagination = &v1.Pagination{
-		Limit: math.MaxInt32,
 	}
 )
 

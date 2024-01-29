@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
+	encConfigDatastore "github.com/stackrox/rox/central/notifier/encconfig/datastore"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -46,35 +47,78 @@ func initialize() {
 	// When alerts are generated, we will want to notify.
 	pr = New(ns, reporter.Singleton())
 
-	cryptoKey := ""
-	if env.EncNotifierCreds.BooleanSetting() {
-		var err error
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
-		if err != nil {
-			utils.CrashOnError(err)
-		}
-	}
-
-	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx)
+	notifierDatastore := datastore.Singleton()
+	protoNotifiers, err := notifierDatastore.GetNotifiers(ctx)
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)
 	}
 
-	// Create actionable notifiers from the loaded protos.
-	for _, protoNotifier := range protoNotifiers {
-		// Check if the notifier creds are need to be encrypted
-		encCredsModified, err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
+	if env.EncNotifierCreds.BooleanSetting() {
+		var notifiersToUpsert []*storage.Notifier
+		cryptoKey, activeIndex, err := notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
-			// Don't send out error from crypto lib
-			utils.CrashOnError(fmt.Errorf("Error securing notifier %s", protoNotifier.GetId()))
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifiers will be unable to send notifications"))
 		}
-		if encCredsModified {
-			_, err = datastore.Singleton().UpsertNotifier(ctx, protoNotifier)
+		encConfigDataStore := encConfigDatastore.Singleton()
+		encConfig, err := encConfigDataStore.GetConfig()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error getting notifier encryption config"))
+		}
+		storedKeyIndex := 0
+		if encConfig != nil {
+			storedKeyIndex = int(encConfig.ActiveKeyIndex)
+		}
+
+		var oldKey string
+		var needsRekey bool
+		if activeIndex != storedKeyIndex {
+			needsRekey = true
+			oldKey, err = notifierUtils.GetNotifierEncryptionKeyAtIndex(storedKeyIndex)
 			if err != nil {
-				utils.Should(errors.Wrapf(err, "error upserting secured notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
-				continue
+				utils.Should(errors.Wrap(err, "Error reading old encryption key, notifiers will be unable to send notifications"))
 			}
 		}
+		for _, protoNotifier := range protoNotifiers {
+			secured, err := notifierUtils.IsNotifierSecured(protoNotifier)
+			if err != nil {
+				utils.Should(errors.Wrapf(err, "Error checking id the notifier %s is secured, notifications to this notifier will fail",
+					protoNotifier.GetId()))
+				continue
+			}
+			if secured && !needsRekey {
+				continue
+			}
+			if needsRekey {
+				err = notifierUtils.RekeyNotifier(protoNotifier, oldKey, cryptoKey)
+				if err != nil {
+					utils.Should(fmt.Errorf("error rekeying notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
+					continue
+				}
+			} else {
+				err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
+				if err != nil {
+					// Don't send out error from crypto lib
+					utils.Should(fmt.Errorf("error securing notifier %s, notifications to this notifier will fail", protoNotifier.GetId()))
+					continue
+				}
+			}
+			notifiersToUpsert = append(notifiersToUpsert, protoNotifier)
+		}
+		err = notifierDatastore.UpsertManyNotifiers(ctx, notifiersToUpsert)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error upserting secured notifiers, several notifiers will be unable to send notifications"))
+		}
+		if needsRekey || encConfig == nil {
+			encConfig = &storage.NotifierEncConfig{ActiveKeyIndex: int32(activeIndex)}
+			err = encConfigDataStore.UpsertConfig(encConfig)
+			if err != nil {
+				utils.Should(errors.Wrapf(err, "Error updating active key index to %d", activeIndex))
+			}
+		}
+	}
+
+	// Create actionable notifiers from the loaded protos.
+	for _, protoNotifier := range protoNotifiers {
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))

@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/crud.go -source crud.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

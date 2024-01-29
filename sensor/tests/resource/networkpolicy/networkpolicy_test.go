@@ -32,7 +32,6 @@ var _ suite.SetupAllSuite = &NetworkPolicySuite{}
 var _ suite.TearDownTestSuite = &NetworkPolicySuite{}
 
 func (s *NetworkPolicySuite) SetupSuite() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	policies, err := testutils.GetPoliciesFromFile("data/policies.json")
 	if err != nil {
 		log.Fatalln(err)

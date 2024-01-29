@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8"
+	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8" //#nosec G101
 )
 
 func TestQuayIntegrationSuite(t *testing.T) {
@@ -70,7 +70,7 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 		}
 		return nil
 	}, retry.OnFailedAttempts(func(err error) {
-		log.Errorf("error scanning image: %v", err)
+		suite.T().Logf("error scanning image: %v", err)
 		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -47,13 +46,12 @@ type testGraphDataStoreImpl struct {
 	pgtestbase *pgtest.TestPostgres
 
 	// DataStores
-	namespaceStore      namespaceDataStore.DataStore
-	deploymentStore     deploymentDataStore.DataStore
-	imageStore          imageDataStore.DataStore
-	nodeStore           nodeDataStore.DataStore
-	clusterStore        clusterDataStore.DataStore
-	clusterCVEEdgeStore clusterCVEEdgeDataStore.DataStore
-	clusterCVEStore     clusterCVEDataStore.DataStore
+	namespaceStore  namespaceDataStore.DataStore
+	deploymentStore deploymentDataStore.DataStore
+	imageStore      imageDataStore.DataStore
+	nodeStore       nodeDataStore.DataStore
+	clusterStore    clusterDataStore.DataStore
+	clusterCVEStore clusterCVEDataStore.DataStore
 
 	storedNodes           []string
 	storedImages          []string

@@ -104,7 +104,7 @@ func makeTestCluster(mainImage, collectorImage string) *storage.Cluster {
 		MainImage:           mainImage,
 		CollectorImage:      collectorImage,
 		CentralApiEndpoint:  "central.stackrox:443",
-		CollectionMethod:    storage.CollectionMethod_EBPF,
+		CollectionMethod:    storage.CollectionMethod_CORE_BPF,
 		AdmissionController: false,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,

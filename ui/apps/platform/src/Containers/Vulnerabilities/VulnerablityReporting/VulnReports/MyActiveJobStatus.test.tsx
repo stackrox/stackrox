@@ -17,7 +17,7 @@ describe('MyActiveJobStatus', () => {
 
         render(<MyActiveJobStatus reportStatus={reportStatus} />);
 
-        expect(screen.getByText('Preparing')).toBeDefined();
+        expect(screen.getByText('Preparing')).toBeInTheDocument();
     });
 
     test('should show "WAITING" when your active job status is waiting', async () => {
@@ -31,7 +31,7 @@ describe('MyActiveJobStatus', () => {
 
         render(<MyActiveJobStatus reportStatus={reportStatus} />);
 
-        expect(screen.getByText('Waiting')).toBeDefined();
+        expect(screen.getByText('Waiting')).toBeInTheDocument();
     });
 
     test('should show "-" when your active job status is a success', async () => {
@@ -45,7 +45,7 @@ describe('MyActiveJobStatus', () => {
 
         render(<MyActiveJobStatus reportStatus={reportStatus} />);
 
-        expect(screen.getByText('-')).toBeDefined();
+        expect(screen.getByText('-')).toBeInTheDocument();
     });
 
     test('should show "-" when your active job status is a failure', async () => {
@@ -59,6 +59,6 @@ describe('MyActiveJobStatus', () => {
 
         render(<MyActiveJobStatus reportStatus={reportStatus} />);
 
-        expect(screen.getByText('-')).toBeDefined();
+        expect(screen.getByText('-')).toBeInTheDocument();
     });
 });

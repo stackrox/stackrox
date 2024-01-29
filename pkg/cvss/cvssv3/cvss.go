@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mathutil"
 )
 
 var attackVectorMap = map[string]storage.CVSSV3_AttackVector{
@@ -71,7 +73,7 @@ func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	for _, vector := range vectors {
 		vals := strings.Split(vector, ":")
 		if len(vals) != 2 {
-			return nil, fmt.Errorf("Invalid format for vector subfield %q", vector)
+			return nil, fmt.Errorf("invalid format for vector subfield %q", vector)
 		}
 		k, v := strings.TrimSpace(vals[0]), strings.TrimSpace(vals[1])
 		var ok bool
@@ -115,4 +117,20 @@ func Severity(score float32) storage.CVSSV3_Severity {
 		return storage.CVSSV3_CRITICAL
 	}
 	return storage.CVSSV3_UNKNOWN
+}
+
+// CalculateScores calculates and sets CVSS scores based on the current vector string.
+func CalculateScores(cvssV3 *storage.CVSSV3) error {
+	vec, err := cvss3.VectorFromString(cvssV3.GetVector())
+	if err != nil {
+		return fmt.Errorf("parsing: %w", err)
+	}
+	err = vec.Validate()
+	if err != nil {
+		return fmt.Errorf("validating: %w", err)
+	}
+	cvssV3.Score = float32(vec.BaseScore())
+	cvssV3.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
+	cvssV3.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1))
+	return nil
 }

@@ -76,12 +76,13 @@ func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clus
 	return g.postMessageWithRetry(ctx, msg, networkPolicyMessageKey)
 }
 
-func validateConfig(generic *storage.Generic) error {
+// Validate Generic notifier
+func Validate(generic *storage.Generic, validateSecret bool) error {
 	errList := errorhelpers.NewErrorList("Generic webhook validation")
 	if generic.GetEndpoint() == "" {
 		errList.AddString("endpoint is required")
 	}
-	if generic.GetUsername() != generic.GetPassword() && stringutils.AtLeastOneEmpty(generic.GetUsername(), generic.GetPassword()) {
+	if validateSecret && generic.GetUsername() != generic.GetPassword() && stringutils.AtLeastOneEmpty(generic.GetUsername(), generic.GetPassword()) {
 		errList.AddString("both username and password must be defined together")
 	}
 	for _, f := range generic.GetHeaders() {
@@ -113,13 +114,8 @@ func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 }
 
 func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*generic, error) {
-	genericConfig, ok := notifier.Config.(*storage.Notifier_Generic)
-
-	if !ok {
-		return nil, validateConfig(&storage.Generic{})
-	}
-	conf := genericConfig.Generic
-	if err := validateConfig(conf); err != nil {
+	conf := notifier.GetGeneric()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 	fullyQualifiedEndpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
@@ -167,14 +163,19 @@ func (g *generic) ProtoNotifier() *storage.Notifier {
 	return g.Notifier
 }
 
-func (g *generic) Test(ctx context.Context) error {
+func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 	alert := &storage.Alert{
 		Id: "testalert",
 		Policy: &storage.Policy{
 			Name: "This is a test message created to test integration with StackRox.",
 		},
 	}
-	return g.AlertNotify(ctx, alert)
+
+	if err := g.AlertNotify(ctx, alert); err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
@@ -250,6 +251,11 @@ func (g *generic) AuditLoggingEnabled() bool {
 }
 
 func (g *generic) getPassword() (string, error) {
+	if g.GetGeneric().GetUsername() == "" {
+		// Both username and password can be empty for unauthenticated generic notifier integration
+		return "", nil
+	}
+
 	if g.creds != "" {
 		return g.creds, nil
 	}
@@ -257,10 +263,6 @@ func (g *generic) getPassword() (string, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		g.creds = g.GetGeneric().GetPassword()
 		return g.creds, nil
-	}
-
-	if g.GetNotifierSecret() == "" {
-		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", g.GetName())
 	}
 
 	decCreds, err := g.cryptoCodec.Decrypt(g.cryptoKey, g.GetNotifierSecret())
@@ -275,9 +277,9 @@ func init() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
-			utils.CrashOnError(err)
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
 	}
 	notifiers.Add(notifiers.GenericType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {

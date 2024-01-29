@@ -6,10 +6,8 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
@@ -391,17 +389,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				deleteMock.Times(0)
 			}
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
-			deps := set.NewStringSet()
 			require.NotNil(t, events)
-			if !env.ResyncDisabled.BooleanSetting() {
-				// If re-sync is disabled we don't send the CompatibilityReprocess in the dispatcher
-				deps.AddAll(events.ReprocessDeployments...)
-				for _, d := range c.expectedDeployments {
-					_, ok := deps[d.GetId()]
-					assert.Truef(t, ok, "Expected Id %s not found in the ReprocessDeployments slice", d.GetId())
-				}
-
-			}
 			for _, e := range events.ForwardMessages {
 				_, ok := c.expectedEvents[e.Id]
 				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.Id)

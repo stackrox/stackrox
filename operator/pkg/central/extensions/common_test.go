@@ -36,9 +36,12 @@ type secretReconciliationTestCase struct {
 	VerifyStatus               statusVerifyFunc
 }
 
-func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
+func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.CentralSpec {
 	spec := platform.CentralSpec{
 		Scanner: &platform.ScannerComponentSpec{
+			ScannerComponent: new(platform.ScannerComponentPolicy),
+		},
+		ScannerV4: &platform.ScannerV4ComponentSpec{
 			ScannerComponent: new(platform.ScannerComponentPolicy),
 		},
 	}
@@ -47,6 +50,13 @@ func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
 	} else {
 		*spec.Scanner.ScannerComponent = platform.ScannerComponentDisabled
 	}
+
+	if scannerV4Enabled {
+		*spec.ScannerV4.ScannerComponent = platform.ScannerComponentEnabled
+	} else {
+		*spec.ScannerV4.ScannerComponent = platform.ScannerComponentDisabled
+	}
+
 	return spec
 }
 
@@ -98,8 +108,8 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	client = interceptor.NewClient(client, c.InterceptedK8sAPICalls)
 
-	// Verify that an initial invocation does not touch any of the existing secrets, and creates
-	// the expected ones.
+	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
+	// the expected managed ones.
 	err := runFn(context.Background(), central.DeepCopy(), client, statusUpdater, logr.Discard())
 	if c.ExpectedError == "" {
 		require.NoError(t, err)

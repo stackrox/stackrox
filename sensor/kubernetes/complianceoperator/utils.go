@@ -14,6 +14,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type scanNameGetter interface {
+	GetScanName() string
+}
+
+func validateScanName(req scanNameGetter) error {
+	if req == nil {
+		return errors.New("apply scan configuration request is empty")
+	}
+	if req.GetScanName() == "" {
+		return errors.New("no name provided for the scan")
+	}
+	return nil
+}
 func convertCentralRequestToScanSetting(namespace string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) *v1alpha1.ScanSetting {
 	// TODO: Add ACS labels.
 	return &v1alpha1.ScanSetting{
@@ -69,20 +82,6 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	}
 }
 
-func validateApplyOneTimeScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_OneTimeScan) error {
-	if req == nil {
-		return errors.New("apply scan configuration request is empty")
-	}
-	var errList errorhelpers.ErrorList
-	if req.GetScanSettings().GetScanName() == "" {
-		errList.AddStrings("no name provided for the scan")
-	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
-	}
-	return errList.ToError()
-}
-
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
 	if req == nil {
 		return errors.New("apply scan configuration request is empty")
@@ -94,15 +93,21 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	if len(req.GetScanSettings().GetProfiles()) == 0 {
 		errList.AddStrings("compliance profiles not specified")
 	}
-	if req.GetCron() == "" {
-		errList.AddStrings("schedule not specified")
-	} else {
+	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
 		}
 	}
 	return errList.ToError()
+}
+
+func validateApplySuspendScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) error {
+	return validateScanName(req)
+}
+
+func validateApplyResumeScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) error {
+	return validateScanName(req)
 }
 
 func validateApplyRerunScheduledScanRequest(req *central.ApplyComplianceScanConfigRequest_RerunScheduledScan) error {

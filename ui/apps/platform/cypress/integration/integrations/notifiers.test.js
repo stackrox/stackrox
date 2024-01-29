@@ -5,6 +5,7 @@ import {
     getInputByLabel,
 } from '../../helpers/formHelpers';
 import sampleCert from '../../helpers/sampleCert';
+import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
 
 import {
     clickCreateNewIntegrationInTable,
@@ -59,7 +60,22 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 2, check fields for invalid formats
+            // Step 2, check conditional fields
+
+            // Step 2.1, enable container IAM role, this should remove the AWS credentials fields
+            getInputByLabel('Use container IAM role').click();
+            cy.get(
+                `.pf-c-form__group:has('.pf-c-form__control:contains("Access key ID")') input`
+            ).should('not.exist');
+            cy.get(
+                `.pf-c-form__group:has('.pf-c-form__control:contains("Secret access key")') input`
+            ).should('not.exist');
+            // Step 2.2, disable container IAM role, this should render the AWS credentials fields again
+            getInputByLabel('Use container IAM role').click();
+            getInputByLabel('Access key ID').should('be.visible');
+            getInputByLabel('Secret access key').should('be.visible');
+
+            // Step 3, check fields for invalid formats
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('AWS region').select('US East (N. Virginia) us-east-1');
             getInputByLabel('Access key ID').click().type('AKIA5VNQSYCDODH7VKMK');
@@ -74,7 +90,7 @@ describe('Notifier Integrations', () => {
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid form and save
+            // Step 4, check valid form and save
             getInputByLabel('AWS account number').clear().type('939357552771').blur();
 
             testIntegrationInFormWithStoredCredentials(
@@ -237,19 +253,28 @@ describe('Notifier Integrations', () => {
             // Step 1, check empty fields
             getInputByLabel('Integration name').type(' ');
             getInputByLabel('Cloud SCC Source ID').type(' ');
-            getInputByLabel('Service Account Key (JSON)').type(' ').blur();
+            getInputByLabel('Service account key (JSON)').type(' ').blur();
 
-            getHelperElementByLabel('Integration name').contains('Required');
+            getHelperElementByLabel('Integration name').contains('An integration name is required');
             getHelperElementByLabel('Cloud SCC Source ID').contains('A source ID is required');
-            getHelperElementByLabel('Service Account Key (JSON)').contains(
-                'A service account is required'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 2, check fields for invalid formats
+            // Step 2, check conditional fields
+
+            // Step 2.1, enable workload identity, this should remove the service account field
+            getInputByLabel('Use workload identity').click();
+            getInputByLabel('Service account key (JSON)').should('be.disabled');
+            // Step 2.2, disable workload identity, this should render the service account field again
+            getInputByLabel('Use workload identity').click();
+            getInputByLabel('Service account key (JSON)').should('be.enabled');
+
+            // Step 3, check fields for invalid formats
             getInputByLabel('Cloud SCC Source ID').type('organization-123');
-            getInputByLabel('Service Account Key (JSON)')
+            getInputByLabel('Service account key (JSON)')
                 .type('{ "type": "service_account", "project_id": "123456"', {
                     parseSpecialCharSequences: false,
                 })
@@ -258,20 +283,18 @@ describe('Notifier Integrations', () => {
             getHelperElementByLabel('Cloud SCC Source ID').contains(
                 'SCC source ID must match the format: organizations/[0-9]+/sources/[0-9]+'
             );
-            getHelperElementByLabel('Service Account Key (JSON)').contains(
-                'Service account must be valid JSON'
+            getHelperElementByLabel('Service account key (JSON)').contains(
+                'Valid JSON is required for service account key'
             );
             cy.get(selectors.buttons.test).should('be.disabled');
             cy.get(selectors.buttons.save).should('be.disabled');
 
-            // Step 3, check valid from and save
+            // Step 4, check valid from and save
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('Cloud SCC Source ID').clear().type('organizations/123/sources/456');
-            getInputByLabel('Service Account Key (JSON)')
+            getInputByLabel('Service account key (JSON)')
                 .clear()
-                .type('{ "type": "service_account", "project_id": "123456" }', {
-                    parseSpecialCharSequences: false,
-                })
+                .type(JSON.stringify(fakeGCPServiceAccount), { parseSpecialCharSequences: false })
                 .blur();
 
             testIntegrationInFormWithStoredCredentials(

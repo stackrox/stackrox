@@ -3,7 +3,6 @@ package rbac
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -112,31 +111,22 @@ func (r *Dispatcher) processEvent(obj interface{}, action central.ResourceAction
 }
 
 func (r *Dispatcher) findSubjectForBinding(binding metav1.Object) []namespacedSubject {
-	if env.ResyncDisabled.BooleanSetting() {
-		return r.store.FindSubjectForBindingID(binding.GetNamespace(), binding.GetName(), string(binding.GetUID()))
-	}
-	return nil
+	return r.store.FindSubjectForBindingID(binding.GetNamespace(), binding.GetName(), string(binding.GetUID()))
 }
 
 func (r *Dispatcher) findSubjectForRole(role metav1.Object) []namespacedSubject {
-	if env.ResyncDisabled.BooleanSetting() {
-		return r.store.FindSubjectForRole(role.GetNamespace(), role.GetName())
-	}
-	return nil
+	return r.store.FindSubjectForRole(role.GetNamespace(), role.GetName())
 }
 
 func (r *Dispatcher) mustGenerateRelatedEvents(obj metav1.Object, roleID string, isClusterRole bool) []*central.SensorEvent {
 	// Only generate related binding events if re-sync is not enabled. Otherwise, binding events will be reprocessed every minute.
-	if env.ResyncDisabled.BooleanSetting() {
-		relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
-		events, err := r.fetcher.generateManyDependentEvents(relatedBindings, roleID, isClusterRole)
-		if err != nil {
-			log.Warnf("failed to fetch related bindings: %s", err)
-			return nil
-		}
-		return events
+	relatedBindings := r.store.FindBindingForNamespacedRole(obj.GetNamespace(), obj.GetName())
+	events, err := r.fetcher.generateManyDependentEvents(relatedBindings, roleID, isClusterRole)
+	if err != nil {
+		log.Warnf("failed to fetch related bindings: %s", err)
+		return nil
 	}
-	return nil
+	return events
 }
 
 func (r *Dispatcher) toRoxBinding(binding *v1.RoleBinding) *storage.K8SRoleBinding {

@@ -25,7 +25,9 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string, env environment.Environment) error {
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration,
+	createUpgraderSA bool, slimCollectorP *bool, istioVersion string, env environment.Environment,
+) error {
 	conn, err := env.GRPCConnection()
 	if err != nil {
 		return err
@@ -35,7 +37,7 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, env)
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, 20*time.Second, env)
 	if err != nil {
 		return errors.Wrapf(err, "error resolving cluster ID for %q", clusterIDOrName)
 	}

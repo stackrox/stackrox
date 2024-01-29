@@ -37,6 +37,8 @@ import CVESelectionTh from '../components/CVESelectionTh';
 import CVESelectionTd from '../components/CVESelectionTd';
 import TooltipTh from '../components/TooltipTh';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
+import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+import PartialCVEDataAlert from '../components/PartialCVEDataAlert';
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -47,6 +49,7 @@ export const imageVulnerabilitiesFragment = gql`
         cvss
         scoreVersion
         discoveredAtImage
+        pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
             ...ImageComponentVulnerabilities
         }
@@ -60,6 +63,7 @@ export type ImageVulnerability = {
     cvss: number;
     scoreVersion: string;
     discoveredAtImage: string | null;
+    pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
 };
 
@@ -72,7 +76,11 @@ export type ImageVulnerabilitiesTableProps = {
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
-    createTableActions?: (cve: { cve: string; summary: string }) => IAction[];
+    createTableActions?: (cve: {
+        cve: string;
+        summary: string;
+        numAffectedImages: number;
+    }) => IAction[];
 };
 
 function ImageVulnerabilitiesTable({
@@ -130,6 +138,7 @@ function ImageVulnerabilitiesTable({
                         scoreVersion,
                         imageComponents,
                         discoveredAtImage,
+                        pendingExceptionCount,
                     },
                     rowIndex
                 ) => {
@@ -152,10 +161,21 @@ function ImageVulnerabilitiesTable({
                                         rowIndex={rowIndex}
                                         cve={cve}
                                         summary={summary}
+                                        numAffectedImages={1}
                                     />
                                 )}
-                                <Td dataLabel="CVE">
-                                    <Link to={getEntityPagePath('CVE', cve)}>{cve}</Link>
+                                <Td dataLabel="CVE" modifier="nowrap">
+                                    <PendingExceptionLabelLayout
+                                        hasPendingException={pendingExceptionCount > 0}
+                                        cve={cve}
+                                        vulnerabilityState={vulnerabilityState}
+                                    >
+                                        <Link
+                                            to={getEntityPagePath('CVE', cve, vulnerabilityState)}
+                                        >
+                                            {cve}
+                                        </Link>
+                                    </PendingExceptionLabelLayout>
                                 </Td>
                                 <Td modifier="nowrap" dataLabel="CVE severity">
                                     {isVulnerabilitySeverity(severity) && (
@@ -185,7 +205,12 @@ function ImageVulnerabilitiesTable({
                                 {createTableActions && (
                                     <Td className="pf-u-px-0">
                                         <ActionsColumn
-                                            items={createTableActions({ cve, summary })}
+                                            menuAppendTo={() => document.body}
+                                            items={createTableActions({
+                                                cve,
+                                                summary,
+                                                numAffectedImages: 1,
+                                            })}
                                         />
                                     </Td>
                                 )}
@@ -194,11 +219,17 @@ function ImageVulnerabilitiesTable({
                                 <Td />
                                 <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
-                                        <p className="pf-u-mb-md">{summary}</p>
-                                        <ImageComponentVulnerabilitiesTable
-                                            imageMetadataContext={image}
-                                            componentVulnerabilities={imageComponents}
-                                        />
+                                        {summary && image ? (
+                                            <>
+                                                <p className="pf-u-mb-md">{summary}</p>
+                                                <ImageComponentVulnerabilitiesTable
+                                                    imageMetadataContext={image}
+                                                    componentVulnerabilities={imageComponents}
+                                                />
+                                            </>
+                                        ) : (
+                                            <PartialCVEDataAlert />
+                                        )}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -40,12 +41,28 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// CountScanConfigurations mocks base method.
+func (m *MockDataStore) CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountScanConfigurations", ctx, q)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountScanConfigurations indicates an expected call of CountScanConfigurations.
+func (mr *MockDataStoreMockRecorder) CountScanConfigurations(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountScanConfigurations", reflect.TypeOf((*MockDataStore)(nil).CountScanConfigurations), ctx, q)
+}
+
 // DeleteScanConfiguration mocks base method.
-func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) error {
+func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteScanConfiguration", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteScanConfiguration indicates an expected call of DeleteScanConfiguration.
@@ -55,18 +72,18 @@ func (mr *MockDataStoreMockRecorder) DeleteScanConfiguration(ctx, id any) *gomoc
 }
 
 // GetScanConfigClusterStatus mocks base method.
-func (m *MockDataStore) GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error) {
+func (m *MockDataStore) GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetScanConfigClusterStatus", ctx, scanID)
+	ret := m.ctrl.Call(m, "GetScanConfigClusterStatus", ctx, scanConfigID)
 	ret0, _ := ret[0].([]*storage.ComplianceOperatorClusterScanConfigStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetScanConfigClusterStatus indicates an expected call of GetScanConfigClusterStatus.
-func (mr *MockDataStoreMockRecorder) GetScanConfigClusterStatus(ctx, scanID any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetScanConfigClusterStatus(ctx, scanConfigID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanConfigClusterStatus", reflect.TypeOf((*MockDataStore)(nil).GetScanConfigClusterStatus), ctx, scanID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScanConfigClusterStatus", reflect.TypeOf((*MockDataStore)(nil).GetScanConfigClusterStatus), ctx, scanConfigID)
 }
 
 // GetScanConfiguration mocks base method.
@@ -116,17 +133,17 @@ func (mr *MockDataStoreMockRecorder) ScanConfigurationExists(ctx, scanName any) 
 }
 
 // UpdateClusterStatus mocks base method.
-func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, scanID, clusterID, clusterStatus string) error {
+func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, scanConfigID, clusterID, clusterStatus string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateClusterStatus", ctx, scanID, clusterID, clusterStatus)
+	ret := m.ctrl.Call(m, "UpdateClusterStatus", ctx, scanConfigID, clusterID, clusterStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateClusterStatus indicates an expected call of UpdateClusterStatus.
-func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, scanID, clusterID, clusterStatus any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, scanID, clusterID, clusterStatus)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, scanConfigID, clusterID, clusterStatus)
 }
 
 // UpsertScanConfiguration mocks base method.

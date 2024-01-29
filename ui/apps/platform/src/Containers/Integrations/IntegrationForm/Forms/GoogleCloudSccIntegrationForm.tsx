@@ -9,16 +9,20 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 
+import { getGoogleCredentialsPlaceholder } from '../../utils/integrationUtils';
+
 export type GoogleCloudSccIntegration = {
     cscc: {
         serviceAccount: string;
         sourceId: string;
+        wifEnabled: boolean;
     };
     type: 'cscc';
 } & NotifierIntegrationBase;
@@ -32,33 +36,32 @@ const sourceIdRegex = /^organizations\/[0-9]+\/sources\/[0-9]+$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         cscc: yup.object().shape({
+            wifEnabled: yup.bool(),
             serviceAccount: yup
                 .string()
                 .trim()
-                .required('A service account is required')
                 .test(
-                    'isValidJson',
-                    'Service account must be valid JSON',
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account key',
                     (value, context: yup.TestContext) => {
-                        const isRequired =
+                        const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
                             context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.wifEnabled;
 
-                        if (!isRequired) {
+                        if (!requirePasswordField || useWorkloadId) {
                             return true;
                         }
-                        if (!value) {
-                            return false;
-                        }
                         try {
-                            JSON.parse(value);
+                            JSON.parse(value as string);
                         } catch (e) {
                             return false;
                         }
-                        return true;
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
                     }
                 ),
             sourceId: yup
@@ -81,6 +84,7 @@ export const defaultValues: GoogleCloudSccIntegrationFormValues = {
         cscc: {
             serviceAccount: '',
             sourceId: '',
+            wifEnabled: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -94,6 +98,8 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.notifier = {
@@ -177,44 +183,79 @@ function GoogleCloudSccIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && isEditable && (
+                    {isCloudCredentialsEnabled && (
                         <FormLabelGroup
-                            label=""
-                            fieldId="updatePassword"
-                            helperText="Enable this option to replace currently stored credentials (if any)"
+                            fieldId="notifier.cscc.wifEnabled"
+                            touched={touched}
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update token"
-                                id="updatePassword"
-                                isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                label="Use workload identity"
+                                id="notifier.cscc.wifEnabled"
+                                isChecked={values.notifier.cscc.wifEnabled}
+                                onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
+                    {!isCreating && isEditable && (
+                        <FormLabelGroup
+                            label=""
+                            fieldId="updatePassword"
+                            helperText="Enable this option to replace currently stored credentials (if any)"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Update stored credentials"
+                                id="updatePassword"
+                                isChecked={
+                                    !(
+                                        isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled
+                                    ) && values.updatePassword
+                                }
+                                onChange={onUpdateCredentialsChange}
+                                onBlur={handleBlur}
+                                isDisabled={
+                                    !isEditable ||
+                                    (isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
+                                }
+                            />
+                        </FormLabelGroup>
+                    )}
                     <FormLabelGroup
-                        label="Service Account Key (JSON)"
-                        isRequired={values.updatePassword}
+                        label="Service account key (JSON)"
+                        isRequired={
+                            values.updatePassword &&
+                            isCloudCredentialsEnabled &&
+                            !values.notifier.cscc.wifEnabled
+                        }
                         fieldId="notifier.cscc.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
                         <TextArea
                             className="json-input"
-                            isRequired={values.updatePassword}
+                            isRequired={
+                                values.updatePassword &&
+                                !(isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
+                            }
                             type="text"
                             id="notifier.cscc.serviceAccount"
+                            name="notifier.cscc.serviceAccount"
                             value={values.notifier.cscc.serviceAccount}
-                            placeholder={
-                                values.updatePassword
-                                    ? 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}'
-                                    : 'Currently-stored credentials will be used.'
-                            }
                             onChange={onChange}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
+                            isDisabled={
+                                !isEditable ||
+                                !values.updatePassword ||
+                                (isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled)
+                            }
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                isCloudCredentialsEnabled && values.notifier.cscc.wifEnabled,
+                                values.updatePassword
+                            )}
                         />
                     </FormLabelGroup>
                 </Form>

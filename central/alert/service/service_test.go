@@ -25,10 +25,6 @@ import (
 
 var (
 	errFake = errors.New("fake error")
-
-	maxPagination = &v1.Pagination{
-		Limit: math.MaxInt32,
-	}
 )
 
 func TestAlertService(t *testing.T) {

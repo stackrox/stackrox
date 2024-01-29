@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"google.golang.org/grpc"
 )
 
@@ -94,8 +95,13 @@ func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*
 	return &v1.GetIntegrationHealthResponse{IntegrationHealth: healthData}, nil
 }
 
-func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, _ *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
-	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo()
+func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, req *v1.VulnDefinitionsInfoRequest) (*v1.VulnDefinitionsInfo, error) {
+	scannerType := types.Clairify
+	if req.GetComponent() == v1.VulnDefinitionsInfoRequest_SCANNER_V4 {
+		scannerType = types.ScannerV4
+	}
+
+	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo(scannerType)
 	if err != nil {
 		return nil, errors.Errorf("failed to obtain vulnerability definitions information: %v", err)
 	}

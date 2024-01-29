@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	pgStore "github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store/postgres"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,8 +11,6 @@ var (
 	once sync.Once
 
 	ad DataStore
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
+    Bullseye,
     PageSection,
     Pagination,
+    Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -10,90 +12,107 @@ import {
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import useURLPagination from 'hooks/useURLPagination';
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    IMAGE_CVE_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-    REQUESTER_SEARCH_OPTION,
-    REQUEST_ID_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+import useURLSort from 'hooks/useURLSort';
+import useRestQuery from 'hooks/useRestQuery';
+import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import {
-    ExpiresTableCell,
-    RequestIDTableCell,
-    RequestedActionTableCell,
-    RequestedItemsTableCell,
-    RequestedTableCell,
-    RequesterTableCell,
-    ScopeTableCell,
+    RequestExpires,
+    RequestIDLink,
+    RequestedAction,
+    RequestedItems,
+    RequestCreatedAt,
+    Requester,
+    RequestScope,
 } from './components/ExceptionRequestTableCells';
 import FilterAutocompleteSelect from '../components/FilterAutocomplete';
-
-// @TODO: Use API data instead of hardcoded data
-const vulnerabilityExceptions: VulnerabilityException[] = [
-    {
-        id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
-        name: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
-        targetState: 'DEFERRED',
-        exceptionStatus: 'APPROVED_PENDING_UPDATE',
-        expired: false,
-        requester: {
-            id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-            name: 'admin',
-        },
-        createdAt: '2023-10-01T19:16:49.155480945Z',
-        lastUpdated: '2023-10-01T19:16:49.155480945Z',
-        comments: [
-            {
-                createdAt: '2023-10-23T19:16:49.155480945Z',
-                id: 'c84b3f5f-4cad-4c4e-8a4a-97b821c2c373',
-                message: 'asdf',
-                user: {
-                    id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-                    name: 'admin',
-                },
-            },
-        ],
-        scope: {
-            imageScope: {
-                registry: 'quay.io',
-                remote: 'stackrox-io/scanner',
-                tag: '.*',
-            },
-        },
-        deferralRequest: {
-            expiry: {
-                expiryType: 'ALL_CVE_FIXABLE',
-            },
-        },
-        deferralUpdate: {
-            cves: ['CVE-2018-20839'],
-            expiry: {
-                expiryType: 'TIME',
-                expiresOn: '2023-10-31T19:16:49.155480945Z',
-            },
-        },
-        cves: ['CVE-2018-20839'],
-    },
-];
+import TableErrorComponent from '../WorkloadCves/components/TableErrorComponent';
+import {
+    SearchOption,
+    REQUEST_NAME_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    REQUESTER_SEARCH_OPTION,
+    IMAGE_SEARCH_OPTION,
+} from '../searchOptions';
 
 const searchOptions: SearchOption[] = [
-    REQUEST_ID_SEARCH_OPTION,
+    REQUEST_NAME_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     REQUESTER_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
 ];
+
+const sortFields = [
+    'Request Name',
+    'Requester User Name',
+    'Created Time',
+    'Request Expiry Time',
+    'Image Registry Scope',
+];
+const defaultSortOption = {
+    field: sortFields[0],
+    direction: 'desc',
+} as const;
 
 function ApprovedDeferrals() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
+
+    const vulnerabilityExceptionsFn = useCallback(
+        () =>
+            fetchVulnerabilityExceptions(
+                {
+                    ...searchFilter,
+                    'Request Status': ['APPROVED', 'APPROVED_PENDING_UPDATE'],
+                    'Requested Vulnerability State': 'DEFERRED',
+                },
+                sortOption,
+                page - 1,
+                perPage
+            ),
+        [searchFilter, sortOption, page, perPage]
+    );
+    const { data, loading, error } = useRestQuery(vulnerabilityExceptionsFn);
 
     function onFilterChange() {
         setPage(1);
+    }
+
+    if (loading && !data) {
+        return (
+            <Bullseye>
+                <Spinner isSVG />
+            </Bullseye>
+        );
+    }
+
+    if (error) {
+        return (
+            <PageSection variant="light">
+                <TableErrorComponent
+                    error={error}
+                    message="An error occurred. Try refreshing again"
+                />
+            </PageSection>
+        );
+    }
+
+    if (!data) {
+        return (
+            <NotFoundMessage
+                title="404: We couldn't find that page"
+                message="Pending vulnerability exception requests could not be found."
+            />
+        );
     }
 
     return (
@@ -102,12 +121,19 @@ function ApprovedDeferrals() {
                 <ToolbarContent>
                     <FilterAutocompleteSelect
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
+                        onFilterChange={(newFilter) => setSearchFilter(newFilter)}
                         searchOptions={searchOptions}
                     />
                     <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                         <Pagination
-                            itemCount={1}
+                            toggleTemplate={({ firstIndex, lastIndex }) => (
+                                <span>
+                                    <b>
+                                        {firstIndex} - {lastIndex}
+                                    </b>{' '}
+                                    of <b>many</b>
+                                </span>
+                            )}
                             page={page}
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
@@ -131,46 +157,40 @@ function ApprovedDeferrals() {
             <TableComposable borders={false}>
                 <Thead noWrap>
                     <Tr>
-                        <Th>Request ID</Th>
-                        <Th>Requester</Th>
+                        <Th sort={getSortParams('Request Name')}>Request name</Th>
+                        <Th sort={getSortParams('Requester User Name')}>Requester</Th>
                         <Th>Requested action</Th>
-                        <Th>Requested</Th>
-                        <Th>Expires</Th>
-                        <Th>Scope</Th>
+                        <Th sort={getSortParams('Created Time')}>Requested</Th>
+                        <Th sort={getSortParams('Request Expiry Time')}>Expires</Th>
+                        <Th sort={getSortParams('Image Registry Scope')}>Scope</Th>
                         <Th>Requested items</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {vulnerabilityExceptions.map((exception) => {
-                        const { id, name, requester, createdAt, scope, cves } = exception;
+                    {data.map((exception) => {
+                        const { id, name, requester, createdAt, scope } = exception;
                         return (
                             <Tr key={id}>
                                 <Td>
-                                    <RequestIDTableCell id={id} name={name} />
+                                    <RequestIDLink id={id} name={name} context="CURRENT" />
                                 </Td>
                                 <Td>
-                                    <RequesterTableCell requester={requester} />
+                                    <Requester requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedActionTableCell
-                                        exception={exception}
-                                        context="APPROVED_DEFERRALS"
-                                    />
+                                    <RequestedAction exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
-                                    <RequestedTableCell createdAt={createdAt} />
+                                    <RequestCreatedAt createdAt={createdAt} />
                                 </Td>
                                 <Td>
-                                    <ExpiresTableCell
-                                        exception={exception}
-                                        context="APPROVED_DEFERRALS"
-                                    />
+                                    <RequestExpires exception={exception} context="CURRENT" />
                                 </Td>
                                 <Td>
-                                    <ScopeTableCell scope={scope} />
+                                    <RequestScope scope={scope} />
                                 </Td>
                                 <Td>
-                                    <RequestedItemsTableCell cves={cves} />
+                                    <RequestedItems exception={exception} context="CURRENT" />
                                 </Td>
                             </Tr>
                         );

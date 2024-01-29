@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -71,7 +71,7 @@ type enricherImpl struct {
 }
 
 // EnrichWithVulnerabilities enriches the given image with vulnerabilities.
-func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error) {
+func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, components *scannerTypes.ScanComponents, notes []scannerV1.Note) (EnrichmentResult, error) {
 	scanners := e.integrations.ScannerSet()
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
@@ -82,9 +82,8 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	for _, imageScanner := range scanners.GetAll() {
 		scanner := imageScanner.GetScanner()
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
-			// Clairify is the only supported ImageVulnerabilityGetter at this time.
-			if scanner.Type() != clairify.TypeString {
-				log.Errorf("unexpected image vulnerability getter: %s [%s]", scanner.Name(), scanner.Type())
+			if scanner.Type() != components.ScannerType() {
+				log.Debugf("Skipping scanner %q with type %q, components are meant for scanner type %q for image: %q", scanner.Name(), scanner.Type(), components.ScannerType(), image.GetName().GetFullName())
 				continue
 			}
 
@@ -108,7 +107,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 }
 
 func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource *storage.DataSource, scanner scannerTypes.ImageVulnerabilityGetter,
-	image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (ScanResult, error) {
+	image *storage.Image, components *scannerTypes.ScanComponents, notes []scannerV1.Note) (ScanResult, error) {
 	scanStartTime := time.Now()
 	scan, err := scanner.GetVulnerabilities(image, components, notes)
 	e.metrics.SetImageVulnerabilityRetrievalTime(scanStartTime, scannerName, err)
@@ -582,6 +581,14 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 				})
 			}
 			errorList.AddError(err)
+
+			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
+				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
+				// This would result in Clairify scanners being skipped per sorting logic in `GetAll` of
+				// `pkg/scanners/set_impl.go`.
+				log.Debugf("Scanner V4 encountered an error scanning image %q, skipping remaining scanners", image.GetName().GetFullName())
+				break
+			}
 			continue
 		}
 		if result != ScanNotDone {

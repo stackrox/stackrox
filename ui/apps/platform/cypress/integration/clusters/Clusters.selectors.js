@@ -8,7 +8,7 @@ export const selectors = {
     clusterForm: scopeSelectors('[data-testid="cluster-form"]', {
         nameInput: 'input[name="name"]',
     }),
-    clusterHealth: scopeSelectors('[data-testid="clusters-side-panel"]', {
+    clusterHealth: scopeSelectors('[data-testid="cluster-page"]', {
         clusterStatus: '[data-testid="clusterStatus"]',
         sensorStatus: '[data-testid="sensorStatus"]',
         collectorStatus: '[data-testid="collectorStatus"]',

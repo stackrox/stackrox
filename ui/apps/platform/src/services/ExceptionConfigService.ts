@@ -13,6 +13,7 @@ export type VulnerabilitiesExceptionConfig = {
             anyFixable: boolean;
         };
         customDate: boolean;
+        indefinite: boolean;
     };
 };
 

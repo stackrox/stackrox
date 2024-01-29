@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/pool.go -source pool.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -12,8 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	pgconn "github.com/jackc/pgconn"
-	pgx "github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v5"
+	pgconn "github.com/jackc/pgx/v5/pgconn"
 	postgres "github.com/stackrox/rox/pkg/postgres"
 	gomock "go.uber.org/mock/gomock"
 )

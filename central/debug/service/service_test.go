@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/driftprogramming/pgxpoolmock"
 	"github.com/pkg/errors"
 	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	"github.com/stackrox/rox/central/globaldb"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/httputil/mock"
+	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -188,9 +188,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 	w := mock.NewResponseWriter()
 	testutils.SetVersion(s.T(), testutils.GetExampleVersion(s.T()))
 	db := mocks.NewMockDB(s.mockCtrl)
-	pgxRows := pgxpoolmock.NewRows([]string{"server_version"}).AddRow("15.1").ToPgxRows()
-	// Workaround for https://github.com/driftprogramming/pgxpoolmock/issues/8
-	pgxRows.Next()
+	pgxRows := pkgmocks.NewRows([]string{"server_version"}).AddRow("15.1").ToPgxRows()
 	db.EXPECT().QueryRow(gomock.Any(), "SHOW server_version;").Return(pgxRows)
 	globaldb.SetPostgresTest(s.T(), db)
 

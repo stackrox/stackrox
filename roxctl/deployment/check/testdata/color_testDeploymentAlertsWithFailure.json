@@ -10,9 +10,9 @@
         }
       },
       "summary": {
-        "[31;1mCRITICAL[0m": 0,
+        "[31;1mCRITICAL[0;22m": 0,
         "[95mHIGH[0m": 2,
-        "[34;2mLOW[0m": 1,
+        "[34;2mLOW[0;22m": 1,
         "[33mMEDIUM[0m": 3,
         "TOTAL": 6
       },
@@ -78,7 +78,7 @@
         },
         {
           "name": "policy 7",
-          "severity": "[34;2mLOW[0m",
+          "severity": "[34;2mLOW[0;22m",
           "description": "policy 7 for testing",
           "violation": [
             "testing alert violation message"
@@ -90,9 +90,9 @@
     }
   ],
   "summary": {
-    "[31;1mCRITICAL[0m": 0,
+    "[31;1mCRITICAL[0;22m": 0,
     "[95mHIGH[0m": 2,
-    "[34;2mLOW[0m": 1,
+    "[34;2mLOW[0;22m": 1,
     "[33mMEDIUM[0m": 3,
     "TOTAL": 6
   }

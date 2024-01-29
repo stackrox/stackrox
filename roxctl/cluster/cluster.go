@@ -16,5 +16,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.AddCommand(delete.Command(cliEnvironment))
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Switch, Redirect } from 'react-router-dom';
 
-import usePageAction from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/usePageAction';
+import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { vulnerabilityReportsPath } from 'routePaths';
 

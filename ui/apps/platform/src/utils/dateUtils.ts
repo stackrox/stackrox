@@ -38,7 +38,7 @@ export function getTime(timestamp: DateLike) {
  * @returns {string} - returns a formatted string for the time
  */
 export function getTimeHoursMinutes(timestamp: DateLike) {
-    return format(timestamp, 'h:mmA');
+    return format(timestamp, 'h:mm A');
 }
 
 export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
@@ -141,6 +141,28 @@ export function getDayList(dayListType: IntervalType, days) {
     }, []);
 
     return dayNameArray;
+}
+
+/**
+ * Returns day of month with its ordinal suffix.
+ * @param {number} num - The number to get the ordinal suffix for. Confirmed to work with 1 through 31.
+ * @returns {string} - The number with its ordinal suffix (e.g., "1st", "2nd", "3rd", "4th", etc.)
+ */
+export function getDayOfMonthWithOrdinal(num: number): string {
+    if (num === 11 || num === 12 || num === 13) {
+        return `${num}th`;
+    }
+
+    switch (num % 10) {
+        case 1:
+            return `${num}st`;
+        case 2:
+            return `${num}nd`;
+        case 3:
+            return `${num}rd`;
+        default:
+            return `${num}th`;
+    }
 }
 
 export default {

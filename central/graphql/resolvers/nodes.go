@@ -317,36 +317,8 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 	return resolver.root.TopNodeVulnerability(resolver.nodeScopeContext(ctx), args)
 }
 
-func (resolver *nodeResolver) getTopNodeCVEV1Query(args RawQuery) (*v1.Query, error) {
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	query = search.ConjunctionQuery(query, resolver.getNodeQuery())
-	query.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.CVSS.String(),
-				Reversed: true,
-			},
-			{
-				Field:    search.CVE.String(),
-				Reversed: true,
-			},
-		},
-		Limit:  1,
-		Offset: 0,
-	}
-	return query, nil
-}
-
 func (resolver *nodeResolver) getNodeRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).Query()
-}
-
-func (resolver *nodeResolver) getNodeQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).ProtoQuery()
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.

@@ -2,6 +2,9 @@ name: "test collector compliance container"
 defs: |
   def compliance:
     container(.daemonsets.collector; "compliance");
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "test securityContext"
   tests:

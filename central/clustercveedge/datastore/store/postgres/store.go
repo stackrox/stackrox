@@ -21,11 +21,6 @@ import (
 const (
 	baseTable = "cluster_cve_edges"
 	storeName = "ClusterCVEEdge"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -47,6 +42,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.

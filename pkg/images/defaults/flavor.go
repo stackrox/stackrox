@@ -95,6 +95,11 @@ type ImageFlavor struct {
 	ScannerDBImageName     string
 	ScannerDBSlimImageName string
 
+	// ScannerV4ImageTag is used for all scanner-v4* images (scanner-v4, scanner-v4-db)
+	ScannerV4ImageTag    string
+	ScannerV4ImageName   string
+	ScannerV4DBImageName string
+
 	ChartRepo        ChartRepo
 	ImagePullSecrets ImagePullSecrets
 	Versions         version.Versions
@@ -131,6 +136,11 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
+
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
 			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
@@ -165,6 +175,11 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
 
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
+
 		ChartRepo: ChartRepo{
 			URL:     "https://charts.stackrox.io",
 			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
@@ -197,6 +212,11 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
 		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
+
+		ScannerV4ImageName:   "rhacs-scanner-v4-rhel8",
+		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel8",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
 
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
@@ -243,6 +263,11 @@ func OpenSourceImageFlavor() ImageFlavor {
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
 
 		ChartRepo: ChartRepo{
 			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",

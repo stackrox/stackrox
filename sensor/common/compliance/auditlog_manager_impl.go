@@ -167,6 +167,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
+		HashKey:   a.clusterIDGetter(),
+		DedupeKey: a.clusterIDGetter(),
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
@@ -179,9 +181,9 @@ func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[strin
 // If the feature is enabled, then the node will automatically be sent a message to start collection upon a successful add
 func (a *auditLogCollectionManagerImpl) AddEligibleComplianceNode(node string, connection sensor.ComplianceService_CommunicateServer) {
 	log.Infof("Adding node `%s` as an eligible compliance node for audit log collection", node)
-	a.connectionLock.Lock()
-	a.eligibleComplianceNodes[node] = connection
-	a.connectionLock.Unlock()
+	concurrency.WithLock(&a.connectionLock, func() {
+		a.eligibleComplianceNodes[node] = connection
+	})
 
 	if a.enabled.Get() {
 		a.fileStateLock.RLock() // Will read the state when sending start message.
@@ -281,15 +283,15 @@ func (a *auditLogCollectionManagerImpl) stopAuditLogCollectionOnAllNodes() {
 // If the feature is already enabled and there are eligible nodes, then this will restart collection on those nodes from this state
 func (a *auditLogCollectionManagerImpl) SetAuditLogFileStateFromCentral(fileStates map[string]*storage.AuditLogFileState) {
 	a.receivedInitialStateFromCentral.Set(true)
-	a.fileStateLock.Lock()
-	a.fileStates = fileStates
 
-	// Ensure that the map is empty not nil if there is no saved state. The rest of the manager depends on it being _not nil_
-	if a.fileStates == nil {
-		a.fileStates = make(map[string]*storage.AuditLogFileState)
-	}
+	concurrency.WithLock(&a.fileStateLock, func() {
+		a.fileStates = fileStates
 
-	a.fileStateLock.Unlock()
+		// Ensure that the map is empty not nil if there is no saved state. The rest of the manager depends on it being _not nil_
+		if a.fileStates == nil {
+			a.fileStates = make(map[string]*storage.AuditLogFileState)
+		}
+	})
 
 	if a.enabled.Get() {
 		a.startAuditLogCollectionOnAllNodes()

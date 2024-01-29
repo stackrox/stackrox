@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
 )
 
 type serviceAccountKey struct {
@@ -16,20 +15,6 @@ type ServiceAccountStore struct {
 	lock                        sync.RWMutex
 	serviceAccountToPullSecrets map[serviceAccountKey][]string
 	serviceAccountIDs           set.StringSet
-}
-
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (sas *ServiceAccountStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypeServiceAccount.String() {
-		return "", nil
-	}
-	// Resource exists on central but not on Sensor, send delete event
-	if !sas.serviceAccountIDs.Contains(resID) {
-		return resID, nil
-	}
-	return "", nil
 }
 
 func newServiceAccountStore() *ServiceAccountStore {

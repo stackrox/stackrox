@@ -49,11 +49,14 @@ function useFetchNetworkFlows({
         const peers = transformFlowsToPeers(flows);
         fetchNetworkBaselineStatuses({ deploymentId, peers })
             .then((response: { statuses: BaselineStatus[] }) => {
-                const statusMap = response.statuses.reduce((acc, curr) => {
-                    const id = getUniqueIdFromPeer(curr.peer);
-                    acc[id] = curr.status;
-                    return acc;
-                }, {} as Record<string, BaselineStatusType>);
+                const statusMap = response.statuses.reduce(
+                    (acc, curr) => {
+                        const id = getUniqueIdFromPeer(curr.peer);
+                        acc[id] = curr.status;
+                        return acc;
+                    },
+                    {} as Record<string, BaselineStatusType>
+                );
                 const modifiedFlows = flows.map((flow) => {
                     const id = getUniqueIdFromFlow(flow);
                     const modifiedFlow: Flow = {

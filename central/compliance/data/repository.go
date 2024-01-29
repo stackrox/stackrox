@@ -31,23 +31,21 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	unresolvedAlerts      []*storage.ListAlert
-	networkPolicies       map[string]*storage.NetworkPolicy
-	networkGraph          *v1.NetworkGraph
-	policies              map[string]*storage.Policy
-	images                []*storage.ListImage
-	imageIntegrations     []*storage.ImageIntegration
-	registries            []framework.ImageMatcher
-	scanners              []framework.ImageMatcher
-	sshProcessIndicators  []*storage.ProcessIndicator
-	hasProcessIndicators  bool
-	networkFlows          []*storage.NetworkFlow
-	notifiers             []*storage.Notifier
-	roles                 []*storage.K8SRole
-	bindings              []*storage.K8SRoleBinding
-	cisDockerRunCheck     bool
-	cisKubernetesRunCheck bool
-	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
+	unresolvedAlerts             []*storage.ListAlert
+	deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy
+	policies                     map[string]*storage.Policy
+	images                       []*storage.ListImage
+	imageIntegrations            []*storage.ImageIntegration
+	registries                   []framework.ImageMatcher
+	scanners                     []framework.ImageMatcher
+	sshProcessIndicators         []*storage.ProcessIndicator
+	hasProcessIndicators         bool
+	flowsWithDeploymentDst       []*storage.NetworkFlow
+	notifiers                    []*storage.Notifier
+	roles                        []*storage.K8SRole
+	bindings                     []*storage.K8SRoleBinding
+	cisKubernetesRunCheck        bool
+	categoryToPolicies           map[string]set.StringSet // maps categories to policy set
 
 	complianceOperatorResults map[string][]*storage.ComplianceOperatorCheckResult
 
@@ -68,12 +66,8 @@ func (r *repository) Deployments() map[string]*storage.Deployment {
 	return r.deployments
 }
 
-func (r *repository) NetworkPolicies() map[string]*storage.NetworkPolicy {
-	return r.networkPolicies
-}
-
-func (r *repository) NetworkGraph() *v1.NetworkGraph {
-	return r.networkGraph
+func (r *repository) DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy {
+	return r.deploymentsToNetworkPolicies
 }
 
 func (r *repository) Policies() map[string]*storage.Policy {
@@ -100,8 +94,8 @@ func (r *repository) HasProcessIndicators() bool {
 	return r.hasProcessIndicators
 }
 
-func (r *repository) NetworkFlows() []*storage.NetworkFlow {
-	return r.networkFlows
+func (r *repository) NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow {
+	return r.flowsWithDeploymentDst
 }
 
 func (r *repository) Notifiers() []*storage.Notifier {
@@ -144,9 +138,9 @@ func (r *repository) ComplianceOperatorResults() map[string][]*storage.Complianc
 	return r.complianceOperatorResults
 }
 
-func newRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
+func newRepository(ctx context.Context, domain framework.ComplianceDomain, factory *factory) (*repository, error) {
 	r := &repository{}
-	if err := r.init(ctx, domain, scrapeResults, factory); err != nil {
+	if err := r.init(ctx, domain, factory); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -164,14 +158,6 @@ func deploymentsByID(deployments []*storage.Deployment) map[string]*storage.Depl
 	result := make(map[string]*storage.Deployment, len(deployments))
 	for _, deployment := range deployments {
 		result[deployment.GetId()] = deployment
-	}
-	return result
-}
-
-func networkPoliciesByID(policies []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	result := make(map[string]*storage.NetworkPolicy, len(policies))
-	for _, policy := range policies {
-		result[policy.GetId()] = policy
 	}
 	return result
 }
@@ -202,7 +188,11 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	return result
 }
 
-func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
+func deploymentIngressFlowsPredicate(props *storage.NetworkFlowProperties) bool {
+	return props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT
+}
+
+func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 
@@ -221,14 +211,13 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	if err != nil {
 		return err
 	}
-	r.networkPolicies = networkPoliciesByID(networkPolicies)
 
 	networkTree := f.netTreeMgr.GetNetworkTree(ctx, clusterID)
 	if networkTree == nil {
 		networkTree = f.netTreeMgr.CreateNetworkTree(ctx, clusterID)
 	}
 
-	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, nil, deployments, networkTree, networkPolicies, false)
+	r.deploymentsToNetworkPolicies = f.networkGraphEvaluator.GetApplyingPoliciesPerDeployment(deployments, networkTree, networkPolicies)
 
 	policies, err := f.policyStore.GetAllPolicies(ctx)
 	if err != nil {
@@ -279,7 +268,8 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	} else if flowStore == nil {
 		return errors.Errorf("no flows found for cluster %q", domain.Cluster().ID())
 	}
-	r.networkFlows, _, err = flowStore.GetAllFlows(ctx, nil)
+
+	r.flowsWithDeploymentDst, _, err = flowStore.GetMatchingFlows(ctx, deploymentIngressFlowsPredicate, nil)
 	if err != nil {
 		return err
 	}
@@ -329,16 +319,6 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	// Flatten the files so we can do direct lookups on the nested values
-	for _, n := range scrapeResults {
-		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
-		n.Files = totalNodeFiles
-	}
-
-	r.hostScrape = scrapeResults
-
-	r.nodeResults = getNodeResults(scrapeResults)
-
 	cisKubernetesStandardID, err := f.standardsRepo.GetCISKubernetesStandardID()
 	if err != nil {
 		return err
@@ -350,6 +330,18 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	return nil
+}
+
+func (r *repository) AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn) {
+	// Flatten the files so we can do direct lookups on the nested values
+	for _, n := range scrapeResults {
+		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
+		n.Files = totalNodeFiles
+	}
+
+	r.hostScrape = scrapeResults
+
+	r.nodeResults = getNodeResults(scrapeResults)
 }
 
 func getNodeResults(scrapeResults map[string]*compliance.ComplianceReturn) map[string]map[string]*compliance.ComplianceStandardResult {

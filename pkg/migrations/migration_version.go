@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -104,5 +103,36 @@ func (m *MigrationVersion) atomicWrite() error {
 	if err != nil {
 		return err
 	}
-	return ioutils.AtomicWriteFile(filepath.Join(m.dbPath, MigrationVersionFile), bytes, migrationVersionFileMode)
+	return atomicWriteFile(filepath.Join(m.dbPath, MigrationVersionFile), bytes, migrationVersionFileMode)
+}
+
+func atomicWriteFile(filename string, bytes []byte, mode os.FileMode) error {
+	tempFile, err := os.CreateTemp(filepath.Split(filename))
+	if err != nil {
+		return err
+	}
+	tempName := tempFile.Name()
+
+	if _, err := tempFile.Write(bytes); err != nil {
+		_ = tempFile.Close()
+		return errors.Wrapf(err, "could not write to %q", tempName)
+	}
+
+	if err := tempFile.Close(); err != nil {
+		return errors.Wrapf(err, "could not close %q", tempName)
+	}
+
+	if err := os.Chmod(tempName, mode); err != nil {
+		return errors.Wrapf(err, "could not chmod %q", tempName)
+	}
+
+	if _, err := os.Stat(tempName); err != nil {
+		return errors.Wrapf(err, "could not stat %q", tempName)
+	}
+
+	if err = os.Rename(tempName, filename); err != nil {
+		return errors.Wrapf(err, "could not rename %q to %q", tempName, filename)
+	}
+
+	return nil
 }

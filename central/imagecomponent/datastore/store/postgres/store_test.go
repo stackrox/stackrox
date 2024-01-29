@@ -35,6 +35,7 @@ func (s *ImageComponentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_components CASCADE")
 	s.T().Log("image_components", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

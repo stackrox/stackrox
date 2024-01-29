@@ -2,13 +2,12 @@ import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 
 import {
-    complianceEnhancedStatusPath,
     complianceEnhancedBasePath,
-    complianceEnhancedScanConfigsBasePath,
-    complianceEnhancedScanConfigsPath,
+    complianceEnhancedClusterComplianceBasePath,
+    complianceEnhancedStatusPath,
 } from 'routePaths';
-import ComplianceStatusPage from 'Containers/ComplianceEnhanced/Status/ComplianceStatusPage';
-import ScanConfigsPage from 'Containers/ComplianceEnhanced/ScanConfigs/ScanConfigsPage';
+import ComplianceStatusPage from './Status/ComplianceStatusPage';
+import ClusterCompliancePage from './ClusterCompliance/ClusterCompliancePage';
 
 function ComplianceEnhancedPage() {
     return (
@@ -17,12 +16,8 @@ function ComplianceEnhancedPage() {
             <Route path={complianceEnhancedStatusPath}>
                 <ComplianceStatusPage />
             </Route>
-            {/* TODO: see if there is a more elegant solution than 2 Route components for similar paths */}
-            <Route path={complianceEnhancedScanConfigsPath}>
-                <ScanConfigsPage />
-            </Route>
-            <Route path={complianceEnhancedScanConfigsBasePath}>
-                <ScanConfigsPage />
+            <Route path={complianceEnhancedClusterComplianceBasePath}>
+                <ClusterCompliancePage />
             </Route>
         </Switch>
     );

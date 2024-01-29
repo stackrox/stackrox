@@ -34,6 +34,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return false
 		}
 		calledFunc := typeutil.Callee(pass.TypesInfo, callExpr)
+		if calledFunc == nil || calledFunc.Pkg() == nil {
+			return false
+		}
 		if calledFunc.Pkg().Path() == gogoProtoPkg && calledFunc.Name() == "Clone" {
 			pass.Reportf(n.Pos(), "do not call proto.Clone and cast, just use .Clone() on the object directly")
 		}

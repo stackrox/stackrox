@@ -1,50 +1,67 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    List,
+    ListItem,
+    Modal,
+    Text,
+    TextVariants,
+} from '@patternfly/react-core';
 
 import { exceptionManagementPath } from 'routePaths';
 import {
     ExceptionExpiry,
-    VulnerabilityDeferralException,
     VulnerabilityException,
+    VulnerabilityExceptionComment,
     isDeferralException,
     isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
-import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDate, getDateTime, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import useModal from 'hooks/useModal';
+import { getQueryString } from 'utils/queryStringUtils';
 
-// @TODO: Add tests for these
+export type RequestContext = 'CURRENT' | 'PENDING_UPDATE';
 
-export type RequestContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS';
-
-export type RequestIDTableCellProps = {
+export type RequestIDLinkProps = {
     id: VulnerabilityException['id'];
     name: VulnerabilityException['name'];
+    context: RequestContext;
 };
 
-export function RequestIDTableCell({ id, name }: RequestIDTableCellProps) {
-    return <Link to={`${exceptionManagementPath}/requests/${id}`}>{name}</Link>;
+export function RequestIDLink({ id, name, context }: RequestIDLinkProps) {
+    const query = getQueryString({ context });
+    return <Link to={`${exceptionManagementPath}/requests/${id}${query}`}>{name}</Link>;
 }
 
-export type RequesterTableCellProps = {
+export type RequesterProps = {
     requester: VulnerabilityException['requester'];
 };
-export function RequesterTableCell({ requester }: RequesterTableCellProps) {
-    return <div>{requester.name}</div>;
+export function Requester({ requester }: RequesterProps) {
+    return <div>{requester?.name || '-'}</div>;
 }
 
-export type RequestedActionTableCellProps = {
+export type RequestedActionProps = {
     exception: VulnerabilityException;
     context: RequestContext;
 };
 
-export function getShouldUseUpdatedExpiry(
-    exception: VulnerabilityDeferralException,
+export function getShouldUseUpdatedRequest(
+    exception: VulnerabilityException,
     context: RequestContext
 ): boolean {
-    switch (exception.exceptionStatus) {
+    switch (exception.status) {
         case 'APPROVED_PENDING_UPDATE':
-            if (context === 'PENDING_REQUESTS' && exception.deferralUpdate) {
-                return true;
+            if (context === 'PENDING_UPDATE') {
+                if (isDeferralException(exception) && exception.deferralUpdate) {
+                    return true;
+                }
+                if (isFalsePositiveException(exception) && exception.falsePositiveUpdate) {
+                    return true;
+                }
             }
             return false;
         default:
@@ -56,10 +73,10 @@ export function getRequestedAction(
     exception: VulnerabilityException,
     context: RequestContext
 ): string {
+    const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
     if (isDeferralException(exception)) {
-        const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(exception, context);
         const exceptionExpiry: ExceptionExpiry =
-            shouldUseUpdatedExpiry && exception.deferralUpdate
+            shouldUseUpdatedRequest && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
                 : exception.deferralRequest.expiry;
         let duration = 'indefinitely';
@@ -74,36 +91,39 @@ export function getRequestedAction(
         } else if (exceptionExpiry.expiryType === 'ANY_CVE_FIXABLE') {
             duration = 'when any fixed';
         }
-        const deferralText = shouldUseUpdatedExpiry ? 'Deferral pending update' : 'Deferred';
+        const deferralText = shouldUseUpdatedRequest ? 'Deferral pending update' : 'Deferred';
         return `${deferralText} (${duration})`;
     }
     if (isFalsePositiveException(exception)) {
-        return 'False positive';
+        const falsePositiveText = shouldUseUpdatedRequest
+            ? 'False positive pending update'
+            : 'False positive';
+        return falsePositiveText;
     }
     return '-';
 }
 
-export function RequestedActionTableCell({ exception, context }: RequestedActionTableCellProps) {
+export function RequestedAction({ exception, context }: RequestedActionProps) {
     return <div>{getRequestedAction(exception, context)}</div>;
 }
 
-export type RequestedTableCellProps = {
+export type RequestCreatedAtProps = {
     createdAt: VulnerabilityException['createdAt'];
 };
-export function RequestedTableCell({ createdAt }: RequestedTableCellProps) {
+export function RequestCreatedAt({ createdAt }: RequestCreatedAtProps) {
     return <div>{getDate(createdAt)}</div>;
 }
 
-export type ExpiresTableCellProps = {
+export type RequestExpiresProps = {
     exception: VulnerabilityException;
     context: RequestContext;
 };
 
 export function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
     if (isDeferralException(exception)) {
-        const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(exception, context);
+        const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
         const exceptionExpiry: ExceptionExpiry =
-            shouldUseUpdatedExpiry && exception.deferralUpdate
+            shouldUseUpdatedRequest && exception.deferralUpdate
                 ? exception.deferralUpdate.expiry
                 : exception.deferralRequest.expiry;
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
@@ -113,24 +133,83 @@ export function getExpiresDate(exception: VulnerabilityException, context: Reque
     return '-';
 }
 
-export function ExpiresTableCell({ exception, context }: ExpiresTableCellProps) {
+export function RequestExpires({ exception, context }: RequestExpiresProps) {
     return <div>{getExpiresDate(exception, context)}</div>;
 }
 
-export type ScopeTableCellProps = {
+export type RequestScopeProps = {
     scope: VulnerabilityException['scope'];
 };
 
-export function ScopeTableCell({ scope }: ScopeTableCellProps) {
+export function RequestScope({ scope }: RequestScopeProps) {
+    const { registry, remote, tag } = scope.imageScope;
+    const text =
+        registry === '.*' && remote === '.*' && tag === '.*'
+            ? '.*'
+            : `${registry}/${remote}:${tag}`;
+    return <div>{text}</div>;
+}
+
+export type RequestedItemsProps = {
+    exception: VulnerabilityException;
+    context: RequestContext;
+};
+
+export function RequestedItems({ exception, context }: RequestedItemsProps) {
+    const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
+    let cvesCount = exception.cves.length;
+    if (isDeferralException(exception) && shouldUseUpdatedRequest && exception.deferralUpdate) {
+        cvesCount = exception.deferralUpdate.cves.length;
+    } else if (
+        isFalsePositiveException(exception) &&
+        shouldUseUpdatedRequest &&
+        exception.falsePositiveUpdate
+    ) {
+        cvesCount = exception.falsePositiveUpdate.cves.length;
+    }
+    return <div>{`${cvesCount} ${pluralize('CVE', cvesCount)}`}</div>;
+}
+
+export type RequestCommentProps = {
+    comment: VulnerabilityExceptionComment;
+};
+
+export function RequestComment({ comment }: RequestCommentProps) {
     return (
-        <div>{`${scope.imageScope.registry}/${scope.imageScope.remote}:${scope.imageScope.tag}`}</div>
+        <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'row' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Text className="pf-u-font-weight-bold">{comment.user.name}</Text>
+                <Text component={TextVariants.small}>({getDateTime(comment.createdAt)})</Text>
+            </Flex>
+            <FlexItem>{comment.message}</FlexItem>
+        </Flex>
     );
 }
 
-export type RequestedItemsTableCellProps = {
-    cves: VulnerabilityException['cves'];
+export type RequestCommentsProps = {
+    comments: VulnerabilityExceptionComment[];
 };
 
-export function RequestedItemsTableCell({ cves }: RequestedItemsTableCellProps) {
-    return <div>{`${cves.length} ${pluralize('CVE', cves.length)}`}</div>;
+export function RequestComments({ comments }: RequestCommentsProps) {
+    const { isModalOpen, openModal, closeModal } = useModal();
+
+    return (
+        <>
+            <Button variant="link" isInline onClick={openModal}>{`${comments.length} ${pluralize(
+                'comment',
+                comments.length
+            )}`}</Button>
+            <Modal variant="small" title="Comments" isOpen={isModalOpen} onClose={closeModal}>
+                <List isPlain isBordered>
+                    {comments.map((comment) => {
+                        return (
+                            <ListItem key={comment.id}>
+                                <RequestComment comment={comment} />
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            </Modal>
+        </>
+    );
 }

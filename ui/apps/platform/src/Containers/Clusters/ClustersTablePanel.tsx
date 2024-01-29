@@ -1,20 +1,25 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import PropTypes from 'prop-types';
+import { useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
+    Bullseye,
     Button,
     Dropdown,
     DropdownItem,
     DropdownPosition,
     DropdownToggle,
+    PageSection,
 } from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
+import PageHeader from 'Components/PageHeader';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
+import LinkShim from 'Components/PatternFly/LinkShim';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
-import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -33,26 +38,31 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
+import { clustersBasePath, clustersDelegatedScanningPath } from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
+import ManageTokensButton from './Components/ManageTokensButton';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import AddClusterPrompt from './AddClusterPrompt';
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
-    setSelectedClusterId: (clusterId: string) => void;
     searchOptions: SearchCategory[];
 };
 
 function ClustersTablePanel({
     selectedClusterId,
-    setSelectedClusterId,
     searchOptions,
 }: ClustersTablePanelProps): ReactElement {
-    const { hasReadWriteAccess } = usePermissions();
+    const history = useHistory();
+
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
+    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
 
     function onToggleInstallMenu(newIsInstallMenuOpen) {
@@ -73,7 +83,7 @@ function ClustersTablePanel({
 
     const metadata = useMetadata();
 
-    const { searchFilter: pageSearch } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
@@ -126,6 +136,39 @@ function ClustersTablePanel({
 
     const { version } = metadata;
 
+    const pageHeader = (
+        <PageHeader header="Clusters" subHeader="Resource list">
+            <div className="flex flex-1 items-center justify-end">
+                <SearchFilterInput
+                    className="w-full"
+                    searchFilter={searchFilter}
+                    searchOptions={searchOptions}
+                    searchCategory="CLUSTERS"
+                    placeholder="Filter clusters"
+                    handleChangeSearchFilter={setSearchFilter}
+                />
+                {hasReadAccessForDelegatedScanning && (
+                    <div className="flex items-center ml-4 mr-1">
+                        <Button
+                            variant="secondary"
+                            component={LinkShim}
+                            href={clustersDelegatedScanningPath}
+                        >
+                            Manage delegated scanning
+                        </Button>
+                    </div>
+                )}
+                {hasWriteAccessForIntegration && (
+                    <div className="flex items-center ml-1">
+                        <Button variant="tertiary">
+                            <ManageTokensButton />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </PageHeader>
+    );
+
     const installMenuOptions = [
         version ? (
             <DropdownItem
@@ -163,7 +206,7 @@ function ClustersTablePanel({
             });
     }
 
-    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const filteredSearch = filterAllowedSearch(searchOptions, searchFilter || {});
     const restSearch = convertToRestSearch(filteredSearch || {});
     useDeepCompareEffect(() => {
         if (restSearch.length) {
@@ -181,7 +224,11 @@ function ClustersTablePanel({
     }, clusterTablePollingInterval);
 
     function onAddCluster() {
-        setSelectedClusterId('new');
+        history.push(`${clustersBasePath}/new`); // TODO we might replace pseudo-id with ?action=create
+    }
+
+    function setSelectedClusterId(cluster: Cluster) {
+        history.push(`${clustersBasePath}/${cluster.id}`);
     }
 
     function upgradeSingleCluster(id) {
@@ -222,12 +269,13 @@ function ClustersTablePanel({
             .then(() => {
                 setCheckedClusterIds([]);
 
-                // Although return works around typescript-eslint/no-floating-promises error,
-                // catch block would be better.
                 return fetchClustersWithRetentionInfo().then((clustersResponse) => {
                     setCurrentClusters(clustersResponse.clusters);
                     setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
+            })
+            .catch(() => {
+                // TODO render error in dialogand move finally code to then block.
             })
             .finally(() => {
                 setShowDialog(false);
@@ -337,8 +385,23 @@ function ClustersTablePanel({
 
     const hasSearchApplied = getHasSearchApplied(filteredSearch);
 
+    if (
+        (!fetchingClusters || pollingCount > 0) &&
+        currentClusters.length <= 0 &&
+        !hasSearchApplied
+    ) {
+        return (
+            <PageSection variant="light">
+                <Bullseye>
+                    <AddClusterPrompt />
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
     return (
         <div className="overflow-hidden w-full">
+            {pageHeader}
             <PanelNew testid="panel">
                 <PanelHead>
                     {headerComponent}
@@ -350,9 +413,6 @@ function ClustersTablePanel({
                             {messages}
                         </div>
                     )}
-                    {(!fetchingClusters || pollingCount > 0) &&
-                        currentClusters.length <= 0 &&
-                        !hasSearchApplied && <AddClusterPrompt />}
                     {(!fetchingClusters || pollingCount > 0) &&
                         (currentClusters.length > 0 || hasSearchApplied) && (
                             <div data-testid="clusters-table" className="h-full w-full">
@@ -387,16 +447,5 @@ function ClustersTablePanel({
         </div>
     );
 }
-
-ClustersTablePanel.propTypes = {
-    selectedClusterId: PropTypes.string,
-    setSelectedClusterId: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.string),
-};
-
-ClustersTablePanel.defaultProps = {
-    selectedClusterId: null,
-    searchOptions: [],
-};
 
 export default ClustersTablePanel;

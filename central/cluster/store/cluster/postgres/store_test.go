@@ -38,6 +38,7 @@ func (s *ClustersStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE clusters CASCADE")
 	s.T().Log("clusters", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
@@ -136,7 +137,7 @@ type testCase struct {
 	expectedWriteError     error
 }
 
-func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluster, *storage.Cluster, map[string]testCase) {
+func (s *ClustersStoreSuite) getTestData(access ...storage.Access) (*storage.Cluster, *storage.Cluster, map[string]testCase) {
 	objA := &storage.Cluster{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -163,7 +164,7 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withNoAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(uuid.Nil.String()),
 				)),
@@ -176,7 +177,7 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccess: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetId()),
 				)),
@@ -189,7 +190,7 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetId()),
 				)),
@@ -202,7 +203,7 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToDifferentCluster: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys("caaaaaaa-bbbb-4011-0000-111111111111"),
 				)),
@@ -215,7 +216,7 @@ func (s *ClustersStoreSuite) getTestData(access storage.Access) (*storage.Cluste
 		withAccessToDifferentNs: {
 			context: sac.WithGlobalAccessScopeChecker(context.Background(),
 				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(access),
+					sac.AccessModeScopeKeys(access...),
 					sac.ResourceScopeKeys(targetResource),
 					sac.ClusterScopeKeys(objA.GetId()),
 					sac.NamespaceScopeKeys("unknown ns"),
@@ -292,7 +293,7 @@ func (s *ClustersStoreSuite) TestSACGetIDs() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers, err := s.store.GetIDs(testCase.context)
 			assert.NoError(t, err)
-			assert.EqualValues(t, testCase.expectedObjIDs, identifiers)
+			assert.ElementsMatch(t, testCase.expectedObjIDs, identifiers)
 		})
 	}
 }
@@ -337,7 +338,7 @@ func (s *ClustersStoreSuite) TestSACGet() {
 }
 
 func (s *ClustersStoreSuite) TestSACDelete() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -364,7 +365,7 @@ func (s *ClustersStoreSuite) TestSACDelete() {
 }
 
 func (s *ClustersStoreSuite) TestSACDeleteMany() {
-	objA, objB, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			s.SetupTest()

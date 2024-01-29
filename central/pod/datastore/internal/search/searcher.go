@@ -3,16 +3,11 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/pod/datastore/internal/store"
 	podIndexer "github.com/stackrox/rox/central/pod/index"
-	"github.com/stackrox/rox/central/pod/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Searcher provides search functionality on existing pods

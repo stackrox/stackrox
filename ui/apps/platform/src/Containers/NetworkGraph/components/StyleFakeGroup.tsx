@@ -26,12 +26,14 @@ type StyleGroupProps = {
     collapsedWidth?: number;
     collapsedHeight?: number;
     onCollapseChange?: (group: Node, collapsed: boolean) => void;
-    getCollapsedShape?: (node: Node) => React.FunctionComponent<ShapeProps>;
+    getCollapsedShape?: (
+        node: Node
+    ) => React.FunctionComponent<React.PropsWithChildren<ShapeProps>>;
     collapsedShadowOffset?: number; // defaults to 10
 } & WithDragNodeProps &
     WithSelectionProps;
 
-const StyleFakeGroup: React.FunctionComponent<StyleGroupProps> = ({
+const StyleFakeGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProps>> = ({
     element,
     collapsedWidth = 75,
     collapsedHeight = 75,

@@ -38,7 +38,6 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = frozenSchema.ComplianceOperatorRulesSchema
 	log       = loghelper.LogWrapper{}
 )
 

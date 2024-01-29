@@ -20,7 +20,7 @@ import (
 const (
 	server   = "smtp.mailgun.org"
 	user     = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
-	password = "ec221fbe09156dfef5bd48afb71d277c"
+	password = "ec221fbe09156dfef5bd48afb71d277c" //#nosec G101
 
 	recipientTestEnv = "EMAIL_RECIPIENT"
 )

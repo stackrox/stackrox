@@ -123,6 +123,27 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.Error(t, err)
 	})
+	t.Run("when invalid indexer addr then error ", func(t *testing.T) {
+		for _, addr := range []string{"foo bar", "foo:bar", "80:80"} {
+			c := MatcherConfig{Enable: true, IndexerAddr: addr}
+			err := c.validate()
+			assert.Error(t, err)
+		}
+	})
+	t.Run("when valid addr then remote addr is set", func(t *testing.T) {
+		for _, addr := range []string{":8443", "localhost:443", "127.0.0.1:80"} {
+			c := MatcherConfig{Enable: true, IndexerAddr: addr, Database: Database{ConnString: "host=foobar"}}
+			err := c.validate()
+			assert.NoError(t, err)
+			assert.True(t, c.RemoteIndexerEnabled)
+		}
+	})
+	t.Run("when addr is empty then remote addr is not set", func(t *testing.T) {
+		c := MatcherConfig{Enable: true, IndexerAddr: "", Database: Database{ConnString: "host=foobar"}}
+		err := c.validate()
+		assert.NoError(t, err)
+		assert.False(t, c.RemoteIndexerEnabled)
+	})
 }
 
 func Test_Database_validate(t *testing.T) {

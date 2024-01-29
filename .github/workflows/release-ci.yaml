@@ -20,6 +20,11 @@ jobs:
     uses: ./.github/workflows/build.yaml
     secrets: inherit
 
+  build-scanner-v4:
+    name: Build Scanner v4
+    uses: ./.github/workflows/scanner-build.yaml
+    secrets: inherit
+
   check-is-release:
     runs-on: ubuntu-latest
     outputs:
@@ -78,7 +83,9 @@ jobs:
       - name: Patch RELEASED_VERSIONS
         env:
           STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
+          GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           scripts/ci/lib.sh \
             mark_collector_release "${STACKROX_TAG}"
@@ -93,13 +100,15 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}
-          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
+          GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
           RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
         run: |
@@ -119,12 +128,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v1'
+      - uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v1'
-      - uses: actions/download-artifact@v3
+        uses: 'google-github-actions/setup-gcloud@v2'
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
       - name: Publish roxctl to Google Cloud storage

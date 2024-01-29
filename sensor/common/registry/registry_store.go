@@ -12,13 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 )
 
 const (
@@ -26,9 +26,7 @@ const (
 	globalRegNamePrefix  = "Global"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Store stores cluster-internal registries by namespace.
 type Store struct {
@@ -71,16 +69,6 @@ type Store struct {
 	tlsCheckResults expiringcache.Cache
 }
 
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (rs *Store) ReconcileDelete(_, resID string, _ uint64) (string, error) {
-	if !rs.knownSecretIDs.Contains(resID) {
-		return resID, nil
-	}
-	return "", nil
-}
-
 // CheckTLS defines a function which checks if the given address is using TLS.
 // An example implementation of this is tlscheck.CheckTLS.
 type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
@@ -97,8 +85,8 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		factory:                     regFactory,
 		store:                       make(map[string]registries.Set),
 		checkTLSFunc:                tlscheck.CheckTLS,
-		globalRegistries:            registries.NewSet(regFactory),
-		centralRegistryIntegrations: registries.NewSet(regFactory),
+		globalRegistries:            registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
+		centralRegistryIntegrations: registries.NewSet(regFactory, types.WithGCPTokenManager(gcp.Singleton())),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
 		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
 		knownSecretIDs:              set.NewStringSet(),
@@ -153,7 +141,7 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 
 	regs := rs.store[namespace]
 	if regs == nil {
-		regs = registries.NewSet(rs.factory)
+		regs = registries.NewSet(rs.factory, types.WithGCPTokenManager(gcp.Singleton()))
 		rs.store[namespace] = regs
 	}
 
@@ -161,9 +149,9 @@ func (rs *Store) getRegistries(namespace string) registries.Set {
 }
 
 func createImageIntegration(registry string, dce config.DockerConfigEntry, secure bool, name string) *storage.ImageIntegration {
-	registryType := dockerFactory.GenericDockerRegistryType
+	registryType := types.DockerType
 	if rhelFactory.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
-		registryType = rhelFactory.RedHatRegistryType
+		registryType = types.RedHatType
 	}
 
 	return &storage.ImageIntegration{
@@ -246,7 +234,7 @@ func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
 // and is associated with namespace.
 //
 // An error is returned if no registry found.
-func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (registryTypes.ImageRegistry, error) {
+func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namespace string) (types.ImageRegistry, error) {
 	reg := image.GetRegistry()
 	regs := rs.getRegistriesInNamespace(namespace)
 	if regs != nil {
@@ -286,7 +274,7 @@ func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce 
 // GetGlobalRegistryForImage returns the relevant global registry for image.
 //
 // An error is returned if the registry is unknown.
-func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (registryTypes.ImageRegistry, error) {
+func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (types.ImageRegistry, error) {
 	reg := image.GetRegistry()
 	regs := rs.globalRegistries
 	if regs != nil {
@@ -395,8 +383,8 @@ func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 
 // GetMatchingCentralRegistryIntegrations returns registry integrations sync'd from Central that match the
 // provided image name.
-func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageName) []registryTypes.ImageRegistry {
-	var regs []registryTypes.ImageRegistry
+func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageName) []types.ImageRegistry {
+	var regs []types.ImageRegistry
 	for _, ii := range rs.centralRegistryIntegrations.GetAll() {
 		if ii.Match(imgName) {
 			regs = append(regs, ii)

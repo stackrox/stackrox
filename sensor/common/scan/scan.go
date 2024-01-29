@@ -82,7 +82,7 @@ type LocalScanCentralClient interface {
 // NewLocalScan initializes a LocalScan struct
 func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store) *LocalScan {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
-		CreatorFuncs: []registries.CreatorWrapper{
+		CreatorFuncs: []registryTypes.CreatorWrapper{
 			docker.CreatorWithoutRepoList,
 		},
 	})
@@ -156,6 +156,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		Components:     scannerResp.GetComponents(),
 		V4Contents:     scannerResp.GetContents(),
 		Notes:          scannerResp.GetNotes(),
+		IndexerVersion: scannerResp.GetIndexerVersion(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
 		Error:          errorList.String(),
@@ -372,7 +373,8 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 
 // scanImage will scan the given image and return its components.
 func scanImage(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
+	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient,
+) (*scannerclient.ImageAnalysis, error) {
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
 	if err != nil {
@@ -401,7 +403,7 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 	ii := &storage.ImageIntegration{
 		Id:         registry,
 		Name:       fmt.Sprintf("NoAuth/reg:%v", registry),
-		Type:       docker.GenericDockerRegistryType,
+		Type:       registryTypes.DockerType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{

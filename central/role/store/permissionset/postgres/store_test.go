@@ -35,6 +35,7 @@ func (s *PermissionSetsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE permission_sets CASCADE")
 	s.T().Log("permission_sets", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -55,21 +55,14 @@ type pagerDuty struct {
 }
 
 func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*pagerDuty, error) {
-	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
-	if !ok {
-		return nil, errors.New("PagerDuty configuration required")
-	}
-	conf := pagerDutyConfig.Pagerduty
-	if err := validate(conf); err != nil {
+	conf := notifier.GetPagerduty()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 
 	decCreds := conf.GetApiKey()
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		if notifier.GetNotifierSecret() == "" {
-			return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", notifier.GetName())
-		}
 		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
 		if err != nil {
 			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", notifier.GetName())
@@ -87,8 +80,9 @@ func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCode
 	}, nil
 }
 
-func validate(conf *storage.PagerDuty) error {
-	if len(conf.ApiKey) == 0 {
+// Validate PagerDuty notifier
+func Validate(conf *storage.PagerDuty, validateSecret bool) error {
+	if validateSecret && len(conf.ApiKey) == 0 {
 		return errors.New("PagerDuty API key must be specified")
 	}
 	return nil
@@ -106,8 +100,8 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
 
-func (p *pagerDuty) Test(_ context.Context) error {
-	return p.postAlert(&storage.Alert{
+func (p *pagerDuty) Test(_ context.Context) *notifiers.NotifierError {
+	err := p.postAlert(&storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
 			Name:        "Test PagerDuty Policy",
@@ -125,6 +119,12 @@ func (p *pagerDuty) Test(_ context.Context) error {
 		},
 		Time: types.TimestampNow(),
 	}, newAlert)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send PagerDuty alert failed", err)
+	}
+
+	return nil
 }
 
 func (p *pagerDuty) AckAlert(_ context.Context, alert *storage.Alert) error {
@@ -222,9 +222,9 @@ func init() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
-			utils.CrashOnError(err)
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
 	}
 

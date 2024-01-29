@@ -10,6 +10,7 @@ import (
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -93,7 +94,6 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
-
 	s.service = New(s.scanConfigDatastore, s.manager)
 }
 
@@ -105,21 +105,46 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	allAccessContext := sac.WithAllAccess(context.Background())
 
 	request := getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
 	storageRequest := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse := convertV2ScanConfigToStorage(allAccessContext, request)
 	processResponse.Id = uuid.NewDummy().String()
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(processResponse, nil).Times(1)
 	s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 		{
-			ClusterId: fixtureconsts.Cluster1,
-			ScanId:    uuid.NewDummy().String(),
-			Errors:    []string{"Error 1", "Error 2", "Error 3"},
+			ClusterId:    fixtureconsts.Cluster1,
+			ScanConfigId: uuid.NewDummy().String(),
+			Errors:       []string{"Error 1", "Error 2", "Error 3"},
 		},
 	}, nil).Times(1)
 
 	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
 	s.Require().Equal(request, config)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	// Test Case 1: Successful Deletion
+	validID := "validScanConfigID"
+	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
+
+	_, err := s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
+	s.Require().NoError(err)
+
+	// Test Case 2: Deletion with Empty ID
+	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: ""})
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Scan configuration ID is required for deletion")
+
+	// Test Case 3: Deletion Fails in Manager
+	failingID := "failingScanConfigID"
+	s.manager.EXPECT().DeleteScan(gomock.Any(), failingID).Return(errors.New("manager error")).Times(1)
+
+	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: failingID})
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "Unable to delete scan config")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationScanExists() {
@@ -179,14 +204,13 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 				Return([]*storage.ComplianceOperatorScanConfigurationV2{
 					{
 						Id:                     uuid.NewDummy().String(),
-						ScanName:               "test-scan",
+						ScanConfigName:         "test-scan",
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -194,15 +218,16 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 						CreatedTime:     createdTime,
 						LastUpdatedTime: lastUpdatedTime,
 						ModifiedBy:      storageRequester,
+						Description:     "test-description",
 					},
 				}, nil).Times(1)
 
 			s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 				{
-					ClusterId:   fixtureconsts.Cluster1,
-					ClusterName: mockClusterName,
-					ScanId:      uuid.NewDummy().String(),
-					Errors:      []string{"Error 1", "Error 2", "Error 3"},
+					ClusterId:    fixtureconsts.Cluster1,
+					ClusterName:  mockClusterName,
+					ScanConfigId: uuid.NewDummy().String(),
+					Errors:       []string{"Error 1", "Error 2", "Error 3"},
 				},
 			}, nil).Times(1)
 
@@ -211,6 +236,40 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 			s.Require().Equal(expectedResp, configs)
 		})
 	}
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestCountComplianceScanConfigurations() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	testCases := []struct {
+		desc      string
+		query     *apiV2.RawQuery
+		expectedQ *v1.Query
+	}{
+		{
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
+		},
+		{
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+
+			s.scanConfigDatastore.EXPECT().CountScanConfigurations(allAccessContext, tc.expectedQ).
+				Return(1, nil).Times(1)
+
+			configs, err := s.service.GetComplianceScanConfigurationsCount(allAccessContext, tc.query)
+			s.Require().NoError(err)
+			s.Require().Equal(int32(1), configs.Count)
+		})
+	}
+
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguration() {
@@ -247,14 +306,13 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 				s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, tc.scanID).
 					Return(&storage.ComplianceOperatorScanConfigurationV2{
 						Id:                     uuid.NewDummy().String(),
-						ScanName:               "test-scan",
+						ScanConfigName:         "test-scan",
 						AutoApplyRemediations:  false,
 						AutoUpdateRemediations: false,
 						OneTimeScan:            false,
 						Profiles: []*storage.ProfileShim{
 							{
-								ProfileId:   uuid.NewV5FromNonUUIDs("", "ocp4-cis").String(),
-								ProfileName: "ocp4-cis",
+								ProfileId: "ocp4-cis",
 							},
 						},
 						StrictNodeScan:  false,
@@ -262,14 +320,15 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 						CreatedTime:     createdTime,
 						LastUpdatedTime: lastUpdatedTime,
 						ModifiedBy:      storageRequester,
+						Description:     "test-description",
 					}, true, nil).Times(1)
 
 				s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 					{
-						ClusterId:   fixtureconsts.Cluster1,
-						ClusterName: mockClusterName,
-						ScanId:      uuid.NewDummy().String(),
-						Errors:      []string{"Error 1", "Error 2", "Error 3"},
+						ClusterId:    fixtureconsts.Cluster1,
+						ClusterName:  mockClusterName,
+						ScanConfigId: uuid.NewDummy().String(),
+						Errors:       []string{"Error 1", "Error 2", "Error 3"},
 					},
 				}, nil).Times(1)
 			} else {
@@ -288,6 +347,24 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 	}
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfigurationWithValidScanConfigIdSucceeds() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	validID := "validScanConfigID"
+	s.manager.EXPECT().ProcessRescanRequest(gomock.Any(), validID).Return(nil).Times(1)
+
+	_, err := s.service.RunComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
+	s.Require().NoError(err)
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestRunComplianceScanConfigurationWithInvalidScanConfigIdFails() {
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	invalidID := ""
+	_, err := s.service.RunComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: invalidID})
+	s.Require().Error(err)
+}
+
 func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.ComplianceScanConfigurationStatus {
 	return &apiV2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
@@ -296,6 +373,7 @@ func getTestAPIStatusRec(createdTime, lastUpdatedTime *types.Timestamp) *apiV2.C
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
+			Description:  "test-description",
 		},
 		ClusterStatus: []*apiV2.ClusterScanStatus{
 			{
@@ -317,6 +395,7 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 			OneTimeScan:  false,
 			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: defaultAPISchedule,
+			Description:  "test-description",
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}

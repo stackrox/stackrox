@@ -114,7 +114,7 @@ func (s *errorSignalState) getErrPtr() *error {
 }
 
 func (s *errorSignalState) trigger(err error) bool {
-	//#nosec G103
+	//nolint:gosec // G103
 	if !atomic.CompareAndSwapPointer(&s.errPtr, nil, unsafe.Pointer(&err)) {
 		return false
 	}
@@ -130,7 +130,7 @@ func newErrorSignalState() *errorSignalState {
 
 var (
 	defaultErrorSignalState = &errorSignalState{
-		//#nosec G103
+		//nolint:gosec // G103
 		errPtr:  unsafe.Pointer(&[]error{nil}[0]),
 		signalC: closedCh,
 	}
@@ -146,7 +146,7 @@ type ErrorSignal struct {
 // NewErrorSignal creates and returns a new error signal.
 func NewErrorSignal() ErrorSignal {
 	return ErrorSignal{
-		//#nosec G103
+		//nolint:gosec // G103
 		statePtr: unsafe.Pointer(newErrorSignalState()),
 	}
 }
@@ -190,7 +190,7 @@ func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
 	// concurrent reset happened and succeeded, this Reset invocation will not. If the signal has been reset and
 	// triggered in the meantime, we fail, too, pretending this Reset invocation happened as the first action in a
 	// Reset - Trigger - Reset sequence.
-	//#nosec G103
+	//nolint:gosec // G103
 	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(rawState), unsafe.Pointer(newErrorSignalState())) {
 		return nil, false
 	}

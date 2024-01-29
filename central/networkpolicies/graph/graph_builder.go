@@ -321,6 +321,18 @@ func (b *graphBuilder) AddEdgesForNetworkPolicies(netPols []*storage.NetworkPoli
 	b.forEachNetworkPolicy(netPols, b.addEdgesForNetworkPolicy)
 }
 
+func (b *graphBuilder) GetApplyingPoliciesPerDeployment(allNetPols []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy {
+	deploymentsToNetPols := make(map[string][]*storage.NetworkPolicy)
+	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {
+		for _, node := range matchedDeployments {
+			if id := node.deployment.GetId(); id != "" {
+				deploymentsToNetPols[id] = append(deploymentsToNetPols[id], netPol)
+			}
+		}
+	})
+	return deploymentsToNetPols
+}
+
 func (b *graphBuilder) GetApplyingPolicies(allNetPols []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	var applyingPolicies []*storage.NetworkPolicy
 	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {

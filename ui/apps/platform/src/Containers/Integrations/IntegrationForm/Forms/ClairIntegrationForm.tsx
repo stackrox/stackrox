@@ -101,7 +101,7 @@ function ClairIntegrationForm({
                 >
                     <Text>
                         CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster
-                        Security 4.1 release.
+                        Security 4.5 release.
                     </Text>
                     <Text>Use Clair v4 integration instead.</Text>
                 </Alert>

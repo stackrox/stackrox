@@ -48,6 +48,13 @@ class Helpers {
     }
 
     static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
+        if (!trueWithin(retries, intervalSeconds, closure)) {
+            throw new RuntimeException("All ${retries} attempts failed, could not reach desired state")
+        }
+        return true
+    }
+
+    static boolean trueWithin(int retries, int intervalSeconds, Closure closure) {
         Timer t = new Timer(retries, intervalSeconds)
         int attempt = 0
         while (t.IsValid()) {
@@ -57,7 +64,7 @@ class Helpers {
             }
             log.debug "Attempt ${attempt} failed, retrying"
         }
-        throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
+        return false
     }
 
     static boolean containsNoWhitespace(Object ignored, String baseString, String subString) {

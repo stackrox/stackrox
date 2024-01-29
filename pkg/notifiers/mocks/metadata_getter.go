@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/metadata_getter.go github.com/stackrox/rox/pkg/notifiers MetadataGetter
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

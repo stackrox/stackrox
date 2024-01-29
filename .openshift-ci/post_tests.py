@@ -91,7 +91,8 @@ class StoreArtifacts(RunWithBestEffortMixin):
             if self.artifact_destination_prefix:
                 args.append(
                     os.path.join(
-                        self.artifact_destination_prefix, os.path.basename(source)
+                        self.artifact_destination_prefix, os.path.basename(
+                            source)
                     )
                 )
             self.run_with_best_effort(
@@ -146,6 +147,12 @@ class PostClusterTest(StoreArtifacts):
         artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
+        if self.artifact_destination_prefix is not None:
+            self.service_logs_destination = os.path.join(PostTestsConstants.K8S_LOG_DIR,
+                                                         self.artifact_destination_prefix,
+                                                         "k8s-logs")
+        else:
+            self.service_logs_destination = PostTestsConstants.K8S_LOG_DIR
         self._check_stackrox_logs = check_stackrox_logs
         self.k8s_namespaces = [
             "stackrox",
@@ -187,18 +194,18 @@ class PostClusterTest(StoreArtifacts):
                 [
                     "scripts/ci/collect-service-logs.sh",
                     namespace,
-                    PostTestsConstants.K8S_LOG_DIR,
+                    self.service_logs_destination,
                 ],
                 timeout=PostTestsConstants.COLLECT_TIMEOUT,
             )
         self.run_with_best_effort(
             [
                 "scripts/ci/collect-infrastructure-logs.sh",
-                PostTestsConstants.K8S_LOG_DIR,
+                self.service_logs_destination,
             ],
             timeout=PostTestsConstants.COLLECT_INFRA_TIMEOUT,
         )
-        self.data_to_store.append(PostTestsConstants.K8S_LOG_DIR)
+        self.data_to_store.append(self.service_logs_destination)
 
     def collect_collector_metrics(self):
         self.run_with_best_effort(
@@ -245,7 +252,8 @@ class PostClusterTest(StoreArtifacts):
 
     def check_stackrox_logs(self):
         self.run_with_best_effort(
-            ["tests/e2e/lib.sh", "check_stackrox_logs", PostTestsConstants.K8S_LOG_DIR],
+            ["tests/e2e/lib.sh", "check_stackrox_logs",
+                self.service_logs_destination],
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
 
@@ -332,7 +340,8 @@ class FinalPost(StoreArtifacts):
                 PostTestsConstants.QA_GRADLE_RESULTS
             )
             # Spock test specification logs.
-            self.dirs_to_store_to_osci_artifacts.append(PostTestsConstants.QA_SPEC_LOGS)
+            self.dirs_to_store_to_osci_artifacts.append(
+                PostTestsConstants.QA_SPEC_LOGS)
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
     def run(self, test_outputs=None):

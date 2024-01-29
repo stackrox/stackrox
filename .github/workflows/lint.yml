@@ -1,13 +1,19 @@
-name: Lint GitHub Actions workflows
+name: Lint
 on:
   push:
+    tags:
+    - '*'
     branches:
-      - master
-      - main
+    - master
+    - release-*
   pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
-  actionlint:
+  github-actions-lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,9 +24,26 @@ jobs:
       - name: Check workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color
         shell: bash
-  shellcheck:
+
+  github-actions-shellcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Check scripts with shellcheck
         run: shellcheck -P SCRIPTDIR -x ./.github/workflows/scripts/*.sh
+
+  openshift-ci-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.62
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+
+      - name: Pylint
+        run: make -C .openshift-ci lint

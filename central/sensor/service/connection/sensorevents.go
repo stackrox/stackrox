@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
@@ -41,7 +43,15 @@ type sensorEventHandler struct {
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, initSyncMgr *initSyncManager) *sensorEventHandler {
+func newSensorEventHandler(
+	cluster *storage.Cluster,
+	sensorVersion string,
+	pipeline pipeline.ClusterPipeline,
+	injector common.MessageInjector,
+	stopSig *concurrency.ErrorSignal,
+	deduper hashManager.Deduper,
+	initSyncMgr *initSyncManager,
+) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
 		sensorVersion: sensorVersion,
@@ -68,10 +78,6 @@ func stripTypePrefix(s string) string {
 	return s
 }
 
-func (s *sensorEventHandler) disableReconciliation() {
-	s.reconciliationMap.Close()
-}
-
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	event := msg.GetEvent()
 	if event == nil {
@@ -86,10 +92,19 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	case *central.SensorEvent_Synced:
 		// Call the reconcile functions
 		log.Info("Receiving reconciliation event")
-		if s.reconciliationMap.IsClosed() {
-			log.Infof("Ignoring SYNC from cluster %s (ClusterID:%s) since reconciliationMap is already closed", s.cluster.GetName(), s.cluster.GetId())
-			return
+
+		unchangedIDs := event.GetSynced().GetUnchangedIds()
+		if unchangedIDs != nil {
+			parsedKeys, err := deduperkey.ParseKeySlice(unchangedIDs)
+			if err != nil {
+				// Show warning for failed keys
+				log.Warnf("Error parsing %d unchanged IDs: %s", len(unchangedIDs), err)
+			}
+			for _, k := range parsedKeys {
+				s.reconciliationMap.AddWithTypeString(k.ResourceType.String(), k.ID)
+			}
 		}
+
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
@@ -106,11 +121,25 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
 		// NodeInventory because the two should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
+	case *central.SensorEvent_ComplianceOperatorScanV2:
+		if !features.ComplianceEnhancements.Enabled() {
+			log.Warnf("Received next gen compliance event from cluster %s (%s). Next gen compliance is disabled on central.", s.cluster.GetName(), s.cluster.GetId())
+			return
+		}
+		// Due to needing both V1 and V2 compliance to run at the same time and due to how the
+		// reconciliation keys are used we need to use the V1 key for reconciliation.  This could
+		// have been avoided by sending both messages from sensor during the transition, but
+		// that seemed like a lot of extra traffic.
+		workerType = reflectutils.Type(&central.SensorEvent_ComplianceOperatorScan{})
+		if !s.reconciliationMap.IsClosed() {
+			s.reconciliationMap.Add(&central.SensorEvent_ComplianceOperatorScan{}, event.Id)
+		}
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())
 			return
 		}
+
 		// Default worker type is the event type.
 		workerType = reflectutils.Type(event.Resource)
 		if !s.reconciliationMap.IsClosed() {
@@ -137,7 +166,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			if queue == nil {
 				queue = newWorkerQueue(workerQueueSize, stripTypePrefix(workerType), s.injector)
 				s.workerQueues[workerType] = queue
-				go queue.run(ctx, s.stopSig, s.handleMessages)
+				go queue.run(ctx, s.stopSig, s.deduper, s.handleMessages)
 			}
 		})
 	}

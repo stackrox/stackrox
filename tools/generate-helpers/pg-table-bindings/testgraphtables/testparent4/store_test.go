@@ -35,6 +35,7 @@ func (s *TestParent4StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_parent4 CASCADE")
 	s.T().Log("test_parent4", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -16,11 +16,13 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-func fetchCAConfig(cliEnvironment environment.Environment, outputFile string, timeout time.Duration) error {
+func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
+	timeout time.Duration, retryTimeout time.Duration,
+) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
 		return err
 	}
@@ -78,7 +80,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 			} else if outputFile == "-" {
 				outputFile = ""
 			}
-			return fetchCAConfig(cliEnvironment, outputFile, flags.Timeout(cmd))
+			return fetchCAConfig(cliEnvironment, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the CA config")

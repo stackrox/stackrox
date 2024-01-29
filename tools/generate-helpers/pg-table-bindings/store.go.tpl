@@ -20,13 +20,7 @@
 {{- $ := . }}
 {{- $pks := .Schema.PrimaryKeys }}
 
-{{- $singlePK := false }}
-{{- if eq (len $pks) 1 }}
-{{ $singlePK = index $pks 0 }}
-{{/*If there are multiple pks, then use the explicitly specified ID column.*/}}
-{{- else if .Schema.ID.ColumnName}}
-{{ $singlePK = .Schema.ID }}
-{{- end }}
+{{ $singlePK := index $pks 0 }}
 
 package postgres
 
@@ -36,9 +30,10 @@ import (
     "time"
 
     "github.com/hashicorp/go-multierror"
-    "github.com/jackc/pgx/v4"
+    "github.com/jackc/pgx/v5"
     "github.com/pkg/errors"
     "github.com/stackrox/rox/central/metrics"
+    "github.com/stackrox/rox/pkg/features"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -59,11 +54,6 @@ import (
 const (
         baseTable = {{ .Table | quote }}
         storeName = {{ .TrimmedType | quote }}
-
-        // using copyFrom, we may not even want to batch.  It would probably be simpler
-        // to deal with failures if we just sent it all.  Something to think about as we
-        // proceed and move into more e2e and larger performance testing
-        batchSize = 10000
 )
 
 var (
@@ -82,10 +72,8 @@ type Store interface {
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
-    DeleteByQuery(ctx context.Context, q *v1.Query) error
-{{- if $singlePK }}
+    DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
     DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
-{{- end }}
 {{- end }}
 
     Count(ctx context.Context) (int, error)
@@ -95,24 +83,38 @@ type Store interface {
 {{- if .SearchCategory }}
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 {{- end }}
-{{- if $singlePK }}
     GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-{{- end }}
 {{- if .GetAll }}
     GetAll(ctx context.Context) ([]*storeType, error)
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *storeType) error) error
+    WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
-{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
+{{ define "storeCreator" -}}
+    {{- if and (.PermissionChecker) (.CachedStore) -}}
+        pgSearch.NewGenericStoreWithCacheAndPermissionChecker
+    {{- else if (.PermissionChecker) -}}
+        pgSearch.NewGenericStoreWithPermissionChecker
+    {{- else if .CachedStore -}}
+        pgSearch.NewGenericStoreWithCache
+    {{- else -}}
+        pgSearch.NewGenericStore
+    {{- end -}}
+{{- end }}
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-    return pgSearch.NewGenericStore{{ if .PermissionChecker }}WithPermissionChecker{{ end }}[storeType, *storeType](
+    {{ if .CachedStore -}}
+    // Use of {{ template "storeCreator" . }} can be dangerous with high cardinality stores,
+    // and be the source of memory pressure. Think twice about the need for in-memory caching
+    // of the whole store.
+    {{ end -}}
+    return {{ template "storeCreator" . }}[storeType, *storeType](
             db,
             schema,
             pkGetter,
@@ -129,6 +131,9 @@ func New(db postgres.DB) Store {
             {{- end }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
+            {{- if .CachedStore }}
+            metricsSetCacheOperationDurationTime,
+            {{ end -}}
             {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
             pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
             {{- else if .Obj.IsDirectlyScoped }}
@@ -151,7 +156,13 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
     metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
+{{- if .CachedStore }}
 
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+    metrics.SetCacheOperationDurationTime(start, op, storeName)
+}
+
+{{ end -}}
 {{- if .Obj.IsDirectlyScoped }}
 func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
     {{ template "defineScopeChecker" "READ_WRITE" }}
@@ -216,6 +227,9 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{end}}
 
     {{range $index, $child := $schema.Children }}
+    {{ if $child.Flag }}
+    if features.Flags["{{$child.Flag}}"].Enabled() {
+    {{- end }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
@@ -224,6 +238,9 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
     query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
+    {{- if $child.Flag }}
+    }
+    {{- end}}
     {{- end}}
     return nil
 }
@@ -241,8 +258,12 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 {{- define "copyObject"}}
 {{- $schema := .schema }}
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+    batchSize := pgSearch.MaxBatchSize
+    if len(objs) < batchSize {
+        batchSize = len(objs)
+    }
     inputRows := make([][]interface{}, 0, batchSize)
-    {{if and (eq (len $schema.PrimaryKeys) 1) (not $schema.Parent) }}
+    {{if not $schema.Parent }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     deletes := make([]string, 0, batchSize)
@@ -272,21 +293,15 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         })
 
         {{ if not $schema.Parent }}
-        {{if eq (len $schema.PrimaryKeys) 1}}
         // Add the ID to be deleted.
         deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{else}}
-        if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
-            return err
-        }
-        {{end}}
         {{end}}
 
         // if we hit our batch size we need to push the data
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and ((eq (len $schema.PrimaryKeys) 1)) (not $schema.Parent) }}
+            {{if not $schema.Parent }}
             if err := s.DeleteMany(ctx, deletes); err != nil {
                 return err
             }

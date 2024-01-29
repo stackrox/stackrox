@@ -11,12 +11,12 @@ const (
 	timeoutFlagName = "timeout"
 )
 
-// AddTimeoutWithDefault adds a timeout flag to the given command, with the given default.
+// AddTimeoutWithDefault adds a timeout flag to the given command with the given default.
 func AddTimeoutWithDefault(c *cobra.Command, defaultDuration time.Duration) {
-	c.PersistentFlags().DurationP(timeoutFlagName, "t", defaultDuration, "timeout for API requests")
+	c.PersistentFlags().DurationP(timeoutFlagName, "t", defaultDuration, "timeout for API requests; represents the maximum duration of a request")
 }
 
-// AddTimeout adds a timeout flag to the given command, with the global default value.
+// AddTimeout adds a timeout flag to the given command with the global default value.
 func AddTimeout(c *cobra.Command) {
 	AddTimeoutWithDefault(c, 1*time.Minute)
 }

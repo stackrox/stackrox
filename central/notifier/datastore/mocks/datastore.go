@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -187,6 +188,20 @@ func (m *MockDataStore) UpdateNotifier(ctx context.Context, notifier *storage.No
 func (mr *MockDataStoreMockRecorder) UpdateNotifier(ctx, notifier any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockDataStore)(nil).UpdateNotifier), ctx, notifier)
+}
+
+// UpsertManyNotifiers mocks base method.
+func (m *MockDataStore) UpsertManyNotifiers(ctx context.Context, notifiers []*storage.Notifier) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertManyNotifiers", ctx, notifiers)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertManyNotifiers indicates an expected call of UpsertManyNotifiers.
+func (mr *MockDataStoreMockRecorder) UpsertManyNotifiers(ctx, notifiers any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertManyNotifiers", reflect.TypeOf((*MockDataStore)(nil).UpsertManyNotifiers), ctx, notifiers)
 }
 
 // UpsertNotifier mocks base method.

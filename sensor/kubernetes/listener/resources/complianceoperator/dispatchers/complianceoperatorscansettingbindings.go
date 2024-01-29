@@ -4,8 +4,6 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -13,14 +11,11 @@ import (
 
 // ScanSettingBindings handles compliance operator scan setting bindings
 type ScanSettingBindings struct {
-	reconciliationStore reconciliation.Store
 }
 
 // NewScanSettingBindingsDispatcher creates and returns a new scan setting binding dispatcher
-func NewScanSettingBindingsDispatcher(store reconciliation.Store) *ScanSettingBindings {
-	return &ScanSettingBindings{
-		reconciliationStore: store,
-	}
+func NewScanSettingBindingsDispatcher() *ScanSettingBindings {
+	return &ScanSettingBindings{}
 }
 
 // ProcessEvent processes a scan setting binding event
@@ -60,11 +55,6 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 				},
 			},
 		},
-	}
-	if action == central.ResourceAction_REMOVE_RESOURCE {
-		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorScanSettingBinding.String(), id)
-	} else {
-		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), id)
 	}
 	return component.NewEvent(events...)
 }

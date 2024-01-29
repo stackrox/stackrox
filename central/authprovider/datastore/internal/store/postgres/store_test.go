@@ -35,6 +35,7 @@ func (s *AuthProvidersStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE auth_providers CASCADE")
 	s.T().Log("auth_providers", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

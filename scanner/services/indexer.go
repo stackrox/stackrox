@@ -2,22 +2,32 @@ package services
 
 import (
 	"context"
-	"crypto/sha512"
-	"fmt"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/services/converters"
+	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
+
+var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
+	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly(), idcheck.ScannerV4MatcherOnly()): {
+		"/scanner.v4.Indexer/CreateIndexReport",
+		"/scanner.v4.Indexer/GetIndexReport",
+		"/scanner.v4.Indexer/HasIndexReport",
+	},
+})
 
 type indexerService struct {
 	v4.UnimplementedIndexerServer
@@ -32,7 +42,7 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer.CreateIndexReport")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
@@ -40,15 +50,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	if err := validators.ValidateContainerImageRequest(req); err != nil {
 		return nil, err
 	}
-	manifestDigest, err := createManifestDigest(req.GetHashId())
-	if err != nil {
-		return nil, err
-	}
-
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/service/indexer",
-		"resource_type", resourceType,
-		"manifest_digest", manifestDigest.String())
+	ctx = zlog.ContextWithValues(ctx, "resource_type", resourceType, "hash_id", req.GetHashId())
 
 	// Setup authentication.
 	var opts []indexer.Option
@@ -67,14 +69,14 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		Msg("creating index report for container image")
 	clairReport, err := s.indexer.IndexContainerImage(
 		ctx,
-		manifestDigest,
+		req.GetHashId(),
 		req.GetContainerImage().GetUrl(),
 		opts...)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
@@ -85,12 +87,19 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 }
 
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
-	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.GetIndexReport",
+		"hash_id", req.GetHashId(),
+	)
+	clairReport, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
+		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	if !exists {
+		return nil, errox.NotFound.Newf("index report not found: %s", req.GetHashId())
+	}
+	indexReport, err := mappers.ToProtoV4IndexReport(clairReport)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
@@ -99,40 +108,31 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	return indexReport, nil
 }
 
-func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
-	_, err := s.getClairIndexReport(ctx, req.GetHashId())
+func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/indexer.HasIndexReport",
+		"hash_id", req.GetHashId(),
+	)
+	_, exists, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
 	}
-	return &types.Empty{}, nil
-}
-
-// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
-func createManifestDigest(hashID string) (claircore.Digest, error) {
-	hashIDSum := sha512.Sum512([]byte(hashID))
-	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
-	if err != nil {
-		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
-	}
-	return d, nil
+	return &v4.HasIndexReportResponse{
+		Exists: exists,
+	}, nil
 }
 
 // getClairIndexReport query and return a claircore index report, return a "not
 // found" error when the report does not exist.
-func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashID)
+func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	clairReport, ok, err := s.indexer.GetIndexReport(ctx, hashID)
 	if err != nil {
-		return nil, err
-	}
-	clairReport, ok, err := s.indexer.GetIndexReport(ctx, manifestDigest)
-	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if !ok {
-		return nil, errox.NotFound.Newf("index report not found: %s", hashID)
+		return nil, false, nil
 	}
-	return clairReport, nil
+	return clairReport, true, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -142,8 +142,12 @@ func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *indexerService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// TODO: Setup permissions for indexer.
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	auth := indexerAuth
+	// If this a dev build, allow anonymous traffic for testing purposes.
+	if !buildinfo.ReleaseBuild {
+		auth = allow.Anonymous()
+	}
+	return ctx, auth.Authorized(ctx, fullMethodName)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.

@@ -167,13 +167,14 @@ func matches(values []string, key, target, defaultStr string) (string, bool) {
 	}
 	if len(matchingValues) > 0 {
 		return fmt.Sprintf("%q is set to %s", key, msgfmt.FormatStrings(matchingValues...)), true
-	} else if len(nonMatchingValues) > 0 {
-		return fmt.Sprintf("%q is set to %q and not the target value of %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), false
-	} else if target == defaultStr {
-		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), false
 	}
+	if len(nonMatchingValues) > 0 {
+		return fmt.Sprintf("%q is set to %q and not the target value of %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), false
+	}
+	if target == defaultStr {
+		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), true
+	}
+	return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), false
 }
 
 func notMatches(values []string, key, target, defaultStr string) (string, bool) {
@@ -188,13 +189,14 @@ func notMatches(values []string, key, target, defaultStr string) (string, bool) 
 	}
 	if len(matchingValues) > 0 {
 		return fmt.Sprintf("%q is set to %s which matches %q", key, msgfmt.FormatStrings(matchingValues...), target), false
-	} else if len(nonMatchingValues) > 0 {
-		return fmt.Sprintf("%q is set to %s which does not match %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
-	} else if target == defaultStr {
-		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), false
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), true
 	}
+	if len(nonMatchingValues) > 0 {
+		return fmt.Sprintf("%q is set to %s which does not match %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
+	}
+	if target == defaultStr {
+		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), false
+	}
+	return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), true
 }
 
 func onlyContains(values []string, key, targets, defaults string) (string, bool) {
@@ -253,11 +255,11 @@ func contains(values []string, key, target, defaultStr string) (string, bool) {
 		return fmt.Sprintf("%q contains %s", key, msgfmt.FormatStrings(matchingValues...)), true
 	} else if len(nonMatchingValues) > 0 {
 		return fmt.Sprintf("%q is set to %q and does not contain the target value of %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), false
-	} else if strings.Contains(defaultStr, target) {
-		return fmt.Sprintf("%q has a default value that contains the target value of %q", key, defaultStr), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not contain the target value of %q", key, defaultStr, target), false
 	}
+	if strings.Contains(defaultStr, target) {
+		return fmt.Sprintf("%q has a default value that contains the target value of %q", key, defaultStr), true
+	}
+	return fmt.Sprintf("%q has a default value of %q that does not contain the target value of %q", key, defaultStr, target), false
 }
 
 func notContains(values []string, key, target, defaultStr string) (string, bool) {
@@ -273,13 +275,14 @@ func notContains(values []string, key, target, defaultStr string) (string, bool)
 
 	if len(matchingValues) > 0 {
 		return fmt.Sprintf("%q is set to %s which contains %q", key, msgfmt.FormatStrings(matchingValues...), target), false
-	} else if len(nonMatchingValues) > 0 {
-		return fmt.Sprintf("%q is set to %s which does not contain %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
-	} else if !strings.Contains(defaultStr, target) {
-		return fmt.Sprintf("%q does not contain %q", key, target), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that contains %q", key, defaultStr, target), false
 	}
+	if len(nonMatchingValues) > 0 {
+		return fmt.Sprintf("%q is set to %s which does not contain %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
+	}
+	if !strings.Contains(defaultStr, target) {
+		return fmt.Sprintf("%q does not contain %q", key, target), true
+	}
+	return fmt.Sprintf("%q has a default value of %q that contains %q", key, defaultStr, target), false
 }
 
 // MasterNodeKubernetesCommandlineCheck checks the arguments of the given process if this is the Kubernetes master node

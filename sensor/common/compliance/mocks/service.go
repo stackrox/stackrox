@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/service.go github.com/stackrox/rox/sensor/common/compliance Service
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

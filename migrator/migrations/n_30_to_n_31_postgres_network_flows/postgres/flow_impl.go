@@ -5,17 +5,15 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/n_30_to_n_31_postgres_network_flows/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -55,8 +53,6 @@ const (
 
 var (
 	log = logging.LoggerForModule()
-
-	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), baseTable)
 
 	// We begin to process in batches after this number of records
 	batchAfter = 100

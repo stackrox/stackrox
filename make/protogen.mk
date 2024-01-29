@@ -14,7 +14,7 @@ SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
 
 # Space separated list of v2 service proto files to include in API docs
-V2_SERVICES_TO_INCLUDE_IN_DOCS = report_service.proto
+V2_SERVICES_TO_INCLUDE_IN_DOCS = report_service.proto compliance_integration_service.proto compliance_profile_service.proto compliance_results_service.proto compliance_scan_configuration_service.proto
 
 V2_SERVICE_PROTOS_REL = $(V2_SERVICES_TO_INCLUDE_IN_DOCS:%=api/v2/%)
 API_SERVICE_PROTOS_V2 = $(filter $(V2_SERVICE_PROTOS_REL), $(SERVICE_PROTOS_REL))
@@ -37,6 +37,11 @@ SCANNER_PROTO_BASE_PATH = $(SCANNER_DIR)/proto
 ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
 endif
+
+$(call go-tool, PROTOC_GEN_GO_BIN, github.com/gogo/protobuf/protoc-gen-gofast)
+$(call go-tool, PROTOC_GEN_SWAGGER, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger, tools/proto)
+$(call go-tool, PROTOC_GEN_GRPC_GATEWAY, github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway, tools/proto)
+
 
 ##############
 ## Protobuf ##
@@ -61,13 +66,7 @@ PROTOC := $(PROTOC_DIR)/bin/protoc
 
 PROTOC_DOWNLOADS_DIR := $(PROTO_PRIVATE_DIR)/.downloads
 
-PROTO_GOBIN := $(PROTO_PRIVATE_DIR)/bin
-
 $(PROTOC_DOWNLOADS_DIR):
-	@echo "+ $@"
-	$(SILENT)mkdir -p "$@"
-
-$(PROTO_GOBIN):
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$@"
 
@@ -92,8 +91,6 @@ $(PROTOC):
 
 PROTOC_INCLUDES := $(PROTOC_DIR)/include/google
 
-PROTOC_GEN_GO_BIN := $(PROTO_GOBIN)/protoc-gen-gofast
-
 MODFILE_DIR := $(PROTO_PRIVATE_DIR)/modules
 
 $(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
@@ -101,10 +98,6 @@ $(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)go list -m -json $* | jq '.Dir' >"$@.tmp"
 	$(SILENT)(cmp -s "$@.tmp" "$@" && rm "$@.tmp") || mv "$@.tmp" "$@"
-
-$(PROTOC_GEN_GO_BIN): $(MODFILE_DIR)/github.com/gogo/protobuf/UPDATE_CHECK $(PROTO_GOBIN)
-	@echo "+ $@"
-	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/gogo/protobuf/$(notdir $@)
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 
@@ -179,18 +172,6 @@ printprotos:
 ## Generate gRPC proto messages, services, and gateways for the API. ##
 #######################################################################
 
-PROTOC_GEN_GRPC_GATEWAY := $(PROTO_GOBIN)/protoc-gen-grpc-gateway
-
-$(PROTOC_GEN_GRPC_GATEWAY): $(MODFILE_DIR)/github.com/grpc-ecosystem/grpc-gateway/UPDATE_CHECK $(PROTO_GOBIN)
-	@echo "+ $@"
-	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-
-PROTOC_GEN_SWAGGER := $(PROTO_GOBIN)/protoc-gen-swagger
-
-$(PROTOC_GEN_SWAGGER): $(MODFILE_DIR)/github.com/grpc-ecosystem/grpc-gateway/UPDATE_CHECK $(PROTO_GOBIN)
-	@echo "+ $@"
-	$(SILENT)GOBIN=$(PROTO_GOBIN) go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-
 $(GENERATED_DOC_PATH):
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(GENERATED_DOC_PATH)
@@ -198,13 +179,13 @@ $(GENERATED_DOC_PATH):
 # Generate all of the proto messages and gRPC services with one invocation of
 # protoc when any of the .pb.go sources don't exist or when any of the .proto
 # files change.
-$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_GO_BIN) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)mkdir -p $(dir $@)
-	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
@@ -216,13 +197,13 @@ endif
 # Generate all of the reverse-proxies (gRPC-Gateways) with one invocation of
 # protoc when any of the .pb.gw.go sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(GENERATED_BASE_PATH)/%_service.pb.go $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)mkdir -p $(dir $@)
-	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOGO_DIR) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
@@ -234,12 +215,12 @@ endif
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_BASE_PATH)/api/v1/%.swagger.json: $(PROTO_BASE_PATH)/api/v1/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/api/v1/%.swagger.json: $(PROTO_BASE_PATH)/api/v1/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
-	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
@@ -249,12 +230,12 @@ endif
 		$(dir $<)/*.proto
 
 
-$(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS) $(PROTOC)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
-	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
+	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
 		-I$(GOGO_DIR) \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
@@ -277,7 +258,7 @@ $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	docker run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 # Nukes pretty much everything that goes into building protos.
 # You should not have to run this day-to-day, but it occasionally is useful

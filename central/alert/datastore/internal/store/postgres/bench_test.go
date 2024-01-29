@@ -11,9 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 )
 
-func BenchmarkGetMany(b *testing.B) {
+func BenchmarkMany(b *testing.B) {
 	var alerts []*storage.Alert
-	const alertsNum = 3000
+	const alertsNum = 10000
 	for i := 0; i < alertsNum; i++ {
 		alert := &storage.Alert{}
 		err := testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
@@ -38,7 +38,13 @@ func BenchmarkGetMany(b *testing.B) {
 	}
 
 	for n := 1; n < alertsNum; n = n * 2 {
-		b.Run(fmt.Sprintf("%d alerts", n), func(b *testing.B) {
+		b.Run(fmt.Sprintf("upsert %d alerts", n), func(b *testing.B) {
+			err := store.UpsertMany(ctx, alerts[:n])
+			if err != nil {
+				b.Fatal(err)
+			}
+		})
+		b.Run(fmt.Sprintf("get %d alerts", n), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, _, err := store.GetMany(ctx, idx[:n])
 				if err != nil {

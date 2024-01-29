@@ -18,6 +18,7 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { Policy } from 'types/policy.proto';
 
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
 import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
@@ -76,8 +77,8 @@ function ViolationDetailsPage(): ReactElement {
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
-        ? alert.deployment.name
-        : '';
+          ? alert.deployment.name
+          : '';
     /* eslint-enable no-nested-ternary */
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
@@ -135,7 +136,9 @@ function ViolationDetailsPage(): ReactElement {
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-u-pb-md" />
-                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
+                                <PolicyDetailContent
+                                    policy={getClientWizardPolicy(policy) as unknown as Policy}
+                                />
                             </PageSection>
                         </Tab>
                     )}

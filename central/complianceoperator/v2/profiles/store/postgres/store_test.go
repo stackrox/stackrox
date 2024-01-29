@@ -42,6 +42,7 @@ func (s *ComplianceOperatorProfileV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_profile_v2 CASCADE")
 	s.T().Log("compliance_operator_profile_v2", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
@@ -93,7 +94,7 @@ func (s *ComplianceOperatorProfileV2StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundComplianceOperatorProfileV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorProfileV2.GetId()), sac.ErrResourceAccessDenied)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorProfileV2.GetId()))
 
 	var complianceOperatorProfileV2s []*storage.ComplianceOperatorProfileV2
 	var complianceOperatorProfileV2IDs []string

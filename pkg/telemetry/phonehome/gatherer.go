@@ -38,6 +38,9 @@ type gatherer struct {
 	gatherFuncs []GatherFunc
 	lastData    map[string]any
 	opts        []telemeter.Option
+
+	// tickerFactory allows for setting a custom ticker for ad-hoc gathering.
+	tickerFactory func(time.Duration) *time.Ticker
 }
 
 func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
@@ -45,6 +48,8 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 		clientType: clientType,
 		telemeter:  t,
 		period:     p,
+
+		tickerFactory: time.NewTicker,
 	}
 }
 
@@ -78,6 +83,9 @@ func (g *gatherer) identify() {
 	if !reflect.DeepEqual(g.lastData, data) {
 		// Issue an event so that the new data become visible on analytics:
 		g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts, telemeter.WithTraits(data))...)
+	} else {
+		// No changes in properties, just send a heartbeat event:
+		g.telemeter.Track(g.clientType+" Heartbeat", nil, g.opts...)
 	}
 	g.lastData = data
 }
@@ -85,13 +93,15 @@ func (g *gatherer) identify() {
 func (g *gatherer) loop() {
 	// Send initial data on start:
 	g.identify()
-	ticker := time.NewTicker(g.period)
+	ticker := g.tickerFactory(g.period)
+	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
 		select {
-		case <-ticker.C:
-			go g.identify()
+		case _, ok := <-ticker.C:
+			if ok {
+				go g.identify()
+			}
 		case <-g.stopSig.Done():
-			ticker.Stop()
 			return
 		}
 	}
@@ -105,11 +115,9 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 	defer g.mu.Unlock()
 	if g.stopSig.IsDone() {
 		g.reset()
-		{
-			g.gathering.Lock()
+		concurrency.WithLock(&g.gathering, func() {
 			g.opts = opts
-			g.gathering.Unlock()
-		}
+		})
 		go g.loop()
 	}
 }

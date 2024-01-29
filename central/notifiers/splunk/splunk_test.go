@@ -15,9 +15,6 @@ import (
 )
 
 const (
-	endpoint = "https://localhost:8088/services/collector/event"
-	token    = "292A25D6-FF99-448C-BD90-7029FBD537BC"
-
 	tokenEnv    = "SPLUNK_TOKEN"
 	endpointEnv = "SPLUNK_ENDPOINT"
 )

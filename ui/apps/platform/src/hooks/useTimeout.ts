@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useMemo } from 'react';
 
 export type UseTimeoutReturn<Args extends unknown[]> = [
     (delay: number, ...args: Args) => void,
-    () => void
+    () => void,
 ];
 
 /**
@@ -30,7 +30,7 @@ export default function useTimeout<Return, Args extends unknown[]>(
         callbackRef.current = callback;
     }, [callback]);
 
-    useEffect(() => cleanup, [timeoutRef.current]);
+    useEffect(() => cleanup, []);
 
     const execCallback = useCallback((delay: number, ...args: Args) => {
         cleanup();

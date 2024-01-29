@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stackrox/rox/pkg/contextutil"
 )
 
@@ -56,7 +56,7 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pg
 	}
 	if err != nil {
 		incQueryErrors(sql, err)
-		return nil, toErrox(err)
+		return pgconn.CommandTag{}, toErrox(err)
 	}
 	return ct, nil
 }

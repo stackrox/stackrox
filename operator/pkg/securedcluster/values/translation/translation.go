@@ -15,6 +15,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,8 +41,8 @@ var (
 	baseValuesYAML []byte
 )
 
-// NewTranslator creates a translator
-func NewTranslator(client ctrlClient.Client) Translator {
+// New creates a translator
+func New(client ctrlClient.Client) Translator {
 	return Translator{client: client}
 }
 
@@ -98,7 +99,12 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig))
+	scannerV4AutoSenseConfig, err := scanner.AutoSenseLocalScannerV4Config(ctx, t.client, sc)
+	if err != nil {
+		return nil, err
+	}
+
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig))
 
 	if sc.Spec.AdmissionControl != nil {
 		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
@@ -113,12 +119,14 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
+	if sc.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
+		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(sc, scannerV4AutoSenseConfig))
+	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 
 	v.AddChild("customize", &customize)
 	v.AddChild("meta", getMetaValues(sc))
-	v.AddAllFrom(translation.GetMisc(sc.Spec.Misc))
 
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
@@ -177,7 +185,7 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 
 	if sensor != nil {
@@ -186,8 +194,8 @@ func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, config
 		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
 	}
 
-	if config.EnableLocalImageScanning {
-		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(config.EnableLocalImageScanning))
+	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
+		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(true))
 	}
 
 	return &sv
@@ -284,15 +292,21 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	if c := collectorContainerSpec.Collection; c != nil {
 		switch *c {
 		case platform.CollectionEBPF:
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			// EBPF collection has been deprecated, translate it to CORE_BPF if it's not forced
+			if collectorContainerSpec.ForceCollection != nil &&
+				*collectorContainerSpec.ForceCollection {
+				cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			} else {
+				cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
+			}
 		case platform.CollectionNone:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_NO_COLLECTION.String())
 		case platform.CollectionCOREBPF:
 			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		case legacyCollectionKernelModule:
 			// Kernel module collection has been removed, but for the
-			// purposes of upgrades, we translate it to EBPF
-			cv.SetStringValue("collectionMethod", storage.CollectionMethod_EBPF.String())
+			// purposes of upgrades, we translate it to CORE_BPF
+			cv.SetStringValue("collectionMethod", storage.CollectionMethod_CORE_BPF.String())
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.perNode.collection %q", *c))
 		}
@@ -348,10 +362,22 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 	return &sv
 }
 
+func (t Translator) getLocalScannerV4ComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	s := securedCluster.Spec.ScannerV4
+	sv.SetBoolValue("disable", !config.DeployScannerResources)
+
+	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
+	translation.SetScannerV4DBValues(&sv, s.DB)
+
+	return &sv
+}
+
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
+	scanner.SetScannerV4Defaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}

@@ -344,6 +344,7 @@ func (suite *imageCheckTestSuite) TestConstruct() {
 
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
 
 	cases := map[string]struct {
 		shouldFail         bool
@@ -517,7 +518,8 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 
 // helper to run output format tests
 func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
-	standardizedFormat bool) {
+	standardizedFormat bool,
+) {
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		suite.Run(name, func() {

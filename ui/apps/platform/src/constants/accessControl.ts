@@ -53,7 +53,7 @@ export const defaultMinimalReadAccessResources = [
     'NetworkPolicy',
     'NetworkGraph',
     'Node',
-    'Policy',
+    'WorkflowAdministration',
     'Secret',
 ];
 

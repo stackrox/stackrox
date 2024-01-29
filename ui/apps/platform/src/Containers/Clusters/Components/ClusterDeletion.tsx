@@ -28,8 +28,8 @@ function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactE
             daysUntilDeletion < 1
                 ? 'Imminent'
                 : daysUntilDeletion === 1
-                ? 'in 1 day'
-                : `in ${daysUntilDeletion} days`;
+                  ? 'in 1 day'
+                  : `in ${daysUntilDeletion} days`;
         /* eslint-enable no-nested-ternary */
 
         return <span>{text}</span>;

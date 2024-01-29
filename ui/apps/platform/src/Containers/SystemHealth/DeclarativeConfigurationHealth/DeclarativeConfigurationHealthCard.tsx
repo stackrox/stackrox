@@ -59,8 +59,8 @@ function DeclarativeConfigurationHealthCard({
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : errorMessageFetching
-        ? ErrorIcon
-        : healthIconMap[unhealthyCount === 0 ? 'success' : 'danger'];
+          ? ErrorIcon
+          : healthIconMap[unhealthyCount === 0 ? 'success' : 'danger'];
     /* eslint-enable no-nested-ternary */
 
     return (

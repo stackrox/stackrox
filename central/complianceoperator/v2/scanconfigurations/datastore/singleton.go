@@ -16,7 +16,8 @@ var (
 )
 
 func initialize() {
-	dataStore = New(pgStore.New(globaldb.GetPostgres()), statusStore.New(globaldb.GetPostgres()), clusterDatastore.Singleton())
+	storage := pgStore.New(globaldb.GetPostgres())
+	dataStore = New(storage, statusStore.New(globaldb.GetPostgres()), clusterDatastore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

@@ -5,16 +5,18 @@ import { SortOption } from 'types/table';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import {
     CLUSTER_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
     DEPLOYMENT_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import WorkloadTableToolbar from './WorkloadTableToolbar';
 import { DynamicTableLabel } from './DynamicIcon';
 import EntityTypeToggleGroup, { EntityCounts } from './EntityTypeToggleGroup';
-import { DefaultFilters } from '../types';
+import { DefaultFilters, EntityTab } from '../types';
 
 type TableEntityToolbarProps = {
     defaultFilters: DefaultFilters;
@@ -23,15 +25,18 @@ type TableEntityToolbarProps = {
     pagination: UseURLPaginationResult;
     tableRowCount: number;
     isFiltered: boolean;
+    onEntityTabChange: (entityTab: EntityTab) => void;
     children?: React.ReactNode;
 };
 
 const searchOptions: SearchOption[] = [
-    IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
     DEPLOYMENT_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     CLUSTER_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
 function TableEntityToolbar({
@@ -41,6 +46,7 @@ function TableEntityToolbar({
     pagination,
     tableRowCount,
     isFiltered,
+    onEntityTabChange,
     children,
 }: TableEntityToolbarProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -61,6 +67,7 @@ function TableEntityToolbar({
                             deploymentCount={countsData.deploymentCount}
                             setSortOption={setSortOption}
                             setPage={setPage}
+                            onChange={onEntityTabChange}
                         />
                     </ToolbarItem>
                     {isFiltered && (

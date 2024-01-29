@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
@@ -24,8 +23,6 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	once       sync.Once
 	csvHandler *csvCommon.HandlerImpl
 

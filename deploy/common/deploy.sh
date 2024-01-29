@@ -36,9 +36,6 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
 echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
-export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
-echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
-
 function curl_central() {
 	cmd=(curl -k)
 	local admin_user="${ROX_ADMIN_USER:-admin}"
@@ -72,8 +69,9 @@ function generate_ca {
 #   - API server endpoint to ping
 function wait_for_central {
     LOCAL_API_ENDPOINT="$1"
+    local central_namespace=${2:-stackrox}
 
-    echo -n "Waiting for Central to respond."
+    echo -n "Waiting for Central in namespace ${central_namespace} to respond."
     set +e
     local start_time
     start_time="$(date '+%s')"
@@ -81,9 +79,9 @@ function wait_for_central {
     until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
         if [[ "$(date '+%s')" -gt "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
+            central_pod="$("${ORCH_CMD}" -n "${central_namespace}" get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
             if [[ -n "$central_pod" ]]; then
-                "${ORCH_CMD}" -n stackrox exec "${central_pod}" -c central -- kill -ABRT 1
+                "${ORCH_CMD}" -n "${central_namespace}" exec "${central_pod}" -c central -- kill -ABRT 1
             fi
             exit 1
         fi

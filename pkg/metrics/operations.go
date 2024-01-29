@@ -45,4 +45,7 @@ const (
 	UpdateMany
 	Upsert
 	UpsertAll
+
+	Walk
+	WalkByQuery
 )

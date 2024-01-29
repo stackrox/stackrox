@@ -1,6 +1,7 @@
 package maputil
 
 import (
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -139,6 +140,6 @@ func (m *FastRMap[K, V]) cloneAndMutateWithInitialPtr(initialMapPtr *map[K]V, mu
 
 		// our work was for nothing, another goroutine beat us to the write!
 		initialMapPtr = m.m
-		m.lock.Unlock()
+		concurrency.UnsafeUnlock(&m.lock)
 	}
 }

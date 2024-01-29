@@ -39,21 +39,19 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Deployment": 1,
         "*central.SensorEvent_Node": 0,
         "*central.SensorEvent_ComplianceOperatorProfile": 0,
+        "*central.SensorEvent_ComplianceOperatorProfileV2": 0,
         "*central.SensorEvent_ComplianceOperatorResult": 0,
         "*central.SensorEvent_ComplianceOperatorRule": 0,
+        "*central.SensorEvent_ComplianceOperatorRuleV2": 0,
         "*central.SensorEvent_ComplianceOperatorScanSettingBinding": 0,
         "*central.SensorEvent_ComplianceOperatorScan": 0,
     ]
 
     private Set<String> getPodsInCluster() {
-        Set<String> result = [] as Set
-        for (namespace in orchestrator.getNamespaces()) {
+        return orchestrator.getNamespaces().collectMany { String namespace ->
             List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
-            for (pod in allPods) {
-                result.add(namespace + ":" + pod.metadata.getName())
-            }
+            allPods.collect { Pod pod -> namespace + ":" + pod.metadata.getName() }
         }
-        return result
     }
 
     private Set<String> getDifference(Set<String> list1, Set<String> list2) {

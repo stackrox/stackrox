@@ -3,12 +3,14 @@ package check
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
@@ -32,6 +34,7 @@ const (
 		"results.#.violatedPolicies.#.description," +
 		"results.#.violatedPolicies.#.violation.@list," +
 		"results.#.violatedPolicies.#.remediation}"
+	defaultNamespace = "default"
 )
 
 var (
@@ -82,8 +85,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
+	// TODO(ROX-21443): Pass deploymentCheckCmd.files to the Sarif printer once it can handle multiple entities
 	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
-		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.firstFile))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
@@ -107,7 +111,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Add all printer related flags
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringArrayVarP(&deploymentCheckCmd.files, "file", "f", nil, "yaml files to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
@@ -115,7 +119,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
-	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
+	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
+	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "a namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
@@ -128,7 +133,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
-	file               string
+	// TODO(ROX-21443): Remove firstFile once sarif printers can handle multiple entities
+	firstFile          string
+	files              []string
 	json               bool
 	retryDelay         int
 	retryCount         int
@@ -137,6 +144,7 @@ type deploymentCheckCommand struct {
 	timeout            time.Duration
 	force              bool
 	cluster            string
+	namespace          string
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -146,6 +154,11 @@ type deploymentCheckCommand struct {
 
 func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
+
+	// TODO(ROX-21443): Remove this once sarif printers can handle multiple entities
+	// Temporary solution until Sarif printers can handle string slices
+	// d.firstFile needs to be populated before the printer is created
+	d.firstFile = d.files[0]
 
 	// Only create a printer if legacy json output format is not used
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format
@@ -162,8 +175,20 @@ func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *pr
 }
 
 func (d *deploymentCheckCommand) Validate() error {
-	if _, err := os.Open(d.file); err != nil {
-		return common.ErrInvalidCommandOption.CausedBy(err)
+	if d.cluster != "" && d.namespace == defaultNamespace {
+		d.env.Logger().WarnfLn("Deployments without a namespace in the spec will be enhanced with context information for the \"default\" namespace. This can be changed with setting '--namespace/-n'")
+	}
+	if d.cluster == "" && d.namespace != defaultNamespace {
+		d.env.Logger().WarnfLn("Cluster is empty. Namespace will only have an effect if '--cluster' is defined.")
+	}
+	var fileErrs errorhelpers.ErrorList
+	for _, file := range d.files {
+		if _, err := os.Open(file); err != nil {
+			fileErrs.AddError(err)
+		}
+	}
+	if !fileErrs.Empty() {
+		return common.ErrInvalidCommandOption.CausedBy(fileErrs.ErrorStrings())
 	}
 
 	return nil
@@ -186,13 +211,33 @@ func (d *deploymentCheckCommand) Check() error {
 	return nil
 }
 
-func (d *deploymentCheckCommand) checkDeployment() error {
-	deploymentFileContents, err := os.ReadFile(d.file)
-	if err != nil {
-		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
+func normalizeYaml(yamlContent string) string {
+	if yamlContent == "" {
+		return ""
 	}
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
+	yamlContent = strings.TrimSpace(yamlContent)
+	yamlContent = strings.TrimPrefix(yamlContent, "---\n")
+	yamlContent = strings.TrimSuffix(yamlContent, "\n---")
+	yamlContent = yamlContent + "\n"
+
+	return yamlContent
+}
+
+func (d *deploymentCheckCommand) checkDeployment() error {
+	var combinedDeployments string
+	for _, file := range d.files {
+		fileContents, err := os.ReadFile(file)
+		if err != nil {
+			return errors.Wrapf(err, "could not read deployment file: %q", file)
+		}
+		if len(combinedDeployments) > 0 && len(fileContents) > 0 {
+			combinedDeployments = combinedDeployments + "---\n"
+		}
+		combinedDeployments = combinedDeployments + normalizeYaml(string(fileContents))
+	}
+
+	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(combinedDeployments)
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
@@ -215,6 +260,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 		Yaml:             deploymentYaml,
 		PolicyCategories: d.policyCategories,
 		Cluster:          d.cluster,
+		Namespace:        d.namespace,
 	})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
@@ -224,6 +270,7 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
 	}
+
 	return alerts, response.GetIgnoredObjectRefs(), nil
 }
 
@@ -275,7 +322,8 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logg
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out logger.Logger) {
+	out logger.Logger,
+) {
 	if amountViolatedPolicies == 0 {
 		return
 	}

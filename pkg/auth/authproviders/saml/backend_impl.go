@@ -13,12 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // All configuration keys the auth provider exposes within the auth provider config map.

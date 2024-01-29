@@ -27,6 +27,9 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		ScannerImageTag:        "3.2.1",
 		ScannerDBSlimImageName: "scanner-slim",
 		ScannerDBImageName:     "custom-scanner-db",
+		ScannerV4ImageName:     "custom-scanner-v4",
+		ScannerV4DBImageName:   "custom-scanner-v4-db",
+		ScannerV4ImageTag:      "4.2.1",
 
 		ChartRepo: defaults.ChartRepo{
 			URL:     "url",

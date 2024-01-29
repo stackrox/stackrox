@@ -35,6 +35,7 @@ func (s *DeclarativeConfigHealthsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE declarative_config_healths CASCADE")
 	s.T().Log("declarative_config_healths", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

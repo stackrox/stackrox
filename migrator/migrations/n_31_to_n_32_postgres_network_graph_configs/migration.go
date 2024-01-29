@@ -40,7 +40,6 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = frozenSchema.NetworkGraphConfigsSchema
 	log       = loghelper.LogWrapper{}
 )
 

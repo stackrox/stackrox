@@ -8,8 +8,10 @@ import (
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/extensions"
-	"github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
+	scTranslation "github.com/stackrox/rox/operator/pkg/securedcluster/values/translation"
 	"github.com/stackrox/rox/operator/pkg/utils"
+	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -33,6 +35,10 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient())),
 	}
 
+	if features.ScannerV4Support.Enabled() {
+		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient())))
+	}
+
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
@@ -43,7 +49,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.NewTranslator(mgr.GetClient()), proxyEnv, mgr.GetLogger()),
+		translation.WithEnrichment(
+			scTranslation.New(mgr.GetClient()),
+			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger())),
 		opts...,
 	)
 }

@@ -98,7 +98,7 @@ jobs:
       - name: Build UI
         run: make -C ui build
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
@@ -129,7 +129,7 @@ jobs:
       - name: Bundle build to preserve permissions
         run: tar -cvzf cli-build.tgz bin
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: cli-build
           path: cli-build.tgz
@@ -171,9 +171,13 @@ jobs:
 
       - name: Setup Go build environment for -race
         if: |
-          contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
-            ||
-          matrix.name == 'race-condition-debug'
+          matrix.arch == 'amd64'
+            &&
+          (
+            contains(github.event.pull_request.labels.*.name, 'ci-race-tests')
+              ||
+            matrix.name == 'race-condition-debug'
+          )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
       - name: Build Go Binaries
@@ -189,7 +193,7 @@ jobs:
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
@@ -221,7 +225,7 @@ jobs:
           # Workarround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: docs-build
           path: |
@@ -305,12 +309,12 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ui-${{ env.ROX_PRODUCT_BRANDING }}-build
           path: ui
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
 
@@ -318,7 +322,7 @@ jobs:
         run: |
           tar xvzf cli-build.tgz
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ env.GO_BINARIES_BUILD_ARTIFACT }}
 
@@ -326,7 +330,7 @@ jobs:
         run: |
           tar xvzf go-binaries-build.tgz
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: docs-build
           path: image/rhel/docs
@@ -353,14 +357,14 @@ jobs:
 
       - name: Build main images
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-main-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-main-image
 
       - name: Check debugger presence in the main image
         run: make check-debugger
 
       - name: Build roxctl image
         run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} make docker-build-roxctl-image
+          GOOS=linux GOARCH=${{ matrix.arch }} scripts/lib.sh retry 3 true make docker-build-roxctl-image
 
       # needed for docs ensure_image.sh initial pull with RHACS_BRANDING
       - name: Docker login
@@ -368,7 +372,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+          scripts/lib.sh retry 5 true docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
       - name: Push images
         # Skip for external contributions.
@@ -486,7 +490,7 @@ jobs:
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       env:
-        GITHUB_TOKEN: "${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}"
+        GITHUB_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
       run: |
         source ./scripts/ci/lib.sh
         add_build_comment_to_pr
@@ -532,14 +536,15 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
+          scripts/lib.sh retry 5 true docker login -u "${QUAY_RHACS_ENG_RW_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RW_PASSWORD}"
 
       - name: Build Operator Bundle image
         run: |
           make -C operator/ bundle bundle-build
 
       - name: Build Operator image
-        run: make -C operator/ build docker-build
+        run: |
+          scripts/lib.sh retry 3 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
         run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -566,52 +571,57 @@ jobs:
         run: |
           make -C operator/ docker-push-index | cat
 
-  build-and-push-mock-grpc-server:
+  scan-go-binaries:
+    if: github.event_name == 'push'
+    env:
+      ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.61
+    needs:
+    - pre-build-cli
+    - pre-build-go-binaries
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
-    - uses: ./.github/actions/handle-tagged-build
-
-    - name: Get tag
-      id: tag
-      run: |
-        echo "TAG=$(make --quiet --no-print-directory tag)" >> "$GITHUB_OUTPUT"
-
-    - name: Set up Docker Buildx
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to quay.io/rhacs-eng
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/login-action@v3
+    - uses: actions/download-artifact@v4
       with:
-        registry: quay.io
-        username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        password: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        name: cli-build
 
-    - name: Push to quay.io/rhacs-eng
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      env:
-        TAG: ${{ steps.tag.outputs.TAG }}
-        PLATFORM: "linux/amd64,linux/s390x,linux/ppc64le"
-      run: make mock-grpc-server-image-push
+    - name: Unpack cli build
+      run: |
+        tar xvzf cli-build.tgz
+
+    - uses: actions/download-artifact@v4
+      with:
+        name: go-binaries-build-amd64-default
+
+    - name: Unpack Go binaries build
+      run: |
+        tar xvzf go-binaries-build.tgz
+
+    - name: Scan
+      run: |
+        ./scripts/ci/govulncheck.sh
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      uses: ./.github/actions/junit2jira
+      if: always()
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        directory: 'junit-reports'
 
   scan-images-with-roxctl:
     if: github.event_name == 'push'
@@ -638,7 +648,7 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: cli-build
 
@@ -656,7 +666,15 @@ jobs:
           ./release/scripts/scan-images-with-roxctl.sh
 
   slack-on-build-failure:
-    if: github.event_name == 'push' && failure()
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SLACK_CI_INTEGRATION_TESTING_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+      TEST_FAILURES_NOTIFY_WEBHOOK: ${{ secrets.TEST_FAILURES_NOTIFY_WEBHOOK }}
+    if: |
+      failure() && (
+          github.event_name == 'push' ||
+          contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
+      )
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
@@ -666,15 +684,17 @@ jobs:
       - pre-build-docs
       - build-and-push-main
       - build-and-push-operator
-      - build-and-push-mock-grpc-server
       - scan-images-with-roxctl
+      - scan-go-binaries
     permissions:
       actions: read
     steps:
-      - name: Slack Workflow Notification
-        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
-        with:
-          include_commit_message: true
-          include_jobs: on-failure
-          repo_token: ${{secrets.GITHUB_TOKEN}}
-          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Slack message
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+        run: |
+          source scripts/ci/lib.sh
+          slack_workflow_failure

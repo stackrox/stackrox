@@ -1,7 +1,22 @@
+import { addDays, format } from 'date-fns';
+import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 
 const basePath = '/main/vulnerabilities/workload-cves/';
+
+export function getDateString(date) {
+    return format(date, 'MM/DD/YYYY');
+}
+
+/**
+ * Get a date in the future by a number of days
+ * @param {number} days
+ * @returns {Date}
+ */
+export function getFutureDateByDays(days) {
+    return addDays(new Date(), days);
+}
 
 export function visitWorkloadCveOverview() {
     visit(basePath);
@@ -39,40 +54,43 @@ export function applyLocalSeverityFilters(...severities) {
 }
 
 /**
- * Select a resource filter type from the resource filter dropdown.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Select a search option from the search options dropdown.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectResourceFilterType(entityType) {
+export function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
-    cy.get(selectors.searchOptionsMenuItem(entityType)).click();
+    cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
 }
 
 /**
- * Type a value into the resource filter typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Type a value into the filter autocomplete typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  * @param {string} value
  */
-export function typeAndSelectResourceFilterValue(entityType, value) {
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(entityType))
+export function typeAndSelectSearchFilterValue(searchOption, value) {
+    selectSearchOption(searchOption);
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
         .contains(new RegExp(`^${value}$`))
         .click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**
- * Type a value into the resource filter typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * Type a value into the search filter typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  * @param {string} value
  */
-export function typeAndSelectCustomResourceFilterValue(entityType, value) {
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(entityType)).contains(`Add "${value}"`).click();
-    cy.get(selectors.searchOptionsValueTypeahead(entityType)).click();
+export function typeAndSelectCustomSearchFilterValue(searchOption, value) {
+    selectSearchOption(searchOption);
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
+    cy.get(selectors.searchOptionsValueMenuItem(searchOption)).contains(`Add "${value}"`).click();
+    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
+
 /**
  * View a specific entity tab for a Workload CVE table
  *
@@ -103,6 +121,24 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
         targetSeverity,
         allSeverities.filter((s) => s.toUpperCase() !== targetSeverity.toUpperCase()),
     ];
+}
+
+export function cancelAllCveExceptions() {
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
+
+    cy.get('@vulnExceptions').then((res) => {
+        res.body.exceptions.forEach(({ id, expired }) => {
+            if (!expired) {
+                cy.request({
+                    url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                    auth,
+                    method: 'POST',
+                });
+            }
+        });
+    });
 }
 
 /**
@@ -144,15 +180,11 @@ export function selectMultipleCvesForException(exceptionType) {
     // Select the first CVE on the first page and the first CVE on the second page
     // to test multi-deferral flows
     return cy
-        .get(selectors.firstTableRow)
+        .get(selectors.nthTableRow(1))
         .then(($row) => {
             cveNames.push($row.find('td[data-label="CVE"]').text());
             cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
-            cy.get(selectors.paginationNext).click();
-            // Wait for the table to finish updating
-            cy.get(selectors.isUpdatingTable).should('not.exist');
-
-            return cy.get(selectors.firstTableRow);
+            return cy.get(selectors.nthTableRow(2));
         })
         .then(($nextRow) => {
             cveNames.push($nextRow.find('td[data-label="CVE"]').text());
@@ -160,8 +192,6 @@ export function selectMultipleCvesForException(exceptionType) {
 
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
-        })
-        .then(() => {
             cy.get('button:contains("CVE selections")').click();
             // TODO - Update this code when modal form is completed
             cveNames.forEach((name) => {
@@ -170,6 +200,65 @@ export function selectMultipleCvesForException(exceptionType) {
 
             return Promise.resolve(cveNames);
         });
+}
+
+export function verifySelectedCvesInModal(cveNames) {
+    cy.get(selectors.cveSelectionTab).click();
+
+    cveNames.forEach((cve) => {
+        cy.get(`*[role="dialog"] a:contains("${cve}")`);
+    });
+}
+
+export function visitAnyImageSinglePage() {
+    visitWorkloadCveOverview();
+    selectEntityTab('Image');
+    cy.get('tbody tr td[data-label="Image"] a').first().click();
+
+    return cy.get('h1').then(($h1) => {
+        return $h1.text().split(':');
+    });
+}
+
+/**
+ * Fill out the exception form and submit it
+ * @param {Object} param
+ * @param {string} param.comment
+ * @param {string=} param.scopeLabel
+ * @param {string=} param.expiryLabel
+ */
+export function fillAndSubmitExceptionForm({ comment, scopeLabel, expiryLabel }) {
+    cy.get(selectors.exceptionOptionsTab).click();
+    if (expiryLabel) {
+        cy.get(`label:contains('${expiryLabel}')`).click();
+    }
+    if (scopeLabel) {
+        cy.get(`label:contains('${scopeLabel}')`).click();
+    }
+    cy.get('textarea[name="comment"]').type(comment);
+    cy.get('button:contains("Submit request")').click();
+    cy.get('header').contains(/Request .* has been submitted/);
+}
+
+/**
+ * Verify that the confirmation details for an exception are correct
+ * @param {Object} params
+ * @param {('Deferral' | 'False positive')} params.expectedAction
+ * @param {string[]} params.cves
+ * @param {string} params.scope
+ * @param {string=} params.expiry
+ */
+export function verifyExceptionConfirmationDetails(params) {
+    const { expectedAction, cves, scope, expiry } = params;
+    getDescriptionListGroup('Requested action', expectedAction);
+    getDescriptionListGroup('Requested', getDateString(new Date()));
+    getDescriptionListGroup('CVEs', String(cves.length));
+    if (expiry) {
+        getDescriptionListGroup('Expires', expiry);
+    }
+    if (scope) {
+        getDescriptionListGroup('Scope', scope);
+    }
 }
 
 /**

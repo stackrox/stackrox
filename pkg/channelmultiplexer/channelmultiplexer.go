@@ -12,7 +12,6 @@ type ChannelMultiplexer[T any] struct {
 	inputChannels  []<-chan T
 	outputCommands chan T
 
-	wg      sync.WaitGroup
 	started concurrency.Signal
 }
 
@@ -42,6 +41,7 @@ func (c *ChannelMultiplexer[T]) Run() {
 
 	output := FanIn[T](ctx, c.inputChannels...)
 	go func() {
+		defer close(c.outputCommands)
 		for o := range output {
 			c.outputCommands <- o
 		}

@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 )
 
 func TestDeploymentDataStoreWithPostgres(t *testing.T) {
@@ -34,7 +33,6 @@ func TestDeploymentDataStoreWithPostgres(t *testing.T) {
 type DeploymentPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	mockCtrl            *gomock.Controller
 	testDB              *pgtest.TestPostgres
 	ctx                 context.Context
 	imageDatastore      imageDataStore.DataStore

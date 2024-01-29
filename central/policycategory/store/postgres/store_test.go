@@ -35,6 +35,7 @@ func (s *PolicyCategoriesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE policy_categories CASCADE")
 	s.T().Log("policy_categories", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

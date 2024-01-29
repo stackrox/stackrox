@@ -19,7 +19,7 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { gql, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
-import useURLPagination from 'hooks/useURLPagination';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied } from 'utils/searchUtils';
@@ -29,9 +29,11 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import {
-    IMAGE_CVE_SEARCH_OPTION,
     SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+} from 'Containers/Vulnerabilities/searchOptions';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -45,6 +47,7 @@ import { DynamicTableLabel } from '../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -58,11 +61,16 @@ import ExceptionRequestModal, {
 import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../hooks/useExceptionRequestModal';
 
-const imageVulnerabilitiesQuery = gql`
+export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${resourceCountByCveSeverityAndStatusFragment}
     ${imageVulnerabilitiesFragment}
-    query getCVEsForImage($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCVEsForImage(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
         image(id: $id) {
             ...ImageMetadataContext
             imageCVECountBySeverity(query: $query) {
@@ -77,7 +85,11 @@ const imageVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
-const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION];
+const searchOptions: SearchOption[] = [
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;
@@ -86,9 +98,16 @@ export type ImagePageVulnerabilitiesProps = {
         remote: string;
         tag: string;
     };
+    refetchAll: () => void;
+    pagination: UseURLPaginationResult;
 };
 
-function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabilitiesProps) {
+function ImagePageVulnerabilities({
+    imageId,
+    imageName,
+    refetchAll,
+    pagination,
+}: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
 
@@ -96,7 +115,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
-    const { page, perPage, setPage, setPerPage } = useURLPagination(20);
+    const { page, perPage, setPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -105,12 +124,6 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
         },
         onSort: () => setPage(1),
     });
-
-    const pagination = {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        sortOption,
-    };
 
     const { data, previousData, loading, error } = useQuery<
         {
@@ -123,12 +136,18 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
             id: string;
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
             query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
-            pagination,
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
 
@@ -194,6 +213,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={vulnerabilityData.image.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
+                                isBusy={loading}
                             />
                         </GridItem>
                     </Grid>
@@ -260,7 +280,12 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                             />
                         </SplitItem>
                     </Split>
-                    <div className="workload-cves-table-container">
+                    <div
+                        className="workload-cves-table-container"
+                        role="region"
+                        aria-live="polite"
+                        aria-busy={loading ? 'true' : 'false'}
+                    >
                         <ImageVulnerabilitiesTable
                             image={vulnerabilityData.image}
                             getSortParams={getSortParams}
@@ -286,6 +311,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
+                        return refetchAll();
                     }}
                     onClose={closeModals}
                 />
@@ -304,7 +330,7 @@ function ImagePageVulnerabilities({ imageId, imageName }: ImagePageVulnerabiliti
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox />
+                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         searchOptions={searchOptions}

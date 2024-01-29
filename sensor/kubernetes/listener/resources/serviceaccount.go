@@ -3,7 +3,6 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -82,7 +81,7 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		},
 	}
 	componentMessage := component.NewEvent(events...)
-	if env.ResyncDisabled.BooleanSetting() && deploymentReference != nil {
+	if deploymentReference != nil {
 		// Service Accounts can influence the `image` on AugmentedObject instance. Meaning the storage.Deployment object
 		// won't be changed based on Service Account properties, but the alerts might. So the detection has to be forced.
 		componentMessage.AddDeploymentReference(deploymentReference,

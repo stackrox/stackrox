@@ -23,8 +23,5 @@
     "jsx": "react-jsx",
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "src/**/*",
-    "setupTests.js"
-  ]
+  "include": ["src/**/*"]
 }

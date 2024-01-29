@@ -2,11 +2,18 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
+    cancelAllCveExceptions,
+    fillAndSubmitExceptionForm,
+    getDateString,
+    getFutureDateByDays,
     selectMultipleCvesForException,
     selectSingleCveForException,
+    verifyExceptionConfirmationDetails,
+    verifySelectedCvesInModal,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE List deferral and false positive flows', () => {
     withAuth();
@@ -14,17 +21,35 @@ describe('Workload CVE List deferral and false positive flows', () => {
     before(function () {
         if (
             !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
+            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') ||
+            !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
         ) {
             this.skip();
         }
     });
 
     beforeEach(() => {
-        // TODO - clean up any existing deferred or false positive CVEs
+        if (
+            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
+            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+        ) {
+            cancelAllCveExceptions();
+        }
     });
 
-    it('should disable multi-cve controls when no rows are selected', () => {
+    after(() => {
+        if (
+            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
+            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL') &&
+            hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')
+        ) {
+            cancelAllCveExceptions();
+        }
+    });
+
+    // TODO - Update this test to mock the server response since we can't rely on multiple pages of data
+    it.skip('should disable multi-cve controls when no rows are selected', () => {
         visitWorkloadCveOverview();
         // Check that the select all checkbox is disabled
         // Check that the bulk action menu is disabled
@@ -66,25 +91,67 @@ describe('Workload CVE List deferral and false positive flows', () => {
 
     it('should defer a single CVE', () => {
         visitWorkloadCveOverview();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
-        selectSingleCveForException('DEFERRAL');
+        selectSingleCveForException('DEFERRAL').then((cveName) => {
+            verifySelectedCvesInModal([cveName]);
+            fillAndSubmitExceptionForm({
+                comment: 'Test comment',
+                expiryLabel: 'When all CVEs are fixable',
+            });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: [cveName],
+                scope: 'All images',
+                expiry: 'When all CVEs are fixable',
+            });
+        });
     });
 
     it('should defer multiple selected CVEs', () => {
         visitWorkloadCveOverview();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
-        selectMultipleCvesForException('DEFERRAL');
+        selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
+            verifySelectedCvesInModal(cveNames);
+            fillAndSubmitExceptionForm({ comment: 'Test comment', expiryLabel: '30 days' });
+
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'Deferral',
+                cves: cveNames,
+                scope: 'All images',
+                expiry: `${getDateString(getFutureDateByDays(30))} (30 days)`,
+            });
+        });
     });
 
-    it.skip('should mark a single CVE false positive', () => {
+    it('should mark a single CVE false positive', () => {
         visitWorkloadCveOverview();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
-        selectSingleCveForException('FALSE_POSITIVE');
+        selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
+            verifySelectedCvesInModal([cveName]);
+            fillAndSubmitExceptionForm({ comment: 'Test comment' });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'False positive',
+                cves: [cveName],
+                scope: 'All images',
+            });
+        });
     });
 
-    it.skip('should mark multiple selected CVEs as false positive', () => {
+    it('should mark multiple selected CVEs as false positive', () => {
         visitWorkloadCveOverview();
+        cy.get(vulnSelectors.clearFiltersButton).click(); // Note: This is a workaround to prevent a lack of CVE data from causing the test to fail in CI
 
-        selectMultipleCvesForException('FALSE_POSITIVE');
+        selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
+            verifySelectedCvesInModal(cveNames);
+            fillAndSubmitExceptionForm({ comment: 'Test comment' });
+            verifyExceptionConfirmationDetails({
+                expectedAction: 'False positive',
+                cves: cveNames,
+                scope: 'All images',
+            });
+        });
     });
 });

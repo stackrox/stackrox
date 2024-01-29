@@ -42,6 +42,7 @@ func (s *HashesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE hashes CASCADE")
 	s.T().Log("hashes", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

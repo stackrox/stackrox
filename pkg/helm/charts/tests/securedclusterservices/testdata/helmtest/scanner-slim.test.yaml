@@ -2,33 +2,40 @@ values:
   monitoring:
     openshift:
       enabled: false
+  scannerV4:
+    disable: true
 server:
   visibleSchemas:
   - openshift-4.1.0
   availableSchemas:
   - openshift-4.1.0
 tests:
-- name: "scanner with default settings in slim mode"
+- name: "scanner with default settings is in slim mode"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
   expect: |
     container(.deployments["scanner"]; "scanner").image | contains("slim")
     container(.deployments["scanner-db"]; "db").image | contains("slim")
-    .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner", "stackrox-sensor"])
     envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+    .deployments.["scanner"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
   tests:
   - name: "on openshift 4"
   - name: "on openshift 3"
     set:
       env.openshift: 3
 
-- name: "scanner is disabled should not be installed by default"
+- name: "scanner is disabled by default, neither deployments nor SA should be created"
+  set:
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner"] | assertThat(. == null)
     .deployments["scanner-db"] | assertThat(. == null)
+    .serviceaccounts["scanner"] | assertThat(. == null)
 
 - name: "scanner can override image config"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
   expect: |
     container(.deployments["scanner"]; "scanner") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
@@ -55,6 +62,7 @@ tests:
 
 - name: "scanner accepts connections from sensor when scanner slim is enabled"
   set:
+    imagePullSecrets.allowNone: true
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
@@ -66,34 +74,37 @@ tests:
     scanner.disable: false
     scanner.mode: "slim"
   expect: |
-    .serviceaccounts["scanner"] | assertThat(. != null)
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox")
-    .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "stackrox-scanner")
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
+    assumeThat(.error == null) | .serviceaccounts["scanner"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
   tests:
   - name: "when authenticating in image registry with user and password"
     set:
       imagePullSecrets.username: "imagePullUser"
       imagePullSecrets.password: "imagePullPassword"
     expect: |
-      .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
+      .serviceaccounts["scanner"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
       .secrets["secured-cluster-services-main"] | assertThat(. != null)
-  - name: "no secret is created"
+  - name: "when username/password are not provided, no secret is created"
     expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
     tests:
+    - name: "by default (allowNone is false), chart fails"
+      expectError: true
+      expect: |
+        .error | assertThat(contains("You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred."))
     - name: "when allowNone is true"
       set:
         imagePullSecrets.allowNone: true
-      expect: .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 3)
+      expect: .serviceaccounts["scanner"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner"])
     - name: "when using existing secrets"
       set:
         imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
       expect: |
-        .serviceaccounts["scanner"] | .imagePullSecrets | assertThat(length == 5)
-        .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret1")
-        .serviceaccounts["scanner"] | .imagePullSecrets[] | select(.name == "existing-secret2")
+        .serviceaccounts["scanner"] | saOnlyRefersTo([
+          "secured-cluster-services-main", "stackrox", "stackrox-scanner", "existing-secret1", "existing-secret2"])
 
 - name: "sensor only connects to local scanner when it is enabled"
+  set:
+    imagePullSecrets.allowNone: true
   tests:
   - name: "local scanner enabled"
     set:
@@ -110,6 +121,7 @@ tests:
   release:
     namespace: custom-ns
   set:
+    imagePullSecrets.allowNone: true
     allowNonstandardNamespace: true
     scanner.disable: false
   expect: |
@@ -118,16 +130,20 @@ tests:
 
 - name: "Test customize for local scanner"
   values:
+    imagePullSecrets:
+      allowNone: true
     scanner:
       disable: false
     customize:
       envVars:
         FOO: bar
-    expect: |
-      envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
+  expect: |
+    envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
 
 - name: "Installation fails in full mode"
   values:
+    imagePullSecrets:
+      allowNone: true
     scanner:
       disable: false
       mode: full

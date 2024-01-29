@@ -120,10 +120,6 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 	return ds.removeIndicators(ctx, ids)
 }
 
-func (ds *datastoreImpl) removeMatchingIndicators(ctx context.Context, results []pkgSearch.Result) error {
-	return ds.removeIndicators(ctx, pkgSearch.ResultsToIDs(results))
-}
-
 func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
@@ -154,7 +150,7 @@ func (ds *datastoreImpl) removeIndicators(ctx context.Context, ids []string) err
 			AddStrings(pkgSearch.ProcessID, identifierBatch...).
 			ProtoQuery()
 
-		if err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
+		if _, err := ds.plopStorage.DeleteByQuery(ctx, deleteQuery); err != nil {
 			err = errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(ids), numRecordsToDelete)
 			return err
 		}
@@ -173,7 +169,8 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

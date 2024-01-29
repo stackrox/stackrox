@@ -35,8 +35,8 @@ const IntegrationHealthWidget = ({
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : errorMessageFetching
-        ? ErrorIcon
-        : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
+          ? ErrorIcon
+          : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
     /* eslint-enable no-nested-ternary */
     const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
 

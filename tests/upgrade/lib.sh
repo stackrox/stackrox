@@ -65,6 +65,9 @@ validate_upgrade() {
         echo "${API_TOKEN}" | "${TEST_ROOT}/bin/${TEST_HOST_PLATFORM}/roxctl" --insecure-skip-tls-verify --insecure -e "${API_ENDPOINT}" --token-file /dev/stdin central whoami > /dev/null
     fi
 
+    rm -f FAIL
+    remove_qa_test_results
+
     info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \

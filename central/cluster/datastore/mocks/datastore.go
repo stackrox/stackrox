@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -148,6 +149,21 @@ func (m *MockDataStore) GetClusters(ctx context.Context) ([]*storage.Cluster, er
 func (mr *MockDataStoreMockRecorder) GetClusters(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockDataStore)(nil).GetClusters), ctx)
+}
+
+// GetClustersForSAC mocks base method.
+func (m *MockDataStore) GetClustersForSAC(ctx context.Context) ([]*storage.Cluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClustersForSAC", ctx)
+	ret0, _ := ret[0].([]*storage.Cluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersForSAC indicates an expected call of GetClustersForSAC.
+func (mr *MockDataStoreMockRecorder) GetClustersForSAC(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersForSAC", reflect.TypeOf((*MockDataStore)(nil).GetClustersForSAC), ctx)
 }
 
 // LookupOrCreateClusterFromConfig mocks base method.

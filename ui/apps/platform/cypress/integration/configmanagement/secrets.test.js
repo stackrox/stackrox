@@ -26,16 +26,8 @@ describe('Configuration Management Secrets', () => {
     it('should render the deployments link and open the side panel when a row is clicked', () => {
         visitConfigurationManagementEntities(entitiesKey);
 
-        cy.get('.rt-tbody .rt-tr')
-            .find(`.rt-td a[data-testid='deployment']`)
-            .eq(0)
-            .click()
-            .invoke('text')
-            .then((expectedText) => {
-                cy.get('[data-testid="side-panel"] [data-testid="panel-header"]').contains(
-                    expectedText.toLowerCase()
-                );
-            });
+        cy.get('.rt-tbody .rt-tr').find(`.rt-td a[data-testid='deployment']`).eq(0).click();
+        cy.get('[data-testid="side-panel"] [data-testid="panel-header"]:contains("deployment")');
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {

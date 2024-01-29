@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -18,6 +18,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/utils/pointer"
 )
 
 type handlerImpl struct {
@@ -29,6 +30,14 @@ type handlerImpl struct {
 
 	disabled   concurrency.Signal
 	stopSignal concurrency.Signal
+}
+
+type scanScheduleConfiguration struct {
+	Suspend        *bool
+	Schedule       *string
+	ScanName       string
+	Request        interface{}
+	ValidationFunc func(interface{}) error
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
@@ -46,9 +55,6 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 }
 
 func (m *handlerImpl) Start() error {
-	if !features.ComplianceEnhancements.Enabled() {
-		return nil
-	}
 	// TODO: create default scan setting for ad-hoc scan
 	go m.run()
 	return nil
@@ -109,7 +115,6 @@ func (m *handlerImpl) run() {
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
 	m.disabled.Reset()
-	// TODO: [ROX-18096] Start collecting compliance profiles & rules
 	return m.composeAndSendEnableComplianceResponse(request.GetId(), nil)
 }
 
@@ -136,39 +141,18 @@ func (m *handlerImpl) processApplyScanCfgRequest(request *central.ApplyComplianc
 		}
 
 		switch r := request.GetScanRequest().(type) {
-		case *central.ApplyComplianceScanConfigRequest_OneTimeScan_:
-			return m.processOneTimeScanRequest(request.GetId(), r.OneTimeScan)
 		case *central.ApplyComplianceScanConfigRequest_ScheduledScan_:
 			return m.processScheduledScanRequest(request.GetId(), r.ScheduledScan)
+		case *central.ApplyComplianceScanConfigRequest_SuspendScan:
+			return m.processSuspendScheduledScanRequest(request.GetId(), r.SuspendScan)
+		case *central.ApplyComplianceScanConfigRequest_ResumeScan:
+			return m.processResumeScheduledScanRequest(request.GetId(), r.ResumeScan)
 		case *central.ApplyComplianceScanConfigRequest_RerunScan:
 			return m.processRerunScheduledScanRequest(request.GetId(), r.RerunScan)
 		default:
 			return m.composeAndSendApplyScanConfigResponse(request.GetId(), errors.New("Cannot handle compliance scan request"))
 		}
 	}
-}
-
-func (m *handlerImpl) processOneTimeScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_OneTimeScan) bool {
-	if err := validateApplyOneTimeScanConfigRequest(request); err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
-	}
-	// TODO: Check if default ACS scan setting CR exists. If it doesn't exist, create one.
-
-	ns := m.complianceOperatorInfo.GetNamespace()
-	if ns == "" {
-		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
-	}
-
-	scanSettingBinding, err := runtimeObjToUnstructured(convertCentralRequestToScanSettingBinding(ns, request.GetScanSettings()))
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
-	}
-	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
 func (m *handlerImpl) processScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ScheduledScan) bool {
@@ -214,39 +198,132 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
 	}
 
-	// Conventionally, compliance scan can be rerun by applying an annotation to ComplianceScan CR. Note that the CRs
-	// created from a scan configuration have the same name as scan configuration.
-	resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
+	// Conventionally, compliance scan can be rerun by applying an
+	// annotation to ComplianceScan CR. The ComplianceScan CRs can be
+	// found from the ComplianceSuite CR. Note that the ComplianceSuite
+	// created from a scan configuration have the same name as scan
+	// configuration.
+	resI := m.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).Namespace(ns)
 	obj, err := resI.Get(m.ctx(), request.GetScanName(), v1.GetOptions{})
 	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, request.GetScanName())
+		err = errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	var complianceScan v1alpha1.ComplianceScan
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
-		err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+	var complianceSuite v1alpha1.ComplianceSuite
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceSuite); err != nil {
+		err = errors.Wrap(err, "Could not convert unstructured to compliance suite")
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	// Apply annotation to indicate compliance scan be rerun.
-	if complianceScan.GetAnnotations() == nil {
-		complianceScan.Annotations = make(map[string]string)
-	}
-	complianceScan.Annotations[rescanAnnotation] = ""
+	for _, scan := range complianceSuite.Spec.Scans {
+		resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
+		obj, err := resI.Get(m.ctx(), scan.Name, v1.GetOptions{})
+		if err != nil || obj == nil {
+			err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+		var complianceScan v1alpha1.ComplianceScan
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &complianceScan); err != nil {
+			err = errors.Wrap(err, "Could not convert unstructured to compliance scan")
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
 
-	obj, err = runtimeObjToUnstructured(&complianceScan)
-	if err != nil {
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
-	}
-	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, request.GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		if complianceScan.GetAnnotations() == nil {
+			complianceScan.Annotations = make(map[string]string)
+		}
+		complianceScan.Annotations[rescanAnnotation] = ""
+
+		obj, err = runtimeObjToUnstructured(&complianceScan)
+		if err != nil {
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
+		log.Infof("Rerunning compliance scan %s", complianceScan.Name)
+		_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+		if err != nil {
+			err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
+			return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		}
 	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
+func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, config scanScheduleConfiguration) bool {
+	if err := config.ValidationFunc(config.Request); err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.Wrap(err, "validating compliance scan request"))
+	}
 
+	ns := m.complianceOperatorInfo.GetNamespace()
+	if ns == "" {
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("Compliance operator namespace not known"))
+	}
+
+	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
+	obj, err := resI.Get(m.ctx(), config.ScanName, v1.GetOptions{})
+	if err != nil || obj == nil {
+		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	var scanSetting v1alpha1.ScanSetting
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &scanSetting); err != nil {
+		err = errors.Wrap(err, "Could not convert unstructured to scan setting")
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	// Check if scanSetting has the "Suspend" field
+	if _, ok := reflect.TypeOf(scanSetting).FieldByName("Suspend"); ok {
+		scanSetting.Suspend = *config.Suspend
+	} else {
+		// Handle the case where the field doesn't exist (older CRD)
+		return m.composeAndSendApplyScanConfigResponse(requestID, errors.New("suspending a scan is not supported on this version of the compliance operator"))
+	}
+
+	obj, err = runtimeObjToUnstructured(&scanSetting)
+	if err != nil {
+		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+	}
+
+	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
+	}
+
+	return m.composeAndSendApplyScanConfigResponse(requestID, err)
+}
+
+func validateInterface(i interface{}) error {
+	switch req := i.(type) {
+	case *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan:
+		return validateApplySuspendScheduledScanRequest(req)
+	case *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan:
+		return validateApplyResumeScheduledScanRequest(req)
+	// Add other cases as needed for other request types.
+	// ex. we might need be adding suppport for changing schedule for scheduled scans.
+	default:
+		return errors.Errorf("Cannot validate request of type %T", i)
+	}
+}
+
+func (m *handlerImpl) processSuspendScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) bool {
+	config := scanScheduleConfiguration{
+		Suspend:        pointer.Bool(true),
+		ScanName:       request.GetScanName(),
+		Request:        request,
+		ValidationFunc: validateInterface,
+	}
+	return m.processScanConfigScheduleChangeRequest(requestID, config)
+}
+
+func (m *handlerImpl) processResumeScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) bool {
+	config := scanScheduleConfiguration{
+		Suspend:        pointer.Bool(false),
+		ScanName:       request.GetScanName(),
+		Request:        request,
+		ValidationFunc: validateInterface,
+	}
+	return m.processScanConfigScheduleChangeRequest(requestID, config)
+}
 func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplianceScanConfigRequest) bool {
 	select {
 	case <-m.disabled.Done():

@@ -21,8 +21,10 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func downloadCerts(env environment.Environment, outputDir, clusterIDOrName string, timeout time.Duration) error {
-	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, env)
+func downloadCerts(env environment.Environment, outputDir, clusterIDOrName string,
+	timeout time.Duration, retryTimeout time.Duration,
+) error {
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, retryTimeout, env)
 	if err != nil {
 		return err
 	}
@@ -83,7 +85,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed).",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadCerts(cliEnvironment, outputDir, args[0], flags.Timeout(c)); err != nil {
+			if err := downloadCerts(cliEnvironment, outputDir, args[0], flags.Timeout(c), flags.RetryTimeout(c)); err != nil {
 				return errors.Wrap(err, "error downloading regenerated certs")
 			}
 			return nil

@@ -2,11 +2,7 @@ package expiringcache
 
 import (
 	"container/list"
-
-	"github.com/stackrox/rox/pkg/logging"
 )
-
-var log = logging.LoggerForModule()
 
 // A MappedQueue provides a mix of map and queue functionality, so that you can reference objects by key, but also
 // fetch items in insertion order.

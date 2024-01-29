@@ -38,7 +38,7 @@ const CUSTOM_DECORATOR_PADDING = 2.5;
 
 type StyleNodeProps = {
     element: Node;
-    getCustomShape?: (node: Node) => React.FunctionComponent<ShapeProps>;
+    getCustomShape?: (node: Node) => React.FunctionComponent<React.PropsWithChildren<ShapeProps>>;
     getShapeDecoratorCenter?: (quadrant: TopologyQuadrant, node: Node) => { x: number; y: number };
     showLabel?: boolean; // Defaults to true
     labelIcon?: React.ComponentClass<SVGIconProps>;
@@ -157,7 +157,7 @@ const renderDecorators = (
     );
 };
 
-const StyleNode: React.FunctionComponent<StyleNodeProps> = ({
+const StyleNode: React.FunctionComponent<React.PropsWithChildren<StyleNodeProps>> = ({
     element,
     onContextMenu,
     contextMenuOpen,

@@ -5,11 +5,13 @@ import (
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
-	"github.com/stackrox/rox/operator/pkg/central/values/translation"
+	centralTranslation "github.com/stackrox/rox/operator/pkg/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
+	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -43,6 +45,10 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
 
+	if features.ScannerV4Support.Enabled() {
+		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4DBPasswordExtension(mgr.GetClient())))
+	}
+
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
@@ -52,7 +58,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	return reconciler.SetupReconcilerWithManager(
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
-		proxy.InjectProxyEnvVars(translation.New(mgr.GetClient()), proxyEnv, mgr.GetLogger()),
+		translation.WithEnrichment(
+			centralTranslation.New(mgr.GetClient()),
+			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger())),
 		opts...,
 	)
 }

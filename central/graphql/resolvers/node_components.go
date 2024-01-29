@@ -143,11 +143,6 @@ func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery)
 Utility Functions
 */
 
-func queryWithNodeIDRegexFilter(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+").Query())
-}
-
 func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
@@ -166,10 +161,6 @@ func (resolver *nodeComponentResolver) nodeComponentScopeContext(ctx context.Con
 
 func (resolver *nodeComponentResolver) nodeComponentQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
-}
-
-func (resolver *nodeComponentResolver) nodeComponentRawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetId()).Query()
 }
 
 func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns []*storage.NodeVulnerability, query *v1.Query) ([]NodeVulnerabilityResolver, error) {

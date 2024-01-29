@@ -21,7 +21,7 @@ func Test_colorWriter_Write(t *testing.T) {
 	}{
 		{
 			given:    "(TOTAL: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)",
-			expected: "(TOTAL: 0, \x1b[34;2mLOW\x1b[0m: 0, \x1b[33mMEDIUM\x1b[0m: 0, \x1b[95mHIGH\x1b[0m: 0, \x1b[31;1mCRITICAL\x1b[0m: 0)",
+			expected: "(TOTAL: 0, \x1b[34;2mLOW\x1b[0;22m: 0, \x1b[33mMEDIUM\x1b[0m: 0, \x1b[95mHIGH\x1b[0m: 0, \x1b[31;1mCRITICAL\x1b[0;22m: 0)",
 		},
 		{
 			given:    "Lorem ipsum dolor sit amet, consectetur adipiscing elit",

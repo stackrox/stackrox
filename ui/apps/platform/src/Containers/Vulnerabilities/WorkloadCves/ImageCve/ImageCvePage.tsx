@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Alert,
@@ -31,15 +31,19 @@ import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import {
-    CLUSTER_SEARCH_OPTION,
-    DEPLOYMENT_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-    NAMESPACE_SEARCH_OPTION,
     SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+    IMAGE_SEARCH_OPTION,
+    DEPLOYMENT_SEARCH_OPTION,
+    NAMESPACE_SEARCH_OPTION,
+    CLUSTER_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+} from 'Containers/Vulnerabilities/searchOptions';
+import useAnalytics, { WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED } from 'hooks/useAnalytics';
 import {
     getHiddenSeverities,
     getOverviewCvesPath,
+    getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
@@ -64,7 +68,7 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../SummaryCards/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import { VulnerabilitySeverityLabel } from '../types';
+import { EntityTab, VulnerabilitySeverityLabel } from '../types';
 import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
@@ -101,7 +105,11 @@ export const imageCveSummaryQuery = gql`
 export const imageCveAffectedImagesQuery = gql`
     ${imagesForCveFragment}
     # by default, query must include the CVE id
-    query getImagesForCVE($query: String, $pagination: Pagination) {
+    query getImagesForCVE(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
         images(query: $query, pagination: $pagination) {
             ...ImagesForCVE
         }
@@ -118,6 +126,7 @@ export const imageCveAffectedDeploymentsQuery = gql`
         $moderateImageCountQuery: String
         $importantImageCountQuery: String
         $criticalImageCountQuery: String
+        $statusesForExceptionCount: [String!]
     ) {
         deployments(query: $query, pagination: $pagination) {
             ...DeploymentsForCVE
@@ -157,9 +166,12 @@ const searchOptions: SearchOption[] = [
     DEPLOYMENT_SEARCH_OPTION,
     NAMESPACE_SEARCH_OPTION,
     CLUSTER_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
 function ImageCvePage() {
+    const { analyticsTrack } = useAnalytics();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -211,6 +223,7 @@ function ImageCvePage() {
         {
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedImagesQuery, {
         variables: {
@@ -220,6 +233,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Image',
     });
@@ -227,7 +241,7 @@ function ImageCvePage() {
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
         const filters = { ...querySearchFilter, CVE: [cveId] };
         if (severity) {
-            filters.Severity = [severity];
+            filters.SEVERITY = [severity];
         }
         return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
     }
@@ -241,6 +255,7 @@ function ImageCvePage() {
             importantImageCountQuery: string;
             criticalImageCountQuery: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
     >(imageCveAffectedDeploymentsQuery, {
         variables: {
@@ -254,6 +269,7 @@ function ImageCvePage() {
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Deployment',
     });
@@ -281,6 +297,21 @@ function ImageCvePage() {
         tableError = deploymentDataRequest.error;
         tableLoading = deploymentDataRequest.loading;
     }
+
+    function trackEntityTabView(entityTab: EntityTab) {
+        analyticsTrack({
+            event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
+            properties: {
+                type: entityTab,
+                page: 'CVE Detail',
+            },
+        });
+    }
+
+    // Track the initial entity tab view
+    useEffect(() => {
+        trackEntityTabView(entityTab);
+    }, []);
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
     if (metadataRequest.data && metadataRequest.data.imageCVE === null) {
@@ -330,7 +361,11 @@ function ImageCvePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1">
-                <VulnerabilityStateTabs titleOverrides={{ observed: 'Workloads' }} isBox />
+                <VulnerabilityStateTabs
+                    titleOverrides={{ observed: 'Workloads' }}
+                    isBox
+                    onChange={() => setPage(1)}
+                />
                 <div className="pf-u-background-color-100">
                     <div className="pf-u-px-sm">
                         <WorkloadTableToolbar
@@ -391,6 +426,7 @@ function ImageCvePage() {
                                     entityTabs={imageCveEntities}
                                     setSortOption={setSortOption}
                                     setPage={setPage}
+                                    onChange={trackEntityTabView}
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
@@ -431,6 +467,8 @@ function ImageCvePage() {
                                                 images={imageData?.images ?? []}
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                         {entityTab === 'Deployment' && (
@@ -439,8 +477,10 @@ function ImageCvePage() {
                                                 getSortParams={getSortParams}
                                                 isFiltered={isFiltered}
                                                 filteredSeverities={
-                                                    searchFilter.Severity as VulnerabilitySeverityLabel[]
+                                                    searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
                                                 }
+                                                cve={cveId}
+                                                vulnerabilityState={currentVulnerabilityState}
                                             />
                                         )}
                                     </div>

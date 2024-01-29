@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/enricher.go -source enricher.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -14,6 +15,7 @@ import (
 
 	storage "github.com/stackrox/rox/generated/storage"
 	enricher "github.com/stackrox/rox/pkg/images/enricher"
+	types "github.com/stackrox/rox/pkg/scanners/types"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -72,7 +74,7 @@ func (mr *MockImageEnricherMockRecorder) EnrichWithSignatureVerificationData(ctx
 }
 
 // EnrichWithVulnerabilities mocks base method.
-func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
+func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components *types.ScanComponents, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", image, components, notes)
 	ret0, _ := ret[0].(enricher.EnrichmentResult)

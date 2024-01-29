@@ -42,7 +42,6 @@ func (s *RoleDependencySuite) TearDownTest() {
 }
 
 func (s *RoleDependencySuite) SetupSuite() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	if testContext, err := helper.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {

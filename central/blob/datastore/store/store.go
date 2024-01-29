@@ -4,19 +4,17 @@ import (
 	"context"
 	"io"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/blob/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
-	log          = logging.LoggerForModule()
 	scopeChecker = sac.ForResource(resources.Administration)
 )
 

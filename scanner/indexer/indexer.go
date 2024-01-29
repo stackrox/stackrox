@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,82 +17,183 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/dpkg"
+	"github.com/quay/claircore/gobin"
+	ccindexer "github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
+	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
+// ecosystems specifies the package ecosystems to use for indexing.
+func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
+	es := []*ccindexer.Ecosystem{
+		alpine.NewEcosystem(ctx),
+		dpkg.NewEcosystem(ctx),
+		gobin.NewEcosystem(ctx),
+		java.NewEcosystem(ctx),
+		python.NewEcosystem(ctx),
+		rhcc.NewEcosystem(ctx),
+		rhel.NewEcosystem(ctx),
+		rpm.NewEcosystem(ctx),
+		ruby.NewEcosystem(ctx),
+	}
+	if env.ScannerV4NodeJSSupport.BooleanSetting() {
+		es = append(es, nodejs.NewEcosystem(ctx))
+	}
+	return es
+}
+
+// ReportGetter can get index reports from an Indexer.
+type ReportGetter interface {
+	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
+}
+
 // Indexer represents an image indexer.
 //
 //go:generate mockgen-wrapper
 type Indexer interface {
-	IndexContainerImage(context.Context, claircore.Digest, string, ...Option) (*claircore.IndexReport, error)
-	GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error)
+	ReportGetter
+	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
 }
 
 // localIndexer is the Indexer implementation that runs libindex locally.
 type localIndexer struct {
 	libIndex        *libindex.Libindex
+	pool            *pgxpool.Pool
+	root            string
 	getLayerTimeout time.Duration
 }
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.NewIndexer")
+
+	var success bool
+
 	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
+	defer func() {
+		if !success {
+			pool.Close()
+		}
+	}()
+
 	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = store.Close(ctx)
+		}
+	}()
+
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer postgres locker: %w", err)
 	}
+	defer func() {
+		if !success {
+			_ = locker.Close(ctx)
+		}
+	}()
 
-	// TODO: Update the HTTP client.
-	c := http.DefaultClient
-	// TODO: When adding Indexer.Close(), make sure to clean-up /tmp.
-	faRoot, err := os.MkdirTemp("", "scanner-fetcharena-*")
+	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer root directory: %w", err)
 	}
-	defer utils.IgnoreError(func() error {
-		if err != nil {
-			return os.RemoveAll(faRoot)
+	defer func() {
+		if !success {
+			_ = os.RemoveAll(root)
 		}
+	}()
+
+	indexer, err := newLibindex(ctx, cfg, root, store, locker)
+	if err != nil {
+		return nil, err
+	}
+
+	success = true
+	return &localIndexer{
+		libIndex:        indexer,
+		pool:            pool,
+		root:            root,
+		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
+	}, nil
+}
+
+func castToConfig[T any](f func(cfg T)) func(o any) error {
+	return func(o any) error {
+		cfg, ok := o.(T)
+		if !ok {
+			return errors.New("internal error: casting failed")
+		}
+		f(cfg)
 		return nil
-	})
+	}
+}
+
+func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, root string, store ccindexer.Store, locker *ctxlock.Locker) (*libindex.Libindex, error) {
+	// TODO: Update the HTTP client.
+	c := http.DefaultClient
 	// TODO: Consider making layer scan concurrency configurable?
 	opts := libindex.Options{
 		Store:                store,
 		Locker:               locker,
-		FetchArena:           libindex.NewRemoteFetchArena(c, faRoot),
+		FetchArena:           libindex.NewRemoteFetchArena(c, root),
 		ScanLockRetry:        libindex.DefaultScanLockRetry,
 		LayerScanConcurrency: libindex.DefaultLayerScanConcurrency,
+		Ecosystems:           ecosystems(ctx),
+		ScannerConfig: struct {
+			Package, Dist, Repo, File map[string]func(any) error
+		}{
+			Repo: map[string]func(any) error{
+				"rhel-repository-scanner": castToConfig(func(cfg *rhel.RepositoryScannerConfig) {
+					cfg.Repo2CPEMappingURL = indexerCfg.RepositoryToCPEURL
+					cfg.Repo2CPEMappingFile = indexerCfg.RepositoryToCPEFile
+				}),
+			},
+			Package: map[string]func(any) error{
+				"rhel_containerscanner": castToConfig(func(cfg *rhcc.ScannerConfig) {
+					cfg.Name2ReposMappingURL = indexerCfg.NameToReposURL
+					cfg.Name2ReposMappingFile = indexerCfg.NameToReposFile
+				}),
+			},
+		},
 	}
-
 	indexer, err := libindex.New(ctx, &opts, c)
 	if err != nil {
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
 
-	return &localIndexer{
-		libIndex:        indexer,
-		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
-	}, nil
+	return indexer, nil
 }
 
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
-	return i.libIndex.Close(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	i.pool.Close()
+	return err
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
@@ -100,11 +202,15 @@ func (i *localIndexer) Close(ctx context.Context) error {
 // the layer's URI and headers.
 func (i *localIndexer) IndexContainerImage(
 	ctx context.Context,
-	manifestDigest claircore.Digest,
+	hashID string,
 	imageURL string,
 	opts ...Option,
 ) (*claircore.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
+	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, err
+	}
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
@@ -130,7 +236,7 @@ func (i *localIndexer) IndexContainerImage(
 		if err != nil {
 			return nil, fmt.Errorf("getting layer digests: %w", err)
 		}
-		// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
+		// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 		layerReq, err := getLayerRequest(httpClient, imgRef, layerDigest)
 		if err != nil {
 			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
@@ -203,15 +309,29 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 	return res.Request, nil
 }
 
-// GetIndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
-func (i *localIndexer) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
+// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists.
+func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	manifestDigest, err := createManifestDigest(hashID)
+	if err != nil {
+		return nil, false, err
+	}
 	return i.libIndex.IndexReport(ctx, manifestDigest)
+}
+
+// createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
+func createManifestDigest(hashID string) (claircore.Digest, error) {
+	hashIDSum := sha512.Sum512([]byte(hashID))
+	d, err := claircore.NewDigest(claircore.SHA512, hashIDSum[:])
+	if err != nil {
+		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
+	}
+	return d, nil
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
 // a list of layers.
 func getContainerImageLayers(ctx context.Context, ref name.Reference, o options) ([]v1.Layer, error) {
-	// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
+	// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 	desc, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuth(o.auth), remote.WithPlatform(o.platform))
 	if err != nil {
 		return nil, err
@@ -227,11 +347,11 @@ func getContainerImageLayers(ctx context.Context, ref name.Reference, o options)
 	return layers, nil
 }
 
-// parseContainerImageURL returns a image reference from an image URL.
+// parseContainerImageURL returns an image reference from an image URL.
 func parseContainerImageURL(imageURL string) (name.Reference, error) {
 	// We expect input was sanitized, so all errors here are considered internal errors.
 	if imageURL == "" {
-		return nil, errors.New("invalid URL")
+		return nil, errors.New("invalid URL: empty")
 	}
 	// Parse image reference to ensure it is valid.
 	parsedURL, err := url.Parse(imageURL)
@@ -245,7 +365,7 @@ func parseContainerImageURL(imageURL string) (name.Reference, error) {
 		parseOpts = append(parseOpts, name.Insecure)
 	case "https":
 	default:
-		return nil, errors.New("invalid URL")
+		return nil, fmt.Errorf("invalid URL scheme %q", parsedURL.Scheme)
 	}
 	// Strip the URL scheme:// and parse host/path as an image reference.
 	imageRef := strings.TrimPrefix(imageURL, parsedURL.Scheme+"://")

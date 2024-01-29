@@ -20,12 +20,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	clusterOS = ""
-
-	waitForIndexing = true
-)
-
 var (
 	allAccessCtx = sac.WithAllAccess(context.Background())
 )

@@ -3,20 +3,20 @@ package handler
 import (
 	"archive/zip"
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	blob "github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/snapshot"
-	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -46,6 +46,13 @@ const (
 
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
+
+	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
+	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
+	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	cvssFile          = "nvd-bundle/nvd-data.tar.gz"
+	mappingUpdaterKey = "mapping"
+	cvssUpdaterKey    = "cvss"
 )
 
 var (
@@ -55,6 +62,11 @@ var (
 	}
 
 	log = logging.LoggerForModule()
+
+	v4FileMapping = map[string]string{
+		"name2cpe": "repomapping-tmp/container-name-repos-map.json",
+		"repo2cpe": "repomapping-tmp/repository-to-cpe.json",
+	}
 )
 
 type requestedUpdater struct {
@@ -64,8 +76,6 @@ type requestedUpdater struct {
 
 // httpHandler handles HTTP GET and POST requests for vulnerability data.
 type httpHandler struct {
-	cveManager fetcher.OrchestratorIstioCVEManager
-
 	online        bool
 	interval      time.Duration
 	lock          sync.Mutex
@@ -75,10 +85,8 @@ type httpHandler struct {
 }
 
 // New creates a new http.Handler to handle vulnerability data.
-func New(cveManager fetcher.OrchestratorIstioCVEManager, blobStore blob.Datastore, opts handlerOpts) http.Handler {
+func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 	h := &httpHandler{
-		cveManager: cveManager,
-
 		online:    !env.OfflineModeEnv.BooleanSetting(),
 		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
 		blobStore: blobStore,
@@ -114,6 +122,18 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
+	if fileType := r.URL.Query().Get("file"); fileType != "" {
+		if v4FileName, exists := v4FileMapping[fileType]; exists {
+			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
+			return
+		}
+		if fileType == "cvss" {
+			h.getV4Files(w, r, cvssUpdaterKey, "")
+			return
+		}
+		writeErrorNotFound(w)
+	}
+
 	// Open the most recent definitions file for the provided `uuid`.
 	uuid := r.URL.Query().Get(`uuid`)
 	f, err := h.openMostRecentDefinitions(r.Context(), uuid)
@@ -169,31 +189,37 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 }
 
 // getUpdater gets or creates the updater for the scanner definitions
-// identified by the given uuid.
+// identified by the given key/uuid.
 // If the updater is created here, it is no started here, as it is a blocking operation.
-func (h *httpHandler) getUpdater(uuid string) *requestedUpdater {
+func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	u, exists := h.updaters[uuid]
+	updater, exists := h.updaters[key]
 	if !exists {
-		filePath := filepath.Join(h.onlineVulnDir, uuid+".zip")
+		filePath := filepath.Join(h.onlineVulnDir, key)
 
-		h.updaters[uuid] = &requestedUpdater{
-			updater: newUpdater(
-				file.New(filePath),
-				client,
-				strings.Join([]string{scannerUpdateDomain, uuid, scannerUpdateURLSuffix}, "/"),
-				h.interval,
-			),
+		var urlStr string
+		switch key {
+		case mappingUpdaterKey:
+			urlStr, _ = url.JoinPath(v4StorageDomain, mappingFile)
+			filePath += ".zip"
+		case cvssUpdaterKey:
+			urlStr, _ = url.JoinPath(v4StorageDomain, cvssFile)
+			filePath += ".tar.gz"
+		default: // uuid
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
+			filePath += ".zip"
 		}
 
-		u = h.updaters[uuid]
+		h.updaters[key] = &requestedUpdater{
+			updater: newUpdater(file.New(filePath), client, urlStr, h.interval),
+		}
+		updater = h.updaters[key]
 	}
 
-	u.lastRequestedTime = time.Now()
-
-	return u
+	updater.lastRequestedTime = time.Now()
+	return updater
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
@@ -336,7 +362,6 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	// only start the updater once. The Start() call blocks if the definitions were
 	// not downloaded yet.
 	u := h.getUpdater(uuid)
-	u.Start()
 
 	toClose := func(f *vulDefFile) {
 		if file != f && f != nil {
@@ -346,7 +371,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 
 	// Open both the "online" and "offline", and save their modification times.
 	var onlineFile *vulDefFile
-	onlineOSFile, onlineTime, err := u.file.Open()
+	onlineOSFile, onlineTime, err := h.startUpdaterAndOpenFile(u)
 	if err != nil {
 		return
 	}
@@ -368,6 +393,46 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 		file = offlineFile
 	}
 	return
+}
+
+func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (file *vulDefFile, err error) {
+	// TODO(ROX-20520): enable fetching offline file
+	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
+	u := h.getUpdater(updaterKey)
+	var onlineFile *vulDefFile
+	// Ensure the updater is running.
+	u.Start()
+	openedFile, onlineTime, err := u.file.Open()
+	if err != nil {
+		return nil, err
+	}
+	if openedFile == nil {
+		return nil, errors.New("updater file was not found")
+	}
+	log.Debugf("Compressed data file is available: %s", openedFile.Name())
+	toClose := func(f *vulDefFile) {
+		if file != f && f != nil {
+			utils.IgnoreError(f.Close)
+		}
+	}
+	switch updaterKey {
+	case cvssUpdaterKey:
+		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
+	case mappingUpdaterKey:
+		targetFile, err := openFromArchive(openedFile.Name(), fileName)
+		if err != nil {
+			return nil, err
+		}
+		if targetFile == nil {
+			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
+		}
+		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
+	default:
+		return nil, fmt.Errorf("internal error: updater key: %s", updaterKey)
+	}
+	defer toClose(onlineFile)
+	file = onlineFile
+	return file, nil
 }
 
 // openFromArchive returns a file object for a name within the definitions
@@ -421,4 +486,44 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 		return nil, errors.Wrap(err, "writing to temporary file")
 	}
 	return tmpFile, nil
+}
+
+func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updaterKey, fileName string) {
+	log.Infof("Fetching repository mapping file: %s", fileName)
+
+	var err error
+	var f *vulDefFile
+
+	switch updaterKey {
+	case cvssUpdaterKey:
+		f, err = h.openMostRecentFile(cvssUpdaterKey, "")
+	case mappingUpdaterKey:
+		f, err = h.openMostRecentFile(mappingUpdaterKey, fileName)
+	default:
+		errMsg := fmt.Sprintf("internal error: invalid updater key: %s", updaterKey)
+		log.Error(errMsg)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		return
+	}
+
+	if err != nil {
+		errMsg := fmt.Sprintf("could not read file: %v", err)
+		log.Error(errMsg)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
+		return
+	}
+
+	http.ServeContent(w, r, f.Name(), f.modTime, f)
+}
+
+func (h *httpHandler) startUpdaterAndOpenFile(u *requestedUpdater) (*os.File, time.Time, error) {
+	u.Start()
+	osFile, modTime, err := u.file.Open()
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	if osFile == nil {
+		return nil, time.Time{}, nil
+	}
+	return osFile, modTime, nil
 }

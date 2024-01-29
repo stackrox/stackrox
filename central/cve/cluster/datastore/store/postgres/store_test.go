@@ -35,6 +35,7 @@ func (s *ClusterCvesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE cluster_cves CASCADE")
 	s.T().Log("cluster_cves", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

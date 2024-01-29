@@ -11,11 +11,6 @@ import (
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Service provides the interface to the microservice that serves deployment data.

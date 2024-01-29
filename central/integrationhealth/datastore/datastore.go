@@ -5,11 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/integrationhealth/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for modifying integration health data.

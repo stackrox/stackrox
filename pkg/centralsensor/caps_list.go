@@ -13,6 +13,9 @@ const (
 	// SensorDetectionCap identifies the capability to run detection from sensor
 	SensorDetectionCap SensorCapability = "SensorDetection"
 
+	// SensorEnhancedDeploymentCheckCap identifies the capability for sensor to enhance roxctl deployment check
+	SensorEnhancedDeploymentCheckCap SensorCapability = "SensorEnhancedDeploymentCheck"
+
 	// ComplianceInNodesCap identifies the capability to run compliance in compliance pods
 	ComplianceInNodesCap SensorCapability = "ComplianceInNodes"
 
@@ -37,6 +40,12 @@ const (
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
 
-	// SensorReconciliationOnReconnect identifies the capability to receive resource hashes from Central when reconnecting.
-	SensorReconciliationOnReconnect = "SensorReconciliationOnReconnect"
+	// SendDeduperStateOnReconnect identifies the capability to receive resource hashes from Central when reconnecting.
+	SendDeduperStateOnReconnect = "SendDeduperStateOnReconnect"
+
+	// ComplianceV2Integrations identifies the capability of central to support V2 integrations with compliance operator
+	ComplianceV2Integrations = "ComplianceV2Integrations"
+
+	// ScannerV4Supported identifies the capability of Central to support Scanner V4 related requests from Sensor.
+	ScannerV4Supported = "ScannerV4Supported"
 )

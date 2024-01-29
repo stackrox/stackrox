@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // PgxPoolConn is an interface to interact with pgxpool.Conn

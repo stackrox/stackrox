@@ -15,8 +15,8 @@ import {
 } from '@patternfly/react-topology';
 
 import { networkBasePath } from 'routePaths';
-import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
+import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
@@ -30,14 +30,15 @@ import { CustomModel, CustomNodeModel } from './types/topology.type';
 import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
+import { EdgeState } from './components/EdgeStateSelect';
+import { deploymentTabs } from './utils/deploymentUtils';
+import EmptyUnscopedState from './components/EmptyUnscopedState';
 import {
     NetworkPolicySimulator,
     SetNetworkPolicyModification,
 } from './hooks/useNetworkPolicySimulator';
-import { EdgeState } from './components/EdgeStateSelect';
-import { deploymentTabs } from './utils/deploymentUtils';
-import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 import { NetworkScopeHierarchy } from './types/networkScopeHierarchy';
+import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
 
 // TODO: move these type defs to a central location
 export const UrlDetailType = {
@@ -56,6 +57,7 @@ function getUrlParamsForEntity(type, id): [UrlDetailTypeValue, string] {
 }
 
 export type TopologyComponentProps = {
+    isReadyForVisualization: boolean;
     model: CustomModel;
     simulation: Simulation;
     selectedNode?: CustomNodeModel;
@@ -66,6 +68,7 @@ export type TopologyComponentProps = {
 };
 
 const TopologyComponent = ({
+    isReadyForVisualization,
     model,
     simulation,
     selectedNode,
@@ -138,7 +141,7 @@ const TopologyComponent = ({
     }, [controller]);
 
     const panNodeIntoView = useCallback(
-        (node) => {
+        (node: CustomNodeModel) => {
             const selectedNodeElement = controller.getNodeById(node.id);
             if (selectedNodeElement) {
                 // the offset is to make sure the label also makes it inside the viewport
@@ -234,24 +237,34 @@ const TopologyComponent = ({
             sideBarOpen={!!selectedNode || simulation.isOn}
             sideBarResizable
             controlBar={
-                <TopologyControlBar
-                    controlButtons={createTopologyControlButtons({
-                        ...defaultControlButtonsOptions,
-                        zoomInCallback,
-                        zoomOutCallback,
-                        fitToScreenCallback,
-                        resetViewCallback,
-                    })}
-                />
+                isReadyForVisualization ? (
+                    <TopologyControlBar
+                        controlButtons={createTopologyControlButtons({
+                            ...defaultControlButtonsOptions,
+                            zoomInCallback,
+                            zoomOutCallback,
+                            fitToScreenCallback,
+                            resetViewCallback,
+                        })}
+                    />
+                ) : undefined
             }
         >
-            <VisualizationSurface state={{ selectedIds }} />
-            <Popover
-                aria-label="Network graph legend"
-                bodyContent={<LegendContent />}
-                hasAutoWidth
-                reference={() => document.getElementById('legend') as HTMLButtonElement}
-            />
+            {isReadyForVisualization ? (
+                <>
+                    <VisualizationSurface state={{ selectedIds }} />
+                    <Popover
+                        aria-label="Network graph legend"
+                        bodyContent={<LegendContent />}
+                        hasAutoWidth
+                        reference={() => document.getElementById('legend') as HTMLButtonElement}
+                    />
+                </>
+            ) : (
+                <div className="pf-u-h-100 pf-u-w-100 pf-u-background-color-100">
+                    <EmptyUnscopedState />
+                </div>
+            )}
         </TopologyView>
     );
 };

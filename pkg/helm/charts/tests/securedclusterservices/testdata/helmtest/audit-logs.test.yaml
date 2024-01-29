@@ -1,4 +1,6 @@
 values:
+  imagePullSecrets:
+    allowNone: true
   monitoring:
     openshift:
       enabled: false

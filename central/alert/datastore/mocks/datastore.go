@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/datastore.go -source datastore.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -226,4 +227,18 @@ func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.ListAlert)
 func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockDataStore) WalkByQuery(ctx context.Context, q *v1.Query, db func(*storage.Alert) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, q, db)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, q, db any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, q, db)
 }

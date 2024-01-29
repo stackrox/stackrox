@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "with default settings"
   expect: |

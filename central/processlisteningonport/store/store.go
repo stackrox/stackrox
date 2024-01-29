@@ -14,7 +14,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
@@ -26,7 +26,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
-
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 	GetProcessListeningOnPort(
 		ctx context.Context,
 		deploymentID string,

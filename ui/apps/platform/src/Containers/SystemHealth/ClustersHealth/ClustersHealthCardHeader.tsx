@@ -27,8 +27,8 @@ function ClustersHealthCardHeader({
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : !counts
-        ? ErrorIcon
-        : healthIconMap[getClustersHealthVariant(counts)];
+          ? ErrorIcon
+          : healthIconMap[getClustersHealthVariant(counts)];
     /* eslint-enable no-nested-ternary */
 
     const phrase = counts === null ? '' : getClustersHealthPhrase(counts);

@@ -8,7 +8,6 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 /*
@@ -36,50 +35,32 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 		return nil, nil
 	}
 
-	var clusters []string
 	scanClusters, err := configDS.GetScanConfigClusterStatus(ctx, scanConfig.GetId())
 	if err != nil {
 		return nil, err
 	}
 
+	clusters := make([]string, 0, len(scanClusters))
 	for _, cluster := range scanClusters {
 		clusters = append(clusters, cluster.GetClusterId())
 	}
 
-	// TODO(ROX-18102):  See if we want to lookup profile name by id instead of storing it
-	var profiles []string
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
-		profiles = append(profiles, profile.GetProfileName())
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
+	for _, profile := range scanConfig.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileId())
 	}
 
 	return &v2.ComplianceScanConfiguration{
-		ScanName: scanConfig.GetScanName(),
+		Id:       scanConfig.Id,
+		ScanName: scanConfig.GetScanConfigName(),
 		Clusters: clusters,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
+			Description:  scanConfig.GetDescription(),
 		},
 	}, nil
-}
-
-func convertStorageProtos(ctx context.Context, scanConfigs []*storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) ([]*v2.ComplianceScanConfiguration, error) {
-	if scanConfigs == nil {
-		return nil, nil
-	}
-
-	scanSettings := make([]*v2.ComplianceScanConfiguration, 0, len(scanConfigs))
-	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2(ctx, scanConfig, configDS)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration with name %s to response", scanConfig.GetScanName())
-		}
-
-		scanSettings = append(scanSettings, converted)
-	}
-
-	return scanSettings, nil
 }
 
 func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.ComplianceScanConfiguration) *storage.ComplianceOperatorScanConfigurationV2 {
@@ -87,18 +68,22 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		return nil
 	}
 
-	var profiles []*storage.ProfileShim
+	profiles := make([]*storage.ProfileShim, 0, len(scanConfig.GetScanConfig().GetProfiles()))
 	for _, profile := range scanConfig.GetScanConfig().GetProfiles() {
 		profiles = append(profiles, &storage.ProfileShim{
-			// TODO(ROX-18102):  look up the profile.  Doing this now to use a single profile to demonstrate
-			// flow.
-			ProfileId:   uuid.NewV5FromNonUUIDs("", profile).String(),
-			ProfileName: profile,
+			ProfileId: profile,
+		})
+	}
+
+	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(scanConfig.GetClusters()))
+	for _, cluster := range scanConfig.GetClusters() {
+		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			ClusterId: cluster,
 		})
 	}
 
 	return &storage.ComplianceOperatorScanConfigurationV2{
-		ScanName:               scanConfig.GetScanName(),
+		ScanConfigName:         scanConfig.GetScanName(),
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
 		OneTimeScan:            false,
@@ -106,6 +91,8 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		Schedule:               convertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
 		Profiles:               profiles,
 		ModifiedBy:             authn.UserFromContext(ctx),
+		Description:            scanConfig.GetScanConfig().GetDescription(),
+		Clusters:               clusters,
 	}
 }
 
@@ -173,16 +160,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		return nil, err
 	}
 
-	// TODO(ROX-18102):  Lookup profiles
-	var profiles []string
-	scanProfiles := scanConfig.GetProfiles()
-	for _, profile := range scanProfiles {
-		profiles = append(profiles, profile.GetProfileName())
+	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
+	for _, profile := range scanConfig.GetProfiles() {
+		profiles = append(profiles, profile.GetProfileId())
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{
 		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanName(),
+		ScanName: scanConfig.GetScanConfigName(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
@@ -199,6 +184,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 			OneTimeScan:  scanConfig.GetOneTimeScan(),
 			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
 			Profiles:     profiles,
+			Description:  scanConfig.GetDescription(),
 		},
 		ModifiedBy: &v2.SlimUser{
 			Id:   scanConfig.GetModifiedBy().GetId(),
@@ -218,7 +204,7 @@ func convertStorageScanConfigToV2ScanStatuses(ctx context.Context, scanConfigs [
 	for _, scanConfig := range scanConfigs {
 		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanName())
+			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanConfigName())
 		}
 
 		scanStatuses = append(scanStatuses, converted)

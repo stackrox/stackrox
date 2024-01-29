@@ -95,7 +95,10 @@ const ComponentFormMap = {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
     },
-} as Record<IntegrationSource, Record<IntegrationType, FunctionComponent<FormProps>>>;
+} as Record<
+    IntegrationSource,
+    Record<IntegrationType, FunctionComponent<React.PropsWithChildren<FormProps>>>
+>;
 
 function IntegrationForm({
     source,
@@ -113,7 +116,8 @@ function IntegrationForm({
         history.replace(integrationsPath);
     }
 
-    const Form: FunctionComponent<FormProps> = ComponentFormMap?.[source]?.[type];
+    const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
+        ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(
             `There are no integration form components for source (${source}) and type (${type})`

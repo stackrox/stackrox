@@ -1,4 +1,7 @@
 defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
   def verifyNodeAffinities(obj):
     [
       (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
@@ -27,8 +30,6 @@ server:
   visibleSchemas:
     - kubernetes-1.20.2
 values:
-  imagePullSecrets:
-    allowNone: true
   ca:
     cert: "CA cert"
     key: "CA key"
@@ -49,3 +50,16 @@ values:
     dbServiceTLS:
       cert: "ScannerDB cert"
       key: "ScannerDB key"
+  scannerV4:
+    indexer:
+      serviceTLS:
+        cert: "Indexer cert"
+        key: "Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "Matcher cert"
+        key: "Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerDB cert"
+        key: "ScannerDB key"

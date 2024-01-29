@@ -9,11 +9,16 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
-import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import { DefaultFilters, EntityTab, VulnerabilitySeverityLabel } from '../types';
+import {
+    getStatusesForExceptionCount,
+    getVulnStateScopedQueryString,
+    parseQuerySearchFilter,
+} from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
@@ -28,6 +33,7 @@ export type CVEsTableContainerProps = {
     vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
     isUnifiedDeferralsEnabled: boolean; // TODO Remove this when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    onEntityTabChange: (entityTab: EntityTab) => void;
 };
 
 function CVEsTableContainer({
@@ -36,6 +42,7 @@ function CVEsTableContainer({
     vulnerabilityState,
     pagination,
     isUnifiedDeferralsEnabled,
+    onEntityTabChange,
 }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -55,10 +62,13 @@ function CVEsTableContainer({
                 limit: perPage,
                 sortOption,
             },
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
+
+    const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
@@ -84,6 +94,7 @@ function CVEsTableContainer({
                     onExceptionRequestSuccess={(exception) => {
                         selectedCves.clear();
                         showModal({ type: 'COMPLETION', exception });
+                        return refetchAll();
                     }}
                     onClose={closeModals}
                 />
@@ -101,6 +112,7 @@ function CVEsTableContainer({
                 pagination={pagination}
                 tableRowCount={countsData.imageCVECount}
                 isFiltered={isFiltered}
+                onEntityTabChange={onEntityTabChange}
             >
                 {canSelectRows && (
                     <ToolbarItem alignment={{ default: 'alignRight' }}>
@@ -155,7 +167,7 @@ function CVEsTableContainer({
                         unfilteredImageCount={imageCountData?.imageCount || 0}
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
-                        filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                        filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                         selectedCves={selectedCves}
                         canSelectRows={canSelectRows}
                         vulnerabilityState={vulnerabilityState}

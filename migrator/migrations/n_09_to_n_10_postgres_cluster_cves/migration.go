@@ -37,7 +37,6 @@ var (
 		},
 	}
 	batchSize = 500
-	schema    = frozenSchema.ClusterCvesSchema
 	log       = loghelper.LogWrapper{}
 )
 

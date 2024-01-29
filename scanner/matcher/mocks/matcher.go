@@ -5,12 +5,14 @@
 //
 //	mockgen -package mocks -destination mocks/matcher.go -source matcher.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	claircore "github.com/quay/claircore"
 	gomock "go.uber.org/mock/gomock"
@@ -51,6 +53,21 @@ func (m *MockMatcher) Close(ctx context.Context) error {
 func (mr *MockMatcherMockRecorder) Close(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockMatcher)(nil).Close), ctx)
+}
+
+// GetLastVulnerabilityUpdate mocks base method.
+func (m *MockMatcher) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastVulnerabilityUpdate", ctx)
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastVulnerabilityUpdate indicates an expected call of GetLastVulnerabilityUpdate.
+func (mr *MockMatcherMockRecorder) GetLastVulnerabilityUpdate(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastVulnerabilityUpdate", reflect.TypeOf((*MockMatcher)(nil).GetLastVulnerabilityUpdate), ctx)
 }
 
 // GetVulnerabilities mocks base method.

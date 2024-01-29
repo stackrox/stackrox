@@ -35,6 +35,7 @@ func (s *GroupsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE groups CASCADE")
 	s.T().Log("groups", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

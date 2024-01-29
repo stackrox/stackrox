@@ -67,15 +67,15 @@ func (r *reconcileCentralDBPasswordExtensionRun) readAndSetPasswordFromReference
 
 func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		return r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, false, nil, nil, false)
+		return r.DeleteSecret(ctx, canonicalCentralDBPasswordSecretName)
 	}
 
 	centralSpec := r.centralObj.Spec.Central
 	if centralSpec != nil && centralSpec.DB != nil {
 		dbSpec := centralSpec.DB
 		dbPasswordSecret := dbSpec.PasswordSecret
-		if dbSpec.IsExternal() && dbPasswordSecret == nil {
-			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an external DB")
+		if dbSpec.ConnectionStringOverride != nil && dbPasswordSecret == nil {
+			return errors.New("setting spec.central.db.passwordSecret is mandatory when using an DB not managed by the operator")
 		}
 
 		if dbPasswordSecret != nil {
@@ -91,7 +91,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 
 	// At this point, r.password was set via readAndSetPasswordFromReferencedSecret above (user-specified mode), or is unset,
 	// in which case the auto-generation logic will take effect.
-	if err := r.ReconcileSecret(ctx, canonicalCentralDBPasswordSecretName, true, r.validateSecretData, r.generateDBPassword, true); err != nil {
+	if err := r.EnsureSecret(ctx, canonicalCentralDBPasswordSecretName, r.validateSecretData, r.generateDBPassword); err != nil {
 		return errors.Wrapf(err, "reconciling %s secret", canonicalCentralDBPasswordSecretName)
 	}
 	return nil
@@ -100,7 +100,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) Execute(ctx context.Context) er
 func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.SecretDataMap, _ bool) error {
 	password, err := passwordFromSecretData(data)
 	if err != nil {
-		return errors.Wrap(err, "validating existing secret data")
+		return errors.Wrap(err, "error validating existing secret data")
 	}
 	if r.password != "" && r.password != password {
 		return errors.New("existing password does not match expected one")
@@ -111,7 +111,7 @@ func (r *reconcileCentralDBPasswordExtensionRun) validateSecretData(data types.S
 	return nil
 }
 
-func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword() (types.SecretDataMap, error) {
+func (r *reconcileCentralDBPasswordExtensionRun) generateDBPassword(_ types.SecretDataMap) (types.SecretDataMap, error) {
 	if r.password == "" {
 		r.password = renderer.CreatePassword()
 	}

@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/store.go -source store.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -41,11 +42,12 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteByQuery indicates an expected call of DeleteByQuery.

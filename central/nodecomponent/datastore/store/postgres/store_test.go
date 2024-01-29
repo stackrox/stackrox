@@ -35,6 +35,7 @@ func (s *NodeComponentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE node_components CASCADE")
 	s.T().Log("node_components", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

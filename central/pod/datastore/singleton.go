@@ -6,7 +6,6 @@ import (
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -15,8 +14,6 @@ var (
 	once sync.Once
 
 	ps DataStore
-
-	log = logging.LoggerForModule()
 )
 
 // Singleton provides the interface for non-service external interaction.

@@ -7,13 +7,13 @@ import {
     Spinner,
     AlertGroup,
     AlertActionCloseButton,
-    AlertVariant,
     Divider,
     Button,
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import { policiesBasePath } from 'routePaths';
+import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import {
     getPolicies,
     reassessPolicies,
@@ -31,7 +31,6 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
-import PolicyManagementSubHeader from 'Containers/PolicyManagement/PolicyManagementSubHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 
@@ -212,7 +211,7 @@ function PoliciesTablePage({
         <>
             <PolicyManagementHeader currentTabTitle="Policies" />
             <Divider component="div" />
-            <PolicyManagementSubHeader
+            <TabNavSubHeader
                 description="Configure security policies for your resources."
                 actions={
                     hasWriteAccessForPolicy ? (
@@ -241,7 +240,7 @@ function PoliciesTablePage({
             <AlertGroup isToast isLiveRegion>
                 {toasts.map(({ key, variant, title, children }: Toast) => (
                     <Alert
-                        variant={AlertVariant[variant]}
+                        variant={variant}
                         title={title}
                         timeout={4000}
                         onTimeout={() => removeToast(key)}

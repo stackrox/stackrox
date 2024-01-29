@@ -5,11 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Searcher provides search functionality on existing network policies

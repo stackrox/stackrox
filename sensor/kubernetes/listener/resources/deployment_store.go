@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -28,23 +27,6 @@ type DeploymentStore struct {
 type snapshotEntry struct {
 	dependenciesHash uint64
 	builtDeployment  *storage.Deployment
-}
-
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypeDeployment.String() {
-		return "", nil
-	}
-	ds.lock.RLock()
-	defer ds.lock.RUnlock()
-	_, exists := ds.deployments[resID]
-	if !exists {
-		// found on Central, not found on Sensor - need to send a Delete message
-		return resID, nil
-	}
-	return "", nil
 }
 
 // newDeploymentStore creates and returns a new deployment store.
@@ -81,6 +63,7 @@ func (ds *DeploymentStore) Cleanup() {
 
 	ds.deploymentIDs = make(map[string]map[string]struct{})
 	ds.deployments = make(map[string]*deploymentWrap)
+	ds.deploymentSnapshots = make(map[string]snapshotEntry)
 }
 
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
@@ -93,6 +76,7 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	}
 	delete(ids, wrap.GetId())
 	delete(ds.deployments, wrap.GetId())
+	delete(ds.deploymentSnapshots, wrap.GetId())
 }
 
 func (ds *DeploymentStore) getDeploymentsByIDs(_ string, idSet set.StringSet) []*deploymentWrap {
@@ -258,6 +242,21 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment().Clone()
 }
 
+// GetSnapshot returns the snapshot of the deployment for the supplied id.
+// If the snapshot is not found, this functions returns a clone of the deployment.
+func (ds *DeploymentStore) GetSnapshot(id string) *storage.Deployment {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	if features.SensorDeploymentBuildOptimization.Enabled() {
+		if d, ok := ds.deploymentSnapshots[id]; ok {
+			return d.builtDeployment
+		}
+	}
+	wrap := ds.getWrapNoLock(id)
+	return wrap.GetDeployment().Clone()
+}
+
 // GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.
 func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, bool) {
 	ds.lock.Lock()
@@ -267,6 +266,18 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 		return nil, false
 	}
 	return wrap.GetDeployment().Clone(), wrap.isBuilt
+}
+
+// EnhanceDeploymentReadOnly takes a deployment.storage object and enhances it with available information
+// without changing the internal stores
+func (ds *DeploymentStore) EnhanceDeploymentReadOnly(d *storage.Deployment, dependencies store.Dependencies) {
+	wrap := deploymentWrap{
+		Deployment: d,
+	}
+	// Note: No need to check any pod info, as no new pods are created
+	wrap.populatePorts()
+	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
+	wrap.updatePortExposureSlice(dependencies.Exposures)
 }
 
 // BuildDeploymentWithDependencies creates storage.Deployment object using external object dependencies.

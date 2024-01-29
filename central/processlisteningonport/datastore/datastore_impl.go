@@ -39,6 +39,16 @@ func newDatastoreImpl(
 	}
 }
 
+func checkIfShouldUpdate(
+	existingPLOP *storage.ProcessListeningOnPortStorage,
+	newPLOP *storage.ProcessListeningOnPortFromSensor) bool {
+
+	return existingPLOP.CloseTimestamp != newPLOP.CloseTimestamp ||
+		(existingPLOP.PodUid == "" && newPLOP.PodUid != "") ||
+		(existingPLOP.ClusterId == "" && newPLOP.ClusterId != "") ||
+		(existingPLOP.Namespace == "" && newPLOP.Namespace != "")
+}
+
 func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
 	if plop == nil {
 		log.Warn("Plop is nil. Unable to set process indicator id. Plop will not appear in the API")
@@ -94,6 +104,7 @@ func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) s
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
 	ctx context.Context,
+	clusterID string,
 	portProcesses ...*storage.ProcessListeningOnPortFromSensor,
 ) error {
 	defer metrics.SetDatastoreFunctionDuration(
@@ -132,6 +143,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 	plopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
+		val.ClusterId = clusterID
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -154,18 +166,22 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		// There are three options:
-		// * We found an existing PLOP object with different close timestamp.
+		// * We found an existing PLOP object with different close timestamp or non-empty PodUid
 		//   It has to be updated.
 		// * We found an existing PLOP object with the same close timestamp.
 		//   Nothing has to be changed (XXX: Ideally it has to be excluded from
 		//   the upsert later on).
 		// * No existing PLOP object, create a new one with whatever close
 		//   timestamp we have received and fetched indicator ID.
-		if prevExists && existingPLOP.CloseTimestamp != val.CloseTimestamp {
+		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
+			// Update the timestamp and PodUid
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
+			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
+			existingPLOP.Namespace = val.Namespace
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -181,6 +197,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
+		val.ClusterId = clusterID
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -192,7 +209,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 		existingPLOP, prevExists := existingPLOPMap[plopKey]
 
-		// Best efforst to not duplicate data. If no process indicator with
+		// Best effort to not duplicate data. If no process indicator with
 		// such an id exists, we deal with a potentially orphaned PLOP, and
 		// need to store the process information. Otherwise processInfo is nil
 		// and will not be stored.
@@ -202,18 +219,17 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			processInfo = val.GetProcess()
 		}
 
-		if prevExists {
-			log.Debugf("Got existing PLOP to update timestamp: %s", plopStorageToNoSecretsString(existingPLOP))
+		if prevExists && checkIfShouldUpdate(existingPLOP, val) {
+			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
-			if existingPLOP.CloseTimestamp != nil &&
-				existingPLOP.CloseTimestamp != val.CloseTimestamp {
-
-				// An existing closed PLOP, update timestamp
+			// Update the timestamp and PodUid
+			if existingPLOP.Closed {
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
-				plopObjects = append(plopObjects, existingPLOP)
 			}
-
-			// Add nothing if the PLOP is active, i.e. CloseTimestamp == nil
+			existingPLOP.PodUid = val.PodUid
+			existingPLOP.ClusterId = val.ClusterId
+			existingPLOP.Namespace = val.Namespace
+			plopObjects = append(plopObjects, existingPLOP)
 		}
 
 		if !prevExists {
@@ -454,16 +470,6 @@ func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) str
 	)
 }
 
-func getProcessUniqueKey(process *storage.ProcessIndicator) string {
-	return getProcessUniqueKeyFromParts(
-		process.GetContainerName(),
-		process.GetPodId(),
-		process.GetSignal().GetName(),
-		process.GetSignal().GetArgs(),
-		process.GetSignal().GetExecFilePath(),
-	)
-}
-
 func getPlopKeyFromParts(protocol storage.L4Protocol, port uint32, indicatorID string) string {
 	return fmt.Sprintf("%d_%d_%s",
 		protocol,
@@ -502,6 +508,8 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		Process:            processInfo,
 		DeploymentId:       value.DeploymentId,
 		PodUid:             value.PodUid,
+		ClusterId:          value.ClusterId,
+		Namespace:          value.Namespace,
 		Closed:             value.CloseTimestamp != nil,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
@@ -516,5 +524,6 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 		return sac.ErrResourceAccessDenied
 	}
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
+	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
+	return storeErr
 }

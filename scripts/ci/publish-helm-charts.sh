@@ -35,12 +35,6 @@ fi
 
 tmp_remote_repository="$(mktemp -d)"
 
-gitbot(){
-	git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" \
-		-c "url.https://${GITHUB_TOKEN}:x-oauth-basic@github.com/.insteadOf=https://github.com/" \
-		"${@}"
-}
-
 gitbot clone "$remote_repository" "$tmp_remote_repository"
 
 branch_name="release/${version}"
@@ -49,8 +43,8 @@ gitbot -C "$tmp_remote_repository" checkout -b "$branch_name"
 
 mkdir "${tmp_remote_repository}/${remote_subdirectory}/${version}"
 
-cp -a "${central_services_chart}/stackrox" "${tmp_remote_repository}/${remote_subdirectory}/${version}/central-services"
-cp -a "${secured_cluster_services_chart}/stackrox" "${tmp_remote_repository}/${remote_subdirectory}/${version}/secured-cluster-services"
+cp -a "${central_services_chart}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/central-services"
+cp -a "${secured_cluster_services_chart}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/secured-cluster-services"
 
 mkdir "${tmp_remote_repository}/${remote_subdirectory}/rhacs/${version}"
 

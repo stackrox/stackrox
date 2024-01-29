@@ -6,9 +6,12 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/enhancement"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -32,6 +35,9 @@ func initialize() {
 		deploytime.SingletonDetector(),
 		deploytime.SingletonPolicySet(),
 		sachelper.NewClusterSacHelper(clusterDS),
+		connection.ManagerSingleton(),
+		enhancement.BrokerSingleton(),
+		networkpolicyDatastore.Singleton(),
 	)
 }
 

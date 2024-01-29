@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -151,16 +149,6 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 	return resolver.root.TopImageVulnerability(resolver.withImageScopeContext(ctx), args)
 }
 
-func (resolver *imageResolver) vulnQueryScoping(ctx context.Context) context.Context {
-	ctx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_IMAGES,
-		ID:    resolver.data.GetId(),
-	})
-	ctx = distroctx.Context(ctx, resolver.data.GetScan().GetOperatingSystem())
-
-	return ctx
-}
-
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
@@ -230,14 +218,6 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 		return nil
 	}
 	return image
-}
-
-func (resolver *imageResolver) getImageRawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).Query()
-}
-
-func (resolver *imageResolver) getImageQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
 }
 
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

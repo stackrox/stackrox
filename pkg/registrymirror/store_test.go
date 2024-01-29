@@ -328,29 +328,22 @@ func TestPullSources(t *testing.T) {
 	})
 
 	t.Run("error when CRs updated to bad state (sync)", func(t *testing.T) {
-		path := filepath.Join(t.TempDir(), fileName)
+		badPath := ""
 
-		s := NewFileStore(WithConfigPath(path), WithDelay(0))
+		s := NewFileStore(WithConfigPath(badPath), WithDelay(0))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
-		assert.NoError(t, err)
-
-		err = s.UpsertImageDigestMirrorSet(idmsA)
 		assert.Error(t, err)
 	})
 
 	t.Run("no error when CRs are updated to bad state (async)", func(t *testing.T) {
 		// the config update will fail and the failure logged, however because the write
 		// is async no error is returned.
-		path := filepath.Join(t.TempDir(), fileName)
+		badPath := ""
 
-		s := NewFileStore(WithConfigPath(path), WithDelay(30*time.Millisecond))
+		s := NewFileStore(WithConfigPath(badPath), WithDelay(30*time.Millisecond))
 
 		err := s.UpsertImageContentSourcePolicy(icspA)
-		assert.NoError(t, err)
-
-		err = s.UpsertImageDigestMirrorSet(idmsA)
-		time.Sleep(40 * time.Millisecond)
 		assert.NoError(t, err)
 	})
 

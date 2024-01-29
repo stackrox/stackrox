@@ -26,7 +26,7 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
             .then((clustersFetched) => {
                 setErrorMessageFetching('');
                 // TODO supersede src/Containers/Clusters/clusterTypes.ts with types/cluster.proto.ts
-                // eslint-disable-next-line
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 setClusters(clustersFetched);
                 setCurrentDatetime(new Date());

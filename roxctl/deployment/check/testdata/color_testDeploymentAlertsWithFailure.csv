@@ -13,4 +13,4 @@ policy 5,[33mMEDIUM[0m,-,wordpress,policy 5 for testing,"- testing alert viola
 - testing multiple alert violation messages 2
 - testing multiple alert violation messages 3",policy 5 for testing
 policy 6,[33mMEDIUM[0m,-,wordpress,policy 6 for testing,- testing alert violation message,policy 6 for testing
-policy 7,[34;2mLOW[0m,-,wordpress,policy 7 for testing,- testing alert violation message,policy 7 for testing
+policy 7,[34;2mLOW[0;22m,-,wordpress,policy 7 for testing,- testing alert violation message,policy 7 for testing

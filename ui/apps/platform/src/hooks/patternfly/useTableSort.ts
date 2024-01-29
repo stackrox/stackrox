@@ -29,10 +29,13 @@ function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTa
     // we'll construct a map of sort fields to ids that will make it easier to work with
     // PatternFly
     useEffect(() => {
-        const newFieldToIdMap = sortFields.reduce((acc, curr, index) => {
-            acc[curr] = index;
-            return acc;
-        }, {} as Record<string, number>);
+        const newFieldToIdMap = sortFields.reduce(
+            (acc, curr, index) => {
+                acc[curr] = index;
+                return acc;
+            },
+            {} as Record<string, number>
+        );
         setFieldToIdMap(newFieldToIdMap);
     }, [sortFields]);
 

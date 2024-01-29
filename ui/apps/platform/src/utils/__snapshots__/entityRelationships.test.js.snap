@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`entityRelationshipMap has properties and derived properties 1`] = `
-Object {
-  "CLUSTER": Object {
+{
+  "CLUSTER": {
     "1-children": "NAMESPACE NODE ROLE",
     "2-parents": "",
     "3-matches        ": "CLUSTER_CVE CONTROL",
@@ -11,7 +11,7 @@ Object {
     "6-getContains        ": "CONTROL DEPLOYMENT IMAGE IMAGE_COMPONENT IMAGE_CVE NAMESPACE NODE NODE_COMPONENT NODE_CVE POLICY ROLE SECRET SERVICE_ACCOUNT SUBJECT",
     "7-isContainedInferred": "CONTROL DEPLOYMENT IMAGE IMAGE_COMPONENT IMAGE_CVE NODE_COMPONENT NODE_CVE POLICY SECRET SERVICE_ACCOUNT SUBJECT",
   },
-  "CLUSTER_CVE": Object {
+  "CLUSTER_CVE": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "",
@@ -20,7 +20,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "CONTROL": Object {
+  "CONTROL": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "CLUSTER DEPLOYMENT NODE",
@@ -29,7 +29,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "DEPLOYMENT": Object {
+  "DEPLOYMENT": {
     "1-children": "IMAGE",
     "2-parents": "CLUSTER NAMESPACE",
     "3-matches        ": "CONTROL POLICY SECRET SERVICE_ACCOUNT",
@@ -38,7 +38,7 @@ Object {
     "6-getContains        ": "IMAGE IMAGE_COMPONENT IMAGE_CVE",
     "7-isContainedInferred": "IMAGE_COMPONENT IMAGE_CVE",
   },
-  "IMAGE": Object {
+  "IMAGE": {
     "1-children": "IMAGE_COMPONENT",
     "2-parents": "",
     "3-matches        ": "DEPLOYMENT",
@@ -47,7 +47,7 @@ Object {
     "6-getContains        ": "IMAGE_COMPONENT IMAGE_CVE",
     "7-isContainedInferred": "IMAGE_CVE",
   },
-  "IMAGE_COMPONENT": Object {
+  "IMAGE_COMPONENT": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "IMAGE IMAGE_CVE",
@@ -56,7 +56,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "IMAGE_CVE": Object {
+  "IMAGE_CVE": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "IMAGE_COMPONENT",
@@ -65,7 +65,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "NAMESPACE": Object {
+  "NAMESPACE": {
     "1-children": "DEPLOYMENT SECRET SERVICE_ACCOUNT",
     "2-parents": "CLUSTER",
     "3-matches        ": "",
@@ -74,7 +74,7 @@ Object {
     "6-getContains        ": "CONTROL DEPLOYMENT IMAGE IMAGE_COMPONENT IMAGE_CVE POLICY ROLE SECRET SERVICE_ACCOUNT",
     "7-isContainedInferred": "CONTROL IMAGE IMAGE_COMPONENT IMAGE_CVE POLICY ROLE",
   },
-  "NODE": Object {
+  "NODE": {
     "1-children": "NODE_COMPONENT",
     "2-parents": "CLUSTER",
     "3-matches        ": "CONTROL",
@@ -83,7 +83,7 @@ Object {
     "6-getContains        ": "NODE_COMPONENT NODE_CVE",
     "7-isContainedInferred": "NODE_CVE",
   },
-  "NODE_COMPONENT": Object {
+  "NODE_COMPONENT": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "NODE NODE_CVE",
@@ -92,7 +92,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "NODE_CVE": Object {
+  "NODE_CVE": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "NODE_COMPONENT",
@@ -101,7 +101,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "POLICY": Object {
+  "POLICY": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "DEPLOYMENT",
@@ -110,7 +110,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "ROLE": Object {
+  "ROLE": {
     "1-children": "",
     "2-parents": "CLUSTER",
     "3-matches        ": "SERVICE_ACCOUNT SUBJECT",
@@ -119,7 +119,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "SECRET": Object {
+  "SECRET": {
     "1-children": "",
     "2-parents": "NAMESPACE",
     "3-matches        ": "DEPLOYMENT",
@@ -128,7 +128,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "SERVICE_ACCOUNT": Object {
+  "SERVICE_ACCOUNT": {
     "1-children": "",
     "2-parents": "NAMESPACE",
     "3-matches        ": "DEPLOYMENT ROLE",
@@ -137,7 +137,7 @@ Object {
     "6-getContains        ": "",
     "7-isContainedInferred": "",
   },
-  "SUBJECT": Object {
+  "SUBJECT": {
     "1-children": "",
     "2-parents": "",
     "3-matches        ": "ROLE",

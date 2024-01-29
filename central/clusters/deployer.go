@@ -12,13 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // RenderOptions are options that control the rendering.

@@ -1,0 +1,16 @@
+# Assert only things specific to this step.
+# General sanity is asserted by the other assert file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  annotations:
+    test-step: "76"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    test-step: "76"
+  labels:
+    app: central

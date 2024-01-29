@@ -63,6 +63,7 @@ export type ComponentVulnerabilityBase = {
         vulnerabilityId: string;
         severity: string;
         fixedByVersion: string;
+        pendingExceptionCount: number;
     }[];
 };
 
@@ -79,6 +80,7 @@ export type DeploymentComponentVulnerability = Omit<
         scoreVersion: string;
         fixedByVersion: string;
         discoveredAtImage: string | null;
+        pendingExceptionCount: number;
     }[];
 };
 
@@ -103,6 +105,7 @@ export type TableDataRow = {
         instruction: string;
         value: string;
     } | null;
+    pendingExceptionCount: number;
 };
 
 /**
@@ -178,6 +181,7 @@ function extractCommonComponentFields(
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
+    const pendingExceptionCount = vulnerability?.pendingExceptionCount ?? 0;
 
     return {
         name,
@@ -189,6 +193,7 @@ function extractCommonComponentFields(
         vulnerabilityId,
         severity,
         fixedByVersion,
+        pendingExceptionCount,
     };
 }
 

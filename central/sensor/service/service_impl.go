@@ -106,15 +106,24 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
 		if features.SensorReconciliationOnReconnect.Enabled() {
-			capabilities = append(capabilities, centralsensor.SensorReconciliationOnReconnect)
+			capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
 		}
+		if features.ComplianceEnhancements.Enabled() {
+			capabilities = append(capabilities, centralsensor.ComplianceV2Integrations)
+		}
+		if features.ScannerV4.Enabled() {
+			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
+		}
+
+		preferences := s.manager.GetConnectionPreference(cluster.GetId())
 
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId:      cluster.GetId(),
-			ManagedCentral: env.ManagedCentral.BooleanSetting(),
-			CentralId:      installInfo.GetId(),
-			Capabilities:   capabilities,
+			ClusterId:        cluster.GetId(),
+			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
+			CentralId:        installInfo.GetId(),
+			Capabilities:     capabilities,
+			SendDeduperState: preferences.SendDeduperState,
 		}
 
 		if err := safe.RunE(func() error {

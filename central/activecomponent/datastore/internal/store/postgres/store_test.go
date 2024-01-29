@@ -35,6 +35,7 @@ func (s *ActiveComponentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE active_components CASCADE")
 	s.T().Log("active_components", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

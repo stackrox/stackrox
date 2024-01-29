@@ -20,6 +20,7 @@ var (
 type Queue[T comparable] struct {
 	maxSize        int
 	counterMetric  *prometheus.CounterVec
+	droppedMetric  prometheus.Counter
 	queue          *list.List
 	notEmptySignal concurrency.Signal
 	mutex          sync.Mutex
@@ -34,6 +35,13 @@ type OptionFunc[T comparable] func(queue *Queue[T])
 func WithCounterVec[T comparable](vec *prometheus.CounterVec) OptionFunc[T] {
 	return func(queue *Queue[T]) {
 		queue.counterMetric = vec
+	}
+}
+
+// WithDroppedMetric provides a counter which tracks number of items dropped.
+func WithDroppedMetric[T comparable](metric prometheus.Counter) OptionFunc[T] {
+	return func(q *Queue[T]) {
+		q.droppedMetric = metric
 	}
 }
 
@@ -108,6 +116,9 @@ func (q *Queue[T]) Push(item T) {
 
 	if q.maxSize != 0 && q.queue.Len() >= q.maxSize {
 		log.Warnf("Queue size limit reached (%d). New items added to the queue will be dropped.", q.maxSize)
+		if q.droppedMetric != nil {
+			q.droppedMetric.Inc()
+		}
 		return
 	}
 
@@ -116,4 +127,11 @@ func (q *Queue[T]) Push(item T) {
 		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Add.String()}).Inc()
 	}
 	q.queue.PushBack(item)
+}
+
+// Len returns the number of elements in the queue.
+func (q *Queue[T]) Len() int {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	return q.queue.Len()
 }

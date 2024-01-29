@@ -38,8 +38,7 @@ var (
 	batchSize      = 3000
 	imageBatchSize = 1000
 
-	schema = frozenSchema.ActiveComponentsSchema
-	log    = loghelper.LogWrapper{}
+	log = loghelper.LogWrapper{}
 )
 
 type imageIDAndOs struct {

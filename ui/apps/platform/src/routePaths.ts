@@ -26,6 +26,7 @@ export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
+export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
 export const collectionsBasePath = `${mainPath}/collections`;
@@ -37,8 +38,10 @@ export const complianceEnhancedStatusPath = `${complianceEnhancedBasePath}/statu
 export const complianceEnhancedStatusClustersPath = `${complianceEnhancedStatusPath}/clusters/:id`;
 export const complianceEnhancedStatusProfilesPath = `${complianceEnhancedStatusPath}/profiles/:id`;
 export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
-export const complianceEnhancedScanConfigsBasePath = `${complianceEnhancedBasePath}/scan-configs`;
-export const complianceEnhancedScanConfigsPath = `${complianceEnhancedBasePath}/scan-configs/:scanConfigId`;
+export const complianceEnhancedClusterComplianceBasePath = `${complianceEnhancedBasePath}/cluster-compliance`;
+export const complianceEnhancedScanConfigsPath = `${complianceEnhancedClusterComplianceBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigDetailPath = `${complianceEnhancedScanConfigsPath}/:scanConfigId`;
+export const complianceEnhancedCoveragePath = `${complianceEnhancedClusterComplianceBasePath}/coverage`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
@@ -148,6 +151,8 @@ export type RouteKey =
     | 'apidocs-v2'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
     | 'clusters'
@@ -194,6 +199,11 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     'clusters/delegated-image-scanning': {
+        resourceAccessRequirements: everyResource(['Administration']),
+    },
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    'clusters/discovered-clusters': {
+        featureFlagRequirements: allEnabled(['ROX_CLOUD_SOURCES']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
@@ -368,7 +378,7 @@ export function isRouteEnabled(
  * New Framwork-related route paths
  */
 
-export const urlEntityListTypes = {
+export const urlEntityListTypes: Record<string, string> = {
     [resourceTypes.NAMESPACE]: 'namespaces',
     [resourceTypes.CLUSTER]: 'clusters',
     [resourceTypes.NODE]: 'nodes',
@@ -389,7 +399,7 @@ export const urlEntityListTypes = {
     [rbacConfigTypes.ROLE]: 'roles',
 };
 
-export const urlEntityTypes = {
+export const urlEntityTypes: Record<string, string> = {
     [resourceTypes.NAMESPACE]: 'namespace',
     [resourceTypes.CLUSTER]: 'cluster',
     [resourceTypes.NODE]: 'node',
@@ -411,21 +421,21 @@ export const urlEntityTypes = {
     [rbacConfigTypes.ROLE]: 'role',
 };
 
-const vulnManagementPathToLabelMap = {
+const vulnManagementPathToLabelMap: Record<string, string> = {
     [vulnManagementPath]: 'Dashboard',
     // TODO: add mapping for Deferrals
     [vulnManagementReportsPath]: 'Reporting',
     [vulnManagementRiskAcceptancePath]: 'Risk Acceptance',
 };
 
-const vulnerabilitiesPathToLabelMap = {
+const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
     [exceptionManagementPath]: 'Exception Management',
 };
 
-export const basePathToLabelMap = {
+export const basePathToLabelMap: Record<string, string> = {
     [dashboardPath]: 'Dashboard',
     [networkBasePath]: 'Network Graph',
     [listeningEndpointsBasePath]: 'Listening Endpoints',

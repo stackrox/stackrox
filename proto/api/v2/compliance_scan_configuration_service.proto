@@ -20,14 +20,15 @@ message ClusterScanStatus {
     string                    cluster_name = 3;
 }
 
-// Next available tag: 4
+// Next available tag: 5
 message BaseComplianceScanConfigurationSettings {
-    bool                  one_time_scan            = 1;
-    repeated string       profiles                 = 2;
-    Schedule              scan_schedule            = 3;
+    bool            one_time_scan = 1;
+    repeated string profiles      = 2;
+    Schedule        scan_schedule = 3;
+    string          description   = 4;
 }
 
-// Next available tag: 4
+// Next available tag: 5
 message ComplianceScanConfiguration {
     string                                     id             = 1;
     string                                     scan_name      = 2;
@@ -45,6 +46,10 @@ message ComplianceScanConfigurationStatus {
     google.protobuf.Timestamp                  last_updated_time    = 6;
     // Most recent user to update the scan settings
     SlimUser                                   modified_by           = 7;
+}
+
+message ComplianceScanConfigurationsCount{
+    int32  count = 1;
 }
 
 // Next available tag: 2
@@ -90,10 +95,18 @@ service ComplianceScanConfigurationService {
         };
     }
 
-    // RunComplianceScanConfiguration launches scan for the specified scan configuration
+    // RunComplianceScanConfiguration launches scan for the specified scan
+    // configuration, which will invoke scans to run for the applicable
+    // profiles across the configured clusters.
     rpc RunComplianceScanConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            get: "/v2/compliance/scan/configurations/execute/{id}"
+            post: "/v2/compliance/scan/configurations/{id}/run"
+        };
+    }
+
+    rpc GetComplianceScanConfigurationsCount(RawQuery) returns (ComplianceScanConfigurationsCount){
+        option (google.api.http) = {
+          get: "/v2/compliance/scan/count/configurations"
         };
     }
 }

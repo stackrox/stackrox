@@ -95,12 +95,12 @@ func NewDispatcherRegistry(
 
 		traceWriter: traceWriter,
 
-		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(storeProvider.reconciliationStore),
-		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(storeProvider.reconciliationStore),
-		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(storeProvider.reconciliationStore),
-		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(storeProvider.reconciliationStore),
-		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(storeProvider.reconciliationStore),
-		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(storeProvider.reconciliationStore, profileLister),
+		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
+		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
+		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
+		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
+		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
+		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
 	}
 }
 

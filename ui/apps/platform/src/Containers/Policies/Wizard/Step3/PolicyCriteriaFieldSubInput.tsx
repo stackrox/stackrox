@@ -72,6 +72,7 @@ function PolicyCriteriaFieldSubInput({
                         isDisabled={readOnly}
                         selections={value}
                         placeholderText={subComponent.placeholder || 'Select an option'}
+                        menuAppendTo={() => document.body}
                     >
                         {subComponent.options?.map((option) => (
                             <SelectOption

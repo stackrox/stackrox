@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/http_metrics.go -source http_metrics.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 

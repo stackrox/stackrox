@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"path"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,13 +15,20 @@ import (
 	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cloudproviders/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	timeout = 5 * time.Second
+	loggingRateLimiter  = "aws-metadata"
+	timeout             = 5 * time.Second
+	eksClusterNameLabel = "alpha.eksctl.io/cluster-name"
+	eksClusterNameTag   = "eks:cluster-name"
+	instanceTagsPath    = "/tags/instance"
 )
 
 var (
@@ -62,6 +71,8 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, errs.ToError()
 	}
 
+	clusterMetadata := getClusterMetadata(ctx, mdClient, doc)
+
 	return &storage.ProviderMetadata{
 		Region: doc.Region,
 		Zone:   doc.AvailabilityZone,
@@ -71,6 +82,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 			},
 		},
 		Verified: verified,
+		Cluster:  clusterMetadata,
 	}, nil
 }
 
@@ -113,4 +125,61 @@ func plaintextIdentityDoc(ctx context.Context, mdClient *ec2metadata.EC2Metadata
 	}
 
 	return doc, nil
+}
+
+// getClusterMetadata attempts to get the EKS cluster name on a best effort basis.
+// First, it tries to get the cluster name from the EC2 instance tags. Access to
+// the tags must be explicitly enabled for the EC2 instance beforehand.
+// Second, it tries the node labels. The label is only set when the EKS cluster
+// was created via eksctl.
+func getClusterMetadata(ctx context.Context,
+	client *ec2metadata.EC2Metadata, doc *ec2metadata.EC2InstanceIdentityDocument,
+) *storage.ClusterMetadata {
+	clusterName, err := getClusterNameFromInstanceTags(ctx, client)
+	if err == nil {
+		return clusterMetadataFromName(clusterName, doc)
+	}
+	logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata from instance tags: %s", err)
+
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata: Obtaining in-cluster Kubernetes config: %s", err)
+		return nil
+	}
+	k8sClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata: Creating Kubernetes clientset: %s", err)
+		return nil
+	}
+	clusterName, err = getClusterNameFromNodeLabels(ctx, k8sClient)
+	if err != nil {
+		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get EKS cluster metadata from node labels: %s", err)
+		return nil
+	}
+	return clusterMetadataFromName(clusterName, doc)
+}
+
+func getClusterNameFromInstanceTags(ctx context.Context, client *ec2metadata.EC2Metadata) (string, error) {
+	clusterName, err := client.GetMetadataWithContext(ctx, path.Join(instanceTagsPath, eksClusterNameTag))
+	if err != nil {
+		return "", errors.Wrap(err, "getting cluster name tag")
+	}
+	return clusterName, nil
+}
+
+func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Interface) (string, error) {
+	nodeLabels, err := utils.GetAnyNodeLabels(ctx, k8sClient)
+	if err != nil {
+		return "", errors.Wrap(err, "getting node labels")
+	}
+	if clusterName := nodeLabels[eksClusterNameLabel]; clusterName != "" {
+		return clusterName, nil
+	}
+	return "", errors.Errorf("node label %q not found", eksClusterNameLabel)
+}
+
+func clusterMetadataFromName(clusterName string, doc *ec2metadata.EC2InstanceIdentityDocument,
+) *storage.ClusterMetadata {
+	clusterARN := fmt.Sprintf("arn:aws:eks:%s:%s:cluster/%s", doc.Region, doc.AccountID, clusterName)
+	return &storage.ClusterMetadata{Type: storage.ClusterMetadata_EKS, Name: clusterName, Id: clusterARN}
 }

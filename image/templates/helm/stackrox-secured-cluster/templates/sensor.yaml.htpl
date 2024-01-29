@@ -74,7 +74,7 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
-        - name: GOMEMLIMIT
+        - name: ROX_MEMLIMIT
           valueFrom:
             resourceFieldRef:
               resource: limits.memory
@@ -112,6 +112,14 @@ spec:
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
         [<- end >]
+        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4_GRPC_ENDPOINT
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
+        [<- end >]
         {{- if ._rox.monitoring.openshift.enabled }}
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
@@ -132,6 +140,10 @@ spec:
           readOnly: true
         - name: cache
           mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: helm-cluster-config
           mountPath: /run/secrets/stackrox.io/helm-cluster-config/
@@ -169,6 +181,16 @@ spec:
         emptyDir: {}
       - name: cache
         emptyDir: {}
+      {{- if ._rox.env.openshift }}
+      - name: sensor-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: openshift
+              expirationSeconds: 3600
+      {{- end }}
       [<- if not .KubectlOutput >]
       - name: helm-cluster-config
         secret:
@@ -184,7 +206,6 @@ spec:
       - name: monitoring-tls
         secret:
           secretName: sensor-monitoring-tls
-          optional: true
       {{- end }}
 ---
 apiVersion: v1

@@ -39,8 +39,8 @@ function* saveRuleGroup(action) {
             roleName: defaultRole,
         });
         yield call(service.updateOrAddGroup, {
-            newGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
-            oldGroups: getExistingGroupsWithDefault(existingGroups, id),
+            requiredGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
+            previousGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
         yield put(authActions.setAuthProviderEditingState(false));

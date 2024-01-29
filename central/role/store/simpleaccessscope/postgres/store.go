@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,11 +23,6 @@ import (
 const (
 	baseTable = "simple_access_scopes"
 	storeName = "SimpleAccessScope"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -43,7 +38,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
@@ -54,6 +49,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -106,6 +102,10 @@ func insertIntoSimpleAccessScopes(batch *pgx.Batch, obj *storage.SimpleAccessSco
 }
 
 func copyFromSimpleAccessScopes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SimpleAccessScope) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them

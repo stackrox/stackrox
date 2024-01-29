@@ -457,7 +457,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock, _, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
+	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -471,7 +471,6 @@ type ProcessIndicatorReindexSuite struct {
 	suite.Suite
 
 	storage  *storeMocks.MockStore
-	indexer  *indexMocks.MockIndexer
 	searcher *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller

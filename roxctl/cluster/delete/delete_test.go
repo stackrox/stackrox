@@ -70,8 +70,9 @@ func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*stora
 
 func (c *clusterDeleteTestSuite) SetupTest() {
 	c.defaultClusterDeleteCommand = clusterDeleteCommand{
-		name:    "dummy",
-		timeout: 5 * time.Second,
+		name:         "dummy",
+		timeout:      5 * time.Second,
+		retryTimeout: 5 * time.Second,
 	}
 	os.Stderr = nil
 }
@@ -81,6 +82,7 @@ func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cob
 	mockedEnv, stdout, stderr := mocks.NewEnvWithConn(conn, c.T())
 	cbr := Command(mockedEnv)
 	cbr.PersistentFlags().DurationP("timeout", "t", 5*time.Second, "timeout for API requests")
+	cbr.PersistentFlags().Duration("retry-timeout", 5*time.Second, "retry timeout for API requests")
 
 	return cbr, closeFunction, stdout, stderr
 }
@@ -124,10 +126,12 @@ func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {
 	expectedTimeout := 10 * time.Minute
 	testCmd := &cobra.Command{Use: "test"}
 	testCmd.Flags().Duration("timeout", expectedTimeout, "")
+	testCmd.Flags().Duration("retry-timeout", expectedTimeout, "")
 
 	clusterDeleteCmd := c.defaultClusterDeleteCommand
 	err := clusterDeleteCmd.Construct(nil, testCmd)
 
 	c.Assert().NoError(err)
 	c.Assert().Equal(clusterDeleteCmd.timeout, expectedTimeout, "Timeout does not match value of '--timeout' flag.")
+	c.Assert().Equal(clusterDeleteCmd.retryTimeout, expectedTimeout, "Retry timeout does not match value of '--retry-timeout' flag.")
 }

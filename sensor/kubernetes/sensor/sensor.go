@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -25,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
+	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -34,7 +34,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
-	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -61,11 +60,7 @@ var (
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
-	if env.ResyncDisabled.BooleanSetting() {
-		log.Info("Running sensor with Kubernetes re-sync disabled")
-	} else {
-		log.Infof("Running sensor with Kubernetes re-sync enabled. Re-sync time: %s", cfg.resyncPeriod.String())
-	}
+	log.Info("Running sensor with Kubernetes re-sync disabled")
 
 	storeProvider := resources.InitializeStore()
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
@@ -123,18 +118,19 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
-	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
+	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
-	indicators := make(chan *message.ExpiringMessage)
+	indicators := make(chan *message.ExpiringMessage, env.ProcessIndicatorBufferSize.IntegerSetting())
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector)
+	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -152,6 +148,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		reprocessorHandler,
 		delegatedRegistryHandler,
 		imageService,
+		enhancer,
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
@@ -160,10 +157,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// i.e., after nodeInventoryHandler
 	components = append(components, nodeInventoryHandler, complianceMultiplexer)
 
-	if features.ComplianceEnhancements.Enabled() {
-		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
-		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))
-	}
+	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
+	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
@@ -197,15 +192,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
-	hashReconciler := resources.NewResourceStoreReconciler(storeProvider)
-	deduperStateProcessor := reconciliation.NewDeduperStateProcessor(hashReconciler)
-
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
-		deduperStateProcessor,
 		components...,
 	)
 

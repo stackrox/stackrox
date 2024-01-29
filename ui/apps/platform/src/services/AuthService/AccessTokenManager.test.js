@@ -1,3 +1,4 @@
+/* global global */
 import AccessTokenManager from './AccessTokenManager';
 
 describe('AccessTokenManager', () => {

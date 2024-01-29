@@ -6,8 +6,6 @@ yarn:
   node-modules-dirs:
     - ui/node_modules
     - ui/apps/platform/node_modules
-    - ui/packages/ui-components/node_modules
-    - ui/packages/tailwind-config/node_modules
 
 patterns:
   - "*AUTHOR*"

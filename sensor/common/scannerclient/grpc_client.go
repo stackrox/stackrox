@@ -16,10 +16,19 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/scanner/pkg/client"
+	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+)
+
+const (
+	// v4IndexerVersion represents an arbitrary indexer version, at this time
+	// a non-empty value will be interpreted as a Scanner V4 index by Central.
+	//
+	// TODO(ROX-21362): Replace this with the actual version from the indexer API.
+	v4IndexerVersion = "v4"
 )
 
 var (
@@ -34,8 +43,10 @@ type ScannerClient interface {
 
 // ImageAnalysis is the result of an image analysis.
 type ImageAnalysis struct {
-	ScanStatus scannerV1.ScanStatus
-	ScanNotes  []scannerV1.Note
+	ScanStatus     scannerV1.ScanStatus
+	ScanNotes      []scannerV1.Note
+	IndexerVersion string
+
 	// Fields for analysis results for each supported Scanner: Scanner V2 (v1 proto)
 	// and Scanner V4 (v4 proto).
 	V1Components *scannerV1.Components
@@ -88,6 +99,16 @@ func (i *ImageAnalysis) GetContents() *v4.Contents {
 		return i.V4Contents
 	}
 	return nil
+}
+
+// GetIndexerVersion returns the version of the indexer used to produce
+// the associated index report.
+func (i *ImageAnalysis) GetIndexerVersion() string {
+	if i != nil {
+		return i.IndexerVersion
+	}
+
+	return ""
 }
 
 // getScannerEndpoint reads and validate the Scanner gRPC endpoint setting. If
@@ -147,7 +168,7 @@ func dialV4() (ScannerClient, error) {
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
 		// TODO: [ROX-19050] Set the Scanner V4 TLS validation when certificates are ready.
-		client.WithoutTLSVerify)
+		client.SkipTLSVerification)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +197,7 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Scanner for image %s", imgName)
+	log.Debugf("Received image components from local Scanner for image: %q", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),
@@ -203,6 +224,8 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 	return &ImageAnalysis{
 		ScanStatus: st,
 		V4Contents: ir.GetContents(),
+		// TODO(ROX-21362): Replace this with the actual version from the indexer API.
+		IndexerVersion: v4IndexerVersion,
 	}
 }
 
@@ -211,12 +234,12 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	if cfg.Insecure {
 		opts = append(opts, name.Insecure)
 	}
-	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
-	ref, err := name.NewDigest(n, opts...)
+
+	ref, err := pkgscanner.DigestFromImage(image, opts...)
 	if err != nil {
-		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
-		return nil, fmt.Errorf("creating digest reference: %w", err)
+		return nil, err
 	}
+
 	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,
@@ -225,6 +248,9 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
+
+	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
+
 	return convertIndexReportToAnalysis(ir), nil
 }
 

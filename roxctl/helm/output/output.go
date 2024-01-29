@@ -9,10 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	pkgEnv "github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -42,6 +45,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&helmOutputCmd.outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&helmOutputCmd.removeOutputDir, "remove", false, "remove the output directory if it already exists")
 	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().BoolVar(&helmOutputCmd.telemetry, "enable-telemetry", version.IsReleaseVersion(), "whether to enable telemetry")
 
 	deprecationNote := fmt.Sprintf("use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	utils.Must(c.PersistentFlags().MarkDeprecated("rhacs", deprecationNote))
@@ -60,6 +64,7 @@ type helmOutputCommand struct {
 	removeOutputDir bool
 	rhacs           bool
 	imageFlavor     string
+	telemetry       bool
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	chartName               string
@@ -146,7 +151,22 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	if err != nil {
 		return nil, errox.InvalidArgs.Newf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
-	return charts.GetMetaValuesForFlavor(imageFlavor), nil
+
+	values := charts.GetMetaValuesForFlavor(imageFlavor)
+
+	// For testing purposes, running a non-release roxctl version, provide
+	// TelemetryStorageKey with the test value and set --enable-telemetry=true
+	// to get telemetry enabled by default in the resulting chart.
+	if cfg.telemetry && (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
+		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
+		values.TelemetryEnabled = true
+		values.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()
+		values.TelemetryEndpoint = pkgEnv.TelemetryEndpoint.Setting()
+	} else {
+		values.TelemetryEnabled = false
+		values.TelemetryKey = phonehome.DisabledKey
+	}
+	return values, nil
 }
 
 func handleRhacsWarnings(rhacs, _ bool, logger logger.Logger) {

@@ -29,7 +29,6 @@ var (
 	postgresDBVer         = versionPair{version: "4.0.0", seqNum: 175, minSeqNum: 62}
 	futureVerDifferentMin = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 185}
 	futureVer             = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 62}
-	moreFutureVer         = versionPair{version: "10002.0.0.0", seqNum: 7533, minSeqNum: 62}
 
 	// Current versions
 	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65, minSeqNum: 62}

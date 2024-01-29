@@ -12,8 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/registries"
-	"github.com/stackrox/rox/pkg/registries/docker"
-	"github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -180,10 +179,10 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
 	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
-	assert.Equal(t, ii.Type, docker.GenericDockerRegistryType)
+	assert.Equal(t, ii.Type, types.DockerType)
 
 	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
-	assert.Equal(t, ii.Type, rhel.RedHatRegistryType)
+	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
 func TestRegistryStore_IsLocal(t *testing.T) {
@@ -293,7 +292,6 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 
 		t.Run(name, tf)
 	}
-
 }
 
 func TestRegistryStore_GenImgIntName(t *testing.T) {
@@ -344,31 +342,4 @@ func TestDataRaceAtCleanup(_ *testing.T) {
 	regStore.Cleanup()
 	doneSignal.Signal()
 	wg.Wait()
-}
-
-func TestReconcile(t *testing.T) {
-	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-	testCases := map[string]bool{
-		"a": false,
-		"b": true,
-		"c": true,
-	}
-
-	for secretID, isRemoved := range testCases {
-		regStore.AddSecretID(secretID)
-		if isRemoved {
-			regStore.RemoveSecretID(secretID)
-		}
-	}
-
-	for secretID, isRemoved := range testCases {
-		id, err := regStore.ReconcileDelete("", secretID, 0)
-		require.NoError(t, err)
-		if isRemoved {
-			assert.NotEmpty(t, id)
-		} else {
-			assert.Empty(t, id)
-		}
-	}
-
 }

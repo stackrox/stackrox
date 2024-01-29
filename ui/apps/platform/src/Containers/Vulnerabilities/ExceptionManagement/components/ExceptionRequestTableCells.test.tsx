@@ -3,7 +3,7 @@ import {
     VulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import {
-    getShouldUseUpdatedExpiry,
+    getShouldUseUpdatedRequest,
     getRequestedAction,
     RequestContext,
 } from './ExceptionRequestTableCells';
@@ -11,12 +11,13 @@ import {
 const baseException: BaseVulnerabilityException = {
     id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
     name: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
-    exceptionStatus: 'APPROVED_PENDING_UPDATE',
+    status: 'APPROVED_PENDING_UPDATE',
     expired: false,
     requester: {
         id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
         name: 'admin',
     },
+    approvers: [],
     createdAt: '2023-10-01T19:16:49.155480945Z',
     lastUpdated: '2023-10-01T19:16:49.155480945Z',
     comments: [
@@ -46,21 +47,21 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
 
         // When an approved deferral that is pending an update is finally approved, it overwrites
@@ -69,28 +70,28 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED',
+                status: 'APPROVED',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
 
         it('should use the updated expiry for an approved request pending an update', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -104,21 +105,21 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(true);
+            expect(shouldUseUpdatedRequest).toBe(true);
         });
 
         it('should use the original expiry for an approved request pending an update', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
@@ -132,14 +133,14 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'APPROVED_DEFERRALS';
+            const context: RequestContext = 'CURRENT';
 
-            const shouldUseUpdatedExpiry = getShouldUseUpdatedExpiry(
+            const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(
                 vulnerabilityException,
                 context
             );
 
-            expect(shouldUseUpdatedExpiry).toBe(false);
+            expect(shouldUseUpdatedRequest).toBe(false);
         });
     });
 
@@ -148,10 +149,10 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'FALSE_POSITIVE',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 falsePositiveRequest: {},
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -162,14 +163,14 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ALL_CVE_FIXABLE',
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -180,14 +181,14 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'ANY_CVE_FIXABLE',
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -198,7 +199,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -206,7 +207,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -217,7 +218,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'PENDING',
+                status: 'PENDING',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -225,7 +226,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -236,7 +237,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -251,7 +252,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'PENDING_REQUESTS';
+            const context: RequestContext = 'PENDING_UPDATE';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 
@@ -262,7 +263,7 @@ describe('ExceptionRequestTableCells', () => {
             const vulnerabilityException: VulnerabilityException = {
                 ...baseException,
                 targetState: 'DEFERRED',
-                exceptionStatus: 'APPROVED_PENDING_UPDATE',
+                status: 'APPROVED_PENDING_UPDATE',
                 deferralRequest: {
                     expiry: {
                         expiryType: 'TIME',
@@ -277,7 +278,7 @@ describe('ExceptionRequestTableCells', () => {
                     },
                 },
             };
-            const context: RequestContext = 'APPROVED_DEFERRALS';
+            const context: RequestContext = 'CURRENT';
 
             const requestedAction = getRequestedAction(vulnerabilityException, context);
 

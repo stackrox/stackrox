@@ -400,9 +400,12 @@ export function verifyTableLinkToSidePanelTable(entitiesKey1, entitiesKey2) {
         .then(($a) => {
             // 2. Visit secondary entities side panel.
             const opname = opnameForPrimaryAndSecondaryEntities(entitiesKey1, entitiesKey2);
-            interactAndWaitForResponses(() => {
-                cy.wrap($a).click();
-            }, getRouteMatcherMapForGraphQL([opname]));
+            interactAndWaitForResponses(
+                () => {
+                    cy.wrap($a).click();
+                },
+                getRouteMatcherMapForGraphQL([opname])
+            );
 
             const heading = headingForEntities[entitiesKey2];
             cy.get(

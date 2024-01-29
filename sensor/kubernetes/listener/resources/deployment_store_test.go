@@ -7,15 +7,12 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -113,6 +110,7 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
+	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
 	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
 			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
@@ -208,6 +206,9 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 			}
 
 			s.deploymentStore.Cleanup()
+			s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
+			s.Assert().Len(s.deploymentStore.deploymentIDs, 0)
+			s.Assert().Len(s.deploymentStore.deployments, 0)
 		})
 	}
 }
@@ -254,6 +255,31 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment
 	})
 
 	s.ErrorContains(err, "some-uuid doesn't exist")
+}
+
+func (s *deploymentStoreSuite) Test_DeleteSnapshot() {
+	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
+	uid := uuid.NewV4().String()
+	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
+	s.deploymentStore.addOrUpdateDeployment(wrap)
+
+	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
+	s.Assert().False(isBuilt, "deployment should not be fully built yet")
+
+	deployment, _, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+	})
+
+	s.NoError(err, "should not have error building dependencies")
+	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 1)
+
+	s.deploymentStore.removeDeployment(&deploymentWrap{
+		Deployment: &storage.Deployment{
+			Id:        deployment.GetId(),
+			Namespace: deployment.GetNamespace(),
+		},
+	})
+	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
 }
 
 func withLabels(deployment *v1.Deployment, labels map[string]string) *v1.Deployment {
@@ -540,6 +566,28 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 	}
 }
 
+func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
+	d := storage.Deployment{
+		Id:   uuid.NewV4().String(),
+		Name: "testDeployment",
+	}
+	deps := store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+			{
+				service.PortRefOf(stubService()): make([]*storage.PortConfig_ExposureInfo, 0),
+			},
+		},
+	}
+	s.Empty(s.deploymentStore.deployments)
+
+	s.deploymentStore.EnhanceDeploymentReadOnly(&d, deps)
+
+	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, d.GetServiceAccountPermissionLevel())
+	s.Contains(d.GetPorts(), &storage.PortConfig{ContainerPort: 4321, Protocol: "TCP"})
+	s.Empty(s.deploymentStore.deployments, "EnhanceDeploymentReadOnly mustn't modify deployment store")
+}
+
 func makeDeploymentObject(name, namespace string, id types.UID) *v1.Deployment {
 	return &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -565,107 +613,5 @@ func stubService() corev1.ServicePort {
 			IntVal: 4321,
 		},
 		NodePort: 0,
-	}
-}
-
-func TestDeploymentStore_ReconcileDelete(t *testing.T) {
-	const (
-		existingDeployID1 = "deployment-1"
-		missingDeployID1  = "not-existing-deployment"
-	)
-	depl1 := &deploymentWrap{
-		Deployment: &storage.Deployment{
-			Id:                            existingDeployID1,
-			Name:                          "depl1",
-			Hash:                          0,
-			Type:                          "",
-			Namespace:                     "ns",
-			NamespaceId:                   "",
-			OrchestratorComponent:         false,
-			Replicas:                      0,
-			Labels:                        nil,
-			PodLabels:                     nil,
-			LabelSelector:                 nil,
-			Created:                       nil,
-			ClusterId:                     "cluster1",
-			ClusterName:                   "",
-			Containers:                    nil,
-			Annotations:                   nil,
-			Priority:                      0,
-			Inactive:                      false,
-			ImagePullSecrets:              nil,
-			ServiceAccount:                "",
-			ServiceAccountPermissionLevel: 0,
-			AutomountServiceAccountToken:  false,
-			HostNetwork:                   false,
-			HostPid:                       false,
-			HostIpc:                       false,
-			RuntimeClass:                  "",
-			Tolerations:                   nil,
-			Ports:                         nil,
-			StateTimestamp:                0,
-			RiskScore:                     0,
-		},
-		registryOverride: "",
-		original:         nil,
-		portConfigs:      nil,
-		pods:             nil,
-		isBuilt:          false,
-		mutex:            sync.RWMutex{},
-	}
-	require.NoError(t, depl1.updateHash(), "failed updating the hash for test deployment")
-
-	storage1 := make(map[string]*deploymentWrap)
-	storage1[existingDeployID1] = depl1
-	t.Logf("Deployment hash: %d", depl1.GetHash())
-
-	type args struct {
-		resType string
-		resID   string
-		resHash uint64
-	}
-	tests := map[string]struct {
-		storage map[string]*deploymentWrap
-		args    args
-		want    string
-		wantErr assert.ErrorAssertionFunc
-	}{
-		"Exisiting deployment with matching hash should yield no reconciliation events": {
-			storage: storage1,
-			args: args{
-				resType: deduper.TypeDeployment.String(),
-				resID:   existingDeployID1,
-				resHash: depl1.GetHash(),
-			},
-			want: "",
-			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
-				return assert.Nil(t, err, args)
-			},
-		},
-		"Deployment that cannot be found should be deleted from Central": {
-			storage: storage1,
-			args: args{
-				resType: deduper.TypeDeployment.String(),
-				resID:   missingDeployID1,
-				resHash: depl1.GetHash(),
-			},
-			want: missingDeployID1,
-			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
-				return assert.Nil(t, err, args)
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			ds := &DeploymentStore{
-				lock:        sync.RWMutex{},
-				deployments: tt.storage,
-			}
-			got, err := ds.ReconcileDelete(tt.args.resType, tt.args.resID, tt.args.resHash)
-			if !tt.wantErr(t, err, fmt.Sprintf("ReconcileDelete(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "ReconcileDelete(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)
-		})
 	}
 }

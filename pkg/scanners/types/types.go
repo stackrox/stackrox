@@ -6,6 +6,16 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// Scanner type strings.
+const (
+	Clair     = "clair"
+	Clairify  = "clairify"
+	ClairV4   = "clairV4"
+	Google    = "google"
+	Quay      = "quay"
+	ScannerV4 = "scannerv4"
+)
+
 // Scanner is the interface that all scanners must implement
 type Scanner interface {
 	ScanSemaphore
@@ -23,6 +33,8 @@ type Scanner interface {
 
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
+//
+//go:generate mockgen-wrapper
 type ImageScannerWithDataSource interface {
 	GetScanner() Scanner
 	DataSource() *storage.DataSource
@@ -31,7 +43,7 @@ type ImageScannerWithDataSource interface {
 // ImageVulnerabilityGetter is a scanner which can retrieve vulnerabilities
 // which exist in the given image components and the scan notes for the given image.
 type ImageVulnerabilityGetter interface {
-	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
+	GetVulnerabilities(image *storage.Image, components *ScanComponents, notes []scannerV1.Note) (*storage.ImageScan, error)
 }
 
 // NodeScanner is the interface all node scanners must implement

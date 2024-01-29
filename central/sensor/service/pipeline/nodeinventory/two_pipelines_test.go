@@ -202,6 +202,8 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				ranking.NodeComponentRanker(),
 
 				tt.mocks.updater,
+
+				nil,
 			)
 			creator := func() (string, scanners.NodeScannerCreator) {
 				return "fake", func(integration *storage.NodeIntegration) (types.NodeScanner, error) {

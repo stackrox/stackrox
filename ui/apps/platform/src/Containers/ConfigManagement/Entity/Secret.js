@@ -109,8 +109,8 @@ SecretDataMetadata.defaultProps = {
 
 const SecretValues = ({ files }) => {
     const filesWithoutImagePullSecrets = files.filter(
-        // eslint-disable-next-line
-        file => !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
+        (file) =>
+            !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
     );
     const filesCount = filesWithoutImagePullSecrets.length;
     const widgetHeader = `${filesCount} ${pluralize('value', filesCount)}`;

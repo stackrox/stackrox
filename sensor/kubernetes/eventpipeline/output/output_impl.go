@@ -5,15 +5,10 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type outputQueueImpl struct {

@@ -25,20 +25,12 @@ function WatchedImagesForm({
     watchedImagesRequest,
     watchImage,
 }: WatchedImagesFormProps) {
-    const {
-        values,
-        errors,
-        touched,
-        handleChange,
-        handleBlur,
-        handleSubmit,
-        submitForm,
-        isSubmitting,
-    } = useFormik({
-        initialValues: { imageName: defaultWatchedImageName },
-        validationSchema,
-        onSubmit: addToWatchedImages,
-    });
+    const { values, errors, touched, handleChange, handleSubmit, submitForm, isSubmitting } =
+        useFormik({
+            initialValues: { imageName: defaultWatchedImageName },
+            validationSchema,
+            onSubmit: addToWatchedImages,
+        });
     const isNameFieldInvalid = !!(errors.imageName && touched.imageName);
     const nameFieldValidated = isNameFieldInvalid ? 'error' : 'default';
 
@@ -68,7 +60,6 @@ function WatchedImagesForm({
                     value={values.imageName}
                     validated={nameFieldValidated}
                     onChange={(_, e) => handleChange(e)}
-                    onBlur={handleBlur}
                     isDisabled={isSubmitting}
                     placeholder="registry.example.com/namespace/image-name:tag"
                     isRequired

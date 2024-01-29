@@ -214,22 +214,12 @@ func (resolver *nodeCVEResolver) getNodeCVEQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 }
 
-func (resolver *nodeCVEResolver) getNodeCVERawQuery() string {
-	return search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetId()).Query()
-}
-
 func nodeCveToVulnerabilityWithSeverity(in []*storage.NodeCVE) []VulnerabilityWithSeverity {
 	ret := make([]VulnerabilityWithSeverity, 0, len(in))
 	for _, vuln := range in {
 		ret = append(ret, vuln)
 	}
 	return ret
-}
-
-// withNodeCveTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
-func withNodeCveTypeFiltering(q string) string {
-	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
 }
 
 func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext(ctx context.Context) context.Context {

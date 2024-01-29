@@ -7,6 +7,8 @@ import (
 )
 
 // Store provides storage functionality for alerts.
+//
+//go:generate mockgen-wrapper
 type Store interface {
 	Get(ctx context.Context, id string) (*storage.ImageIntegration, bool, error)
 	GetAll(ctx context.Context) ([]*storage.ImageIntegration, error)

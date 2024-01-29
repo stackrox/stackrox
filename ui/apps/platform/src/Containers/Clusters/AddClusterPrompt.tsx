@@ -1,25 +1,25 @@
 import React from 'react';
 import {
-    Alert,
-    AlertVariant,
     Button,
     ButtonVariant,
+    EmptyState,
+    EmptyStateIcon,
     Flex,
     FlexItem,
     Text,
     TextContent,
     TextVariants,
 } from '@patternfly/react-core';
+import { CheckCircleIcon } from '@patternfly/react-icons';
 
 function AddClusterPrompt() {
     return (
-        <>
-            <Alert isInline variant={AlertVariant.success} title="You are ready to go!">
-                <p className="pf-u-font-weight-normal">
-                    You have successfully deployed a Red Hat Advanced Cluster Security platform. Now
-                    you can configure the clusters you want to secure.
-                </p>
-            </Alert>
+        <EmptyState>
+            <EmptyStateIcon icon={CheckCircleIcon} color="var(--pf-global--success-color--100)" />
+            <p className="pf-u-font-weight-normal">
+                You have successfully deployed a Red Hat Advanced Cluster Security platform. Now you
+                can configure the clusters you want to secure.
+            </p>
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 justifyContent={{ default: 'justifyContentCenter' }}
@@ -50,7 +50,7 @@ function AddClusterPrompt() {
                     </Button>
                 </FlexItem>
             </Flex>
-        </>
+        </EmptyState>
     );
 }
 

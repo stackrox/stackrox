@@ -2,11 +2,14 @@
 {
     "extends": "./tsconfig.json",
     "include": [
-        ".",
-        "**/.eslintrc.js",
         ".prettierrc.js",
-        ".postcss.config.js",
-        "tailwind.config.js"
+        "config-overrides.js",
+        "cypress.config.js",
+        "eslint.config.js",
+        "postcss.config.js",
+        "tailwind.config.js",
+        "cypress/**/*",
+        "src/**/*"
     ],
     "exclude": [],
     "compilerOptions": {

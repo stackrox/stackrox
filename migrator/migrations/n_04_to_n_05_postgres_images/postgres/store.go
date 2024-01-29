@@ -8,7 +8,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/frozenschema/v73"
@@ -663,23 +663,6 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
 	}
 	return componentIDToEdgeMap, rows.Err()
-}
-
-func getImageCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, imageID string) (set.StringSet, error) {
-	rows, err := tx.Query(ctx, "SELECT id FROM "+imageCVEEdgesTable+" WHERE imageid = $1", imageID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids.Add(id)
-	}
-	return ids, rows.Err()
 }
 
 func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {

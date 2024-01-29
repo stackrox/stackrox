@@ -60,8 +60,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   Header: `Deployments`,
                   headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
-                  // eslint-disable-next-line
-        Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { deployments, id } = original;
                       const num = deployments.length;
                       const text = `${num} ${pluralize('deployment', num)}`;

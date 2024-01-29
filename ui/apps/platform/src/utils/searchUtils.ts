@@ -247,7 +247,7 @@ export function searchValueAsArray(searchValue: ValueOf<SearchFilter>): string[]
  * @param {string} item
  * @returns {string}
  */
-export function convertToExactMatch(item): string | unknown {
+export function convertToExactMatch(item): unknown {
     if (typeof item !== 'string') {
         return item;
     }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
@@ -16,14 +17,21 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -40,6 +48,7 @@ import (
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,6 +79,11 @@ var (
 	delegateScanPermissions = []string{"Image"}
 )
 
+// EnhancementRequestWatcher is the interface to send deployments for enhancement to Sensor
+type EnhancementRequestWatcher interface {
+	SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
+}
+
 func init() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
 	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
@@ -87,6 +101,10 @@ type serviceImpl struct {
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
+	connManager        connection.Manager
+
+	netpols            networkPolicyDS.DataStore
+	enhancementWatcher EnhancementRequestWatcher
 
 	notifications notifier.Processor
 
@@ -209,10 +227,19 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
+	appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+	if err != nil {
+		log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
+	} else {
+		log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+	}
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: appliedNetpols,
 	}, filter)
 	if err != nil {
 		return nil, err
@@ -228,15 +255,29 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find network policies for cluster %s and namespace %s", enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	}
+	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
+}
+
+func convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
-	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
-	if err != nil {
-		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
-	}
+	return resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
+}
+
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
+	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// between different generated deployments.
+	deployment.Id = uuid.NewV4().String()
+
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 
@@ -308,7 +349,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error
 // DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errox.InvalidArgs.CausedBy("yaml field must be specified in detection request")
+		return nil, errox.InvalidArgs.New("yaml field must be specified in detection request")
 	}
 
 	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
@@ -319,6 +360,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
 		Delegable:       true,
+		Namespace:       "default",
 	}
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
@@ -336,11 +378,52 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		eCtx.ClusterID = clusterID
 	}
 
+	if ns := req.GetNamespace(); ns != "" {
+		eCtx.Namespace = ns
+	}
+
+	var deployments []*storage.Deployment
+	errorList := errorhelpers.NewErrorList("error parsing YAML files")
+
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
+		d, err := convertK8sResource(r)
 		if err != nil {
-			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
+			errorList.AddError(err)
+			continue
+		}
+		if d == nil {
+			continue
+		}
+		deployments = append(deployments, d)
+	}
+	errs := errorList.ToError()
+
+	if len(deployments) == 0 && errs != nil {
+		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(errs)
+	}
+	if len(deployments) > 0 && errs != nil {
+		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
+	}
+
+	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
+	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
+	if eCtx.ClusterID != "" && s.connManager.GetConnection(eCtx.ClusterID).HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
+		conn := s.connManager.GetConnection(eCtx.ClusterID)
+		if conn == nil {
+			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
+		}
+		deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, env.CentralDeploymentEnhancementTimeout.DurationSetting())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
+		}
+	}
+
+	for _, d := range deployments {
+		run, err := s.runDeployTimeDetect(ctx, eCtx, d, req.GetPolicyCategories())
+
+		if err != nil {
+			return nil, errox.InvalidArgs.New("unable to add additional information to deployment").CausedBy(err)
 		}
 		if run != nil {
 			runs = append(runs, run)

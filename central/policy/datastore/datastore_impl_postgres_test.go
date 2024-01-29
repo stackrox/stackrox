@@ -43,7 +43,6 @@ type PolicyPostgresDataStoreTestSuite struct {
 
 	datastore  DataStore
 	categoryDS policyCategoryDS.DataStore
-	edgeDS     policyCategoryEdgeDS.DataStore
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {

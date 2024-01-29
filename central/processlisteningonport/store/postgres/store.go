@@ -4,9 +4,11 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
@@ -23,11 +26,6 @@ import (
 const (
 	baseTable = "listening_endpoints"
 	storeName = "ProcessListeningOnPortStorage"
-
-	// using copyFrom, we may not even want to batch.  It would probably be simpler
-	// to deal with failures if we just sent it all.  Something to think about as we
-	// proceed and move into more e2e and larger performance testing
-	batchSize = 10000
 )
 
 var (
@@ -43,7 +41,7 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
@@ -55,6 +53,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -67,7 +66,7 @@ func New(db postgres.DB) Store {
 		copyFromListeningEndpoints,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		isUpsertAllowed,
 		targetResource,
 	)
 }
@@ -84,6 +83,23 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if scopeChecker.IsAllowed() {
+		return nil
+	}
+	var deniedIDs []string
+	for _, obj := range objs {
+		subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
+		if !subScopeChecker.IsAllowed() {
+			deniedIDs = append(deniedIDs, obj.GetId())
+		}
+	}
+	if len(deniedIDs) != 0 {
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying processListeningOnPortStorages with IDs [%s] was denied", strings.Join(deniedIDs, ", "))
+	}
+	return nil
 }
 
 func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListeningOnPortStorage) error {
@@ -103,16 +119,22 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 		obj.GetClosed(),
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		pgutils.NilOrUUID(obj.GetPodUid()),
+		pgutils.NilOrUUID(obj.GetClusterId()),
+		obj.GetNamespace(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, CloseTimestamp, ProcessIndicatorId, Closed, DeploymentId, PodUid, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, CloseTimestamp = EXCLUDED.CloseTimestamp, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, PodUid = EXCLUDED.PodUid, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, CloseTimestamp, ProcessIndicatorId, Closed, DeploymentId, PodUid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, CloseTimestamp = EXCLUDED.CloseTimestamp, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, PodUid = EXCLUDED.PodUid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
 func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
+	batchSize := pgSearch.MaxBatchSize
+	if len(objs) < batchSize {
+		batchSize = len(objs)
+	}
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -128,6 +150,8 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 		"closed",
 		"deploymentid",
 		"poduid",
+		"clusterid",
+		"namespace",
 		"serialized",
 	}
 
@@ -151,6 +175,8 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 			obj.GetClosed(),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			pgutils.NilOrUUID(obj.GetPodUid()),
+			pgutils.NilOrUUID(obj.GetClusterId()),
+			obj.GetNamespace(),
 			serialized,
 		})
 

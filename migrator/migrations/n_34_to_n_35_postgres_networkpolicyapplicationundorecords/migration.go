@@ -35,7 +35,6 @@ var (
 		},
 	}
 	batchSize = 10000
-	schema    = frozenSchema.NetworkpolicyapplicationundorecordsSchema
 	log       = loghelper.LogWrapper{}
 )
 

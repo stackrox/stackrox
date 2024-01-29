@@ -29,7 +29,6 @@ describe('Cluster configuration', () => {
     const fixturePath = 'clusters/health.json';
 
     const assertConfigurationReadOnly = () => {
-        const form = cy.get('[data-testid="cluster-form"]').children();
         [
             'name',
             'mainImage',
@@ -47,10 +46,18 @@ describe('Cluster configuration', () => {
             'dynamicConfig.admissionControllerConfig.scanInline',
             'dynamicConfig.admissionControllerConfig.disableBypass',
             'dynamicConfig.disableAuditLogs',
-        ].forEach((id) => form.get(`input[id="${id}"]`).should('be.disabled'));
-        ['Select a cluster type', 'Select a runtime option'].forEach((label) =>
-            form.get(`select[aria-label="${label}"]`).should('be.disabled')
-        );
+        ].forEach((id) => {
+            cy.get('[data-testid="cluster-form"]')
+                .children()
+                .get(`input[id="${id}"]`)
+                .should('be.disabled');
+        });
+        ['Select a cluster type', 'Select a runtime option'].forEach((label) => {
+            cy.get('[data-testid="cluster-form"]')
+                .children()
+                .get(`select[aria-label="${label}"]`)
+                .should('be.disabled');
+        });
     };
 
     it('should be read-only for Helm-based installations', () => {

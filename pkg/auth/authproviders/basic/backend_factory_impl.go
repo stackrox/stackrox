@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
@@ -18,8 +17,7 @@ const (
 )
 
 var (
-	log                              = logging.LoggerForModule()
-	_   authproviders.BackendFactory = (*factory)(nil)
+	_ authproviders.BackendFactory = (*factory)(nil)
 )
 
 type factory struct {

@@ -3,17 +3,14 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/namespace/datastore/internal/store"
 	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/store"
-	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -29,6 +26,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -51,18 +49,6 @@ func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploym
 	}
 }
 
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
-	dbstore := pgStore.New(pool)
-	indexer := pgStore.NewIndexer(pool)
-	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	namespaceRanker := ranking.NamespaceRanker()
-	return New(dbstore, indexer, deploymentStore, namespaceRanker), nil
-}
-
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
 
@@ -74,7 +60,6 @@ var (
 
 type datastoreImpl struct {
 	store             store.Store
-	indexer           index.Indexer
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 
@@ -108,7 +93,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 				IsAllowed() {
 				return nil
 			}
-			allowedNamespaces = append(allowedNamespaces, namespace)
+			allowedNamespaces = append(allowedNamespaces, namespace.Clone())
 			return nil
 		})
 	}
@@ -116,6 +101,33 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 		return nil, err
 	}
 	b.updateNamespacePriority(allowedNamespaces...)
+	return allowedNamespaces, nil
+}
+
+// GetNamespacesForSAC retrieves namespaces matching the request
+func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	ok, err := namespaceSAC.ReadAllowed(ctx)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return b.SearchNamespaces(ctx, search.EmptyQuery())
+	}
+	var allowedNamespaces []*storage.NamespaceMetadata
+	walkFn := func() error {
+		allowedNamespaces = allowedNamespaces[:0]
+		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
+			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
+			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
+				IsAllowed() {
+				return nil
+			}
+			allowedNamespaces = append(allowedNamespaces, namespace)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
 	return allowedNamespaces, nil
 }
 

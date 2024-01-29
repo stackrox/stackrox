@@ -18,7 +18,6 @@ import objects.Service
 
 interface OrchestratorMain {
     def setup()
-    def cleanup()
 
     // Pods
     List<Pod> getPods(String ns, String appName)

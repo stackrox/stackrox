@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/data.go -source data.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -12,7 +13,6 @@ import (
 	reflect "reflect"
 
 	framework "github.com/stackrox/rox/central/compliance/framework"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
@@ -79,6 +79,18 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
+// AddHostScrapedData mocks base method.
+func (m *MockComplianceDataRepository) AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddHostScrapedData", scrapeResults)
+}
+
+// AddHostScrapedData indicates an expected call of AddHostScrapedData.
+func (mr *MockComplianceDataRepositoryMockRecorder) AddHostScrapedData(scrapeResults any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddHostScrapedData", reflect.TypeOf((*MockComplianceDataRepository)(nil).AddHostScrapedData), scrapeResults)
+}
+
 // CISKubernetesTriggered mocks base method.
 func (m *MockComplianceDataRepository) CISKubernetesTriggered() bool {
 	m.ctrl.T.Helper()
@@ -133,6 +145,20 @@ func (m *MockComplianceDataRepository) Deployments() map[string]*storage.Deploym
 func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
+}
+
+// DeploymentsToNetworkPolicies mocks base method.
+func (m *MockComplianceDataRepository) DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeploymentsToNetworkPolicies")
+	ret0, _ := ret[0].(map[string][]*storage.NetworkPolicy)
+	return ret0
+}
+
+// DeploymentsToNetworkPolicies indicates an expected call of DeploymentsToNetworkPolicies.
+func (mr *MockComplianceDataRepositoryMockRecorder) DeploymentsToNetworkPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentsToNetworkPolicies", reflect.TypeOf((*MockComplianceDataRepository)(nil).DeploymentsToNetworkPolicies))
 }
 
 // HasProcessIndicators mocks base method.
@@ -219,46 +245,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) K8sRoles() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "K8sRoles", reflect.TypeOf((*MockComplianceDataRepository)(nil).K8sRoles))
 }
 
-// NetworkFlows mocks base method.
-func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
+// NetworkFlowsWithDeploymentDst mocks base method.
+func (m *MockComplianceDataRepository) NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkFlows")
+	ret := m.ctrl.Call(m, "NetworkFlowsWithDeploymentDst")
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
 	return ret0
 }
 
-// NetworkFlows indicates an expected call of NetworkFlows.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call {
+// NetworkFlowsWithDeploymentDst indicates an expected call of NetworkFlowsWithDeploymentDst.
+func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlowsWithDeploymentDst() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
-}
-
-// NetworkGraph mocks base method.
-func (m *MockComplianceDataRepository) NetworkGraph() *v1.NetworkGraph {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkGraph")
-	ret0, _ := ret[0].(*v1.NetworkGraph)
-	return ret0
-}
-
-// NetworkGraph indicates an expected call of NetworkGraph.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkGraph() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkGraph", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkGraph))
-}
-
-// NetworkPolicies mocks base method.
-func (m *MockComplianceDataRepository) NetworkPolicies() map[string]*storage.NetworkPolicy {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NetworkPolicies")
-	ret0, _ := ret[0].(map[string]*storage.NetworkPolicy)
-	return ret0
-}
-
-// NetworkPolicies indicates an expected call of NetworkPolicies.
-func (mr *MockComplianceDataRepositoryMockRecorder) NetworkPolicies() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkPolicies", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkPolicies))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlowsWithDeploymentDst", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlowsWithDeploymentDst))
 }
 
 // NodeResults mocks base method.

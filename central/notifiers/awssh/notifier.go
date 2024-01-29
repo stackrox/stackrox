@@ -4,6 +4,7 @@ package awssh
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -21,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -76,9 +79,9 @@ func init() {
 		cryptoKey := ""
 		var err error
 		if env.EncNotifierCreds.BooleanSetting() {
-			cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+			cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
 			if err != nil {
-				utils.CrashOnError(err)
+				utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 			}
 		}
 		configuration.cryptoKey = cryptoKey
@@ -107,32 +110,41 @@ func init() {
 	})
 }
 
-func validateNotifierConfiguration(awssh *storage.AWSSecurityHub) (*storage.AWSSecurityHub, error) {
+// Validate AWSSecurityHub notifier
+func Validate(awssh *storage.AWSSecurityHub, validateSecret bool) error {
 	if awssh == nil {
-		return nil, errors.New("AWSSecurityHub configuration is required")
+		return errors.New("AWSSecurityHub configuration is required")
 	}
 
 	if awssh.GetRegion() == "" {
-		return nil, errors.New("AWS region must not be empty")
+		return errors.New("AWS region must not be empty")
 	}
 
 	if awssh.GetAccountId() == "" {
-		return nil, errors.New("AWS account ID must not be empty")
+		return errors.New("AWS account ID must not be empty")
 	}
 
-	if awssh.GetCredentials() == nil {
-		return nil, errors.New("AWS credentials must not be empty")
+	if validateSecret {
+		if awssh.GetCredentials() == nil {
+			return errors.New("AWS credentials must not be empty")
+		}
+
+		// In case STS is not enabled for the integration, expect static configuration to be enabled.
+		if !awssh.GetCredentials().GetStsEnabled() {
+			if awssh.GetCredentials().GetAccessKeyId() == "" {
+				return errors.New("AWS access key ID must not be empty")
+			}
+
+			if awssh.GetCredentials().GetSecretAccessKey() == "" {
+				return errors.New("AWS secret access key must not be empty")
+			}
+		}
+		if awssh.GetCredentials().GetStsEnabled() && !features.CloudCredentials.Enabled() {
+			return errors.New("AWS STS support enabled without the associated feature flag being enabled")
+		}
 	}
 
-	if awssh.GetCredentials().GetAccessKeyId() == "" {
-		return nil, errors.New("AWS access key ID must not be empty")
-	}
-
-	if awssh.GetCredentials().GetSecretAccessKey() == "" {
-		return nil, errors.New("AWS secret access key must not be empty")
-	}
-
-	return awssh, nil
+	return nil
 }
 
 type configuration struct {
@@ -149,6 +161,23 @@ type configuration struct {
 	canceler func()
 }
 
+func (c *configuration) getCredentials() (*storage.AWSSecurityHub_Credentials, error) {
+	if !env.EncNotifierCreds.BooleanSetting() {
+		return c.descriptor.GetAwsSecurityHub().GetCredentials(), nil
+	}
+
+	decCredsStr, err := c.cryptoCodec.Decrypt(c.cryptoKey, c.descriptor.GetNotifierSecret())
+	if err != nil {
+		return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
+	}
+	creds := &storage.AWSSecurityHub_Credentials{}
+	err = creds.Unmarshal([]byte(decCredsStr))
+	if err != nil {
+		return nil, errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
+	}
+	return creds, err
+}
+
 // notifier is an AlertNotifier implementation.
 type notifier struct {
 	configuration
@@ -163,7 +192,8 @@ type notifier struct {
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
-	awssh, err := validateNotifierConfiguration(configuration.descriptor.GetAwsSecurityHub())
+	awssh := configuration.descriptor.GetAwsSecurityHub()
+	err := Validate(awssh, !env.EncNotifierCreds.BooleanSetting())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config for AWS SecurityHub")
 	}
@@ -173,18 +203,18 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		awsConfig = awsConfig.WithRegion(awssh.GetRegion())
 	}
 
-	creds, err := getCredentials(configuration)
+	creds, err := configuration.getCredentials()
 	if err != nil {
 		return nil, err
 	}
-	if creds != nil {
+	if !creds.GetStsEnabled() {
 		awsConfig = awsConfig.WithCredentials(credentials.NewStaticCredentials(
 			creds.GetAccessKeyId(),
 			creds.GetSecretAccessKey(),
 			"",
 		))
 	}
-
+	awsConfig = awsConfig.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()})
 	awss, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create AWS session")
@@ -200,27 +230,6 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		initDoneSig:   concurrency.NewSignal(),
 		// stoppedSig intentionally omitted - zero value is "already triggered"
 	}, nil
-}
-
-func getCredentials(config configuration) (*storage.AWSSecurityHub_Credentials, error) {
-	if !env.EncNotifierCreds.BooleanSetting() {
-		return config.descriptor.GetAwsSecurityHub().GetCredentials(), nil
-	}
-
-	if config.descriptor.GetNotifierSecret() == "" {
-		return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", config.descriptor.GetName())
-	}
-
-	decCredsStr, err := config.cryptoCodec.Decrypt(config.cryptoKey, config.descriptor.GetNotifierSecret())
-	if err != nil {
-		return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", config.descriptor.GetName())
-	}
-	creds := &storage.AWSSecurityHub_Credentials{}
-	err = creds.Unmarshal([]byte(decCredsStr))
-	if err != nil {
-		return nil, errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", config.descriptor.GetName())
-	}
-	return creds, err
 }
 
 func (n *notifier) waitForInitDone() {
@@ -408,9 +417,9 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 //   - AWS SecurityHub is reachable
 //
 // If either of the checks fails, an error is returned.
-func (n *notifier) Test(ctx context.Context) error {
+func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 	if n.stoppedSig.IsDone() {
-		return errNotRunning
+		return notifiers.NewNotifierError(errNotRunning.Error(), nil)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
@@ -428,7 +437,7 @@ func (n *notifier) Test(ctx context.Context) error {
 		MaxResults: aws.Int64(1),
 	})
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
+		return notifiers.NewNotifierError("get findings from AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 
 	testAlert := &storage.Alert{
@@ -469,7 +478,7 @@ func (n *notifier) Test(ctx context.Context) error {
 	})
 
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
+		return notifiers.NewNotifierError("import test findings to AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 	return nil
 }

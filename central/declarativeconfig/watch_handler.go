@@ -82,6 +82,13 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		log.Warnf("Error reading declarative configuration files: %+v", err)
 		return
 	}
+
+	// Operate the critical section under a single lock.
+	// This lead to rare occurrences where calls to UpdateDeclarativeConfigContents were done twice under the read lock
+	// instead of only once under a single lock (since we previously held two different locks for comparing + updating.
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	fileContents, ok := val.(map[string][]byte)
 	if !ok {
 		log.Warnf("Received invalid type in stable update for declarative configuration files: %T", val)
@@ -96,10 +103,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 		log.Debug("Found no changes from before in content, no reconciliation will be triggered")
 		return
 	}
-
 	log.Debug("Found changes in declarative configuration files, reconciliation will be triggered")
-	w.mutex.RLock()
-	defer w.mutex.RUnlock()
 	w.updater.UpdateDeclarativeConfigContents(w.id, maputil.Values(fileContents))
 }
 
@@ -118,8 +122,6 @@ func (w *watchHandler) OnWatchError(err error) {
 //
 // Otherwise, it will return false.
 func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) bool {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	var changedFiles bool
 	for fileName, fileContent := range fileContents {
 		cachedHash, ok := w.cachedFileHashes[fileName]
@@ -136,8 +138,6 @@ func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) b
 // the list of updated files. Otherwise, returns false.
 // In the end, the cached values will be changed to reflect the passed file contents.
 func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	cachedFileNames := set.NewStringSet(maputil.Keys(w.cachedFileHashes)...)
 	fileNames := set.NewStringSet(maputil.Keys(fileContents)...)
 
@@ -160,8 +160,6 @@ func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool
 func (w *watchHandler) logFileContents(contents map[string][]byte) {
 	logMessage := "Found declarative configuration file contents\n"
 
-	w.mutex.RLock()
-	defer w.mutex.RUnlock()
 	for fileName, fileContents := range contents {
 		logMessage += fmt.Sprintf("File %s: %s\n", fileName, fileContents)
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -29,6 +28,7 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
 			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
+			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfigurationsCount",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
@@ -37,7 +37,6 @@ var (
 			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
 		},
 	})
-	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -91,6 +90,19 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
 }
 
+func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")
+	}
+
+	err := s.manager.DeleteScan(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
+	}
+
+	return &v2.Empty{}, nil
+}
+
 func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
@@ -130,4 +142,27 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 	}
 
 	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.complianceScanSettingsDS)
+}
+
+func (s *serviceImpl) GetComplianceScanConfigurationsCount(ctx context.Context, request *v2.RawQuery) (*v2.ComplianceScanConfigurationsCount, error) {
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	scanConfigs, err := s.complianceScanSettingsDS.CountScanConfigurations(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.NotFound, err.Error())
+	}
+	return &v2.ComplianceScanConfigurationsCount{
+		Count: int32(scanConfigs),
+	}, nil
+}
+
+func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, request *v2.ResourceByID) (*v2.Empty, error) {
+	if request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to rerun a scan")
+	}
+
+	err := s.manager.ProcessRescanRequest(ctx, request.GetId())
+	return &v2.Empty{}, err
 }

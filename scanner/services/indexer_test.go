@@ -7,6 +7,7 @@ import (
 
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -52,15 +53,19 @@ func createRequest(id, url, username string) *v4.CreateIndexReportRequest {
 	}
 }
 
-func (s *indexerServiceTestSuite) setupMock(optCount int, report *claircore.IndexReport, err error) {
+func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report *claircore.IndexReport, err error) {
 	s.indexerMock.
 		EXPECT().
-		IndexContainerImage(gomock.Any(), gomock.Any(), gomock.Eq(imageURL), gomock.Len(optCount)).
+		IndexContainerImage(gomock.Any(), gomock.Eq(hashID), gomock.Eq(imageURL), gomock.Len(optCount)).
 		Return(report, err)
 }
 
+func (s *indexerServiceTestSuite) TestAuthz() {
+	testutils.AssertAuthzWorks(s.T(), &indexerService{})
+}
+
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEnabled() {
-	s.setupMock(1, &claircore.IndexReport{}, nil)
+	s.setupMock(hashID, 1, &claircore.IndexReport{}, nil)
 	req := createRequest(hashID, imageURL, "sample username")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -68,7 +73,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
-	s.setupMock(0, &claircore.IndexReport{}, nil)
+	s.setupMock(hashID, 0, &claircore.IndexReport{}, nil)
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
@@ -76,7 +81,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
-	s.setupMock(0, nil, errors.New(`indexer said "ouch"`))
+	s.setupMock(hashID, 0, nil, errors.New(`indexer said "ouch"`))
 	req := createRequest(hashID, imageURL, "")
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
@@ -196,13 +201,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 
 func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	req := &v4.GetIndexReportRequest{HashId: hashID}
-	manifestDigest, err := createManifestDigest(hashID)
-	s.NoError(err)
 
 	// When get index report returns an error.
 	s.indexerMock.
 		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
 		Return(nil, false, errors.New("ouch"))
 	r, err := s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "ouch")
@@ -211,7 +214,7 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	// When get index report returns not found.
 	s.indexerMock.
 		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
 		Return(nil, false, nil)
 	r, err = s.service.GetIndexReport(s.ctx, req)
 	s.ErrorContains(err, "not found")
@@ -220,9 +223,40 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 	// When get index report returns an index report.
 	s.indexerMock.
 		EXPECT().
-		GetIndexReport(gomock.Any(), gomock.Eq(manifestDigest)).
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
 		Return(&claircore.IndexReport{State: "sample state"}, true, nil)
 	r, err = s.service.GetIndexReport(s.ctx, req)
 	s.NoError(err)
 	s.Equal(&v4.IndexReport{HashId: hashID, State: "sample state", Contents: &v4.Contents{}}, r)
+}
+
+func (s *indexerServiceTestSuite) Test_HasIndexReport() {
+	req := &v4.HasIndexReportRequest{HashId: hashID}
+
+	// When get index report returns an error.
+	s.indexerMock.
+		EXPECT().
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+		Return(nil, false, errors.New("ouch"))
+	r, err := s.service.HasIndexReport(s.ctx, req)
+	s.ErrorContains(err, "ouch")
+	s.Nil(r)
+
+	// When get index report returns not found.
+	s.indexerMock.
+		EXPECT().
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+		Return(nil, false, nil)
+	r, err = s.service.HasIndexReport(s.ctx, req)
+	s.NoError(err)
+	s.False(r.GetExists())
+
+	// When get index report returns an index report.
+	s.indexerMock.
+		EXPECT().
+		GetIndexReport(gomock.Any(), gomock.Eq(hashID)).
+		Return(&claircore.IndexReport{State: "sample state"}, true, nil)
+	r, err = s.service.HasIndexReport(s.ctx, req)
+	s.NoError(err)
+	s.True(r.GetExists())
 }

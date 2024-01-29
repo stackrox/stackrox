@@ -2,12 +2,12 @@ import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
-    selectResourceFilterType,
-    typeAndSelectResourceFilterValue,
-    typeAndSelectCustomResourceFilterValue as typeAndCreateResourceFilterValue,
+    typeAndSelectSearchFilterValue,
+    typeAndSelectCustomSearchFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 describe('Workload CVE Image CVE Single page', () => {
     withAuth();
@@ -18,15 +18,22 @@ describe('Workload CVE Image CVE Single page', () => {
         }
     });
 
-    it('should correctly handle ImageCVE single page specific behavior', () => {
-        // Apply global default filters
+    function visitFirstCve() {
         visitWorkloadCveOverview();
 
-        // Click any CVE link in the table to visit the ImageCVE Page.
-        cy.get('tbody tr td[data-label="CVE"] a:contains("CVE")').first().click();
+        // Clear any filters that may be applied to increase the likelihood of finding valid data
+        if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS')) {
+            cy.get(vulnSelectors.clearFiltersButton).click();
+        }
 
-        // Wait for the summary card skeleton to disappear
-        cy.get('.pf-c-skeleton:contains("Loading image cve summary data")').should('not.exist');
+        // Ensure the data in the table has settled
+        cy.get(selectors.isUpdatingTable).should('not.exist');
+
+        cy.get('tbody tr td[data-label="CVE"] a').first().click();
+    }
+
+    it('should correctly handle ImageCVE single page specific behavior', () => {
+        visitFirstCve();
 
         // Check that only applicable resource menu items are present in the toolbar
         cy.get(selectors.searchOptionsDropdown).click();
@@ -39,8 +46,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should correctly handle local filters on the images tab', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td[data-label="CVE"] a').first().click();
+        visitFirstCve();
 
         cy.get('table tbody tr:nth-of-type(1) td[data-label="CVE severity"]').then(
             ([$severity]) => {
@@ -63,7 +69,7 @@ describe('Workload CVE Image CVE Single page', () => {
                 ).should('not.exist');
 
                 // Clear the filters
-                cy.get(selectors.clearFiltersButton).click();
+                cy.get(vulnSelectors.clearFiltersButton).click();
 
                 // Apply the filter that _does_ match the value extracted from the first row to ensure all data
                 // in the table only contains that severity value. Since this value was pulled from the first row
@@ -83,8 +89,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should correctly handle local filters on the deployments tab', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td a:contains("CVE")').first().click();
+        visitFirstCve();
         cy.get(selectors.entityTypeToggleItem('Deployment')).click();
 
         // Wait for the loading spinner to disappear
@@ -93,16 +98,15 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get(`${selectors.firstTableRow} td[data-label="Namespace"]`).then(([$namespace]) => {
             const namespace = $namespace.innerText;
 
-            selectResourceFilterType('Namespace');
             typeAndCreateResourceFilterValue('Namespace', `bogus-${namespace}`);
 
             cy.get(`table tbody tr td[data-label="Namespace"]:contains("${namespace}")`).should(
                 'not.exist'
             );
 
-            cy.get(selectors.clearFiltersButton).click();
+            cy.get(vulnSelectors.clearFiltersButton).click();
 
-            typeAndSelectResourceFilterValue('Namespace', namespace);
+            typeAndSelectSearchFilterValue('Namespace', namespace);
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`
@@ -111,8 +115,7 @@ describe('Workload CVE Image CVE Single page', () => {
     });
 
     it('should have consistent behavior within the data table', () => {
-        visitWorkloadCveOverview();
-        cy.get('tbody tr td a:contains("CVE")').first().click();
+        visitFirstCve();
 
         // Test that the number of components in the top level row matches the table in the expanded row
         cy.get(`${selectors.firstTableRow} .pf-c-table__toggle button`).click();
@@ -147,7 +150,7 @@ describe('Workload CVE Image CVE Single page', () => {
         // Test the the deployment links navigate to the correct page
         cy.get(`${selectors.firstTableRow} td[data-label="Deployment"] a`).then(
             ([$deploymentLink]) => {
-                const deploymentName = $deploymentLink.innerText;
+                const deploymentName = $deploymentLink.innerText.replace('\n', '');
                 cy.wrap($deploymentLink).click();
                 cy.get(`h1:contains("${deploymentName}")`);
             }

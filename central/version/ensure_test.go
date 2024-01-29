@@ -5,7 +5,6 @@ package version
 import (
 	"testing"
 
-	pgStore "github.com/stackrox/rox/central/version/postgres"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -21,7 +20,6 @@ func TestEnsurer(t *testing.T) {
 type EnsurerTestSuite struct {
 	suite.Suite
 
-	pgStore      pgStore.Store
 	pool         postgres.DB
 	versionStore store.Store
 }

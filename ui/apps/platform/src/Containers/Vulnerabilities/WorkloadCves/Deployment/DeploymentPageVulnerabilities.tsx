@@ -18,7 +18,7 @@ import {
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
-import useURLPagination from 'hooks/useURLPagination';
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
@@ -27,10 +27,12 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import {
+    SearchOption,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
     IMAGE_CVE_SEARCH_OPTION,
     IMAGE_SEARCH_OPTION,
-    SearchOption,
-} from 'Containers/Vulnerabilities/components/SearchOptionsDropdown';
+} from 'Containers/Vulnerabilities/searchOptions';
 import { DynamicTableLabel } from '../components/DynamicIcon';
 import WorkloadTableToolbar from '../components/WorkloadTableToolbar';
 import TableErrorComponent from '../components/TableErrorComponent';
@@ -44,6 +46,7 @@ import {
     getHiddenSeverities,
     getHiddenStatuses,
     getVulnStateScopedQueryString,
+    getStatusesForExceptionCount,
 } from '../searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
@@ -65,10 +68,15 @@ const summaryQuery = gql`
     }
 `;
 
-const vulnerabilityQuery = gql`
+export const deploymentVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
     ${deploymentWithVulnerabilitiesFragment}
-    query getCvesForDeployment($id: ID!, $query: String!, $pagination: Pagination!) {
+    query getCvesForDeployment(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
         deployment(id: $id) {
             imageVulnerabilityCount(query: $query)
             ...DeploymentWithVulnerabilities
@@ -78,19 +86,28 @@ const vulnerabilityQuery = gql`
 
 const defaultSortFields = ['CVE'];
 
-const searchOptions: SearchOption[] = [IMAGE_CVE_SEARCH_OPTION, IMAGE_SEARCH_OPTION];
+const searchOptions: SearchOption[] = [
+    IMAGE_SEARCH_OPTION,
+    IMAGE_CVE_SEARCH_OPTION,
+    COMPONENT_SEARCH_OPTION,
+    COMPONENT_SOURCE_SEARCH_OPTION,
+];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
+    pagination: UseURLPaginationResult;
 };
 
-function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabilitiesProps) {
+function DeploymentPageVulnerabilities({
+    deploymentId,
+    pagination,
+}: DeploymentPageVulnerabilitiesProps) {
     const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const { page, setPage, perPage, setPerPage } = useURLPagination(20);
+    const { page, setPage, perPage, setPerPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: defaultSortFields,
         defaultSortOption: {
@@ -113,18 +130,18 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
             } | null;
         },
-        { id: string; query: string }
+        { id: string; query: string; statusesForExceptionCount: string[] }
     >(summaryQuery, {
-        variables: { id: deploymentId, query },
+        fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
+        variables: {
+            id: deploymentId,
+            query,
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+        },
     });
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
-
-    const pagination = {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        sortOption,
-    };
 
     const vulnerabilityRequest = useQuery<
         {
@@ -138,9 +155,21 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
             id: string;
             query: string;
             pagination: PaginationParam;
+            statusesForExceptionCount: string[];
         }
-    >(vulnerabilityQuery, {
-        variables: { id: deploymentId, query, pagination },
+    >(deploymentVulnerabilitiesQuery, {
+        fetchPolicy: 'no-cache',
+        nextFetchPolicy: 'no-cache',
+        variables: {
+            id: deploymentId,
+            query,
+            pagination: {
+                offset: (page - 1) * perPage,
+                limit: perPage,
+                sortOption,
+            },
+            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+        },
     });
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
@@ -171,7 +200,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs isBox />
+                <VulnerabilityStateTabs isBox onChange={() => setPage(1)} />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         autocompleteSearchContext={{
@@ -215,6 +244,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                             summaryData.deployment.imageCVECountBySeverity
                                         }
                                         hiddenStatuses={hiddenStatuses}
+                                        isBusy={summaryRequest.loading}
                                     />
                                 </GridItem>
                             </Grid>
@@ -265,6 +295,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                                     deployment={vulnerabilityData.deployment}
                                     getSortParams={getSortParams}
                                     isFiltered={isFiltered}
+                                    vulnerabilityState={currentVulnerabilityState}
                                 />
                             </div>
                         )}

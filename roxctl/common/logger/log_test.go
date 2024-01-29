@@ -28,7 +28,7 @@ func TestLogger(t *testing.T) {
 		{
 			name: "Print",
 			fun:  func(l Logger) { l.PrintfLn(in) },
-			out:  "(TOTAL: 0, \u001B[34;2mLOW\u001B[0m: 0, \u001B[33mMEDIUM\u001B[0m: 0, \u001B[95mHIGH\u001B[0m: 0, \u001B[31;1mCRITICAL\u001B[0m: 0)\n",
+			out:  "(TOTAL: 0, \u001B[34;2mLOW\u001B[0;22m: 0, \u001B[33mMEDIUM\u001B[0m: 0, \u001B[95mHIGH\u001B[0m: 0, \u001B[31;1mCRITICAL\u001B[0;22m: 0)\n",
 		},
 		{
 			name:   "Info",

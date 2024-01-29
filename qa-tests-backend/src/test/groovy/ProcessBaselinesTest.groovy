@@ -1,9 +1,11 @@
 import static Services.waitForSuspiciousProcessInRiskIndicators
 import static Services.waitForViolation
 import static util.Helpers.evaluateWithRetry
+import static util.Helpers.trueWithin
 
 import java.util.concurrent.TimeUnit
 
+import com.google.protobuf.util.Timestamps
 import org.apache.commons.lang3.StringUtils
 import org.junit.Rule
 import org.junit.rules.Timeout
@@ -119,7 +121,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     // some padding.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(3*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(4*(BASELINE_WAIT_TIME + RISK_WAIT_TIME) + 300 + 120, TimeUnit.SECONDS)
 
     @Shared
     private Policy unauthorizedProcessExecution
@@ -255,6 +257,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
 
@@ -438,10 +441,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Tag("BAT")
     def "Delete process baselines via API"() {
         given:
-        "a baseline is deleted"
+        "a baseline is created"
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
@@ -450,6 +452,12 @@ class ProcessBaselinesTest extends BaseSpecification {
         def baselinesCreated = ProcessBaselineService.
                 waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
         assert(baselinesCreated)
+        def baselineBeforeDelete = null
+        assert trueWithin(70, 5) {
+            baselineBeforeDelete = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            assert baselineBeforeDelete
+            baselineBeforeDelete.elementsList.size() > 0
+        }
 
         when:
         "delete the baselines"
@@ -460,8 +468,12 @@ class ProcessBaselinesTest extends BaseSpecification {
         "Verify that all baselines with that deployment ID have been deleted (i.e. the baseline contents cleared)"
         ProcessBaselineOuterClass.ProcessBaseline baselineAfterDelete = ProcessBaselineService.
                             getProcessBaseline(clusterId, deployment, containerName)
-        // Baseline should still exist but have no elements associated.  Essentially cleared out.
-        assert  ( baselineAfterDelete.elementsList == [] )
+        // Baseline should still exist but have no elements associated. Essentially cleared out.
+        log.info "baselineBeforeDelete processes ${baselineBeforeDelete.elementsList*.element.processName}"
+        assert Timestamps.compare(
+                baselineBeforeDelete.getStackRoxLockedTimestamp(),
+                baselineAfterDelete.getStackRoxLockedTimestamp()) < 0
+        assert ( baselineAfterDelete.elementsList == [] )
 
         cleanup:
         "Remove deployment"

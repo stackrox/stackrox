@@ -20,7 +20,7 @@ type Environment interface {
 	HTTPClient(timeout time.Duration, method ...auth.Method) (common.RoxctlHTTPClient, error)
 
 	// GRPCConnection returns an authenticated grpc.ClientConn
-	GRPCConnection() (*grpc.ClientConn, error)
+	GRPCConnection(connectionOpts ...common.GRPCOption) (*grpc.ClientConn, error)
 
 	// InputOutput returns an IO which holds all input / output streams
 	InputOutput() io2.IO

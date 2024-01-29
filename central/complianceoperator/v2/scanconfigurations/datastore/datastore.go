@@ -11,12 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator metadata.
@@ -36,13 +31,16 @@ type DataStore interface {
 	UpsertScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error
 
 	// DeleteScanConfiguration deletes the scan configuration specified by id
-	DeleteScanConfiguration(ctx context.Context, id string) error
+	DeleteScanConfiguration(ctx context.Context, id string) (string, error)
 
 	// UpdateClusterStatus updates the scan configuration with the cluster status
-	UpdateClusterStatus(ctx context.Context, scanID string, clusterID string, clusterStatus string) error
+	UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error
 
 	// GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan id
-	GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
+	GetScanConfigClusterStatus(ctx context.Context, scanConfigID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error)
+
+	// CountScanConfigurations scan config based on a query
+	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.
@@ -56,20 +54,9 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store,
 	return ds
 }
 
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, clusterDS clusterDatastore.DataStore) DataStore {
-	ds := &datastoreImpl{
-		storage:       scanConfigStore,
-		statusStorage: scanConfigStatusStore,
-		clusterDS:     clusterDS,
-		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
-	}
-	return ds
-}
-
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB, clusterDS clusterDatastore.DataStore) (DataStore, error) {
 	store := pgStore.New(pool)
-	statusStore := statusStore.New(pool)
-	return New(store, statusStore, clusterDS), nil
+	statusStorage := statusStore.New(pool)
+	return New(store, statusStorage, clusterDS), nil
 }

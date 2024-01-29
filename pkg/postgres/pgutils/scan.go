@@ -2,7 +2,7 @@ package pgutils
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 )
 
 type unmarshaler[T any] interface {

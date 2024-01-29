@@ -12,7 +12,7 @@ type EmptyStateTemplateProps = {
     children?: ReactNode;
     title: string;
     headingLevel: 'h1' | 'h2' | 'h3' | 'h4';
-    icon?: React.ComponentType;
+    icon?: React.ComponentType<React.PropsWithChildren<unknown>>;
     iconClassName?: string;
 };
 

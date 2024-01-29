@@ -2330,3 +2330,43 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		})
 	}
 }
+
+func TestGetApplyingPoliciesPerDeployment(t *testing.T) {
+	evaluator := newMockGraphEvaluator()
+
+	deployments := []*storage.Deployment{
+		{
+			Id:          "a",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "a"),
+		},
+		{
+			Id:          "b",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "b"),
+		},
+		{
+			Id:          "c",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "c"),
+		},
+	}
+
+	networkPolicies := []*storage.NetworkPolicy{
+		getExamplePolicy("a-ingress-tcp-8080"),
+		getExamplePolicy("b-egress-a-tcp-ports-and-dns"),
+		getExamplePolicy("c-egress-a-tcp-8443-and-udp"),
+	}
+
+	expectedResults := map[string][]*storage.NetworkPolicy{
+		"a": {networkPolicies[0]},
+		"b": {networkPolicies[1]},
+		"c": {networkPolicies[2]},
+	}
+
+	resultMap := evaluator.GetApplyingPoliciesPerDeployment(deployments, nil, networkPolicies)
+	assert.Equal(t, expectedResults, resultMap)
+}

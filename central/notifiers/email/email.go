@@ -128,7 +128,8 @@ func (s *smtpServer) endpoint() string {
 	return fmt.Sprintf("%v:%v", s.host, s.port)
 }
 
-func validate(emailConf *storage.Email) error {
+// Validate Email notifier
+func Validate(emailConf *storage.Email, validateSecret bool) error {
 	if emailConf == nil {
 		return errors.New("Email configuration is required")
 	}
@@ -144,7 +145,7 @@ func validate(emailConf *storage.Email) error {
 		if emailConf.GetUsername() == "" {
 			errorList.AddString("Username must be specified")
 		}
-		if emailConf.GetPassword() == "" {
+		if validateSecret && emailConf.GetPassword() == "" {
 			errorList.AddString("Password must be specified")
 		}
 	}
@@ -157,7 +158,7 @@ func validate(emailConf *storage.Email) error {
 func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
 	conf := notifier.GetEmail()
-	if err := validate(conf); err != nil {
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 
@@ -364,11 +365,14 @@ func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 }
 
 // Test sends a test notification.
-func (e *email) Test(ctx context.Context) error {
+func (e *email) Test(ctx context.Context) *notifiers.NotifierError {
 	subject := "StackRox Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with StackRox.")
-	err := e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body)
-	return err
+	if err := e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body); err != nil {
+		return notifiers.NewNotifierError("send test email failed", err)
+	}
+
+	return nil
 }
 
 func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) error {
@@ -536,6 +540,10 @@ func (e *email) tlsConfig() *tls.Config {
 }
 
 func (e *email) getPassword() (string, error) {
+	if e.config.GetAllowUnauthenticatedSmtp() {
+		return "", nil
+	}
+
 	if e.creds != "" {
 		return e.creds, nil
 	}
@@ -543,10 +551,6 @@ func (e *email) getPassword() (string, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		e.creds = e.config.GetPassword()
 		return e.creds, nil
-	}
-
-	if e.notifier.GetNotifierSecret() == "" {
-		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
 	}
 
 	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.notifier.GetNotifierSecret())
@@ -574,9 +578,9 @@ func init() {
 	cryptoKey := ""
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
 		if err != nil {
-			utils.CrashOnError(err)
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
 		}
 	}
 	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {

@@ -53,7 +53,7 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 	}
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, indicator, processNotInBaseline)
+		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, indicator, processNotInBaseline)
 	}, indicator, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -171,7 +171,7 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, flow)
+		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, flow)
 	}, nil, nil, flow, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

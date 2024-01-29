@@ -35,6 +35,7 @@ func (s *ServiceIdentitiesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE service_identities CASCADE")
 	s.T().Log("service_identities", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

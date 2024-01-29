@@ -5,6 +5,8 @@ values:
   central:
     persistence:
       none: true
+  imagePullSecrets:
+    allowNone: true
 
 name: "Test default labels"
 tests:

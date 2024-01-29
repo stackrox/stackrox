@@ -116,8 +116,7 @@ func TestSplunkComplianceAPI(t *testing.T) {
 type splunkComplianceAPITestSuite struct {
 	suite.Suite
 
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasReadCtx context.Context
 
 	mockCtrl *gomock.Controller
 	mockDS   *mocks.MockDataStore

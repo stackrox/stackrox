@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import useMap from './useMap';
 
 test('useMap should test membership via reference equality', () => {

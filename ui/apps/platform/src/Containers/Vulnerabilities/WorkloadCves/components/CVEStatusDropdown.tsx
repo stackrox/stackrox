@@ -5,7 +5,7 @@ import { SearchFilter } from 'types/search';
 
 type CVEStatusDropdownProps = {
     searchFilter: SearchFilter;
-    onSelect: (filterType, e, selection) => void;
+    onSelect: (filterType: 'FIXABLE', checked: boolean, selection: string) => void;
 };
 
 function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
@@ -14,9 +14,6 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
     function onCveStatusToggle(isOpen: boolean) {
         setCveStatusIsOpen(isOpen);
     }
-    function onCveStatusSelect(e, selection) {
-        onSelect('Fixable', e, selection);
-    }
 
     return (
         <Select
@@ -24,8 +21,10 @@ function CVEStatusDropdown({ searchFilter, onSelect }: CVEStatusDropdownProps) {
             aria-label="CVE status filter menu items"
             toggleAriaLabel="CVE status filter menu toggle"
             onToggle={onCveStatusToggle}
-            onSelect={onCveStatusSelect}
-            selections={searchFilter.Fixable}
+            onSelect={(e, selection) => {
+                onSelect('FIXABLE', (e.target as HTMLInputElement).checked, selection as string);
+            }}
+            selections={searchFilter.FIXABLE}
             isOpen={cveStatusIsOpen}
             placeholderText="CVE status"
         >

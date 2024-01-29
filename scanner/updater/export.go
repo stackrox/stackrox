@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/updater/manual"
+	"github.com/stackrox/rox/scanner/updater/rhel"
 	"golang.org/x/time/rate"
 
 	// default updaters
@@ -22,18 +23,22 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
 	}
 	// create output json file
-	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
+	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.zst"))
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := outputFile.Close(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("Failed to close output file")
+		}
+	}()
 
-	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
+	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
 			limiter:   limiter,
@@ -52,39 +57,56 @@ func Export(ctx context.Context, outputDir string) error {
 		}
 	}()
 
-	updaterSet, err := manual.UpdaterSet(ctx, nil)
+	var opts [][]updates.ManagerOption
+
+	// Manual CVEs.
+	manualSet, err := manual.UpdaterSet(ctx, nil)
 	if err != nil {
 		return err
 	}
-	outOfTree := [][]driver.Updater{
-		make([]driver.Updater, 0),
-	}
-	outOfTree = append(outOfTree, updaterSet.Updaters())
+	outOfTree := append([]driver.Updater{}, manualSet.Updaters()...)
+	opts = append(opts, []updates.ManagerOption{updates.WithOutOfTree(outOfTree)})
 
-	for i, uSet := range [][]string{
-		{"oracle", "photon", "suse", "aws", "rhcc"},
-		{"alpine", "rhel", "ubuntu", "osv", "debian"},
+	// RHEL custom: Forked from ClairCore.
+	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
+	if err != nil {
+		return err
+	}
+	opts = append(opts, []updates.ManagerOption{
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{"rhel-custom": fac})})
+
+	// ClairCore updaters.
+	for _, uSet := range [][]string{
+		{"oracle"},
+		{"photon"},
+		{"suse"},
+		{"aws"},
+		{"alpine"},
+		{"debian"},
+		{"rhcc"},
+		{"ubuntu"},
+		{"osv"},
 	} {
+		opts = append(opts, []updates.ManagerOption{updates.WithEnabled(uSet)})
+	}
+
+	for _, o := range opts {
 		jsonStore, err := jsonblob.New()
 		if err != nil {
 			return err
 		}
-
-		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
-			updates.WithEnabled(uSet),
-			updates.WithOutOfTree(outOfTree[i]),
-		)
+		mgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient, o...)
 		if err != nil {
 			return err
 		}
-
-		if err := updateMgr.Run(ctx); err != nil {
+		if err := mgr.Run(ctx); err != nil {
 			return err
 		}
-
-		err = jsonStore.Store(zstdWriter)
-		if err != nil {
+		if err := jsonStore.Store(zstdWriter); err != nil {
 			return err
+		}
+		if err := zstdWriter.Flush(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("Failed to flush zstd writer")
 		}
 	}
 

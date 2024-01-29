@@ -19,16 +19,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
 var (
-	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
+			// The GetPublicConfig endpoint is used in code flows where
+			// the user is not authenticated yet. For instance the public
+			// config contains banners that are rendered on the login page.
+			// This endpoint should therefore remain public.
 			"/v1.ConfigService/GetPublicConfig",
 		},
 		user.With(permissions.View(resources.Administration)): {

@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -82,7 +83,6 @@ type localSensorConfig struct {
 	ReplayK8sEnabled   bool
 	ReplayK8sTraceFile string
 	Verbose            bool
-	ResyncPeriod       time.Duration
 	CreateMode         k8s.CreateMode
 	Delay              time.Duration
 	PoliciesFile       string
@@ -151,7 +151,6 @@ func mustGetCommandLineArgs() localSensorConfig {
 		RecordK8sFile:      "k8s-trace.jsonl",
 		ReplayK8sEnabled:   false,
 		ReplayK8sTraceFile: "k8s-trace.jsonl",
-		ResyncPeriod:       1 * time.Minute,
 		Delay:              5 * time.Second,
 		CreateMode:         k8s.Delay,
 		PoliciesFile:       "",
@@ -173,7 +172,6 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.RecordK8sFile, "record-out", sensorConfig.RecordK8sFile, "a file where recorded trace would be stored")
 	flag.BoolVar(&sensorConfig.ReplayK8sEnabled, "replay", sensorConfig.ReplayK8sEnabled, "whether to reply recorded a trace with k8s events")
 	flag.StringVar(&sensorConfig.ReplayK8sTraceFile, "replay-in", sensorConfig.ReplayK8sTraceFile, "a file where recorded trace would be read from")
-	flag.DurationVar(&sensorConfig.ResyncPeriod, "resync", sensorConfig.ResyncPeriod, "resync period")
 	flag.DurationVar(&sensorConfig.Delay, "delay", sensorConfig.Delay, "create events with a given delay")
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
@@ -306,7 +304,6 @@ func main() {
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(connection).
 		WithLocalSensor(true).
-		WithResyncPeriod(localConfig.ResyncPeriod).
 		WithWorkloadManager(workloadManager)
 
 	if localConfig.RecordK8sEnabled {
@@ -423,12 +420,19 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		}
 	}
 
-	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
+	initialMessages := []*central.MsgToSensor{
 		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
 		message.BaselineSync([]*storage.ProcessBaseline{}),
-		message.NetworkBaselineSync([]*storage.NetworkBaseline{}))
+		message.NetworkBaselineSync([]*storage.NetworkBaseline{}),
+	}
+
+	if features.SensorReconciliationOnReconnect.Enabled() {
+		initialMessages = append(initialMessages, message.DeduperState(nil, 1, 1))
+	}
+
+	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(initialMessages...)
 
 	if localConfig.Verbose {
 		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {

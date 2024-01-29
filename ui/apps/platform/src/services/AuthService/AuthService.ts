@@ -235,7 +235,10 @@ export type UserAuthStatus = {
  */
 export function getAuthStatus(): Promise<UserAuthStatus> {
     return axios.get<AuthStatus>('/v1/auth/status').then(({ data }) => {
+        // disable because unused refreshUrl might be specified for rest spread idiom.
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         const { expires, refreshUrl, ...userAuthData } = data;
+        /* eslint-enable @typescript-eslint/no-unused-vars */
         // while it's a side effect, it's the best place to do it
         // @ts-ignore 2345
         accessTokenManager.updateTokenInfo({ expiry: expires });
@@ -311,9 +314,12 @@ export function loginWithBasicAuth(
 const BEARER_TOKEN_PREFIX = `Bearer `;
 
 function setAuthHeader(config, token: string) {
+    // disable because unused Authorization might be specified for rest spread idiom.
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const {
         headers: { Authorization, ...notAuthHeaders },
     } = config;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
     // make sure new config doesn't have unnecessary auth header
     const newConfig = {
         ...config,

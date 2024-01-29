@@ -38,7 +38,6 @@ var _ suite.SetupAllSuite = &PodHierarchySuite{}
 var _ suite.TearDownTestSuite = &PodHierarchySuite{}
 
 func (s *PodHierarchySuite) SetupSuite() {
-	s.T().Setenv("ROX_RESYNC_DISABLED", "true")
 	if testContext, err := helper.NewContext(s.T()); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
@@ -97,7 +96,7 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 
 			messages := testC.GetFakeCentral().GetAllMessages()
 			uniquePodNames := helper.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
-			s.Require().Len(uniquePodNames, 3, "Should have received three different pod events")
+			s.Require().Lenf(uniquePodNames, 3, "Should have received three different pod events: %v", uniquePodNames)
 		}),
 	)
 }
@@ -150,18 +149,23 @@ func (s *PodHierarchySuite) Test_DeleteDeployment() {
 		require.NoError(t, deleteDep())
 
 		// Check deployment and action
-		testC.LastDeploymentStateWithTimeout(t, "nginx-deployment", func(_ *storage.Deployment, action central.ResourceAction) error {
+		testC.LastDeploymentStateWithID(t, id, func(_ *storage.Deployment, action central.ResourceAction) error {
 			if action != central.ResourceAction_REMOVE_RESOURCE {
 				return errors.New("ResourceAction should be REMOVE_RESOURCE")
 			}
 			return nil
-		}, "deployment should be deleted", 5*time.Minute)
+		}, "deployment should be deleted", time.Minute)
 		testC.LastViolationStateByIDWithTimeout(t, id, func(alertResults *central.AlertResults) error {
-			if alertResults.GetAlerts() != nil {
+			if alertResults.GetAlerts() != nil && len(alertResults.GetAlerts()) > 0 {
+				var alertNames []string
+				for _, a := range alertResults.GetAlerts() {
+					alertNames = append(alertNames, a.GetPolicy().GetName())
+				}
+				t.Logf("AlertResults are not empty: %v", alertNames)
 				return errors.New("AlertResults should be empty")
 			}
 			return nil
-		}, "Should have an empty violation", true, 5*time.Minute)
+		}, "Should have an empty violation", true, time.Minute)
 		testC.GetFakeCentral().ClearReceivedBuffer()
 	}))
 }

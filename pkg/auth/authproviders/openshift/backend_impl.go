@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dexidp/dex/connector"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -43,15 +42,15 @@ const (
 )
 
 var (
-	defaultScopes = connector.Scopes{
+	defaultScopes = dexconnector.Scopes{
 		OfflineAccess: true,
 		Groups:        true,
 	}
 )
 
 type callbackAndRefreshConnector interface {
-	connector.CallbackConnector
-	connector.RefreshConnector
+	dexconnector.CallbackConnector
+	dexconnector.RefreshConnector
 }
 
 type backend struct {
@@ -147,11 +146,11 @@ func (b *backend) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*a
 	return b.idToAuthResponse(&id), nil
 }
 
-func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthResponse {
+func (b *backend) idToAuthResponse(id *dexconnector.Identity) *authproviders.AuthResponse {
 	// OpenShift doesn't provide emails in their users API response, see
 	// https://docs.openshift.com/container-platform/4.9/rest_api/user_and_group_apis/user-user-openshift-io-v1.html
 	attributes := map[string][]string{
-		authproviders.UseridAttribute: {id.UserID},
+		authproviders.UseridAttribute: {string(id.UserID)},
 		authproviders.NameAttribute:   {id.Username},
 		authproviders.GroupsAttribute: id.Groups,
 	}
@@ -172,7 +171,7 @@ func (b *backend) idToAuthResponse(id *connector.Identity) *authproviders.AuthRe
 // RefreshAccessToken attempts to fetch user info and issue an updated auth
 // status. If the refresh token has expired, error is returned.
 func (b *backend) RefreshAccessToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) (*authproviders.AuthResponse, error) {
-	id, err := b.openshiftConnector.Refresh(ctx, defaultScopes, connector.Identity{
+	id, err := b.openshiftConnector.Refresh(ctx, defaultScopes, dexconnector.Identity{
 		ConnectorData: []byte(refreshTokenData.RefreshToken),
 	})
 	if err != nil {

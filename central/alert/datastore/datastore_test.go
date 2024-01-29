@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	indexMocks "github.com/stackrox/rox/central/alert/datastore/internal/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
@@ -178,7 +177,6 @@ type alertDataStoreWithSACTestSuite struct {
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
 	searcher  *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller

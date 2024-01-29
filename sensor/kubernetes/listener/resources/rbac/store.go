@@ -28,7 +28,6 @@ type Store interface {
 	FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID
 
 	Cleanup()
-	ReconcileDelete(resType, resID string, resHash uint64) (string, error)
 }
 
 // NewStore creates a new instance of Store

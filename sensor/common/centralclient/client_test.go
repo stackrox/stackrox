@@ -3,6 +3,7 @@ package centralclient
 import (
 	"context"
 	"crypto/tls"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -28,22 +29,6 @@ import (
 const (
 	endpoint = "localhost:8000"
 
-	// 1. Deploy a new StackRox instance
-	// 2. Create and generate a new CA and replace it in the additional-ca.yaml:
-	// $ openssl genrsa -des3 -out myCA.key 2048
-	// $ openssl req -x509 -new -nodes -key myCA.key -sha256 -out myCA.pem -days 100000 -subj '/CN=Root LoadBalancer Certificate Authority'
-	// $ kubectl -n stackrox apply -f additional-ca.yaml
-	//
-	// 3. Receiving trust info examples from a running cluster:
-	// $ roxcurl /v1/tls-challenge?"challengeToken=h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
-	// Copy trust-info and signature from the json response
-	//
-	// 4. Update certificates central cert in ./testdata/central-ca.pem
-	// $ kubectl -n stackrox get secrets central-tls -o json | jq '.data["ca.pem"]' -r | base64 --decode > ./testdata/central-ca.pem
-	//
-	// TODO(ROX-8661): Make these tests not fail after cert expiration.
-	trustInfoExample = "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"
-	signatureExample = "MEUCIQCZKFQR1lgX99ZwP0LesThASckZWtxzPuuhf1oG+XelGwIgA4N3p0Rza3ZfZ3Za6Ub6loSRV8z1TWH8gszEKRxHGrA="
 	// invalidSignature signature signed by a different private key
 	invalidSignature = "MEUCIQDTYU+baqRR2RPy9Y50u5xc+ZrwrxCbqgHsgyf+QrjZQQIgJgqMmvRRvtgLU9O6WfzNifA1X8vwaBZ98CCniRH2pGs="
 
@@ -51,9 +36,13 @@ const (
 	trustInfoUntrustedCentral = "CtIEMIICTjCCAfSgAwIBAgIJANYUBtnEPMvRMAoGCCqGSM49BAMCMEcxJzAlBgNVBAMTHlN0YWNrUm94IENlcnRpZmljYXRlIEF1dGhvcml0eTEcMBoGA1UEBRMTNTkzMTk2NjM4NzcxMzkwNTgzMjAeFw0yMTEwMjEwOTAyMDBaFw0yMjEwMjExMDAyMDBaMFwxGDAWBgNVBAsMD0NFTlRSQUxfU0VSVklDRTEhMB8GA1UEAwwYQ0VOVFJBTF9TRVJWSUNFOiBDZW50cmFsMR0wGwYDVQQFExQxNTQyNTk2MjE1NjAyMDc3OTk4NTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNeN6Vr6JzdqYuhbMYywuGzVxNLYmuiOt7vBd0n3y/0+hqhw57u9cRlVUqDYzrQgV5kWLqOG8x9eW+FGbyP4ZM6jgbMwgbAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQCPd9tI81J+WfhCi3tfZHw0vwPZTAfBgNVHSMEGDAWgBSsFJ+sB5YiXsxIwlyAOZk/z4aVSTAxBgNVHREEKjAoghBjZW50cmFsLnN0YWNrcm94ghRjZW50cmFsLnN0YWNrcm94LnN2YzAKBggqhkjOPQQDAgNIADBFAiEAtgK8ueDNBKtowtHSQl6+DdXJNiJZIyNteRqO2lK2LNkCIGeMhGX5gNli98NU26odZ+QrxWsLa39iK710jsVTj6nwCtYDMIIB0jCCAXigAwIBAgIUYDi0j/ypoh0u5w8FU70RzDHH9MMwCgYIKoZIzj0EAwIwRzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRwwGgYDVQQFExM1OTMxOTY2Mzg3NzEzOTA1ODMyMB4XDTIxMTAyMTA5NTcwMFoXDTI2MTAyMDA5NTcwMFowRzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRwwGgYDVQQFExM1OTMxOTY2Mzg3NzEzOTA1ODMyMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEASqFQTVprF72w5TH2C62JjnHRlA50n/xRgRCLCWmnSj8V8jgXc5wOpc8dbSLh1fn0cZ320j6F5erwQaloZc3GaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFKwUn6wHliJezEjCXIA5mT/PhpVJMAoGCCqGSM49BAMCA0gAMEUCIQDbiBkLqvuX6YC32zion11nYTO9p5eo3RVVFkvusgNAWQIgX/BADqhoAuGNXTO6qosJwwO40E/0bT5rtVjBNoN4XTASLGg4M19QR2hTcVM4T0F2cGxiOGFzWU1mUEh5MUpoVlZNS2Nhall5S21ySVU9GixGRm5sT2tqc29HcVJmZkYxczl0MUdJamNUYTBnMkN3eXo2UGp5b0NVUEpjPQ=="
 	signatureUntrustedCentral = "MEUCIQDz2vnle9zrByV7KgwawvQkkXPNTMHxeAt2+hlLRch2QQIgFU+uu9w7LrjzuknVnZRq2ZzdmIbYVkzWYQkZhCH8kSQ="
 
+	// To create new data you can do it manually via roxcurl, or use ./update-testdata.sh
 	//#nosec G101 -- This is a false positive
 	exampleChallengeToken = "h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
 )
+
+//go:embed testdata/*
+var testdata embed.FS
 
 func TestClient(t *testing.T) {
 	suite.Run(t, new(ClientTestSuite))
@@ -62,17 +51,18 @@ func TestClient(t *testing.T) {
 type ClientTestSuite struct {
 	suite.Suite
 
-	clientCertDir string
-	mockCtrl      *gomock.Controller
+	clientCertDir    string
+	mockCtrl         *gomock.Controller
+	trustInfoExample string
+	signatureExample string
 }
 
 func (t *ClientTestSuite) SetupSuite() {
-
 	t.mockCtrl = gomock.NewController(t.T())
 
 	cwd, err := os.Getwd()
 	t.Require().NoError(err)
-	t.T().Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
+	t.T().Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central", "ca.pem"))
 
 	// Generate a client certificate (this does not need to be related to the central CA from testdata).
 	ca, err := certgen.GenerateCA()
@@ -87,6 +77,14 @@ func (t *ClientTestSuite) SetupSuite() {
 	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
 	t.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
 	t.T().Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
+
+	signature, err := testdata.ReadFile("testdata/signature.example")
+	t.Require().NoError(err)
+	t.signatureExample = string(signature)
+
+	trustInfo, err := testdata.ReadFile("testdata/trust_info_serialized.example")
+	t.Require().NoError(err)
+	t.trustInfoExample = string(trustInfo)
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
@@ -153,8 +151,8 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
 		},
 		"Sensor connecting to a peer with an untrusted certificate fails": {
 			Error:               errAdditionalCANeeded,
-			TrustInfoSerialized: trustInfoExample,
-			TrustInfoSignature:  signatureExample,
+			TrustInfoSerialized: t.trustInfoExample,
+			TrustInfoSignature:  t.signatureExample,
 		},
 	}
 
@@ -206,8 +204,8 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 		t.Assert().Len(sensorChallengeTokenBytes, centralsensor.ChallengeTokenLength)
 
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"trustInfoSerialized": trustInfoExample,
-			"signature":           signatureExample,
+			"trustInfoSerialized": t.trustInfoExample,
+			"signature":           t.signatureExample,
 		})
 	}))
 
@@ -235,7 +233,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"trustInfoSerialized": trustInfoExample,
+			"trustInfoSerialized": t.trustInfoExample,
 			"signature":           invalidSignature,
 		})
 	}))
@@ -253,7 +251,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"trustInfoSerialized": base64.StdEncoding.EncodeToString([]byte("Invalid trust info")),
-			"signature":           signatureExample,
+			"signature":           t.signatureExample,
 		})
 	}))
 	defer ts.Close()
@@ -269,7 +267,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"trustInfoSerialized": trustInfoExample,
+			"trustInfoSerialized": t.trustInfoExample,
 			"signature":           base64.StdEncoding.EncodeToString([]byte("Invalid signature")),
 		})
 	}))
@@ -285,7 +283,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 
 func (t *ClientTestSuite) TestGetTLSTrustedCertsWithDifferentSensorChallengeShouldFail() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"trustInfoSerialized": trustInfoExample, "signature": signatureExample})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"trustInfoSerialized": t.trustInfoExample, "signature": t.signatureExample})
 	}))
 	defer ts.Close()
 

@@ -125,9 +125,6 @@ func createMockImageService(t *testing.T) (*grpc.ClientConn, func()) {
 
 type mockImageServiceServer struct {
 	v1.UnimplementedImageServiceServer
-	expectedResponse *v1.ScanImageInternalResponse
-	delayResponse    time.Duration
-	expectedError    error
 }
 
 func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {

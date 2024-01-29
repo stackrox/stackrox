@@ -65,12 +65,6 @@ func init() {
 	)
 }
 
-func (resolver *namespaceResolver) getNamespaceIDRawQuery() string {
-	return search.NewQueryBuilder().
-		AddExactMatches(search.NamespaceID, resolver.data.GetMetadata().GetId()).
-		Query()
-}
-
 func (resolver *namespaceResolver) getClusterNamespaceRawQuery() string {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
@@ -514,15 +508,6 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 		Level: v1.SearchCategory_NAMESPACES,
 		ID:    resolver.data.GetMetadata().GetId(),
 	})
-}
-
-func (resolver *namespaceResolver) vulnQueryScoping(ctx context.Context) context.Context {
-	ctx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.Metadata.GetId(),
-	})
-
-	return ctx
 }
 
 func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {

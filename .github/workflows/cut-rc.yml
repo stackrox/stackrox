@@ -178,7 +178,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{needs.variables.outputs.branch}}
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -233,7 +233,7 @@ jobs:
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
         id: tag
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -243,7 +243,7 @@ jobs:
       - name: Create next milestone
         if: env.DRY_RUN == 'false'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -265,7 +265,7 @@ jobs:
         id: pre-release
         if: env.DRY_RUN == 'false'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \

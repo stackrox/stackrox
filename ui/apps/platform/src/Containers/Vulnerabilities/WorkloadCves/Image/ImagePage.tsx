@@ -6,6 +6,7 @@ import {
     ClipboardCopy,
     Divider,
     Flex,
+    FlexItem,
     PageSection,
     Skeleton,
     Tab,
@@ -13,16 +14,20 @@ import {
     TabsComponent,
     TabTitleText,
     Title,
+    Alert,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
+import isEmpty from 'lodash/isEmpty';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useURLPagination from 'hooks/useURLPagination';
+import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../types';
@@ -31,6 +36,7 @@ import ImageDetailBadges, {
     ImageDetails,
     imageDetailsFragment,
 } from '../components/ImageDetailBadges';
+import getImageScanMessage from '../utils/getImageScanMessage';
 
 const workloadCveOverviewImagePath = getOverviewCvesPath({
     vulnerabilityState: 'OBSERVED',
@@ -72,11 +78,15 @@ function ImagePage() {
         variables: { id: imageId },
     });
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+    const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
+
+    const pagination = useURLPagination(20);
 
     const imageData = data && data.image;
     const imageName = imageData?.name
         ? `${imageData.name.registry}/${imageData.name.remote}:${imageData.name.tag}`
         : 'NAME UNKNOWN';
+    const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
 
     let mainContent: ReactNode | null = null;
 
@@ -117,6 +127,22 @@ function ImagePage() {
                                 </ClipboardCopy>
                             )}
                             <ImageDetailBadges imageData={imageData} />
+                            {!isEmpty(scanMessage) && (
+                                <Alert
+                                    className="pf-u-w-100"
+                                    variant="warning"
+                                    isInline
+                                    title="CVE data may be inaccurate"
+                                >
+                                    <Flex
+                                        direction={{ default: 'column' }}
+                                        spaceItems={{ default: 'spaceItemsSm' }}
+                                    >
+                                        <FlexItem>{scanMessage.header}</FlexItem>
+                                        <FlexItem>{scanMessage.body}</FlexItem>
+                                    </Flex>
+                                </Alert>
+                            )}
                         </Flex>
                     ) : (
                         <Flex
@@ -135,7 +161,10 @@ function ImagePage() {
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={(e, key) => setActiveTabKey(key)}
+                        onSelect={(e, key) => {
+                            setActiveTabKey(key);
+                            pagination.setPage(1);
+                        }}
                         component={TabsComponent.nav}
                         className="pf-u-pl-md pf-u-background-color-100"
                         mountOnEnter
@@ -155,6 +184,8 @@ function ImagePage() {
                                         tag: '',
                                     }
                                 }
+                                refetchAll={refetchAll}
+                                pagination={pagination}
                             />
                         </Tab>
                         <Tab
@@ -162,7 +193,7 @@ function ImagePage() {
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
-                            <ImagePageResources imageId={imageId} />
+                            <ImagePageResources imageId={imageId} pagination={pagination} />
                         </Tab>
                     </Tabs>
                 </PageSection>

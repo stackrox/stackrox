@@ -35,6 +35,7 @@ func (s *SignatureIntegrationsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE signature_integrations CASCADE")
 	s.T().Log("signature_integrations", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 

@@ -13,7 +13,7 @@ import (
 
 const (
 	testImage = "us.icr.io/sr-testing/nginx:1.10"
-	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB"
+	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB" //#nosec G101
 )
 
 func TestIBM(t *testing.T) {

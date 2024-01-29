@@ -6,11 +6,15 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
+BENCHCOUNT ?= 1
 
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
-DOCKER_USER=--user "$(shell id -u)"
+DOCKER_OPTS=--user "$(shell id -u)"
+else
+# Disable selinux for local podman builds.
+DOCKER_OPTS=--security-opt label=disable
 endif
 
 # Set to empty string to echo some command lines which are hidden by default.
@@ -121,12 +125,12 @@ include make/gotools.mk
 
 $(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
-$(call go-tool, CONTROLLER_GEN_BIN, sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
 $(call go-tool, MOCKGEN_BIN, go.uber.org/mock/mockgen)
 $(call go-tool, GO_JUNIT_REPORT_BIN, github.com/jstemmer/go-junit-report/v2, tools/test)
 $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tools/linters)
+$(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 
 ###########
 ## Style ##
@@ -135,7 +139,17 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 style: golangci-lint style-slim
 
 .PHONY: style-slim
-style-slim: roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style shell-style
+style-slim: \
+	blanks \
+	check-service-protos \
+	newlines \
+	no-large-files \
+	openshift-ci-style \
+	qa-tests-style \
+	roxvet \
+	shell-style \
+	storage-protos-compatible \
+	ui-lint
 
 GOLANGCILINT_FLAGS := --verbose --print-resources-usage
 
@@ -157,13 +171,14 @@ ifdef CI
 	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
 	@echo "Running with no tags..."
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS)
+	@# We need to enable unused linter here as it will not work without tests or in release tag.
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --enable=unused
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
 
@@ -176,6 +191,11 @@ qa-tests-style:
 ui-lint:
 	@echo "+ $@"
 	make -C ui lint
+
+.PHONY: openshift-ci-style
+openshift-ci-style:
+	@echo "+ $@"
+	make -C .openshift-ci/ style
 
 .PHONY: shell-style
 shell-style:
@@ -199,7 +219,7 @@ central-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -217,7 +237,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -304,7 +324,7 @@ clean-proto-generated-srcs:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs
 
-deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
+deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
 
@@ -318,6 +338,7 @@ ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
+	$(SILENT)go mod download
 	$(SILENT)touch $@
 
 .PHONY: clean-deps
@@ -389,10 +410,6 @@ build-volumes:
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
-ifneq ($(DOCKER_USER),)
-	@echo "Restoring user's ownership of linux-gocache and go directories after previous runs which could set it to root..."
-	$(SILENT)docker run --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache /go
-endif
 
 .PHONY: main-builder-image
 main-builder-image: build-volumes
@@ -408,12 +425,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -427,14 +444,14 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	$(GOBUILD) sensor/upgrader
 ifndef CI
-    CGO_ENABLED=0 $(GOBUILD) roxctl
+	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
 
 .PHONY: scale-build
@@ -451,12 +468,6 @@ webhookserver-build: build-prep
 syslog-build:build-prep
 	@echo "+ $@"
 	CGO_ENABLED=0 $(GOBUILD) qa-tests-backend/test-images/syslog
-
-.PHONY: mock-grpc-server-build
-mock-grpc-server-build: build-prep
-	for GOARCH in $$(echo $(PLATFORM) | sed -e 's/,/ /g') ; do \
-		GOARCH="$${GOARCH##*/}" CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server; \
-	done
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -482,9 +493,10 @@ go-unit-tests: build-prep test-prep
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
+	@echo "Run log tests"
 	for encoding in console json; do \
 		for level in debug info warn error fatal panic; do \
-			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... > /dev/null; \
+			LOGENCODING=$$encoding LOGLEVEL=$$level CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -v ./pkg/logging/... | grep -v "iteration"; \
 		done; \
 	done
 
@@ -512,7 +524,7 @@ go-postgres-unit-tests: build-prep test-prep
 go-postgres-bench-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -v \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -535,6 +547,10 @@ endif
 .PHONY: ui-test
 ui-test:
 	make -C ui test
+
+.PHONY: ui-component-tests
+ui-component-tests:
+	make -C ui test-component
 
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
@@ -664,21 +680,6 @@ syslog-image: syslog-build
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
 
-.PHONY: mock-grpc-server-image
-mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --load \
-		-t stackrox/grpc-server:$(TAG) \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
-.PHONY: mock-grpc-server-image-push
-mock-grpc-server-image-push: mock-grpc-server-build
-	cp -R bin integration-tests/mock-grpc-server/image
-	docker buildx build --platform $(PLATFORM) --push \
-		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
-		integration-tests/mock-grpc-server/image
-
 .PHONY: central-db-image
 central-db-image:
 	$(DOCKERBUILD) \
@@ -701,7 +702,6 @@ clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin image/rhel/bin
 	git clean -xdf image/ui image/rhel/ui image/rhel/docs
-	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
 
@@ -764,10 +764,14 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 .PHONY: roxvet
+roxvet: skip-dirs := operator/pkg/clientset \
+                     scanner/updater/rhel      # TODO(ROX-21539): Remove when CSAF/VEX arrives
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v 'operator/pkg/clientset')
+	$(SILENT)go list -e ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 
 ##########
 ## Misc ##

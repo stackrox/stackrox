@@ -52,9 +52,10 @@ func TestGoogleMatch(t *testing.T) {
 			matches: false, // matches us.gcr.io, but not stackrox-ci
 		},
 	}
-	reg, err := docker.NewDockerRegistryWithConfig(docker.Config{
-		Endpoint: "us.gcr.io",
-	}, &storage.ImageIntegration{})
+	reg, err := docker.NewDockerRegistryWithConfig(
+		&docker.Config{Endpoint: "us.gcr.io"},
+		&storage.ImageIntegration{},
+	)
 	require.NoError(t, err)
 
 	gr := &googleRegistry{
@@ -64,6 +65,53 @@ func TestGoogleMatch(t *testing.T) {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s/%s", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {
 			assert.Equal(t, c.matches, gr.Match(c.name))
+		})
+	}
+}
+
+func TestGoogleValidate(t *testing.T) {
+	t.Setenv("ROX_CLOUD_CREDENTIALS", "true")
+	cases := []struct {
+		name    string
+		config  *storage.GoogleConfig
+		isValid bool
+	}{
+		{
+			name:    "static credentials - success",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: `{"type": "service_account"}`},
+			isValid: true,
+		},
+		{
+			name:    "static credentials - no endpoint",
+			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: `{"type": "service_account"}`},
+			isValid: false,
+		},
+		{
+			name:    "static credentials - no service account",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: ""},
+			isValid: false,
+		},
+		{
+			name:    "workload identity - success",
+			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: "", WifEnabled: true},
+			isValid: true,
+		},
+		{
+			name:    "workload identity - no endpoint",
+			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: "", WifEnabled: true},
+			isValid: false,
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.name, func(t *testing.T) {
+			err := validate(c.config)
+			if c.isValid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
 		})
 	}
 }

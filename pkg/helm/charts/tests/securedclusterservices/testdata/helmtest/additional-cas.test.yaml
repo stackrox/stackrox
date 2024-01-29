@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "Additional CA secret is not created"
   expect: |

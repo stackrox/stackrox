@@ -1,6 +1,14 @@
+ARG MAPPINGS_REGISTRY=registry.access.redhat.com
+ARG MAPPINGS_BASE_IMAGE=ubi8
+ARG MAPPINGS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
+
+FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mappings
+
+COPY download-mappings.sh /download-mappings.sh
+RUN /download-mappings.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -12,9 +20,13 @@ LABEL name="scanner" \
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-COPY scripts/ /
-COPY bin/scanner /
+COPY scripts/entrypoint.sh \
+     scripts/import-additional-cas \
+     scripts/restore-all-dir-contents \
+     scripts/save-dir-contents /usr/local/bin/
+COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 
 RUN microdnf upgrade --nobest && \
     microdnf clean all && \
@@ -26,10 +38,9 @@ RUN microdnf upgrade --nobest && \
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`
     # during the container start.
-    chown -R 65534:65534 /etc/pki /etc/ssl && /save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    chmod +rx /scanner
+    chown -R 65534:65534 /etc/pki /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl
 
 # This is equivalent to nobody:nobody.
 USER 65534:65534
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["entrypoint.sh"]

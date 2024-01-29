@@ -20,9 +20,10 @@ import TableCountLinks from 'Components/workflow/TableCountLinks';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useAnalytics, { GLOBAL_SNOOZE_CVE } from 'hooks/useAnalytics';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -118,7 +119,6 @@ export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
             Header: `Active`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 return original.activeState?.state || 'Undetermined';
             },
@@ -282,6 +282,7 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { analyticsTrack } = useAnalytics();
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
 
@@ -378,6 +379,24 @@ const VulnMgmtCves = ({
         }
     };
 
+    function trackGlobalSnooze(cveNames, entityType, duration) {
+        let type;
+
+        if (entityType === resourceTypes.NODE_CVE) {
+            type = 'NODE';
+        } else if (entityType === resourceTypes.CLUSTER_CVE) {
+            type = 'PLATFORM';
+        } else {
+            // The entity type is IMAGE_CVE or something unexpected, so we don't want to track it
+            return;
+        }
+
+        analyticsTrack({
+            event: GLOBAL_SNOOZE_CVE,
+            properties: { type, duration },
+        });
+    }
+
     const suppressCves = (cve, duration) => (e) => {
         e.stopPropagation();
 
@@ -400,6 +419,8 @@ const VulnMgmtCves = ({
                     )} globally`
                 );
                 setTimeout(removeToast, 2000);
+
+                trackGlobalSnooze(selectedCveNames, currentEntityType, duration);
             })
             .catch((evt) => {
                 addToast(`Could not defer and approve all of the selected CVEs: ${evt.message}`);

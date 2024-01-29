@@ -37,6 +37,8 @@ var (
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
+//
+//go:generate mockgen-wrapper
 type Manager interface {
 	AddProfile(profile *storage.ComplianceOperatorProfile) error
 	DeleteProfile(profile *storage.ComplianceOperatorProfile) error

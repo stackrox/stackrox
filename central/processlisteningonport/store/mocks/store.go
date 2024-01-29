@@ -5,6 +5,7 @@
 //
 //	mockgen -package mocks -destination mocks/store.go -source store.go
 //
+
 // Package mocks is a generated GoMock package.
 package mocks
 
@@ -70,11 +71,12 @@ func (mr *MockStoreMockRecorder) Delete(ctx, id any) *gomock.Call {
 }
 
 // DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, q *v1.Query) error {
+func (m *MockStore) DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, q)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteByQuery indicates an expected call of DeleteByQuery.
@@ -229,4 +231,18 @@ func (m *MockStore) Walk(ctx context.Context, fn func(*storage.ProcessListeningO
 func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), ctx, fn)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ProcessListeningOnPortStorage) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, query, fn)
 }
