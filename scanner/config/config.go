@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"log"
 	"net"
 	"net/url"
 	"os"
@@ -266,6 +268,13 @@ func (c *ProxyConfig) validate() error {
 	path := filepath.Join(dir, c.ConfigFile)
 	info, err = os.Stat(path)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			// When the proxy is configured to be a Kubernetes secret,
+			// the file will not exist if the secret does not exist.
+			// Just allow this and log it, as the proxy config watcher will handle it.
+			log.Printf("config_file %q does not exist, continuing...", path)
+			return nil
+		}
 		return fmt.Errorf("could not read config_file: %w", err)
 	}
 	if info.IsDir() {
