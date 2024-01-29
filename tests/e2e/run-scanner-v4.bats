@@ -84,6 +84,10 @@ describe_pods_in_namespace() {
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
       "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
       echo
+      echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
+      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}"
+      echo
+
     done
 }
 
