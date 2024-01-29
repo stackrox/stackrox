@@ -24,4 +24,3 @@ teardown() {
   assert_failure
   assert_line --partial "is deprecated"
 }
-
