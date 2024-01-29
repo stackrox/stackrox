@@ -63,7 +63,6 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
                 fillAndSubmitExceptionForm({
                     comment: 'Test comment',
                     expiryLabel: '30 days',
-                    scopeLabel: `Only ${image}:${tag}`,
                 });
 
                 verifyExceptionConfirmationDetails({
@@ -96,7 +95,6 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
                     comment: 'Test comment',
-                    scopeLabel: `Only ${image}:${tag}`,
                 });
                 verifyExceptionConfirmationDetails({
                     expectedAction: 'False positive',
