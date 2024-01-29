@@ -110,6 +110,14 @@ const SystemHealthDashboardPage = () => {
                     <GridItem span={12}>
                         <CertificateCard component="SCANNER" pollingCount={pollingCountSlower} />
                     </GridItem>
+                    {isScannerV4Enabled && (
+                        <GridItem span={12}>
+                            <CertificateCard
+                                component="SCANNER_V4"
+                                pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
                 </Grid>
             </PageSection>
         </>
