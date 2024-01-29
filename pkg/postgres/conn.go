@@ -66,7 +66,6 @@ func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Row
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
 	if tx, ok := TxFromContext(ctx); ok {
-		log.Infof("Sql: %s %+v", sql, args)
 		rows, err := tx.Query(ctx, sql, args...)
 		incQueryErrors(sql, err)
 		return rows, err
