@@ -62,23 +62,19 @@ teardown() {
     run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
     assert_line --index 0 'match: NetworkPolicy'
     assert_line --index 1 'doc: 0'
-    assert_line --index 2 '---'
-    assert_line --index 3 'match: NetworkPolicy'
-    assert_line --index 4 'doc: 1'
-    assert_line --index 5 '---'
-    assert_line --index 6 'match: NetworkPolicy'
-    assert_line --index 7 'doc: 2'
+    assert_line --index 2 'match: NetworkPolicy'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: NetworkPolicy'
+    assert_line --index 5 'doc: 2'
 
     # Ensure that all NetworkPolicies have the generated-by-stackrox label
     run yq e '.metadata.labels | ({"match": ."network-policy-buildtime-generator.stackrox.io/generated", "doc": di})' "${ofile}"
     assert_line --index 0 'match: "true"'
     assert_line --index 1 'doc: 0'
-    assert_line --index 2 '---'
-    assert_line --index 3 'match: "true"'
-    assert_line --index 4 'doc: 1'
-    assert_line --index 5 '---'
-    assert_line --index 6 'match: "true"'
-    assert_line --index 7 'doc: 2'
+    assert_line --index 2 'match: "true"'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: "true"'
+    assert_line --index 5 'doc: 2'
 }
 
 @test "roxctl-development netpol generate produces no output when all yamls are templated" {
