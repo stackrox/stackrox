@@ -11,8 +11,7 @@ import {
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
-
-type PageActions = 'create' | 'edit' | 'clone';
+import { PageActions } from './compliance.scanConfigs.utils';
 
 function ScanConfigsPage() {
     /*

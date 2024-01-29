@@ -1,10 +1,14 @@
-import { gql, useQuery, ApolloError } from '@apollo/client';
+import { gql, useQuery, ApolloError, QueryHookOptions } from '@apollo/client';
 
 import { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 type DeploymentCountResponse = {
     count: number;
+};
+
+type DeploymentCountParameters = {
+    query: string;
 };
 
 type UseFetchDeploymentCount = {
@@ -19,12 +23,18 @@ const DEPLOYMENT_COUNT_QUERY = gql`
     }
 `;
 
-function useFetchDeploymentCount(searchFilter: SearchFilter): UseFetchDeploymentCount {
+function useFetchDeploymentCount(
+    searchFilter: SearchFilter,
+    queryOptions: Omit<
+        QueryHookOptions<DeploymentCountResponse, DeploymentCountParameters>,
+        'variables'
+    > = {}
+): UseFetchDeploymentCount {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const queryOptions = { variables: { query } };
+    const options = { ...queryOptions, variables: { query } };
     const { loading, error, data } = useQuery<DeploymentCountResponse, { query: string }>(
         DEPLOYMENT_COUNT_QUERY,
-        queryOptions
+        options
     );
 
     return {

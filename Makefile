@@ -146,6 +146,7 @@ style-slim: \
 	newlines \
 	no-large-files \
 	openshift-ci-style \
+	proto-style \
 	qa-tests-style \
 	roxvet \
 	shell-style \

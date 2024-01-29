@@ -237,9 +237,9 @@ func Test_ProxyConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 	})
-	t.Run("when config file does not exist then error", func(t *testing.T) {
+	t.Run("when config file does not exist then ok", func(t *testing.T) {
 		c := ProxyConfig{ConfigDir: tmp, ConfigFile: "does-not-exist.yaml"}
 		err := c.validate()
-		assert.Error(t, err)
+		assert.NoError(t, err)
 	})
 }

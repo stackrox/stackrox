@@ -4,6 +4,7 @@ import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useInterval from 'hooks/useInterval';
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import CertificateCard from './CertificateHealth/CertificateCard';
 import ClustersHealthCards from './ClustersHealth/ClustersHealthCards';
@@ -26,6 +27,9 @@ const SystemHealthDashboardPage = () => {
     const hasReadAccessForAdministration = hasReadAccess('Administration');
     const hasReadAccessForCluster = hasReadAccess('Cluster');
     const hasReadAccessForIntegration = hasReadAccess('Integration');
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
@@ -66,7 +70,18 @@ const SystemHealthDashboardPage = () => {
                     )}
                     {hasReadAccessForAdministration && (
                         <GridItem span={12}>
-                            <VulnerabilityDefinitionsHealthCard pollingCount={pollingCountSlower} />
+                            <VulnerabilityDefinitionsHealthCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
+                    {isScannerV4Enabled && hasReadAccessForAdministration && (
+                        <GridItem span={12}>
+                            <VulnerabilityDefinitionsHealthCard
+                                component="SCANNER_V4"
+                                pollingCount={pollingCountSlower}
+                            />
                         </GridItem>
                     )}
                     {hasReadAccessForIntegration && (
@@ -95,6 +110,14 @@ const SystemHealthDashboardPage = () => {
                     <GridItem span={12}>
                         <CertificateCard component="SCANNER" pollingCount={pollingCountSlower} />
                     </GridItem>
+                    {isScannerV4Enabled && (
+                        <GridItem span={12}>
+                            <CertificateCard
+                                component="SCANNER_V4"
+                                pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
                 </Grid>
             </PageSection>
         </>
