@@ -249,13 +249,23 @@ export function getScanConfigs(
     const query = {
         pagination: { offset, limit: pageSize, sortOption },
     };
-    const params = qs.stringify({ query });
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<{
             configurations: ComplianceScanConfigurationStatus[];
         }>(`${scanScheduleUrl}?${params}`)
         .then((response) => {
             return response?.data?.configurations ?? [];
+        });
+}
+
+export function getScanConfigsCount(): Promise<number> {
+    return axios
+        .get<{
+            count: number;
+        }>(`${complianceResultsServiceUrl}/count/configurations`)
+        .then((response) => {
+            return response?.data?.count ?? 0;
         });
 }
 
