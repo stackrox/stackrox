@@ -17,7 +17,7 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
 import { ComplianceProfile } from 'services/ComplianceEnhancedService';
 
-import { ScanConfigFormValues } from './useFormikScanConfig';
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export type ProfileSelectionProps = {
     profiles: ComplianceProfile[];
