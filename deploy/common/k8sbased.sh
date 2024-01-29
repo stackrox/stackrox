@@ -526,6 +526,7 @@ function launch_central {
             sleep 1
             ROUTE_HOST=$(kubectl -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
+        echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
         "${central_scripts_dir}/port-forward.sh" 8000
