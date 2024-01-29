@@ -24,6 +24,8 @@ const (
 	mappingURL = "https://storage.googleapis.com/definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 
 	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
+
+	v4VulnURL = "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst"
 )
 
 var (
@@ -81,6 +83,15 @@ func TestMappingUpdate(t *testing.T) {
 		t.Fatalf("Failed to count files in zip: %v", err)
 	}
 	assert.Equal(t, len(v4FileMapping), n)
+}
+
+func TestV4VulnUpdate(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "test.json.zst")
+	u := newUpdater(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, v4VulnURL, 1*time.Hour)
+
+	// Should fetch first time.
+	require.NoError(t, u.doUpdate())
+	assertOnFileExistence(t, filePath, true)
 }
 
 func TestCvssUpdate(t *testing.T) {

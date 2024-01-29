@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -49,7 +50,9 @@ const (
 
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
+	v4VulnSubDir      = "vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
+	v4VulnFile        = "output.json.zst"
 	mappingUpdaterKey = "mapping"
 )
 
@@ -65,6 +68,8 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
+
+	v4VersionRegex = regexp.MustCompile(`^(?:\d+\.\d+\.\d+(?:-rc\.\d+)?(?:-\d+-g[0-9a-f]+|-nightly-\d{8})?|dev)$`)
 )
 
 type requestedUpdater struct {
@@ -122,7 +127,6 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	uuid := r.URL.Query().Get(`uuid`)
 	fileName := r.URL.Query().Get(`file`)
-
 	// If only file is requested, then this is for Scanner v4.
 	if fileName != "" && uuid == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
@@ -132,9 +136,12 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		writeErrorNotFound(w)
 		return
 	}
+	if v := r.URL.Query().Get("version"); v != "" {
+		h.getV4Files(w, r, v, "")
+		return
+	}
 
 	// At this point, we assume the request is from Scanner v2.
-
 	if uuid == "" {
 		writeErrorBadRequest(w)
 		return
@@ -210,10 +217,13 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		filePath := filepath.Join(h.onlineVulnDir, key)
 
 		var urlStr string
-		switch key {
-		case mappingUpdaterKey:
+		switch {
+		case mappingUpdaterKey == key:
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
+		case v4VersionRegex.MatchString(key):
+			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, key, v4VulnFile)
+			filePath += ".json.zst"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
 			filePath += ".zip"
@@ -402,7 +412,7 @@ func (h *httpHandler) openMostRecentDefinitions(ctx context.Context, uuid string
 	return
 }
 
-func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (file *vulDefFile, err error) {
+func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (file *vulDefFile, err error) {
 	// TODO(ROX-20520): enable fetching offline file
 	log.Debugf("Getting v4 data for updater key: %s", updaterKey)
 	u := h.getUpdater(updaterKey)
@@ -422,8 +432,10 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 			utils.IgnoreError(f.Close)
 		}
 	}
-	switch updaterKey {
-	case mappingUpdaterKey:
+	switch {
+	case v4VersionRegex.MatchString(updaterKey):
+		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
+	case mappingUpdaterKey == updaterKey:
 		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
@@ -494,14 +506,18 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, error) {
 }
 
 func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updaterKey, fileName string) {
-	log.Infof("Fetching repository mapping file: %s", fileName)
+	log.Debugf("Fetching scanner V4 file: %s", fileName)
 
 	var err error
 	var f *vulDefFile
 
-	switch updaterKey {
-	case mappingUpdaterKey:
-		f, err = h.openMostRecentFile(mappingUpdaterKey, fileName)
+	switch {
+	case mappingUpdaterKey == updaterKey:
+		f, err = h.openMostRecentV4File(mappingUpdaterKey, fileName)
+	case v4VersionRegex.MatchString(updaterKey):
+		f, err = h.openMostRecentV4File(updaterKey, "")
+		w.Header().Set("Content-Type", "application/zstd")
+		http.ServeContent(w, r, f.Name(), f.modTime, f)
 	default:
 		errMsg := fmt.Sprintf("internal error: invalid updater key: %s", updaterKey)
 		log.Error(errMsg)
