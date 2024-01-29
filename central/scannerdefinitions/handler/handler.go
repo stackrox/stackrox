@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -38,8 +39,16 @@ const (
 	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
 	scannerDefsSubZipName = "scanner-defs.zip"
 
+	// v4ScannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner v4.
+	v4ScannerDefsSubZipName = "scanner-v4-defs.zip"
+
+	v4ScannerDefsPrefix = "scanner-v4-defs"
+
 	// offlineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner.
 	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
+
+	// v4OfflineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner V4.
+	v4OfflineScannerDefinitionBlobName = "/offline/scanner/" + v4ScannerDefsSubZipName
 
 	scannerUpdateDomain    = "https://definitions.stackrox.io"
 	scannerUpdateURLSuffix = "diff.zip"
@@ -238,7 +247,7 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 	return updater
 }
 
-func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File) error {
+func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	if err != nil {
 		return errors.Wrap(err, "opening ZIP reader")
@@ -247,7 +256,7 @@ func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File)
 
 	// POST requests only update the offline feed.
 	b := &storage.Blob{
-		Name:         offlineScannerDefinitionBlobName,
+		Name:         blobName,
 		LastUpdated:  timestamp.TimestampNow(),
 		ModifiedTime: timestamp.TimestampNow(),
 		Length:       zipF.FileInfo().Size(),
@@ -272,13 +281,19 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	// support other files (like we have in the past), which is why we
 	// expect this ZIP of a single ZIP.
 	for _, zipF := range zipR.File {
+		var blobName string
 		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(ctx, zipF); err != nil {
-				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
-			}
-			return nil
+			blobName = offlineScannerDefinitionBlobName
+		} else if strings.HasPrefix(zipF.Name, v4ScannerDefsPrefix) {
+			blobName = v4OfflineScannerDefinitionBlobName
+		} else {
+			// Ignore any other files which may be in the ZIP.
+			continue
 		}
-		// Ignore any other files which may be in the ZIP.
+		if err := h.handleScannerDefsFile(ctx, zipF, blobName); err != nil {
+			return errors.Wrap(err, "couldn't handle scanner-defs sub file")
+		}
+		return nil
 	}
 
 	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
