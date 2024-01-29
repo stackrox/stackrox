@@ -6,6 +6,7 @@ import (
 	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -37,6 +38,7 @@ type managerImpl struct {
 	sensorConnMgr connection.Manager
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
+	clusterDS     clusterDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
 	// a unique entry in the map
@@ -45,11 +47,12 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
 		scanSettingDS:   scanSettingDS,
+		clusterDS:       clusterDS,
 		runningRequests: make(map[string]clusterScan),
 	}
 }
@@ -186,7 +189,8 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 
 		// Update status in DB
-		err = m.scanSettingDS.UpdateClusterStatus(ctx, scanRequest.GetId(), clusterID, status)
+		// TODO: Make call to GetClusterName
+		err = m.scanSettingDS.UpdateClusterStatus(ctx, scanRequest.GetId(), clusterID, "test", status)
 		if err != nil {
 			log.Error(err)
 			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanConfigName())
@@ -237,7 +241,8 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 		return errors.Errorf("Unable to map request %q to a scan configuration", requestID)
 	}
 
-	err := m.scanSettingDS.UpdateClusterStatus(ctx, scanID, clusterID, responsePayload)
+	// TODO: Make call to GetClusterName
+	err := m.scanSettingDS.UpdateClusterStatus(ctx, scanID, clusterID, "test", responsePayload)
 	if err != nil {
 		return err
 	}

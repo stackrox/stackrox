@@ -1,6 +1,7 @@
 package compliancemanager
 
 import (
+	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -15,7 +16,7 @@ var (
 // Singleton returns the compliance operator manager
 func Singleton() Manager {
 	once.Do(func() {
-		manager = New(connection.ManagerSingleton(), compIntegration.Singleton(), compScanSetting.Singleton())
+		manager = New(connection.ManagerSingleton(), compIntegration.Singleton(), compScanSetting.Singleton(), cluster.Singleton())
 	})
 	return manager
 }

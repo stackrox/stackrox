@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	sensorMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -57,6 +58,7 @@ type complianceManagerTestSuite struct {
 	integrationDS *mocks.MockDataStore
 	scanConfigDS  *scanConfigMocks.MockDataStore
 	connectionMgr *sensorMocks.MockManager
+	clusterDS     *clusterMocks.MockDataStore
 	manager       Manager
 }
 
@@ -81,7 +83,8 @@ func (suite *complianceManagerTestSuite) SetupTest() {
 	suite.integrationDS = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.scanConfigDS = scanConfigMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connectionMgr = sensorMocks.NewMockManager(suite.mockCtrl)
-	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS)
+	suite.clusterDS = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	suite.manager = New(suite.connectionMgr, suite.integrationDS, suite.scanConfigDS, suite.clusterDS)
 }
 
 func (suite *complianceManagerTestSuite) TearDownTest() {
@@ -184,7 +187,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "")
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "test", "")
 			},
 			isErrorTest: false,
 		},
@@ -217,7 +220,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "Unable to process sensor message")
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "test", "Unable to process sensor message")
 			},
 			isErrorTest: false,
 		},

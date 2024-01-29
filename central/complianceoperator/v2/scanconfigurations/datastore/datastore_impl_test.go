@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -74,26 +73,10 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.db = pgtest.ForT(s.T())
 
-	clusterDatastore, err := clusterDS.GetTestPostgresDataStore(s.T(), s.db)
-	s.Require().NoError(err)
-
-	clusterID1, cluster1AddErr := clusterDatastore.AddCluster(sac.WithAllAccess(context.Background()), &storage.Cluster{
-		Name:      mockClusterName,
-		MainImage: "4.3.0",
-	})
-	s.clusterID1 = clusterID1
-	s.Require().NoError(cluster1AddErr)
-	clusterID2, cluster2AddErr := clusterDatastore.AddCluster(sac.WithAllAccess(context.Background()), &storage.Cluster{
-		Name:      "mock-cluster-2",
-		MainImage: "4.3.0",
-	})
-	s.clusterID2 = clusterID2
-	s.Require().NoError(cluster2AddErr)
-
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
 
-	s.dataStore = New(s.storage, s.statusStorage, clusterDatastore)
+	s.dataStore = New(s.storage, s.statusStorage)
 
 	// Setup SAC contexts
 	s.testContexts = make(map[string]context.Context, 0)
@@ -247,7 +230,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 	scanConfigStatus, err := s.dataStore.GetScanConfigClusterStatus(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
 	s.Require().NoError(err)
 	s.Require().Empty(scanConfigStatus)
-	
+
 	newscanConfig, exists, err = s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.GetId())
 	s.Require().NoError(err)
 	s.Require().True(exists, "scan config not found")

@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	statusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -25,7 +24,6 @@ var (
 type datastoreImpl struct {
 	storage       postgres.Store
 	statusStorage statusStore.Store
-	clusterDS     clusterDatastore.DataStore
 	keyedMutex    *concurrency.KeyedMutex
 }
 
@@ -129,18 +127,9 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 }
 
 // UpdateClusterStatus updates the scan configuration with the cluster status
-func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterStatus string) error {
+func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID string, clusterID string, clusterName string, clusterStatus string) error {
 	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(clusterID)) {
 		return sac.ErrResourceAccessDenied
-	}
-
-	// Look up the cluster, so we can store the name for convenience AND history
-	cluster, exists, err := ds.clusterDS.GetCluster(ctx, clusterID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.Errorf("could not pull config for cluster %q because it does not exist", clusterID)
 	}
 
 	ds.keyedMutex.Lock(scanConfigID)
@@ -165,7 +154,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
 		Id:           statusKey,
 		ClusterId:    clusterID,
-		ClusterName:  cluster.GetName(),
+		ClusterName:  clusterName,
 		ScanConfigId: scanConfigID,
 		Errors:       []string{clusterStatus},
 	}

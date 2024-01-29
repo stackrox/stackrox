@@ -147,17 +147,17 @@ func (mr *MockDataStoreMockRecorder) ScanConfigurationExists(ctx, scanName any) 
 }
 
 // UpdateClusterStatus mocks base method.
-func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, scanConfigID, clusterID, clusterStatus string) error {
+func (m *MockDataStore) UpdateClusterStatus(ctx context.Context, scanConfigID, clusterID, clusterName, clusterStatus string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateClusterStatus", ctx, scanConfigID, clusterID, clusterStatus)
+	ret := m.ctrl.Call(m, "UpdateClusterStatus", ctx, scanConfigID, clusterID, clusterName, clusterStatus)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateClusterStatus indicates an expected call of UpdateClusterStatus.
-func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterName, clusterStatus any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, scanConfigID, clusterID, clusterStatus)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), ctx, scanConfigID, clusterID, clusterName, clusterStatus)
 }
 
 // UpsertScanConfiguration mocks base method.

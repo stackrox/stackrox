@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
-	complianceManager "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
+	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -80,7 +80,7 @@ type datastoreImpl struct {
 	roleBindingDataStore      roleBindingDataStore.DataStore
 	cm                        connection.Manager
 	networkBaselineMgr        networkBaselineManager.Manager
-	complianceManager         complianceManager.Manager
+	scanConfigurationDS       compScanSetting.DataStore
 
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
@@ -548,7 +548,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterPods(ctx, cluster)
 
 	// Remove scan config associated with cluster
-	if err := ds.complianceManager.RemoveClusterFromScanConfig(ctx, cluster.GetId()); err != nil {
+	if err := ds.scanConfigurationDS.RemoveClusterFromScanConfig(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove scan config for cluster %s: %v", cluster.GetId(), err)
 	}
 

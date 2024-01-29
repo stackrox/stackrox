@@ -111,6 +111,20 @@ func (mr *MockManagerMockRecorder) ProcessScanRequest(ctx, scanRequest, clusters
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessScanRequest", reflect.TypeOf((*MockManager)(nil).ProcessScanRequest), ctx, scanRequest, clusters)
 }
 
+// RemoveClusterFromScanConfig mocks base method.
+func (m *MockManager) RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveClusterFromScanConfig", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveClusterFromScanConfig indicates an expected call of RemoveClusterFromScanConfig.
+func (mr *MockManagerMockRecorder) RemoveClusterFromScanConfig(ctx, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterFromScanConfig", reflect.TypeOf((*MockManager)(nil).RemoveClusterFromScanConfig), ctx, clusterID)
+}
+
 // Sync mocks base method.
 func (m *MockManager) Sync(ctx context.Context) {
 	m.ctrl.T.Helper()

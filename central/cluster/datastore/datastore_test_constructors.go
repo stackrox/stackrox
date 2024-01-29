@@ -91,5 +91,5 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 		alertStore, iiStore, namespaceStore, deploymentStore,
 		nodeStore, podStore, secretStore, netFlowStore, netEntityStore,
 		serviceAccountStore, k8sRoleStore, k8sRoleBindingStore, sensorCnxMgr, nil,
-		clusterRanker, indexer, networkBaselineManager)
+		clusterRanker, indexer, networkBaselineManager, nil)
 }
