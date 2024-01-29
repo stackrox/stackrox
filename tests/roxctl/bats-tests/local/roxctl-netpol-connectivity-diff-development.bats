@@ -7,12 +7,12 @@ templated_fragment='"{{ printf "%s" ._thing.image }}"'
 setup_file() {
     [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
     echo "Testing roxctl version: '$(roxctl-development version)'" >&3
+    export diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff/testdata/"
 }
 
 setup() {
     out_dir="$(mktemp -d -u)"
     ofile="$(mktemp)"
-    diff_tests_dir="${BATS_TEST_DIRNAME}/../../../../roxctl/netpol/connectivity/diff/testdata/"
 }
 
 teardown() {
