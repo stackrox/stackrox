@@ -189,14 +189,16 @@ verify_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-indexer 300
-    "${ORCH_CMD}" -n "${namespace}" wait --for=condition=ready pod -l app=scanner-v4-indexer --timeout=10m
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-indexer" 120
 }
 
 verify_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-db 300
     wait_for_object_to_appear "$namespace" deploy/scanner-v4-matcher 300
-    "${ORCH_CMD}" -n "${namespace}" wait --for=condition=ready pod -l app=scanner-v4-matcher --timeout=10m
+    wait_for_ready_pods "${namespace}" "scanner-v4-db" 300
+    wait_for_ready_pods "${namespace}" "scanner-v4-matcher" 120
 }
 
 
@@ -394,4 +396,45 @@ spec:
               cpu: "1000m"
 EOF
     )
+}
+
+# This function tries to fix shortcomings of `kubectl wait`. Instead of (wrongly) caring about pods terminating
+# in the beginning because the overall situation has not stabilized yet, this function only waits until *some*
+# pod in the specified deployment becomes ready.
+#
+# Hopefully makes CI less flaky.
+wait_for_ready_pods() {
+    local namespace="${1}"
+    local deployment="${2}"
+    local timeout_seconds="${3:-300}" # 5 minutes
+
+    local start_time="$(date '+%s')"
+    local start_time
+    local deployment_json
+    local num_replicas
+    local num_ready_replicas
+    local now
+
+    echo "Waiting for pod within deployment ${namespace}/${deployment} to become ready in ${timeout_seconds} seconds"
+
+    while true; do
+      deployment_json="$("${ORCH_CMD}" -n "${namespace}" get "deployment/${deployment}" -o json)"
+      num_replicas="$(jq '.status.replicas' <<<"${deployment_json}")"
+      num_ready_replicas="$(jq '.status.readyReplicas' <<<"${deployment_json}")"
+      echo "${deployment} replicas: ${num_replicas}"
+      echo "${deployment} readyReplicas: ${num_ready_replicas}"
+      if (( num_ready_replicas >  0 )); then
+        break
+      fi
+      now=$(date '+%s')
+      if (( now - start_time > timeout_seconds)); then
+        echo >&2 "Timed out after ${timeout_seconds} seconds while waiting for ready pods within deployment ${namespace}/${deployment}"
+        "${ORCH_CMD}" -n "${namespace}" get pod -o wide
+        "${ORCH_CMD}" -n "${namespace}" get deploy -o wide
+        exit 1
+      fi
+      sleep 2
+    done
+
+    echo "Pod(s) within deployment ${namespace}/${deployment} ready."
 }
