@@ -14,7 +14,7 @@ on:
     - synchronize
 
 jobs:
-  define-job-matrix:
+  define-scanner-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
@@ -46,14 +46,14 @@ jobs:
         condensed="$(jq -c <<< "$matrix")"
         echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
-  build-and-push:
-    needs: define-job-matrix
+  build-and-push-scanner:
+    needs: define-scanner-job-matrix
     runs-on: ubuntu-latest
     strategy:
       # Supports two go binary builds:
       # default    - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease - built with GOTAGS=release
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:
@@ -105,15 +105,15 @@ jobs:
 
   push-manifests:
     needs:
-    - define-job-matrix
-    - build-and-push
+    - define-scanner-job-matrix
+    - build-and-push-scanner
     runs-on: ubuntu-latest
     strategy:
       # Supports two image builds:
       # default
       # prerelease
       fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_manifests }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
       env:
