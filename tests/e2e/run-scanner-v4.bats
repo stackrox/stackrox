@@ -191,6 +191,17 @@ teardown() {
 #     verify_scannerV4_indexer_deployed "$sensor_namespace"
 # }
 
+@test "Fresh installation using roxctl with Scanner V4 disabled" {
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="false"
+    _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_no_scannerV4_deployed "stackrox"
+}
+
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
     verify_no_scannerV4_indexer_deployed "$namespace"
