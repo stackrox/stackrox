@@ -147,17 +147,7 @@ func (cmd *NetpolGenerateCmd) setupPath(path string) error {
 
 type netpolGenerator interface {
 	PoliciesFromInfos(infos []*resource.Info) ([]*v1.NetworkPolicy, error)
-	Errors() []npguard.FileProcessingError
-}
-
-// handleFileProcessingError temporary added function to handle inconsistency in error types exported form npg pkgs.
-func handleFileProcessingError(src []npguard.FileProcessingError) (warns []error, errs []error) {
-	arr := make([]npg.NPGuardErrorType, len(src))
-	for i, processingError := range src {
-		tmp := processingError // avoid G601: Implicit memory aliasing in for loop
-		arr[i] = &tmp
-	}
-	return npg.HandleNPGuardErrors(arr)
+	ErrorPtrs() []*npguard.FileProcessingError
 }
 
 func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, e []error) {
@@ -173,8 +163,7 @@ func (cmd *NetpolGenerateCmd) generateNetpol(synth netpolGenerator) (w []error, 
 	if err := cmd.ouputNetpols(recommendedNetpols); err != nil {
 		return warns, append(errs, err)
 	}
-	// TODO: change to HandleNPGuardErrors when `FileProcessingError` is unified with other exported errors
-	w, e = handleFileProcessingError(synth.Errors())
+	w, e = npg.HandleNPGuardErrors(synth.ErrorPtrs())
 	return append(warns, w...), append(errs, e...)
 }
 
