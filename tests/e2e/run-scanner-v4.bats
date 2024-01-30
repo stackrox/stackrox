@@ -27,11 +27,14 @@ setup_file() {
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
     EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
+    # Prepend dir with earlier version of roxctl to the PATH so earlier version will have higher priority if binary exists
+    PATH=${EARLIER_ROXCTL_PATH}:$PATH
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
     export EARLIER_ROXCTL_PATH
+    export PATH
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
 }
@@ -76,11 +79,8 @@ setup() {
 
     export ROX_SCANNER_V4=true
 
-    # if there is an alias for roxctl then remove it.
-    # An alias helps temporary use earlier roxctl version instead of latest one in the test below.
-    if alias roxctl  >/dev/null 2>&1; then
-      unalias roxctl
-    fi
+    # Remove earlier version roxctl binary
+    rm -f ${EARLIER_ROXCTL_PATH}/roxctl
 }
 
 describe_pods_in_namespace() {
@@ -226,10 +226,10 @@ teardown() {
     export OUTPUT_FORMAT=""
 
     info "Download and use earlier version of roxctl without Scanner V4 support"
-    curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}"
-    chmod +x "${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}"
-    alias roxctl=${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}
+    curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+    chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
+    roxctl version
     _deploy_stackrox
 
     info "Upgrading StackRox using roxctl with Scanner V4 enabled"
