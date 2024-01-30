@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"log"
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -42,41 +45,58 @@ var (
 		MTLS: MTLSConfig{
 			CertsDir: "",
 		},
+		Proxy: ProxyConfig{
+			ConfigFile: "config.yaml",
+		},
 		LogLevel: LogLevel(zerolog.InfoLevel),
 	}
 )
 
 // Config represents the Scanner configuration parameters.
 type Config struct {
-	Indexer        IndexerConfig `yaml:"indexer"`
-	Matcher        MatcherConfig `yaml:"matcher"`
-	HTTPListenAddr string        `yaml:"http_listen_addr"`
-	GRPCListenAddr string        `yaml:"grpc_listen_addr"`
-	MTLS           MTLSConfig    `yaml:"mtls"`
-	LogLevel       LogLevel      `yaml:"log_level"`
+	// StackRoxServices indicates the Scanner is deployed alongside StackRox services.
+	StackRoxServices bool          `yaml:"stackrox_services"`
+	Indexer          IndexerConfig `yaml:"indexer"`
+	Matcher          MatcherConfig `yaml:"matcher"`
+	HTTPListenAddr   string        `yaml:"http_listen_addr"`
+	GRPCListenAddr   string        `yaml:"grpc_listen_addr"`
+	MTLS             MTLSConfig    `yaml:"mtls"`
+	Proxy            ProxyConfig   `yaml:"proxy"`
+	LogLevel         LogLevel      `yaml:"log_level"`
 }
 
 func (c *Config) validate() error {
 	if err := c.MTLS.validate(); err != nil {
 		return fmt.Errorf("mtls: %w", err)
 	}
+
 	if c.HTTPListenAddr == "" {
 		return errors.New("http_listen_addr is empty")
 	}
+
 	if c.GRPCListenAddr == "" {
 		return errors.New("grpc_listen_addr is empty")
 	}
+
 	if err := c.Indexer.validate(); err != nil {
 		return fmt.Errorf("indexer: %w", err)
 	}
+
 	if err := c.Matcher.validate(); err != nil {
 		return fmt.Errorf("matcher: %w", err)
 	}
+
+	if err := c.Proxy.validate(); err != nil {
+		return fmt.Errorf("proxy: %w", err)
+	}
+
 	return nil
 }
 
 // IndexerConfig provides Scanner Indexer configuration.
 type IndexerConfig struct {
+	// StackRoxServices specifies whether Indexer is deployed alongside StackRox services.
+	StackRoxServices bool
 	// Database provides indexer's database configuration.
 	Database Database `yaml:"database"`
 	// Enable if false disables the Indexer service.
@@ -131,6 +151,8 @@ func (c *IndexerConfig) validate() error {
 
 // MatcherConfig provides Scanner Matcher configuration.
 type MatcherConfig struct {
+	// StackRoxServices specifies whether Matcher is deployed alongside StackRox services.
+	StackRoxServices bool
 	// Database provides matcher's database configuration.
 	Database Database `yaml:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
@@ -147,9 +169,11 @@ func (c *MatcherConfig) validate() error {
 	if !c.Enable {
 		return nil
 	}
+
 	if err := c.Database.validate(); err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
+
 	c.RemoteIndexerEnabled = c.IndexerAddr != ""
 	if c.RemoteIndexerEnabled {
 		_, _, err := net.SplitHostPort(c.IndexerAddr)
@@ -157,6 +181,7 @@ func (c *MatcherConfig) validate() error {
 			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
 		}
 	}
+
 	return nil
 }
 
@@ -216,6 +241,49 @@ func (c *MTLSConfig) validate() error {
 	return nil
 }
 
+// ProxyConfig configures HTTP proxies.
+type ProxyConfig struct {
+	ConfigDir  string `yaml:"config_dir"`
+	ConfigFile string `yaml:"config_file"`
+}
+
+func (c *ProxyConfig) validate() error {
+	dir := c.ConfigDir
+	if dir == "" {
+		return nil
+	}
+
+	info, err := os.Stat(dir)
+	if err != nil {
+		return fmt.Errorf("could not read config_dir: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("config_dir is not a directory: %s", dir)
+	}
+
+	if c.ConfigFile == "" {
+		return errors.New("config_file: cannot be empty")
+	}
+
+	path := filepath.Join(dir, c.ConfigFile)
+	info, err = os.Stat(path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			// When the proxy is configured to be a Kubernetes secret,
+			// the file will not exist if the secret does not exist.
+			// Just allow this and log it, as the proxy config watcher will handle it.
+			log.Printf("config_file %q does not exist, continuing...", path)
+			return nil
+		}
+		return fmt.Errorf("could not read config_file: %w", err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("config_file is a directory: %s", path)
+	}
+
+	return nil
+}
+
 // LogLevel is YAML serializable zerolog.Level
 type LogLevel zerolog.Level
 
@@ -252,6 +320,10 @@ func Load(r io.Reader) (*Config, error) {
 	if err := yd.Decode(&cfg); err != nil {
 		msg := strings.TrimPrefix(err.Error(), `yaml: `)
 		return nil, fmt.Errorf("malformed yaml: %v", msg)
+	}
+	if cfg.StackRoxServices {
+		cfg.Indexer.StackRoxServices = true
+		cfg.Matcher.StackRoxServices = true
 	}
 	return &cfg, cfg.validate()
 }

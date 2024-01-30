@@ -1,6 +1,8 @@
 package flags
 
 import (
+	"fmt"
+	"net"
 	"net/url"
 	"strings"
 
@@ -31,6 +33,8 @@ var (
 
 	caCertFile    string
 	caCertFileSet *bool
+
+	useKubeContext bool
 )
 
 const (
@@ -41,6 +45,7 @@ const (
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
 	plaintextFlagName             = "plaintext"
 	serverNameFlagName            = "server-name"
+	useKubeContextFlagName        = "use-current-k8s-context"
 )
 
 // AddConnectionFlags adds connection-related flags to roxctl.
@@ -72,19 +77,28 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().StringVar(&caCertFile, caCertFileFlagName, "", "Path to a custom CA certificate to use (PEM format). "+
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
 	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
+
+	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "", false,
+		"Use the current kubeconfig context to connect to the central service via port-forwarding. "+
+			"Alternatively, set "+env.UseCurrentKubeContext.EnvVar()+" environment variable to true")
+	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, "endpoint")
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
-// connect in plaintext mode.
+// connect in plaintext mode. As connection requires a port it deduces it from provided schema. If schema is not provided
+// the givenEndpoint must contain port or error is returned.
 func EndpointAndPlaintextSetting() (string, bool, error) {
 	endpoint = flagOrSettingValue(endpoint, *endpointChanged, env.EndpointEnv)
 	if !strings.Contains(endpoint, "://") {
+		if _, _, err := net.SplitHostPort(endpoint); err != nil {
+			return "", false, errox.InvalidArgs.CausedBy(err)
+		}
 		return endpoint, plaintext, nil
 	}
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return "", false, errors.Wrap(err, "malformed endpoint URL")
+		return "", false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	if u.Path != "" && u.Path != "/" {
@@ -92,13 +106,16 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 	}
 
 	var usePlaintext bool
+	var defaultPort int
 	switch u.Scheme {
 	case "http":
+		defaultPort = 80
 		usePlaintext = true
 	case "https":
+		defaultPort = 443
 		usePlaintext = false
 	default:
-		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, the scheme should be: http(s)://<endpoint>:<port>", u.Scheme)
+		return "", false, errox.InvalidArgs.Newf("invalid scheme %q in endpoint URL, use either 'http' or 'https'", u.Scheme)
 	}
 
 	if *plaintextSet ||
@@ -106,6 +123,10 @@ func EndpointAndPlaintextSetting() (string, bool, error) {
 		if booleanFlagOrSettingValue(plaintext, *plaintextSet, env.PlaintextEnv) != usePlaintext {
 			return "", false, errox.InvalidArgs.Newf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
 		}
+	}
+
+	if u.Port() == "" {
+		u.Host = fmt.Sprintf("%s:%d", u.Host, defaultPort)
 	}
 
 	return u.Host, usePlaintext, nil
@@ -166,4 +187,9 @@ func CentralURL() (*url.URL, error) {
 		return nil, errors.Wrapf(err, "parsing central URL %s", rawURL)
 	}
 	return baseURL, nil
+}
+
+// UseKubeContext tells whether the connections should go through k8s port forwarding.
+func UseKubeContext() bool {
+	return useKubeContext || env.UseCurrentKubeContext.BooleanSetting()
 }

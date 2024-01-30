@@ -111,9 +111,9 @@ function local_dev {
 # Checks if central already exists in this cluster.
 # If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
 function prompt_if_central_exists() {
-    local namespace=${1:-stackrox}
-    if "${ORCH_CMD}" -n "${namespace}" get deployment central 2>&1; then
-        yes_no_prompt "Detected there is already a central running on this cluster in namespace ${namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
+    local central_namespace=${1:-stackrox}
+    if "${ORCH_CMD}" -n "${central_namespace}" get deployment central 2>&1; then
+        yes_no_prompt "Detected there is already a central running on this cluster in namespace ${central_namespace}. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
     fi
 }
 
@@ -460,7 +460,7 @@ function launch_central {
       fi
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
-        echo "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
+        echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1
       fi
 
@@ -470,6 +470,10 @@ function launch_central {
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
+          if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+            echo "Deploying ScannerV4..."
+            launch_service "${unzip_dir}" scanner-v4
+          fi
 
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
@@ -526,6 +530,7 @@ function launch_central {
             sleep 1
             ROUTE_HOST=$(kubectl -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
+        echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
         "${central_scripts_dir}/port-forward.sh" 8000

@@ -228,6 +228,8 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	}()
 
 	if err := notifier.Test(ctx); err != nil {
+		log.Warnf("test notifier %q of type %q failed: %s: %v", request.GetNotifier().GetId(), request.GetNotifier().GetType(), err.Error(), err.Unwrap())
+
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return &v1.Empty{}, nil

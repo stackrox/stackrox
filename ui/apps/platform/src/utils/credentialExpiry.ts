@@ -31,5 +31,6 @@ export function getCredentialExpiryVariant(
 
 export const nameOfComponent: Record<CertExpiryComponent, string> = {
     CENTRAL: 'Central',
-    SCANNER: 'Scanner',
+    SCANNER: 'StackRox Scanner',
+    SCANNER_V4: 'Scanner V4',
 };

@@ -73,7 +73,7 @@
 }
 
 /* Replace override for PatternFly with rule from ui-components.css file for classic disabled buttons. */
-:not(.pf-c-page__main-section) button:disabled {
+#main-page-container > div > :not(.pf-c-page__main-section) button:disabled {
     opacity: 0.5;
     pointer-events: none;
 }
@@ -127,12 +127,17 @@
 .pf-c-button__icon.pf-m-start svg,
 .pf-c-button__icon.pf-m-end svg,
 .pf-c-empty-state__content svg,
+.pf-c-progress__status-icon svg,
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
 .chr-c-feedback-modal svg,
 .pf-c-breadcrumb__item-divider svg,
 .pf-c-modal-box__title-icon svg {
     display: inline;
+}
+
+.pf-c-progress__status-icon svg {
+  display: inline-block;
 }
 
 /* overriding vertical align property for table sort icon */
@@ -190,6 +195,11 @@
 .pf-c-form__group input[type="checkbox"]:checked:disabled {
     background-color: var(--pf-global--disabled-color--200);
     border-color: transparent;
+}
+
+/* fixes flattened radio buttons caused by tailwind appearance when using pf standalone radio button */
+.pf-c-radio.pf-m-standalone input[type="radio"] {
+    appearance: auto;
 }
 
 /* For classic components to equal or exceed z-index of PatternFly elements. */

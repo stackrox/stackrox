@@ -79,7 +79,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 type ComplianceOperatorScanConfigurationV2Profiles struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
 	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2profiles_idx,type:btree"`
-	ProfileID                                string                                `gorm:"column:profileid;type:varchar"`
+	ProfileName                              string                                `gorm:"column:profilename;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 

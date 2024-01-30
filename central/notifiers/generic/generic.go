@@ -163,14 +163,19 @@ func (g *generic) ProtoNotifier() *storage.Notifier {
 	return g.Notifier
 }
 
-func (g *generic) Test(ctx context.Context) error {
+func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 	alert := &storage.Alert{
 		Id: "testalert",
 		Policy: &storage.Policy{
 			Name: "This is a test message created to test integration with StackRox.",
 		},
 	}
-	return g.AlertNotify(ctx, alert)
+
+	if err := g.AlertNotify(ctx, alert); err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {

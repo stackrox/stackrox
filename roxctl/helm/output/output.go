@@ -45,6 +45,7 @@ func Command(cliEnvironment env.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&helmOutputCmd.outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&helmOutputCmd.removeOutputDir, "remove", false, "remove the output directory if it already exists")
 	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false, "render RHACS chart flavor")
+	c.PersistentFlags().BoolVar(&helmOutputCmd.telemetry, "enable-telemetry", version.IsReleaseVersion(), "whether to enable telemetry")
 
 	deprecationNote := fmt.Sprintf("use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
 	utils.Must(c.PersistentFlags().MarkDeprecated("rhacs", deprecationNote))
@@ -63,6 +64,7 @@ type helmOutputCommand struct {
 	removeOutputDir bool
 	rhacs           bool
 	imageFlavor     string
+	telemetry       bool
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	chartName               string
@@ -152,7 +154,10 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 
 	values := charts.GetMetaValuesForFlavor(imageFlavor)
 
-	if (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
+	// For testing purposes, running a non-release roxctl version, provide
+	// TelemetryStorageKey with the test value and set --enable-telemetry=true
+	// to get telemetry enabled by default in the resulting chart.
+	if cfg.telemetry && (version.IsReleaseVersion() || pkgEnv.TelemetryStorageKey.Setting() != "") &&
 		pkgEnv.TelemetryStorageKey.Setting() != phonehome.DisabledKey {
 		values.TelemetryEnabled = true
 		values.TelemetryKey = pkgEnv.TelemetryStorageKey.Setting()

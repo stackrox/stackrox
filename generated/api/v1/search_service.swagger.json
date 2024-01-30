@@ -105,7 +105,9 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
+                "COMPLIANCE_RULES",
+                "COMPLIANCE_SCAN_SETTING_BINDINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -210,7 +212,9 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
+                "COMPLIANCE_RULES",
+                "COMPLIANCE_SCAN_SETTING_BINDINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -309,7 +313,9 @@
                 "COMPLIANCE_SCAN_CONFIG_STATUS",
                 "ADMINISTRATION_USAGE",
                 "COMPLIANCE_PROFILES",
-                "COMPLIANCE_PROFILE_CLUSTER_EDGE"
+                "COMPLIANCE_PROFILE_CLUSTER_EDGE",
+                "COMPLIANCE_RULES",
+                "COMPLIANCE_SCAN_SETTING_BINDINGS"
               ]
             },
             "collectionFormat": "multi"
@@ -457,7 +463,9 @@
         "COMPLIANCE_SCAN_CONFIG_STATUS",
         "ADMINISTRATION_USAGE",
         "COMPLIANCE_PROFILES",
-        "COMPLIANCE_PROFILE_CLUSTER_EDGE"
+        "COMPLIANCE_PROFILE_CLUSTER_EDGE",
+        "COMPLIANCE_RULES",
+        "COMPLIANCE_SCAN_SETTING_BINDINGS"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 65"

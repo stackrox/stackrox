@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useCallback } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link, useHistory } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
     Alert,
@@ -29,17 +29,20 @@ import {
 } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
-import { complianceEnhancedScanConfigsPath, complianceEnhancedCoveragePath } from 'routePaths';
+import {
+    complianceEnhancedCoveragePath,
+    complianceEnhancedScanConfigDetailPath,
+    complianceEnhancedScanConfigsPath,
+} from 'routePaths';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getScanConfigs, Schedule } from 'services/ComplianceEnhancedService';
+import { getScanConfigs, getScanConfigsCount } from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
-import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -55,12 +58,17 @@ const CreateScanConfigButton = () => {
     );
 };
 
-const sortFields = ['Name', 'Last Run'];
-const defaultSortOption = { field: 'Name', direction: 'asc' } as SortOption;
+const sortFields = ['Compliance Scan Config Name'];
+const defaultSortOption = {
+    field: 'Compliance Scan Config Name',
+    direction: 'asc',
+} as SortOption;
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
 }: ScanConfigsTablePageProps): React.ReactElement {
+    const history = useHistory();
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -73,6 +81,9 @@ function ScanConfigsTablePage({
     );
     const { data: scanSchedules, loading: isLoading, error } = useRestQuery(listQuery);
 
+    const countQuery = useCallback(() => getScanConfigsCount(), []);
+    const { data: scanSchedulesCount } = useRestQuery(countQuery);
+
     const scanConfigActions = (): IAction[] => [
         {
             title: 'Edit schedule',
@@ -84,31 +95,53 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return scanSchedules?.map(
-            ({ id, scanName, scanConfig, lastUpdatedTime, clusterStatus }) => (
-                <Tr key={id}>
-                    <Td>
-                        <Link
-                            to={generatePath(complianceEnhancedScanConfigsPath, {
-                                policyId: id,
-                            })}
-                        >
-                            {scanName}
-                        </Link>
-                    </Td>
-                    <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                    <Td>
-                        {displayOnlyItemOrItemCount(
-                            clusterStatus.map((cluster) => cluster.clusterName),
-                            'clusters'
-                        )}
-                    </Td>
-                    <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
-                    <Td isActionCell>
-                        <ActionsColumn items={scanConfigActions()} />
-                    </Td>
-                </Tr>
-            )
+            ({ id, scanName, scanConfig, lastUpdatedTime, clusterStatus }) => {
+                const scanConfigUrl = generatePath(complianceEnhancedScanConfigDetailPath, {
+                    scanConfigId: id,
+                });
+
+                const rowActions = [
+                    {
+                        title: 'Edit scan schedule',
+                        onClick: (event) => {
+                            event.preventDefault();
+                            history.push({
+                                pathname: scanConfigUrl,
+                                search: 'action=edit',
+                            });
+                        },
+                        isDisabled: !hasWriteAccessForCompliance,
+                    },
+                    {
+                        title: 'Delete scan schedule',
+                        onClick: (event) => {
+                            event.preventDefault();
+                            // TODO: add delete confirmation modal and delete API call
+                        },
+                        isDisabled: !hasWriteAccessForCompliance,
+                    },
+                ];
+
+                return (
+                    <Tr key={id}>
+                        <Td>
+                            <Link to={scanConfigUrl}>{scanName}</Link>
+                        </Td>
+                        <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
+                        <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
+                        <Td>
+                            {displayOnlyItemOrItemCount(
+                                clusterStatus.map((cluster) => cluster.clusterName),
+                                'clusters'
+                            )}
+                        </Td>
+                        <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
+                        <Td isActionCell>
+                            <ActionsColumn items={rowActions} />
+                        </Td>
+                    </Tr>
+                );
+            }
         );
     };
 
@@ -186,8 +219,7 @@ function ScanConfigsTablePage({
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                                 <Pagination
-                                    isCompact
-                                    itemCount={scanSchedules ? scanSchedules.length : 0}
+                                    itemCount={scanSchedulesCount ?? 0}
                                     page={page}
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
@@ -200,9 +232,9 @@ function ScanConfigsTablePage({
                     <TableComposable>
                         <Thead noWrap>
                             <Tr>
-                                <Th sort={getSortParams('Name')}>Name</Th>
+                                <Th sort={getSortParams('Compliance Scan Config Name')}>Name</Th>
                                 <Th>Schedule</Th>
-                                <Th sort={getSortParams('Last Run')}>Last run</Th>
+                                <Th>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 <Td />

@@ -22,7 +22,7 @@ import (
 )
 
 var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
-	or.SensorOr(idcheck.CentralOnly()): {
+	or.Or(idcheck.CentralOnly(), idcheck.SensorsOnly(), idcheck.ScannerV4MatcherOnly()): {
 		"/scanner.v4.Indexer/CreateIndexReport",
 		"/scanner.v4.Indexer/GetIndexReport",
 		"/scanner.v4.Indexer/HasIndexReport",

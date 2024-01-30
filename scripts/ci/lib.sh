@@ -590,10 +590,8 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     central_services_chart_dir="$(mktemp -d)"
     secured_cluster_services_chart_dir="$(mktemp -d)"
-    roxctl helm output central-services --image-defaults=stackrox.io --output-dir "${central_services_chart_dir}/stackrox"
     roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
-    roxctl helm output secured-cluster-services --image-defaults=stackrox.io --output-dir "${secured_cluster_services_chart_dir}/stackrox"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
@@ -631,7 +629,7 @@ mark_collector_release() {
 
     # We need to make sure the file ends with a newline so as not to corrupt it when appending.
     [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
-    if grep -q "${tag}" RELEASED_VERSIONS; then
+    if grep -qF "${tag}" RELEASED_VERSIONS; then
         echo "Skip RELEASED_VERSIONS file change, already up to date ..." >> "${GITHUB_STEP_SUMMARY}"
     else
         echo "Update RELEASED_VERSIONS file ..." >> "${GITHUB_STEP_SUMMARY}"

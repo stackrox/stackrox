@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "central";
-
 package central;
+
+option go_package = "central";
 
 // DelegatedRegistryConfig determines how to handle scan requests.
 //
@@ -13,16 +13,16 @@ package central;
 //
 // Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 message DelegatedRegistryConfig {
-    enum EnabledFor {
-        NONE     = 0;
-        ALL      = 1;
-        SPECIFIC = 2;
-    }
+  enum EnabledFor {
+    NONE = 0;
+    ALL = 1;
+    SPECIFIC = 2;
+  }
 
-    message DelegatedRegistry {
-        string path = 1;
-    }
+  message DelegatedRegistry {
+    string path = 1;
+  }
 
-    EnabledFor                 enabled_for = 1;
-    repeated DelegatedRegistry registries  = 2;
+  EnabledFor enabled_for = 1;
+  repeated DelegatedRegistry registries = 2;
 }

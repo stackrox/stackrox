@@ -833,7 +833,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:
@@ -1035,7 +1035,7 @@ spec:
                 type: object
               scannerV4:
                 description: Settings for the Scanner V4 component, which can run
-                  in addition to the existing Scanner service
+                  in addition to the previously existing Scanner components
                 properties:
                   db:
                     description: Settings pertaining to the DB deployment.
@@ -1047,8 +1047,8 @@ spec:
                           nodes, you can configure a node selector here.
                         type: object
                       persistence:
-                        description: Persistence defines persistence settings for
-                          central.
+                        description: ScannerV4Persistence defines persistence settings
+                          for scanner V4.
                         properties:
                           hostPath:
                             description: Stores persistent data on a directory on
@@ -1066,10 +1066,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: stackrox-db
+                                default: scanner-v4-db
                                 description: The name of the PVC to manage persistent
                                   data. If no PVC with the given name exists, it will
-                                  be created. Defaults to "stackrox-db" if not set.
+                                  be created. Defaults to "scanner-v4-db" if not set.
                                 type: string
                               size:
                                 description: The size of the persistent volume when
@@ -1250,7 +1250,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:
@@ -1387,7 +1387,7 @@ spec:
                         properties:
                           autoScaling:
                             default: Enabled
-                            description: When enabled, the number of analyzer replicas
+                            description: When enabled, the number of component replicas
                               is managed dynamically based on the load, within the
                               limits specified below.
                             enum:

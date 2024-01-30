@@ -74,7 +74,7 @@ var (
 	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", false)
 
 	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
-	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL", true)
+	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL", false)
 
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", true)
@@ -102,4 +102,7 @@ var (
 
 	// CloudCredentials enables support for short-lived cloud credentials.
 	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
+
+	// CloudSources enables support for cloud source integrations.
+	CloudSources = registerFeature("Enable support for cloud source integrations", "ROX_CLOUD_SOURCES", false)
 )

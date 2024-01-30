@@ -1,28 +1,13 @@
 import { FormikProps, useFormik } from 'formik';
 import * as yup from 'yup';
 
-import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
-
-export type ScanConfigParameters = {
-    name: string;
-    description: string;
-    intervalType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | null;
-    time: string;
-    daysOfWeek: DayOfWeek[];
-    daysOfMonth: DayOfMonth[];
-};
-
-export type ScanConfigFormValues = {
-    parameters: ScanConfigParameters;
-    clusters: string[];
-    profiles: string[];
-};
+import { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 export const defaultScanConfigFormValues: ScanConfigFormValues = {
     parameters: {
         name: '',
         description: '',
-        intervalType: null,
+        intervalType: 'DAILY',
         time: '',
         daysOfWeek: [],
         daysOfMonth: [],
@@ -33,7 +18,13 @@ export const defaultScanConfigFormValues: ScanConfigFormValues = {
 
 const validationSchema = yup.object().shape({
     parameters: yup.object().shape({
-        name: yup.string().required('Scan name is required'),
+        name: yup
+            .string()
+            .required('Scan name is required')
+            .matches(
+                /^[a-z0-9][a-z0-9.-]{0,251}[a-z0-9]$/,
+                "Name can contain only lowercase alphanumeric characters, '-' or '.', and start and end with an alphanumeric character."
+            ),
         description: yup.string(),
         intervalType: yup.string().required('Frequency is required'),
         time: yup.string().required('Time is required'),
@@ -54,9 +45,9 @@ const validationSchema = yup.object().shape({
     }),
 });
 
-function useFormikScanConfig(): FormikProps<ScanConfigFormValues> {
+function useFormikScanConfig(initialFormValues): FormikProps<ScanConfigFormValues> {
     const formik = useFormik<ScanConfigFormValues>({
-        initialValues: defaultScanConfigFormValues,
+        initialValues: initialFormValues || defaultScanConfigFormValues,
         validationSchema,
         onSubmit: () => {},
         validateOnMount: true,

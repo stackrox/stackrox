@@ -26,20 +26,23 @@ export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
+export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
+export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance-enhanced`;
 export const complianceEnhancedStatusPath = `${complianceEnhancedBasePath}/status`;
-export const complianceEnhancedStatusClustersPath = `${complianceEnhancedStatusPath}/clusters/:id`;
-export const complianceEnhancedStatusProfilesPath = `${complianceEnhancedStatusPath}/profiles/:id`;
 export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
 export const complianceEnhancedClusterComplianceBasePath = `${complianceEnhancedBasePath}/cluster-compliance`;
 export const complianceEnhancedScanConfigsPath = `${complianceEnhancedClusterComplianceBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigDetailPath = `${complianceEnhancedScanConfigsPath}/:scanConfigId`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedClusterComplianceBasePath}/coverage`;
+export const complianceEnhancedCoverageClustersPath = `${complianceEnhancedCoveragePath}/clusters/:clusterId`;
+export const complianceEnhancedCoverageProfilesPath = `${complianceEnhancedCoveragePath}/profiles/:profileId`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
@@ -149,8 +152,12 @@ export type RouteKey =
     | 'apidocs-v2'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
+    // Cluster secure-a-cluster must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/secure-a-cluster'
     | 'clusters'
     | 'collections'
     | 'compliance'
@@ -197,10 +204,20 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'clusters/delegated-image-scanning': {
         resourceAccessRequirements: everyResource(['Administration']),
     },
+    // Discovered clusters must precede generic Clusters in Body and so here for consistency.
+    'clusters/discovered-clusters': {
+        featureFlagRequirements: allEnabled(['ROX_CLOUD_SOURCES']),
+        resourceAccessRequirements: everyResource(['Administration']),
+    },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
         featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+    },
+    // Clusters secure-a-cluster must precede generic Clusters in Body and so here for consistency.
+    'clusters/secure-a-cluster': {
+        featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
+        resourceAccessRequirements: everyResource([]),
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),

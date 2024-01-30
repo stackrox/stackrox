@@ -35,9 +35,24 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 	SetScannerDefaults(&s.Spec)
 	scannerComponent := *s.Spec.Scanner.ScannerComponent
 
+	return autoSenseScanner(ctx, client, scannerComponent, s.Namespace)
+}
+
+// AutoSenseLocalScannerV4Config detects whether the local scanner V4 should be deployed and/or used by sensor.
+// Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
+// Modifies the provided SecuredCluster object to set a default Spec.ScannerV4 if missing.
+func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
+	SetScannerV4Defaults(&s.Spec)
+	scannerV4Component := *s.Spec.ScannerV4.ScannerComponent
+
+	return autoSenseScanner(ctx, client, scannerV4Component, s.GetNamespace())
+
+}
+
+func autoSenseScanner(ctx context.Context, client ctrlClient.Client, scannerComponent platform.LocalScannerComponentPolicy, namespace string) (AutoSenseResult, error) {
 	switch scannerComponent {
 	case platform.LocalScannerComponentAutoSense:
-		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
+		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, namespace)
 		if err != nil {
 			return AutoSenseResult{}, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
 		}
@@ -57,7 +72,7 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 		return AutoSenseResult{}, nil
 	}
 
-	return AutoSenseResult{}, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
+	return AutoSenseResult{}, errors.Errorf("invalid scannerComponent setting: %q", scannerComponent)
 }
 
 func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {
