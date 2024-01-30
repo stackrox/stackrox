@@ -281,7 +281,11 @@ _deploy_stackrox() {
     deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
-    export_central_basic_auth_creds
+    if [[ "${HELM_REUSE_VALUES:-}" != "true" ]]; then
+      # In case we are reusing existing Helm values we should not export new
+      # central credentials into the environment.
+      export_central_basic_auth_creds
+    fi
     wait_for_api "${central_namespace}"
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
