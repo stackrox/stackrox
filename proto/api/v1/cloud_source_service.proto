@@ -48,8 +48,10 @@ message OCMConfig {
 }
 
 message CloudSourcesFilter {
+  // Matches cloud sources based on their name.
+  repeated string names = 1;
   // Matches cloud sources based on their type.
-  repeated CloudSource.Type types = 1;
+  repeated CloudSource.Type types = 2;
 }
 
 message CountCloudSourcesRequest {

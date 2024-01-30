@@ -76,6 +76,17 @@
             "type": "boolean"
           },
           {
+            "name": "filter.names",
+            "description": "Matches cloud sources based on their name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
             "name": "filter.types",
             "description": "Matches cloud sources based on their type.",
             "in": "query",
@@ -280,6 +291,17 @@
         },
         "parameters": [
           {
+            "name": "filter.names",
+            "description": "Matches cloud sources based on their name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
             "name": "filter.types",
             "description": "Matches cloud sources based on their type.",
             "in": "query",
@@ -407,6 +429,13 @@
     "v1CloudSourcesFilter": {
       "type": "object",
       "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches cloud sources based on their name."
+        },
         "types": {
           "type": "array",
           "items": {
