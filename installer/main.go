@@ -41,9 +41,13 @@ func main() {
 
 	ctx := context.Background()
 
-	err = manifest.ApplyCentral(ctx, clientset)
+	m, err := manifest.New("stackrox")
 
 	if err != nil {
-		panic(err)
+		panic(err.Error())
+	}
+
+	if err = m.Apply(ctx, clientset); err != nil {
+		panic(err.Error())
 	}
 }
