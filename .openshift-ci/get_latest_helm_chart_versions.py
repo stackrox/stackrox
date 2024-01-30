@@ -55,6 +55,11 @@ def main(argv):
     )
     logging.info(
         f"Helm chart versions for the latest {num_releases} releases:")
+    # Specifically remove 400.1.6 which is affected by a max message size bug, but is no longer supported.
+    if "400.1.6" in helm_versions:
+        print('Removed version 400.1.6')
+        helm_versions.remove("400.1.6")
+
     print("\n".join(helm_versions))
     helm_version_specific = get_latest_helm_chart_version_for_specific_release(
         "stackrox-secured-cluster-services", sample_support_exception

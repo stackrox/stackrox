@@ -65,17 +65,6 @@ test_tuples.extend(
     ]
 )
 
-# Support exception for latest central and sensor 3.74 as per
-# https://issues.redhat.com/browse/ROX-18223
-support_exceptions = [
-    ChartVersions(
-        central_version=latest_tag,
-        sensor_version=get_latest_helm_chart_version_for_specific_release(
-            "stackrox-secured-cluster-services", Release(major=3, minor=74)
-        ),
-    )
-]
-
 test_tuples.extend(
     support_exception
     for support_exception in support_exceptions
