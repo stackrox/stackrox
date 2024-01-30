@@ -165,7 +165,7 @@ func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	count, err := s.complianceResultsDS.ComplianceClusterStatsCount(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}
