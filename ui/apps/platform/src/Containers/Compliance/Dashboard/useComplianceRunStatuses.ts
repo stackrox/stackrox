@@ -1,17 +1,5 @@
 import { useState } from 'react';
-import { gql, useApolloClient, useQuery } from '@apollo/client';
-
-import { resourceTypes } from 'constants/entityTypes';
-import {
-    AGGREGATED_RESULTS_ACROSS_ENTITY,
-    AGGREGATED_RESULTS_STANDARDS_BY_ENTITY,
-} from 'queries/controls';
-import {
-    CLUSTERS_COUNT,
-    DEPLOYMENTS_COUNT,
-    NAMESPACES_COUNT,
-    NODES_COUNT,
-} from './ComplianceDashboardTile';
+import { DocumentNode, gql, useApolloClient, useQuery } from '@apollo/client';
 
 export type ComplianceRunStatusResponse = {
     complianceRunStatuses: {
@@ -24,17 +12,6 @@ function isCurrentScanIncomplete(
 ) {
     return runs.some((run) => run.state !== 'FINISHED');
 }
-
-const queriesToRefetchOnPollingComplete = [
-    CLUSTERS_COUNT,
-    NODES_COUNT,
-    NAMESPACES_COUNT,
-    DEPLOYMENTS_COUNT,
-    AGGREGATED_RESULTS_STANDARDS_BY_ENTITY(resourceTypes.CLUSTER),
-    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.CLUSTER),
-    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.NAMESPACE),
-    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.NODE),
-];
 
 const complianceRunStatusesQuery = gql`
     query runStatuses($latest: Boolean) {
@@ -63,7 +40,9 @@ export type UseComplianceRunStatusesResponse = {
     isCurrentScanIncomplete: boolean;
 };
 
-export function useComplianceRunStatuses(): UseComplianceRunStatusesResponse {
+export function useComplianceRunStatuses(
+    queriesToRefetchOnPollingComplete: DocumentNode[]
+): UseComplianceRunStatusesResponse {
     const [inProgressScanDetected, setInProgressScanDetected] = useState(false);
 
     const client = useApolloClient();
@@ -78,7 +57,6 @@ export function useComplianceRunStatuses(): UseComplianceRunStatusesResponse {
         onError,
         errorPolicy: 'all',
         notifyOnNetworkStatusChange: true,
-        fetchPolicy: 'no-cache',
     });
 
     function onCompleted(data: ComplianceRunStatusResponse) {

@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { Alert } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { gql } from '@apollo/client';
@@ -8,11 +9,15 @@ import { COMPLIANCE_FAIL_COLOR, COMPLIANCE_PASS_COLOR } from 'constants/severity
 import { standardLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'utils/URLService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import searchContext from 'Containers/searchContext';
 import networkStatuses from 'constants/networkStatuses';
 import COMPLIANCE_STATES from 'constants/complianceStates';
 
 import ScanButton from 'Containers/Compliance/ScanButton';
+import ComplianceScanProgress from 'Containers/Compliance/Dashboard/ComplianceScanProgress';
+import { useComplianceRunStatuses } from 'Containers/Compliance/Dashboard/useComplianceRunStatuses';
+
 import Query from 'Components/CacheFirstQuery';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
@@ -260,9 +265,14 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
     );
 };
 
+const queriesToRefetchOnPollingComplete = [QUERY];
+
 const ComplianceByControls = ({ match, location, className, standardOptions }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+
+    const { runs, error, restartPolling, inProgressScanDetected, isCurrentScanIncomplete } =
+        useComplianceRunStatuses(queriesToRefetchOnPollingComplete);
 
     const searchParam = useContext(searchContext);
     const options = standardOptions.map((standard) => ({
@@ -309,6 +319,8 @@ const ComplianceByControls = ({ match, location, className, standardOptions }) =
                                 clusterId="*"
                                 standardId={selectedStandard.standard}
                                 loaderSize={10}
+                                onScanTriggered={restartPolling}
+                                scanInProgress={isCurrentScanIncomplete}
                             />
                         )}
                         <ViewStandardButton
@@ -341,6 +353,25 @@ const ComplianceByControls = ({ match, location, className, standardOptions }) =
                             <NoResultsMessage message="No data available. Please run a scan." />
                         );
                     }
+                }
+
+                if (isCurrentScanIncomplete) {
+                    contents = (
+                        <div className="flex-1">
+                            {error && (
+                                <Alert
+                                    variant="danger"
+                                    title="There was an error fetching compliance scan status, data below may be out of date"
+                                    component="p"
+                                >
+                                    {getAxiosErrorMessage(error)}
+                                </Alert>
+                            )}
+                            {inProgressScanDetected && !error && (
+                                <ComplianceScanProgress runs={runs} isFullHeight />
+                            )}
+                        </div>
+                    );
                 }
                 return (
                     <Widget

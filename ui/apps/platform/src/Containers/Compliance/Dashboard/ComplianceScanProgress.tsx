@@ -1,13 +1,13 @@
 import React from 'react';
-import { Card, CardBody, CardTitle, Progress } from '@patternfly/react-core';
+import { Card, CardBody, CardProps, CardTitle, Progress } from '@patternfly/react-core';
 
 import { ComplianceRunStatusResponse } from './useComplianceRunStatuses';
 
 export type ComplianceDashboardCurrentProps = {
     runs: ComplianceRunStatusResponse['complianceRunStatuses']['runs'];
-};
+} & CardProps;
 
-function ComplianceScanProgress({ runs }: ComplianceDashboardCurrentProps) {
+function ComplianceScanProgress({ runs, ...props }: ComplianceDashboardCurrentProps) {
     const unfinishedRunCount = runs.filter((run) => run.state !== 'FINISHED').length;
     const finishedRunCount = runs.length - unfinishedRunCount;
 
@@ -17,7 +17,7 @@ function ComplianceScanProgress({ runs }: ComplianceDashboardCurrentProps) {
             : 'Compliance scanning in progress';
 
     return (
-        <Card>
+        <Card {...props}>
             <CardTitle id="compliance-scan-progress-title">{title}</CardTitle>
             <CardBody>
                 <Progress
