@@ -166,7 +166,7 @@ function ClustersTablePanel({
                             component={LinkShim}
                             href={clustersDelegatedScanningPath}
                         >
-                            Manage delegated scanning
+                            Delegated scanning
                         </Button>
                     </div>
                 )}
@@ -184,9 +184,12 @@ function ClustersTablePanel({
     /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
         isMoveInitBundlesEnabled ? (
-            <DropdownItem key="init-bundle">
-                <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
-            </DropdownItem>
+            <DropdownItem
+                key="init-bundle"
+                component={
+                    <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
+                }
+            />
         ) : version ? (
             <DropdownItem
                 key="link"
@@ -202,9 +205,14 @@ function ClustersTablePanel({
                 Instructions unavailable; version missing
             </DropdownItem>
         ),
-        <DropdownItem key="add" onClick={onAddCluster}>
-            {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
-        </DropdownItem>,
+        <DropdownItem
+            key="legacy"
+            component={
+                <Link to={`${clustersBasePath}/new`}>
+                    {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
+                </Link>
+            }
+        />,
     ];
     /* eslint-enable no-nested-ternary */
 
@@ -281,10 +289,6 @@ function ClustersTablePanel({
                 </Bullseye>
             </PageSection>
         );
-    }
-
-    function onAddCluster() {
-        history.push(`${clustersBasePath}/new`); // TODO we might replace pseudo-id with ?action=create
     }
 
     function setSelectedClusterId(cluster: Cluster) {
