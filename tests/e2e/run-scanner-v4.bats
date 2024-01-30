@@ -26,7 +26,7 @@ setup_file() {
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
-    EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl" -p /tmp)
+    EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
