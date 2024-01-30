@@ -55,10 +55,6 @@ def main(argv):
     )
     logging.info(
         f"Helm chart versions for the latest {num_releases} releases:")
-    # Specifically remove 400.1.6 which is affected by a max message size bug, but is no longer supported.
-    if "400.1.6" in helm_versions:
-        print('Removed version 400.1.6')
-        helm_versions.remove("400.1.6")
 
     print("\n".join(helm_versions))
     helm_version_specific = get_latest_helm_chart_version_for_specific_release(
@@ -102,8 +98,8 @@ def __get_latest_helm_chart_versions(chart_name, num_releases):
     logging.debug(
         f"Identified these charts as {num_releases} latest: {latest_charts}")
 
-    return [c["version"] for c in latest_charts]
-
+    # Specifically remove 400.1.6 which is affected by a max message size bug, but is no longer supported.
+    return [c["version"] for c in latest_charts if c["version"] != "400.1.6"]
 
 def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
     charts = read_charts()
