@@ -101,6 +101,7 @@ def __get_latest_helm_chart_versions(chart_name, num_releases):
     # Specifically remove 400.1.6 which is affected by a max message size bug, but is no longer supported.
     return [c["version"] for c in latest_charts if c["version"] != "400.1.6"]
 
+
 def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
     charts = read_charts()
     logging.info(f"Discovered total {len(charts)} charts")
