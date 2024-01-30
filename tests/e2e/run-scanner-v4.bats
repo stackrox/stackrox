@@ -14,8 +14,8 @@ setup_file() {
     export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_CHART_VERSION="4.3.0"
-    export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
+    export EARLIER_VERSION="4.3.0"
+    export EARLIER_MAIN_IMAGE_TAG=EARLIER_VERSION
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
@@ -26,10 +26,12 @@ setup_file() {
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
+    EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl" -p /tmp)
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+    export EARLIER_ROXCTL_PATH
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
 }
@@ -73,6 +75,12 @@ setup() {
     info "Overriding MAIN_IMAGE_TAG=$MAIN_IMAGE_TAG"
 
     export ROX_SCANNER_V4=true
+
+    # if there is an alias for roxctl then remove it.
+    # An alias helps temporary use earlier roxctl version instead of latest one in the test below.
+    if alias roxctl  >/dev/null 2>&1; then
+      unalias roxctl
+    fi
 }
 
 describe_pods_in_namespace() {
@@ -131,7 +139,7 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
+    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_VERSION}/central-services"
     info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
 
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
@@ -204,6 +212,28 @@ teardown() {
 @test "Fresh installation using roxctl with Scanner V4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="true"
+    _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
+}
+
+@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
+    OS="$(uname)"
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+
+    info "Download and use earlier version of roxctl without Scanner V4 support"
+    curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}"
+    chmod +x "${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}"
+    alias roxctl=${EARLIER_ROXCTL_PATH}/roxctl-${EARLIER_VERSION}
+    info "Installing old StackRox version without Scanner V4 support using roxctl"
+    _deploy_stackrox
+
+    info "Upgrading StackRox using roxctl with Scanner V4 enabled"
+    unalias roxctl
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     _deploy_stackrox
