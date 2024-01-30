@@ -9,6 +9,7 @@ import {
     OutEdges,
     L4Protocol,
     EdgeProperties,
+    InternalNetworkEntitiesInfo,
 } from 'types/networkFlow.proto';
 import { ensureExhaustive } from 'utils/type.utils';
 import {
@@ -26,6 +27,9 @@ import {
     CustomEdgeModel,
     DeploymentData,
     CIDRBlockData,
+    InternalEntitiesNodeModel,
+    InternalGroupData,
+    InternalGroupNodeModel,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -88,6 +92,24 @@ function getExternalGroupNode(): ExternalGroupNodeModel {
     };
 }
 
+function getInternalGroupNode(): InternalGroupNodeModel {
+    const internalGroupData: InternalGroupData = {
+        collapsible: true,
+        showContextMenu: false,
+        type: 'INTERNAL_GROUP',
+        isFadedOut: false,
+    };
+    return {
+        id: 'Internal to cluster',
+        type: 'group',
+        children: [],
+        group: true,
+        label: 'Internal to cluster',
+        style: { padding: 15 },
+        data: internalGroupData,
+    };
+}
+
 function getDeploymentNodeModel(
     entity: DeploymentNetworkEntityInfo,
     policyIds: string[],
@@ -143,6 +165,19 @@ function getExternalNodeModel(
     }
 }
 
+function getInternalNodeModel(
+    entity: InternalNetworkEntitiesInfo,
+    outEdges: OutEdges
+): InternalEntitiesNodeModel {
+    const baseNode = getBaseNode(entity.id);
+    return {
+        ...baseNode,
+        shape: NodeShape.rect,
+        label: 'Internal entities',
+        data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
+    };
+}
+
 function getNodeModel(
     entity: NetworkEntityInfo,
     policyIds: string[],
@@ -161,6 +196,8 @@ function getNodeModel(
         case 'EXTERNAL_SOURCE':
         case 'INTERNET':
             return getExternalNodeModel(entity, outEdges);
+        case 'INTERNAL_ENTITIES':
+            return getInternalNodeModel(entity, outEdges);
         default:
             return ensureExhaustive(entity);
     }
@@ -210,14 +247,19 @@ export function transformActiveData(
     activeEdgeMap: Record<string, CustomEdgeModel>;
     activeNodeMap: Record<string, CustomNodeModel>;
 } {
-    const activeDataModel = {
+    const activeDataModel: {
+        graph: typeof graphModel;
+        nodes: CustomNodeModel[];
+        edges: CustomEdgeModel[];
+    } = {
         graph: graphModel,
-        nodes: [] as CustomNodeModel[],
-        edges: [] as CustomEdgeModel[],
+        nodes: [],
+        edges: [],
     };
 
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     const externalNodes: Record<string, ExternalEntitiesNodeModel | CIDRBlockNodeModel> = {};
+    const internalNodes: Record<string, InternalEntitiesNodeModel> = {};
     const deploymentNodes: Record<string, DeploymentNodeModel> = {};
     const activeEdgeMap: Record<string, CustomEdgeModel> = {};
 
@@ -262,6 +304,13 @@ export function transformActiveData(
             const externalNode = getExternalNodeModel(entity, outEdges);
             if (!externalNodes[id]) {
                 externalNodes[id] = externalNode;
+            }
+        }
+
+        if (type === 'INTERNAL_ENTITIES') {
+            const internalNode = getInternalNodeModel(entity, outEdges);
+            if (!internalNodes[id]) {
+                internalNodes[id] = internalNode;
             }
         }
 
@@ -331,6 +380,17 @@ export function transformActiveData(
         activeDataModel.nodes.push(externalGroupNode);
     }
 
+    const internalNodeIds = Object.keys(internalNodes);
+    if (internalNodeIds.length > 0) {
+        const internalGroupNode = getInternalGroupNode();
+        internalNodeIds.forEach((internalNodeId) => {
+            internalGroupNode?.children?.push(internalNodeId);
+        });
+
+        // add external group node to data model
+        activeDataModel.nodes.push(internalGroupNode);
+    }
+
     // add deployment nodes to data model
     activeDataModel.nodes.push(...Object.values(deploymentNodes));
 
@@ -340,8 +400,12 @@ export function transformActiveData(
     // add external nodes to data model
     activeDataModel.nodes.push(...Object.values(externalNodes));
 
+    // add internal nodes to data model
+    activeDataModel.nodes.push(...Object.values(internalNodes));
+
     // add edges to data model
     activeDataModel.edges.push(...Object.values(activeEdgeMap));
+
     return {
         activeDataModel,
         // set activeEdgeMap to be able to cross reference edges by id for the extraneous graph
@@ -467,6 +531,7 @@ export function createExtraneousFlowsModel(
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
+    const internalNode = getInternalGroupNode();
     // add all non-group nodes from the active graph
     Object.values(activeNodeMap).forEach((node) => {
         if (!node.group) {
@@ -553,6 +618,10 @@ export function createExtraneousFlowsModel(
             if (externalNode && externalNode?.children) {
                 externalNode.children.push(data.id);
             }
+        }
+
+        if (type === 'INTERNAL_ENTITIES') {
+            internalNode?.children?.push(data.id);
         }
     });
 
