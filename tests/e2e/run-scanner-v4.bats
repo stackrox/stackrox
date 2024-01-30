@@ -228,9 +228,8 @@ teardown() {
     curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
-    echo $PATH
-    roxctl version
-    _deploy_stackrox
+    PATH=${EARLIER_ROXCTL_PATH}:$PATH roxctl version
+    PATH=${EARLIER_ROXCTL_PATH}:$PATH _deploy_stackrox
 
     info "Upgrading StackRox using roxctl with Scanner V4 enabled"
     remove_earlier_roxctl_binary
