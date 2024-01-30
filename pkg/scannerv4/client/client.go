@@ -98,6 +98,12 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.UseInsecureNoTLS(o.skipTLS),
 		clientconn.ServerName(o.serverName),
 		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
+		clientconn.WithDialOptions(
+			// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
+			// load balance too well on its own. We do client-side load balancing here.
+			// Note: this is possible because Scanner v4 services are "headless" (clusterIP: None).
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
+		),
 	}
 
 	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
