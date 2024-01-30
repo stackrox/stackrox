@@ -64,6 +64,7 @@ func (s *pipelineImpl) Run(
 		portProcesses := update.GetProcessesListeningOnPorts()
 
 		if portProcesses != nil {
+			log.Infof("In pipeline clusterID= %s", clusterID)
 			if err := s.dataStore.AddProcessListeningOnPort(ctx, clusterID, portProcesses...); err != nil {
 				return err
 			}

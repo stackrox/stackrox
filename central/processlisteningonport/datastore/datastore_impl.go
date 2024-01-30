@@ -118,6 +118,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
+	log.Infof("clusterID= %s", clusterID)
+
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
 	indicatorIds := getIndicatorIdsForPlops(allPLOPs)
@@ -182,6 +184,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			existingPLOP.PodUid = val.PodUid
 			existingPLOP.ClusterId = val.ClusterId
 			existingPLOP.Namespace = val.Namespace
+			log.Infof("existingPLOP.ClusterId= %s", existingPLOP.ClusterId)
 			plopObjects = append(plopObjects, existingPLOP)
 		}
 
@@ -514,6 +517,7 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		CloseTimestamp:     value.CloseTimestamp,
 	}
 
+	log.Infof("value.ClusterId= %s", value.ClusterId)
 	return append(plopObjects, newPLOP)
 }
 
