@@ -86,6 +86,82 @@
           "ComplianceIntegrationService"
         ]
       }
+    },
+    "/v2/compliance/integrations/count": {
+      "get": {
+        "summary": "GetComplianceIntegrationsCount returns the number of compliance operator integrations\nmatching the given query",
+        "operationId": "ComplianceIntegrationService_GetComplianceIntegrationsCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CountComplianceIntegrationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceIntegrationService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -170,6 +246,16 @@
         }
       },
       "title": "Next Tag: 6"
+    },
+    "v2CountComplianceIntegrationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "CountComplianceIntegrationsResponse gives count of compliance integrations"
     },
     "v2ListComplianceIntegrationsResponse": {
       "type": "object",

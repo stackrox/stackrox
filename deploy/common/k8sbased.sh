@@ -460,7 +460,7 @@ function launch_central {
       fi
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
-        echo "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
+        echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1
       fi
 
@@ -470,6 +470,10 @@ function launch_central {
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
+          if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+            echo "Deploying ScannerV4..."
+            launch_service "${unzip_dir}" scanner-v4
+          fi
 
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
@@ -526,6 +530,7 @@ function launch_central {
             sleep 1
             ROUTE_HOST=$(kubectl -n "${central_namespace}" get route/central -o jsonpath='{.status.ingress[0].host}')
         done
+        echo
         export API_ENDPOINT="${ROUTE_HOST}:443"
     else
         "${central_scripts_dir}/port-forward.sh" 8000

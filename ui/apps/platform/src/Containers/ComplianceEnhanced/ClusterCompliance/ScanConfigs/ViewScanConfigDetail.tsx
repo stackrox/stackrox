@@ -26,7 +26,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceEnhancedService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import ScanConfigParameters from './components/ScanConfigParameters';
+import ScanConfigParameterView from './components/ScanConfigParameterView';
 import ScanConfigProfiles from './components/ScanConfigProfiles';
 import ScanConfigClustersTable from './components/ScanConfigClustersTable';
 
@@ -103,7 +103,7 @@ function ViewScanConfigDetail({
                 {!isLoading && scanConfig && (
                     <Grid hasGutter>
                         <GridItem sm={12} md={6}>
-                            <ScanConfigParameters scanConfig={scanConfig} />
+                            <ScanConfigParameterView scanConfig={scanConfig} />
                         </GridItem>
                         <GridItem sm={12} md={6}>
                             <ScanConfigProfiles profiles={scanConfig.scanConfig.profiles} />

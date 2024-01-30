@@ -77,7 +77,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     <Alert
                         variant="warning"
                         isInline
-                        title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, clone and create a new policy."
+                        title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, disable the policy first."
                         component="div"
                         className="pf-u-mt-sm pf-u-mb-md"
                         data-testid="active-violations-policy-alert"

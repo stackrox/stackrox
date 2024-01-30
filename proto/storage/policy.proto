@@ -1,244 +1,244 @@
 syntax = "proto3";
 
+package storage;
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/deployment.proto";
+import "storage/image.proto";
+import "storage/rbac.proto";
+import "storage/scope.proto";
+
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
-import "google/protobuf/timestamp.proto";
-import "storage/scope.proto";
-import "storage/image.proto";
-import "gogoproto/gogo.proto";
-import "storage/deployment.proto";
-import "storage/rbac.proto";
-
-package storage;
-
 message Policy {
-    string                      id                      = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
-    string                      name                    = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
-    string                      description             = 3 [(gogoproto.moretags) = 'search:"Description"'];
-    string                      rationale               = 4;
-    string                      remediation             = 5;
-    bool                        disabled                = 6 [(gogoproto.moretags) = 'search:"Disabled"'];
-    repeated string             categories              = 7 [(gogoproto.moretags) = 'search:"Category,store"'];
-    reserved                                              8; // was PolicyFields fields
+  string id = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
+  string name = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
+  string description = 3 [(gogoproto.moretags) = 'search:"Description"'];
+  string rationale = 4;
+  string remediation = 5;
+  bool disabled = 6 [(gogoproto.moretags) = 'search:"Disabled"'];
+  repeated string categories = 7 [(gogoproto.moretags) = 'search:"Category,store"'];
+  reserved 8; // was PolicyFields fields
 
-    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
-    EventSource                 event_source            = 22;
+  repeated LifecycleStage lifecycle_stages = 9 [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
+  EventSource event_source = 22;
 
-    reserved                                            10; //was repeated Exclusion whitelists
-    repeated Exclusion          exclusions              = 21;
-    repeated Scope              scope                   = 11;
+  reserved 10; //was repeated Exclusion whitelists
+  repeated Exclusion exclusions = 21;
+  repeated Scope scope = 11;
 
-    Severity                    severity                = 12 [(gogoproto.moretags) = 'search:"Severity,store"'];
-    // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
-    // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
-    // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = 'search:"Enforcement"'];
-    repeated string             notifiers               = 14;
-    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = 'search:"Policy Last Updated"'];
+  Severity severity = 12 [(gogoproto.moretags) = 'search:"Severity,store"'];
+  // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
+  // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
+  // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
+  repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = 'search:"Enforcement"'];
+  repeated string notifiers = 14;
+  google.protobuf.Timestamp last_updated = 15 [(gogoproto.moretags) = 'search:"Policy Last Updated"'];
 
-    // For internal use only.
-    string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
-    // For internal use only.
-    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden"'];
-    // For internal use only.
-    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
+  // For internal use only.
+  string SORT_name = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
+  // For internal use only.
+  string SORT_lifecycleStage = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden"'];
+  // For internal use only.
+  bool SORT_enforcement = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
 
-    string                      policy_version          = 19;
-    repeated PolicySection      policy_sections         = 20;
+  string policy_version = 19;
+  repeated PolicySection policy_sections = 20;
 
-    message MitreAttackVectors {
-        string          tactic     = 1;
-        repeated string techniques = 2;
-    }
+  message MitreAttackVectors {
+    string tactic = 1;
+    repeated string techniques = 2;
+  }
 
-    repeated MitreAttackVectors mitre_attack_vectors    = 23;
+  repeated MitreAttackVectors mitre_attack_vectors = 23;
 
-    // Read-only field. If true, the policy's criteria fields are rendered read-only.
-    bool                        criteria_locked         = 24;
-    // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
-    bool                        mitre_vectors_locked    = 25;
-    // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-    bool                        is_default              = 26;
+  // Read-only field. If true, the policy's criteria fields are rendered read-only.
+  bool criteria_locked = 24;
+  // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
+  bool mitre_vectors_locked = 25;
+  // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
+  bool is_default = 26;
 }
 
 enum EventSource {
-    NOT_APPLICABLE        = 0;
-    DEPLOYMENT_EVENT      = 1;
-    AUDIT_LOG_EVENT       = 2;
+  NOT_APPLICABLE = 0;
+  DEPLOYMENT_EVENT = 1;
+  AUDIT_LOG_EVENT = 2;
 }
 
 message PolicySection {
-    string section_name = 1;
-    repeated PolicyGroup policy_groups = 3;
+  string section_name = 1;
+  repeated PolicyGroup policy_groups = 3;
 }
 
 message PolicyGroup {
-    string field_name                = 1;
-    BooleanOperator boolean_operator = 2;
-    bool negate                      = 3;
-    repeated PolicyValue values      = 4;
+  string field_name = 1;
+  BooleanOperator boolean_operator = 2;
+  bool negate = 3;
+  repeated PolicyValue values = 4;
 }
 
 message PolicyValue {
-    string value = 1;
+  string value = 1;
 }
 
 enum BooleanOperator {
-    OR  = 0;
-    AND = 1;
+  OR = 0;
+  AND = 1;
 }
 
 message PolicyList {
-    repeated Policy policies = 1;
+  repeated Policy policies = 1;
 }
 
 message ListPolicy {
-    string                    id               = 1;
-    string                    name             = 2;
-    string                    description      = 3;
-    Severity                  severity         = 4;
-    bool                      disabled         = 5;
-    repeated LifecycleStage   lifecycle_stages = 6;
-    repeated string           notifiers        = 7;
-    google.protobuf.Timestamp last_updated     = 8;
-    EventSource               event_source     = 9;
-    bool                      is_default       = 10;
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  Severity severity = 4;
+  bool disabled = 5;
+  repeated LifecycleStage lifecycle_stages = 6;
+  repeated string notifiers = 7;
+  google.protobuf.Timestamp last_updated = 8;
+  EventSource event_source = 9;
+  bool is_default = 10;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.
 
 enum EnforcementAction {
-    UNSET_ENFORCEMENT                         = 0;
-    SCALE_TO_ZERO_ENFORCEMENT                 = 1;
-    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
-    KILL_POD_ENFORCEMENT                      = 3;
-    FAIL_BUILD_ENFORCEMENT                    = 4;
-    // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
-    FAIL_KUBE_REQUEST_ENFORCEMENT             = 5;
-    // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.
-    FAIL_DEPLOYMENT_CREATE_ENFORCEMENT        = 6;
-    // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT        = 7;
+  UNSET_ENFORCEMENT = 0;
+  SCALE_TO_ZERO_ENFORCEMENT = 1;
+  UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
+  KILL_POD_ENFORCEMENT = 3;
+  FAIL_BUILD_ENFORCEMENT = 4;
+  // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
+  FAIL_KUBE_REQUEST_ENFORCEMENT = 5;
+  // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.
+  FAIL_DEPLOYMENT_CREATE_ENFORCEMENT = 6;
+  // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
+  FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT = 7;
 }
 
 enum Severity {
-    UNSET_SEVERITY    = 0;
-    LOW_SEVERITY      = 1;
-    MEDIUM_SEVERITY   = 2;
-    HIGH_SEVERITY     = 3;
-    CRITICAL_SEVERITY = 4;
+  UNSET_SEVERITY = 0;
+  LOW_SEVERITY = 1;
+  MEDIUM_SEVERITY = 2;
+  HIGH_SEVERITY = 3;
+  CRITICAL_SEVERITY = 4;
 }
 
 enum LifecycleStage {
-    DEPLOY    = 0;
-    BUILD     = 1;
-    RUNTIME   = 2;
+  DEPLOY = 0;
+  BUILD = 1;
+  RUNTIME = 2;
 }
 
 message Component {
-    string name    = 1;
-    string version = 2;
+  string name = 1;
+  string version = 2;
 }
 
 message DockerfileLineRuleField {
-    string instruction  = 1;
-    string value        = 2;
+  string instruction = 1;
+  string value = 2;
 }
 
 message KeyValuePolicy {
-    string key   = 1;
-    string value = 2;
-    ContainerConfig.EnvironmentConfig.EnvVarSource env_var_source = 3;
+  string key = 1;
+  string value = 2;
+  ContainerConfig.EnvironmentConfig.EnvVarSource env_var_source = 3;
 }
 
 message VolumePolicy {
-    string name         = 1;
-    string source       = 2;
-    string destination  = 3;
-    oneof set_read_only {
-        bool read_only  = 4;
-    }
-    string type         = 5;
+  string name = 1;
+  string source = 2;
+  string destination = 3;
+  oneof set_read_only {
+    bool read_only = 4;
+  }
+  string type = 5;
 }
 
 message HostMountPolicy {
-    oneof set_read_only {
-        bool read_only  = 1;
-    }
+  oneof set_read_only {
+    bool read_only = 1;
+  }
 }
 
 message ProcessPolicy {
-    string name     = 1;
-    string args     = 2;
-    string ancestor = 3;
-    string uid      = 4;
+  string name = 1;
+  string args = 2;
+  string ancestor = 3;
+  string uid = 4;
 }
 
 message ResourcePolicy {
-    NumericalPolicy cpu_resource_request    = 1;
-    NumericalPolicy cpu_resource_limit      = 2;
-    NumericalPolicy memory_resource_request = 3;
-    NumericalPolicy memory_resource_limit   = 4;
+  NumericalPolicy cpu_resource_request = 1;
+  NumericalPolicy cpu_resource_limit = 2;
+  NumericalPolicy memory_resource_request = 3;
+  NumericalPolicy memory_resource_limit = 4;
 }
 
 message NumericalPolicy {
-    Comparator op  = 1;
-    float value    = 3;
+  Comparator op = 1;
+  float value = 3;
 }
 
 enum Comparator {
-    LESS_THAN              = 0;
-    LESS_THAN_OR_EQUALS    = 1;
-    EQUALS                 = 2;
-    GREATER_THAN_OR_EQUALS = 3;
-    GREATER_THAN           = 4;
+  LESS_THAN = 0;
+  LESS_THAN_OR_EQUALS = 1;
+  EQUALS = 2;
+  GREATER_THAN_OR_EQUALS = 3;
+  GREATER_THAN = 4;
 }
 
 message PortPolicy {
-    int32 port          = 1;
-    string protocol     = 2;
+  int32 port = 1;
+  string protocol = 2;
 }
 
 // K8S RBAC Permission level configuration.
 message PermissionPolicy {
-    PermissionLevel permission_level = 1;
+  PermissionLevel permission_level = 1;
 }
 
 message ImageNamePolicy {
-    string registry        = 1; // e.g. docker.io
-    string remote          = 2; // e.g. stackrox/container-summarizer
-    string tag             = 3; // e.g. latest
+  string registry = 1; // e.g. docker.io
+  string remote = 2; // e.g. stackrox/container-summarizer
+  string tag = 3; // e.g. latest
 }
 
 message PortExposurePolicy {
-    repeated PortConfig.ExposureLevel exposure_levels = 1;
+  repeated PortConfig.ExposureLevel exposure_levels = 1;
 }
 
 message Exclusion {
-    string                    name       = 1;
+  string name = 1;
 
-    message Container {
-        ImageName image_name = 3 [(gogoproto.moretags) = 'search:"-"'];
-    }
-    reserved 2; // formally Container container
+  message Container {
+    ImageName image_name = 3 [(gogoproto.moretags) = 'search:"-"'];
+  }
+  reserved 2; // formally Container container
 
-    message Deployment {
-        string                name       = 3;
-        Scope                 scope      = 4;
-    }
-    Deployment                deployment = 5;
+  message Deployment {
+    string name = 3;
+    Scope scope = 4;
+  }
+  Deployment deployment = 5;
 
-    message Image {
-        string name = 1;
-    }
-    Image                     image      = 7;
+  message Image {
+    string name = 1;
+  }
+  Image image = 7;
 
-    google.protobuf.Timestamp expiration = 6;
+  google.protobuf.Timestamp expiration = 6;
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
 // We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
 message ExportPoliciesResponse {
-    repeated storage.Policy policies = 1;
+  repeated storage.Policy policies = 1;
 }

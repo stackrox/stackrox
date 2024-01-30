@@ -165,10 +165,7 @@ func dialV2() (ScannerClient, error) {
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
-	c, err := client.NewGRPCScanner(ctx,
-		client.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
-		// TODO: [ROX-19050] Set the Scanner V4 TLS validation when certificates are ready.
-		client.SkipTLSVerification)
+	c, err := client.NewGRPCScanner(ctx, client.WithIndexerAddress(env.ScannerV4GRPCEndpoint.Setting()))
 	if err != nil {
 		return nil, err
 	}

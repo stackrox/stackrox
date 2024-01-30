@@ -17,8 +17,19 @@ export type ExceptionScopeFieldProps = {
 function ExceptionScopeField({ fieldId, label, scopeContext, formik }: ExceptionScopeFieldProps) {
     const { values, setFieldValue } = formik;
 
+    const isImageWithoutTag = scopeContext !== 'GLOBAL' && scopeContext.imageName.tag === '';
+
     return (
-        <FormGroup fieldId={fieldId} label={label} isRequired>
+        <FormGroup
+            fieldId={fieldId}
+            label={label}
+            isRequired
+            helperText={
+                isImageWithoutTag
+                    ? `This image does not have a tag and the exception will apply to all tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`
+                    : undefined
+            }
+        >
             {scopeContext === 'GLOBAL' && (
                 <Radio
                     id="scope-global"
@@ -33,39 +44,39 @@ function ExceptionScopeField({ fieldId, label, scopeContext, formik }: Exception
                 />
             )}
             {scopeContext !== 'GLOBAL' && (
-                <>
-                    <Radio
-                        id="scope-single-image"
-                        name="scope-single-image"
-                        isChecked={
-                            values.scope.imageScope.registry === scopeContext.imageName.registry &&
-                            values.scope.imageScope.remote === scopeContext.imageName.remote &&
-                            values.scope.imageScope.tag === ALL
-                        }
-                        onChange={() =>
-                            setFieldValue('scope.imageScope', {
-                                ...scopeContext.imageName,
-                                tag: ALL,
-                            })
-                        }
-                        label={`All tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`}
-                    />
-                    <Radio
-                        id="scope-single-image-single-tag"
-                        name="scope-single-image-single-tag"
-                        isChecked={
-                            values.scope.imageScope.registry === scopeContext.imageName.registry &&
-                            values.scope.imageScope.remote === scopeContext.imageName.remote &&
-                            values.scope.imageScope.tag === scopeContext.imageName.tag
-                        }
-                        onChange={() =>
-                            setFieldValue('scope.imageScope', {
-                                ...scopeContext.imageName,
-                            })
-                        }
-                        label={`Only ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}:${scopeContext.imageName.tag}`}
-                    />
-                </>
+                <Radio
+                    id="scope-single-image"
+                    name="scope-single-image"
+                    isChecked={
+                        values.scope.imageScope.registry === scopeContext.imageName.registry &&
+                        values.scope.imageScope.remote === scopeContext.imageName.remote &&
+                        values.scope.imageScope.tag === ALL
+                    }
+                    onChange={() =>
+                        setFieldValue('scope.imageScope', {
+                            ...scopeContext.imageName,
+                            tag: ALL,
+                        })
+                    }
+                    label={`All tags within ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}`}
+                />
+            )}
+            {scopeContext !== 'GLOBAL' && !isImageWithoutTag && (
+                <Radio
+                    id="scope-single-image-single-tag"
+                    name="scope-single-image-single-tag"
+                    isChecked={
+                        values.scope.imageScope.registry === scopeContext.imageName.registry &&
+                        values.scope.imageScope.remote === scopeContext.imageName.remote &&
+                        values.scope.imageScope.tag === scopeContext.imageName.tag
+                    }
+                    onChange={() =>
+                        setFieldValue('scope.imageScope', {
+                            ...scopeContext.imageName,
+                        })
+                    }
+                    label={`Only ${scopeContext.imageName.registry}/${scopeContext.imageName.remote}:${scopeContext.imageName.tag}`}
+                />
             )}
         </FormGroup>
     );
