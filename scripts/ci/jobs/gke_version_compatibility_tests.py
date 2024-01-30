@@ -18,7 +18,6 @@ from runners import ClusterTestSetsRunner
 from clusters import GKECluster
 from get_latest_helm_chart_versions import (
     get_latest_helm_chart_versions,
-    get_latest_helm_chart_version_for_specific_release,
 )
 
 Release = namedtuple("Release", ["major", "minor"])
@@ -64,6 +63,8 @@ test_tuples.extend(
         for central_chart_version in central_chart_versions
     ]
 )
+
+support_exceptions = []
 
 test_tuples.extend(
     support_exception
