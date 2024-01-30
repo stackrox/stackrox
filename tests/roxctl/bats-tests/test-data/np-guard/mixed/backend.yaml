@@ -50,4 +50,3 @@ spec:
   - name: http
     port: 9090
     targetPort: 9090
-

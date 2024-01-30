@@ -19,7 +19,6 @@ spec:
   - Ingress
   - Egress
 status: {}
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -49,7 +48,6 @@ spec:
   - Ingress
   - Egress
 status: {}
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -62,4 +60,3 @@ spec:
   - Ingress
   - Egress
 status: {}
-
