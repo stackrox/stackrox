@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m ManifestGenerator) applyScanner(ctx context.Context) error {
+func (m manifestGenerator) applyScanner(ctx context.Context) error {
 	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}
@@ -41,7 +41,7 @@ func (m ManifestGenerator) applyScanner(ctx context.Context) error {
 	return nil
 }
 
-func (m ManifestGenerator) createScannerConfig(ctx context.Context) error {
+func (m manifestGenerator) createScannerConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"config.yaml": `# Configuration file for scanner.
@@ -92,7 +92,7 @@ scanner:
 	return err
 }
 
-func (m ManifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
+func (m manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 	var secret v1.Secret
 	var err error
 
@@ -164,7 +164,7 @@ func (m ManifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 	return nil
 }
 
-func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
+func (m manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -322,7 +322,7 @@ func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) applyScannerDeployment(ctx context.Context) error {
+func (m manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -519,7 +519,7 @@ func (m ManifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) applyScannerServices(ctx context.Context) error {
+func (m manifestGenerator) applyScannerServices(ctx context.Context) error {
 	// scanner
 
 	svc := v1.Service{

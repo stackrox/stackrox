@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m ManifestGenerator) applyCentral(ctx context.Context) error {
+func (m manifestGenerator) applyCentral(ctx context.Context) error {
 	err := m.createCentralEndpointsConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central endpoints config: %w\n", err)
@@ -66,7 +66,7 @@ func (m ManifestGenerator) applyCentral(ctx context.Context) error {
 	return nil
 }
 
-func (m ManifestGenerator) createCentralDbConfig(ctx context.Context) error {
+func (m manifestGenerator) createCentralDbConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"pg_hba.conf": `local   all             all                                     scram-sha-256
@@ -118,7 +118,7 @@ shared_preload_libraries = 'pg_stat_statements'`,
 	return err
 }
 
-func (m ManifestGenerator) createCentralConfig(ctx context.Context) error {
+func (m manifestGenerator) createCentralConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"central-config.yaml": `maintenance:
@@ -155,7 +155,7 @@ func (m ManifestGenerator) createCentralConfig(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) createCentralEndpointsConfig(ctx context.Context) error {
+func (m manifestGenerator) createCentralEndpointsConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"endpoints.yaml": "",
@@ -167,7 +167,7 @@ func (m ManifestGenerator) createCentralEndpointsConfig(ctx context.Context) err
 	return err
 }
 
-func (m ManifestGenerator) createTlsSecrets(ctx context.Context) error {
+func (m manifestGenerator) createTlsSecrets(ctx context.Context) error {
 	var secret v1.Secret
 	var err error
 
@@ -247,7 +247,7 @@ func (m ManifestGenerator) createTlsSecrets(ctx context.Context) error {
 }
 
 // TODO: Use this in one of the options
-func (m ManifestGenerator) createCentralDbPvc(ctx context.Context) error {
+func (m manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	pvc := v1.PersistentVolumeClaim{
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
@@ -264,7 +264,7 @@ func (m ManifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) createAdminPassword(ctx context.Context) error {
+func (m manifestGenerator) createAdminPassword(ctx context.Context) error {
 	var secret v1.Secret
 	apply := func() error {
 		_, err := m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
@@ -314,7 +314,7 @@ func (m ManifestGenerator) createAdminPassword(ctx context.Context) error {
 	return nil
 }
 
-func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
+func (m manifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -482,7 +482,7 @@ func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) applyCentralDeployment(ctx context.Context) error {
+func (m manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -739,7 +739,7 @@ func (m ManifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m ManifestGenerator) applyCentralServices(ctx context.Context) error {
+func (m manifestGenerator) applyCentralServices(ctx context.Context) error {
 	// central
 
 	svc := v1.Service{
