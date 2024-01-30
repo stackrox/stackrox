@@ -82,7 +82,7 @@ describe_pods_in_namespace() {
     echo
     "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
+      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}" || true
       echo
     done
 }
@@ -117,7 +117,8 @@ teardown() {
     fi
 
     for namespace in "${namespaces[@]}"; do
-        run remove_existing_stackrox_resources "${namespace}"
+        echo "INFO: Tearing down StackRox resources..."
+        run bash -c "remove_existing_stackrox_resources \"${namespace}\" >/dev/null"
     done
 }
 
