@@ -15,51 +15,50 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
 )
 
-func (m ManifestGenerator) applyCentral(ctx context.Context, clientset *kubernetes.Clientset) error {
-	err := m.createCentralEndpointsConfig(ctx, clientset)
+func (m ManifestGenerator) applyCentral(ctx context.Context) error {
+	err := m.createCentralEndpointsConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central endpoints config: %w\n", err)
 	}
 	log.Info("Created central endpoints config")
 
-	err = m.createCentralConfig(ctx, clientset)
+	err = m.createCentralConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}
 	log.Info("Created central config")
 
-	err = m.createCentralDbConfig(ctx, clientset)
+	err = m.createCentralDbConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central db config: %w\n", err)
 	}
 	log.Info("Created central db config")
 
-	err = m.createAdminPassword(ctx, clientset)
+	err = m.createAdminPassword(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create admin password: %w\n", err)
 	}
 	log.Info("Created admin password")
 
-	err = m.createTlsSecrets(ctx, clientset)
+	err = m.createTlsSecrets(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
 	}
 	log.Info("Created TLS secret")
 
-	err = m.applyCentralDbDeployment(ctx, clientset)
+	err = m.applyCentralDbDeployment(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = m.applyCentralDeployment(ctx, clientset)
+	err = m.applyCentralDeployment(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = m.applyCentralServices(ctx, clientset)
+	err = m.applyCentralServices(ctx)
 	if err != nil {
 		return err
 	}
@@ -67,7 +66,7 @@ func (m ManifestGenerator) applyCentral(ctx context.Context, clientset *kubernet
 	return nil
 }
 
-func (m ManifestGenerator) createCentralDbConfig(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createCentralDbConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"pg_hba.conf": `local   all             all                                     scram-sha-256
@@ -114,12 +113,12 @@ shared_preload_libraries = 'pg_stat_statements'`,
 		},
 	}
 	cm.SetName("central-db-config")
-	_, err := client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
-func (m ManifestGenerator) createCentralConfig(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createCentralConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"central-config.yaml": `maintenance:
@@ -132,7 +131,7 @@ func (m ManifestGenerator) createCentralConfig(ctx context.Context, client *kube
 		},
 	}
 	cm.SetName("central-config")
-	_, err := client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	cm = v1.ConfigMap{
 		Data: map[string]string{
@@ -151,32 +150,32 @@ func (m ManifestGenerator) createCentralConfig(ctx context.Context, client *kube
 		},
 	}
 	cm.SetName("central-external-db")
-	_, err = client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
-func (m ManifestGenerator) createCentralEndpointsConfig(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createCentralEndpointsConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"endpoints.yaml": "",
 		},
 	}
 	cm.SetName("central-endpoints")
-	_, err := client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
-func (m ManifestGenerator) createTlsSecrets(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createTlsSecrets(ctx context.Context) error {
 	var secret v1.Secret
 	var err error
 
 	apply := func() error {
-		_, err = client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
+		_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
 
 		if errors.IsAlreadyExists(err) {
-			_, err = client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
+			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
 			log.Infof("Updated secret %s", secret.GetName())
 		} else {
 			log.Infof("Created secret %s", secret.GetName())
@@ -248,7 +247,7 @@ func (m ManifestGenerator) createTlsSecrets(ctx context.Context, client *kuberne
 }
 
 // TODO: Use this in one of the options
-func (m ManifestGenerator) createCentralDbPvc(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	pvc := v1.PersistentVolumeClaim{
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
@@ -260,17 +259,17 @@ func (m ManifestGenerator) createCentralDbPvc(ctx context.Context, client *kuber
 		},
 	}
 	pvc.SetName("central-db")
-	_, err := client.CoreV1().PersistentVolumeClaims(m.Namespace).Create(ctx, &pvc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().PersistentVolumeClaims(m.Namespace).Create(ctx, &pvc, metav1.CreateOptions{})
 
 	return err
 }
 
-func (m ManifestGenerator) createAdminPassword(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createAdminPassword(ctx context.Context) error {
 	var secret v1.Secret
 	apply := func() error {
-		_, err := client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
+		_, err := m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
 		if errors.IsAlreadyExists(err) {
-			_, err = client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
+			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
 			if err == nil {
 				log.Info("Updated admin-pass")
 			}
@@ -315,7 +314,7 @@ func (m ManifestGenerator) createAdminPassword(ctx context.Context, client *kube
 	return nil
 }
 
-func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -471,10 +470,10 @@ func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context, client 
 	}
 
 	deployment.SetName("central-db")
-	_, err := client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central deployment")
 	} else {
 		log.Info("Created central deployment")
@@ -483,7 +482,7 @@ func (m ManifestGenerator) applyCentralDbDeployment(ctx context.Context, client 
 	return err
 }
 
-func (m ManifestGenerator) applyCentralDeployment(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -728,10 +727,10 @@ func (m ManifestGenerator) applyCentralDeployment(ctx context.Context, client *k
 
 	deployment.SetName("central")
 
-	_, err := client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central deployment")
 	} else {
 		log.Info("Created central deployment")
@@ -740,7 +739,7 @@ func (m ManifestGenerator) applyCentralDeployment(ctx context.Context, client *k
 	return err
 }
 
-func (m ManifestGenerator) applyCentralServices(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyCentralServices(ctx context.Context) error {
 	// central
 
 	svc := v1.Service{
@@ -759,10 +758,10 @@ func (m ManifestGenerator) applyCentralServices(ctx context.Context, client *kub
 
 	svc.SetName("central")
 
-	_, err := client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated central service")
 	} else {
 		log.Info("Created central service")
@@ -790,10 +789,10 @@ func (m ManifestGenerator) applyCentralServices(ctx context.Context, client *kub
 
 	svc.SetName("central-db")
 
-	_, err = client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated central-db service")
 	} else {
 		log.Info("Created central-db service")

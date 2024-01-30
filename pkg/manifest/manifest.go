@@ -27,9 +27,10 @@ var (
 type ManifestGenerator struct {
 	CA        mtls.CA
 	Namespace string
+	Client    *kubernetes.Clientset
 }
 
-func New(ns string) (*ManifestGenerator, error) {
+func New(ns string, clientset *kubernetes.Clientset) (*ManifestGenerator, error) {
 	if ns == "" {
 		return nil, fmt.Errorf("Invalid namespace: %s", ns)
 	}
@@ -43,29 +44,30 @@ func New(ns string) (*ManifestGenerator, error) {
 	return &ManifestGenerator{
 		Namespace: ns,
 		CA:        ca,
+		Client:    clientset,
 	}, nil
 }
 
-func (m ManifestGenerator) Apply(ctx context.Context, clientset *kubernetes.Clientset) error {
-	if err := m.applyNamespace(ctx, clientset); err != nil {
+func (m ManifestGenerator) Apply(ctx context.Context) error {
+	if err := m.applyNamespace(ctx); err != nil {
 		panic(err)
 	}
 
-	if err := m.applyCentral(ctx, clientset); err != nil {
+	if err := m.applyCentral(ctx); err != nil {
 		panic(err)
 	}
 
-	if err := m.applyScanner(ctx, clientset); err != nil {
+	if err := m.applyScanner(ctx); err != nil {
 		panic(err)
 	}
 
 	return nil
 }
 
-func (m ManifestGenerator) applyNamespace(ctx context.Context, clientset *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyNamespace(ctx context.Context) error {
 	ns := v1.Namespace{}
 	ns.SetName(m.Namespace)
-	_, err := clientset.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
 
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create namespace: %w\n", err)

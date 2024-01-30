@@ -13,36 +13,35 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
 )
 
-func (m ManifestGenerator) applyScanner(ctx context.Context, clientset *kubernetes.Clientset) error {
-	if err := m.createScannerConfig(ctx, clientset); err != nil && !errors.IsAlreadyExists(err) {
+func (m ManifestGenerator) applyScanner(ctx context.Context) error {
+	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}
 	log.Info("Created central config")
 
-	if err := m.createScannerTlsSecrets(ctx, clientset); err != nil && !errors.IsAlreadyExists(err) {
+	if err := m.createScannerTlsSecrets(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
 	}
 	log.Info("Created scanner TLS secrets")
 
-	if err := m.applyScannerDbDeployment(ctx, clientset); err != nil {
+	if err := m.applyScannerDbDeployment(ctx); err != nil {
 		return err
 	}
 
-	if err := m.applyScannerDeployment(ctx, clientset); err != nil {
+	if err := m.applyScannerDeployment(ctx); err != nil {
 		return err
 	}
 
-	if err := m.applyScannerServices(ctx, clientset); err != nil {
+	if err := m.applyScannerServices(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m ManifestGenerator) createScannerConfig(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createScannerConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"config.yaml": `# Configuration file for scanner.
@@ -88,20 +87,20 @@ scanner:
 		},
 	}
 	cm.SetName("scanner-config")
-	_, err := client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().ConfigMaps(m.Namespace).Create(ctx, &cm, metav1.CreateOptions{})
 
 	return err
 }
 
-func (m ManifestGenerator) createScannerTlsSecrets(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
 	var secret v1.Secret
 	var err error
 
 	apply := func() error {
-		_, err = client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
+		_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
 
 		if errors.IsAlreadyExists(err) {
-			_, err = client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
+			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
 			log.Infof("Updated secret %s", secret.GetName())
 		} else {
 			log.Infof("Created secret %s", secret.GetName())
@@ -165,7 +164,7 @@ func (m ManifestGenerator) createScannerTlsSecrets(ctx context.Context, client *
 	return nil
 }
 
-func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -311,10 +310,10 @@ func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context, client 
 	}
 
 	deployment.SetName("scanner-db")
-	_, err := client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated central deployment")
 	} else {
 		log.Info("Created central deployment")
@@ -323,7 +322,7 @@ func (m ManifestGenerator) applyScannerDbDeployment(ctx context.Context, client 
 	return err
 }
 
-func (m ManifestGenerator) applyScannerDeployment(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -508,10 +507,10 @@ func (m ManifestGenerator) applyScannerDeployment(ctx context.Context, client *k
 
 	deployment.SetName("scanner")
 
-	_, err := client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
+	_, err := m.Client.AppsV1().Deployments(m.Namespace).Create(ctx, &deployment, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
+		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
 		log.Info("Updated scanner deployment")
 	} else {
 		log.Info("Created scanner deployment")
@@ -520,7 +519,7 @@ func (m ManifestGenerator) applyScannerDeployment(ctx context.Context, client *k
 	return err
 }
 
-func (m ManifestGenerator) applyScannerServices(ctx context.Context, client *kubernetes.Clientset) error {
+func (m ManifestGenerator) applyScannerServices(ctx context.Context) error {
 	// scanner
 
 	svc := v1.Service{
@@ -544,10 +543,10 @@ func (m ManifestGenerator) applyScannerServices(ctx context.Context, client *kub
 
 	svc.SetName("scanner")
 
-	_, err := client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err := m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated scanner service")
 	} else {
 		log.Info("Created scanner service")
@@ -575,10 +574,10 @@ func (m ManifestGenerator) applyScannerServices(ctx context.Context, client *kub
 
 	svc.SetName("scanner-db")
 
-	_, err = client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
+	_, err = m.Client.CoreV1().Services(m.Namespace).Create(ctx, &svc, metav1.CreateOptions{})
 
 	if errors.IsAlreadyExists(err) {
-		_, err = client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
+		_, err = m.Client.CoreV1().Services(m.Namespace).Update(ctx, &svc, metav1.UpdateOptions{})
 		log.Info("Updated scanner-db service")
 	} else {
 		log.Info("Created scanner-db service")
