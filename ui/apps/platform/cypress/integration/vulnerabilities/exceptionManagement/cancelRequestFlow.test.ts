@@ -4,6 +4,7 @@ import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
     markFalsePositiveAndVisitRequestDetails,
+    visitExceptionManagement,
 } from './ExceptionManagement.helpers';
 import { approveRequest } from './approveRequestFlow.test';
 
@@ -89,6 +90,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
+        visitExceptionManagement();
         cy.get('button[role="tab"]:contains("Approved deferrals")').click();
         cy.get('table tbody tr').should('not.exist');
     });
@@ -103,6 +105,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get('div[role="dialog"]').should('exist');
         cy.get('div[role="dialog"] button:contains("Cancel request")').click();
         cy.get('div[role="dialog"]').should('not.exist');
+        visitExceptionManagement();
         cy.get('button[role="tab"]:contains("Approved false positives")').click();
         cy.get('table tbody tr').should('not.exist');
     });
