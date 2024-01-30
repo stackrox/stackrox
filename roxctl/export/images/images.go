@@ -28,7 +28,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		if err != nil {
 			return errors.Wrap(err, "could not establish gRPC connection to central")
 		}
-
 		defer utils.IgnoreError(conn.Close)
 
 		svc := v1.NewImageServiceClient(conn)
