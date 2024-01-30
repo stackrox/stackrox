@@ -31,6 +31,8 @@ echo "Creating sensor secrets..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
 echo "Creating sensor RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-rbac.yaml"
+echo "Creating sensor compliance RBAC roles..."
+${KUBE_COMMAND} apply -f "$DIR/sensor-compliance-rbac.yaml"
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml"
 

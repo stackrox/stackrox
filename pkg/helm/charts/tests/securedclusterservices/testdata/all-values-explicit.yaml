@@ -33,6 +33,8 @@ sensor:
   serviceTLS:
     cert: "DUMMY SENSOR CERT"
     key: "DUMMY SENSOR KEY"
+  complianceOperator:
+    enabled: true
 
 collector:
   serviceTLS:

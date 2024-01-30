@@ -83,6 +83,8 @@ sensor:
     # sensor reaching out to a scanner instance.
     # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
     enabled: null # bool
+  complianceOperator:
+    enabled: null # bool
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool

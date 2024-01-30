@@ -1,0 +1,49 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.sensor.complianceOperator.enabled }}
+# Role edit has all verbs but 'use' to disallow using any SCCs (resources: *).
+# The permission to 'use' SCCs should be defined at finer granularity in other roles.
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: edit-compliance
+  namespace: openshift-compliance
+  labels:
+    {{- include "srox.labels" (list . "role" "edit-compliance") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "role" "edit-compliance") | nindent 4 }}
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+  - deletecollection
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-compliance
+  namespace: openshift-compliance
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "manage-compliance") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "manage-compliance") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+roleRef:
+  kind: Role
+  name: edit-compliance
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
