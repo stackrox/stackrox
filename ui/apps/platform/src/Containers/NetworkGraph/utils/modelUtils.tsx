@@ -157,7 +157,7 @@ function getExternalNodeModel(
             return {
                 ...baseNode,
                 shape: NodeShape.rect,
-                label: entity.externalSource.name,
+                label: entity?.externalSource?.name || 'Unknown entity',
                 data: cidrBlockData,
             };
         default:

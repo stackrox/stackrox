@@ -72,6 +72,10 @@ export type InternetNetworkEntityInfo = {
     type: 'INTERNET';
 } & BaseNetworkEntityInfo;
 
+export type InternalNetworkEntitiesInfo = {
+    type: 'INTERNAL_ENTITIES';
+} & BaseNetworkEntityInfo;
+
 type BaseNetworkEntityInfo = {
     type: NetworkEntityInfoType;
     id: string;

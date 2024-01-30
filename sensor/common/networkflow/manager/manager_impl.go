@@ -442,6 +442,14 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) resolveEntityType(conn *connection) networkgraph.Entity {
+	// If collector hides the IP, then the entity is most probably from outside of the cluster
+	if conn.remote.IPAndPort.Address.String() == "255.255.255.255" {
+		return networkgraph.InternetEntity()
+	}
+	return networkgraph.InternalEntities()
+}
+
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -496,10 +504,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
-			// Fake a lookup result. This shows "External Entities" in the network graph
+			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         networkgraph.InternetEntity(),
+					Entity:         m.resolveEntityType(conn),
 					ContainerPorts: []uint16{port},
 				},
 			}
