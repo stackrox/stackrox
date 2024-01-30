@@ -34,6 +34,7 @@ var (
 		},
 		"github.com/gogo/protobuf/types": {
 			"TimestampNow": "TimestampNow",
+			"TimestampProto": "ConvertTimeToTimestampOrError",
 		},
 	}
 
