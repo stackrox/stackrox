@@ -15,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m manifestGenerator) applyScanner(ctx context.Context) error {
+func (m *manifestGenerator) applyScanner(ctx context.Context) error {
 	if err := m.createScannerConfig(ctx); err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central config: %w\n", err)
 	}
@@ -41,7 +41,7 @@ func (m manifestGenerator) applyScanner(ctx context.Context) error {
 	return nil
 }
 
-func (m manifestGenerator) createScannerConfig(ctx context.Context) error {
+func (m *manifestGenerator) createScannerConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"config.yaml": `# Configuration file for scanner.
@@ -92,79 +92,38 @@ scanner:
 	return err
 }
 
-func (m manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
-	var secret v1.Secret
-	var err error
-
-	apply := func() error {
-		_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
-
-		if errors.IsAlreadyExists(err) {
-			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
-			log.Infof("Updated secret %s", secret.GetName())
-		} else {
-			log.Infof("Created secret %s", secret.GetName())
+func (m *manifestGenerator) createScannerTlsSecrets(ctx context.Context) error {
+	err := m.applyTlsSecret(ctx, "scanner-tls", func(fileMap types.SecretDataMap) error {
+		if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
+			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
+		return nil
+	})
 
+	if err != nil {
 		return err
 	}
 
-	// scanner
+	err = m.applyTlsSecret(ctx, "scanner-db-password", func(fileMap types.SecretDataMap) error {
+		fileMap["password"] = []byte("letmein")
+		return nil
+	})
 
-	fileMap := make(types.SecretDataMap)
-	certgen.AddCAToFileMap(fileMap, m.CA)
-	if err := certgen.IssueScannerCerts(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
-		return fmt.Errorf("issuing central service certificate: %w\n", err)
-	}
-
-	secret = v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "scanner-tls",
-		},
-		Data: fileMap,
-	}
-
-	if err := apply(); err != nil {
+	if err != nil {
 		return err
 	}
 
-	// password
+	err = m.applyTlsSecret(ctx, "scanner-db-tls", func(fileMap types.SecretDataMap) error {
+		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Namespace)); err != nil {
+			return fmt.Errorf("issuing scanner DB certificate: %w\n", err)
+		}
+		return nil
+	})
 
-	secret = v1.Secret{
-		StringData: map[string]string{
-			"password": "letmein",
-		},
-	}
-	secret.SetName("scanner-db-password")
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	// scanner-db
-
-	fileMap = make(types.SecretDataMap)
-	certgen.AddCAToFileMap(fileMap, m.CA)
-
-	if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.ScannerDBSubject}, mtls.WithNamespace(m.Namespace)); err != nil {
-		return fmt.Errorf("issuing scanner DB certificate: %w\n", err)
-	}
-
-	secret = v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "scanner-db-tls",
-		},
-		Data: fileMap,
-	}
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (m manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
+func (m *manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -322,7 +281,7 @@ func (m manifestGenerator) applyScannerDbDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m manifestGenerator) applyScannerDeployment(ctx context.Context) error {
+func (m *manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -519,7 +478,7 @@ func (m manifestGenerator) applyScannerDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m manifestGenerator) applyScannerServices(ctx context.Context) error {
+func (m *manifestGenerator) applyScannerServices(ctx context.Context) error {
 	// scanner
 
 	svc := v1.Service{

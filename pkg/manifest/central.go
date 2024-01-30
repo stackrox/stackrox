@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (m manifestGenerator) applyCentral(ctx context.Context) error {
+func (m *manifestGenerator) applyCentral(ctx context.Context) error {
 	err := m.createCentralEndpointsConfig(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create central endpoints config: %w\n", err)
@@ -40,13 +40,11 @@ func (m manifestGenerator) applyCentral(ctx context.Context) error {
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create admin password: %w\n", err)
 	}
-	log.Info("Created admin password")
 
 	err = m.createTlsSecrets(ctx)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("Failed to create TLS secret: %w\n", err)
 	}
-	log.Info("Created TLS secret")
 
 	err = m.applyCentralDbDeployment(ctx)
 	if err != nil {
@@ -66,7 +64,7 @@ func (m manifestGenerator) applyCentral(ctx context.Context) error {
 	return nil
 }
 
-func (m manifestGenerator) createCentralDbConfig(ctx context.Context) error {
+func (m *manifestGenerator) createCentralDbConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"pg_hba.conf": `local   all             all                                     scram-sha-256
@@ -118,7 +116,7 @@ shared_preload_libraries = 'pg_stat_statements'`,
 	return err
 }
 
-func (m manifestGenerator) createCentralConfig(ctx context.Context) error {
+func (m *manifestGenerator) createCentralConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"central-config.yaml": `maintenance:
@@ -155,7 +153,7 @@ func (m manifestGenerator) createCentralConfig(ctx context.Context) error {
 	return err
 }
 
-func (m manifestGenerator) createCentralEndpointsConfig(ctx context.Context) error {
+func (m *manifestGenerator) createCentralEndpointsConfig(ctx context.Context) error {
 	cm := v1.ConfigMap{
 		Data: map[string]string{
 			"endpoints.yaml": "",
@@ -167,87 +165,37 @@ func (m manifestGenerator) createCentralEndpointsConfig(ctx context.Context) err
 	return err
 }
 
-func (m manifestGenerator) createTlsSecrets(ctx context.Context) error {
-	var secret v1.Secret
-	var err error
-
-	apply := func() error {
-		_, err = m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
-
-		if errors.IsAlreadyExists(err) {
-			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
-			log.Infof("Updated secret %s", secret.GetName())
-		} else {
-			log.Infof("Created secret %s", secret.GetName())
+func (m *manifestGenerator) createTlsSecrets(ctx context.Context) error {
+	err := m.applyTlsSecret(ctx, "central-tls", func(fileMap types.SecretDataMap) error {
+		if err := certgen.IssueCentralCert(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
+			return fmt.Errorf("issuing central service certificate: %w\n", err)
 		}
 
-		return err
-	}
+		jwtKey, err := certgen.GenerateJWTSigningKey()
+		if err != nil {
+			return fmt.Errorf("generating JWT signing key: %w\n", err)
+		}
 
-	// additional-ca
+		certgen.AddJWTSigningKeyToFileMap(fileMap, jwtKey)
+		return nil
+	})
 
-	fileMap := make(types.SecretDataMap)
-	certgen.AddCAToFileMap(fileMap, m.CA)
-
-	secret = v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "additional-ca",
-		},
-		Data: fileMap,
-	}
-
-	// central
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	if err := certgen.IssueCentralCert(fileMap, m.CA, mtls.WithNamespace(m.Namespace)); err != nil {
-		return fmt.Errorf("issuing central service certificate: %w\n", err)
-	}
-
-	jwtKey, err := certgen.GenerateJWTSigningKey()
 	if err != nil {
-		return fmt.Errorf("generating JWT signing key: %w\n", err)
-	}
-	certgen.AddJWTSigningKeyToFileMap(fileMap, jwtKey)
-
-	secret = v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "central-tls",
-		},
-		Data: fileMap,
-	}
-
-	if err := apply(); err != nil {
 		return err
 	}
 
-	// central-db
+	return m.applyTlsSecret(ctx, "central-db-tls", func(fileMap types.SecretDataMap) error {
+		subjects := []mtls.Subject{mtls.CentralDBSubject}
+		if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, subjects, mtls.WithNamespace(m.Namespace)); err != nil {
+			return fmt.Errorf("issuing central service certificate: %w\n", err)
+		}
 
-	fileMap = make(types.SecretDataMap)
-	certgen.AddCAToFileMap(fileMap, m.CA)
-
-	if err := certgen.IssueOtherServiceCerts(fileMap, m.CA, []mtls.Subject{mtls.CentralDBSubject}, mtls.WithNamespace(m.Namespace)); err != nil {
-		return fmt.Errorf("issuing central service certificate: %w\n", err)
-	}
-
-	secret = v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "central-db-tls",
-		},
-		Data: fileMap,
-	}
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // TODO: Use this in one of the options
-func (m manifestGenerator) createCentralDbPvc(ctx context.Context) error {
+func (m *manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	pvc := v1.PersistentVolumeClaim{
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
@@ -264,57 +212,34 @@ func (m manifestGenerator) createCentralDbPvc(ctx context.Context) error {
 	return err
 }
 
-func (m manifestGenerator) createAdminPassword(ctx context.Context) error {
-	var secret v1.Secret
-	apply := func() error {
-		_, err := m.Client.CoreV1().Secrets(m.Namespace).Create(ctx, &secret, metav1.CreateOptions{})
-		if errors.IsAlreadyExists(err) {
-			_, err = m.Client.CoreV1().Secrets(m.Namespace).Update(ctx, &secret, metav1.UpdateOptions{})
-			if err == nil {
-				log.Info("Updated admin-pass")
-			}
-		} else if err == nil {
-			log.Info("Created admin-pass")
+func (m *manifestGenerator) createAdminPassword(ctx context.Context) error {
+	password := "letmein"
+
+	applyPassword := func(fileMap types.SecretDataMap) error {
+		fileMap["password"] = []byte(password)
+		return nil
+	}
+
+	if err := m.applyTlsSecret(ctx, "admin-pass", applyPassword); err != nil {
+		return err
+	}
+
+	if err := m.applyTlsSecret(ctx, "central-db-password", applyPassword); err != nil {
+		return err
+	}
+
+	return m.applyTlsSecret(ctx, "central-htpasswd", func(fileMap types.SecretDataMap) error {
+		htpasswdBytes, err := renderer.CreateHtpasswd(password)
+		if err != nil {
+			return err
 		}
-		return err
-	}
 
-	secret = v1.Secret{
-		StringData: map[string]string{
-			"password": "letmein",
-		},
-	}
-	secret.SetName("admin-pass")
-
-	if err := apply(); err != nil {
-		return err
-	}
-	secret.SetName("central-db-password")
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	htpasswdBytes, err := renderer.CreateHtpasswd("letmein")
-	if err != nil {
-		return err
-	}
-
-	secret = v1.Secret{
-		Data: map[string][]byte{
-			"htpasswd": htpasswdBytes,
-		},
-	}
-	secret.SetName("central-htpasswd")
-
-	if err := apply(); err != nil {
-		return err
-	}
-
-	return nil
+		fileMap["htpasswd"] = htpasswdBytes
+		return nil
+	})
 }
 
-func (m manifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
+func (m *manifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -474,15 +399,15 @@ func (m manifestGenerator) applyCentralDbDeployment(ctx context.Context) error {
 
 	if errors.IsAlreadyExists(err) {
 		_, err = m.Client.AppsV1().Deployments(m.Namespace).Update(ctx, &deployment, metav1.UpdateOptions{})
-		log.Info("Updated central deployment")
+		log.Info("Updated central-db deployment")
 	} else {
-		log.Info("Created central deployment")
+		log.Info("Created central-db deployment")
 	}
 
 	return err
 }
 
-func (m manifestGenerator) applyCentralDeployment(ctx context.Context) error {
+func (m *manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	deployment := apps.Deployment{
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -739,7 +664,7 @@ func (m manifestGenerator) applyCentralDeployment(ctx context.Context) error {
 	return err
 }
 
-func (m manifestGenerator) applyCentralServices(ctx context.Context) error {
+func (m *manifestGenerator) applyCentralServices(ctx context.Context) error {
 	// central
 
 	svc := v1.Service{
