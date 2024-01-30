@@ -2,7 +2,6 @@ package nodes
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -48,13 +47,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				if errors.Is(err, io.EOF) {
 					break
 				}
-				panic(err)
+				return errors.Wrap(err, "stream broken by unexpected error")
 			}
-			serialized, err := marshaler.MarshalToString(node)
-			if err != nil {
-				return err
+			if err := marshaler.Marshal(cliEnvironment.InputOutput().Out(), node); err != nil {
+				return errors.Wrap(err, "unable to serialize node")
 			}
-			fmt.Println(serialized)
 		}
 		return nil
 	}

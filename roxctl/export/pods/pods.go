@@ -2,7 +2,6 @@ package pods
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"time"
 
@@ -40,21 +39,18 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		if err != nil {
 			return errors.Wrap(err, "could not initialize stream client")
 		}
-
 		marshaler := &jsonpb.Marshaler{}
 		for {
-			node, err := client.Recv()
+			pod, err := client.Recv()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					break
 				}
-				panic(err)
+				return errors.Wrap(err, "stream broken by unexpected error")
 			}
-			serialized, err := marshaler.MarshalToString(node)
-			if err != nil {
-				return err
+			if err := marshaler.Marshal(cliEnvironment.InputOutput().Out(), pod); err != nil {
+				return errors.Wrap(err, "unable to serialize pod")
 			}
-			fmt.Println(serialized)
 		}
 		return nil
 	}
