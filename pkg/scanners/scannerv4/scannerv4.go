@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -35,6 +36,10 @@ var (
 
 	scanTimeout     = env.ScanTimeout.DurationSetting()
 	metadataTimeout = 1 * time.Minute
+
+	// zeroProtoTimestampFromTime represents the zero value of a proto
+	// timestamp when initialized from the zero time.
+	zeroProtoTimestampFromTime, _ = protoTypes.TimestampProto(time.Time{})
 )
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
@@ -150,8 +155,13 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 		return nil, fmt.Errorf("pulling metadata from matcher: %w", err)
 	}
 
+	lastTms := metadata.GetLastVulnerabilityUpdate()
+	if lastTms == nil || lastTms.Equal(protoTypes.Timestamp{}) || lastTms.Equal(zeroProtoTimestampFromTime) {
+		return nil, errors.New("no timestamp available")
+	}
+
 	return &v1.VulnDefinitionsInfo{
-		LastUpdatedTimestamp: metadata.GetLastVulnerabilityUpdate(),
+		LastUpdatedTimestamp: lastTms,
 	}, nil
 }
 
