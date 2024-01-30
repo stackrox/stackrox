@@ -149,6 +149,10 @@ type Config struct {
 
 	GRPCMetrics metrics.GRPCMetrics
 	HTTPMetrics metrics.HTTPMetrics
+
+	// MaxConnectionAge is the maximum amount of time a connection may exist before it will be closed.
+	// Default is +infinity.
+	MaxConnectionAge time.Duration
 }
 
 // NewAPI returns an API object.
@@ -423,7 +427,8 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		),
 		grpc.MaxRecvMsgSize(MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time: 40 * time.Second,
+			Time:             40 * time.Second,
+			MaxConnectionAge: a.config.MaxConnectionAge,
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 			MinTime:             5 * time.Second,
