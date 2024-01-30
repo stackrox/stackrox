@@ -85,6 +85,11 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	namespace := env.Namespace.Setting()
+	if r.URL.Query().Get("v") == "4" {
+		s.scannerV4Handler(w, secrets, ca, namespace)
+		return
+	}
+
 	if err := certgen.IssueScannerCerts(secrets, ca, mtls.WithNamespace(namespace)); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
@@ -100,6 +105,24 @@ func (s *serviceImpl) scannerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeFile(w, rendered, "scanner-tls.yaml")
+}
+
+func (s *serviceImpl) scannerV4Handler(w http.ResponseWriter, secrets map[string][]byte, ca mtls.CA, namespace string) {
+	if err := certgen.IssueScannerV4Certs(secrets, ca, mtls.WithNamespace(namespace)); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+
+	rendered, err := renderer.RenderScannerV4TLSSecretOnly(renderer.Config{
+		K8sConfig:      &renderer.K8sConfig{},
+		SecretsByteMap: secrets,
+	}, defaults.GetImageFlavorFromEnv())
+	if err != nil {
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render scanner TLS file: %v", err)
+		return
+	}
+
+	writeFile(w, rendered, "scanner-v4-tls.yaml")
 }
 
 func (s *serviceImpl) centralDBHandler(w http.ResponseWriter, r *http.Request) {

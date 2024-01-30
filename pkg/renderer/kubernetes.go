@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"bytes"
 	"encoding/base64"
 
 	"github.com/pkg/errors"
@@ -38,6 +39,8 @@ const (
 	scannerTLSOnly
 	// centralDBOnly renders only the central db
 	centralDBOnly
+	// scannerV4TLSOnly renders only the scanner v4 tls secrets.
+	scannerV4TLSOnly
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
@@ -65,7 +68,7 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.HelmImage = image.GetDefaultImage()
 	}
 
-	if mode == centralTLSOnly || mode == scannerTLSOnly {
+	if mode == centralTLSOnly || mode == scannerTLSOnly || mode == scannerV4TLSOnly {
 		return nil
 	}
 	if c.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER {
@@ -132,15 +135,33 @@ func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.Fil
 }
 
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	return renderAndExtractMultipleFileContents(c, mode, imageFlavor, 1)
+}
+
+func renderAndExtractMultipleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor, numFiles int) ([]byte, error) {
 	files, err := render(c, mode, imageFlavor)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(files) != 1 {
-		return nil, utils.ShouldErr(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
+	if len(files) != numFiles {
+		return nil, utils.ShouldErr(errors.Errorf("expected %d but got %d files when rendering in mode %s", numFiles, len(files), mode))
 	}
-	return files[0].Content, nil
+
+	if len(files) == 1 {
+		// Short circuit if a single file.
+		return files[0].Content, nil
+	}
+
+	buf := bytes.Buffer{}
+	for i, f := range files {
+		if i > 0 {
+			buf.WriteString("\n\n---\n\n")
+		}
+		buf.Write(f.Content)
+	}
+
+	return buf.Bytes(), nil
 }
 
 // RenderCentralTLSSecretOnly renders just the file that contains the central-tls secret.
@@ -151,6 +172,12 @@ func RenderCentralTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]b
 // RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.
 func RenderScannerTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	return renderAndExtractSingleFileContents(c, scannerTLSOnly, imageFlavor)
+}
+
+// RenderScannerV4TLSSecretOnly renders just the file that contains the scanner-v4-tls secret.
+func RenderScannerV4TLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	// Separate secrets for indexer, matcher, and db expected
+	return renderAndExtractMultipleFileContents(c, scannerV4TLSOnly, imageFlavor, 3)
 }
 
 func render(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
