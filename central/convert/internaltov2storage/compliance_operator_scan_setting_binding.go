@@ -5,10 +5,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func getConditions(conditionsData []*central.ComplianceOperatorScanSettingBindingV2_Condition) []*storage.ComplianceOperatorScanSettingBindingV2_Condition {
-	conditions := make([]*storage.ComplianceOperatorScanSettingBindingV2_Condition, 0, len(conditionsData))
+func getConditions(conditionsData []*central.ComplianceOperatorCondition) []*storage.ComplianceOperatorCondition {
+	conditions := make([]*storage.ComplianceOperatorCondition, 0, len(conditionsData))
 	for _, c := range conditionsData {
-		conditions = append(conditions, &storage.ComplianceOperatorScanSettingBindingV2_Condition{
+		conditions = append(conditions, &storage.ComplianceOperatorCondition{
 			Type:               c.GetType(),
 			Status:             c.GetStatus(),
 			Message:            c.GetMessage(),
