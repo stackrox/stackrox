@@ -17,29 +17,6 @@ const paramId = ':entityId?';
 function AccessControl(): ReactElement {
     return (
         <>
-            <Alert
-                isInline
-                variant="warning"
-                title={
-                    <>
-                        <p>The following permission resources have been replaced:</p>
-                        <List>
-                            <ListItem>
-                                <b>Access</b> replaces{' '}
-                                <b>AuthProvider, Group, Licenses, Role, and User</b>
-                            </ListItem>
-                            <ListItem>
-                                <b>WorkflowAdministration</b> replaces{' '}
-                                <b>Policy and VulnerabilityReports</b>
-                            </ListItem>
-                        </List>
-                        <p>
-                            For additional information on deprecation and required actions, please
-                            consult the release notes.
-                        </p>
-                    </>
-                }
-            />
             <Switch>
                 <Route exact path={accessControlBasePath}>
                     <Redirect to={getEntityPath('AUTH_PROVIDER')} />
