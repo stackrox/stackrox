@@ -68,7 +68,7 @@ spec:
           memory: 1Gi
         limits:
           cpu: 1
-          memory: 4Gi
+          memory: 3Gi
     db:
       resources:
         requests:
