@@ -1190,6 +1190,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 				return err
 			}
 			if !exists {
+				log.Errorf("UNEXPECTED: could not find image %q", data.GetId())
 				continue
 			}
 			if err := fn(img); err != nil {

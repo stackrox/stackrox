@@ -904,6 +904,7 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 				return err
 			}
 			if !exists {
+				log.Errorf("UNEXPECTED: could not find node %q", data.GetId())
 				continue
 			}
 			if err := fn(node); err != nil {
