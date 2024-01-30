@@ -79,8 +79,7 @@ setup() {
 
     export ROX_SCANNER_V4=true
 
-    # Remove earlier version roxctl binary
-    rm -f ${EARLIER_ROXCTL_PATH}/roxctl
+    remove_earlier_roxctl_binary
 }
 
 describe_pods_in_namespace() {
@@ -233,7 +232,7 @@ teardown() {
     _deploy_stackrox
 
     info "Upgrading StackRox using roxctl with Scanner V4 enabled"
-    unalias roxctl
+    remove_earlier_roxctl_binary
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
     _deploy_stackrox
@@ -522,4 +521,10 @@ wait_for_ready_pods() {
     done
 
     echo "Pod(s) within deployment ${namespace}/${deployment} ready."
+}
+
+remove_earlier_roxctl_binary {
+    rm -f ${EARLIER_ROXCTL_PATH}/roxctl
+    echo "Removed earlier roxctl binary"
+    roxctl version
 }
