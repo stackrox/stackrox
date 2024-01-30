@@ -213,6 +213,19 @@ teardown() {
     verify_scannerV4_deployed "stackrox"
 }
 
+@test "Fresh multi-namespace installation using roxctl with Scanner V4 enabled" {
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
+    _deploy_stackrox "" "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE"
+
+    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+}
+
 verify_no_scannerV4_deployed() {
     local namespace=${1:-stackrox}
     verify_no_scannerV4_indexer_deployed "$namespace"
