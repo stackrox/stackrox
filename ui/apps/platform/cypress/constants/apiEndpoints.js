@@ -68,7 +68,7 @@ export const integrationHealth = {
     signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/integrationhealth/notifiers',
     externalBackups: '/v1/integrationhealth/externalbackups',
-    vulnDefinitions: '/v1/integrationhealth/vulndefinitions',
+    vulnDefinitions: '/v1/integrationhealth/vulndefinitions?component=*',
 };
 
 export const integrations = {

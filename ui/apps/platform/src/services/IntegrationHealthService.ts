@@ -26,11 +26,16 @@ export const fetchDeclarativeConfigurationsHealth = () =>
         .get<{ integrationHealth: IntegrationHealth[] }>('/v1/integrationhealth/declarativeconfigs')
         .then((response) => response?.data?.integrationHealth ?? []);
 
+export type ScannerComponent = 'SCANNER' | 'SCANNER_V4';
+
 export type VulnerabilityDefinitionsInfo = {
     lastUpdatedTimestamp: string; // ISO 8601 timestamp
 };
 
-export const fetchVulnerabilityDefinitionsInfo = () =>
-    axios
-        .get<VulnerabilityDefinitionsInfo>('/v1/integrationhealth/vulndefinitions')
+export const fetchVulnerabilityDefinitionsInfo = (component: ScannerComponent) => {
+    return axios
+        .get<VulnerabilityDefinitionsInfo>(
+            `/v1/integrationhealth/vulndefinitions?component=${component}`
+        )
         .then((response) => response?.data ?? {});
+};

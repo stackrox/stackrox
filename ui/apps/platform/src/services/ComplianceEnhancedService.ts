@@ -96,16 +96,21 @@ export type ComplianceCheckStatusCount = {
     status: ComplianceCheckStatus;
 };
 
-type ComplianceScanStatsShim = {
+export type ComplianceScanStatsShim = {
     scanName: string;
     checkStats: ComplianceCheckStatusCount[];
     lastScan: string; // ISO 8601 date string
 };
 
-type ComplianceClusterScanStats = {
-    checkStats: ComplianceCheckStatusCount[];
+export type ComplianceClusterScanStats = {
+    scanStats: ComplianceScanStatsShim;
     cluster: ComplianceScanCluster;
 };
+
+export interface ComplianceClusterOverallStats {
+    cluster: ComplianceScanCluster;
+    checkStats: ComplianceCheckStatusCount[];
+}
 
 export interface ComplianceScanResultsOverview {
     scanStats: ComplianceScanStatsShim;
@@ -187,7 +192,60 @@ export function complianceResultsOverview(
     });
 }
 
-export function getComplianceClusterScanStats(
+/**
+ * Fetches stats for all clusters
+ * Note: this function and getSingleClusterCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersCombinedStats(
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceClusterOverallStats[]> {
+    const searchFilter = {};
+    const sortOption = {
+        field: 'Cluster',
+        reversed: false,
+    };
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster
+ * Note: this function and getAllClustersCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterCombinedStats(
+    clusterId: string
+): Promise<ComplianceClusterOverallStats | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            const stats = response?.data?.scanStats;
+            return stats && stats.length > 0 ? stats[0] : null;
+        });
+}
+
+/**
+ * Fetches stats for all clusters grouped by scan config
+ * Note: this function and getSingleClusterStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersStatsByScanConfig(
     page?: number,
     pageSize?: number
 ): Promise<ComplianceClusterScanStats[]> {
@@ -202,7 +260,29 @@ export function getComplianceClusterScanStats(
     return axios
         .get<{
             scanStats: ComplianceClusterScanStats[];
-        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster grouped by scan config
+ * Note: this function and getAllClustersStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterStatsByScanConfig(
+    clusterId: string
+): Promise<ComplianceClusterScanStats[] | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterScanStats[];
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
         });
@@ -226,12 +306,17 @@ export function getScanConfig(
 /*
  * Create a Scan Schedule.
  */
-export function createScanConfig(
+export function saveScanConfig(
     complianceScanConfiguration: ComplianceScanConfiguration
 ): Promise<ComplianceScanConfiguration> {
-    return axios
-        .post<ComplianceScanConfiguration>(`${scanScheduleUrl}`, complianceScanConfiguration)
-        .then((response) => response.data);
+    const promise = complianceScanConfiguration.id
+        ? axios.put<ComplianceScanConfiguration>(
+              `${scanScheduleUrl}/${complianceScanConfiguration.id}`,
+              complianceScanConfiguration
+          )
+        : axios.post<ComplianceScanConfiguration>(scanScheduleUrl, complianceScanConfiguration);
+
+    return promise.then((response) => response.data);
 }
 
 /*

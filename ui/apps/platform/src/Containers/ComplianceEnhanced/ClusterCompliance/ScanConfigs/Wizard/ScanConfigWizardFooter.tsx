@@ -8,9 +8,10 @@ import {
 } from '@patternfly/react-core';
 import useModal from 'hooks/useModal';
 
-export type ScanConfigWizardStepsProps = {
+export type ScanConfigWizardFooterProps = {
     wizardSteps: WizardStep[];
     onSave: () => void;
+    isEditing: boolean;
     isSaving: boolean;
     proceedToNextStepIfValid: (nextFunction: () => void, stepId: string) => void;
 };
@@ -18,9 +19,10 @@ export type ScanConfigWizardStepsProps = {
 function ScanConfigWizardFooter({
     wizardSteps,
     onSave,
+    isEditing,
     isSaving,
     proceedToNextStepIfValid,
-}: ScanConfigWizardStepsProps) {
+}: ScanConfigWizardFooterProps) {
     const { isModalOpen, openModal, closeModal } = useModal();
     const firstStepId = wizardSteps[0].id;
     const lastStepId = wizardSteps[wizardSteps.length - 1].id;
@@ -44,7 +46,7 @@ function ScanConfigWizardFooter({
                         onClick={onSave}
                         isLoading={isSaving}
                     >
-                        Create
+                        {isEditing ? 'Save' : 'Create'}
                     </Button>
                 )}
                 <Button

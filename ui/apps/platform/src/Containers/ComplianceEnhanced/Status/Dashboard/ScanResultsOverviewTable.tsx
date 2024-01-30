@@ -23,7 +23,7 @@ import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
 import ScanResultsToolbar from './ScanResultsToolbar';
-import { getPassAndTotalCount } from '../../ClusterCompliance/Coverage/compliance.coverage.utils';
+import { getStatusCounts } from '../../ClusterCompliance/Coverage/compliance.coverage.utils';
 
 const sortFields = ['Scan Name', 'Failing Controls', 'Last Scanned'];
 const defaultSortOption = { field: 'Scan Name', direction: 'asc' } as SortOption;
@@ -63,7 +63,7 @@ function ScanResultsOverviewTable() {
         }
 
         return scanResultsOverviewData?.map(({ scanStats, cluster, profileName }) => {
-            const { passCount, totalCount } = getPassAndTotalCount(scanStats.checkStats);
+            const { passCount, totalCount } = getStatusCounts(scanStats.checkStats);
             return (
                 <Tr key={scanStats.scanName}>
                     <Td>
