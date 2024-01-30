@@ -90,7 +90,6 @@
 
 {{/* For backward compatibility, include those secrets which already exist.
      In manifest installation mode, include them unconditionally, for lack of a better way.
-     TODO(ROX-9156): manually test that this DTRT in manifest mode, remove this TODO and mention in PR.
 */}}
 {{ range $secretName := (append $defaultSecretNames $secretResourceName) }}
   {{ $secret := dict }}
