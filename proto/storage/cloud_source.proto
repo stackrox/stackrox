@@ -9,7 +9,7 @@ option java_package = "io.stackrox.proto.storage";
 
 message CloudSource {
   string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-  string name = 2 [(gogoproto.moretags) = 'sql:"unique",search:"Integration Name,hidden"'];
+  string name = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Integration Name,hidden"'];
   enum Type {
     UNSPECIFIED = 0;
     PALADIN_CLOUD = 1;
