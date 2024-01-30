@@ -220,21 +220,32 @@ teardown() {
 }
 
 @test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
+    if [[ "$CI" = "true" ]]; then
+        setup_default_TLS_certs
+    fi
+
     OS="$(uname)"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
+    local main_image_tag="${MAIN_IMAGE_TAG}"
 
     info "Download and use earlier version of roxctl without Scanner V4 support"
     curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
+    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_VERSION}/central-services"
     PATH=${EARLIER_ROXCTL_PATH}:$PATH roxctl version
-    PATH=${EARLIER_ROXCTL_PATH}:$PATH _deploy_stackrox
+    if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
+        MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
+        info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
+    fi
+    PATH=${EARLIER_ROXCTL_PATH}:$PATH CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
     info "Upgrading StackRox using roxctl with Scanner V4 enabled"
     remove_earlier_roxctl_binary
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="true"
+    MAIN_IMAGE_TAG="${main_image_tag}"
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
