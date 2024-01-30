@@ -164,7 +164,7 @@ teardown() {
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
 
-    _deploy_stackrox
+    HELM_REUSE_VALUES=true _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
