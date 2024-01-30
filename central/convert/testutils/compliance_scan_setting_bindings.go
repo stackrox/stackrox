@@ -33,7 +33,7 @@ func GetScanSettingBindingV2Storage(_ *testing.T, clusterID string) *storage.Com
 		Name:            "ocp-scan-setting-binding-name",
 		ProfileNames:    []string{"profile-1", "profile-2"},
 		ScanSettingName: "ocp-scan-setting-name",
-		Conditions: []*storage.ComplianceOperatorScanSettingBindingV2_Condition{
+		Conditions: []*storage.ComplianceOperatorCondition{
 			{
 				Type:               "Ready",
 				Status:             "True",
@@ -52,7 +52,7 @@ func GetScanSettingBindingV2SensorMsg(_ *testing.T) *central.ComplianceOperatorS
 		Name:            "ocp-scan-setting-binding-name",
 		ProfileNames:    []string{"profile-1", "profile-2"},
 		ScanSettingName: "ocp-scan-setting-name",
-		Conditions: []*central.ComplianceOperatorScanSettingBindingV2_Condition{
+		Conditions: []*central.ComplianceOperatorCondition{
 			{
 				Type:               "Ready",
 				Status:             "True",

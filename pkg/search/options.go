@@ -226,6 +226,7 @@ var (
 	ComplianceOperatorScanLastExecutedTime   = newFieldLabel("Compliance Scan Last Executed Time")
 	ComplianceOperatorRuleType               = newFieldLabel("Compliance Rule Type")
 	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
+	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
