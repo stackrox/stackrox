@@ -24,13 +24,13 @@ var (
 	log                = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
-type ManifestGenerator struct {
+type manifestGenerator struct {
 	CA        mtls.CA
 	Namespace string
 	Client    *kubernetes.Clientset
 }
 
-func New(ns string, clientset *kubernetes.Clientset) (*ManifestGenerator, error) {
+func New(ns string, clientset *kubernetes.Clientset) (*manifestGenerator, error) {
 	if ns == "" {
 		return nil, fmt.Errorf("Invalid namespace: %s", ns)
 	}
@@ -41,14 +41,14 @@ func New(ns string, clientset *kubernetes.Clientset) (*ManifestGenerator, error)
 		return nil, fmt.Errorf("creating new CA: %w\n", err)
 	}
 
-	return &ManifestGenerator{
+	return &manifestGenerator{
 		Namespace: ns,
 		CA:        ca,
 		Client:    clientset,
 	}, nil
 }
 
-func (m ManifestGenerator) Apply(ctx context.Context) error {
+func (m manifestGenerator) Apply(ctx context.Context) error {
 	if err := m.applyNamespace(ctx); err != nil {
 		panic(err)
 	}
@@ -64,7 +64,7 @@ func (m ManifestGenerator) Apply(ctx context.Context) error {
 	return nil
 }
 
-func (m ManifestGenerator) applyNamespace(ctx context.Context) error {
+func (m manifestGenerator) applyNamespace(ctx context.Context) error {
 	ns := v1.Namespace{}
 	ns.SetName(m.Namespace)
 	_, err := m.Client.CoreV1().Namespaces().Create(ctx, &ns, metav1.CreateOptions{})
