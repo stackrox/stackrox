@@ -136,6 +136,10 @@
     display: inline;
 }
 
+.pf-c-progress__status-icon svg {
+  display: inline-block;
+}
+
 /* overriding vertical align property for table sort icon */
 .pf-c-table__sort-indicator {
     align-self: center;
