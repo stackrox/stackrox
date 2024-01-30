@@ -158,7 +158,10 @@ func renderAndExtractFileContents(c Config, mode mode, imageFlavor defaults.Imag
 		if i > 0 {
 			buf.WriteString("\n\n---\n\n")
 		}
-		buf.Write(f.Content)
+		_, err = buf.Write(f.Content)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return buf.Bytes(), nil
