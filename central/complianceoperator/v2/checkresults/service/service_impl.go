@@ -151,7 +151,7 @@ func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
+		return nil, errors.Errorf("Unable to retrieve compliance scan results count for query %v", query)
 	}
 	return &v2.CountComplianceScanResults{
 		Count: int32(count),
