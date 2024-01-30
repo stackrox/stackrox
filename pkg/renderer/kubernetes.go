@@ -135,10 +135,10 @@ func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.Fil
 }
 
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {
-	return renderAndExtractMultipleFileContents(c, mode, imageFlavor, 1)
+	return renderAndExtractFileContents(c, mode, imageFlavor, 1)
 }
 
-func renderAndExtractMultipleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor, numFiles int) ([]byte, error) {
+func renderAndExtractFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor, numFiles int) ([]byte, error) {
 	files, err := render(c, mode, imageFlavor)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func RenderScannerTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]b
 // RenderScannerV4TLSSecretOnly renders just the file that contains the scanner-v4-tls secret.
 func RenderScannerV4TLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	// Separate secrets for indexer, matcher, and db expected
-	return renderAndExtractMultipleFileContents(c, scannerV4TLSOnly, imageFlavor, 3)
+	return renderAndExtractFileContents(c, scannerV4TLSOnly, imageFlavor, 3)
 }
 
 func render(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
