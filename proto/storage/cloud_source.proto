@@ -9,7 +9,7 @@ package storage;
 
 message CloudSource {
     string id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    string name                          = 2 [(gogoproto.moretags) = 'sql:"unique"'];
+    string name                          = 2 [(gogoproto.moretags) = 'sql:"unique",search:"Integration Name,hidden"'];
     enum Type {
         UNSPECIFIED                      = 0;
         PALADIN_CLOUD                    = 1;
@@ -17,10 +17,8 @@ message CloudSource {
     }
     Type type                            = 3 [(gogoproto.moretags) = 'search:"Integration Type,hidden"'];
 
-    // Credentials may be encrypted at rest.
     message Credentials {
         string secret                    = 1 [(gogoproto.moretags) = 'scrub:"always"'];
-        bool   is_encrypted              = 2;
     }
     Credentials credentials              = 4;
 
