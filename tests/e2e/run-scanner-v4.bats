@@ -523,7 +523,8 @@ wait_for_ready_pods() {
     echo "Pod(s) within deployment ${namespace}/${deployment} ready."
 }
 
-remove_earlier_roxctl_binary {
+# Remove earlier roxctl binary from the folder added to PATH so default roxctl can be used again
+remove_earlier_roxctl_binary() {
     rm -f ${EARLIER_ROXCTL_PATH}/roxctl
     echo "Removed earlier roxctl binary"
     roxctl version
