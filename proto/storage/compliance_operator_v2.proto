@@ -209,26 +209,26 @@ message ComplianceOperatorScanSettingBindingV2 {
 // Next Tag: 6
 // ComplianceOperatorCondition represents an observation of an object's state.
 message ComplianceOperatorCondition {
-    string type = 1;
-    string status = 2;
-    string reason = 3;
-    string message = 4;
-    google.protobuf.Timestamp last_transition_time = 5;
+  string type = 1;
+  string status = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp last_transition_time = 5;
 }
 
 // Next Tag: 5
 // ComplianceOperatorSuite represents scan status
 message ComplianceOperatorSuite {
-    string id = 1 [(gogoproto.moretags) = 'sql:"pk,id,type(uuid)"'];
-    string name = 2 [(gogoproto.moretags) = 'search:"Compliance Suite Name,hidden"'];
-    string cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+  string id = 1 [(gogoproto.moretags) = 'sql:"pk,id,type(uuid)"'];
+  string name = 2 [(gogoproto.moretags) = 'search:"Compliance Suite Name,hidden"'];
+  string cluster_id = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
 
-    message Status {
-        string phase           = 1;
-        string result         = 2;
-        string error_message   = 3;
-        repeated ComplianceOperatorCondition conditions = 4;
-    }
+  message Status {
+    string phase = 1;
+    string result = 2;
+    string error_message = 3;
+    repeated ComplianceOperatorCondition conditions = 4;
+  }
 
-    Status status = 4;
+  Status status = 4;
 }
