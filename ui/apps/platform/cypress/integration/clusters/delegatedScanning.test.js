@@ -18,7 +18,7 @@ describe('Delegated Image Scanning', () => {
     it(`should have a link on the clusters main page`, () => {
         visitClusters();
 
-        cy.get('a:contains("Manage delegated scanning")').click();
+        cy.get('a:contains("Delegated scanning")').click();
 
         cy.location('pathname').should('eq', '/main/clusters/delegated-image-scanning');
     });
@@ -113,7 +113,7 @@ describe('Delegated Image Scanning', () => {
                 visitWithStaticResponseForPermissions(clustersPath, staticResponseForPermissions);
 
                 // make sure link is not present
-                cy.get('a:contains("Manage delegated scanning")').should('not.exist');
+                cy.get('a:contains("Delegated scanning")').should('not.exist');
             });
         });
     });

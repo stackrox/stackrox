@@ -16,15 +16,35 @@ import {
 } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import {
+    AGGREGATED_RESULTS_ACROSS_ENTITY,
+    AGGREGATED_RESULTS_STANDARDS_BY_ENTITY,
+} from 'queries/controls';
 import ScanButton from '../ScanButton';
 import StandardsByEntity from '../widgets/StandardsByEntity';
 import StandardsAcrossEntity from '../widgets/StandardsAcrossEntity';
 
 import ManageStandardsError from './ManageStandardsError';
 import ManageStandardsModal from './ManageStandardsModal';
-import ComplianceDashboardTile from './ComplianceDashboardTile';
+import ComplianceDashboardTile, {
+    CLUSTERS_COUNT,
+    DEPLOYMENTS_COUNT,
+    NAMESPACES_COUNT,
+    NODES_COUNT,
+} from './ComplianceDashboardTile';
 import ComplianceScanProgress from './ComplianceScanProgress';
 import { useComplianceRunStatuses } from './useComplianceRunStatuses';
+
+const queriesToRefetchOnPollingComplete = [
+    CLUSTERS_COUNT,
+    NODES_COUNT,
+    NAMESPACES_COUNT,
+    DEPLOYMENTS_COUNT,
+    AGGREGATED_RESULTS_STANDARDS_BY_ENTITY(resourceTypes.CLUSTER),
+    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.CLUSTER),
+    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.NAMESPACE),
+    AGGREGATED_RESULTS_ACROSS_ENTITY(resourceTypes.NODE),
+];
 
 function ComplianceDashboardPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
@@ -45,7 +65,7 @@ function ComplianceDashboardPage(): ReactElement {
     }`;
 
     const { runs, error, restartPolling, inProgressScanDetected, isCurrentScanIncomplete } =
-        useComplianceRunStatuses();
+        useComplianceRunStatuses(queriesToRefetchOnPollingComplete);
 
     function clickManageStandardsButton() {
         setIsFetchingStandards(true);

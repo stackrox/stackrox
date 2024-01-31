@@ -31,7 +31,7 @@ describe('Clusters', () => {
             // Replace h1 with h2 if we factor out a minimal Clusters page.
             cy.get('h1:contains("Secure clusters with a reusable init bundle")');
             // Assert link instead of button, because init bundles exist.
-            cy.get('a:contains("Review installation methods")');
+            cy.get('a:contains("Review init bundle installation methods")');
         } else {
             cy.get('h2:contains("Configure the clusters you want to secure.")');
             cy.get('a:contains("View instructions")');
