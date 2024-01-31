@@ -40,6 +40,8 @@ function MainPage(): ReactElement {
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
 
+    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
     const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
@@ -95,6 +97,12 @@ function MainPage(): ReactElement {
                 component="SCANNER"
                 showCertGenerateAction={currentUserCanGenerateCert}
             />
+            {isScannerV4Enabled && (
+                <CredentialExpiryBanner
+                    component="SCANNER_V4"
+                    showCertGenerateAction={currentUserCanGenerateCert}
+                />
+            )}
             <OutdatedVersionBanner />
             <DatabaseStatusBanner />
             <ServerStatusBanner />
