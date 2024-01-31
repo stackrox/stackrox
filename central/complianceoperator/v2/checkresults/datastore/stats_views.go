@@ -12,6 +12,7 @@ type ResourceResultCountByClusterScan struct {
 	ClusterID          string `db:"cluster_id"`
 	ClusterName        string `db:"cluster"`
 	ScanConfigName     string `db:"compliance_scan_config_name"`
+	ScanConfigID       string `db:"compliance_scan_config_id"`
 }
 
 // ResultStatusCountByCluster represents shape of the stats query for compliance operator results

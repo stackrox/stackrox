@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -39,9 +40,10 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
+		scanConfigDS:        scanConfigDS,
 	}
 }
 
@@ -49,6 +51,7 @@ type serviceImpl struct {
 	v2.UnimplementedComplianceResultsServiceServer
 
 	complianceResultsDS complianceDS.DataStore
+	scanConfigDS        complianceConfigDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -89,8 +92,22 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
 	}
 
+	// Need to look up the scan config IDs to return with the results.
+	scanConfigToIDs := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
+			scanConfigQuery := search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorScanConfigName, result.GetScanConfigName()).ProtoQuery()
+			configs, err := s.scanConfigDS.GetScanConfigurations(ctx, scanConfigQuery)
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
+			}
+			scanConfigToIDs[result.GetScanConfigName()] = configs[0].GetId()
+		}
+	}
+
 	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults),
+		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
 	}, nil
 }
 

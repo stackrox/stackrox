@@ -8,12 +8,14 @@ import (
 
 type checkResultKey struct {
 	scanConfigName string
+	scanConfigID   string
 	profileName    string
 	checkName      string
 }
 
 type scanResultKey struct {
 	scanConfigName string
+	scanConfigID   string
 	profileName    string
 }
 
@@ -38,7 +40,7 @@ func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2) 
 }
 
 // ComplianceV2CheckResults converts the storage check results to v2 scan results
-func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2) []*v2.ComplianceScanResult {
+func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV2, scanToScanID map[string]string) []*v2.ComplianceScanResult {
 	// Since a check result can hold the status for multiple clusters we need to build from
 	// bottom up.  resultsByScanCheck holds check result based on the key combination of
 	// scanName, profileName, checkName.  Then when that key is encountered again we
@@ -50,6 +52,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	for _, result := range incoming {
 		key := checkResultKey{
 			scanConfigName: result.GetScanConfigName(),
+			scanConfigID:   scanToScanID[result.GetScanConfigName()],
 			profileName:    "", // TODO(ROX-20334)
 			checkName:      result.GetCheckName(),
 		}
@@ -74,6 +77,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	for _, key := range orderedKeys {
 		scanKey := scanResultKey{
 			scanConfigName: key.scanConfigName,
+			scanConfigID:   key.scanConfigID,
 			profileName:    key.profileName,
 		}
 		result, resultFound := resultsByScanCheck[key]
@@ -94,6 +98,7 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 	for _, key := range scanOrder {
 		convertedResults = append(convertedResults, &v2.ComplianceScanResult{
 			ScanName:     key.scanConfigName,
+			ScanConfigId: key.scanConfigID,
 			ProfileName:  key.profileName,
 			CheckResults: resultsByScan[key],
 		})
@@ -113,7 +118,8 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 				ClusterName: resultCount.ClusterName,
 			},
 			ScanStats: &v2.ComplianceScanStatsShim{
-				ScanName: resultCount.ScanConfigName,
+				ScanName:     resultCount.ScanConfigName,
+				ScanConfigId: resultCount.ScanConfigID,
 				CheckStats: []*v2.ComplianceCheckStatusCount{
 					{
 						Count:  int32(resultCount.FailCount),

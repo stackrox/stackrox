@@ -782,6 +782,9 @@
           "items": {
             "$ref": "#/definitions/v2ComplianceCheckResult"
           }
+        },
+        "scanConfigId": {
+          "type": "string"
         }
       },
       "title": "ComplianceScanResult provides the results of a scan"
@@ -822,6 +825,9 @@
         "lastScan": {
           "type": "string",
           "format": "date-time"
+        },
+        "scanConfigId": {
+          "type": "string"
         }
       },
       "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
