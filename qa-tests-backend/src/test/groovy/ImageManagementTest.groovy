@@ -38,7 +38,7 @@ class ImageManagementTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
-        given: 
+        given:
         if (!tryWithScannerV4) {
             Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
         }
@@ -76,7 +76,7 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""         | true
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)" | true
-        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false 
+        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
         // verify Azure registry
         // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""         | true
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
