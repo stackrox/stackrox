@@ -456,7 +456,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			if activeConn, found := m.activeConnections[*conn]; found {
 				enrichedConnections[*activeConn] = timestamp.Now()
 				delete(m.activeConnections, *conn)
-				flowMetrics.SetActiveFlowsTrackerSizeGauge(len(m.activeConnections))
+				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 				return
 			}
 			status.rotten = true
@@ -559,10 +559,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				enrichedConnections[indicator] = status.lastSeen
 				if status.lastSeen == timestamp.InfiniteFuture {
 					m.activeConnections[*conn] = &indicator
-					flowMetrics.SetActiveFlowsTrackerSizeGauge(len(m.activeConnections))
+					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 				} else {
 					delete(m.activeConnections, *conn)
-					flowMetrics.SetActiveFlowsTrackerSizeGauge(len(m.activeConnections))
+					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 				}
 			}
 		}
