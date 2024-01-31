@@ -18,7 +18,7 @@ function ManageTokensButton(): ReactElement {
             className="no-underline flex-shrink-0"
             data-testid="manageTokens"
         >
-            {isMoveInitBundlesEnabled ? 'Manage init bundles' : 'Manage tokens'}
+            {isMoveInitBundlesEnabled ? 'Init bundles' : 'Manage tokens'}
         </HashLink>
     );
 }
