@@ -53,6 +53,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ComplianceOperatorScanV2{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceOperatorScanConfigurationV2{}, resourceType: indirectlyScoped},
 		{typ: &storage.ComplianceOperatorScanSettingBinding{}, resourceType: globallyScoped},
+		{typ: &storage.ComplianceOperatorSuite{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceRunMetadata{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceRunResults{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceStrings{}, resourceType: indirectlyScoped},
