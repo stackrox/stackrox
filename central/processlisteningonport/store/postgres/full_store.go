@@ -134,8 +134,10 @@ func (s *fullStoreImpl) readRows(
 
 		if procMsg.GetClusterId() != "" {
 			clusterID = procMsg.GetClusterId()
+			log.Infof("procMsg.GetClusterId()= %s", clusterID)
 		} else {
 			clusterID = msg.GetClusterId()
+			log.Infof("msg.GetClusterId()= %s", clusterID)
 		}
 
 		if procMsg.GetNamespace() != "" {
