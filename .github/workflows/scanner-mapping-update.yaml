@@ -3,6 +3,9 @@ name: Scanner mappings update
 on:
   schedule:
     - cron: "0 0 * * *"
+  push:
+    branches:
+    - scanner/*
 
 jobs:
   update-scanner-mappings:
@@ -15,7 +18,7 @@ jobs:
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -36,7 +39,7 @@ jobs:
 
         mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
         # Upload mapping.zip to Google Cloud Storage
-        gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
+        gsutil cp -r "redhat-repository-mappings" "gs://definitions.stackrox.io/"
 
     - name: Send Slack notification on workflow failure
       if: failure()
