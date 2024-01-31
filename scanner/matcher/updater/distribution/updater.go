@@ -50,13 +50,10 @@ func New(ctx context.Context, store postgres.MatcherStore) (*Updater, error) {
 }
 
 func (u *Updater) Known() []claircore.Distribution {
-	known := func() []claircore.Distribution {
-		u.mutex.RLock()
-		defer u.mutex.RUnlock()
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
 
-		return slices.Clone(u.known)
-	}()
-
+	known := slices.Clone(u.known)
 	return known
 }
 

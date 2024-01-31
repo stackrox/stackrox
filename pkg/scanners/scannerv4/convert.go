@@ -244,7 +244,7 @@ func os(report *v4.VulnerabilityReport) string {
 }
 
 func notes(report *v4.VulnerabilityReport, os string) []storage.ImageScan_Note {
-	notes := make([]storage.ImageScan_Note, 0, 3)
+	notes := make([]storage.ImageScan_Note, 0, len(v4.VulnerabilityReport_Note_value))
 
 	for _, note := range report.GetNotes() {
 		switch note {
