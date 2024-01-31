@@ -408,12 +408,14 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	// TODO(ROX-21342): Ensure central doesn't crash if user doesn't provide cluster info
 	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
-	if eCtx.ClusterID != "" && s.connManager.GetConnection(eCtx.ClusterID).HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
+	if eCtx.ClusterID != "" {
 		conn := s.connManager.GetConnection(eCtx.ClusterID)
 		if conn == nil {
 			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
 		}
-		deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, env.CentralDeploymentEnhancementTimeout.DurationSetting())
+		if conn.HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
+			deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, env.CentralDeploymentEnhancementTimeout.DurationSetting())
+		}
 		if err != nil {
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
