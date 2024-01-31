@@ -11,19 +11,21 @@ import (
 	"github.com/quay/claircore"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/matcher/updater"
 )
 
-var (
-	// matcherNames specifies the ClairCore matchers to use.
-	// TODO(ROX-14093): add NodeJS once implemented.
-	matcherNames = []string{
+// matcherNames specifies the ClairCore matchers to use.
+func matcherNames() []string {
+	names := []string{
 		"alpine-matcher",
 		"aws-matcher",
 		"debian-matcher",
@@ -38,7 +40,11 @@ var (
 		"suse",
 		"ubuntu-matcher",
 	}
-)
+	if env.ScannerV4NodeJSSupport.BooleanSetting() {
+		names = append(names, "nodejs")
+	}
+	return names
+}
 
 // Matcher represents a vulnerability matcher.
 //
@@ -100,11 +106,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		// TODO(ROX-21264): Replace with our own enricher(s).
-		Enrichers:                nil,
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames(),
+		Enrichers:                []driver.Enricher{&nvd.Enricher{}},
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
@@ -140,8 +145,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        client,
-		// TODO(ROX-19005): replace with a URL related to the desired version.
-		URL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
+		URL:           cfg.VulnerabilitiesURL,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)

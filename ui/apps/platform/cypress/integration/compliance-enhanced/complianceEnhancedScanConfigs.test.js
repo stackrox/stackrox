@@ -74,7 +74,6 @@ describe('Compliance Dashboard', () => {
             .blur();
 
         getHelperElementByLabel('Name').contains('Scan name is required');
-        getHelperElementByLabel('Frequency').contains('Frequency is required');
         getHelperElementByLabel('Time').contains('Time is required');
 
         getInputByLabel('Frequency').click();
@@ -85,7 +84,7 @@ describe('Compliance Dashboard', () => {
         getHelperElementByLabel('On day(s)').contains('Selection is required');
 
         // Step 2, check valid form and save
-        getInputByLabel('Name').clear().type('Scooby');
+        getInputByLabel('Name').clear().type('scooby-doo');
         getInputByLabel('On day(s)').click();
         cy.get('.pf-c-select.pf-m-expanded .pf-c-check__label:contains("Tuesday")').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function

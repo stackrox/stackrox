@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useCallback } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link, useHistory } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
     Alert,
@@ -67,6 +67,8 @@ const defaultSortOption = {
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
 }: ScanConfigsTablePageProps): React.ReactElement {
+    const history = useHistory();
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -93,31 +95,53 @@ function ScanConfigsTablePage({
 
     const renderTableContent = () => {
         return scanSchedules?.map(
-            ({ id, scanName, scanConfig, lastUpdatedTime, clusterStatus }) => (
-                <Tr key={id}>
-                    <Td>
-                        <Link
-                            to={generatePath(complianceEnhancedScanConfigDetailPath, {
-                                scanConfigId: id,
-                            })}
-                        >
-                            {scanName}
-                        </Link>
-                    </Td>
-                    <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                    <Td>
-                        {displayOnlyItemOrItemCount(
-                            clusterStatus.map((cluster) => cluster.clusterName),
-                            'clusters'
-                        )}
-                    </Td>
-                    <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
-                    <Td isActionCell>
-                        <ActionsColumn items={scanConfigActions()} />
-                    </Td>
-                </Tr>
-            )
+            ({ id, scanName, scanConfig, lastUpdatedTime, clusterStatus }) => {
+                const scanConfigUrl = generatePath(complianceEnhancedScanConfigDetailPath, {
+                    scanConfigId: id,
+                });
+
+                const rowActions = [
+                    {
+                        title: 'Edit scan schedule',
+                        onClick: (event) => {
+                            event.preventDefault();
+                            history.push({
+                                pathname: scanConfigUrl,
+                                search: 'action=edit',
+                            });
+                        },
+                        isDisabled: !hasWriteAccessForCompliance,
+                    },
+                    {
+                        title: 'Delete scan schedule',
+                        onClick: (event) => {
+                            event.preventDefault();
+                            // TODO: add delete confirmation modal and delete API call
+                        },
+                        isDisabled: !hasWriteAccessForCompliance,
+                    },
+                ];
+
+                return (
+                    <Tr key={id}>
+                        <Td>
+                            <Link to={scanConfigUrl}>{scanName}</Link>
+                        </Td>
+                        <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
+                        <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
+                        <Td>
+                            {displayOnlyItemOrItemCount(
+                                clusterStatus.map((cluster) => cluster.clusterName),
+                                'clusters'
+                            )}
+                        </Td>
+                        <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
+                        <Td isActionCell>
+                            <ActionsColumn items={rowActions} />
+                        </Td>
+                    </Tr>
+                );
+            }
         );
     };
 

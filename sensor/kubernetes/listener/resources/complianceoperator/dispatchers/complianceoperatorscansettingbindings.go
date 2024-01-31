@@ -29,15 +29,15 @@ func getProfileNames(profiles []v1alpha1.NamedObjectReference) []string {
 	return profileNames
 }
 
-func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOperatorScanSettingBindingV2_Condition {
-	statusConditions := make([]*central.ComplianceOperatorScanSettingBindingV2_Condition, 0, len(conditions))
+func getStatusConditions(conditions v1alpha1.Conditions) []*central.ComplianceOperatorCondition {
+	statusConditions := make([]*central.ComplianceOperatorCondition, 0, len(conditions))
 	for _, c := range conditions {
 		lastTransitionTime, err := types.TimestampProto(c.LastTransitionTime.Time)
 		if err != nil {
 			log.Warnf("unable to convert last transition time %v, skipping condition", err)
 			continue
 		}
-		statusConditions = append(statusConditions, &central.ComplianceOperatorScanSettingBindingV2_Condition{
+		statusConditions = append(statusConditions, &central.ComplianceOperatorCondition{
 			Type:               string(c.Type),
 			Status:             string(c.Status),
 			Reason:             string(c.Reason),

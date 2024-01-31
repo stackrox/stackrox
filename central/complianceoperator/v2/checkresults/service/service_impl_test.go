@@ -290,6 +290,70 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceOverallClusterStats
 	}
 }
 
+func (s *ComplianceResultsServiceTestSuite) GetComplianceOverallClusterCount() {
+	testCases := []struct {
+		desc         string
+		query        *apiV2.RawQuery
+		expectedResp *apiV2.CountComplianceScanResults
+		expectedErr  error
+		setMocks     func()
+	}{
+		{
+			desc:        "Empty query",
+			query:       &apiV2.RawQuery{Query: ""},
+			expectedErr: nil,
+			expectedResp: &apiV2.CountComplianceScanResults{
+				Count: 3,
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				s.resultDatastore.EXPECT().ComplianceClusterStatsCount(gomock.Any(), expectedQ).Return(3, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with search field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:" + fixtureconsts.Cluster1},
+			expectedErr: nil,
+			expectedResp: &apiV2.CountComplianceScanResults{
+				Count: 1,
+			},
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+				s.resultDatastore.EXPECT().ComplianceClusterStatsCount(gomock.Any(), expectedQ).Return(1, nil).Times(1)
+			},
+		},
+		{
+			desc:        "Query with non-existent field",
+			query:       &apiV2.RawQuery{Query: "Cluster ID:id"},
+			expectedErr: errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance cluster scan stats for query %v", &apiV2.RawQuery{Query: "Cluster ID:id"}),
+			setMocks: func() {
+				expectedQ := search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
+					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
+
+				s.resultDatastore.EXPECT().ComplianceClusterStats(gomock.Any(), expectedQ).Return(nil, nil).Times(1)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.setMocks()
+
+			results, err := s.service.GetComplianceOverallClusterCount(s.ctx, tc.query)
+			if tc.expectedErr == nil {
+				s.Require().NoError(err)
+			} else {
+				s.Require().Error(tc.expectedErr, err)
+			}
+
+			if tc.expectedResp != nil {
+				s.Require().Equal(tc.expectedResp.Count, results.Count)
+			}
+		})
+	}
+}
+
 func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 	testCases := []struct {
 		desc         string

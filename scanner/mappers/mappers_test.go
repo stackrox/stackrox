@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	nvdschema "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
@@ -610,9 +610,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	assert.NoError(t, err)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
-		nvdScores         map[string]nvdschema.CVSSV30
+		nvdVulns          map[string]*nvdschema.CVEAPIJSON20CVEItem
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
-		wantErr           string
 	}{
 		"when nil then nil": {},
 		"when vulnerabilities then convert": {
@@ -803,7 +802,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		"when severity with CVSSv2 is invalid then return error": {
+		"when severity with CVSSv2 is invalid then skip": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					Issued: now,
@@ -814,9 +813,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater: "RHEL8-updater",
 				},
 			},
-			wantErr: `v2 vector: need two values separated by :, got "invalid cvss2 vector"`,
 		},
-		"when severity with CVSSv3 is invalid then return error": {
+		"when severity with CVSSv3 is invalid then skip": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					Issued: now,
@@ -827,7 +825,6 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater: "RHEL8-updater",
 				},
 			},
-			wantErr: `v3 vector: vector missing "CVSS:" prefix: "INVALID CVSS3 VECTOR"`,
 		},
 		"when OSV and severity with CVSSv3 then return": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
@@ -856,10 +853,19 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Updater: "unknown updater",
 				},
 			},
-			nvdScores: map[string]nvdschema.CVSSV30{
+			nvdVulns: map[string]*nvdschema.CVEAPIJSON20CVEItem{
 				"foo": {
-					Version:      "3.1",
-					VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					ID: "CVE-1234-567",
+					Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+						CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+							{
+								CvssData: &nvdschema.CVSSV31{
+									Version:      "3.1",
+									VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								},
+							},
+						},
+					},
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
@@ -878,12 +884,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdScores)
-			if tt.wantErr != "" {
-				assert.ErrorContains(t, err, tt.wantErr)
-			} else {
-				assert.NoError(t, err)
-			}
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}

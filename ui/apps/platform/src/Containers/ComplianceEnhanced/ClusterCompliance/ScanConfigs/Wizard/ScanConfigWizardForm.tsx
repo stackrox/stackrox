@@ -6,7 +6,7 @@ import { complianceEnhancedScanConfigsPath } from 'routePaths';
 
 import useRestQuery from 'hooks/useRestQuery';
 import {
-    createScanConfig,
+    saveScanConfig,
     listComplianceIntegrations,
     listComplianceProfiles,
 } from 'services/ComplianceEnhancedService';
@@ -18,7 +18,7 @@ import ProfileSelection from './ProfileSelection';
 import ReviewConfig from './ReviewConfig';
 import ScanConfigWizardFooter from './ScanConfigWizardFooter';
 import useFormikScanConfig from './useFormikScanConfig';
-import { convertFormikToScanConfig } from '../compliance.scanConfigs.utils';
+import { convertFormikToScanConfig, ScanConfigFormValues } from '../compliance.scanConfigs.utils';
 
 const PARAMETERS = 'Set Parameters';
 const PARAMETERS_ID = 'parameters';
@@ -29,9 +29,13 @@ const SELECT_PROFILES_ID = 'profiles';
 const REVIEW_CONFIG = 'Review and create';
 const REVIEW_CONFIG_ID = 'review';
 
-function ScanConfigWizardForm(): ReactElement {
+type ScanConfigWizardFormProps = {
+    initialFormValues?: ScanConfigFormValues;
+};
+
+function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
     const history = useHistory();
-    const formik = useFormikScanConfig();
+    const formik = useFormikScanConfig(initialFormValues);
     const [isCreating, setIsCreating] = useState(false);
     const [createScanConfigError, setCreateScanConfigError] = useState('');
 
@@ -41,13 +45,13 @@ function ScanConfigWizardForm(): ReactElement {
     const listProfilesQuery = useCallback(() => listComplianceProfiles(), []);
     const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
 
-    async function onCreate() {
+    async function onSave() {
         setIsCreating(true);
         setCreateScanConfigError('');
         const complianceScanConfig = convertFormikToScanConfig(formik.values);
 
         try {
-            await createScanConfig(complianceScanConfig);
+            await saveScanConfig(complianceScanConfig);
             history.push(complianceEnhancedScanConfigsPath);
         } catch (error) {
             setCreateScanConfigError(getAxiosErrorMessage(error));
@@ -119,6 +123,8 @@ function ScanConfigWizardForm(): ReactElement {
         },
     ];
 
+    const isEditing = initialFormValues?.id !== undefined;
+
     return (
         <>
             <FormikProvider value={formik}>
@@ -131,9 +137,10 @@ function ScanConfigWizardForm(): ReactElement {
                     footer={
                         <ScanConfigWizardFooter
                             wizardSteps={wizardSteps}
-                            onSave={onCreate}
+                            onSave={onSave}
                             isSaving={isCreating}
                             proceedToNextStepIfValid={proceedToNextStepIfValid}
+                            isEditing={isEditing}
                         />
                     }
                 />

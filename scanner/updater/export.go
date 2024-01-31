@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/pkg/errors"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
 	"github.com/stackrox/rox/scanner/updater/rhel"
 	"golang.org/x/time/rate"
@@ -73,7 +75,33 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 	opts = append(opts, []updates.ManagerOption{
-		updates.WithFactories(map[string]driver.UpdaterSetFactory{"rhel-custom": fac})})
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"rhel-custom": fac,
+		})})
+
+	// NVD enricher.
+	opts = append(opts, []updates.ManagerOption{
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"nvd": nvd.NewFactory(),
+		}),
+		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
+			"nvd": func(i interface{}) error {
+				cfg, ok := i.(*nvd.Config)
+				if !ok {
+					return errors.New("internal error: config assertion failed")
+				}
+				ci := os.Getenv("STACKROX_NVD_API_CALL_INTERVAL")
+				if ci != "" {
+					cfg.CallInterval = &ci
+				}
+				key := os.Getenv("STACKROX_NVD_API_KEY")
+				if key != "" {
+					cfg.APIKey = &key
+				}
+				return nil
+			},
+		}),
+	})
 
 	// ClairCore updaters.
 	for _, uSet := range [][]string{

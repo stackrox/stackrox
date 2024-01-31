@@ -1,4 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Alert,
     Bullseye,
@@ -20,7 +21,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getProductBranding } from 'constants/productBranding';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
+import { clustersBasePath, clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
 
 /*
  * Comments about data flow:
@@ -113,7 +114,7 @@ function NoClustersPage(): ReactElement {
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                             >
-                                                Review installation methods
+                                                Review init bundle installation methods
                                             </a>
                                         </ExternalLink>
                                     </FlexItem>
@@ -130,6 +131,9 @@ function NoClustersPage(): ReactElement {
                                 Create bundle
                             </Button>
                         )}
+                        <div className="pf-u-mt-xl">
+                            <Link to={`${clustersBasePath}/new`}>Legacy installation method</Link>
+                        </div>
                     </EmptyState>
                 )}
             </PageSection>

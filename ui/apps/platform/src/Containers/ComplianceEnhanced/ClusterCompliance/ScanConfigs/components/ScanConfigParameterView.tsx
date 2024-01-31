@@ -13,11 +13,11 @@ import {
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceEnhancedService';
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
-type ScanConfigParametersProps = {
+type ScanConfigParameterViewProps = {
     scanConfig: ComplianceScanConfigurationStatus;
 };
 
-function ScanConfigParameters({ scanConfig }: ScanConfigParametersProps): React.ReactElement {
+function ScanConfigParameterView({ scanConfig }: ScanConfigParameterViewProps): React.ReactElement {
     return (
         <Card className="pf-u-h-100">
             <CardTitle component="h2">Parameters</CardTitle>
@@ -63,4 +63,4 @@ function ScanConfigParameters({ scanConfig }: ScanConfigParametersProps): React.
     );
 }
 
-export default ScanConfigParameters;
+export default ScanConfigParameterView;
