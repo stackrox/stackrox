@@ -20,6 +20,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import PageTitle from 'Components/PageTitle';
 import {
     RequestExpires,
     RequestIDLink,
@@ -118,6 +119,7 @@ function ApprovedDeferrals() {
 
     return (
         <PageSection>
+            <PageTitle title="Exception Management - Approved Deferrals" />
             <Toolbar>
                 <ToolbarContent>
                     <FilterAutocompleteSelect
