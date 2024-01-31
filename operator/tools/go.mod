@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/kudobuilder/kuttl v0.15.0
 	github.com/mikefarah/yq/v4 v4.40.5
-	github.com/operator-framework/operator-sdk v1.24.1
+	github.com/operator-framework/operator-sdk v1.28.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230131195449-5db173878d6d
 	sigs.k8s.io/controller-tools v0.12.1
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7
@@ -141,11 +141,11 @@ require (
 	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
-	github.com/operator-framework/api v0.17.2-0.20221028193825-b611f6cef49c // indirect
-	github.com/operator-framework/helm-operator-plugins v0.0.12-0.20221014213227-6f6106714f0d // indirect
-	github.com/operator-framework/java-operator-plugins v0.7.1-0.20221007075838-2e24140314fb // indirect
-	github.com/operator-framework/operator-manifest-tools v0.2.3-0.20220901033859-2a7ce32ef673 // indirect
-	github.com/operator-framework/operator-registry v1.26.3-0.20220930210947-614d6a955dc0 // indirect
+	github.com/operator-framework/api v0.17.4-0.20230223191600-0131a6301e42 // indirect
+	github.com/operator-framework/helm-operator-plugins v0.0.12-0.20230307164205-6e30bde28688 // indirect
+	github.com/operator-framework/java-operator-plugins v0.7.1-0.20230306190439-0eed476d2b75 // indirect
+	github.com/operator-framework/operator-manifest-tools v0.2.3-0.20230227155221-caa8b9e1ab12 // indirect
+	github.com/operator-framework/operator-registry v1.26.5-0.20230307160312-3bfcb23fa7d0 // indirect
 	github.com/otiai10/copy v1.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
@@ -218,20 +218,20 @@ require (
 	k8s.io/apiextensions-apiserver v0.27.1 // indirect
 	k8s.io/apimachinery v0.27.1 // indirect
 	k8s.io/apiserver v0.27.1 // indirect
-	k8s.io/cli-runtime v0.26.0 // indirect
+	k8s.io/cli-runtime v0.26.2 // indirect
 	k8s.io/client-go v0.27.1 // indirect
 	k8s.io/component-base v0.27.1 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a // indirect
-	k8s.io/kubectl v0.26.0 // indirect
-	k8s.io/utils v0.0.0-20230209194617-a36077c30491 // indirect
+	k8s.io/kubectl v0.26.2 // indirect
+	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
 	oras.land/oras-go v1.2.2 // indirect
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.1.1 // indirect
-	sigs.k8s.io/controller-runtime v0.14.1 // indirect
+	sigs.k8s.io/controller-runtime v0.14.5 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kind v0.17.0 // indirect
-	sigs.k8s.io/kubebuilder/v3 v3.7.1-0.20221011212440-eff842a46496 // indirect
+	sigs.k8s.io/kubebuilder/v3 v3.9.1 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/cmd/config v0.10.9 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
