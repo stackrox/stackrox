@@ -212,7 +212,7 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		var urlStr string
 		switch key {
 		case mappingUpdaterKey:
-			urlStr, _ = url.JoinPath(v4StorageDomain, mappingFile)
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
