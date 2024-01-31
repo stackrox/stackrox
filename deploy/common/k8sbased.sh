@@ -256,12 +256,10 @@ function launch_central {
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
+        echo "Generating Central bundle..."
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
-        ls -l $(command -v roxctl)
-        echo "Generating Central bundle"
-        roxctl version
-        ls -l
         cp -R central-bundle/ "${unzip_dir}/"
+        ls -l "${unzip_dir}/"
         rm -rf central-bundle
     else
         docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
@@ -474,7 +472,7 @@ function launch_central {
             "${unzip_dir}/scanner/scripts/setup.sh"
           fi
           launch_service "${unzip_dir}" scanner
-          if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+          if [[ "${ROX_SCANNER_V4:-}" != "false" && -d "${unzip_dir}/scanner-v4" ]]; then
             echo "Deploying ScannerV4..."
             launch_service "${unzip_dir}" scanner-v4
           fi
