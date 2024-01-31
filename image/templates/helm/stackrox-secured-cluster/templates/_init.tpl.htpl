@@ -107,12 +107,6 @@
   {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
 {{ end }}
 
-{{/* Compliance Operator */}}
-{{ if and $._rox.sensor.complianceOperator.enabled (ne $._rox.env.openshift 4) }}
-  {{ include "srox.warn" (list . "'sensor.complianceOperator.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'complianceOperator.enabled=false'.") }}
-  {{ $_ := set $._rox "sensor" (dict "complianceOperator" (dict "enabled" false)) }}
-{{ end }}
-
 [<- if .AutoSensePodSecurityPolicies >]
 {{/* Detect enablePodSecurityPolicies */}}
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}
