@@ -32,6 +32,7 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceClusterScanStats",
 			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
+			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 		},
 	})
@@ -149,6 +150,22 @@ func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *
 	}
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Errorf("Unable to retrieve compliance scan results count for query %v", query)
+	}
+	return &v2.CountComplianceScanResults{
+		Count: int32(count),
+	}, nil
+}
+
+// GetComplianceOverallClusterCount returns scan results count
+func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	count, err := s.complianceResultsDS.ComplianceClusterStatsCount(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}

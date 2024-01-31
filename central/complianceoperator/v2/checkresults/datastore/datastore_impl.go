@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -149,8 +150,40 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 	return countResults, nil
 }
 
+// ComplianceClusterStatsCount retrieves the distinct scan result counts specified by query for the clusters
+func (d *datastoreImpl) ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error) {
+	var err error
+	query, err = withSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return 0, err
+	}
+
+	var results []*clusterStatsCount
+	results, err = pgSearch.RunSelectRequestForSchema[clusterStatsCount](ctx, d.db, schema.ComplianceOperatorCheckResultV2Schema, withCountQuery(query))
+	if err != nil {
+		return 0, err
+	}
+	if len(results) == 0 {
+		return 0, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", query.String())
+		utils.Should(err)
+		return 0, err
+	}
+	return results[0].ClusterCount, nil
+}
+
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+func withCountQuery(q *v1.Query) *v1.Query {
+	cloned := q.Clone()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ClusterID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	return cloned
 }
 
 func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
