@@ -55,7 +55,7 @@ type HelmManagedConfigInit struct {
 	ClusterConfig        *storage.CompleteClusterConfig `protobuf:"bytes,1,opt,name=cluster_config,json=clusterConfig,proto3" json:"cluster_config,omitempty"`
 	ClusterName          string                         `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	ClusterId            string                         `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	NotHelmManaged       bool                           `protobuf:"varint,4,opt,name=not_helm_managed,json=notHelmManaged,proto3" json:"not_helm_managed,omitempty"` // Deprecated: Do not use.
+	NotHelmManaged       bool                           `protobuf:"varint,4,opt,name=not_helm_managed,json=notHelmManaged,proto3" json:"not_helm_managed,omitempty"` // Deprecated: Do not use. // Only taken into account if managed_by is UNKNOWN.
 	ManagedBy            storage.ManagerType            `protobuf:"varint,5,opt,name=managed_by,json=managedBy,proto3,enum=storage.ManagerType" json:"managed_by,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
 	XXX_unrecognized     []byte                         `json:"-"`

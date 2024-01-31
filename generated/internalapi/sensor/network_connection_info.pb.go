@@ -338,8 +338,8 @@ func (m *NetworkEndpoint) Clone() *NetworkEndpoint {
 }
 
 type NetworkAddress struct {
-	AddressData []byte `protobuf:"bytes,1,opt,name=address_data,json=addressData,proto3" json:"address_data,omitempty"`
-	Port        uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	AddressData []byte `protobuf:"bytes,1,opt,name=address_data,json=addressData,proto3" json:"address_data,omitempty"` // semantics determined by socket_family of the given connection
+	Port        uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`                                 // may be 0 if not applicable (e.g., icmp).
 	// Represents an IPV4 or IPV6 network. First 4/16 bytes representing network address whereas following byte represents
 	// the length of network prefix. If used, this field must have 5 or 17 bytes; otherwise it should be discarded.
 	// `ip_network` and `address_data` usage should be mutually exclusive.
