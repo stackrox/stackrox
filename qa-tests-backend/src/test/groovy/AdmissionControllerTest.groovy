@@ -23,6 +23,10 @@ import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 
+import org.junit.Assume
+import services.FeatureFlagService
+
+
 @Tag("PZ")
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -138,6 +142,11 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Config: #desc"() {
+        given: 
+        if (scan) {
+            Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
+        }
+
         when:
         prepareChaosMonkey()
 
@@ -309,6 +318,11 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
+        given: 
+        if (scan) {
+            Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
+        }
+
         when:
         prepareChaosMonkey()
 

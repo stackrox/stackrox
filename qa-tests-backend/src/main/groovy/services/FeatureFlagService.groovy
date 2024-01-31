@@ -19,4 +19,12 @@ class FeatureFlagService extends BaseService {
         }
         return flag.enabled
     }
+
+    static boolean isFeatureFlagEnabled(String envVar, boolean defaultVal) {
+        try {
+            return isFeatureFlagEnabled(envVar)
+        } catch(E2ETestException ex) {
+            return defaultVal
+        }
+    }
 }
