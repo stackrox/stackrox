@@ -9,6 +9,7 @@ image/templates/common/ca-setup.sh
 image/templates/common/delete-ca.sh
 image/templates/common/port-forward.sh
 image/templates/common/setup-central.sh
+image/templates/common/setup-scanner-v4.sh
 image/templates/common/setup-scanner.sh
 image/templates/common/setup.sh
 image/templates/sensor/kubernetes/sensor.sh
