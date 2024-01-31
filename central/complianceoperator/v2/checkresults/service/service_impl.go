@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -37,6 +38,8 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -95,14 +98,14 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 	// Need to look up the scan config IDs to return with the results.
 	scanConfigToIDs := make(map[string]string, len(scanResults))
 	for _, result := range scanResults {
+		log.Infof("SHREWS -- results %q", result.GetScanConfigName())
 		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
-			scanConfigQuery := search.NewQueryBuilder().
-				AddExactMatches(search.ComplianceOperatorScanConfigName, result.GetScanConfigName()).ProtoQuery()
-			configs, err := s.scanConfigDS.GetScanConfigurations(ctx, scanConfigQuery)
+			log.Infof("SHREWS -- Didn't find it.  Looking it up")
+			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
 			if err != nil {
 				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
 			}
-			scanConfigToIDs[result.GetScanConfigName()] = configs[0].GetId()
+			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
 		}
 	}
 
