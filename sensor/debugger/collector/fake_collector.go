@@ -14,11 +14,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// FakeCollectorConfig FakeCollector's configuration.
 type FakeCollectorConfig struct {
 	sensorAddress string
 	certsPath     string
 }
 
+// NewFakeCollector creates a new FakeCollector.
 func NewFakeCollector(cfg *FakeCollectorConfig) *FakeCollector {
 	stopper := concurrency.NewStopper()
 	return &FakeCollector{
@@ -29,6 +31,7 @@ func NewFakeCollector(cfg *FakeCollectorConfig) *FakeCollector {
 	}
 }
 
+// WithDefaultConfig initializes the FakeCollector's default configuration.
 func WithDefaultConfig() *FakeCollectorConfig {
 	return &FakeCollectorConfig{
 		sensorAddress: "localhost:8443",
@@ -36,16 +39,19 @@ func WithDefaultConfig() *FakeCollectorConfig {
 	}
 }
 
+// WithCertsPath sets the certificates' path.
 func (cc *FakeCollectorConfig) WithCertsPath(path string) *FakeCollectorConfig {
 	cc.certsPath = path
 	return cc
 }
 
+// WithSensorAddress sets sensor's address.
 func (cc *FakeCollectorConfig) WithSensorAddress(address string) *FakeCollectorConfig {
 	cc.sensorAddress = address
 	return cc
 }
 
+// FakeCollector a fake collector for testing.
 type FakeCollector struct {
 	config             *FakeCollectorConfig
 	stopper            concurrency.Stopper
@@ -53,6 +59,7 @@ type FakeCollector struct {
 	signalManager      *fakeSignalManager
 }
 
+// Start FakeCollector.
 func (c *FakeCollector) Start() error {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", path.Join(c.config.certsPath, "/cert.pem")))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", path.Join(c.config.certsPath, "/key.pem")))
@@ -68,10 +75,12 @@ func (c *FakeCollector) Start() error {
 	return nil
 }
 
+// SendFakeNetworkFlow sends a NetworkConnectionInfoMessage to sensor.
 func (c *FakeCollector) SendFakeNetworkFlow(msg *sensor.NetworkConnectionInfoMessage) {
 	c.networkFlowManager.send(msg)
 }
 
+// SendFakeSignal sends a SignalStreamMessage to sensor.
 func (c *FakeCollector) SendFakeSignal(msg *sensor.SignalStreamMessage) {
 	c.signalManager.send(msg)
 

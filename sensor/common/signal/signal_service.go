@@ -25,8 +25,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// Option function for the signal service.
 type Option func(*serviceImpl)
 
+// WithAuthFuncOverride sets the AuthFuncOverride.
 func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
 	return func(srv *serviceImpl) {
 		srv.authFuncOverride = overrideFn

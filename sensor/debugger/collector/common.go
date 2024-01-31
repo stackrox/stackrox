@@ -5,8 +5,7 @@ import (
 	"crypto/x509"
 )
 
-type insecureVerifier struct {
-}
+type insecureVerifier struct{}
 
 func (v *insecureVerifier) VerifyPeerCertificate(_ *x509.Certificate, _ []*x509.Certificate, _ *tls.Config) error {
 	return nil
