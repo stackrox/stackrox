@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { Alert } from '@patternfly/react-core';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
@@ -41,7 +42,7 @@ function ClusterEditForm({
     return (
         <div className="bg-base-200 px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            {selectedCluster.id && (
+            {selectedCluster.id ? (
                 <ClusterSummary
                     healthStatus={selectedCluster.healthStatus}
                     status={selectedCluster.status}
@@ -50,6 +51,19 @@ function ClusterEditForm({
                     clusterRetentionInfo={clusterRetentionInfo}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />
+            ) : (
+                <Alert variant="warning" isInline title="Legacy installation method" component="p">
+                    <p>
+                        Legacy installation is not recommended. It causes extra operational
+                        complexity.
+                    </p>
+                    <p>
+                        It is strongly recommend to use a cluster init bundle with either of the
+                        following installation methods:
+                    </p>
+                    <p>Operator for Red Hat OpenShift</p>
+                    <p>Helm chart for other platforms</p>
+                </Alert>
             )}
             <form
                 className="grid grid-columns-1 md:grid-columns-2 grid-gap-4 xl:grid-gap-6 mb-4 w-full"
