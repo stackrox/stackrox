@@ -225,7 +225,6 @@ var (
 			256_000_000,
 		}, // Arbitrary bucket sizes
 	}, []string{"Type"})
-
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -239,11 +238,6 @@ func ObserveSentSize(messageType string, size float64) {
 	}).Observe(size)
 }
 
-// IncGRPCResourceExhausted increments the counter of gRPC payloads that were above Central's accepted threshold.
-func IncGRPCResourceExhausted() {
-	// grpcResourceExhaustedCount.Inc()
-}
-
 // SetGRPCMaxMessageSizeGauge sets the maximum message size observed for message with type.
 func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
 	grpcMaxMessageSize.With(prometheus.Labels{
@@ -251,6 +245,7 @@ func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
 	}).Set(size)
 }
 
+// SetGRPCLastMessageSizeGauge sets last received message size observed for message with type.
 func SetGRPCLastMessageSizeGauge(typ string, size float64) {
 	grpcLastMessageSizeSent.With(prometheus.Labels{
 		"Type": typ,
