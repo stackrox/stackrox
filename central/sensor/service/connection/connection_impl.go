@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -172,6 +173,15 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.push(msg)
 }
 
+func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
+	messageType := reflectutils.Type(msg.GetMsg())
+	var eventType string
+	if msg.GetEvent() != nil {
+		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
+	}
+	return fmt.Sprintf("%s_%s", messageType, eventType)
+}
+
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
 	queues := make(map[string]*dedupingQueue)
 	for !c.stopSig.IsDone() {
@@ -181,10 +191,12 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 				if errStatus.Code() == codes.ResourceExhausted {
 					log.Debugf("Central received a payload from sensor that was too large: %v", errStatus.Details())
 				}
+				metrics.RegisterGRPCError(errStatus.Code().String())
 			}
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
+		metrics.SetGRPCLastMessageSizeReceived(getSensorMessageTypeString(msg), float64(msg.Size()))
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }

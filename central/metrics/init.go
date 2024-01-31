@@ -34,5 +34,7 @@ func init() {
 		grpcMaxMessageSize,
 		grpcSentSize,
 		grpcLastMessageSizeSent,
+		grpcLastMessageSizeReceived,
+		grpcError,
 	)
 }

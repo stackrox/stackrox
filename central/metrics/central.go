@@ -198,6 +198,13 @@ var (
 		Name:      "sensor_connected",
 	}, []string{"ClusterID", "connection_state"})
 
+	grpcLastMessageSizeReceived = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_last_message_size_received_bytes",
+		Help:      "A gauge for last message size received per message type",
+	}, []string{"Type"})
+
 	grpcLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -211,6 +218,13 @@ var (
 		Name:      "grpc_max_message_size_sent_bytes",
 		Help:      "A gauge for maximum message size sent in the lifetime of this central",
 	}, []string{"Type"})
+
+	grpcError = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_error",
+		Help:      "A counter for gRPC errors received in sensor connections",
+	}, []string{"Code"})
 
 	grpcSentSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -245,11 +259,24 @@ func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
 	}).Set(size)
 }
 
-// SetGRPCLastMessageSizeGauge sets last received message size observed for message with type.
+// SetGRPCLastMessageSizeGauge sets last sent message size observed for message with type.
 func SetGRPCLastMessageSizeGauge(typ string, size float64) {
 	grpcLastMessageSizeSent.With(prometheus.Labels{
 		"Type": typ,
 	}).Set(size)
+}
+
+// SetGRPCLastMessageSizeReceived sets the last received message size observed for message with type.
+func SetGRPCLastMessageSizeReceived(typ string, size float64) {
+	grpcLastMessageSizeReceived.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
+}
+
+func RegisterGRPCError(code string) {
+	grpcError.With(prometheus.Labels{
+		"Code": code,
+	}).Inc()
 }
 
 // SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource.
