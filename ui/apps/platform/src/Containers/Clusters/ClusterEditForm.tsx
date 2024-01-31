@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Alert } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem } from '@patternfly/react-core';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
@@ -53,16 +53,27 @@ function ClusterEditForm({
                 />
             ) : (
                 <Alert variant="warning" isInline title="Legacy installation method" component="p">
-                    <p>
-                        Legacy installation is not recommended. It causes extra operational
-                        complexity.
-                    </p>
-                    <p>
-                        It is strongly recommend to use a cluster init bundle with either of the
-                        following installation methods:
-                    </p>
-                    <p>Operator for Red Hat OpenShift</p>
-                    <p>Helm chart for other platforms</p>
+                    <Flex direction={{ default: 'column' }}>
+                        <FlexItem>
+                            <p>
+                                To avoid extra operational complexity, use a{' '}
+                                <strong>cluster init bundle</strong>
+                                with either of the following installation methods:
+                            </p>
+                            <p>
+                                <strong>Operator</strong> for Red Hat OpenShift
+                            </p>
+                            <p>
+                                <strong>Helm chart</strong> for other platforms
+                            </p>
+                        </FlexItem>
+                        <FlexItem>
+                            <p>
+                                Only use the legacy installation method if you have a specific
+                                installation need that requires using this method.
+                            </p>
+                        </FlexItem>
+                    </Flex>
                 </Alert>
             )}
             <form
