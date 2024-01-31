@@ -230,7 +230,7 @@ test: manifests generate fmt vet  ## Run go unit tests
 	go test $(shell go list ./... | grep -v '^github.com/stackrox/rox/operator/tests') -coverprofile cover.out
 
 test-integration: manifests generate envtest ## Run go integration tests
-	    KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
