@@ -32,5 +32,7 @@ func init() {
 		sensorEventsDeduperCounter,
 		sensorConnectedCounter,
 		grpcMaxMessageSize,
+		grpcSentSize,
+		grpcLastMessageSizeSent,
 	)
 }

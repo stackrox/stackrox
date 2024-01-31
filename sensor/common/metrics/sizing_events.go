@@ -16,17 +16,23 @@ type sizingEventStream struct {
 }
 
 func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
-	typ := reflectutils.Type(msg)
+	messageType := reflectutils.Type(msg.GetMsg())
 	var eventType string
 	if msg.GetEvent() != nil {
 		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
 	}
-	key := s.metricKey(typ, eventType)
-	s.maxSeen[key] = math.Max(s.maxSeen[key], float64(msg.Size()))
-	sensorGRPCMaxMessageSize.With(prometheus.Labels{
-		"Type":      typ,
-		"EventType": eventType,
-	}).Set(s.maxSeen[key])
+	messageType = s.metricKey(messageType, eventType)
+
+	messageSize := float64(msg.Size())
+	labels := prometheus.Labels{
+		"Type": messageType,
+	}
+
+	sensorMessageSizeSent.With(labels).Observe(messageSize)
+	sensorLastMessageSizeSent.With(labels).Set(messageSize)
+
+	s.maxSeen[messageType] = math.Max(s.maxSeen[messageType], messageSize)
+	sensorMaxMessageSizeSent.With(labels).Set(s.maxSeen[messageType])
 }
 
 func (s *sizingEventStream) metricKey(typ, eventType string) string {

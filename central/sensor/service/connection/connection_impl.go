@@ -36,6 +36,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -73,8 +75,6 @@ type sensorConnection struct {
 	capabilities set.Set[centralsensor.SensorCapability]
 
 	hashDeduper hashManager.Deduper
-
-	maxSeenMessageSize map[string]float64
 }
 
 func newConnection(ctx context.Context,
@@ -109,7 +109,6 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 		complianceOperatorMgr:      complianceOperatorMgr,
-		maxSeenMessageSize:         make(map[string]float64),
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -178,6 +177,11 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 	for !c.stopSig.IsDone() {
 		msg, err := grpcServer.Recv()
 		if err != nil {
+			if errStatus, ok := status.FromError(err); ok {
+				if errStatus.Code() == codes.ResourceExhausted {
+					log.Debugf("Central received a payload from sensor that was too large: %v", errStatus.Details())
+				}
+			}
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}

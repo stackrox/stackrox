@@ -14,8 +14,10 @@ type sizingEventStream struct {
 }
 
 func (s *sizingEventStream) Send(msg *central.MsgToSensor) error {
-	typ := reflectutils.Type(msg)
+	typ := reflectutils.Type(msg.GetMsg())
 	gaugeValue := math.Max(s.maxSeen[typ], float64(msg.Size()))
+	metrics.ObserveSentSize(typ, float64(msg.Size()))
+	metrics.SetGRPCLastMessageSizeGauge(typ, float64(msg.Size()))
 	metrics.SetGRPCMaxMessageSizeGauge(typ, gaugeValue)
 	s.maxSeen[typ] = gaugeValue
 	return s.stream.Send(msg)

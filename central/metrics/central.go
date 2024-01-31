@@ -198,21 +198,61 @@ var (
 		Name:      "sensor_connected",
 	}, []string{"ClusterID", "connection_state"})
 
+	grpcLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_last_message_size_sent_bytes",
+		Help:      "A gauge for last message size sent per message type",
+	}, []string{"Type"})
+
 	grpcMaxMessageSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "max_message_size_sent",
-		Help:      "A gauge for maximum message size seen when sending messages to sensor",
+		Name:      "grpc_max_message_size_sent_bytes",
+		Help:      "A gauge for maximum message size sent in the lifetime of this central",
 	}, []string{"Type"})
+
+	grpcSentSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "grpc_message_size_sent_bytes",
+		Help:      "Histogram of sent message sizes from Central",
+		Buckets: []float64{
+			4_000_000,
+			12_000_000,
+			24_000_000,
+			48_000_000,
+			256_000_000,
+		}, // Arbitrary bucket sizes
+	}, []string{"Type"})
+
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
 }
 
+// ObserveSentSize registers central payload sent size.
+func ObserveSentSize(messageType string, size float64) {
+	grpcSentSize.With(prometheus.Labels{
+		"Type": messageType,
+	}).Observe(size)
+}
+
+// IncGRPCResourceExhausted increments the counter of gRPC payloads that were above Central's accepted threshold.
+func IncGRPCResourceExhausted() {
+	// grpcResourceExhaustedCount.Inc()
+}
+
 // SetGRPCMaxMessageSizeGauge sets the maximum message size observed for message with type.
 func SetGRPCMaxMessageSizeGauge(typ string, size float64) {
 	grpcMaxMessageSize.With(prometheus.Labels{
+		"Type": typ,
+	}).Set(size)
+}
+
+func SetGRPCLastMessageSizeGauge(typ string, size float64) {
+	grpcLastMessageSizeSent.With(prometheus.Labels{
 		"Type": typ,
 	}).Set(size)
 }
