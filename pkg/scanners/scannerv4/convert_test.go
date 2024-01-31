@@ -282,7 +282,9 @@ func TestNotes(t *testing.T) {
 	}{
 		{
 			os:       "unknown",
-			report:   &v4.VulnerabilityReport{},
+			report:   &v4.VulnerabilityReport{
+				Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
+			},
 			expected: []storage.ImageScan_Note{storage.ImageScan_OS_UNAVAILABLE, storage.ImageScan_PARTIAL_SCAN_DATA},
 		},
 		{
@@ -301,7 +303,7 @@ func TestNotes(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.os, func(t *testing.T) {
-			notes := notes(testcase.report, testcase.os)
+			notes := notes(testcase.report)
 			assert.ElementsMatch(t, testcase.expected, notes)
 		})
 	}

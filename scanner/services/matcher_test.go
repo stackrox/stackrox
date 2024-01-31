@@ -97,6 +97,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
+			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 		})
 	})
 
@@ -128,6 +129,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
 				},
 			},
+			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 		})
 	})
 }
@@ -196,15 +198,13 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		},
 	}
 
-	s.matcherMock.
-		EXPECT().
-		GetKnownDistributions(gomock.Any()).
-		Times(2).
-		Return(dists)
-
 	srv := NewMatcherService(s.matcherMock, nil)
 
 	// Empty notes.
+	s.matcherMock.
+		EXPECT().
+		GetKnownDistributions(gomock.Any()).
+		Return(dists)
 	notes := srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
 			Distributions: []*v4.Distribution{
@@ -217,7 +217,11 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 	})
 	s.Empty(notes)
 
-	// Unknown OS.
+	// Unsupported OS.
+	s.matcherMock.
+		EXPECT().
+		GetKnownDistributions(gomock.Any()).
+		Return(dists)
 	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
 		Contents: &v4.Contents{
 			Distributions: []*v4.Distribution{
@@ -230,7 +234,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 	})
 	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}, notes)
 
-	// No known OSes.
+	// No known OSes is the same as unsupported.
 	s.matcherMock.
 		EXPECT().
 		GetKnownDistributions(gomock.Any()).
@@ -245,5 +249,22 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 			},
 		},
 	})
-	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE}, notes)
+	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}, notes)
+
+	// Unknown OS.
+	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
+		Contents: &v4.Contents{
+			Distributions: []*v4.Distribution{
+				{
+					Did:       "alpine",
+					VersionId: "3.18",
+				},
+				{
+					Did:       "alpine",
+					VersionId: "3.19",
+				},
+			},
+		},
+	})
+	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}, notes)
 }

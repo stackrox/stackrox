@@ -22,8 +22,8 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 		ScanTime:        gogotypes.TimestampNow(),
 		OperatingSystem: os(report),
 		Components:      components(metadata, report),
+		Notes:           notes(report),
 	}
-	scan.Notes = notes(report, scan.GetOperatingSystem())
 
 	return scan
 }
@@ -243,17 +243,18 @@ func os(report *v4.VulnerabilityReport) string {
 	return dist.Did + ":" + dist.VersionId
 }
 
-func notes(report *v4.VulnerabilityReport, os string) []storage.ImageScan_Note {
+func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
 	notes := make([]storage.ImageScan_Note, 0, len(v4.VulnerabilityReport_Note_value))
 
 	for _, note := range report.GetNotes() {
 		switch note {
-		case v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
+		case v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
 			notes = append(notes, storage.ImageScan_OS_CVES_UNAVAILABLE)
+		case v4.VulnerabilityReport_NOTE_OS_UNKNOWN:
+			notes = append(notes, storage.ImageScan_OS_UNAVAILABLE)
+		default:
+			// Ignore unknown/unsupported note.
 		}
-	}
-	if os == "unknown" {
-		notes = append(notes, storage.ImageScan_OS_UNAVAILABLE)
 	}
 
 	if len(notes) > 0 {

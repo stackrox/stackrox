@@ -150,10 +150,11 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 }
 
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
-	dists := s.matcher.GetKnownDistributions(ctx)
-	if len(dists) == 0 {
-		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_VULNERABILITIES_UNAVAILABLE}
+	if len(vr.Contents.Distributions) != 1 {
+		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}
 	}
+
+	dists := s.matcher.GetKnownDistributions(ctx)
 	dist := vr.Contents.Distributions[0]
 	dID := dist.GetDid()
 	versionID := dist.GetVersionId()

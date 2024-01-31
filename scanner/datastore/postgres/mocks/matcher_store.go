@@ -64,6 +64,21 @@ func (mr *MockMatcherStoreMockRecorder) DeleteUpdateOperations(arg0 any, arg1 ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUpdateOperations", reflect.TypeOf((*MockMatcherStore)(nil).DeleteUpdateOperations), varargs...)
 }
 
+// DeltaUpdateVulnerabilities mocks base method.
+func (m *MockMatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeltaUpdateVulnerabilities", ctx, updater, fingerprint, vulns, deletedVulns)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeltaUpdateVulnerabilities indicates an expected call of DeltaUpdateVulnerabilities.
+func (mr *MockMatcherStoreMockRecorder) DeltaUpdateVulnerabilities(ctx, updater, fingerprint, vulns, deletedVulns any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeltaUpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).DeltaUpdateVulnerabilities), ctx, updater, fingerprint, vulns, deletedVulns)
+}
+
 // Distributions mocks base method.
 func (m *MockMatcherStore) Distributions(ctx context.Context) ([]claircore.Distribution, error) {
 	m.ctrl.T.Helper()
