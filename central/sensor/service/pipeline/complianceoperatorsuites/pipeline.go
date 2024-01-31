@@ -37,7 +37,7 @@ type pipelineImpl struct {
 	suiteDatastore sDatastore.DataStore
 }
 
-func (_ *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+func (*pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	})
 }
 
-func (_ *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
+func (*pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetComplianceOperatorSuite() != nil
 }
 
