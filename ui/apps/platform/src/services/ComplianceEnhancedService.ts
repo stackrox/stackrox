@@ -7,6 +7,7 @@ import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/
 import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
 import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { Empty } from './types';
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
@@ -320,7 +321,7 @@ export function saveScanConfig(
 }
 
 /*
- * Get policies filtered by an optional query string.
+ * Get scan configs filtered by an optional query string.
  */
 export function getScanConfigs(
     sortOption: ApiSortOption,
@@ -352,6 +353,12 @@ export function getScanConfigsCount(): Promise<number> {
         .then((response) => {
             return response?.data?.count ?? 0;
         });
+}
+
+export function deleteDownloadableReport(scanConfigId: string) {
+    return axios.delete<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
+        return response.data;
+    });
 }
 
 export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
