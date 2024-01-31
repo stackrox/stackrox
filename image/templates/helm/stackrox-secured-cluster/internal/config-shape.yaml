@@ -65,6 +65,9 @@ image:
 env:
   openshift: null # bool | int
   istio: null # bool
+  storageClasses:
+    all: {} # dict
+    default: null # string
 ca:
   cert: null # string
 sensor:
