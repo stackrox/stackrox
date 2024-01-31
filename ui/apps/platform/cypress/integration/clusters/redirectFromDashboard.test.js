@@ -30,8 +30,9 @@ describe('Clusters', () => {
         if (hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
             // Replace h1 with h2 if we factor out a minimal Clusters page.
             cy.get('h1:contains("Secure clusters with a reusable init bundle")');
-            // Assert link instead of button, because init bundles exist.
-            cy.get('a:contains("Review init bundle installation methods")');
+            // Assert links instead of button, because init bundles exist.
+            cy.get('a:contains("Installing secured cluster services on Red Hat OpenShift")');
+            cy.get('a:contains("Installing secured cluster services on other platforms")');
         } else {
             cy.get('h2:contains("Configure the clusters you want to secure.")');
             cy.get('a:contains("View instructions")');
