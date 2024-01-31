@@ -153,7 +153,7 @@ func renderAndExtractFileContents(c Config, mode mode, imageFlavor defaults.Imag
 		return files[0].Content, nil
 	}
 
-	buf := bytes.Buffer{}
+	var buf bytes.Buffer
 	for i, f := range files {
 		if i > 0 {
 			buf.WriteString("\n\n---\n\n")

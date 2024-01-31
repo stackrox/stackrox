@@ -118,7 +118,7 @@ func (s *serviceImpl) scannerV4Handler(w http.ResponseWriter, secrets map[string
 		SecretsByteMap: secrets,
 	}, defaults.GetImageFlavorFromEnv())
 	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render scanner TLS file: %v", err)
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to render scanner v4 TLS files: %v", err)
 		return
 	}
 
