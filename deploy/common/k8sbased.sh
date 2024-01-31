@@ -258,7 +258,7 @@ function launch_central {
         rm -rf central-bundle "${k8s_dir}/central-bundle"
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="$(pwd)/central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         ls -l $(command -v roxctl)
-        echo "Generating Central bundle in $(pwd) and k8s dir is ${k8s_dir} ${STORAGE} ${EXTRA_ARGS[@]} ${STORAGE_ARGS[@]}"
+        echo "Generating Central bundle in $(pwd) and k8s dir is ${k8s_dir}"
         roxctl version
         ls -l
         cp -R central-bundle/ "${unzip_dir}/"
