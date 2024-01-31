@@ -667,9 +667,7 @@ function launch_sensor {
       fi
 
       if [[ "$ROX_COMPLIANCE_ENHANCEMENTS" == "true" ]]; then
-        echo "SHREWS -- setting helm arg"
         helm_args+=(--set "sensor.complianceOperator.enabled=true")
-        extra_helm_config+=(--set "sensor.complianceOperator.enabled=true")
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then
