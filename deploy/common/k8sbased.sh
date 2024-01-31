@@ -483,6 +483,7 @@ function launch_central {
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             echo "Deploying ScannerV4..."
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
+              "${unzip_dir}/scanner-v4/scripts/setup.sh"
               launch_service "${unzip_dir}" scanner-v4
             else
               echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
