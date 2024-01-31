@@ -57,8 +57,8 @@ function ClusterEditForm({
                         <FlexItem>
                             <p>
                                 To avoid extra operational complexity, use a{' '}
-                                <strong>cluster init bundle</strong>
-                                with either of the following installation methods:
+                                <strong>cluster init bundle</strong> with either of the following
+                                installation methods:
                             </p>
                             <p>
                                 <strong>Operator</strong> for Red Hat OpenShift
