@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	v1 "github.com/openshift/api/config/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -124,7 +124,7 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 }
 
 func (u *updaterImpl) run() {
-	clusterMetadata := u.getClusterMetadata()
+	orchestratorMetadata := u.getOrchestratorMetadata()
 	cloudProviderMetadata := u.getCloudProviderMetadata(context.Background())
 
 	updateMessage := &central.ClusterStatusUpdate{
@@ -132,7 +132,7 @@ func (u *updaterImpl) run() {
 			Status: &storage.ClusterStatus{
 				SensorVersion:        version.GetMainVersion(),
 				ProviderMetadata:     cloudProviderMetadata,
-				OrchestratorMetadata: clusterMetadata,
+				OrchestratorMetadata: orchestratorMetadata,
 			},
 		},
 	}
@@ -158,7 +158,7 @@ func (u *updaterImpl) run() {
 	u.sendMessage(updateMessage)
 }
 
-func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
+func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 	serverVersion, err := u.kubeClient.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
@@ -211,7 +211,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 	if operators == nil {
 		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
 	}
-	var clusterOperator *v1.ClusterOperator
+	var clusterOperator *configv1.ClusterOperator
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
@@ -293,11 +293,26 @@ func (u *updaterImpl) getAPIVersions() []string {
 }
 
 func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
+	// We first attempt to get providers by calling the metadata service of each cloud provider we currently support.
 	m := u.getProviders(ctx)
-	if m == nil {
-		log.Info("No Cloud Provider metadata is found")
+	if m != nil {
+		return m
 	}
-	return m
+
+	// In the case of OpenShift _and_ not having collected metadata previously through cloud providers metadata service,
+	// we can read out the Infrastructure CR for provider specific information.
+	if env.OpenshiftAPI.BooleanSetting() {
+		m, err := u.getMetadataFromInfrastructureCR(ctx)
+		if err != nil {
+			log.Error("Failed to obtain provider metadata from config.openshift.io/v1/Infrastructure: ", err)
+		}
+		if m != nil {
+			return m
+		}
+	}
+
+	log.Info("No Cloud Provider metadata is found")
+	return nil
 }
 
 // NewUpdater returns a new ready-to-use updater.
@@ -311,5 +326,61 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 		stopSig:      concurrency.NewSignal(),
 		offlineMode:  offlineMode,
 		getProviders: providers.GetMetadata,
+	}
+}
+
+func (u *updaterImpl) getMetadataFromInfrastructureCR(ctx context.Context) (*storage.ProviderMetadata, error) {
+	clusterInfraCR, err := u.client.OpenshiftConfig().ConfigV1().
+		Infrastructures().Get(ctx, "cluster", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return providerMetadataFromInfraCR(clusterInfraCR), nil
+}
+
+func providerMetadataFromInfraCR(infra *configv1.Infrastructure) *storage.ProviderMetadata {
+	// The platform status is required to read out the provider specific information. If it is unset,
+	// we can short-circuit here.
+	if infra.Status.PlatformStatus == nil {
+		return nil
+	}
+
+	switch infra.Status.PlatformStatus.Type {
+	case configv1.AWSPlatformType:
+		return &storage.ProviderMetadata{
+			Region:   infra.Status.PlatformStatus.AWS.Region,
+			Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+			Verified: true,
+			Cluster: &storage.ClusterMetadata{
+				Type: storage.ClusterMetadata_OCP,
+				Name: infra.Status.InfrastructureName,
+			},
+		}
+	case configv1.GCPPlatformType:
+		return &storage.ProviderMetadata{
+			Region: infra.Status.PlatformStatus.GCP.Region,
+			Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+				Project: infra.Status.PlatformStatus.GCP.ProjectID,
+			}},
+			Verified: true,
+			Cluster: &storage.ClusterMetadata{
+				Type: storage.ClusterMetadata_OCP,
+				Name: infra.Status.InfrastructureName,
+			},
+		}
+	case configv1.AzurePlatformType:
+		return &storage.ProviderMetadata{
+			Region:   "",
+			Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
+			Verified: true,
+			Cluster: &storage.ClusterMetadata{
+				Type: storage.ClusterMetadata_OCP,
+				Name: infra.Status.InfrastructureName,
+			},
+		}
+	default:
+		// In case of a non-supported cloud provider, we currently assume nil.
+		return nil
 	}
 }

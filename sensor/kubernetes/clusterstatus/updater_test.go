@@ -2,17 +2,22 @@ package clusterstatus
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	configFake "github.com/openshift/client-go/config/clientset/versioned/fake"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -28,7 +33,8 @@ func TestClusterStatusUpdater(t *testing.T) {
 }
 
 type fakeClientSet struct {
-	k8s kubernetes.Interface
+	k8s    kubernetes.Interface
+	config configVersioned.Interface
 }
 
 func (c *fakeClientSet) Kubernetes() kubernetes.Interface {
@@ -44,7 +50,7 @@ func (c *fakeClientSet) OpenshiftApps() appVersioned.Interface {
 }
 
 func (c *fakeClientSet) OpenshiftConfig() configVersioned.Interface {
-	return nil
+	return c.config
 }
 
 func (c *fakeClientSet) OpenshiftRoute() routeVersioned.Interface {
@@ -55,9 +61,15 @@ func (c *fakeClientSet) OpenshiftOperator() operatorVersioned.Interface {
 	return nil
 }
 
-func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata) {
+func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata,
+	configClient ...*configFake.Clientset) {
+	config := configFake.NewSimpleClientset()
+	if len(configClient) != 0 {
+		config = configClient[0]
+	}
 	s.updater = NewUpdater(&fakeClientSet{
-		k8s: fake.NewSimpleClientset(),
+		k8s:    fake.NewSimpleClientset(),
+		config: config,
 	})
 	s.updater.(*updaterImpl).getProviders = getProviders
 }
@@ -137,6 +149,153 @@ func (s *updaterSuite) Test_OfflineMode() {
 			for _, fn := range tc {
 				fn()
 			}
+		})
+	}
+}
+
+func (s *updaterSuite) Test_GetCloudProviderMetadata() {
+	testProviderMetadata := &storage.ProviderMetadata{
+		Region: "us-east1",
+		Zone:   "us-east1-a",
+		Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+			Project:     "sample-thing",
+			ClusterName: "sample-cluster",
+		}},
+		Verified: true,
+		Cluster: &storage.ClusterMetadata{
+			Type: storage.ClusterMetadata_GKE,
+			Name: "sample-cluster",
+			Id:   "1",
+		},
+	}
+
+	nilGetProviders := func(_ context.Context) *storage.ProviderMetadata { return nil }
+
+	typeMeta := metav1.TypeMeta{Kind: "Infrastructure", APIVersion: "config.openshift.io/v1"}
+	objectMeta := metav1.ObjectMeta{
+		Name: "cluster",
+	}
+
+	cases := map[string]struct {
+		infra        *configv1.Infrastructure
+		metadata     *storage.ProviderMetadata
+		getProviders func(ctx context.Context) *storage.ProviderMetadata
+		openshift    bool
+	}{
+		"return of provider should not call any k8s API": {
+			getProviders: func(ctx context.Context) *storage.ProviderMetadata {
+				return testProviderMetadata
+			},
+			metadata: testProviderMetadata,
+		},
+		"no provider returned from get providers and not running on OpenShift should return nil": {
+			getProviders: nilGetProviders,
+		},
+		"on openshift running on AWS should return AWS provider metadata": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.AWSPlatformType,
+						AWS: &configv1.AWSPlatformStatus{
+							Region: "us-east1",
+						}},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region:   "us-east1",
+				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OCP,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running on GCP should return GCP provider metadata": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.GCPPlatformType,
+						GCP: &configv1.GCPPlatformStatus{
+							ProjectID: "project-1",
+							Region:    "us-east1",
+						}},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region: "us-east1",
+				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+					Project: "project-1",
+				}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OCP,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running on Azure should return Azure provider metadata": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type:  configv1.AzurePlatformType,
+						Azure: &configv1.AzurePlatformStatus{},
+					},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region:   "",
+				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OCP,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running on a provider not supported should return nil": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type:         configv1.AlibabaCloudPlatformType,
+						AlibabaCloud: &configv1.AlibabaCloudPlatformStatus{},
+					},
+					InfrastructureName: "cluster-1",
+				},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.T().Setenv(env.OpenshiftAPI.EnvVar(), strconv.FormatBool(tc.openshift))
+			config := configFake.NewSimpleClientset()
+			if tc.infra != nil {
+				config = configFake.NewSimpleClientset(tc.infra)
+			}
+			s.createUpdater(tc.getProviders, config)
+			u := s.updater.(*updaterImpl)
+			providerMetadata := u.getCloudProviderMetadata(context.Background())
+			s.Equal(tc.metadata, providerMetadata)
 		})
 	}
 }
