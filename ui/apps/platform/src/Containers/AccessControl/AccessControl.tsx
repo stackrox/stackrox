@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
-import { Alert, List, ListItem } from '@patternfly/react-core';
 
 import { accessControlBasePath, accessControlPath } from 'routePaths';
 
