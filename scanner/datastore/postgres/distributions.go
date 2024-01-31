@@ -7,7 +7,7 @@ import (
 )
 
 func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribution, error) {
-	const selectDists = `SELECT dist_id, dist_version_id, dist_version FROM vuln GROUP BY dist_id, dist_version_id, dist_version`
+	const selectDists = `SELECT DISTINCT dist_id, dist_version_id, dist_version FROM vuln`
 
 	rows, err := m.pool.Query(ctx, selectDists)
 	if err != nil {
@@ -25,6 +25,10 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 		if err := rows.Scan(&dID, &versionID, &version); err != nil {
 			return nil, err
 		}
+		if dID == "" {
+			continue
+		}
+
 		dists = append(dists, claircore.Distribution{
 			DID:       dID,
 			VersionID: versionID,

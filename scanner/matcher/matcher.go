@@ -201,8 +201,7 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
 }
 
-func (m *matcherImpl) GetKnownDistributions(ctx context.Context) []claircore.Distribution {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher")
+func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
 	return m.distroUpdater.Known()
 }
 
