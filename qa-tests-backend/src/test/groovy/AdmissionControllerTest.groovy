@@ -138,7 +138,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Config: #desc"() {
-                when:
+        when:
         prepareChaosMonkey()
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
@@ -309,7 +309,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
-                when:
+        when:
         prepareChaosMonkey()
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()

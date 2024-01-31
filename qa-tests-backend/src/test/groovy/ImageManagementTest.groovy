@@ -36,7 +36,7 @@ class ImageManagementTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
-                when:
+        when:
         "Clone and scope the policy for test"
         Policy clone = PolicyService.clonePolicyAndScopeByNamespace(policyName, TEST_NAMESPACE)
 
@@ -66,23 +66,23 @@ class ImageManagementTest extends BaseSpecification {
         "Data inputs are: "
 
         policyName                        | imageRegistry | imageRemote                      | imageTag     | note
-                                                                                                              "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
-                                                                                                              //intentionally use the same policy twice to make sure alert count does not increment
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
+        //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
-                                                                                                              "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                              // verify Azure registry
+        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        // verify Azure registry
         // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                              "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                              "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-                                                                                                              "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
-                                                                                                              "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                          }
+        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
+        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
+        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+    }
 
     @Tag("BAT")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
-                // Scan an ubuntu 14:04 image we're pretending is latest
+        // Scan an ubuntu 14:04 image we're pretending is latest
         def img = ImageService.scanImage(
             "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
                 "@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30", false) // 14.04
