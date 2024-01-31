@@ -237,7 +237,7 @@ var (
 			24_000_000,
 			48_000_000,
 			256_000_000,
-		}, // Arbitrary bucket sizes
+		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
 	}, []string{"Type"})
 )
 
@@ -273,6 +273,7 @@ func SetGRPCLastMessageSizeReceived(typ string, size float64) {
 	}).Set(size)
 }
 
+// RegisterGRPCError increments gRPC errors in the connection with Sensor observed by Central.
 func RegisterGRPCError(code string) {
 	grpcError.With(prometheus.Labels{
 		"Code": code,

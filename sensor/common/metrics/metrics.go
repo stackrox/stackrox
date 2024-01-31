@@ -178,7 +178,7 @@ var (
 			24_000_000,
 			48_000_000,
 			256_000_000,
-		},
+		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
 	}, []string{"Type"})
 
 	k8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
