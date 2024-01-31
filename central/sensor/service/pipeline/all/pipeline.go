@@ -72,6 +72,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 
 			var err error
 			panicErr := safe.Run(func() {
+				log.Infof("s.clusterID= %s", s.clusterID)
 				err = fragment.Run(ctx, s.clusterID, msg, injector)
 			})
 			if err != nil {
