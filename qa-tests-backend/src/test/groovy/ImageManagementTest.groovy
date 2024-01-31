@@ -72,18 +72,27 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policyName                        | imageRegistry | imageRemote                      | imageTag     | note       | tryWithScannerV4
-        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""         | true
+        policyName                        | imageRegistry | imageRemote                      | imageTag     | note
+                                                                                                      | tryWithScannerV4
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
+                                                                                                      | true
         //intentionally use the same policy twice to make sure alert count does not increment
-        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)" | true
-        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
+        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
+                                                                                                      | true
+        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                      | false
         // verify Azure registry
-        // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""         | true
-        "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
-        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
-        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""         | false
-        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""         | false
-        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""         | false
+        // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
+        "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                      | false
+        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                      | false
+        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
+                                                                                                      | false
+        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
+                                                                                                      | false
+        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                      | false
     }
 
     @Tag("BAT")
@@ -130,7 +139,7 @@ class ImageManagementTest extends BaseSpecification {
         "centos7-base"         | "centos:7"        | "unknown"
         // We explicitly do not support Fedora at this time.
         FEDORA_28              | "unknown"         | "unknown"
-        "nginx-1-9"            | "debian:8"        | "debian:8"   
+        "nginx-1-9"            | "debian:8"        | "debian:8"
         "nginx-1-17-1"         | "debian:9"        | "debian:9"
         "ubi9-slf4j"           | "rhel:9"          | "rhel:9"
         "apache-server"        | "ubuntu:14.04"    | "ubuntu:14.04"
