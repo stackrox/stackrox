@@ -25,18 +25,35 @@ const (
 	networkGraphExtSrcsCap = `network-graph-external-srcs`
 )
 
-// NewService creates a new streaming service with the collector. It should only be called once.
-func NewService(networkFlowManager manager.Manager) Service {
-	return &serviceImpl{
-		manager: networkFlowManager,
-	}
+type Option func(*serviceImpl)
 
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
+// NewService creates a new streaming service with the collector. It should only be called once.
+func NewService(networkFlowManager manager.Manager, opts ...Option) Service {
+	srv := &serviceImpl{
+		manager:          networkFlowManager,
+		authFuncOverride: authFuncOverride,
+	}
+	for _, o := range opts {
+		o(srv)
+	}
+	return srv
+}
+
+func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
 }
 
 type serviceImpl struct {
 	sensor.UnimplementedNetworkConnectionInfoServiceServer
 
-	manager manager.Manager
+	manager          manager.Manager
+	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -52,7 +69,7 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return s.authFuncOverride(ctx, fullMethodName)
 }
 
 // PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector

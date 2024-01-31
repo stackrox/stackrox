@@ -6,10 +6,15 @@ import (
 )
 
 // New creates a new signal service
-func New(pipeline Pipeline, indicators chan *message.ExpiringMessage) Service {
-	return &serviceImpl{
-		queue:           make(chan *v1.Signal, maxBufferSize),
-		indicators:      indicators,
-		processPipeline: pipeline,
+func New(pipeline Pipeline, indicators chan *message.ExpiringMessage, opts ...Option) Service {
+	srv := &serviceImpl{
+		queue:            make(chan *v1.Signal, maxBufferSize),
+		indicators:       indicators,
+		processPipeline:  pipeline,
+		authFuncOverride: authFuncOverride,
 	}
+	for _, o := range opts {
+		o(srv)
+	}
+	return srv
 }
