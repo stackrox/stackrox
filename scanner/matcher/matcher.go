@@ -153,21 +153,31 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	go func() {
-		if err := vulnUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
-		}
-	}()
-	// TODO(ROX-20624): Once the readiness probe is implemented,
-	// we need to determine if this should only start after the initial update.
 	distroUpdater, err := distribution.New(ctx, store)
 	if err != nil {
 		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
 	}
+
+	// Start the updaters asynchronously.
 	go func() {
-		if err := distroUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
+		// Run the initial vuln update prior to starting the distribution updater.
+		zlog.Info(ctx).Msg("starting initial update")
+		if err := vulnUpdater.Update(ctx); err != nil {
+			zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
 		}
+		zlog.Info(ctx).Msg("completed initial update")
+
+		go func() {
+			if err := vulnUpdater.Start(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+			}
+		}()
+
+		go func() {
+			if err := distroUpdater.Start(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
+			}
+		}()
 	}()
 
 	success = true

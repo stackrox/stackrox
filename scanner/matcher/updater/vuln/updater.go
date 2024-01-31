@@ -193,12 +193,6 @@ func (u *Updater) Stop() error {
 func (u *Updater) Start() error {
 	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.Start")
 
-	zlog.Info(ctx).Msg("starting initial update")
-	if err := u.update(ctx); err != nil {
-		zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
-	}
-	zlog.Info(ctx).Msg("completed initial update")
-
 	if !u.skipGC {
 		go u.runGCFullPeriodic()
 	}
@@ -211,7 +205,7 @@ func (u *Updater) Start() error {
 			return ctx.Err()
 		case <-timer.C:
 			zlog.Info(ctx).Msg("starting update")
-			if err := u.update(ctx); err != nil {
+			if err := u.Update(ctx); err != nil {
 				zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
 			}
 			zlog.Info(ctx).Msg("completed update")
@@ -221,8 +215,10 @@ func (u *Updater) Start() error {
 	}
 }
 
-// update runs the full vulnerability update process.
-func (u *Updater) update(ctx context.Context) error {
+// Update runs the full vulnerability update process.
+//
+// Note: periodic full GC will not be started.
+func (u *Updater) Update(ctx context.Context) error {
 	if err := u.runUpdate(ctx); err != nil {
 		return err
 	}
