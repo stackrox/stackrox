@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	indexermocks "github.com/stackrox/rox/scanner/indexer/mocks"
 	matchermocks "github.com/stackrox/rox/scanner/matcher/mocks"
 	"github.com/stretchr/testify/suite"
@@ -163,7 +164,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	now := time.Now()
-	protoNow, err := types.TimestampProto(now)
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	s.Require().NoError(err)
 
 	s.matcherMock.

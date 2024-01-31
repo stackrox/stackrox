@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/matcher"
@@ -111,7 +112,7 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *types.Empty) (*v4.M
 		return nil, fmt.Errorf("getting last vulnerability update time: %w", err)
 	}
 
-	timestamp, err := types.TimestampProto(lastVulnUpdate)
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(lastVulnUpdate)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}

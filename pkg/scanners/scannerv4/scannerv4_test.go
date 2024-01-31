@@ -18,7 +18,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 	errExpected := true
 	var noErr error
 	var noMetadata *v4.Metadata
-	tmsFromTime, _ := types.TimestampProto(time.Time{})
+	tmsFromTime, _ := protocompat.ConvertTimeToTimestampOrError(time.Time{})
 	testCases := []struct {
 		desc         string
 		clientRet    *v4.Metadata
