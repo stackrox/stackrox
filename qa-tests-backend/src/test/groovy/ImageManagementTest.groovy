@@ -8,11 +8,9 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GenericNotifier
 import services.CVEService
-import services.FeatureFlagService
 import services.ImageService
 import services.PolicyService
 
-import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -38,12 +36,7 @@ class ImageManagementTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Integration")
     def "Verify CI/CD Integration Endpoint - #policyName - #imageRegistry #note"() {
-        given:
-        if (!tryWithScannerV4) {
-            Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
-        }
-
-        when:
+                when:
         "Clone and scope the policy for test"
         Policy clone = PolicyService.clonePolicyAndScopeByNamespace(policyName, TEST_NAMESPACE)
 
@@ -73,41 +66,27 @@ class ImageManagementTest extends BaseSpecification {
         "Data inputs are: "
 
         policyName                        | imageRegistry | imageRemote                      | imageTag     | note
-                                                                                                      | tryWithScannerV4
-        "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
-                                                                                                      | true
-        //intentionally use the same policy twice to make sure alert count does not increment
+                                                                                                              "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | ""
+                                                                                                              //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                      | "quay.io"     | "rhacs-eng/qa-multi-arch-nginx"  | "latest"     | "(repeat)"
-                                                                                                      | true
-        "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                      | false
-        // verify Azure registry
+                                                                                                              "90-Day Image Age"                | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                              // verify Azure registry
         // "90-Day Image Age"             | "stackroxacr.azurecr.io" | "nginx"               | "1.12"       | ""
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                      | false
-        "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                      | false
-        "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-                                                                                                      | false
-        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
-                                                                                                      | false
-        "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
-                                                                                                      | false
-    }
+                                                                                                              "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                              "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
+                                                                                                              "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
+                                                                                                              "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
+                                                                                                          }
 
     @Tag("BAT")
     def "Verify two consecutive latest tag image have different scans"() {
         given:
-        def compName = "eglibc"
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false)) {
-            compName = "libklibc"
-        }
-
-        // Scan an ubuntu 14:04 image we're pretending is latest
+                // Scan an ubuntu 14:04 image we're pretending is latest
         def img = ImageService.scanImage(
             "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
                 "@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30", false) // 14.04
-        assert img.scan.componentsList.stream().find { x -> x.name == compName } != null
+        assert img.scan.componentsList.stream().find { x -> x.name == "eglibc" } != null
 
         img = ImageService.scanImage(
             "quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest" +
@@ -115,7 +94,7 @@ class ImageManagementTest extends BaseSpecification {
 
         expect:
         assert img.scan != null
-        assert img.scan.componentsList.stream().find { x -> x.name == compName } == null
+        assert img.scan.componentsList.stream().find { x -> x.name == "eglibc" } == null
     }
 
     @Unroll
@@ -124,26 +103,21 @@ class ImageManagementTest extends BaseSpecification {
         when:
         def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
         then:
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false)) {
-            assert img.scan.operatingSystem == scannerV4Expected
-        } else {
-            assert img.scan.operatingSystem == scannerV2Expected
-        }
-
+        assert img.scan.operatingSystem == expected
         where:
         "Data inputs are: "
 
-        qaImageTag             | scannerV2Expected | scannerV4Expected
-        "nginx-1.19-alpine"    | "alpine:v3.13"    | "alpine:3.13"
-        "busybox-1-30"         | "busybox:1.30.1"  | "unknown"
-        "centos7-base"         | "centos:7"        | "unknown"
+        qaImageTag             | expected
+        "nginx-1.19-alpine"    | "alpine:v3.13"
+        "busybox-1-30"         | "busybox:1.30.1"
+        "centos7-base"         | "centos:7"
         // We explicitly do not support Fedora at this time.
-        FEDORA_28              | "unknown"         | "unknown"
-        "nginx-1-9"            | "debian:8"        | "debian:8"
-        "nginx-1-17-1"         | "debian:9"        | "debian:9"
-        "ubi9-slf4j"           | "rhel:9"          | "rhel:9"
-        "apache-server"        | "ubuntu:14.04"    | "ubuntu:14.04"
-        "ubuntu-22.10-openssl" | "ubuntu:22.10"    | "ubuntu:22.10"
+        FEDORA_28              | "unknown"
+        "nginx-1-9"            | "debian:8"
+        "nginx-1-17-1"         | "debian:9"
+        "ubi9-slf4j"           | "rhel:9"
+        "apache-server"        | "ubuntu:14.04"
+        "ubuntu-22.10-openssl" | "ubuntu:22.10"
     }
 
     @Unroll

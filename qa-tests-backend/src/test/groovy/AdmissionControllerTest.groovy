@@ -11,14 +11,12 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import services.CVEService
 import services.ClusterService
-import services.FeatureFlagService
 import services.ImageService
 import services.PolicyService
 import util.ApplicationHealth
 import util.ChaosMonkey
 import util.Timer
 
-import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
@@ -140,12 +138,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Config: #desc"() {
-        given:
-        if (scan) {
-            Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
-        }
-
-        when:
+                when:
         prepareChaosMonkey()
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
@@ -316,12 +309,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("Parallel")
     def "Verify Admission Controller Enforcement on Updates: #desc"() {
-        given:
-        if (scan) {
-            Assume.assumeFalse(FeatureFlagService.isFeatureFlagEnabled("ROX_SCANNER_V4", false))
-        }
-
-        when:
+                when:
         prepareChaosMonkey()
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
