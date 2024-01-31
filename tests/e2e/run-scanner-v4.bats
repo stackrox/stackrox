@@ -230,7 +230,6 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     info "Download and use earlier version of roxctl without Scanner V4 support"
-    info "Download https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl"
     curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     wget "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" -O "${EARLIER_ROXCTL_PATH}/roxctl-wget"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
