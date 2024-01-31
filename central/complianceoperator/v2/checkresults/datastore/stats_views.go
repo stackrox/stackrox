@@ -27,3 +27,7 @@ type ResultStatusCountByCluster struct {
 	ClusterID          string `db:"cluster_id"`
 	ClusterName        string `db:"cluster"`
 }
+
+type clusterStatsCount struct {
+	ClusterCount int `db:"cluster_id_count"`
+}
