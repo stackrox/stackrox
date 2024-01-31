@@ -230,7 +230,7 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     info "Download and use earlier version of roxctl without Scanner V4 support"
-    curl "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+    curl -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     wget -q "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" -O "${EARLIER_ROXCTL_PATH}/roxctl-wget"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
