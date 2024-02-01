@@ -305,7 +305,7 @@ function ScanConfigsTablePage({
                         )}
                         <TextContent>
                             <Text>
-                                The follow scan{' '}
+                                The following scan{' '}
                                 {`${pluralize('schedule', scanConfigsToDelete.length)}`} will be
                                 deleted.
                             </Text>
