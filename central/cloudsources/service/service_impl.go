@@ -6,6 +6,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	"github.com/stackrox/rox/central/convert/storagetov1"
+	"github.com/stackrox/rox/central/convert/v1tostorage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -89,7 +91,7 @@ func (s *serviceImpl) GetCloudSource(ctx context.Context, request *v1.GetCloudSo
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get cloud source %q", resourceID)
 	}
-	return &v1.GetCloudSourceResponse{CloudSource: toV1Proto(cloudSource)}, err
+	return &v1.GetCloudSourceResponse{CloudSource: storagetov1.CloudSource(cloudSource)}, err
 }
 
 // ListCloudSources returns all cloud sources matching the request query.
@@ -110,7 +112,7 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 	}
 	v1CloudSources := make([]*v1.CloudSource, 0, len(cloudSources))
 	for _, cs := range cloudSources {
-		v1CloudSources = append(v1CloudSources, toV1Proto(cs))
+		v1CloudSources = append(v1CloudSources, storagetov1.CloudSource(cs))
 	}
 	return &v1.ListCloudSourcesResponse{CloudSources: v1CloudSources}, nil
 }
@@ -126,12 +128,12 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	v1CloudSource.Id = uuid.NewV4().String()
-	storageCloudSource := toStorageProto(v1CloudSource)
+	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		_ = s.ds.DeleteCloudSource(ctx, storageCloudSource.GetId())
 		return nil, errors.Wrapf(err, "failed to post cloud source %q", v1CloudSource.GetName())
 	}
-	return &v1.CreateCloudSourceResponse{CloudSource: toV1Proto(storageCloudSource)}, nil
+	return &v1.CreateCloudSourceResponse{CloudSource: storagetov1.CloudSource(storageCloudSource)}, nil
 }
 
 // UpdateCloudSource creates or updates a cloud source.
@@ -141,7 +143,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 	if err := s.validateCloudSource(ctx, v1CloudSource, request.GetUpdateCredentials()); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
-	updatedCloudSource := toStorageProto(v1CloudSource)
+	updatedCloudSource := v1tostorage.CloudSource(v1CloudSource)
 
 	if !request.GetUpdateCredentials() {
 		if err := s.enrichWithStoredCredentials(ctx, updatedCloudSource); err != nil {

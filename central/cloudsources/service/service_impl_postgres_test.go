@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/cloudsources/datastore"
+	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -222,7 +223,7 @@ func (s *servicePostgresTestSuite) addCloudSources(num int) []*v1.CloudSource {
 	result := []*v1.CloudSource{}
 	for _, cs := range cloudSources {
 		s.Require().NoError(s.datastore.UpsertCloudSource(s.writeCtx, cs))
-		result = append(result, toV1Proto(cs))
+		result = append(result, storagetov1.CloudSource(cs))
 	}
 	return result
 }

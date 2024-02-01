@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/cloudsources/datastore/mocks"
+	"github.com/stackrox/rox/central/convert/storagetov1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -72,7 +73,9 @@ func (s *cloudSourcesTestSuite) TestGetCloudSource_Success() {
 	resp, err := s.service.GetCloudSource(s.ctx, &v1.GetCloudSourceRequest{Id: fakeID})
 
 	s.Require().NoError(err)
-	s.Equal(&v1.GetCloudSourceResponse{CloudSource: toV1Proto(fixtures.GetStorageCloudSource())}, resp)
+	s.Equal(&v1.GetCloudSourceResponse{
+		CloudSource: storagetov1.CloudSource(fixtures.GetStorageCloudSource()),
+	}, resp)
 }
 
 func (s *cloudSourcesTestSuite) TestGetCloudSource_Error() {
@@ -99,7 +102,7 @@ func (s *cloudSourcesTestSuite) TestListCloudSources_Success() {
 	resp, err := s.service.ListCloudSources(s.ctx, &v1.ListCloudSourcesRequest{})
 
 	s.Require().NoError(err)
-	expected := []*v1.CloudSource{toV1Proto(fixtures.GetStorageCloudSource())}
+	expected := []*v1.CloudSource{storagetov1.CloudSource(fixtures.GetStorageCloudSource())}
 	s.Equal(expected, resp.GetCloudSources())
 }
 
