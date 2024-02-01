@@ -16,9 +16,9 @@ message CloudSource {
   string id = 1;
   string name = 2;
   enum Type {
-    UNSPECIFIED = 0;
-    PALADIN_CLOUD = 1;
-    OCM = 2;
+    TYPE_UNSPECIFIED = 0;
+    TYPE_PALADIN_CLOUD = 1;
+    TYPE_OCM = 2;
   }
   Type type = 3;
 

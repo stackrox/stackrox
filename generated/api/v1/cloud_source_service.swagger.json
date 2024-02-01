@@ -95,9 +95,9 @@
             "items": {
               "type": "string",
               "enum": [
-                "UNSPECIFIED",
-                "PALADIN_CLOUD",
-                "OCM"
+                "TYPE_UNSPECIFIED",
+                "TYPE_PALADIN_CLOUD",
+                "TYPE_OCM"
               ]
             },
             "collectionFormat": "multi"
@@ -310,9 +310,9 @@
             "items": {
               "type": "string",
               "enum": [
-                "UNSPECIFIED",
-                "PALADIN_CLOUD",
-                "OCM"
+                "TYPE_UNSPECIFIED",
+                "TYPE_PALADIN_CLOUD",
+                "TYPE_OCM"
               ]
             },
             "collectionFormat": "multi"
@@ -420,11 +420,11 @@
     "v1CloudSourceType": {
       "type": "string",
       "enum": [
-        "UNSPECIFIED",
-        "PALADIN_CLOUD",
-        "OCM"
+        "TYPE_UNSPECIFIED",
+        "TYPE_PALADIN_CLOUD",
+        "TYPE_OCM"
       ],
-      "default": "UNSPECIFIED"
+      "default": "TYPE_UNSPECIFIED"
     },
     "v1CloudSourcesFilter": {
       "type": "object",

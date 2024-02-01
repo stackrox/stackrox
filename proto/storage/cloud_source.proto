@@ -11,9 +11,9 @@ message CloudSource {
   string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
   string name = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Integration Name,hidden"'];
   enum Type {
-    UNSPECIFIED = 0;
-    PALADIN_CLOUD = 1;
-    OCM = 2;
+    TYPE_UNSPECIFIED = 0;
+    TYPE_PALADIN_CLOUD = 1;
+    TYPE_OCM = 2;
   }
   Type type = 3 [(gogoproto.moretags) = 'search:"Integration Type,hidden"'];
 
