@@ -34,6 +34,8 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		centralReady:      concurrency.NewSignal(),
 		enricherTicker:    ticker,
 		finished:          &sync.WaitGroup{},
+		activeConnections: make(map[connection]*networkConnIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -92,6 +94,11 @@ func createConnectionPair() *connectionPair {
 	}
 }
 
+func (c *connectionPair) lastSeen(lastSeen timestamp.MicroTS) *connectionPair {
+	c.status.lastSeen = lastSeen
+	return c
+}
+
 func (c *connectionPair) containerID(id string) *connectionPair {
 	c.conn.containerID = id
 	return c
@@ -145,6 +152,11 @@ func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
 
 func (ep *endpointPair) containerID(id string) *endpointPair {
 	ep.endpoint.containerID = id
+	return ep
+}
+
+func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
+	ep.status.lastSeen = lastSeen
 	return ep
 }
 
