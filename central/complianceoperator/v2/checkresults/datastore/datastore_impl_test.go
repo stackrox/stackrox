@@ -41,6 +41,7 @@ var (
 			ClusterID:          testconsts.Cluster1,
 			ClusterName:        "cluster1",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -53,6 +54,7 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -65,6 +67,7 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -77,6 +80,7 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig2",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID2,
 		},
 	}
 
@@ -92,6 +96,7 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -104,6 +109,7 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 		{
 			PassCount:          0,
@@ -116,6 +122,7 @@ var (
 			ClusterID:          testconsts.Cluster3,
 			ClusterName:        "cluster3",
 			ScanConfigName:     "scanConfig2",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID2,
 		},
 	}
 
@@ -131,6 +138,7 @@ var (
 			ClusterID:          testconsts.Cluster2,
 			ClusterName:        "cluster2",
 			ScanConfigName:     "scanConfig1",
+			ScanConfigID:       fixtureconsts.ComplianceScanConfigID1,
 		},
 	}
 
@@ -636,9 +644,9 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	s.Require().NoError(err)
 	s.Require().Empty(checkResultIDs)
 
-	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID1, "scan 1")
+	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID1, "scanConfig1")
 	s.Require().NoError(err)
-	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID2, "scan 2")
+	_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_configuration_v2 (id, scanconfigname) values ($1, $2)", fixtureconsts.ComplianceScanConfigID2, "scanConfig2")
 	s.Require().NoError(err)
 
 	_, err = s.db.DB.Exec(context.Background(), "insert into clusters (id, name) values ($1, $2)", testconsts.Cluster1, "cluster1")
