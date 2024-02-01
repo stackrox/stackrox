@@ -11,16 +11,16 @@ type CheckStatusDropdownProps = {
 function CheckStatusDropdown({ searchFilter, onSelect }: CheckStatusDropdownProps) {
     const [checkStatusIsOpen, setCheckStatusIsOpen] = useState(false);
 
-    function onCveSeverityToggle(isOpen: boolean) {
+    function onCheckStatusToggle(isOpen: boolean) {
         setCheckStatusIsOpen(isOpen);
     }
 
     return (
         <Select
             variant="checkbox"
-            aria-label="CVE severity filter menu items"
-            toggleAriaLabel="CVE severity filter menu toggle"
-            onToggle={onCveSeverityToggle}
+            aria-label="Check status filter menu items"
+            toggleAriaLabel="Check status filter menu toggle"
+            onToggle={onCheckStatusToggle}
             onSelect={(event, selection) => {
                 const { checked } = event.target as HTMLInputElement;
                 onSelect('Compliance Check Status', checked, selection.toString());

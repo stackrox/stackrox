@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 import {
     Bullseye,
@@ -12,6 +12,7 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import omit from 'lodash/omit';
 
@@ -31,8 +32,9 @@ import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 import { searchValueAsArray } from 'utils/searchUtils';
 
+// TODO: move to a shared location
 import TableErrorComponent from 'Containers/Vulnerabilities/WorkloadCves/components/TableErrorComponent';
-import { SearchIcon } from '@patternfly/react-icons';
+
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getClusterResultsStatusObject } from '../compliance.coverage.utils';
 import CheckStatusDropdown from '../Components/CheckStatusDropdown';
@@ -80,9 +82,21 @@ function ClusterDetailsTable({
     );
     const { data: scanResultsCount } = useRestQuery(countQuery);
 
+    useEffect(() => {
+        const checkNameFilter = searchFilter['Compliance Check Name'];
+
+        if (typeof checkNameFilter === 'string') {
+            setSearchCheckValue(checkNameFilter);
+        } else {
+            setSearchCheckValue('');
+        }
+    }, [searchFilter]);
+
     function getStatusByClusterId(clusters: ClusterCheckStatus[]): ComplianceCheckStatus | null {
-        const cluster = clusters.find((cluster) => cluster.cluster.clusterId === clusterId);
-        return cluster ? cluster.status : null;
+        const matchingCluster = clusters.find(
+            (clusterCheckStatus) => clusterCheckStatus.cluster.clusterId === clusterId
+        );
+        return matchingCluster ? matchingCluster.status : null;
     }
 
     function onChangeSearchFilter(newFilter: SearchFilter) {
@@ -132,7 +146,7 @@ function ClusterDetailsTable({
                         <>
                             <Link to={scanConfigUrl}>{checkName}</Link>
                             <br />
-                            <small>{rationale}</small>
+                            <small className="pf-u-color-200">{rationale}</small>
                         </>
                     </Td>
                     <Td>
