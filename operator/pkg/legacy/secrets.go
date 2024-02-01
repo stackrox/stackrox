@@ -91,7 +91,7 @@ func getUseExisting(vals chartutil.Values, key string) ([]string, error) {
 	if !ok {
 		return nil, fmt.Errorf("unexpected value %q type: %T", key+".useExisting", value)
 	}
-	var secretStringSlice []string
+	secretStringSlice := make([]string, 0, len(secretsSlice))
 	for i, e := range secretsSlice {
 		var secret string
 		if secret, ok = e.(string); ok {

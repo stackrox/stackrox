@@ -91,7 +91,7 @@
 {{/* For backward compatibility, include those secrets which already exist.
      In manifest installation mode, include them unconditionally, for lack of a better way.
 */}}
-{{ range $secretName := (append $defaultSecretNames $secretResourceName) }}
+{{ range $secretName := append $defaultSecretNames $secretResourceName }}
   {{ $secret := dict }}
   {{ include "srox.safeLookup" (list $ $secret "v1" "Secret" $namespace $secretName) }}
   {{ if or (eq $._rox.env.installMethod "manifest") $secret.result }}
