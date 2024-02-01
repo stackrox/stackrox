@@ -40,7 +40,7 @@ subjects:
 - kind: ServiceAccount
   name: sensor
   namespace: {{ ._rox._namespace }}
-clusterRoleRef:
+roleRef:
   kind: ClusterRole
   name: {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
   apiGroup: rbac.authorization.k8s.io
