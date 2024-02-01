@@ -12,7 +12,7 @@ func GetStorageCloudSource() *storage.CloudSource {
 	return &storage.CloudSource{
 		Id:          "0925514f-3a33-5931-b431-756406e1a008",
 		Name:        "test-integration",
-		Type:        storage.CloudSource_PALADIN_CLOUD,
+		Type:        storage.CloudSource_TYPE_PALADIN_CLOUD,
 		Credentials: &storage.CloudSource_Credentials{Secret: "1234"},
 		Config: &storage.CloudSource_PaladinCloud{
 			PaladinCloud: &storage.PaladinCloudConfig{Endpoint: "https://apiqa.paladincloud.io"},
@@ -30,12 +30,12 @@ func GetManyStorageCloudSources(num int) []*storage.CloudSource {
 			Credentials: &storage.CloudSource_Credentials{Secret: "1234"},
 		}
 		if i%2 == 0 {
-			cloudSource.Type = storage.CloudSource_PALADIN_CLOUD
+			cloudSource.Type = storage.CloudSource_TYPE_PALADIN_CLOUD
 			cloudSource.Config = &storage.CloudSource_PaladinCloud{
 				PaladinCloud: &storage.PaladinCloudConfig{Endpoint: "https://apiqa.paladincloud.io"},
 			}
 		} else {
-			cloudSource.Type = storage.CloudSource_OCM
+			cloudSource.Type = storage.CloudSource_TYPE_OCM
 			cloudSource.Config = &storage.CloudSource_Ocm{
 				Ocm: &storage.OCMConfig{Endpoint: "https://api.stage.openshift.com"},
 			}
