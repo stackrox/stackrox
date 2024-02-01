@@ -26,6 +26,8 @@ var (
 	}
 )
 
+// Updater represents a known-distribution updater.
+// An Updater reaches out to the DB periodically to fetch the currently known distributions.
 type Updater struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -38,6 +40,7 @@ type Updater struct {
 	mutex sync.RWMutex
 }
 
+// New creates a new Updater.
 func New(ctx context.Context, store postgres.MatcherStore) (*Updater, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	u := &Updater{
@@ -49,6 +52,7 @@ func New(ctx context.Context, store postgres.MatcherStore) (*Updater, error) {
 	return u, nil
 }
 
+// Known returns the currently known distributions.
 func (u *Updater) Known() []claircore.Distribution {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
@@ -57,6 +61,7 @@ func (u *Updater) Known() []claircore.Distribution {
 	return known
 }
 
+// Start begins the update proces.
 func (u *Updater) Start() error {
 	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/distribution/Updater.Start")
 
@@ -100,6 +105,7 @@ func (u *Updater) update(ctx context.Context) error {
 	return nil
 }
 
+// Stop stops the update process.
 func (u *Updater) Stop() error {
 	u.cancel()
 	return nil

@@ -281,8 +281,8 @@ func TestNotes(t *testing.T) {
 		expected []storage.ImageScan_Note
 	}{
 		{
-			os:       "unknown",
-			report:   &v4.VulnerabilityReport{
+			os: "unknown",
+			report: &v4.VulnerabilityReport{
 				Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
 			},
 			expected: []storage.ImageScan_Note{storage.ImageScan_OS_UNAVAILABLE, storage.ImageScan_PARTIAL_SCAN_DATA},

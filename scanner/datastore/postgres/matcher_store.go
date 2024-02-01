@@ -25,7 +25,7 @@ type matcherStore struct {
 	pool *pgxpool.Pool
 }
 
-// InitPostgresMatcherStore initializes a matcher metadata datastore.
+// InitPostgresMatcherStore initializes a matcher datastore.
 func InitPostgresMatcherStore(ctx context.Context, pool *pgxpool.Pool, doMigration bool) (MatcherStore, error) {
 	if pool == nil {
 		return nil, errors.New("pool must be non-nil")

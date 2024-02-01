@@ -74,7 +74,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	// Skip update when locking fails.
-	err := u.update(context.Background())
+	err := u.Update(context.Background())
 	assert.NoError(t, err)
 
 	locker.fail = false
@@ -86,14 +86,14 @@ func TestUpdate(t *testing.T) {
 	metadataStore.EXPECT().
 		SetLastVulnerabilityUpdate(gomock.Any(), now).
 		Return(nil)
-	err = u.update(context.Background())
+	err = u.Update(context.Background())
 	assert.NoError(t, err)
 
 	// No update.
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(time.Minute), nil)
-	err = u.update(context.Background())
+	err = u.Update(context.Background())
 	assert.NoError(t, err)
 }
 
