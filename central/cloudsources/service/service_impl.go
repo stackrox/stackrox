@@ -120,7 +120,7 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 ) (*v1.CreateCloudSourceResponse, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource.GetId() != "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when posting a new cloud source")
+		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when creating a new cloud source")
 	}
 	if err := s.validateCloudSource(ctx, v1CloudSource, true); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -128,7 +128,7 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	v1CloudSource.Id = uuid.NewV4().String()
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
-		return nil, errors.Wrapf(err, "failed to post cloud source %q", v1CloudSource.GetName())
+		return nil, errors.Wrapf(err, "failed to create cloud source %q", v1CloudSource.GetName())
 	}
 	return &v1.CreateCloudSourceResponse{CloudSource: storagetov1.CloudSource(storageCloudSource)}, nil
 }
@@ -154,7 +154,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 	}
 
 	if err := s.ds.UpsertCloudSource(ctx, updatedCloudSource); err != nil {
-		return nil, errors.Wrapf(err, "failed to put cloud source %q", v1CloudSource.GetId())
+		return nil, errors.Wrapf(err, "failed to update cloud source %q", v1CloudSource.GetId())
 	}
 	return &v1.Empty{}, nil
 }
