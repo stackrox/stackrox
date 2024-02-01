@@ -139,7 +139,7 @@ message EmbeddedImageScanComponent {
     repeated string dependencies = 2;
   }
   // Values are cleared after moving to cache, remove them from the grpc return as well
-  repeated Executable executables = 12 [(gogoproto.jsontag) = "-"];
+  repeated Executable executables = 12; // @gotags: json:"-"
 }
 
 enum SourceType {
