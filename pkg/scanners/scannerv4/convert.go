@@ -178,12 +178,12 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 			if v2.GetBaseScore() != 0.0 {
 				c.Score = v2.GetBaseScore()
 			}
-			c.Severity = cvssv2.Severity(v2.GetBaseScore())
+			c.Severity = cvssv2.Severity(c.Score)
 			vuln.CvssV2 = c
 			// This sets the top level score for use in policies. It will be overwritten if
 			// v3 exists.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vuln.Cvss = v2.GetBaseScore()
+			vuln.Cvss = c.Score
 		} else {
 			errList.AddError(fmt.Errorf("v2: %w", err))
 		}
@@ -198,11 +198,11 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 			if v3.GetBaseScore() != 0.0 {
 				c.Score = v3.GetBaseScore()
 			}
-			c.Severity = cvssv3.Severity(v3.GetBaseScore())
+			c.Severity = cvssv3.Severity(c.Score)
 			vuln.CvssV3 = c
 			// Overwrite V2 if set.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vuln.Cvss = v3.GetBaseScore()
+			vuln.Cvss = c.Score
 		} else {
 			errList.AddError(fmt.Errorf("v3: %w", err))
 		}
