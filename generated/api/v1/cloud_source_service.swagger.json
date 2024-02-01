@@ -480,7 +480,8 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string"
+          "type": "string",
+          "title": "Endpoint to the OpenShift API server. Https is assumed if no\nprotocol is specified. Example: https://api.openshift.com"
         }
       },
       "description": "OCMConfig provides information required to fetch discovered clusters from\nthe OpenShift cluster manager."
@@ -512,7 +513,8 @@
       "type": "object",
       "properties": {
         "endpoint": {
-          "type": "string"
+          "type": "string",
+          "title": "Endpoint to the Paladin Cloud API server. Https is assumed if no\nprotocol is specified. Example: https://apiqa.paladincloud.io"
         }
       },
       "description": "PaladinCloudConfig provides information required to fetch discovered\nclusters from Paladin Cloud."

@@ -286,6 +286,8 @@ func (m *CloudSource_Credentials) Clone() *CloudSource_Credentials {
 // PaladinCloudConfig provides information required to fetch discovered
 // clusters from Paladin Cloud.
 type PaladinCloudConfig struct {
+	// Endpoint to the Paladin Cloud API server. Https is assumed if no
+	// protocol is specified. Example: https://apiqa.paladincloud.io
 	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -348,6 +350,8 @@ func (m *PaladinCloudConfig) Clone() *PaladinCloudConfig {
 // OCMConfig provides information required to fetch discovered clusters from
 // the OpenShift cluster manager.
 type OCMConfig struct {
+	// Endpoint to the OpenShift API server. Https is assumed if no
+	// protocol is specified. Example: https://api.openshift.com
 	Endpoint             string   `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
