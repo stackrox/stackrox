@@ -96,7 +96,7 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 
 // AreProfilesEqual returns true if the two profiles are equal
 func AreProfilesEqual(ProfileNameA string, ProfileNameB string) bool {
-	// we use hasPrefix to handle the comparesion of profiles with version string in the name
+	// we use hasPrefix to handle the comparison of profiles with version string in the name
 	// first get the shorter profile name
 	var shorterProfileName string
 	var longerProfileName string
