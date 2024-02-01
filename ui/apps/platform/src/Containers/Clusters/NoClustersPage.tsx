@@ -18,10 +18,12 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getProductBranding } from 'constants/productBranding';
+import useMetadata from 'hooks/useMetadata';
+import { fetchClusterInitBundles } from 'services/ClustersService';
+import { getVersionedDocs } from 'utils/versioning';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { clustersBasePath, clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
+import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
 /*
  * Comments about data flow:
@@ -44,6 +46,8 @@ function NoClustersPage(): ReactElement {
     const [errorMessage, setErrorMessage] = useState('');
     const [initBundlesCount, setInitBundlesCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+
+    const { version } = useMetadata();
 
     const { basePageTitle } = getProductBranding();
     const textForSuccessAlert = `You have successfully deployed a ${basePageTitle} platform. Now you can configure the clusters you want to secure.`;
@@ -108,15 +112,36 @@ function NoClustersPage(): ReactElement {
                                         <Text component="p">
                                             You have successfully created cluster init bundles.
                                         </Text>
-                                        <ExternalLink>
-                                            <a
-                                                href={clustersSecureClusterPath}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                Review init bundle installation methods
-                                            </a>
-                                        </ExternalLink>
+                                        {version && (
+                                            <>
+                                                <ExternalLink>
+                                                    <a
+                                                        href={getVersionedDocs(
+                                                            version,
+                                                            'installing/installing_ocp/install-secured-cluster-ocp.html'
+                                                        )}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        Installing secured cluster services on Red
+                                                        Hat OpenShift
+                                                    </a>
+                                                </ExternalLink>
+                                                <ExternalLink>
+                                                    <a
+                                                        href={getVersionedDocs(
+                                                            version,
+                                                            'installing/installing_other/install-secured-cluster-other.html'
+                                                        )}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        Installing secured cluster services on other
+                                                        platforms
+                                                    </a>
+                                                </ExternalLink>
+                                            </>
+                                        )}
                                     </FlexItem>
                                 )}
                             </Flex>
