@@ -472,7 +472,13 @@ function launch_central {
           launch_service "${unzip_dir}" scanner
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
             echo "Deploying ScannerV4..."
-            launch_service "${unzip_dir}" scanner-v4
+            if [[ -d "${unzip_dir}/scanner-v4" ]]; then
+              launch_service "${unzip_dir}" scanner-v4
+            else
+              echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
+              echo >&2 "WARNING: Scanner V4 will not be deployed now."
+              echo >&2 "Possible reason for this: the roxctl in PATH does not support Scanner V4."
+            fi
           fi
 
           if [[ -n "$CI" ]]; then

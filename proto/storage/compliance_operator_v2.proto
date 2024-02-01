@@ -166,9 +166,11 @@ message ComplianceOperatorCheckResultV2 {
   repeated string warnings = 19;
 }
 
+//Next Tag: 4
+//Scan Status object
 message ScanStatus {
   string phase = 1;
-  string result = 2;
+  string result = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Result"'];
   string warnings = 3;
 }
 

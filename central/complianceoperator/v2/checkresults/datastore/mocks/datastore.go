@@ -72,6 +72,21 @@ func (mr *MockDataStoreMockRecorder) ComplianceClusterStats(ctx, query any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceClusterStats", reflect.TypeOf((*MockDataStore)(nil).ComplianceClusterStats), ctx, query)
 }
 
+// ComplianceClusterStatsCount mocks base method.
+func (m *MockDataStore) ComplianceClusterStatsCount(ctx context.Context, query *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ComplianceClusterStatsCount", ctx, query)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ComplianceClusterStatsCount indicates an expected call of ComplianceClusterStatsCount.
+func (mr *MockDataStoreMockRecorder) ComplianceClusterStatsCount(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceClusterStatsCount", reflect.TypeOf((*MockDataStore)(nil).ComplianceClusterStatsCount), ctx, query)
+}
+
 // CountCheckResults mocks base method.
 func (m *MockDataStore) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
