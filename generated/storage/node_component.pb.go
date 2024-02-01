@@ -25,7 +25,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type NodeComponent struct {
-	Id        string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`
+	Id        string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"` // This field is composite id over name, version, and operating system.
 	Name      string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`
 	Version   string  `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`
 	Priority  int64   `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`

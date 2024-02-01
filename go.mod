@@ -14,7 +14,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring v1.7.0
+	github.com/RoaringBitmap/roaring v1.9.0
 	github.com/Shopify/toxiproxy/v2 v2.7.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.6.6
@@ -44,7 +44,7 @@ require (
 	github.com/google/certificate-transparency-go v1.1.7
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
-	github.com/google/go-containerregistry v0.18.0
+	github.com/google/go-containerregistry v0.19.0
 	github.com/googleapis/gax-go/v2 v2.12.0
 	github.com/gorilla/schema v1.2.1
 	github.com/graph-gophers/graphql-go v1.5.0
@@ -437,7 +437,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20231111002313-57e262e4797e
 	// we need https://github.com/fullsailor/pkcs7/pull/42 to be merged
 	github.com/fullsailor/pkcs7 => github.com/stackrox/pkcs7 v0.0.0-20220914154527-cfdb0aa47179
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
+	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20240125102033-f240d997f1d1
 
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20230714151239-78b1f5f70b8a
 

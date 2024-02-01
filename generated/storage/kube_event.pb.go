@@ -135,11 +135,11 @@ type KubernetesEvent struct {
 	// Extended arguments. May not be available for pod exec and port forward events.
 	// These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
 	User                 *KubernetesEvent_User           `protobuf:"bytes,15,opt,name=user,proto3" json:"user,omitempty"`
-	ImpersonatedUser     *KubernetesEvent_User           `protobuf:"bytes,16,opt,name=impersonated_user,json=impersonatedUser,proto3" json:"impersonated_user,omitempty" policy:",ignore"`
+	ImpersonatedUser     *KubernetesEvent_User           `protobuf:"bytes,16,opt,name=impersonated_user,json=impersonatedUser,proto3" json:"impersonated_user,omitempty" policy:",ignore"` // this field is optional if the request wasn't an impersonated request
 	SourceIps            []string                        `protobuf:"bytes,17,rep,name=source_ips,json=sourceIps,proto3" json:"source_ips,omitempty" policy:"Source IP Address"`
 	UserAgent            string                          `protobuf:"bytes,18,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty" policy:"User Agent"`
 	ResponseStatus       *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus,proto3" json:"response_status,omitempty"`
-	RequestUri           string                          `protobuf:"bytes,20,opt,name=request_uri,json=requestUri,proto3" json:"request_uri,omitempty"`
+	RequestUri           string                          `protobuf:"bytes,20,opt,name=request_uri,json=requestUri,proto3" json:"request_uri,omitempty"` // Field will not be used for policy detection
 	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
 	XXX_unrecognized     []byte                          `json:"-"`
 	XXX_sizecache        int32                           `json:"-"`

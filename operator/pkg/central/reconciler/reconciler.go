@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	centralTranslation "github.com/stackrox/rox/operator/pkg/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	"github.com/stackrox/rox/operator/pkg/legacy"
 	"github.com/stackrox/rox/operator/pkg/proxy"
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
@@ -60,7 +61,9 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		mgr, platform.CentralGVK, image.CentralServicesChartPrefix,
 		translation.WithEnrichment(
 			centralTranslation.New(mgr.GetClient()),
-			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger())),
+			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
+			legacy.NewImagePullSecretReferenceInjector(mgr.GetClient(), "imagePullSecrets",
+				"stackrox", "stackrox-scanner", "stackrox-scanner-v4")),
 		opts...,
 	)
 }

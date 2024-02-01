@@ -18,6 +18,20 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18840: Sunburst widgets in the Compliance section have been removed (deprecation announced in version 4.2 release notes)
 - The Docker CIS benchmark has been removed as announced in the 4.2 release notes.
 - ROX-12982: All custom `stackrox-*` SecurityContextConstraints (SCC) have been replaced with default SCCs (deprecation announced in 4.1 release notes).
+- ROX-9156: In Helm and Operator installation modes, references to image pull secrets with certain names are no longer
+  unconditionally added to service accounts. This is done to avoid causing log spam for kubelet due to non-existing secrets.
+
+  References will still be added for backwards compatibility if during installation or upgrade the secrets in question
+  are found to actually exist. The names of these special secrets are:
+  - for central components: `stackrox`, `stackrox-scanner`,
+  - for secured cluster components: `stackrox`, `stackrox-scanner`,  `secured-cluster-services-main`,
+    `secured-cluster-services-collector`, `collector-stackrox`.
+
+  We recommend to explicitly list image pull secrets that are needed, if any:
+  - for Helm-based installs: via the `imagePullSecrets.useExisting` Helm value
+  - for operator-based installs: via the `spec.imagePullSecrets` field in stackrox custom resources
+  This may be necessary in case the Helm chart is applied in an environment where cluster lookup is unavailable
+  (such as a CD pipeline like ArgoCD).
 
 ### Deprecated Features
 - The following search terms will be disabled in the next release and removed from the deployment context in 2 releases:

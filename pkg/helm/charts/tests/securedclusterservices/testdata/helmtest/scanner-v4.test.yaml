@@ -1,6 +1,4 @@
 values:
-  imagePullSecrets:
-    allowNone: true
   monitoring:
     openshift:
       enabled: false
@@ -12,12 +10,14 @@ server:
 tests:
 - name: "scanner v4 indexer mounts additional-ca-sensor secret"
   set:
+    imagePullSecrets.allowNone: true
     scannerV4.disable: false
   expect: |
     .deployments["scanner-v4-indexer"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
     container(.deployments["scanner-v4-indexer"]; "indexer") | .volumeMounts[] | select(.name == "additional-ca-volume") | assertThat(. != null)
 - name: "scanner v4 with default settings with indexer enabled"
   set:
+    imagePullSecrets.allowNone: true
     scannerV4.disable: false
   expect: |
     container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
@@ -31,6 +31,8 @@ tests:
       env.openshift: 3
 
 - name: "scanner V4 disabled should not be installed by default"
+  set:
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
     .deployments["scanner-v4-db"] | assertThat(. == null)
@@ -38,6 +40,7 @@ tests:
 - name: "scanner V4 enabled should only deploy indexer and db"
   set:
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
@@ -46,6 +49,7 @@ tests:
 - name: "no matcher resources should exist"
   set:
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["scanner-v4-matcher"] | assertThat(. == null)
     .secrets["scanner-v4-matcher-tls"] | assertThat(. == null)
@@ -57,6 +61,7 @@ tests:
 - name: "scanner can override image config"
   set:
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
     container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == "custom.io/custom-scanner-db:1.2.3")
@@ -81,37 +86,72 @@ tests:
           name: custom-scanner-db
 
 - name: "scanner V4 service account can access image pull secrets"
+  server:
+    objects:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner-v4
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: collector-stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-main
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-collector
+        namespace: stackrox
   set:
     scannerV4.disable: false
   expect: |
-    .serviceaccounts["scanner-v4"] | assertThat(. != null)
-    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "secured-cluster-services-main")
-    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox")
-    .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "stackrox-scanner-v4")
+    assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
+    assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
   tests:
   - name: "when authenticating in image registry with user and password"
     set:
       imagePullSecrets.username: "imagePullUser"
       imagePullSecrets.password: "imagePullPassword"
     expect: |
-      .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 3)
+      .serviceaccounts["scanner-v4"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
       .secrets["secured-cluster-services-main"] | assertThat(. != null)
-  - name: "no secret is created"
+  - name: "when username/password are not provided, no secret is created"
     expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
     tests:
+    - name: "by default (allowNone is false), chart fails"
+      expectError: true
+      expect: |
+        .error | assertThat(contains("You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred."))
     - name: "when allowNone is true"
       set:
         imagePullSecrets.allowNone: true
-      expect: .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 3)
+      expect: .serviceaccounts["scanner-v4"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
     - name: "when using existing secrets"
       set:
         imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
       expect: |
-        .serviceaccounts["scanner-v4"] | .imagePullSecrets | assertThat(length == 5)
-        .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "existing-secret1")
-        .serviceaccounts["scanner-v4"] | .imagePullSecrets[] | select(.name == "existing-secret2")
+        .serviceaccounts["scanner-v4"] | saOnlyRefersTo([
+          "secured-cluster-services-main", "stackrox", "stackrox-scanner-v4", "existing-secret1", "existing-secret2"])
 
 - name: "sensor only connects to local scanner V4 when it is enabled"
+  set:
+    imagePullSecrets.allowNone: true
   tests:
   - name: "local scanner enabled"
     set:
@@ -130,6 +170,7 @@ tests:
   set:
     allowNonstandardNamespace: true
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     .deployments["sensor"].spec.template.spec.containers[0].env[] |
       select(.name == "ROX_SCANNER_V4_GRPC_ENDPOINT") | assertThat(.value == "scanner-v4-indexer.custom-ns.svc:8443")
@@ -138,6 +179,8 @@ tests:
   values:
     scannerV4:
       disable: false
+    imagePullSecrets:
+      allowNone: true
     customize:
       envVars:
         FOO: bar
@@ -148,6 +191,8 @@ tests:
   values:
     scanner:
       disable: false
+    imagePullSecrets:
+      allowNone: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. != null)
 
@@ -157,12 +202,15 @@ tests:
       disable: true
     scanner:
       disable: false
+    imagePullSecrets:
+      allowNone: true
   expect: |
     .deployments["scanner-v4-indexer"] | assertThat(. == null)
 
 - name: "indexer should be using sensor endpoints when deployed as part of secured-cluster-services"
   set:
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe")
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=name2repos")
@@ -170,6 +218,7 @@ tests:
 - name: "indexer should not allow ingress from central and matcher when deployed as a secured-cluster-service"
   set:
     scannerV4.disable: false
+    imagePullSecrets.allowNone: true
   expect: |
     .networkpolicys["scanner-v4-indexer"].spec.ingress | assertThat(length == 1)
     .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)

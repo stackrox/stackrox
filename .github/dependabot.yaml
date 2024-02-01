@@ -124,6 +124,22 @@ updates:
       prefix: chore
 
   - package-ecosystem: 'gomod'
+    directory: '/operator/tools/kuttl/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
     directory: '/scanner/tools/'
     schedule:
       interval: 'weekly'

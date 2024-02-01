@@ -302,7 +302,7 @@ func (m *CommandLine) Clone() *CommandLine {
 type CommandLine_Args struct {
 	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Values               []string `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
-	File                 *File    `protobuf:"bytes,3,opt,name=file,proto3" json:"file,omitempty"`
+	File                 *File    `protobuf:"bytes,3,opt,name=file,proto3" json:"file,omitempty"` // This will be set if it looks like the value defines a file and we found the file
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
