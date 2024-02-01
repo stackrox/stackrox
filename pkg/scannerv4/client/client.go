@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -106,7 +107,12 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		),
 	}
 
-	return clientconn.AuthenticatedGRPCConnection(ctx, o.address, o.mTLSSubject, connOpts...)
+	// Replace HTTP(S) with DNS for client-side load balancing.
+	address := strings.TrimPrefix(o.address, "https://")
+	address = strings.TrimPrefix(address, "http://")
+	address = "dns:///" + address
+
+	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
