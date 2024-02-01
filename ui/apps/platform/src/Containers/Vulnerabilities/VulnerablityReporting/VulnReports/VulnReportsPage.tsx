@@ -45,6 +45,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { useWatchLastSnapshotForReports } from 'Containers/Vulnerabilities/VulnerablityReporting/api/useWatchLastSnapshotForReports';
 
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
@@ -54,7 +55,6 @@ import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
-import DeleteModal from '../components/DeleteModal';
 
 const CreateReportsButton = () => {
     return (
