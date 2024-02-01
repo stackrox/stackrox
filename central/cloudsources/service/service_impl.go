@@ -237,17 +237,17 @@ func (s *serviceImpl) validateUniqueName(ctx context.Context, cloudSource *v1.Cl
 
 func validateType(cloudSource *v1.CloudSource) error {
 	cloudSourceType := cloudSource.GetType()
-	if cloudSourceType == v1.CloudSource_UNSPECIFIED {
+	if cloudSourceType == v1.CloudSource_TYPE_UNSPECIFIED {
 		return errors.New("cloud source type must be specified")
 	}
 	switch cloudSource.GetConfig().(type) {
 	case *v1.CloudSource_PaladinCloud:
-		if cloudSourceType != v1.CloudSource_PALADIN_CLOUD {
+		if cloudSourceType != v1.CloudSource_TYPE_PALADIN_CLOUD {
 			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
 		}
 		return nil
 	case *v1.CloudSource_Ocm:
-		if cloudSourceType != v1.CloudSource_OCM {
+		if cloudSourceType != v1.CloudSource_TYPE_OCM {
 			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
 		}
 		return nil

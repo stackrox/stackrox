@@ -85,7 +85,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 	// 3. Filter cloud sources based on the type.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Types: []v1.CloudSource_Type{v1.CloudSource_PALADIN_CLOUD},
+			Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD},
 		},
 	})
 	s.NoError(err)
@@ -131,7 +131,7 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	// 3. Filter cloud sources based on the type.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
 		Filter: &v1.CloudSourcesFilter{
-			Types: []v1.CloudSource_Type{v1.CloudSource_PALADIN_CLOUD},
+			Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD},
 		},
 	})
 	s.NoError(err)

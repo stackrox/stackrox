@@ -150,7 +150,7 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
 
 	// Invalid Type.
 	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Type = v1.CloudSource_UNSPECIFIED
+	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
 	resp, err = s.service.PostCloudSource(s.ctx,
 		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
 	)
@@ -229,7 +229,7 @@ func (s *cloudSourcesTestSuite) TestPutCloudSource_Validate() {
 
 	// Invalid Type.
 	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Type = v1.CloudSource_UNSPECIFIED
+	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
 	resp, err = s.service.PutCloudSource(s.ctx,
 		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
@@ -305,7 +305,7 @@ func TestCloudSourcesQueryBuilder(t *testing.T) {
 	t.Parallel()
 	filter := &v1.CloudSourcesFilter{
 		Names: []string{"my-integration"},
-		Types: []v1.CloudSource_Type{v1.CloudSource_PALADIN_CLOUD, v1.CloudSource_OCM},
+		Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD, v1.CloudSource_TYPE_OCM},
 	}
 	queryBuilder := getQueryBuilderFromFilter(filter)
 
@@ -313,7 +313,7 @@ func TestCloudSourcesQueryBuilder(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, rawQuery, `Integration Name:"my-integration"`)
-	assert.Contains(t, rawQuery, `Integration Type:"OCM","PALADIN_CLOUD"`)
+	assert.Contains(t, rawQuery, `Integration Type:"TYPE_OCM","TYPE_PALADIN_CLOUD"`)
 }
 
 func TestCloudSourcesQueryBuilderNilFilter(t *testing.T) {
