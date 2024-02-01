@@ -4,4 +4,5 @@ rule_data_custom:
   - registry.access.redhat.com/
   - registry.redhat.io/
   - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
+  # TODO(ROX-22195): drop a dependency on centos image
   - quay.io/centos/centos
