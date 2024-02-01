@@ -1992,7 +1992,7 @@ func (m *ClusterUpgradeStatus) Clone() *ClusterUpgradeStatus {
 type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 	Active               bool                                                         `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
 	Id                   string                                                       `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	TargetVersion        string                                                       `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"`
+	TargetVersion        string                                                       `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"` // only relevant if type == Upgrade
 	UpgraderImage        string                                                       `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage,proto3" json:"upgrader_image,omitempty"`
 	InitiatedAt          *types.Timestamp                                             `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt,proto3" json:"initiated_at,omitempty"`
 	Progress             *UpgradeProgress                                             `protobuf:"bytes,6,opt,name=progress,proto3" json:"progress,omitempty"`
@@ -2184,7 +2184,7 @@ func (m *UpgradeProgress) Clone() *UpgradeProgress {
 // For internal use only
 type AuditLogFileState struct {
 	CollectLogsSince     *types.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince,proto3" json:"collect_logs_since,omitempty"`
-	LastAuditId          string           `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"`
+	LastAuditId          string           `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`

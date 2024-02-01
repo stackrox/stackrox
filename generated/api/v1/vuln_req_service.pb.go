@@ -767,7 +767,7 @@ func (m *DenyVulnRequestResponse) Clone() *DenyVulnRequestResponse {
 type UpdateVulnRequest struct {
 	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Comment              string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	Expiry               *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	Expiry               *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"` // Currently, only expiry can be updated
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`

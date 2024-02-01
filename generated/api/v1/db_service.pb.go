@@ -342,10 +342,10 @@ type DBRestoreProcessStatus struct {
 	Metadata             *DBRestoreProcessMetadata          `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	AttemptId            string                             `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
 	State                DBRestoreProcessStatus_State       `protobuf:"varint,3,opt,name=state,proto3,enum=v1.DBRestoreProcessStatus_State" json:"state,omitempty"`
-	ResumeInfo           *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo,proto3" json:"resume_info,omitempty"`
-	Error                string                             `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
-	BytesRead            int64                              `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead,proto3" json:"bytes_read,omitempty"`
-	FilesProcessed       int64                              `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed,proto3" json:"files_processed,omitempty"`
+	ResumeInfo           *DBRestoreProcessStatus_ResumeInfo `protobuf:"bytes,4,opt,name=resume_info,json=resumeInfo,proto3" json:"resume_info,omitempty"`              // only populated if state is PAUSED
+	Error                string                             `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`                                          // only populated when state is COMPLETED
+	BytesRead            int64                              `protobuf:"varint,6,opt,name=bytes_read,json=bytesRead,proto3" json:"bytes_read,omitempty"`                // Payload bytes read so far (approximate)
+	FilesProcessed       int64                              `protobuf:"varint,7,opt,name=files_processed,json=filesProcessed,proto3" json:"files_processed,omitempty"` // Files processed so far (approximate)
 	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
 	XXX_unrecognized     []byte                             `json:"-"`
 	XXX_sizecache        int32                              `json:"-"`
