@@ -146,7 +146,6 @@ export_test_environment() {
     ci_export ROX_ADMINISTRATION_EVENTS "${ROX_ADMINISTRATION_EVENTS:-true}"
     ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
-    ci_export ROX_SCANNER_V4_SUPPORT "${ROX_SCANNER_V4_SUPPORT:-true}"
     ci_export ROX_CLOUD_CREDENTIALS "${ROX_CLOUD_CREDENTIALS:-true}"
     ci_export ROX_SCANNER_V4 "${ROX_SCANNER_V4:-false}"
     ci_export ROX_CLOUD_SOURCES "${ROX_CLOUD_SOURCES:-true}"
@@ -262,7 +261,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CLOUD_SOURCES'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCANNER_V4'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "'"${ROX_SCANNER_V4:-false}"'"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
