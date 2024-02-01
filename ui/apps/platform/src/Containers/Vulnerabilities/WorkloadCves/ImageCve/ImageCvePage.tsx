@@ -372,7 +372,7 @@ function ImageCvePage() {
                         <WorkloadTableToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
-                                'CVE ID': exactCveIdSearchRegex,
+                                CVE: exactCveIdSearchRegex,
                             }}
                             onFilterChange={() => setPage(1)}
                         />
