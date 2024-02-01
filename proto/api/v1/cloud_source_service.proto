@@ -87,15 +87,15 @@ message ListCloudSourcesResponse {
   repeated CloudSource cloud_sources = 1;
 }
 
-message PostCloudSourceRequest {
+message CreateCloudSourceRequest {
   CloudSource cloud_source = 1;
 }
 
-message PostCloudSourceResponse {
+message CreateCloudSourceResponse {
   CloudSource cloud_source = 1;
 }
 
-message PutCloudSourceRequest {
+message UpdateCloudSourceRequest {
   CloudSource cloud_source = 1;
   // If true, cloud_source must include valid credentials.
   // If false, the resource must already exist and
@@ -131,16 +131,16 @@ service CloudSourcesService {
     option (google.api.http) = {get: "/v1/cloud-sources"};
   }
 
-  // PostCloudSource creates a cloud source.
-  rpc PostCloudSource(PostCloudSourceRequest) returns (PostCloudSourceResponse) {
+  // CreateCloudSource creates a cloud source.
+  rpc CreateCloudSource(CreateCloudSourceRequest) returns (CreateCloudSourceResponse) {
     option (google.api.http) = {
       post: "/v1/cloud-sources"
       body: "*"
     };
   }
 
-  // PutCloudSource creates or replaces a cloud source.
-  rpc PutCloudSource(PutCloudSourceRequest) returns (Empty) {
+  // UpdateCloudSource creates or replaces a cloud source.
+  rpc UpdateCloudSource(UpdateCloudSourceRequest) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/cloud-sources/{cloud_source.id}"
       body: "*"

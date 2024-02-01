@@ -108,13 +108,13 @@
         ]
       },
       "post": {
-        "summary": "PostCloudSource creates a cloud source.",
-        "operationId": "CloudSourcesService_PostCloudSource",
+        "summary": "CreateCloudSource creates a cloud source.",
+        "operationId": "CloudSourcesService_CreateCloudSource",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1PostCloudSourceResponse"
+              "$ref": "#/definitions/v1CreateCloudSourceResponse"
             }
           },
           "default": {
@@ -130,7 +130,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1PostCloudSourceRequest"
+              "$ref": "#/definitions/v1CreateCloudSourceRequest"
             }
           }
         ],
@@ -174,8 +174,8 @@
     },
     "/v1/cloud-sources/{cloudSource.id}": {
       "put": {
-        "summary": "PutCloudSource creates or replaces a cloud source.",
-        "operationId": "CloudSourcesService_PutCloudSource",
+        "summary": "UpdateCloudSource creates or replaces a cloud source.",
+        "operationId": "CloudSourcesService_UpdateCloudSource",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -202,7 +202,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1PutCloudSourceRequest"
+              "$ref": "#/definitions/v1UpdateCloudSourceRequest"
             }
           }
         ],
@@ -454,6 +454,22 @@
         }
       }
     },
+    "v1CreateCloudSourceRequest": {
+      "type": "object",
+      "properties": {
+        "cloudSource": {
+          "$ref": "#/definitions/v1CloudSource"
+        }
+      }
+    },
+    "v1CreateCloudSourceResponse": {
+      "type": "object",
+      "properties": {
+        "cloudSource": {
+          "$ref": "#/definitions/v1CloudSource"
+        }
+      }
+    },
     "v1Empty": {
       "type": "object"
     },
@@ -519,34 +535,6 @@
       },
       "description": "PaladinCloudConfig provides information required to fetch discovered\nclusters from Paladin Cloud."
     },
-    "v1PostCloudSourceRequest": {
-      "type": "object",
-      "properties": {
-        "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
-        }
-      }
-    },
-    "v1PostCloudSourceResponse": {
-      "type": "object",
-      "properties": {
-        "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
-        }
-      }
-    },
-    "v1PutCloudSourceRequest": {
-      "type": "object",
-      "properties": {
-        "cloudSource": {
-          "$ref": "#/definitions/v1CloudSource"
-        },
-        "updateCredentials": {
-          "type": "boolean",
-          "description": "If true, cloud_source must include valid credentials.\nIf false, the resource must already exist and\ncredentials in cloud_source are ignored."
-        }
-      }
-    },
     "v1SortOption": {
       "type": "object",
       "properties": {
@@ -563,6 +551,18 @@
       }
     },
     "v1TestCloudSourceRequest": {
+      "type": "object",
+      "properties": {
+        "cloudSource": {
+          "$ref": "#/definitions/v1CloudSource"
+        },
+        "updateCredentials": {
+          "type": "boolean",
+          "description": "If true, cloud_source must include valid credentials.\nIf false, the resource must already exist and\ncredentials in cloud_source are ignored."
+        }
+      }
+    },
+    "v1UpdateCloudSourceRequest": {
       "type": "object",
       "properties": {
         "cloudSource": {
