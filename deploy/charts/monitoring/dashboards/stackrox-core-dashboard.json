@@ -117,7 +117,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|sensor|compliance|admission-control|node-inventory|central|central-db|scanner|scanner-db)\"}[1m])\n)",
+          "expr": "sum by(pod)(\n  rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=~\"(collector|compliance|node-inventory)\"}[1m])*100\n)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
