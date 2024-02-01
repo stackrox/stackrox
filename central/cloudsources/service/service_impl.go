@@ -202,9 +202,6 @@ func (s *serviceImpl) validateCloudSource(ctx context.Context,
 		// Don't test for duplicated names if no name is set.
 		return errorList.ToError()
 	}
-	if err := s.validateUniqueName(ctx, cloudSource); err != nil {
-		errorList.AddError(err)
-	}
 	return errorList.ToError()
 }
 
@@ -217,22 +214,6 @@ func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,
 		return err
 	}
 	return secrets.ReconcileScrubbedStructWithExisting(cloudSource, storedCloudSource)
-}
-
-func (s *serviceImpl) validateUniqueName(ctx context.Context, cloudSource *v1.CloudSource) error {
-	query := getQueryBuilderFromFilter(&v1.CloudSourcesFilter{
-		Names: []string{cloudSource.GetName()},
-	}).ProtoQuery()
-	integrations, err := s.ds.ListCloudSources(ctx, query)
-	if err != nil {
-		return errors.Wrap(err, "failed to list cloud sources")
-	}
-	for _, cs := range integrations {
-		if cs.GetId() != cloudSource.GetId() {
-			return errors.Errorf("integration with name %q already exists", cloudSource.GetName())
-		}
-	}
-	return nil
 }
 
 func validateType(cloudSource *v1.CloudSource) error {

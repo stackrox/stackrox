@@ -120,7 +120,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Success() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(nil)
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
 	resp, err := s.service.CreateCloudSource(s.ctx,
 		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
@@ -134,7 +133,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Validate() {
 	// Invalid ID.
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = "invalid-id"
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil).Times(2)
 	resp, err := s.service.CreateCloudSource(s.ctx,
 		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
@@ -195,7 +193,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(errFake)
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
 	s.datastoreMock.EXPECT().DeleteCloudSource(s.ctx, gomock.Any())
 	resp, err := s.service.CreateCloudSource(s.ctx,
 		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
@@ -210,7 +207,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Error() {
 func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Success() {
 	cloudSource := fixtures.GetV1CloudSource()
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(nil)
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
 	resp, err := s.service.UpdateCloudSource(s.ctx,
 		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
@@ -223,7 +219,6 @@ func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Validate() {
 	// Invalid Name.
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Name = ""
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil).Times(4)
 	resp, err := s.service.UpdateCloudSource(s.ctx,
 		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
@@ -271,7 +266,6 @@ func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Validate() {
 func (s *cloudSourcesTestSuite) TestUpdateCloudSources_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(errFake)
-	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
 	resp, err := s.service.UpdateCloudSource(s.ctx,
 		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
