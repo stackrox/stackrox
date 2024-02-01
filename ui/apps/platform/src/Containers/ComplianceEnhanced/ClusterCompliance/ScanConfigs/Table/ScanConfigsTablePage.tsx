@@ -41,7 +41,7 @@ import useURLSort from 'hooks/useURLSort';
 import {
     getScanConfigs,
     getScanConfigsCount,
-    deleteDownloadableReport,
+    deleteScanConfig,
     ComplianceScanConfigurationStatus,
 } from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
@@ -103,7 +103,7 @@ function ScanConfigsTablePage({
 
     function onDeleteScanConfig() {
         const deletePromises = scanConfigsToDelete.map((scanConfig) =>
-            deleteDownloadableReport(scanConfig.id)
+            deleteScanConfig(scanConfig.id)
         );
 
         setScanConfigDeletionErrors([]);

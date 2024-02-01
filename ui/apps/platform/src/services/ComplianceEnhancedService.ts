@@ -355,7 +355,7 @@ export function getScanConfigsCount(): Promise<number> {
         });
 }
 
-export function deleteDownloadableReport(scanConfigId: string) {
+export function deleteScanConfig(scanConfigId: string) {
     return axios.delete<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
         return response.data;
     });
