@@ -27,14 +27,11 @@ setup_file() {
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
     EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
-    # Prepend dir with earlier version of roxctl to the PATH so earlier version will have higher priority if binary exists
-    PATH=${EARLIER_ROXCTL_PATH}:$PATH
     if [[ ! -e "${CHART_REPOSITORY}/.git" ]]; then
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
     export EARLIER_ROXCTL_PATH
-    export PATH
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
 }
@@ -223,8 +220,9 @@ teardown() {
     if [[ "$CI" = "true" ]]; then
         setup_default_TLS_certs
     fi
-
     OS="$(uname)"
+
+    # switch to roxctl based installation
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     local main_image_tag="${MAIN_IMAGE_TAG}"
@@ -233,13 +231,11 @@ teardown() {
     curl -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_VERSION}/central-services"
-    PATH=${EARLIER_ROXCTL_PATH}:$PATH roxctl version
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
-    PATH=${EARLIER_ROXCTL_PATH}:$PATH CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
+    PATH=${EARLIER_ROXCTL_PATH}:$PATH _deploy_stackrox
 
     info "Upgrading StackRox using roxctl with Scanner V4 enabled"
     remove_earlier_roxctl_binary
