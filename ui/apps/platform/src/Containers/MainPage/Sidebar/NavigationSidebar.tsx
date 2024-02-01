@@ -13,7 +13,6 @@ import {
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
-    complianceEnhancedStatusPath,
     complianceEnhancedClusterComplianceBasePath,
     configManagementPath,
     dashboardPath,
