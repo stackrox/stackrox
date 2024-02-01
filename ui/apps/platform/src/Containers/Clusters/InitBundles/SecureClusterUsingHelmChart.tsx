@@ -1,5 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import {
+    ClipboardCopy,
     ClipboardCopyButton,
     CodeBlock,
     CodeBlockAction,
@@ -81,9 +82,21 @@ function SecureClusterUsingHelmChart({
                 </ExternalLink>
             )}
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
-            <List component="ol">
+            <List component="ul">
                 <ListItem>
-                    <p>You must add the Helm chart repository. TODO is this step 2?</p>
+                    <p>
+                        You must have previously added the Helm chart repository, or add it using
+                        the following command:
+                    </p>
+                    <ClipboardCopy>
+                        helm repo add rhacs https://mirror.openshift.com/pub/rhacs/charts/
+                    </ClipboardCopy>
+                </ListItem>
+                <ListItem>
+                    <p>
+                        You must download the YAML file for a cluster init bundle. You can use one
+                        bundle to secure multiple clusters.
+                    </p>
                 </ListItem>
                 <ListItem>
                     <p>
@@ -95,12 +108,6 @@ function SecureClusterUsingHelmChart({
                     <p>
                         You must have the address and the port number that you are exposing the
                         Central service on.
-                    </p>
-                </ListItem>
-                <ListItem>
-                    <p>
-                        You must download the YAML file for a cluster init bundle. You can use one
-                        bundle to secure multiple clusters.
                     </p>
                 </ListItem>
             </List>

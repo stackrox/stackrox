@@ -28,7 +28,7 @@ function InitBundleWizardStep2({ errorMessage, formik }: InitBundleWizardStep2Pr
             <Alert
                 variant="info"
                 isInline
-                title="You can download the YAML file only once when you create a cluster init bundle"
+                title="You can download the YAML file only once when you create a cluster init bundle."
                 component="p"
             >
                 Store the YAML file securely because it contains secrets.

@@ -43,10 +43,13 @@ function SecureClusterUsingOperator({
             </Title>
             <List component="ol">
                 <ListItem>
-                    <p>Use the OpenShift console to install the ACS Operator from Operator Hub.</p>
                     <p>
-                        Create a new OCP project for ACS. A good name choice is{' '}
-                        <strong>rhacs-operator</strong>
+                        Use the Red Hat OpenShift Container Platform web console to install the
+                        RHACS Operator from OperatorHub.
+                    </p>
+                    <p>
+                        Create a new Red Hat OpenShift Container Platform project for RHACS.{' '}
+                        <strong>rhacs-operator</strong> is a good name choice.
                     </p>
                 </ListItem>
                 <ListItem>

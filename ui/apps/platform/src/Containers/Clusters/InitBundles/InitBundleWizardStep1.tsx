@@ -38,7 +38,7 @@ function InitBundleWizardStep1({ formik }: InitBundleWizardStep1Props): ReactEle
             <Alert
                 variant="info"
                 isInline
-                title="You can use one bundle to secure multiple clusters which have the same installation method."
+                title="You can use one bundle to secure multiple clusters that have the same installation method."
                 component="p"
             />
             <Form>
