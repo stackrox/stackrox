@@ -175,7 +175,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Alert struct {
-	Id             string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"`
+	Id             string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"` // Internal use only
 	Policy         *Policy        `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty" sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"`
 	LifecycleStage LifecycleStage `protobuf:"varint,3,opt,name=lifecycle_stage,json=lifecycleStage,proto3,enum=storage.LifecycleStage" json:"lifecycle_stage,omitempty" search:"Lifecycle Stage" sql:"index=btree"`
 	ClusterId      string         `protobuf:"bytes,18,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"type(uuid)"`
@@ -461,11 +461,11 @@ type Alert_Deployment struct {
 	Id                   string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"`
 	Name                 string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"`
 	Type                 string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Namespace            string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	NamespaceId          string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`
+	Namespace            string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                         // This field has to be duplicated in Alert for scope management and search.
+	NamespaceId          string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	Labels               map[string]string             `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" sensorhash:"ignore" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	ClusterId            string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName          string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	ClusterId            string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`        // This field has to be duplicated in Alert for scope management and search.
+	ClusterName          string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	Containers           []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
 	Annotations          map[string]string             `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" sensorhash:"ignore" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Inactive             bool                          `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`
@@ -688,10 +688,10 @@ func (m *Alert_Deployment_Container) Clone() *Alert_Deployment_Container {
 type Alert_Resource struct {
 	ResourceType         Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type,store"`
 	Name                 string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`
-	ClusterId            string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName          string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace            string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	NamespaceId          string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`
+	ClusterId            string                      `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`       // This field has to be duplicated in Alert for scope management and search.
+	ClusterName          string                      `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // This field has to be duplicated in Alert for scope management and search.
+	Namespace            string                      `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                        // This field has to be duplicated in Alert for scope management and search.
+	NamespaceId          string                      `protobuf:"bytes,6,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"` // This field has to be duplicated in Alert for scope management and search.
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -1908,14 +1908,14 @@ type ListAlertDeployment struct {
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"`
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	ClusterName string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // Deprecated: Do not use.
+	ClusterName string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"` // Deprecated: Do not use. // This field has moved to CommonEntityInfo
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	Namespace string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"` // Deprecated: Do not use.
+	Namespace string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"` // Deprecated: Do not use. // This field has moved to CommonEntityInfo
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	ClusterId string `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // Deprecated: Do not use.
+	ClusterId string `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"` // Deprecated: Do not use. // This field has moved to CommonEntityInfo
 	Inactive  bool   `protobuf:"varint,7,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`
 	// This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
-	NamespaceId          string   `protobuf:"bytes,8,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"` // Deprecated: Do not use.
+	NamespaceId          string   `protobuf:"bytes,8,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"` // Deprecated: Do not use. // This field has moved to CommonEntityInfo
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

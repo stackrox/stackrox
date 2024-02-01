@@ -142,7 +142,7 @@ type ReportConfiguration struct {
 	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`
-	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`
+	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 	XXX_NoUnkeyedLiteral  struct{}                             `json:"-"`
 	XXX_unrecognized      []byte                               `json:"-"`
 	XXX_sizecache         int32                                `json:"-"`

@@ -1833,9 +1833,9 @@ func (m *PermissionPolicy) Clone() *PermissionPolicy {
 }
 
 type ImageNamePolicy struct {
-	Registry             string   `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"`
-	Remote               string   `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty"`
-	Tag                  string   `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`
+	Registry             string   `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty"` // e.g. docker.io
+	Remote               string   `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty"`     // e.g. stackrox/container-summarizer
+	Tag                  string   `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`           // e.g. latest
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
