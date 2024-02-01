@@ -11,7 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
+	"strings"
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
@@ -49,6 +49,7 @@ const (
 	defaultCleanupAge      = 1 * time.Hour
 
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
+	v4Prefix          = "v4-"
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	v4VulnSubDir      = "vulnerability-bundles"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
@@ -68,8 +69,6 @@ var (
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
-
-	v4VersionRegex = regexp.MustCompile(`^(?:\d+\.\d+\.\d+(?:-rc\.\d+)?(?:-\d+-g[0-9a-f]+|-nightly-\d{8})?|dev)$`)
 )
 
 type requestedUpdater struct {
@@ -221,8 +220,8 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		case mappingUpdaterKey == key:
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
-		case v4VersionRegex.MatchString(key):
-			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, key, v4VulnFile)
+		case strings.HasPrefix(key, v4Prefix):
+			urlStr, _ = url.JoinPath(v4StorageDomain, v4VulnSubDir, strings.TrimPrefix(key, v4Prefix), v4VulnFile)
 			filePath += ".json.zst"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
@@ -432,10 +431,7 @@ func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (
 			utils.IgnoreError(f.Close)
 		}
 	}
-	switch {
-	case v4VersionRegex.MatchString(updaterKey):
-		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
-	case mappingUpdaterKey == updaterKey:
+	if mappingUpdaterKey == updaterKey {
 		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
 			return nil, err
@@ -444,8 +440,8 @@ func (h *httpHandler) openMostRecentV4File(updaterKey string, fileName string) (
 			return nil, fmt.Errorf("cannot find associated mapping file: %s", fileName)
 		}
 		onlineFile = &vulDefFile{File: targetFile, modTime: onlineTime}
-	default:
-		return nil, fmt.Errorf("internal error: updater key: %s", updaterKey)
+	} else { // versioned vuln file
+		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
 	}
 	defer toClose(onlineFile)
 	file = onlineFile
@@ -511,18 +507,14 @@ func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updater
 	var err error
 	var f *vulDefFile
 
-	switch {
-	case mappingUpdaterKey == updaterKey:
+	if mappingUpdaterKey == updaterKey {
 		f, err = h.openMostRecentV4File(mappingUpdaterKey, fileName)
-	case v4VersionRegex.MatchString(updaterKey):
+	} else {
+		updaterKey = fmt.Sprintf("%s%s", v4Prefix, updaterKey)
 		f, err = h.openMostRecentV4File(updaterKey, "")
-		w.Header().Set("Content-Type", "application/zstd")
-		http.ServeContent(w, r, f.Name(), f.modTime, f)
-	default:
-		errMsg := fmt.Sprintf("internal error: invalid updater key: %s", updaterKey)
-		log.Error(errMsg)
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, errMsg)
-		return
+		if err == nil {
+			w.Header().Set("Content-Type", "application/zstd")
+		}
 	}
 
 	if err != nil {
