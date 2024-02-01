@@ -259,7 +259,6 @@ function launch_central {
         echo "Generating Central bundle..."
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
         cp -R central-bundle/ "${unzip_dir}/"
-        ls -l "${unzip_dir}/"
         rm -rf central-bundle
     else
         docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
