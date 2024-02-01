@@ -17,18 +17,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// A clusterID creates a structured ID for the ResourceName field.
-type clusterID struct {
-	Project string
-	Zone    string
-	Name    string
-}
-
-// ResourceName is the format needed for the ResourceName field.
-func (c clusterID) ResourceName() string {
-	return fmt.Sprintf("//container.googleapis.com/projects/%s/zones/%s/clusters/%s", c.Project, c.Zone, c.Name)
-}
-
 // An Enforcement object reports that an enforcement action has been taken.
 type Enforcement struct {
 	Action    string               `json:"action,omitempty"`
@@ -68,17 +56,13 @@ func convertAlertToFinding(alert *storage.Alert, sourceID string, notifierEndpoi
 	findingID := convertAlertUUID(alert.GetId())
 
 	finding := &securitycenterpb.Finding{
-		Name:   fmt.Sprintf("%s/findings/%s", sourceID, findingID),
-		Parent: sourceID,
-		ResourceName: clusterID{
-			Project: providerMetadata.GetGoogle().GetProject(),
-			Zone:    providerMetadata.GetZone(),
-			Name:    providerMetadata.GetGoogle().GetClusterName(),
-		}.ResourceName(),
-		Category:    alert.GetPolicy().GetName(),
-		ExternalUri: notifiers.AlertLink(notifierEndpoint, alert),
-		EventTime:   timestamppb.New(protoconv.ConvertTimestampToTimeOrNow(alert.GetTime())),
-		Severity:    convertSeverity(alert.GetPolicy().GetSeverity()),
+		Name:         fmt.Sprintf("%s/findings/%s", sourceID, findingID),
+		Parent:       sourceID,
+		ResourceName: convertProviderMetadataToResourceName(providerMetadata),
+		Category:     alert.GetPolicy().GetName(),
+		ExternalUri:  notifiers.AlertLink(notifierEndpoint, alert),
+		EventTime:    timestamppb.New(protoconv.ConvertTimestampToTimeOrNow(alert.GetTime())),
+		Severity:     convertSeverity(alert.GetPolicy().GetSeverity()),
 		State: utils.IfThenElse(alert.GetState() == storage.ViolationState_ATTEMPTED,
 			securitycenterpb.Finding_INACTIVE,
 			securitycenterpb.Finding_ACTIVE),
@@ -182,4 +166,27 @@ func convertAlertDescription(alert *storage.Alert) string {
 	}
 	sort.Strings(distinctSlice)
 	return strings.Join(distinctSlice, " ")
+}
+
+func convertProviderMetadataToResourceName(providerMetadata *storage.ProviderMetadata) string {
+	// We are creating a finding from a cluster which isn't deployed on GCP.
+	// We will set a resource name here that is a non-cloud resource.
+	if providerMetadata.GetGoogle() == nil {
+		return fmt.Sprintf("%s/%s", providerMetadata.GetCluster().GetType().String(),
+			providerMetadata.GetCluster().GetName())
+	}
+
+	// When the cluster is deployed on Google, it can either be a GKE cluster or an OpenShift cluster.
+	// For the GKE cluster, we can link the specific cluster as the resource, for the OpenShift cluster
+	// we will link the project instead.
+	// See https://cloud.google.com/iam/docs/full-resource-names for a list of resource names supported by GCP.
+	switch providerMetadata.GetCluster().GetType() {
+	case storage.ClusterMetadata_GKE:
+		return fmt.Sprintf("//container.googleapis.com/projects/%s/locations/%s/clusters/%s",
+			providerMetadata.GetGoogle().GetProject(), providerMetadata.GetRegion(),
+			providerMetadata.GetGoogle().GetClusterName())
+	default:
+		return fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s",
+			providerMetadata.GetGoogle().GetProject())
+	}
 }
