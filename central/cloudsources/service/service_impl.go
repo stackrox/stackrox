@@ -89,7 +89,7 @@ func (s *serviceImpl) GetCloudSource(ctx context.Context, request *v1.GetCloudSo
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get cloud source %q", resourceID)
 	}
-	return &v1.GetCloudSourceResponse{CloudSource: storagetov1.CloudSource(cloudSource)}, err
+	return &v1.GetCloudSourceResponse{CloudSource: storagetov1.CloudSource(cloudSource)}, nil
 }
 
 // ListCloudSources returns all cloud sources matching the request query.
@@ -146,7 +146,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 		if err := s.enrichWithStoredCredentials(ctx, updatedCloudSource); err != nil {
 			if errors.Is(err, errox.NotFound) {
 				return nil, errox.InvalidArgs.CausedByf(
-					"cannot fetch existing credentials: %q does not exist", v1CloudSource.GetId(),
+					"cannot fetch existing credentials: cloud source %q does not exist", v1CloudSource.GetId(),
 				)
 			}
 			return nil, errors.Wrapf(err, "cannot fetch existing credentials for %q", v1CloudSource.GetId())
