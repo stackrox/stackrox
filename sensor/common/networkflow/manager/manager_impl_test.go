@@ -740,6 +740,17 @@ func (b *sendNetflowsSuite) updateConn(pair *connectionPair) {
 	addHostConnection(b.m, createHostnameConnections("hostname").withConnectionPair(pair))
 }
 
+func (b *sendNetflowsSuite) updateEp(pair *endpointPair) {
+	addHostConnection(b.m, createHostnameConnections("hostname").withEndpointPair(pair))
+}
+
+func (b *sendNetflowsSuite) expectContainerLookups(n int) {
+	b.mockEntity.EXPECT().RecordTick().AnyTimes()
+	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
+		DeploymentID: srcID,
+	}, true)()
+}
+
 func (b *sendNetflowsSuite) expectLookups(n int) {
 	b.mockEntity.EXPECT().RecordTick().AnyTimes()
 	expectEntityLookupContainerHelper(b.mockEntity, n, clusterentities.ContainerMetadata{
@@ -799,6 +810,34 @@ func (b *sendNetflowsSuite) TestCloseOldConnectionFailedLookup() {
 	b.updateConn(pair)
 	b.thenTickerTicks()
 	b.assertOneUpdatedCloseConnection()
+}
+
+func (b *sendNetflowsSuite) TestCloseEndpoint() {
+	b.expectContainerLookups(1)
+
+	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour)).lastSeen(timestamp.Now()))
+	b.thenTickerTicks()
+	b.assertOneUpdatedCloseEndpoint()
+}
+
+func (b *sendNetflowsSuite) TestCloseEndpointFailedLookup() {
+	b.expectFailedLookup(1)
+
+	b.updateEp(createEndpointPair(timestamp.Now().Add(-time.Hour)).lastSeen(timestamp.Now()))
+	b.thenTickerTicks()
+	mustNotRead(b.T(), b.m.sensorUpdates)
+}
+
+func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
+	b.expectFailedLookup(1)
+
+	pair := createEndpointPair(
+		timestamp.Now().Add(-maxContainerResolutionWaitPeriod * 2)).
+		lastSeen(timestamp.Now())
+	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicator{}
+	b.updateEp(pair)
+	b.thenTickerTicks()
+	b.assertOneUpdatedCloseEndpoint()
 }
 
 func (b *sendNetflowsSuite) TestUnchangedConnection() {
@@ -884,6 +923,14 @@ func (b *sendNetflowsSuite) assertOneUpdatedCloseConnection() {
 	b.Require().True(ok, "message is NetworkFlowUpdate")
 	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdated(), 1, "one updated connection")
 	b.Assert().NotEqual(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdated()[0].GetLastSeenTimestamp().GetNanos(), "the connection should not be open")
+}
+
+func (b *sendNetflowsSuite) assertOneUpdatedCloseEndpoint() {
+	msg := mustReadTimeout(b.T(), b.m.sensorUpdates)
+	netflowUpdate, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
+	b.Require().True(ok, "message is NetworkFlowUpdate")
+	b.Require().Len(netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints(), 1, "one updated endpint")
+	b.Assert().NotEqual(int32(0), netflowUpdate.NetworkFlowUpdate.GetUpdatedEndpoints()[0].GetLastActiveTimestamp().GetNanos(), "the endpoint should not be open")
 }
 
 func mustNotRead[T any](t *testing.T, ch chan T) {

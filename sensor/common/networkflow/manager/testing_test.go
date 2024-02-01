@@ -35,6 +35,7 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 		enricherTicker:    ticker,
 		finished:          &sync.WaitGroup{},
 		activeConnections: make(map[connection]*networkConnIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -151,6 +152,11 @@ func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
 
 func (ep *endpointPair) containerID(id string) *endpointPair {
 	ep.endpoint.containerID = id
+	return ep
+}
+
+func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
+	ep.status.lastSeen = lastSeen
 	return ep
 }
 
