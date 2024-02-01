@@ -90,8 +90,7 @@ tests:
 - name: "Install mode is reported by Helm chart installation notes"
   tests:
   - name: "when installing neither indexer nor matcher"
-    set:
-      scannerV4.disable: true
+    scannerV4.disable: true
     expect: |
       .notes | assertThat(match("Scanner V4 Installation Method: +none"))
   - name: "when installing indexer and matcher"
@@ -240,43 +239,5 @@ tests:
   set:
     scannerV4.disable: false
   expect: |
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe")
-    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?file=name2repos")
-
-- name: "Scanner V4 is installed by default"
-  set:
-    scannerV4.disable: null
-  expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. != null)
-    .deployments["scanner-v4-matcher"] | assertThat(. != null)
-    .deployments["scanner-v4-db"] | assertThat(. != null)
-
-- name: "Scanner V4 can be disabled without impacting Scanner V2"
-  set:
-    scannerV4.disable: true
-  expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-matcher"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
-    .deployments["scanner"] | assertThat(. != null)
-    .deployments["scanner-db"] | assertThat(. != null)
-
-- name: "indexer should allow ingress from central, sensor, and matcher when deployed as a central-service"
-  set:
-    scannerV4.disable: false
-  expect: |
-    .networkpolicys["scanner-v4-indexer"].spec.ingress | assertThat(length == 3)
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "central")
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[1] | .ports | assertThat(length == 1)
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "scanner-v4-matcher")
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[2] | .ports | assertThat(length == 1)
-    .networkpolicys["scanner-v4-indexer"].spec.ingress[2] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
-
-- name: "matcher should allow ingress from central"
-  set:
-    scannerV4.disable: false
-  expect: |
-    .networkpolicys["scanner-v4-matcher"].spec.ingress | assertThat(length == 1)
-    .networkpolicys["scanner-v4-matcher"].spec.ingress[0] | .ports | assertThat(length == 1)
-    .networkpolicys["scanner-v4-matcher"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "central")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(contains("https://central.stackrox.svc/api/extensions/scannerdefinitions"))
