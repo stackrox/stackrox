@@ -16,6 +16,8 @@ func init() {
 		HostConnectionsRemoved,
 		HostEndpointsAdded,
 		HostEndpointsRemoved,
+		activeFlowsTotal,
+		activeEndpointsTotal,
 	)
 }
 
@@ -82,4 +84,26 @@ var (
 		Name:      "processes_listening_on_port_removed",
 		Help:      "Total number of processes listening on ports",
 	})
+	activeFlowsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "active_network_flows_total",
+		Help:      "A gauge that tracks the total active network flows in sensor",
+	})
+	activeEndpointsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "active_endpoints_total",
+		Help:      "A gauge that tracks the total active endpoints in sensor",
+	})
 )
+
+// SetActiveFlowsTotalGauge set the active network flows total gauge.
+func SetActiveFlowsTotalGauge(number int) {
+	activeFlowsTotal.Set(float64(number))
+}
+
+// SetActiveEndpointsTotalGauge set the active endpoints total gauge.
+func SetActiveEndpointsTotalGauge(number int) {
+	activeEndpointsTotal.Set(float64(number))
+}
