@@ -62,7 +62,7 @@ func (c *fakeClientSet) OpenshiftOperator() operatorVersioned.Interface {
 }
 
 func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage.ProviderMetadata,
-	configClient ...*configFake.Clientset) {
+	getMetadata providerMetadataFromOpenShift, configClient ...*configFake.Clientset) {
 	config := configFake.NewSimpleClientset()
 	if len(configClient) != 0 {
 		config = configClient[0]
@@ -72,6 +72,7 @@ func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage
 		config: config,
 	})
 	s.updater.(*updaterImpl).getProviders = getProviders
+	s.updater.(*updaterImpl).getProviderMetadataFromOpenShift = getMetadata
 }
 
 func (s *updaterSuite) online() {
@@ -137,6 +138,10 @@ func mockGetMetadata(_ context.Context) *storage.ProviderMetadata {
 	return &storage.ProviderMetadata{}
 }
 
+func mockProviderMetadata(_ context.Context, _ configVersioned.Interface) (*storage.ProviderMetadata, error) {
+	return nil, nil
+}
+
 func (s *updaterSuite) Test_OfflineMode() {
 	cases := map[string][]func(){
 		"Online, offline, read":                           {s.online, s.offline, s.readCancelledStatus},
@@ -145,7 +150,7 @@ func (s *updaterSuite) Test_OfflineMode() {
 	}
 	for tName, tc := range cases {
 		s.Run(tName, func() {
-			s.createUpdater(mockGetMetadata)
+			s.createUpdater(mockGetMetadata, mockProviderMetadata)
 			for _, fn := range tc {
 				fn()
 			}
@@ -283,6 +288,133 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				},
 			},
 		},
+		"on openshift running OSD on AWS should return AWS provider metadata and OSD cluster type": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.AWSPlatformType,
+						AWS: &configv1.AWSPlatformStatus{
+							Region: "us-east1",
+							ResourceTags: []configv1.AWSResourceTag{
+								{
+									Key:   redHatClusterTypeTagKey,
+									Value: "osd",
+								},
+							},
+						}},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region:   "us-east1",
+				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OSD,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running OSD on GCP should return GCP provider metadata and OSD cluster type": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.GCPPlatformType,
+						GCP: &configv1.GCPPlatformStatus{
+							ProjectID: "project-1",
+							Region:    "us-east1",
+							ResourceTags: []configv1.GCPResourceTag{
+								{
+									Key:   redHatClusterTypeTagKey,
+									Value: "osd",
+								},
+							},
+						}},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region: "us-east1",
+				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+					Project: "project-1",
+				}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OSD,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running ROSA on AWS should return AWS provider metadata and ROSA cluster type": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.AWSPlatformType,
+						AWS: &configv1.AWSPlatformStatus{
+							Region: "us-east1",
+							ResourceTags: []configv1.AWSResourceTag{
+								{
+									Key:   redHatClusterTypeTagKey,
+									Value: "rosa",
+								},
+							},
+						}},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region:   "us-east1",
+				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_ROSA,
+					Name: "cluster-1",
+				},
+			},
+		},
+		"on openshift running ARO on Azure should return Azure provider metadata and ARO cluster type": {
+			getProviders: nilGetProviders,
+			openshift:    true,
+			infra: &configv1.Infrastructure{
+				TypeMeta:   typeMeta,
+				ObjectMeta: objectMeta,
+				Status: configv1.InfrastructureStatus{
+					PlatformStatus: &configv1.PlatformStatus{
+						Type: configv1.AzurePlatformType,
+						Azure: &configv1.AzurePlatformStatus{
+							ResourceTags: []configv1.AzureResourceTag{
+								{
+									Key:   redHatClusterTypeTagKey,
+									Value: "aro",
+								},
+							},
+						},
+					},
+					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Region:   "",
+				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
+				Verified: true,
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_ARO,
+					Name: "cluster-1",
+				},
+			},
+		},
 	}
 
 	for name, tc := range cases {
@@ -292,7 +424,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 			if tc.infra != nil {
 				config = configFake.NewSimpleClientset(tc.infra)
 			}
-			s.createUpdater(tc.getProviders, config)
+			s.createUpdater(tc.getProviders, getProviderMetadataFromOpenShiftConfig, config)
 			u := s.updater.(*updaterImpl)
 			providerMetadata := u.getCloudProviderMetadata(context.Background())
 			s.Equal(tc.metadata, providerMetadata)
