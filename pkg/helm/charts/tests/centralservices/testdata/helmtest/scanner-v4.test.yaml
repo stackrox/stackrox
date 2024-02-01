@@ -229,6 +229,18 @@ tests:
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.database.conn_string | assertThat(contains("statement_timeout=314159"))
 
 - name: "scanner V4 service account can access image pull secrets"
+  server:
+    objects:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner
+        namespace: stackrox
   set:
     scannerV4.disable: false
   expect: |
