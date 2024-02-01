@@ -14,4 +14,5 @@ export type FeatureFlagEnvVar =
     | 'ROX_VULN_MGMT_WORKLOAD_CVES'
     | 'ROX_WORKLOAD_CVES_FIXABILITY_FILTERS'
     | 'ROX_SCANNER_V4'
+    | 'ROX_AUTH_MACHINE_TO_MACHINE'
     ;

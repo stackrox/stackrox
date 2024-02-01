@@ -14,7 +14,7 @@ export type IntegrationType =
     | SignatureIntegrationType
     | CloudSourceIntegrationType;
 
-export type AuthProviderType = 'apitoken' | 'clusterInitBundle';
+export type AuthProviderType = 'apitoken' | 'clusterInitBundle' | 'machineAccess';
 
 // Investigate why the following occur in tableColumnDescriptor but not in integrationsList:
 /*
@@ -62,4 +62,20 @@ export type CloudSourceIntegrationType = 'paladinCloud';
 export type BaseIntegration = {
     id: string;
     name: string;
+};
+
+export type AuthProviderIntegration = BaseIntegration | MachineAccessConfiguration;
+
+export type MachineAccessConfigMapping = {
+    key: string;
+    valueExpression: string;
+    role: string;
+};
+
+export type MachineAccessConfiguration = {
+    id: string;
+    type: string;
+    issuer: string;
+    tokenExpirationDuration: string;
+    mapping: MachineAccessConfigMapping[];
 };

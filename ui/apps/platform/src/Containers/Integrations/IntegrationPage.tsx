@@ -20,7 +20,7 @@ import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import { getIntegrationLabel } from './utils/integrationsList';
-import { getEditDisabledMessage } from './utils/integrationUtils';
+import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 
@@ -50,7 +50,13 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
         pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
     return (
         <>
-            <PageTitle title={title} />
+            <PageTitle
+                title={
+                    getIsMachineAccessConfig(source, type) && title === ''
+                        ? 'Manage configuration'
+                        : title
+                }
+            />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
@@ -61,9 +67,11 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
             <Divider component="div" />
             <PageSection variant="light">
                 <Flex>
-                    <FlexItem>
-                        <Title headingLevel="h1">{name}</Title>
-                    </FlexItem>
+                    {name && (
+                        <FlexItem>
+                            <Title headingLevel="h1">{name}</Title>
+                        </FlexItem>
+                    )}
                     {hasTraitsLabel && <TraitsOriginLabel traits={traits} />}
                     {hasEditButton && (
                         <FlexItem align={{ default: 'alignRight' }}>

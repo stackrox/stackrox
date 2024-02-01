@@ -7,11 +7,13 @@ import {
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
 import {
+    AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
     BaseIntegration,
     CloudSourceIntegrationType,
     ImageIntegrationType,
+    MachineAccessConfiguration,
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
@@ -29,6 +31,7 @@ import {
     categoriesUtilsForRegistryScanner,
     daysOfWeek,
     timesOfDay,
+    transformDurationLongForm,
 } from './integrationUtils';
 
 const { getCategoriesText: getCategoriesTextForClairifyScanner } =
@@ -52,7 +55,10 @@ export type IntegrationTableColumnDescriptor<Integration> = {
  */
 
 type IntegrationTableColumnDescriptorMap = {
-    authProviders: Record<AuthProviderType, IntegrationTableColumnDescriptor<BaseIntegration>[]>;
+    authProviders: Record<
+        AuthProviderType,
+        IntegrationTableColumnDescriptor<AuthProviderIntegration>[]
+    >;
     backups: Record<
         BackupIntegrationType,
         IntegrationTableColumnDescriptor<BaseBackupIntegration>[]
@@ -95,6 +101,25 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
+        ],
+        machineAccess: [
+            {
+                accessor: (config) => {
+                    return (<MachineAccessConfiguration>config).type === 'GENERIC'
+                        ? 'Generic'
+                        : 'Github action';
+                },
+                Header: 'Configuration',
+            },
+            { accessor: 'issuer', Header: 'Issuer' },
+            {
+                accessor: (config) => {
+                    return transformDurationLongForm(
+                        (<MachineAccessConfiguration>config).tokenExpirationDuration
+                    );
+                },
+                Header: 'Token lifetime',
+            },
         ],
     },
     notifiers: {

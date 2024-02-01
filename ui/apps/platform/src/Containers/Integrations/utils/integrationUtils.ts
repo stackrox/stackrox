@@ -6,6 +6,7 @@ import { IntegrationSource, IntegrationType } from 'types/integration';
 import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
 import { Traits } from 'types/traits.proto';
+import pluralize from "pluralize";
 
 export type { IntegrationSource, IntegrationType };
 
@@ -22,6 +23,13 @@ export function getIsAPIToken(source: IntegrationSource, type: IntegrationType):
 
 export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'clusterInitBundle';
+}
+
+export function getIsMachineAccessConfig(
+    source: IntegrationSource,
+    type: IntegrationType
+): boolean {
+    return source === 'authProviders' && type === 'machineAccess';
 }
 
 export function getIsSignatureIntegration(source: IntegrationSource): boolean {
@@ -76,6 +84,27 @@ export function getEditDisabledMessage(type) {
         return 'This API Token can not be edited. Create a new API Token or delete an existing one.';
     }
     return '';
+}
+
+export function transformDurationLongForm(duration: string): string {
+    const splitHoursSeparate = duration.split('h');
+    let result = pluralizeMeasurement(splitHoursSeparate[0], 'hour');
+    if (splitHoursSeparate.length === 1) {
+        return result;
+    }
+    const splitMinutesSeparate = splitHoursSeparate[1].split('m');
+    result = `${result} ${pluralizeMeasurement(splitMinutesSeparate[0], 'minute')}`;
+    if (
+        splitMinutesSeparate.length === 1 ||
+        (splitMinutesSeparate.length === 2 && splitMinutesSeparate[1] === '')
+    ) {
+        return result;
+    }
+    return `${result} ${pluralizeMeasurement(splitMinutesSeparate[1].split('s')[0], 'second')}`;
+}
+
+function pluralizeMeasurement(count, measurement: string): string {
+    return `${count} ${pluralize(measurement, parseInt(count))}`;
 }
 
 export const daysOfWeek = [

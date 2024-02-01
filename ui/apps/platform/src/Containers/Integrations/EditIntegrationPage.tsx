@@ -6,6 +6,7 @@ import useIntegrations from './hooks/useIntegrations';
 import IntegrationPage from './IntegrationPage';
 import IntegrationForm from './IntegrationForm';
 import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
+import { getIsMachineAccessConfig } from './utils/integrationUtils';
 
 function EditIntegrationPage(): ReactElement {
     const {
@@ -19,7 +20,12 @@ function EditIntegrationPage(): ReactElement {
     }
 
     return (
-        <IntegrationPage title="Edit Integration" name={integration.name}>
+        <IntegrationPage
+            title={
+                getIsMachineAccessConfig(source, type) ? 'Manage configuration' : 'Edit Integration'
+            }
+            name={integration.name}
+        >
             <IntegrationForm source={source} type={type} initialValues={integration} isEditable />
         </IntegrationPage>
     );

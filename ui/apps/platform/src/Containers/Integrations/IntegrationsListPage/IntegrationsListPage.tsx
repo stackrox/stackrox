@@ -17,6 +17,7 @@ import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
+import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
 import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
 import { ClusterInitBundle } from 'services/ClustersService';
@@ -27,6 +28,7 @@ import {
     getIsAPIToken,
     getIsCloudSource,
     getIsClusterInitBundle,
+    getIsMachineAccessConfig,
     getIsSignatureIntegration,
     getIsScannerV4,
 } from '../utils/integrationUtils';
@@ -43,6 +45,7 @@ function IntegrationsListPage({
     triggerBackup,
     fetchClusterInitBundles,
     revokeAPITokens,
+    deleteMachineAccessConfigs,
     deleteCloudSources,
 }): ReactElement {
     const { source, type } = useParams();
@@ -62,6 +65,7 @@ function IntegrationsListPage({
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
+    const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
     const isCloudSource = getIsCloudSource(source);
@@ -73,6 +77,8 @@ function IntegrationsListPage({
     function onConfirmDeletingIntegrationIds() {
         if (isAPIToken) {
             revokeAPITokens(deletingIntegrationIds);
+        } else if (isMachineAccessConfig) {
+            deleteMachineAccessConfigs(deletingIntegrationIds);
         } else if (isCloudSource) {
             deleteCloudSources(deletingIntegrationIds);
         } else {
@@ -169,6 +175,7 @@ const mapDispatchToProps = {
     triggerBackup: integrationsActions.triggerBackup,
     fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
+    deleteMachineAccessConfigs: machineAccessActions.deleteMachineAccessConfigs,
     deleteCloudSources: cloudSourcesActions.deleteCloudSources,
 };
 
