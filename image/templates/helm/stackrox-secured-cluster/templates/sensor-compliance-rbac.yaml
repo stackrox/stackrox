@@ -6,7 +6,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
+  {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
   labels:
     {{- include "srox.labels" (list . "role" "edit-compliance") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
