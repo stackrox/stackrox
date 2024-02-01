@@ -40,3 +40,5 @@ sources:
       exclude:
         - hermetic_build_task
         - tasks.required_tasks_found:prefetch-dependencies
+        # TODO(ROX-22196): undo this
+        - attestation_task_bundle.tasks_defined_in_bundle
