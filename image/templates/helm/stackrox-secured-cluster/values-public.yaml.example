@@ -187,8 +187,7 @@
 #  # Rarely needs to be changed.
 #  endpoint: sensor.stackrox.svc:443
 #
-#  # Specify if compliance operator is installed
-#  # The namespace `openshift-compliance` MUST be created before enabling this feature
+#  # Enable compliance operator integration
 #  complianceOperator:
 #    enabled: false
 #
