@@ -55,41 +55,41 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 
 func (s *datastorePostgresTestSuite) TestCountCloudSources() {
 	count, err := s.datastore.CountCloudSources(s.readCtx, &v1.Query{})
-	s.NoError(err)
-	s.Zero(count)
+	s.Require().NoError(err)
+	s.Assert().Zero(count)
 
 	s.addCloudSources(100)
 
 	count, err = s.datastore.CountCloudSources(s.readCtx, &v1.Query{})
-	s.NoError(err)
-	s.Equal(100, count)
+	s.Require().NoError(err)
+	s.Assert().Equal(100, count)
 }
 
 func (s *datastorePostgresTestSuite) TestGetCloudSource() {
 	nonExistingID := "00000000-0000-0000-0000-000000000000"
 	cloudSource, err := s.datastore.GetCloudSource(s.readCtx, nonExistingID)
-	s.ErrorIs(err, errox.NotFound)
-	s.Empty(cloudSource)
+	s.Assert().ErrorIs(err, errox.NotFound)
+	s.Assert().Empty(cloudSource)
 
 	cloudSource = fixtures.GetStorageCloudSource()
 	err = s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
 	s.Require().NoError(err)
 
 	roundtripCloudSource, err := s.datastore.GetCloudSource(s.readCtx, cloudSource.GetId())
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Assert().Equal(cloudSource, roundtripCloudSource)
 }
 
 func (s *datastorePostgresTestSuite) TestListCloudSources() {
 	cloudSources, err := s.datastore.ListCloudSources(s.readCtx, &v1.Query{})
-	s.NoError(err)
-	s.Empty(cloudSources)
+	s.Require().NoError(err)
+	s.Assert().Empty(cloudSources)
 
 	s.addCloudSources(100)
 
 	cloudSources, err = s.datastore.ListCloudSources(s.readCtx, &v1.Query{})
-	s.NoError(err)
-	s.Len(cloudSources, 100)
+	s.Require().NoError(err)
+	s.Assert().Len(cloudSources, 100)
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertCloudSource_Success() {
@@ -104,27 +104,27 @@ func (s *datastorePostgresTestSuite) TestUpsertCloudSource_Success() {
 
 func (s *datastorePostgresTestSuite) TestUpsertCloudSource_InvalidArgument() {
 	err := s.datastore.UpsertCloudSource(s.writeCtx, nil)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	cloudSource := fixtures.GetStorageCloudSource()
 	cloudSource.Id = ""
 	err = s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	cloudSource = fixtures.GetStorageCloudSource()
 	cloudSource.Name = ""
 	err = s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	cloudSource = fixtures.GetStorageCloudSource()
 	cloudSource.Credentials = nil
 	err = s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	cloudSource = fixtures.GetStorageCloudSource()
 	cloudSource.Config = nil
 	err = s.datastore.UpsertCloudSource(s.writeCtx, cloudSource)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *datastorePostgresTestSuite) TestDeleteCloudSource() {
@@ -136,8 +136,8 @@ func (s *datastorePostgresTestSuite) TestDeleteCloudSource() {
 	s.Require().NoError(err)
 
 	cloudSource, err = s.datastore.GetCloudSource(s.readCtx, cloudSource.GetId())
-	s.ErrorIs(err, errox.NotFound)
-	s.Empty(cloudSource)
+	s.Assert().ErrorIs(err, errox.NotFound)
+	s.Assert().Empty(cloudSource)
 }
 
 func (s *datastorePostgresTestSuite) addCloudSources(num int) {
