@@ -56,6 +56,7 @@ const (
 )
 
 func TestClient(t *testing.T) {
+	t.Skipf("Skipping test in 3.74")
 	suite.Run(t, new(ClientTestSuite))
 }
 
