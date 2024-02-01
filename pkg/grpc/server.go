@@ -46,6 +46,7 @@ import (
 )
 
 const (
+	// Note: if these values change consider changing the histogram bucket size for central and sensor gRPC message size metrics.
 	defaultMaxMsgSize               = 24 * 1024 * 1024
 	defaultMaxResponseMsgSize       = 256 * 1024 * 1024 // 256MB
 	defaultMaxGrpcConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
