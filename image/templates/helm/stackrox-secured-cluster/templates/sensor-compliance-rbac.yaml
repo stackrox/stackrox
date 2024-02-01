@@ -3,11 +3,10 @@
 {{- if ._rox.sensor.complianceOperator.enabled }}
 # Role edit has all verbs but 'use' to disallow using any SCCs (resources: *).
 # The permission to 'use' SCCs should be defined at finer granularity in other roles.
-kind: Role
+kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: edit-compliance
-  namespace: openshift-compliance
+  name: {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
   labels:
     {{- include "srox.labels" (list . "role" "edit-compliance") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -15,7 +14,7 @@ metadata:
     {{- include "srox.annotations" (list . "role" "edit-compliance") | nindent 4 }}
 rules:
 - apiGroups:
-  - '*'
+  - 'compliance.openshift.io'
   resources:
   - '*'
   verbs:
@@ -28,11 +27,10 @@ rules:
   - delete
   - deletecollection
 ---
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: manage-compliance
-  namespace: openshift-compliance
+  {{ include "srox.globalResourceName" (list . "stackrox:manage-compliance") }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "manage-compliance") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -42,8 +40,8 @@ subjects:
 - kind: ServiceAccount
   name: sensor
   namespace: {{ ._rox._namespace }}
-roleRef:
-  kind: Role
-  name: edit-compliance
+clusterRoleRef:
+  kind: ClusterRole
+  {{ include "srox.globalResourceName" (list . "stackrox:edit-compliance") }}
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
