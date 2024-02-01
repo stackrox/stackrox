@@ -321,7 +321,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		// No updates.
 		return nil, time.Time{}, nil
 	default:
-		return nil, time.Time{}, fmt.Errorf("received status code %q querying update endpoint", resp.StatusCode)
+		return nil, time.Time{}, fmt.Errorf("received status code %d querying update endpoint", resp.StatusCode)
 	}
 
 	f, err := os.CreateTemp(u.root, updateFilePattern)
