@@ -127,13 +127,9 @@ const navDescriptions: NavDescription[] = [
         children: [
             {
                 type: 'link',
-                content: 'Compliance Status',
-                path: complianceEnhancedStatusPath,
-                routeKey: 'compliance-enhanced',
-            },
-            {
-                type: 'link',
-                content: 'Cluster Compliance',
+                content: (
+                    <NavigationContent variant="TechPreview">Cluster Compliance</NavigationContent>
+                ),
                 path: complianceEnhancedClusterComplianceBasePath,
                 routeKey: 'compliance-enhanced',
             },
