@@ -128,7 +128,6 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	v1CloudSource.Id = uuid.NewV4().String()
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
-		_ = s.ds.DeleteCloudSource(ctx, storageCloudSource.GetId())
 		return nil, errors.Wrapf(err, "failed to post cloud source %q", v1CloudSource.GetName())
 	}
 	return &v1.CreateCloudSourceResponse{CloudSource: storagetov1.CloudSource(storageCloudSource)}, nil

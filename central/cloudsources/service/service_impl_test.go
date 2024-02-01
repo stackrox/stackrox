@@ -193,7 +193,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(errFake)
-	s.datastoreMock.EXPECT().DeleteCloudSource(s.ctx, gomock.Any())
 	resp, err := s.service.CreateCloudSource(s.ctx,
 		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
