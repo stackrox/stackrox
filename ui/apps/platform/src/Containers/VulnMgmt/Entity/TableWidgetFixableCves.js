@@ -49,10 +49,7 @@ const TableWidgetFixableCves = ({
 
     const displayedEntityType = entityNounOrdinaryCaseSingular[entityType];
 
-    const queryFieldName =
-        vulnType === entityTypes.NODE_CVE
-            ? queryFieldNames[entityTypes.NODE_COMPONENT] // fix for React state transition
-            : queryFieldNames[entityType];
+    const queryFieldName = queryFieldNames[entityType];
     let queryVulnCounterFieldName = 'imageVulnerabilityCounter';
     let queryVulnsFieldName = 'imageVulnerabilities';
     let queryCVEFieldsName = 'imageCVEFields';
