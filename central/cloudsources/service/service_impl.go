@@ -38,11 +38,11 @@ var (
 			"/v1.CloudSourcesService/CountCloudSources",
 			"/v1.CloudSourcesService/GetCloudSource",
 			"/v1.CloudSourcesService/ListCloudSources",
-			"/v1.CloudSourcesService/TestCloudSource",
 		},
 		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.CloudSourcesService/CreateCloudSource",
 			"/v1.CloudSourcesService/DeleteCloudSource",
+			"/v1.CloudSourcesService/TestCloudSource",
 			"/v1.CloudSourcesService/UpdateCloudSource",
 		},
 	})
