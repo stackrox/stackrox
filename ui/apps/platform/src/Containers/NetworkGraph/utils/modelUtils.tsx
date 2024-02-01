@@ -28,8 +28,6 @@ import {
     DeploymentData,
     CIDRBlockData,
     InternalEntitiesNodeModel,
-    InternalGroupData,
-    InternalGroupNodeModel,
 } from '../types/topology.type';
 import { protocolLabel } from './flowUtils';
 
@@ -89,24 +87,6 @@ function getExternalGroupNode(): ExternalGroupNodeModel {
         label: 'External to cluster',
         style: { padding: 15 },
         data: externalGroupData,
-    };
-}
-
-function getInternalGroupNode(): InternalGroupNodeModel {
-    const internalGroupData: InternalGroupData = {
-        collapsible: true,
-        showContextMenu: false,
-        type: 'INTERNAL_GROUP',
-        isFadedOut: false,
-    };
-    return {
-        id: 'Internal to cluster',
-        type: 'group',
-        children: [],
-        group: true,
-        label: 'Internal to cluster',
-        style: { padding: 15 },
-        data: internalGroupData,
     };
 }
 
@@ -380,16 +360,8 @@ export function transformActiveData(
         activeDataModel.nodes.push(externalGroupNode);
     }
 
-    const internalNodeIds = Object.keys(internalNodes);
-    if (internalNodeIds.length > 0) {
-        const internalGroupNode = getInternalGroupNode();
-        internalNodeIds.forEach((internalNodeId) => {
-            internalGroupNode?.children?.push(internalNodeId);
-        });
-
-        // add external group node to data model
-        activeDataModel.nodes.push(internalGroupNode);
-    }
+    // add internal entities directly to graph
+    activeDataModel.nodes.push(...Object.values(internalNodes));
 
     // add deployment nodes to data model
     activeDataModel.nodes.push(...Object.values(deploymentNodes));
@@ -531,7 +503,6 @@ export function createExtraneousFlowsModel(
     };
     const namespaceNodes: Record<string, NamespaceNodeModel> = {};
     let externalNode: ExternalGroupNodeModel | null = null;
-    const internalNode = getInternalGroupNode();
     // add all non-group nodes from the active graph
     Object.values(activeNodeMap).forEach((node) => {
         if (!node.group) {
@@ -618,10 +589,6 @@ export function createExtraneousFlowsModel(
             if (externalNode && externalNode?.children) {
                 externalNode.children.push(data.id);
             }
-        }
-
-        if (type === 'INTERNAL_ENTITIES') {
-            internalNode?.children?.push(data.id);
         }
     });
 
