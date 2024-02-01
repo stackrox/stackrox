@@ -93,8 +93,10 @@ function print_rbac_instructions {
 
 echo "Creating sensor RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
-echo "Creating sensor compliance RBAC roles..."
-${KUBE_COMMAND} apply -f "$DIR/sensor-compliance-rbac.yaml" || print_rbac_instructions
+if [[ -f "$DIR/sensor-compliance-rbac.yaml" ]]; then
+    echo "Creating sensor compliance RBAC roles..."
+    ${KUBE_COMMAND} apply -f "$DIR/sensor-compliance-rbac.yaml"
+fi
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
 
