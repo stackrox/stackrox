@@ -111,15 +111,15 @@ func (s *cloudSourcesTestSuite) TestListCloudSources_Error() {
 	s.Nil(resp)
 }
 
-// Test PostCloudSource
+// Test CreateCloudSource
 
-func (s *cloudSourcesTestSuite) TestPostCloudSource_Success() {
+func (s *cloudSourcesTestSuite) TestCreateCloudSource_Success() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(nil)
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
-	resp, err := s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err := s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 
 	s.Require().NoError(err)
@@ -127,13 +127,13 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Success() {
 	s.Equal(cloudSource.GetConfig(), resp.GetCloudSource().GetConfig())
 }
 
-func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
+func (s *cloudSourcesTestSuite) TestCreateCloudSource_Validate() {
 	// Invalid ID.
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = "invalid-id"
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil).Times(2)
-	resp, err := s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err := s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.Error(err)
 	s.Nil(resp)
@@ -142,8 +142,8 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	cloudSource.Name = ""
-	resp, err = s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err = s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -151,16 +151,16 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
 	// Invalid Type.
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
-	resp, err = s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err = s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Config = &v1.CloudSource_Ocm{}
-	resp, err = s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err = s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -169,8 +169,8 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	cloudSource.Credentials = nil
-	resp, err = s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err = s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -181,48 +181,48 @@ func (s *cloudSourcesTestSuite) TestPostCloudSource_Validate() {
 	cloudSource.Config = &v1.CloudSource_PaladinCloud{
 		PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
 	}
-	resp, err = s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err = s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
-func (s *cloudSourcesTestSuite) TestPostCloudSource_Error() {
+func (s *cloudSourcesTestSuite) TestCreateCloudSource_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(errFake)
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
 	s.datastoreMock.EXPECT().DeleteCloudSource(s.ctx, gomock.Any())
-	resp, err := s.service.PostCloudSource(s.ctx,
-		&v1.PostCloudSourceRequest{CloudSource: cloudSource},
+	resp, err := s.service.CreateCloudSource(s.ctx,
+		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
 	)
 
 	s.ErrorIs(err, errFake)
 	s.Nil(resp)
 }
 
-// Test PutCloudSource
+// Test UpdateCloudSource
 
-func (s *cloudSourcesTestSuite) TestPutCloudSource_Success() {
+func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Success() {
 	cloudSource := fixtures.GetV1CloudSource()
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(nil)
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
-	resp, err := s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err := s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 
 	s.Equal(&v1.Empty{}, resp)
 	s.Require().NoError(err)
 }
 
-func (s *cloudSourcesTestSuite) TestPutCloudSource_Validate() {
+func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Validate() {
 	// Invalid Name.
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Name = ""
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil).Times(4)
-	resp, err := s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err := s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -230,16 +230,16 @@ func (s *cloudSourcesTestSuite) TestPutCloudSource_Validate() {
 	// Invalid Type.
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
-	resp, err = s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err = s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Config = &v1.CloudSource_Ocm{}
-	resp, err = s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err = s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -247,8 +247,8 @@ func (s *cloudSourcesTestSuite) TestPutCloudSource_Validate() {
 	// Invalid Credentials.
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Credentials = nil
-	resp, err = s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err = s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
@@ -258,19 +258,19 @@ func (s *cloudSourcesTestSuite) TestPutCloudSource_Validate() {
 	cloudSource.Config = &v1.CloudSource_PaladinCloud{
 		PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
 	}
-	resp, err = s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err = s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 	s.ErrorIs(err, errox.InvalidArgs)
 	s.Nil(resp)
 }
 
-func (s *cloudSourcesTestSuite) TestPutCloudSources_Error() {
+func (s *cloudSourcesTestSuite) TestUpdateCloudSources_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	s.datastoreMock.EXPECT().UpsertCloudSource(s.ctx, gomock.Any()).Return(errFake)
 	s.datastoreMock.EXPECT().ListCloudSources(s.ctx, gomock.Any()).Return(nil, nil)
-	resp, err := s.service.PutCloudSource(s.ctx,
-		&v1.PutCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
+	resp, err := s.service.UpdateCloudSource(s.ctx,
+		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
 	)
 
 	s.ErrorIs(err, errFake)

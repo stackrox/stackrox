@@ -138,12 +138,12 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 	s.Equal(cloudSources[0:25], resp.GetCloudSources())
 }
 
-func (s *servicePostgresTestSuite) TestPostCloudSource() {
+func (s *servicePostgresTestSuite) TestCreateCloudSource() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
 
 	// 1. Create new cloud source.
-	postResp, err := s.service.PostCloudSource(s.writeCtx, &v1.PostCloudSourceRequest{
+	postResp, err := s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
 	s.NoError(err)
@@ -155,18 +155,18 @@ func (s *servicePostgresTestSuite) TestPostCloudSource() {
 	s.Equal(createdCloudSource, getResp.GetCloudSource())
 
 	// 3. Try to create a cloud source with existing name.
-	postResp, err = s.service.PostCloudSource(s.writeCtx, &v1.PostCloudSourceRequest{
+	postResp, err = s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
 	s.Empty(postResp)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
-func (s *servicePostgresTestSuite) TestPutCloudSource() {
+func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 	cloudSource := fixtures.GetV1CloudSource()
 
 	// 1. Create new cloud source.
-	putResp, err := s.service.PutCloudSource(s.writeCtx, &v1.PutCloudSourceRequest{
+	putResp, err := s.service.UpdateCloudSource(s.writeCtx, &v1.UpdateCloudSourceRequest{
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
 	})
@@ -181,7 +181,7 @@ func (s *servicePostgresTestSuite) TestPutCloudSource() {
 
 	// 3. Try to create a cloud source with existing name.
 	cloudSource.Id = uuid.NewV4().String()
-	putResp, err = s.service.PutCloudSource(s.writeCtx, &v1.PutCloudSourceRequest{
+	putResp, err = s.service.UpdateCloudSource(s.writeCtx, &v1.UpdateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
 	s.Empty(putResp)
@@ -191,7 +191,7 @@ func (s *servicePostgresTestSuite) TestPutCloudSource() {
 	cloudSource = fixtures.GetV1CloudSource()
 	cloudSource.Name = "updated-name"
 	cloudSource.Credentials = nil
-	putResp, err = s.service.PutCloudSource(s.writeCtx, &v1.PutCloudSourceRequest{
+	putResp, err = s.service.UpdateCloudSource(s.writeCtx, &v1.UpdateCloudSourceRequest{
 		CloudSource:       cloudSource,
 		UpdateCredentials: false,
 	})

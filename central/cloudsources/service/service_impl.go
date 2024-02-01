@@ -39,9 +39,9 @@ var (
 			"/v1.CloudSourcesService/TestCloudSource",
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.CloudSourcesService/PostCloudSource",
-			"/v1.CloudSourcesService/PutCloudSource",
+			"/v1.CloudSourcesService/CreateCloudSource",
 			"/v1.CloudSourcesService/DeleteCloudSource",
+			"/v1.CloudSourcesService/UpdateCloudSource",
 		},
 	})
 )
@@ -115,9 +115,9 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 	return &v1.ListCloudSourcesResponse{CloudSources: v1CloudSources}, nil
 }
 
-// PostCloudSource creates a new cloud source.
-func (s *serviceImpl) PostCloudSource(ctx context.Context, request *v1.PostCloudSourceRequest,
-) (*v1.PostCloudSourceResponse, error) {
+// CreateCloudSource creates a new cloud source.
+func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateCloudSourceRequest,
+) (*v1.CreateCloudSourceResponse, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when posting a new cloud source")
@@ -131,11 +131,11 @@ func (s *serviceImpl) PostCloudSource(ctx context.Context, request *v1.PostCloud
 		_ = s.ds.DeleteCloudSource(ctx, storageCloudSource.GetId())
 		return nil, errors.Wrapf(err, "failed to post cloud source %q", v1CloudSource.GetName())
 	}
-	return &v1.PostCloudSourceResponse{CloudSource: toV1Proto(storageCloudSource)}, nil
+	return &v1.CreateCloudSourceResponse{CloudSource: toV1Proto(storageCloudSource)}, nil
 }
 
-// PutCloudSource creates or updates a cloud source.
-func (s *serviceImpl) PutCloudSource(ctx context.Context, request *v1.PutCloudSourceRequest,
+// UpdateCloudSource creates or updates a cloud source.
+func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateCloudSourceRequest,
 ) (*v1.Empty, error) {
 	v1CloudSource := request.GetCloudSource()
 	if err := s.validateCloudSource(ctx, v1CloudSource, request.GetUpdateCredentials()); err != nil {
