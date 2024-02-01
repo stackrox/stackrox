@@ -20,20 +20,19 @@ function InitBundleWizardStep2({ errorMessage, formik }: InitBundleWizardStep2Pr
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel="h2">Download bundle</Title>
-            <Alert
-                variant="info"
-                isInline
-                title="A cluster init bundle can only be downloaded once"
-                component="p"
-            >
-                Store this bundle securely because it contains secrets. You can use the same bundle
-                to secure multiple clusters.
-            </Alert>
             {installation === 'Operator' ? (
                 <SecureClusterUsingOperator headingLevel={headingLevel} />
             ) : (
                 <SecureClusterUsingHelmChart headingLevel={headingLevel} />
             )}
+            <Alert
+                variant="info"
+                isInline
+                title="You can download the YAML file only once when you create a cluster init bundle"
+                component="p"
+            >
+                Store the YAML file securely because it contains secrets.
+            </Alert>
             {errorMessage && (
                 <Alert
                     variant="danger"

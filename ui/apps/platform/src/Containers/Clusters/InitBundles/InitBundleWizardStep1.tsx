@@ -35,6 +35,12 @@ function InitBundleWizardStep1({ formik }: InitBundleWizardStep1Props): ReactEle
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel="h2">Select options</Title>
+            <Alert
+                variant="info"
+                isInline
+                title="You can use one bundle to secure multiple clusters which have the same installation method."
+                component="p"
+            />
             <Form>
                 <FormLabelGroup
                     fieldId="name"
@@ -53,12 +59,6 @@ function InitBundleWizardStep1({ formik }: InitBundleWizardStep1Props): ReactEle
                         onChange={onChange}
                     />
                 </FormLabelGroup>
-                <Alert
-                    variant="info"
-                    isInline
-                    title="You can use one bundle for multiple clusters on the same platform with the same installation method."
-                    component="p"
-                />
                 <FormGroup fieldId="platform" label="Platform of secured clusters" isRequired>
                     <Flex
                         direction={{ default: 'column' }}
