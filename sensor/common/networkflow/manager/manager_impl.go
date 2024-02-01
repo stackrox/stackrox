@@ -559,12 +559,14 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
 				enrichedConnections[indicator] = status.lastSeen
-				if status.lastSeen == timestamp.InfiniteFuture {
-					m.activeConnections[*conn] = &indicator
-					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-				} else {
-					delete(m.activeConnections, *conn)
-					flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+				if features.SensorCapturesIntermediateEvents.Enabled() {
+					if status.lastSeen == timestamp.InfiniteFuture {
+						m.activeConnections[*conn] = &indicator
+						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+					} else {
+						delete(m.activeConnections, *conn)
+						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+					}
 				}
 			}
 		}
@@ -608,12 +610,14 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
 	if oldTS, found := enrichedEndpoints[indicator]; !found || oldTS < status.lastSeen {
 		enrichedEndpoints[indicator] = status.lastSeen
-		if status.lastSeen == timestamp.InfiniteFuture {
-			m.activeEndpoints[*ep] = &indicator
-			flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
-		} else {
-			delete(m.activeEndpoints, *ep)
-			flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+		if features.SensorCapturesIntermediateEvents.Enabled() {
+			if status.lastSeen == timestamp.InfiniteFuture {
+				m.activeEndpoints[*ep] = &indicator
+				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+			} else {
+				delete(m.activeEndpoints, *ep)
+				flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
+			}
 		}
 	}
 }
