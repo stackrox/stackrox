@@ -54,10 +54,10 @@ func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName s
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
 func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) (bool, error) {
-	// use AreProfilesEqual to check if there are any duplicate profiles in the scan request profiles
+	// use areProfilesEqual to check if there are any duplicate profiles in the scan request profiles
 	for i := 0; i < len(profiles); i++ {
 		for j := i + 1; j < len(profiles); j++ {
-			if AreProfilesEqual(profiles[i], profiles[j]) {
+			if areProfilesEqual(profiles[i], profiles[j]) {
 				return true, nil
 			}
 		}
@@ -85,7 +85,7 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	// Check if any of the profiles are being used by any of the existing scan configurations.
 	for _, profile := range profiles {
 		for profileName := range profileMap {
-			if AreProfilesEqual(profile, profileName) {
+			if areProfilesEqual(profile, profileName) {
 				return true, nil
 			}
 		}
@@ -94,9 +94,9 @@ func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id 
 	return false, nil
 }
 
-// AreProfilesEqual returns true if the two profiles are equal
-func AreProfilesEqual(ProfileNameA string, ProfileNameB string) bool {
-	// we use hasPrefix to handle the comparison of profiles with version string in the name
+// areProfilesEqual returns true if the two profiles are equal
+func areProfilesEqual(ProfileNameA string, ProfileNameB string) bool {
+	// we use hasPrefix to handle the comparesion of profiles with version string in the name
 	// first get the shorter profile name
 	var shorterProfileName string
 	var longerProfileName string

@@ -162,6 +162,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
+	// TODO (ROX-22187):  Include the name of the conflicting scan configuration in the error message.
 	if found {
 		return nil, errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", scanRequest.GetScanConfigName())
 	}
