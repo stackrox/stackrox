@@ -31,8 +31,6 @@ const (
 )
 
 var (
-	_ v1.CloudSourcesServiceServer = (*serviceImpl)(nil)
-
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
 			"/v1.CloudSourcesService/CountCloudSources",
