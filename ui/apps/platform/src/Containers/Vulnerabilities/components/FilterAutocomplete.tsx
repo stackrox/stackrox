@@ -41,7 +41,7 @@ export type FilterAutocompleteSelectProps = {
     autocompleteSearchContext?:
         | { 'Image SHA': string }
         | { 'Deployment ID': string }
-        | { 'CVE ID': string }
+        | { CVE: string }
         | Record<string, never>;
 };
 
@@ -58,12 +58,12 @@ function FilterAutocompleteSelect({
     const [isTyping, setIsTyping] = useState(false);
     const { isOpen, onToggle } = useSelectToggle();
 
-    // Autocomplete requests for "Cluster" never return results if there is a 'CVE ID', 'Severity', or 'Fixable' search filter
+    // Autocomplete requests for "Cluster" never return results if there is a 'CVE', 'Severity', or 'Fixable' search filter
     // included in the query. In this case we don't include the additional filters at all which leaves the cluster results
     // unfiltered. Not ideal, but better than no results.
     const useSearchContextForAutocomplete =
         searchOption.value !== 'CLUSTER' ||
-        (!autocompleteSearchContext['CVE ID'] && !searchFilter.SEVERITY && !searchFilter.FIXABLE);
+        (!('CVE' in autocompleteSearchContext) && !searchFilter.SEVERITY && !searchFilter.FIXABLE);
 
     const autocompleteSearchFilterBase = useSearchContextForAutocomplete
         ? { ...autocompleteSearchContext, ...searchFilter }
