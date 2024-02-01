@@ -115,16 +115,14 @@ spec:
 
         then:
         "verify RBAC permissions"
-        for (String resource : resourceTest) {
-            def readFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_ACCESS)
-            def writeFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_WRITE_ACCESS)
-            log.info "Testing read function for ${resource}"
-            def read = hasReadAccess(resource, resourceAccess) == canDo(readFunction, token.token)
-            assert read
-            log.info "Testing write function for ${resource}"
-            def write = hasWriteAccess(resource, resourceAccess) == canDo(writeFunction, token.token)
-            assert write
-        }
+        def readFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_ACCESS)
+        def writeFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_WRITE_ACCESS)
+        log.info "Testing read function for ${resource}"
+        def read = hasReadAccess(resource, resourceAccess) == canDo(readFunction, token.token)
+        assert read
+        log.info "Testing write function for ${resource}"
+        def write = hasWriteAccess(resource, resourceAccess) == canDo(writeFunction, token.token)
+        assert write
 
         cleanup:
         useDesiredServiceAuth()
@@ -136,19 +134,19 @@ spec:
         where:
         "Data inputs"
 
-        resourceAccess                                              | resourceTest
-        [:]                                                         | ["Cluster"]
-        ["Cluster": RoleOuterClass.Access.NO_ACCESS]                | ["Cluster"]
-        ["Cluster": RoleOuterClass.Access.READ_ACCESS]              | ["Cluster"]
-        ["Cluster": RoleOuterClass.Access.READ_WRITE_ACCESS]        | ["Cluster"]
+        resourceAccess                                              | resource
+        [:]                                                         | "Cluster"
+        ["Cluster": RoleOuterClass.Access.NO_ACCESS]                | "Cluster"
+        ["Cluster": RoleOuterClass.Access.READ_ACCESS]              | "Cluster"
+        ["Cluster": RoleOuterClass.Access.READ_WRITE_ACCESS]        | "Cluster"
         ["Cluster": RoleOuterClass.Access.READ_ACCESS,
          "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
-         "NetworkPolicy": RoleOuterClass.Access.READ_ACCESS,]       | ["NetworkPolicy"]
+         "NetworkPolicy": RoleOuterClass.Access.READ_ACCESS,]       | "NetworkPolicy"
         ["Cluster": RoleOuterClass.Access.READ_ACCESS,
          "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
-         "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | ["NetworkPolicy"]
+         "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | "NetworkPolicy"
     }
 
     private cleanupRoleAndToken(Map<String, RoleOuterClass.Access> resourceAccess,
