@@ -41,8 +41,8 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
-	// Set up testing environment
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
+		// Set up testing environment
 		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
 		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
 
@@ -50,16 +50,12 @@ func TestPod(testT *testing.T) {
 		deploymentID := getDeploymentID(retryT, deploymentName)
 
 		podCount := getPodCount(retryT, deploymentID)
-		if podCount != 1 {
-			log.Infof("Pod count is not 1: %d", podCount)
-		}
+		log.Infof("Pod count: %d", podCount)
 		require.Equal(retryT, 1, podCount)
 
 		// Get the test pod.
 		pods := getPods(retryT, deploymentID)
-		if len(pods) != 1 {
-			log.Infof("Length Pod count is not 1: %d", len(pods))
-		}
+		log.Infof("Num pods: %d", len(pods))
 		require.Len(retryT, pods, 1)
 		pod := pods[0]
 
@@ -89,15 +85,13 @@ func TestPod(testT *testing.T) {
 		require.ElementsMatch(retryT, eventNames, expected)
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-		if pod.Started.After(events[0].Timestamp.Time) {
-			log.Infof("Pod start is after event time: %s vs %s", pod.Started, events[0].Timestamp.Time)
-		}
+		log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
 		require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
 
 		// Verify risk event timeline csv
-		log.Infof("Before CSV CHeck")
+		log.Info("Before CSV Check")
 		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
-		log.Infof("After CSV CHeck")
+		log.Info("After CSV CHeck")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -112,9 +106,7 @@ func TestPod(testT *testing.T) {
 		}
 		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
-		if !k8sPod.GetCreationTimestamp().Time.UTC().Equal(pod.Started.UTC()) {
-			log.Infof("Creation timestamps are different: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
-		}
+		log.Infof("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 	})
 }
