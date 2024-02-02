@@ -1,12 +1,12 @@
 import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
+import pluralize from 'pluralize';
 
 import { IntegrationBase } from 'services/IntegrationsService';
 import { IntegrationSource, IntegrationType } from 'types/integration';
 import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
 import { Traits } from 'types/traits.proto';
-import pluralize from 'pluralize';
 
 export type { IntegrationSource, IntegrationType };
 
@@ -92,24 +92,24 @@ export function transformDurationLongForm(duration: string): string {
     const seconds = extractUnitsOfTime(duration, 's');
     let result = '';
     if (hours && hours > 0) {
-        result += pluralizeMeasurement(hours, 'hour');
+        result += pluralizeUnit(hours, 'hour');
     }
     if (minutes && minutes > 0) {
         result += ' ';
-        result += pluralizeMeasurement(minutes, 'minute');
+        result += pluralizeUnit(minutes, 'minute');
     }
     if (seconds && seconds > 0) {
         result += ' ';
-        result += pluralizeMeasurement(seconds, 'second');
+        result += pluralizeUnit(seconds, 'second');
     }
     return result;
 }
 
-function pluralizeMeasurement(count, measurement: string): string {
-    return `${count} ${pluralize(measurement, parseInt(count))}`;
+function pluralizeUnit(count: number, unit: string): string {
+    return `${count} ${pluralize(unit, count)}`;
 }
 
-function extractUnitsOfTime(duration, unit: string): number {
+function extractUnitsOfTime(duration: string, unit: string): number {
     const unitRegex = new RegExp(`[0-9]+${unit}`);
     const matchHours = duration.match(unitRegex);
     if (matchHours && matchHours.length !== 0) {

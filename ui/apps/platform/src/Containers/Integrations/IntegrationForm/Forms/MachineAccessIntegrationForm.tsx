@@ -9,22 +9,23 @@ import {
     Form,
     FormGroup,
     FormSection,
-    PageSection, Popover,
+    PageSection,
+    Popover,
     SelectOption,
-    TextInput, Tooltip,
+    TextInput,
 } from '@patternfly/react-core';
 import {FieldArray, FormikProvider} from 'formik';
 import {ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon} from '@patternfly/react-icons';
-import {IntegrationFormProps} from '../integrationFormTypes';
-import useIntegrationForm from '../useIntegrationForm';
-import FormMessage from '../../../../Components/PatternFly/FormMessage';
-import FormLabelGroup from '../FormLabelGroup';
-import IntegrationFormActions from '../IntegrationFormActions';
-import FormSaveButton from '../../../../Components/PatternFly/FormSaveButton';
-import FormCancelButton from '../../../../Components/PatternFly/FormCancelButton';
-import SelectSingle from '../../../../Components/SelectSingle';
-import {fetchRolesAsArray, Role} from '../../../../services/RolesService';
-import {MachineConfigType} from '../../../../services/MachineAccessService';
+import {IntegrationFormProps} from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
+import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
+import FormMessage from 'Components/PatternFly/FormMessage';
+import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import SelectSingle from 'Components/SelectSingle';
+import {fetchRolesAsArray, Role} from 'services/RolesService';
+import {MachineConfigType} from 'services/MachineAccessService';
 
 export type MachineAccessConfig = {
     id: string;
@@ -94,6 +95,7 @@ function MachineAccessIntegrationForm({
         fetchRolesAsArray()
             .then((rolesFetched) => {
                 setRoles(rolesFetched);
+                setAlertRoles(null);
             })
             .catch((error) => {
                 setAlertRoles(
@@ -213,7 +215,8 @@ function MachineAccessIntegrationForm({
                                                                 <Popover bodyContent={
                                                                     <div>
                                                                         <a href="https://golang.org/s/re2syntax"
-                                                                           target="_blank" rel="noreferrer">Learn how to use regex here</a>
+                                                                           target="_blank" rel="noreferrer">Learn how to
+                                                                            use regex here</a>
                                                                     </div>
                                                                 } headerContent={"Use regex to enter values"}>{
                                                                     <Button
@@ -224,7 +227,8 @@ function MachineAccessIntegrationForm({
                                                                         className="pf-c-form__group-label-help"
                                                                         style={{backgroundColor: 'transparent'}}
                                                                     >
-                                                                        <HelpIcon style={{color: 'black'}} noVerticalAlign/>
+                                                                        <HelpIcon style={{color: 'black'}}
+                                                                                  noVerticalAlign/>
                                                                     </Button>
                                                                 }
                                                                 </Popover>

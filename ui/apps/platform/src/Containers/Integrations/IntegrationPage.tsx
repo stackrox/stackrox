@@ -48,23 +48,20 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
         pageState !== 'CREATE' && pageState !== 'LIST' && (type === 'generic' || type === 'splunk');
     const hasEditButton =
         pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
+    const actualTitle = getIsMachineAccessConfig(source, type) && title === ''
+        ? 'Manage configuration'
+        : title;
     return (
         <>
             <PageTitle
-                title={
-                    getIsMachineAccessConfig(source, type) && title === ''
-                        ? 'Manage configuration'
-                        : title
-                }
+                title={actualTitle}
             />
             <PageSection variant="light" className="pf-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
-                        {getIsMachineAccessConfig(source, type) && title === ''
-                            ? 'Manage configuration'
-                            : title}
+                        {actualTitle}
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>

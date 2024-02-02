@@ -17,7 +17,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
-import { createMachineAccessConfig } from '../../../services/MachineAccessService';
+import { createMachineAccessConfig } from 'services/MachineAccessService';
 
 export type UseIntegrationActions = {
     source: IntegrationSource;
