@@ -108,6 +108,12 @@ endif
 
 image-prefix := scanner-v4
 
+image-scripts := restore-all-dir-contents \
+                 import-additional-cas \
+                 save-dir-contents
+
+image-scripts-prefix := image/scanner/scripts
+
 .PHONY: images
 images: scanner-image db-image
 
@@ -116,12 +122,16 @@ image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
 	cp $< $@
 
+$(image-scripts-prefix)/%: ../image/rhel/static-bin/%
+	@echo "+ $@"
+	cp $< $@
+
 OSSLS_NOTICE_DEP := ossls-notice
 ifdef CI
 	OSSLS_NOTICE_DEP := ossls-notice-no-download
 endif
 .PHONY: scanner-image
-scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
+scanner-image: image/scanner/bin/scanner $(addprefix $(image-scripts-prefix)/,$(image-scripts)) $(OSSLS_NOTICE_DEP)
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
@@ -146,25 +156,18 @@ ossls-notice: $(build-deps-t) $(OSSLS_BIN)
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
-SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
-.PHONY: copy-scripts
-copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
-	@echo "+ $@"
-	$(SILENT)cp $^ image/scanner/scripts
-
 #################
 ## Integration ##
 #################
 
-integration-timeout := 20m
-
-db-integration-d := datastore/postgres
+db-integration-timeout := 20m
+db-integration-d       := datastore/postgres
 db-integration-go-tag  := scanner_db_integration
 
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##
