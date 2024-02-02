@@ -5195,7 +5195,7 @@
             ]
           },
           {
-            "name": "ComplianceOperatorSuite",
+            "name": "ComplianceOperatorSuiteV2",
             "fields": [
               {
                 "id": 1,

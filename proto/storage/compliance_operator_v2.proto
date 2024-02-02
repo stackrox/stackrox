@@ -219,7 +219,7 @@ message ComplianceOperatorCondition {
 }
 
 // Next Tag: 5
-// ComplianceOperatorSuite represents scan status
+// ComplianceOperatorSuiteV2 represents scan status
 message ComplianceOperatorSuiteV2 {
   string id = 1 [(gogoproto.moretags) = 'sql:"pk,id,type(uuid)"'];
   string name = 2 [(gogoproto.moretags) = 'search:"Compliance Suite Name,hidden"'];
