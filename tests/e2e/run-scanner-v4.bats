@@ -84,6 +84,10 @@ describe_pods_in_namespace() {
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
       "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}"
       echo
+      echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
+      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}"
+      echo
+
     done
 }
 
@@ -151,16 +155,19 @@ teardown() {
     verify_scannerV4_deployed "stackrox"
 }
 
-@test "Fresh installation of HEAD Helm chart with Scanner v4 disabled" {
-    info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled"
+@test "Fresh installation of HEAD Helm chart with Scanner V4 disabled and enabling it later" {
+    info "Installing StackRox using HEAD Helm chart with Scanner v4 disabled and enabling it later"
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4=false
-    _deploy_stackrox
+    ROX_SCANNER_V4=false _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
     verify_no_scannerV4_deployed "stackrox"
+
+    HELM_REUSE_VALUES=true _deploy_stackrox
+
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
 }
 
 @test "Fresh installation of HEAD Helm chart with Scanner v4 enabled" {
@@ -274,7 +281,11 @@ _deploy_stackrox() {
     deploy_stackrox_operator
 
     _deploy_central "${central_namespace}"
-    export_central_basic_auth_creds
+    if [[ "${HELM_REUSE_VALUES:-}" != "true" ]]; then
+      # In case we are reusing existing Helm values we should not export new
+      # central credentials into the environment.
+      export_central_basic_auth_creds
+    fi
     wait_for_api "${central_namespace}"
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"

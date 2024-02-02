@@ -116,6 +116,8 @@
 
 {{ include "srox.applyDefaults" $ }}
 
+{{ include "srox.getStorageClasses" (list $) }}
+
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}

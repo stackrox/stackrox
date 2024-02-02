@@ -41,7 +41,8 @@ export type NetworkEntityScope = {
 export type NetworkEntityInfo =
     | DeploymentNetworkEntityInfo
     | ExternalSourceNetworkEntityInfo
-    | InternetNetworkEntityInfo;
+    | InternetNetworkEntityInfo
+    | InternalNetworkEntitiesInfo;
 
 export type DeploymentNetworkEntityInfo = {
     deployment: {
@@ -71,6 +72,10 @@ export type InternetNetworkEntityInfo = {
     type: 'INTERNET';
 } & BaseNetworkEntityInfo;
 
+export type InternalNetworkEntitiesInfo = {
+    type: 'INTERNAL_ENTITIES';
+} & BaseNetworkEntityInfo;
+
 type BaseNetworkEntityInfo = {
     type: NetworkEntityInfoType;
     id: string;
@@ -81,7 +86,8 @@ export type NetworkEntityInfoType =
     | 'DEPLOYMENT'
     | 'INTERNET'
     | 'LISTEN_ENDPOINT'
-    | 'EXTERNAL_SOURCE';
+    | 'EXTERNAL_SOURCE'
+    | 'INTERNAL_ENTITIES';
 
 export type L4Protocol =
     | 'L4_PROTOCOL_UNKNOWN'

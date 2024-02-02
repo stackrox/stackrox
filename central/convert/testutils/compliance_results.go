@@ -171,7 +171,8 @@ func GetOneClusterComplianceStorageResults(_ *testing.T, clusterID string) []*st
 func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 	return []*v2.ComplianceScanResult{
 		{
-			ScanName: scanConfigName1,
+			ScanName:     scanConfigName1,
+			ScanConfigId: scanConfigName1,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
 					CheckId:   complianceCheckID1,
@@ -216,7 +217,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 			},
 		},
 		{
-			ScanName: scanConfigName2,
+			ScanName:     scanConfigName2,
+			ScanConfigId: scanConfigName2,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
 					CheckId:   complianceCheckID2,
@@ -237,7 +239,8 @@ func GetConvertedComplianceResults(_ *testing.T) []*v2.ComplianceScanResult {
 			},
 		},
 		{
-			ScanName: scanConfigName3,
+			ScanName:     scanConfigName3,
+			ScanConfigId: scanConfigName3,
 			CheckResults: []*v2.ComplianceCheckResult{
 				{
 					CheckId:   complianceCheckID3,

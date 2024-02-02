@@ -93,9 +93,11 @@ function createFlow({
         entity = adjacentNodeData.deployment.name;
         namespace = adjacentNodeData.deployment.namespace;
     } else if (adjacentNodeData.type === 'CIDR_BLOCK') {
-        entity = `${adjacentNodeData.externalSource.name}`;
+        entity = adjacentNodeData.externalSource.name;
     } else if (adjacentNodeData.type === 'EXTERNAL_ENTITIES') {
         entity = 'External entities';
+    } else if (adjacentNodeData.type === 'INTERNAL_ENTITIES') {
+        entity = 'Internal entities';
     }
     // we need a unique id for each network flow
     const flowId = `${entity}-${namespace}-${direction}-${String(port)}-${String(protocol)}`;
@@ -168,7 +170,7 @@ export function getNetworkFlows(
 }
 
 /*
-  This function takes network flows and filters the data based on a text search value 
+  This function takes network flows and filters the data based on a text search value
   for entity name and some advanced filters specific to network flows. These include:
   flow types, directionality, protocols, and ports
 */
@@ -229,6 +231,8 @@ export function transformFlowsToPeers(flows: Flow[]): Peer[] {
             backendType = 'EXTERNAL_SOURCE';
         } else if (type === 'EXTERNAL_ENTITIES') {
             backendType = 'INTERNET';
+        } else if (type === 'INTERNAL_ENTITIES') {
+            backendType = 'INTERNAL_ENTITIES';
         } else {
             backendType = 'DEPLOYMENT';
         }
@@ -264,6 +268,9 @@ export function createFlowsFromGroupedDiffFlows(
         } else if (entity.type === 'INTERNET') {
             entityName = 'External entities';
             type = 'EXTERNAL_ENTITIES';
+        } else if (entity.type === 'INTERNAL_ENTITIES') {
+            entityName = 'Internal entities';
+            type = 'INTERNAL_ENTITIES';
         } else if (entity.type === 'EXTERNAL_SOURCE') {
             entityName = entity.externalSource.name;
             type = 'CIDR_BLOCK';

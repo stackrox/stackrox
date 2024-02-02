@@ -321,11 +321,7 @@ function launch_central {
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
-      helm_args=(
-        -f "$unzip_dir/values-public.yaml"
-        -f "$unzip_dir/values-private.yaml"
-        --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
-      )
+      local helm_args=( )
 
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
@@ -413,6 +409,20 @@ function launch_central {
         helm lint "${helm_chart}"
         helm lint "${helm_chart}" -n "${central_namespace}"
         helm lint "${helm_chart}" -n "${central_namespace}" "${helm_args[@]}"
+      fi
+
+      if [[ "${HELM_REUSE_VALUES}" == "true" ]]; then
+        # Must be added here, after linting, because `helm lint` doesn't know about `--reuse-values`.
+        # If, instead of using `--reuse-values`, we would provide the newly generated
+        # `values-private.yaml` we would unnecessarily switch certificates and produce a certificate
+        # validation issue.
+        helm_args+=("--reuse-values")
+      else
+        helm_args+=(
+          -f "$unzip_dir/values-public.yaml"
+          -f "$unzip_dir/values-private.yaml"
+          --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
+        )
       fi
 
       # Add a custom values file to Helm
@@ -714,7 +724,7 @@ function launch_sensor {
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
       else
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" "${CLUSTER_TYPE}" "${MAIN_IMAGE}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi

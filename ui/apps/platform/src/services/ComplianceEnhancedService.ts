@@ -123,6 +123,32 @@ export interface ListComplianceScanResultsOverviewResponse {
     scanOverviews: ComplianceScanResultsOverview[];
 }
 
+export type ClusterCheckStatus = {
+    cluster: ComplianceScanCluster;
+    status: ComplianceCheckStatus;
+    createdTime: string; // ISO 8601 date string
+    checkUid: string;
+};
+
+type ComplianceCheckResult = {
+    checkId: string;
+    checkName: string;
+    clusters: ClusterCheckStatus[];
+    description: string;
+    instructions: string;
+    standard: string;
+    control: string;
+    rationale: string;
+    valuesUsed: string[];
+    warnings: string[];
+};
+
+type ComplianceScanResult = {
+    scanName: string;
+    profileName: string;
+    checkResults: ComplianceCheckResult[];
+};
+
 // API types for Compliance Profiles:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_profile_service
 interface ComplianceRule {
@@ -286,6 +312,71 @@ export function getSingleClusterStatsByScanConfig(
         }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
+        });
+}
+
+export function getSingleClusterResultsByScanConfig(
+    clusterId: string,
+    scanName: string,
+    searchFilter: SearchFilter,
+    sortOption: ApiSortOption,
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceScanResult | null> {
+    if (!clusterId || !scanName) {
+        return Promise.reject(new Error('clusterId and scanName are required'));
+    }
+    const searchQuery = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+        'Compliance Scan Config Name': scanName,
+        ...searchFilter,
+    });
+
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        query: searchQuery,
+        pagination: { offset, limit: pageSize, sortOption },
+    };
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+
+    return axios
+        .get<{
+            scanResults: ComplianceScanResult[];
+        }>(`${complianceResultsServiceUrl}/results?${params}`)
+        .then((response) => {
+            const results = response?.data?.scanResults ?? [];
+            if (results.length > 1) {
+                throw new Error('Expected a single result set, but received multiple');
+            }
+            return results[0] || null;
+        });
+}
+
+export function getSingleClusterResultsByScanConfigCount(
+    clusterId: string,
+    scanName: string,
+    searchFilter: SearchFilter
+): Promise<number> {
+    const searchQuery = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+        'Compliance Scan Config Name': scanName,
+        ...searchFilter,
+    });
+
+    const query = {
+        query: searchQuery,
+    };
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+
+    return axios
+        .get<{
+            count: number;
+        }>(`${complianceResultsServiceUrl}/count/results?${params}`)
+        .then((response) => {
+            return response?.data?.count ?? 0;
         });
 }
 

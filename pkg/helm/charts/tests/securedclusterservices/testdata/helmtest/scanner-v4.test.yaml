@@ -223,3 +223,80 @@ tests:
     .networkpolicys["scanner-v4-indexer"].spec.ingress | assertThat(length == 1)
     .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)
     .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "Scanner V4 DB is backed by an emptyDir"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  tests:
+  - name: "if configured explicitly"
+    set:
+      scannerV4.db.persistence.none: true
+    expect: |
+      .deployments["scanner-v4-db"].spec.template.spec.volumes[] | select(.name == "disk") | assertThat(.emptyDir != null)
+    tests:
+    - name: "in absence of a default StorageClass"
+    - name: "in presence of a default StorageClass"
+      server:
+        objects:
+        - apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: def-sc
+            annotations:
+              storageclass.kubernetes.io/is-default-class: true
+
+- name: "Scanner V4 DB is backed by a PVC"
+  set:
+    imagePullSecrets.allowNone: true
+    scannerV4.disable: false
+  tests:
+  - name: "by default if a default StorageClass exists"
+    server:
+      objects:
+      - apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: def-sc
+          annotations:
+            storageclass.kubernetes.io/is-default-class: true
+    expect: |
+      .deployments["scanner-v4-db"].spec.template.spec.volumes[] | select(.name == "disk") | assertThat(.persistentVolumeClaim != null)
+  - name: "if configured explicitly"
+    values:
+      scannerV4:
+        db:
+          persistence:
+            persistentVolumeClaim:
+              claimName: "foo"
+              size: "10Gi"
+              storageClass: "somes-sc"
+              createClaim: true
+    server:
+      objects:
+      - apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: some-sc
+          annotations:
+            storageclass.kubernetes.io/is-default-class: false
+    defs: |
+      def getVolume(deploymentName; volumeName):
+        .deployments[deploymentName].spec.template.spec.volumes[] | select(.name == "disk");
+      def getScannerV4Disk:
+        getVolume("scanner-v4-db"; "disk");
+    expect: |
+      getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+      getScannerV4Disk | assumeThat(.persistentVolumeClaim != null) | .persistentVolumeClaim | assertThat(.claimName == "foo")
+      .persistentvolumeclaims["foo"] | assertThat(. != null)
+    tests:
+      - name: "in absence of a default StorageClass"
+      - name: "in presence of a default StorageClass"
+        server:
+          objects:
+          - apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: a-default-sc
+              annotations:
+                storageclass.kubernetes.io/is-default-class: true
