@@ -6,6 +6,8 @@ import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { EyeIcon } from '@patternfly/react-icons';
+import { LiveRegion } from 'Components/PatternFly/LiveRegion';
+import LiveTr from 'Components/PatternFly/LiveRegion/components/LiveTr';
 import ImageNameTd from '../components/ImageNameTd';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
@@ -87,6 +89,7 @@ export type ImagesTableProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
+    isUpdating: boolean;
 };
 
 function ImagesTable({
@@ -97,138 +100,143 @@ function ImagesTable({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
+    isUpdating,
 }: ImagesTableProps) {
     const colSpan = hasWriteAccessForWatchedImage ? 7 : 6;
 
     return (
-        <TableComposable borders={false} variant="compact">
-            <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
-                <Tr>
-                    <Th sort={getSortParams('Image')}>Image</Th>
-                    <TooltipTh tooltip="CVEs by severity across this image">
-                        CVEs by severity
-                        {isFiltered && <DynamicColumnIcon />}
-                    </TooltipTh>
-                    <Th sort={getSortParams('Image OS')}>Operating system</Th>
-                    <Th>
-                        Deployments
-                        {isFiltered && <DynamicColumnIcon />}
-                    </Th>
-                    <Th sort={getSortParams('Image created time')}>Age</Th>
-                    <Th sort={getSortParams('Image scan time')}>Scan time</Th>
-                    {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
-                </Tr>
-            </Thead>
-            {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
-            {images.map(
-                ({
-                    id,
-                    name,
-                    imageCVECountBySeverity,
-                    operatingSystem,
-                    deploymentCount,
-                    metadata,
-                    watchStatus,
-                    scanTime,
-                    scanNotes,
-                    notes,
-                }) => {
-                    const criticalCount = imageCVECountBySeverity.critical.total;
-                    const importantCount = imageCVECountBySeverity.important.total;
-                    const moderateCount = imageCVECountBySeverity.moderate.total;
-                    const lowCount = imageCVECountBySeverity.low.total;
+        <LiveRegion isUpdating={isUpdating}>
+            <TableComposable borders={false} variant="compact">
+                <Thead noWrap>
+                    <Tr>
+                        <Th sort={getSortParams('Image')}>Image</Th>
+                        <TooltipTh tooltip="CVEs by severity across this image">
+                            CVEs by severity
+                            {isFiltered && <DynamicColumnIcon />}
+                        </TooltipTh>
+                        <Th sort={getSortParams('Image OS')}>Operating system</Th>
+                        <Th>
+                            Deployments
+                            {isFiltered && <DynamicColumnIcon />}
+                        </Th>
+                        <Th sort={getSortParams('Image created time')}>Age</Th>
+                        <Th sort={getSortParams('Image scan time')}>Scan time</Th>
+                        {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
+                    </Tr>
+                </Thead>
+                {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
+                {images.map(
+                    ({
+                        id,
+                        name,
+                        imageCVECountBySeverity,
+                        operatingSystem,
+                        deploymentCount,
+                        metadata,
+                        watchStatus,
+                        scanTime,
+                        scanNotes,
+                        notes,
+                    }) => {
+                        const criticalCount = imageCVECountBySeverity.critical.total;
+                        const importantCount = imageCVECountBySeverity.important.total;
+                        const moderateCount = imageCVECountBySeverity.moderate.total;
+                        const lowCount = imageCVECountBySeverity.low.total;
 
-                    const isWatchedImage = watchStatus === 'WATCHED';
-                    const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
-                    const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
+                        const isWatchedImage = watchStatus === 'WATCHED';
+                        const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
+                        const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
 
-                    return (
-                        <Tbody
-                            key={id}
-                            style={{
-                                borderBottom: '1px solid var(--pf-c-table--BorderColor)',
-                            }}
-                        >
-                            <Tr>
-                                <Td dataLabel="Image">
-                                    {name ? (
-                                        <ImageNameTd name={name} id={id}>
-                                            {isWatchedImage && (
-                                                <Label
-                                                    isCompact
-                                                    variant="outline"
-                                                    color="grey"
-                                                    className="pf-u-mt-xs"
-                                                    icon={<EyeIcon />}
-                                                >
-                                                    Watched image
-                                                </Label>
-                                            )}
-                                            {(notes.length !== 0 || scanNotes.length !== 0) && (
-                                                <ImageScanningErrorLabel
-                                                    imageNotes={notes}
-                                                    scanNotes={scanNotes}
-                                                />
-                                            )}
-                                        </ImageNameTd>
-                                    ) : (
-                                        'Image name not available'
-                                    )}
-                                </Td>
-                                <Td dataLabel="CVEs by severity">
-                                    <SeverityCountLabels
-                                        criticalCount={criticalCount}
-                                        importantCount={importantCount}
-                                        moderateCount={moderateCount}
-                                        lowCount={lowCount}
-                                        entity="image"
-                                        filteredSeverities={filteredSeverities}
-                                    />
-                                </Td>
-                                <Td>{operatingSystem}</Td>
-                                <Td modifier="nowrap">
-                                    {deploymentCount > 0 ? (
-                                        <>
-                                            {deploymentCount}{' '}
-                                            {pluralize('deployment', deploymentCount)}
-                                        </>
-                                    ) : (
-                                        <Flex>
-                                            <div>0 deployments</div>
-                                        </Flex>
-                                    )}
-                                </Td>
-                                <Td>
-                                    <DateDistanceTd date={metadata?.v1?.created} asPhrase={false} />
-                                </Td>
-                                <Td>
-                                    <DateDistanceTd date={scanTime} />
-                                </Td>
-                                {hasWriteAccessForWatchedImage && (
-                                    <Td isActionCell>
-                                        {name?.tag && (
-                                            <ActionsColumn
-                                                menuAppendTo={() => document.body}
-                                                items={[
-                                                    {
-                                                        title: watchImageMenuText,
-                                                        onClick: () =>
-                                                            watchImageMenuAction(
-                                                                `${name.registry}/${name.remote}:${name.tag}`
-                                                            ),
-                                                    },
-                                                ]}
-                                            />
+                        return (
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-c-table--BorderColor)',
+                                }}
+                            >
+                                <LiveTr>
+                                    <Td dataLabel="Image">
+                                        {name ? (
+                                            <ImageNameTd name={name} id={id}>
+                                                {isWatchedImage && (
+                                                    <Label
+                                                        isCompact
+                                                        variant="outline"
+                                                        color="grey"
+                                                        className="pf-u-mt-xs"
+                                                        icon={<EyeIcon />}
+                                                    >
+                                                        Watched image
+                                                    </Label>
+                                                )}
+                                                {(notes.length !== 0 || scanNotes.length !== 0) && (
+                                                    <ImageScanningErrorLabel
+                                                        imageNotes={notes}
+                                                        scanNotes={scanNotes}
+                                                    />
+                                                )}
+                                            </ImageNameTd>
+                                        ) : (
+                                            'Image name not available'
                                         )}
                                     </Td>
-                                )}
-                            </Tr>
-                        </Tbody>
-                    );
-                }
-            )}
-        </TableComposable>
+                                    <Td dataLabel="CVEs by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            entity="image"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
+                                    <Td>{operatingSystem}</Td>
+                                    <Td modifier="nowrap">
+                                        {deploymentCount > 0 ? (
+                                            <>
+                                                {deploymentCount}{' '}
+                                                {pluralize('deployment', deploymentCount)}
+                                            </>
+                                        ) : (
+                                            <Flex>
+                                                <div>0 deployments</div>
+                                            </Flex>
+                                        )}
+                                    </Td>
+                                    <Td>
+                                        <DateDistanceTd
+                                            date={metadata?.v1?.created}
+                                            asPhrase={false}
+                                        />
+                                    </Td>
+                                    <Td>
+                                        <DateDistanceTd date={scanTime} />
+                                    </Td>
+                                    {hasWriteAccessForWatchedImage && (
+                                        <Td isActionCell>
+                                            {name?.tag && (
+                                                <ActionsColumn
+                                                    menuAppendTo={() => document.body}
+                                                    items={[
+                                                        {
+                                                            title: watchImageMenuText,
+                                                            onClick: () =>
+                                                                watchImageMenuAction(
+                                                                    `${name.registry}/${name.remote}:${name.tag}`
+                                                                ),
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
+                                        </Td>
+                                    )}
+                                </LiveTr>
+                            </Tbody>
+                        );
+                    }
+                )}
+            </TableComposable>
+        </LiveRegion>
     );
 }
 

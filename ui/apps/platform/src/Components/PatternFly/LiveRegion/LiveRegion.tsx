@@ -2,22 +2,25 @@ import React from 'react';
 import LiveRegionContext from './liveRegionContext';
 
 export type LiveRegionProps = {
-    children: React.ReactNode;
     isUpdating: boolean;
-    className?: string;
+    children: React.ReactNode;
 };
 
-function LiveRegion({ isUpdating, children, className = '' }: LiveRegionProps) {
+function LiveRegion({ isUpdating, children }: LiveRegionProps) {
     return (
         <LiveRegionContext.Provider value={{ isUpdating }}>
-            <div
-                className={`acs-live-region ${className}`}
-                role="region"
-                aria-live="polite"
-                aria-busy={isUpdating ? 'true' : 'false'}
-            >
-                {children}
-            </div>
+            {React.Children.map(children, (child) => {
+                if (React.isValidElement(child)) {
+                    return React.cloneElement(child, {
+                        ...child.props,
+                        className: `${child.props.className ?? ''} acs-live-region`,
+                        role: child.props.role ?? 'region',
+                        'aria-live': child.props['aria-live'] ?? 'polite',
+                        'aria-busy': isUpdating ? 'true' : 'false',
+                    });
+                }
+                return child;
+            })}
         </LiveRegionContext.Provider>
     );
 }
