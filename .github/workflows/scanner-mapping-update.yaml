@@ -3,9 +3,6 @@ name: Scanner mappings update
 on:
   schedule:
     - cron: "0 0 * * *"
-  push:
-    branches:
-    - scanner/*
 
 jobs:
   update-scanner-mappings:
