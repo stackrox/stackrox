@@ -13,17 +13,17 @@ type datastoreImpl struct {
 }
 
 // GetSuite returns the suite with the name
-func (d *datastoreImpl) GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuite, bool, error) {
+func (d *datastoreImpl) GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuiteV2, bool, error) {
 	return d.store.Get(ctx, id)
 }
 
 // UpsertSuite adds the suite to the database
-func (d *datastoreImpl) UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuite) error {
+func (d *datastoreImpl) UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuiteV2) error {
 	return d.store.Upsert(ctx, suite)
 }
 
 // UpsertSuites adds the suites to the database
-func (d *datastoreImpl) UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuite) error {
+func (d *datastoreImpl) UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuiteV2) error {
 	return d.store.UpsertMany(ctx, suites)
 }
 
@@ -33,7 +33,7 @@ func (d *datastoreImpl) DeleteSuite(ctx context.Context, id string) error {
 }
 
 // GetSuitesByCluster retrieve suites by the cluster
-func (d *datastoreImpl) GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuite, error) {
+func (d *datastoreImpl) GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuiteV2, error) {
 	return d.store.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
 }

@@ -22,8 +22,8 @@ var (
 )
 
 // GetSuiteStorage -- returns suite storage
-func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuite {
-	status := &storage.ComplianceOperatorSuite_Status{
+func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuiteV2 {
+	status := &storage.ComplianceOperatorSuiteV2_Status{
 		Phase:        "DONE",
 		Result:       "NON-COMPLIANT",
 		ErrorMessage: "some error",
@@ -44,7 +44,7 @@ func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuite {
 		},
 	}
 
-	return &storage.ComplianceOperatorSuite{
+	return &storage.ComplianceOperatorSuiteV2{
 		Id:        SuiteUID,
 		Name:      "compliancesuitename",
 		Status:    status,
@@ -53,8 +53,8 @@ func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuite {
 }
 
 // GetSuiteSensorMsg -- returns a suite message from sensor
-func GetSuiteSensorMsg(_ *testing.T) *central.ComplianceOperatorSuite {
-	status := &central.ComplianceOperatorSuite_Status{
+func GetSuiteSensorMsg(_ *testing.T) *central.ComplianceOperatorSuiteV2 {
+	status := &central.ComplianceOperatorSuiteV2_Status{
 		Phase:        "DONE",
 		Result:       "NON-COMPLIANT",
 		ErrorMessage: "some error",
@@ -75,7 +75,7 @@ func GetSuiteSensorMsg(_ *testing.T) *central.ComplianceOperatorSuite {
 		},
 	}
 
-	return &central.ComplianceOperatorSuite{
+	return &central.ComplianceOperatorSuiteV2{
 		Id:     SuiteUID,
 		Name:   "compliancesuitename",
 		Status: status,

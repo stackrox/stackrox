@@ -77,7 +77,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuite() {
 	suiteIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Empty(suiteIDs)
-	suites := []*storage.ComplianceOperatorSuite{
+	suites := []*storage.ComplianceOperatorSuiteV2{
 		s.getTestSuite(testconsts.Cluster1),
 		s.getTestSuite(testconsts.Cluster2),
 	}
@@ -134,13 +134,13 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuite() {
 
 	testCases := []struct {
 		desc                string
-		suites              []*storage.ComplianceOperatorSuite
+		suites              []*storage.ComplianceOperatorSuiteV2
 		testContext         context.Context
 		expectedRecordIndex set.FrozenIntSet
 	}{
 		{
 			desc: "Write 3 clusters - Full access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -150,7 +150,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuite() {
 		},
 		{
 			desc: "Write 3 clusters - No access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -160,7 +160,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuite() {
 		},
 		{
 			desc: "Write 3 clusters - Cluster 1 access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -195,7 +195,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestUpsertSuites() {
 	allSuiteIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Empty(allSuiteIDs)
-	suites := []*storage.ComplianceOperatorSuite{
+	suites := []*storage.ComplianceOperatorSuiteV2{
 		s.getTestSuite(testconsts.Cluster1),
 		s.getTestSuite(testconsts.Cluster2),
 		s.getTestSuite(testconsts.Cluster3),
@@ -254,13 +254,13 @@ func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuite() {
 
 	testCases := []struct {
 		desc                string
-		suites              []*storage.ComplianceOperatorSuite
+		suites              []*storage.ComplianceOperatorSuiteV2
 		testContext         context.Context
 		expectedRecordIndex set.FrozenIntSet
 	}{
 		{
 			desc: "Write 3 clusters - Full access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -270,7 +270,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuite() {
 		},
 		{
 			desc: "Write 3 clusters - No access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -280,7 +280,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestDeleteSuite() {
 		},
 		{
 			desc: "Write 3 clusters - Cluster 1 access",
-			suites: []*storage.ComplianceOperatorSuite{
+			suites: []*storage.ComplianceOperatorSuiteV2{
 				s.getTestSuite(testconsts.Cluster1),
 				s.getTestSuite(testconsts.Cluster2),
 				s.getTestSuite(testconsts.Cluster3),
@@ -333,21 +333,21 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuitesByCluster() {
 		desc            string
 		clusterID       string
 		testContext     context.Context
-		expectedResults []*storage.ComplianceOperatorSuite
+		expectedResults []*storage.ComplianceOperatorSuiteV2
 		expectedCount   int
 	}{
 		{
 			desc:            "Suites exist - Full access",
 			clusterID:       testconsts.Cluster1,
 			testContext:     s.testContexts[sacTestUtils.UnrestrictedReadCtx],
-			expectedResults: []*storage.ComplianceOperatorSuite{testSuite1, testSuite2},
+			expectedResults: []*storage.ComplianceOperatorSuiteV2{testSuite1, testSuite2},
 			expectedCount:   2,
 		},
 		{
 			desc:            "Suites exist - Cluster 1 access",
 			clusterID:       testconsts.Cluster1,
 			testContext:     s.testContexts[sacTestUtils.Cluster1ReadWriteCtx],
-			expectedResults: []*storage.ComplianceOperatorSuite{testSuite1, testSuite2},
+			expectedResults: []*storage.ComplianceOperatorSuiteV2{testSuite1, testSuite2},
 			expectedCount:   2,
 		},
 		{
@@ -380,7 +380,7 @@ func (s *complianceSuiteDataStoreTestSuite) TestGetSuitesByCluster() {
 	}
 }
 
-func (s *complianceSuiteDataStoreTestSuite) getTestSuite(clusterID string) *storage.ComplianceOperatorSuite {
+func (s *complianceSuiteDataStoreTestSuite) getTestSuite(clusterID string) *storage.ComplianceOperatorSuiteV2 {
 	suite := testutils.GetSuiteStorage(s.T())
 	suite.ClusterId = clusterID
 	suite.Id = uuid.NewV4().String()

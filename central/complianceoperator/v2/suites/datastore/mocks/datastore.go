@@ -55,10 +55,10 @@ func (mr *MockDataStoreMockRecorder) DeleteSuite(ctx, id any) *gomock.Call {
 }
 
 // GetSuite mocks base method.
-func (m *MockDataStore) GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuite, bool, error) {
+func (m *MockDataStore) GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuiteV2, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSuite", ctx, id)
-	ret0, _ := ret[0].(*storage.ComplianceOperatorSuite)
+	ret0, _ := ret[0].(*storage.ComplianceOperatorSuiteV2)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -71,10 +71,10 @@ func (mr *MockDataStoreMockRecorder) GetSuite(ctx, id any) *gomock.Call {
 }
 
 // GetSuitesByCluster mocks base method.
-func (m *MockDataStore) GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuite, error) {
+func (m *MockDataStore) GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuiteV2, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSuitesByCluster", ctx, clusterID)
-	ret0, _ := ret[0].([]*storage.ComplianceOperatorSuite)
+	ret0, _ := ret[0].([]*storage.ComplianceOperatorSuiteV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,7 +86,7 @@ func (mr *MockDataStoreMockRecorder) GetSuitesByCluster(ctx, clusterID any) *gom
 }
 
 // UpsertSuite mocks base method.
-func (m *MockDataStore) UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuite) error {
+func (m *MockDataStore) UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuiteV2) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertSuite", ctx, suite)
 	ret0, _ := ret[0].(error)
@@ -100,7 +100,7 @@ func (mr *MockDataStoreMockRecorder) UpsertSuite(ctx, suite any) *gomock.Call {
 }
 
 // UpsertSuites mocks base method.
-func (m *MockDataStore) UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuite) error {
+func (m *MockDataStore) UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuiteV2) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertSuites", ctx, suites)
 	ret0, _ := ret[0].(error)

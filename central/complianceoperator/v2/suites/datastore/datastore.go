@@ -14,16 +14,16 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	// GetSuite returns the suite for the given id
-	GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuite, bool, error)
+	GetSuite(ctx context.Context, id string) (*storage.ComplianceOperatorSuiteV2, bool, error)
 
 	// GetSuitesByCluster retrieve suites by the cluster
-	GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuite, error)
+	GetSuitesByCluster(ctx context.Context, clusterID string) ([]*storage.ComplianceOperatorSuiteV2, error)
 
 	// UpsertSuite adds the suite to the database
-	UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuite) error
+	UpsertSuite(ctx context.Context, suite *storage.ComplianceOperatorSuiteV2) error
 
 	// UpsertSuites adds the suites to the database
-	UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuite) error
+	UpsertSuites(ctx context.Context, suites []*storage.ComplianceOperatorSuiteV2) error
 
 	// DeleteSuite removes a suite from the database
 	DeleteSuite(ctx context.Context, id string) error
@@ -31,14 +31,6 @@ type DataStore interface {
 
 // New returns an instance of DataStore.
 func New(complianceSuiteStorage pgStore.Store) DataStore {
-	ds := &datastoreImpl{
-		store: complianceSuiteStorage,
-	}
-	return ds
-}
-
-// NewForTestOnly returns an instance of DataStore only for tests.
-func NewForTestOnly(_ *testing.T, complianceSuiteStorage pgStore.Store) DataStore {
 	ds := &datastoreImpl{
 		store: complianceSuiteStorage,
 	}

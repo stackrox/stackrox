@@ -1,4 +1,4 @@
-package complianceoperatorsuites
+package complianceoperatorsuitesv2
 
 import (
 	"context"
@@ -58,14 +58,14 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 		existingIDs.Add(suite.GetId())
 	}
 
-	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorSuite)(nil))
+	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorSuiteV2)(nil))
 	return reconciliation.Perform(store, existingIDs, "complianceoperatorsuites", func(id string) error {
 		return p.suiteDatastore.DeleteSuite(ctx, id)
 	})
 }
 
 func (*pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetComplianceOperatorSuite() != nil
+	return msg.GetEvent().GetComplianceOperatorSuiteV2() != nil
 }
 
 // Run runs the pipeline template on the input message and returns the error
@@ -77,7 +77,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	event := msg.GetEvent()
-	suite := event.GetComplianceOperatorSuite()
+	suite := event.GetComplianceOperatorSuiteV2()
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

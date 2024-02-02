@@ -6,16 +6,16 @@ import (
 )
 
 // ComplianceOperatorSuite converts message from sensor to storage message
-func ComplianceOperatorSuite(sensorData *central.ComplianceOperatorSuite, clusterID string) *storage.ComplianceOperatorSuite {
+func ComplianceOperatorSuite(sensorData *central.ComplianceOperatorSuiteV2, clusterID string) *storage.ComplianceOperatorSuiteV2 {
 	sensorStatus := sensorData.Status
-	status := &storage.ComplianceOperatorSuite_Status{
+	status := &storage.ComplianceOperatorSuiteV2_Status{
 		Phase:        sensorStatus.GetPhase(),
 		Result:       sensorStatus.GetResult(),
 		ErrorMessage: sensorStatus.GetErrorMessage(),
 		Conditions:   getConditions(sensorStatus.GetConditions()),
 	}
 
-	return &storage.ComplianceOperatorSuite{
+	return &storage.ComplianceOperatorSuiteV2{
 		Id:        sensorData.GetId(),
 		Name:      sensorData.GetName(),
 		ClusterId: clusterID,

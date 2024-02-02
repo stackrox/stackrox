@@ -1,4 +1,4 @@
-package complianceoperatorsuites
+package complianceoperatorsuitesv2
 
 import (
 	"context"
@@ -55,8 +55,8 @@ func (s *PipelineTestSuite) TestRunCreate() {
 			Event: &central.SensorEvent{
 				Id:     testutils.SuiteUID,
 				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorSuite{
-					ComplianceOperatorSuite: testutils.GetSuiteSensorMsg(s.T()),
+				Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
+					ComplianceOperatorSuiteV2: testutils.GetSuiteSensorMsg(s.T()),
 				},
 			},
 		},
@@ -76,8 +76,8 @@ func (s *PipelineTestSuite) TestRunDelete() {
 			Event: &central.SensorEvent{
 				Id:     testutils.SuiteUID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorSuite{
-					ComplianceOperatorSuite: testutils.GetSuiteSensorMsg(s.T()),
+				Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
+					ComplianceOperatorSuiteV2: testutils.GetSuiteSensorMsg(s.T()),
 				},
 			},
 		},
@@ -99,7 +99,7 @@ func (s *PipelineTestSuite) TestRunReconcileNoOp() {
 func (s *PipelineTestSuite) TestRunReconcile() {
 	ctx := context.Background()
 
-	s.ds.EXPECT().GetSuitesByCluster(ctx, fixtureconsts.Cluster1).Return([]*storage.ComplianceOperatorSuite{testutils.GetSuiteStorage(s.T())}, nil).Times(1)
+	s.ds.EXPECT().GetSuitesByCluster(ctx, fixtureconsts.Cluster1).Return([]*storage.ComplianceOperatorSuiteV2{testutils.GetSuiteStorage(s.T())}, nil).Times(1)
 	s.ds.EXPECT().DeleteSuite(ctx, testutils.SuiteUID).Return(nil).Times(1)
 
 	err := s.pipeline.Reconcile(ctx, fixtureconsts.Cluster1, reconciliation.NewStoreMap())
@@ -116,8 +116,8 @@ func (s *PipelineTestSuite) TestMatch() {
 			Event: &central.SensorEvent{
 				Id:     testutils.SuiteUID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorSuite{
-					ComplianceOperatorSuite: testutils.GetSuiteSensorMsg(s.T()),
+				Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
+					ComplianceOperatorSuiteV2: testutils.GetSuiteSensorMsg(s.T()),
 				},
 			},
 		},
