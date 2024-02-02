@@ -41,7 +41,7 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
-			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
+			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{
