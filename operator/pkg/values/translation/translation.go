@@ -232,20 +232,6 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, persistence *platform.ScannerV
 	sv.AddChild("persistence", &persistenceVB)
 }
 
-func scannerV4PVCValuesBuilder(pvc *platform.ScannerV4PersistentVolumeClaim) ValuesBuilder {
-	pvcBuilder := NewValuesBuilder()
-	if pvc == nil {
-		return pvcBuilder
-	}
-
-	pvcBuilder.SetString("claimName", pvc.ClaimName)
-	pvcBuilder.SetBool("createClaim", pointer.Bool(true))
-	pvcBuilder.SetString("storageClass", pvc.StorageClassName)
-	pvcBuilder.SetString("size", pvc.Size)
-
-	return pvcBuilder
-}
-
 func shouldUseEmptyDir(ctx context.Context, objKind string, db *platform.ScannerV4DB, client ctrlClient.Client) (bool, error) {
 	if objKind != v1alpha1.SecuredClusterGVK.Kind {
 		return false, nil
