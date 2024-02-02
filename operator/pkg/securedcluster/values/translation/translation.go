@@ -120,7 +120,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
 	if sc.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
-		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(sc, scannerV4AutoSenseConfig))
+		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -362,13 +362,13 @@ func (t Translator) getLocalScannerComponentValues(securedCluster platform.Secur
 	return &sv
 }
 
-func (t Translator) getLocalScannerV4ComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.ScannerV4
 	sv.SetBoolValue("disable", !config.DeployScannerResources)
 
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-	translation.SetScannerV4DBValues(&sv, s.DB)
+	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, t.client)
 
 	return &sv
 }

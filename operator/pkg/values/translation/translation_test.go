@@ -1,6 +1,7 @@
 package translation
 
 import (
+	"context"
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -9,7 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestGetCustomize(t *testing.T) {
@@ -412,13 +417,62 @@ func TestSetScannerV4ComponentValues(t *testing.T) {
 
 func TestSetScannerV4DBValues(t *testing.T) {
 	tests := map[string]struct {
-		db      *platform.ScannerV4DB
-		want    chartutil.Values
-		wantErr bool
+		db          *platform.ScannerV4DB
+		want        chartutil.Values
+		fakeObjects []runtime.Object
+		kind        string
+		wantErr     bool
 	}{
-		"empty for default component": {
+		"empty for central default component": {
 			db:   &platform.ScannerV4DB{},
+			kind: platform.CentralGVK.Kind,
 			want: chartutil.Values{},
+		},
+		"empty for securedcluster default with default StorageClass": {
+			db:   &platform.ScannerV4DB{},
+			kind: platform.SecuredClusterGVK.Kind,
+			fakeObjects: []runtime.Object{
+				&storagev1.StorageClass{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "test-sc1",
+					},
+				},
+				&storagev1.StorageClass{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "test-sc2",
+						Annotations: map[string]string{
+							DefaultStorageClassAnnotationKey: "true",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{},
+		},
+		"db.persistence.none for securedcluster default without default StorageClass": {
+			db:   &platform.ScannerV4DB{},
+			kind: platform.SecuredClusterGVK.Kind,
+			fakeObjects: []runtime.Object{
+				&storagev1.StorageClass{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "test-sc1",
+					},
+				},
+				&storagev1.StorageClass{
+					ObjectMeta: v1.ObjectMeta{
+						Name: "test-sc2",
+						Annotations: map[string]string{
+							DefaultStorageClassAnnotationKey: "false",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"db": map[string]interface{}{
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+				},
+			},
 		},
 		"sets resources": {
 			db: &platform.ScannerV4DB{
@@ -541,7 +595,8 @@ func TestSetScannerV4DBValues(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
-			SetScannerV4DBValues(&vb, tt.db)
+			client := fkClient.NewFakeClient(tt.fakeObjects...)
+			SetScannerV4DBValues(context.Background(), &vb, tt.db, tt.kind, client)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)

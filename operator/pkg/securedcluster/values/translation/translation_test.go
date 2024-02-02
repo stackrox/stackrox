@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -48,7 +49,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	u, err := toUnstructured(obj)
 	s.Require().NoError(err)
 
-	translator := Translator{client: newFakeClientWithInitBundle(s.T())}
+	translator := Translator{client: newDefaultFakeClient(s.T())}
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
@@ -89,7 +90,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	u, err := toUnstructured(sc)
 	require.NoError(t, err)
 
-	translator := Translator{client: newFakeClientWithInitBundle(t)}
+	translator := Translator{client: newDefaultFakeClient(t)}
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -118,7 +119,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 	}{
 		"minimal spec": {
 			args: args{
-				client: newFakeClientWithInitBundle(t),
+				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -158,7 +159,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 		},
 		"local scanner autosense suppression": {
 			args: args{
-				client: newFakeClientWithInitBundleAndCentral(t),
+				client: newDefaultFakeClientWithCentral(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -197,9 +198,55 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
+		"scannerV4.db.persistence.none for scanner v4 db without default StorageClass": {
+			args: args{
+				// no default storage class in this fake client, so we expect to default to scannerV4.db.persistence.none
+				client: newDefaultFakeClientWithoutStorageClass(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: "test-cluster",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"admissionControl": map[string]interface{}{
+					"dynamic": map[string]interface{}{
+						"enforceOnCreates": true,
+						"enforceOnUpdates": true,
+					},
+					"listenOnCreates": true,
+					"listenOnUpdates": true,
+				},
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]interface{}{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"none": true,
+						},
+					},
+				},
+			},
+		},
 		"local scanner autosense no suppression": {
 			args: args{
-				client: newFakeClientWithInitBundle(t),
+				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -239,7 +286,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 		},
 		"complete spec": {
 			args: args{
-				client: newFakeClientWithInitBundle(t),
+				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-secured-cluster",
@@ -408,7 +455,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 							DB: &platform.ScannerV4DB{
 								Persistence: &platform.ScannerV4Persistence{
 									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-										ClaimName: pointer.String("scanner-v4-db-pvc"),
+										ClaimName:        pointer.String("scanner-v4-db-pvc"),
+										StorageClassName: pointer.String("test-sc1"),
 									},
 								},
 								DeploymentSpec: platform.DeploymentSpec{
@@ -645,8 +693,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 						"persistence": map[string]interface{}{
 							"persistentVolumeClaim": map[string]interface{}{
-								"claimName":   "scanner-v4-db-pvc",
-								"createClaim": true,
+								"claimName":    "scanner-v4-db-pvc",
+								"createClaim":  true,
+								"storageClass": "test-sc1",
 							},
 						},
 					},
@@ -695,7 +744,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 		},
 		"translate EBPF to CORE_BPF": {
 			args: args{
-				client: newFakeClientWithInitBundle(t),
+				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -745,7 +794,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 		},
 		"force EBPF": {
 			args: args{
-				client: newFakeClientWithInitBundle(t),
+				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
@@ -826,26 +875,43 @@ func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, err
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
-func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
-	return testutils.NewFakeClientBuilder(t,
-		createSecret(sensorTLSSecretName),
-		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName),
-		testutils.ValidClusterVersion).Build()
+var defaultObjects = []ctrlClient.Object{
+	createSecret(sensorTLSSecretName),
+	createSecret(collectorTLSSecretName),
+	createSecret(admissionControlTLSSecretName),
+	testutils.ValidClusterVersion,
 }
 
-func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
-	return testutils.NewFakeClientBuilder(t,
-		createSecret(sensorTLSSecretName),
-		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName),
-		testutils.ValidClusterVersion,
-		&platform.Central{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "a-central",
-				Namespace: "stackrox",
-			},
-		}).Build()
+var defaultStorageClasses = []ctrlClient.Object{
+	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
+		Name: "test-sc1",
+	}},
+	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
+		Name: "test-sc2",
+		Annotations: map[string]string{
+			translation.DefaultStorageClassAnnotationKey: "true",
+		},
+	}},
+}
+
+func newDefaultFakeClient(t *testing.T) ctrlClient.Client {
+	objects := append(defaultObjects, defaultStorageClasses...)
+	return testutils.NewFakeClientBuilder(t, objects...).Build()
+}
+
+func newDefaultFakeClientWithCentral(t *testing.T) ctrlClient.Client {
+	objects := append(defaultObjects, defaultStorageClasses...)
+	objects = append(objects, &platform.Central{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "a-central",
+			Namespace: "stackrox",
+		},
+	})
+	return testutils.NewFakeClientBuilder(t, objects...).Build()
+}
+
+func newDefaultFakeClientWithoutStorageClass(t *testing.T) ctrlClient.Client {
+	return testutils.NewFakeClientBuilder(t, defaultObjects...).Build()
 }
 
 func createSecret(name string) *v1.Secret {
