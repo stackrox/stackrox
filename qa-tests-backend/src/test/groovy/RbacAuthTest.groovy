@@ -12,8 +12,10 @@ import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
 import services.RoleService
+import util.Env
 import util.Helpers
 
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -100,6 +102,7 @@ spec:
 
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.CI_JOB_NAME.contains("rosa") || Env.CI_JOB_NAME.contains("osd") }) // ROX-21171
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
