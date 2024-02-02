@@ -11,8 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/endpoints"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -30,21 +28,19 @@ const (
 	maxPaginationLimit = 1000
 )
 
-var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Integration)): {
-			"/v1.CloudSourcesService/CountCloudSources",
-			"/v1.CloudSourcesService/GetCloudSource",
-			"/v1.CloudSourcesService/ListCloudSources",
-		},
-		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.CloudSourcesService/CreateCloudSource",
-			"/v1.CloudSourcesService/DeleteCloudSource",
-			"/v1.CloudSourcesService/TestCloudSource",
-			"/v1.CloudSourcesService/UpdateCloudSource",
-		},
-	})
-)
+var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+	user.With(permissions.View(resources.Integration)): {
+		"/v1.CloudSourcesService/CountCloudSources",
+		"/v1.CloudSourcesService/GetCloudSource",
+		"/v1.CloudSourcesService/ListCloudSources",
+	},
+	user.With(permissions.Modify(resources.Integration)): {
+		"/v1.CloudSourcesService/CreateCloudSource",
+		"/v1.CloudSourcesService/DeleteCloudSource",
+		"/v1.CloudSourcesService/TestCloudSource",
+		"/v1.CloudSourcesService/UpdateCloudSource",
+	},
+})
 
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
@@ -119,11 +115,11 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateCloudSourceRequest,
 ) (*v1.CreateCloudSourceResponse, error) {
 	v1CloudSource := request.GetCloudSource()
+	if v1CloudSource == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "invalid cloud source")
+	}
 	if v1CloudSource.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when creating a new cloud source")
-	}
-	if err := s.validateCloudSource(ctx, v1CloudSource, true); err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	v1CloudSource.Id = uuid.NewV4().String()
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
@@ -137,13 +133,13 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateCloudSourceRequest,
 ) (*v1.Empty, error) {
 	v1CloudSource := request.GetCloudSource()
-	if err := s.validateCloudSource(ctx, v1CloudSource, request.GetUpdateCredentials()); err != nil {
-		return nil, errox.InvalidArgs.CausedBy(err)
+	if v1CloudSource == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "invalid cloud source")
 	}
-	updatedCloudSource := v1tostorage.CloudSource(v1CloudSource)
+	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 
 	if !request.GetUpdateCredentials() {
-		if err := s.enrichWithStoredCredentials(ctx, updatedCloudSource); err != nil {
+		if err := s.enrichWithStoredCredentials(ctx, storageCloudSource); err != nil {
 			if errors.Is(err, errox.NotFound) {
 				return nil, errox.InvalidArgs.CausedByf(
 					"cannot fetch existing credentials: cloud source %q does not exist", v1CloudSource.GetId(),
@@ -153,7 +149,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 		}
 	}
 
-	if err := s.ds.UpsertCloudSource(ctx, updatedCloudSource); err != nil {
+	if err := s.ds.UpsertCloudSource(ctx, storageCloudSource); err != nil {
 		return nil, errors.Wrapf(err, "failed to update cloud source %q", v1CloudSource.GetId())
 	}
 	return &v1.Empty{}, nil
@@ -178,32 +174,6 @@ func (s *serviceImpl) TestCloudSource(_ context.Context, _ *v1.TestCloudSourceRe
 	return nil, errox.NotImplemented.New("TestCloudSource is not implemented yet")
 }
 
-func (s *serviceImpl) validateCloudSource(ctx context.Context,
-	cloudSource *v1.CloudSource, updateCredentials bool,
-) error {
-	if cloudSource == nil {
-		return errors.New("empty cloud source")
-	}
-
-	errorList := errorhelpers.NewErrorList("Validation")
-	if err := validateType(cloudSource); err != nil {
-		errorList.AddError(err)
-	}
-	if updateCredentials && cloudSource.GetCredentials().GetSecret() == "" {
-		errorList.AddString("cloud source credentials must be defined")
-	}
-	if err := endpoints.ValidateEndpoints(cloudSource.GetConfig()); err != nil {
-		errorList.AddWrap(err, "invalid endpoint")
-	}
-	cloudSourceName := cloudSource.GetName()
-	if cloudSourceName == "" {
-		errorList.AddString("cloud source name must be defined")
-		// Don't test for duplicated names if no name is set.
-		return errorList.ToError()
-	}
-	return errorList.ToError()
-}
-
 func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,
 	cloudSource *storage.CloudSource,
 ) error {
@@ -213,26 +183,6 @@ func (s *serviceImpl) enrichWithStoredCredentials(ctx context.Context,
 		return err
 	}
 	return secrets.ReconcileScrubbedStructWithExisting(cloudSource, storedCloudSource)
-}
-
-func validateType(cloudSource *v1.CloudSource) error {
-	cloudSourceType := cloudSource.GetType()
-	if cloudSourceType == v1.CloudSource_TYPE_UNSPECIFIED {
-		return errors.New("cloud source type must be specified")
-	}
-	switch cloudSource.GetConfig().(type) {
-	case *v1.CloudSource_PaladinCloud:
-		if cloudSourceType != v1.CloudSource_TYPE_PALADIN_CLOUD {
-			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
-		}
-		return nil
-	case *v1.CloudSource_Ocm:
-		if cloudSourceType != v1.CloudSource_TYPE_OCM {
-			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
-		}
-		return nil
-	}
-	return errors.New("invalid cloud source config")
 }
 
 func getQueryBuilderFromFilter(filter *v1.CloudSourcesFilter) *search.QueryBuilder {

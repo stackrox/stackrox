@@ -129,66 +129,6 @@ func (s *cloudSourcesTestSuite) TestCreateCloudSource_Success() {
 	s.Equal(cloudSource.GetConfig(), resp.GetCloudSource().GetConfig())
 }
 
-func (s *cloudSourcesTestSuite) TestCreateCloudSource_Validate() {
-	// Invalid ID.
-	cloudSource := fixtures.GetV1CloudSource()
-	cloudSource.Id = "invalid-id"
-	resp, err := s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.Error(err)
-	s.Nil(resp)
-
-	// Invalid Name.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Id = ""
-	cloudSource.Name = ""
-	resp, err = s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Type.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
-	resp, err = s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Config = &v1.CloudSource_Ocm{}
-	resp, err = s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Credentials.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Id = ""
-	cloudSource.Credentials = nil
-	resp, err = s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Endpoint.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Id = ""
-	cloudSource.Config = &v1.CloudSource_PaladinCloud{
-		PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
-	}
-	resp, err = s.service.CreateCloudSource(s.ctx,
-		&v1.CreateCloudSourceRequest{CloudSource: cloudSource},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-}
-
 func (s *cloudSourcesTestSuite) TestCreateCloudSource_Error() {
 	cloudSource := fixtures.GetV1CloudSource()
 	cloudSource.Id = ""
@@ -212,54 +152,6 @@ func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Success() {
 
 	s.Equal(&v1.Empty{}, resp)
 	s.Require().NoError(err)
-}
-
-func (s *cloudSourcesTestSuite) TestUpdateCloudSource_Validate() {
-	// Invalid Name.
-	cloudSource := fixtures.GetV1CloudSource()
-	cloudSource.Name = ""
-	resp, err := s.service.UpdateCloudSource(s.ctx,
-		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Type.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
-	resp, err = s.service.UpdateCloudSource(s.ctx,
-		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Config = &v1.CloudSource_Ocm{}
-	resp, err = s.service.UpdateCloudSource(s.ctx,
-		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Credentials.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Credentials = nil
-	resp, err = s.service.UpdateCloudSource(s.ctx,
-		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
-
-	// Invalid Endpoint.
-	cloudSource = fixtures.GetV1CloudSource()
-	cloudSource.Config = &v1.CloudSource_PaladinCloud{
-		PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
-	}
-	resp, err = s.service.UpdateCloudSource(s.ctx,
-		&v1.UpdateCloudSourceRequest{CloudSource: cloudSource, UpdateCredentials: true},
-	)
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
 }
 
 func (s *cloudSourcesTestSuite) TestUpdateCloudSources_Error() {
