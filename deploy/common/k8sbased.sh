@@ -481,8 +481,8 @@ function launch_central {
           fi
           launch_service "${unzip_dir}" scanner
           if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
-            echo "Deploying ScannerV4..."
             if [[ -d "${unzip_dir}/scanner-v4" ]]; then
+              echo "Deploying ScannerV4..."
               "${unzip_dir}/scanner-v4/scripts/setup.sh"
               launch_service "${unzip_dir}" scanner-v4
             else
