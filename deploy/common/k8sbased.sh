@@ -424,7 +424,7 @@ function launch_central {
       fi
 
       helm_args+=(
-        --reuse-values
+        --reset-then-reuse-values
       )
 
 

@@ -224,6 +224,8 @@ teardown() {
 
     # switch to roxctl based installation
     # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4=false
+    # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
