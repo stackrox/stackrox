@@ -296,6 +296,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
 		log.Errorw("error enriching image", logging.ImageName(img.GetName().GetFullName()))
+		// This error message can be significantly large in some instances. So it should only be displayed in debug logs.
 		log.Debugw("enriching image error details", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
 		// Purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it.
