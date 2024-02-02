@@ -6,7 +6,7 @@ import { IntegrationSource, IntegrationType } from 'types/integration';
 import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
 import { Traits } from 'types/traits.proto';
-import pluralize from "pluralize";
+import pluralize from 'pluralize';
 
 export type { IntegrationSource, IntegrationType };
 
@@ -109,11 +109,11 @@ function pluralizeMeasurement(count, measurement: string): string {
     return `${count} ${pluralize(measurement, parseInt(count))}`;
 }
 
-function extractUnitsOfTime(duration, unit: string,) : number {
-    const unitRegex = new RegExp('[0-9]+' + unit);
+function extractUnitsOfTime(duration, unit: string): number {
+    const unitRegex = new RegExp(`[0-9]+${unit}`);
     const matchHours = duration.match(unitRegex);
     if (matchHours && matchHours.length !== 0) {
-       return parseInt(matchHours[0].replace(unit, ''))
+        return parseInt(matchHours[0].replace(unit, ''));
     }
     return 0;
 }
