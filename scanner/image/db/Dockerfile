@@ -1,13 +1,14 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
 ARG RPMS_BASE_TAG=latest
+
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
-COPY download.sh /download.sh
+COPY scripts/download.sh /download.sh
 RUN /download.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
@@ -23,6 +24,9 @@ ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
+# This will be ignored if empty in the init script.
+COPY init-bundles/db-init.dump.zst /db-init.dump.zst
+
 COPY signatures/PGDG-RPM-GPG-KEY-RHEL /
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
@@ -34,10 +38,20 @@ RUN microdnf upgrade -y --nobest && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import PGDG-RPM-GPG-KEY-RHEL && \
     microdnf install -y \
-        ca-certificates libicu systemd-sysv \
-        glibc-locale-source glibc-langpack-en \
-        perl-libs libxslt python3 lz4 && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then microdnf install -y uuid; fi && \
+        ca-certificates \
+        glibc-langpack-en \
+        glibc-locale-source \
+        libicu \
+        libxslt \
+        lz4 \
+        perl-libs \
+        python3 \
+        systemd-sysv \
+        zstd \
+        && \
+    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
+        microdnf install -y uuid; \
+    fi && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
