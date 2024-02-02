@@ -179,6 +179,22 @@ func (c *connection) String() string {
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
 }
 
+// IsExternal returns true when IPv4 does not belong to the private IP addresses; false otherwise.
+// Error is returned when IP address is malformed
+func (c *connection) IsExternal() (bool, error) {
+	if !c.remote.IsValid() {
+		return true, errors.New("remote IP address invalid")
+	}
+	// If collector hides the IP, then the entity is most probably from outside of the cluster
+	if c.remote.IPAndPort.Address.String() == "255.255.255.255" {
+		return true, nil
+	}
+	if c.remote.IPAndPort.Address.IsPublic() {
+		return true, nil
+	}
+	return true, nil
+}
+
 type processInfo struct {
 	processName string
 	processArgs string
@@ -447,14 +463,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) resolveEntityType(conn *connection) networkgraph.Entity {
-	// If collector hides the IP, then the entity is most probably from outside of the cluster
-	if conn.remote.IPAndPort.Address.String() == "255.255.255.255" {
-		return networkgraph.InternetEntity()
-	}
-	return networkgraph.InternalEntities()
-}
-
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
@@ -515,15 +523,31 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if extSrc == nil {
+			// Decide if the unknow connection is internal or external
+			dirPrefix := "Outgoing connection from"
+			if conn.incoming {
+				dirPrefix = "Incoming connection to"
+			}
+
+			entityType := networkgraph.InternetEntity()
+			ext, err := conn.IsExternal()
+			if err != nil { // IP is malformed or unknown - assume it is external and log a warning
+				log.Warnf("%s container %s/%s. Local: %s, Remote: %v. ",
+					dirPrefix, container.Namespace, container.ContainerName, conn.local.String(), conn.remote.String())
+			}
+			if !ext {
+				entityType = networkgraph.InternalEntities()
+			}
+
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity:         m.resolveEntityType(conn),
+					Entity:         entityType,
 					ContainerPorts: []uint16{port},
 				},
 			}
 			entitiesName := "Internal Entities"
-			if m.resolveEntityType(conn) == networkgraph.InternetEntity() {
+			if ext {
 				entitiesName = "External Entities"
 			}
 			if conn.incoming {
