@@ -41,6 +41,12 @@ endif
 # The namespace to use for targets that require it (E2E, certs, etc).
 SCANNER_NAMESPACE ?= stackrox
 
+# The init bundle version to use when building the db image.
+SCANNER_DB_INIT_BUNDLE_VERSION ?= dev
+
+# If true enable the DB init bundle when building the db image.
+SCANNER_DB_INIT_BUNDLE_ENABLED ?= false
+
 .PHONY: all
 all: images
 
@@ -108,25 +114,59 @@ endif
 
 image-prefix := scanner-v4
 
+image-scripts := restore-all-dir-contents \
+                 import-additional-cas \
+                 save-dir-contents
+
+image-scripts-prefix := image/scanner/scripts
+
+image-db-init-enabled := $(SCANNER_DB_INIT_BUNDLE_ENABLED)
+image-db-init-ver     := $(SCANNER_DB_INIT_BUNDLE_VERSION)
+image-db-init-d       := image/db/init-bundles
+image-db-init-t       := $(image-db-init-d)/db-init.dump.zst
+
 .PHONY: images
-images: scanner-image db-image
+images: image-scanner image-db
 
 image/scanner/bin/scanner: GOOS=$(DEFAULT_GOOS)
 image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
 	cp $< $@
 
-OSSLS_NOTICE_DEP := ossls-notice
-ifdef CI
-	OSSLS_NOTICE_DEP := ossls-notice-no-download
-endif
-.PHONY: scanner-image
-scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
+$(image-scripts-prefix)/%: ../image/rhel/static-bin/%
+	@echo "+ $@"
+	cp $< $@
+
+.PHONY: image-scanner
+image-scanner: image/scanner/bin/scanner \
+               $(addprefix $(image-scripts-prefix)/,$(image-scripts)) \
+               $(if $(CI),ossls-notice-no-download,ossls-notice)
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
-.PHONY: db-image
-db-image:
+$(image-db-init-d):
+	mkdir -p $@
+
+$(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst: | $(image-db-init-d)
+	@echo "+ $@"
+	$(SILENT)curl \
+	    --retry 3 --silent --show-error --fail --output $@ \
+	    https://storage.googleapis.com/scanner-v4-test/database-init-bundles/$(@F)
+
+.PHONY: $(image-db-init-t)
+
+ifeq ($(image-db-init-enabled),true)
+$(image-db-init-t): $(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst
+	@echo "+ $@"
+	$(SILENT)cp $^ $@
+else
+$(image-db-init-t): | $(image-db-init-d)
+	@echo "+ $@: disabled (empty)"
+	$(SILENT)>$@
+endif
+
+.PHONY: image-db
+image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) $(DB_DOCKERBUILD_ARGS) -f image/db/Dockerfile image/db
 
@@ -146,25 +186,18 @@ ossls-notice: $(build-deps-t) $(OSSLS_BIN)
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
-SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
-.PHONY: copy-scripts
-copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
-	@echo "+ $@"
-	$(SILENT)cp $^ image/scanner/scripts
-
 #################
 ## Integration ##
 #################
 
-integration-timeout := 20m
-
-db-integration-d := datastore/postgres
+db-integration-timeout := 20m
+db-integration-d       := datastore/postgres
 db-integration-go-tag  := scanner_db_integration
 
 .PHONY: db-integration-test
 db-integration-test: $(build-deps-t)
 	@echo "+ $@"
-	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(integration-timeout) -v ./$(db-integration-d)/...
+	$(SILENT)$(GO_TEST_CMD) -tags $(db-integration-go-tag) -count=1 -timeout=$(db-integration-timeout) -v ./$(db-integration-d)/...
 
 ##################
 ## Certificates ##
