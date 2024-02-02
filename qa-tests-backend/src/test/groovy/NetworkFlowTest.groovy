@@ -582,7 +582,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Tag("NetworkFlowVisualization")
-    def "Verify intra-cluster connection via external IP"() {
+    def "Verify intra-cluster connection via internal IP"() {
         // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
         // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
         // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
