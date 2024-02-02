@@ -613,10 +613,10 @@ class NetworkFlowTest extends BaseSpecification {
         "Check for edge in network graph"
         withRetry(2, 10) {
             log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
-            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(
-                    Constants.INTERNET_EXTERNAL_SOURCE_ID,
+            List<Edge> edgesToInternalEntities = NetworkGraphUtil.checkForEdge(
+                    Constants.INTERNAL_ENTITIES_SOURCE_ID,
                     deploymentUid, null, 180)
-            assert edgesToExternalSource
+            assert edgesToInternalEntities
         }
 
         cleanup:
