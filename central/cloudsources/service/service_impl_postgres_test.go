@@ -62,8 +62,8 @@ func (s *servicePostgresTestSuite) TestCount() {
 
 	// 1. Count cloud sources without providing a query filter.
 	resp, err := s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{})
-	s.NoError(err)
-	s.Equal(int32(50), resp.GetCount())
+	s.Require().NoError(err)
+	s.Assert().Equal(int32(50), resp.GetCount())
 
 	// 2.a. Filter cloud sources based on the name - no match.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
@@ -71,8 +71,8 @@ func (s *servicePostgresTestSuite) TestCount() {
 			Names: []string{"this name does not exist"},
 		},
 	})
-	s.NoError(err)
-	s.Equal(int32(0), resp.GetCount())
+	s.Require().NoError(err)
+	s.Assert().Equal(int32(0), resp.GetCount())
 
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
@@ -80,8 +80,8 @@ func (s *servicePostgresTestSuite) TestCount() {
 			Names: []string{"sample name 0"},
 		},
 	})
-	s.NoError(err)
-	s.Equal(int32(1), resp.GetCount())
+	s.Require().NoError(err)
+	s.Assert().Equal(int32(1), resp.GetCount())
 
 	// 3. Filter cloud sources based on the type.
 	resp, err = s.service.CountCloudSources(s.readCtx, &v1.CountCloudSourcesRequest{
@@ -89,8 +89,8 @@ func (s *servicePostgresTestSuite) TestCount() {
 			Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD},
 		},
 	})
-	s.NoError(err)
-	s.Equal(int32(25), resp.GetCount())
+	s.Require().NoError(err)
+	s.Assert().Equal(int32(25), resp.GetCount())
 }
 
 func (s *servicePostgresTestSuite) TestGetCloudSource() {
@@ -99,8 +99,9 @@ func (s *servicePostgresTestSuite) TestGetCloudSource() {
 	resp, err := s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{
 		Id: cloudSources[0].GetId(),
 	})
-	s.NoError(err)
-	s.Equal(cloudSources[0], resp.GetCloudSource())
+	s.Require().NoError(err)
+	s.Assert().Equal(cloudSources[0], resp.GetCloudSource())
+	s.Assert().Empty(cloudSources[0].GetCredentials())
 }
 
 func (s *servicePostgresTestSuite) TestListCloudSources() {
@@ -108,8 +109,8 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 
 	// 1. Count cloud sources without providing a query filter.
 	resp, err := s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{})
-	s.NoError(err)
-	s.Equal(cloudSources, resp.GetCloudSources())
+	s.Require().NoError(err)
+	s.Assert().Equal(cloudSources, resp.GetCloudSources())
 
 	// 2.a. Filter cloud sources based on the name - no match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
@@ -117,8 +118,8 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 			Names: []string{"this name does not exist"},
 		},
 	})
-	s.NoError(err)
-	s.Empty(resp.GetCloudSources())
+	s.Require().NoError(err)
+	s.Assert().Empty(resp.GetCloudSources())
 
 	// 2.b. Filter cloud sources based on the name - one match.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
@@ -126,8 +127,8 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 			Names: []string{"sample name 0"},
 		},
 	})
-	s.NoError(err)
-	s.Equal([]*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
+	s.Require().NoError(err)
+	s.Assert().Equal([]*v1.CloudSource{cloudSources[0]}, resp.GetCloudSources())
 
 	// 3. Filter cloud sources based on the type.
 	resp, err = s.service.ListCloudSources(s.readCtx, &v1.ListCloudSourcesRequest{
@@ -135,8 +136,8 @@ func (s *servicePostgresTestSuite) TestListCloudSources() {
 			Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD},
 		},
 	})
-	s.NoError(err)
-	s.Equal(cloudSources[0:25], resp.GetCloudSources())
+	s.Require().NoError(err)
+	s.Assert().Equal(cloudSources[0:25], resp.GetCloudSources())
 }
 
 func (s *servicePostgresTestSuite) TestCreateCloudSource() {
@@ -147,20 +148,105 @@ func (s *servicePostgresTestSuite) TestCreateCloudSource() {
 	createResp, err := s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
-	s.NoError(err)
+	s.Require().NoError(err)
 	createdCloudSource := createResp.GetCloudSource()
 
 	// 2. Read back the created cloud source.
 	getResp, err := s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: createdCloudSource.GetId()})
-	s.NoError(err)
-	s.Equal(createdCloudSource, getResp.GetCloudSource())
+	s.Require().NoError(err)
+	s.Assert().Equal(createdCloudSource, getResp.GetCloudSource())
 
 	// 3. Try to create a cloud source with existing name.
 	createResp, err = s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
-	s.Empty(createResp)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().Empty(createResp)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
+}
+
+func (s *servicePostgresTestSuite) TestCreateCloudSourceValidation() {
+	testCases := []struct {
+		name          string
+		cloudSourceFn func() *v1.CloudSource
+	}{
+		{
+			name: "Invalid id",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid name",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Name = ""
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid credentials",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Credentials = nil
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid config",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Config = nil
+				return cloudSource
+			},
+		},
+		{
+			name: "Unspecified type",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid type",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Type = v1.CloudSource_TYPE_PALADIN_CLOUD
+				cloudSource.Config = &v1.CloudSource_Ocm{
+					Ocm: &v1.OCMConfig{Endpoint: "https://api.stage.openshift.com"},
+				}
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid endpoint",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				cloudSource.Type = v1.CloudSource_TYPE_PALADIN_CLOUD
+				cloudSource.Config = &v1.CloudSource_PaladinCloud{
+					PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
+				}
+				return cloudSource
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.name, func(t *testing.T) {
+			resp, err := s.service.CreateCloudSource(s.writeCtx, &v1.CreateCloudSourceRequest{
+				CloudSource: testCase.cloudSourceFn(),
+			})
+			s.Assert().Empty(resp)
+			s.Assert().ErrorIs(err, errox.InvalidArgs)
+		})
+	}
 }
 
 func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
@@ -171,22 +257,22 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 		CloudSource:       cloudSource,
 		UpdateCredentials: true,
 	})
-	s.Equal(&v1.Empty{}, updateResp)
-	s.NoError(err)
+	s.Assert().Equal(&v1.Empty{}, updateResp)
+	s.Require().NoError(err)
 
 	// 2. Read back the created cloud source.
 	getResp, err := s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSource.GetId()})
-	s.NoError(err)
+	s.Require().NoError(err)
 	cloudSource.Credentials = nil
-	s.Equal(cloudSource, getResp.GetCloudSource())
+	s.Assert().Equal(cloudSource, getResp.GetCloudSource())
 
 	// 3. Try to create a cloud source with existing name.
 	cloudSource.Id = uuid.NewV4().String()
 	updateResp, err = s.service.UpdateCloudSource(s.writeCtx, &v1.UpdateCloudSourceRequest{
 		CloudSource: cloudSource,
 	})
-	s.Empty(updateResp)
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.Assert().Empty(updateResp)
+	s.Assert().ErrorIs(err, errox.InvalidArgs)
 
 	// 4. Update existing cloud source name without updating credentials.
 	cloudSource = fixtures.GetV1CloudSource()
@@ -196,13 +282,94 @@ func (s *servicePostgresTestSuite) TestUpdateCloudSource() {
 		CloudSource:       cloudSource,
 		UpdateCredentials: false,
 	})
-	s.Equal(&v1.Empty{}, updateResp)
-	s.NoError(err)
+	s.Assert().Equal(&v1.Empty{}, updateResp)
+	s.Require().NoError(err)
 
 	// 5. Read back the updated cloud source.
 	getResp, err = s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSource.GetId()})
-	s.NoError(err)
-	s.Equal(cloudSource, getResp.GetCloudSource())
+	s.Require().NoError(err)
+	s.Assert().Equal(cloudSource, getResp.GetCloudSource())
+}
+
+func (s *servicePostgresTestSuite) TestUpdateCloudSourceValidation() {
+	testCases := []struct {
+		name          string
+		cloudSourceFn func() *v1.CloudSource
+	}{
+		{
+			name: "Invalid id",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Id = ""
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid name",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Name = ""
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid credentials",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Credentials = nil
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid config",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Config = nil
+				return cloudSource
+			},
+		},
+		{
+			name: "Unspecified type",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Type = v1.CloudSource_TYPE_UNSPECIFIED
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid type",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Type = v1.CloudSource_TYPE_PALADIN_CLOUD
+				cloudSource.Config = &v1.CloudSource_Ocm{
+					Ocm: &v1.OCMConfig{Endpoint: "https://api.stage.openshift.com"},
+				}
+				return cloudSource
+			},
+		},
+		{
+			name: "Invalid endpoint",
+			cloudSourceFn: func() *v1.CloudSource {
+				cloudSource := fixtures.GetV1CloudSource()
+				cloudSource.Type = v1.CloudSource_TYPE_PALADIN_CLOUD
+				cloudSource.Config = &v1.CloudSource_PaladinCloud{
+					PaladinCloud: &v1.PaladinCloudConfig{Endpoint: "localhost"},
+				}
+				return cloudSource
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		s.T().Run(testCase.name, func(t *testing.T) {
+			resp, err := s.service.UpdateCloudSource(s.writeCtx, &v1.UpdateCloudSourceRequest{
+				CloudSource:       testCase.cloudSourceFn(),
+				UpdateCredentials: true,
+			})
+			s.Assert().Empty(resp)
+			s.Assert().ErrorIs(err, errox.InvalidArgs)
+		})
+	}
 }
 
 func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
@@ -211,11 +378,11 @@ func (s *servicePostgresTestSuite) TestDeleteCloudSource() {
 	deleteResp, err := s.service.DeleteCloudSource(s.writeCtx, &v1.DeleteCloudSourceRequest{
 		Id: cloudSources[0].GetId(),
 	})
-	s.Equal(&v1.Empty{}, deleteResp)
-	s.NoError(err)
+	s.Assert().Equal(&v1.Empty{}, deleteResp)
+	s.Require().NoError(err)
 
 	_, err = s.service.GetCloudSource(s.readCtx, &v1.GetCloudSourceRequest{Id: cloudSources[0].GetId()})
-	s.ErrorIs(err, errox.NotFound)
+	s.Assert().ErrorIs(err, errox.NotFound)
 }
 
 func (s *servicePostgresTestSuite) addCloudSources(num int) []*v1.CloudSource {
