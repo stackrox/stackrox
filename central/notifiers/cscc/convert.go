@@ -171,7 +171,8 @@ func convertAlertDescription(alert *storage.Alert) string {
 func convertProviderMetadataToResourceName(providerMetadata *storage.ProviderMetadata) string {
 	// We are creating a finding from a cluster which isn't deployed on GCP.
 	// We will set a resource name here that is a non-cloud resource.
-	if providerMetadata.GetGoogle() == nil {
+	googleMetadata := providerMetadata.GetGoogle()
+	if googleMetadata == nil {
 		return fmt.Sprintf("%s/%s", providerMetadata.GetCluster().GetType().String(),
 			providerMetadata.GetCluster().GetName())
 	}
@@ -183,10 +184,10 @@ func convertProviderMetadataToResourceName(providerMetadata *storage.ProviderMet
 	switch providerMetadata.GetCluster().GetType() {
 	case storage.ClusterMetadata_GKE:
 		return fmt.Sprintf("//container.googleapis.com/projects/%s/locations/%s/clusters/%s",
-			providerMetadata.GetGoogle().GetProject(), providerMetadata.GetRegion(),
-			providerMetadata.GetGoogle().GetClusterName())
+			googleMetadata.GetProject(), providerMetadata.GetRegion(),
+			googleMetadata.GetClusterName())
 	default:
 		return fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s",
-			providerMetadata.GetGoogle().GetProject())
+			googleMetadata.GetProject())
 	}
 }
