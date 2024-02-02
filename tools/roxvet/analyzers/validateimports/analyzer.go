@@ -85,6 +85,9 @@ var (
 		},
 		"github.com/google/uuid": {
 			replacement: "github.com/stackrox/rox/pkg/uuid",
+			allowlist: set.NewStringSet(
+				"github.com/stackrox/rox/scanner/datastore/postgres/mocks", // Used by ClairCore.
+			),
 		},
 	}
 )

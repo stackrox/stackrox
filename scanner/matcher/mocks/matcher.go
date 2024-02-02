@@ -55,6 +55,20 @@ func (mr *MockMatcherMockRecorder) Close(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockMatcher)(nil).Close), ctx)
 }
 
+// GetKnownDistributions mocks base method.
+func (m *MockMatcher) GetKnownDistributions(ctx context.Context) []claircore.Distribution {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKnownDistributions", ctx)
+	ret0, _ := ret[0].([]claircore.Distribution)
+	return ret0
+}
+
+// GetKnownDistributions indicates an expected call of GetKnownDistributions.
+func (mr *MockMatcherMockRecorder) GetKnownDistributions(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKnownDistributions", reflect.TypeOf((*MockMatcher)(nil).GetKnownDistributions), ctx)
+}
+
 // GetLastVulnerabilityUpdate mocks base method.
 func (m *MockMatcher) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()
