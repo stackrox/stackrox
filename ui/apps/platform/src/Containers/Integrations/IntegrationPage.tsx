@@ -61,11 +61,11 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
-                    <BreadcrumbItem isActive>{
-                        getIsMachineAccessConfig(source, type) && title === ''
+                    <BreadcrumbItem isActive>
+                        {getIsMachineAccessConfig(source, type) && title === ''
                             ? 'Manage configuration'
-                            : title
-                    }</BreadcrumbItem>
+                            : title}
+                    </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
@@ -73,7 +73,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                 <Flex>
                     {(name || getIsMachineAccessConfig(source, type)) && (
                         <FlexItem>
-                            <Title headingLevel="h1">{name ? name : 'Manage configuration'}</Title>
+                            <Title headingLevel="h1">{name || 'Manage configuration'}</Title>
                         </FlexItem>
                     )}
                     {hasTraitsLabel && <TraitsOriginLabel traits={traits} />}
