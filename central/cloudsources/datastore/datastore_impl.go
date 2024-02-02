@@ -105,5 +105,5 @@ func validateType(cloudSource *storage.CloudSource) error {
 		}
 		return nil
 	}
-	return errors.New("invalid cloud source config")
+	return errors.New("invalid cloud source config type")
 }

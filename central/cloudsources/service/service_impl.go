@@ -116,7 +116,7 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 ) (*v1.CreateCloudSourceResponse, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "invalid cloud source")
+		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
 	}
 	if v1CloudSource.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when creating a new cloud source")
@@ -134,7 +134,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 ) (*v1.Empty, error) {
 	v1CloudSource := request.GetCloudSource()
 	if v1CloudSource == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "invalid cloud source")
+		return nil, errors.Wrap(errox.InvalidArgs, "empty cloud source")
 	}
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 
