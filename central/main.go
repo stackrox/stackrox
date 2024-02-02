@@ -276,9 +276,6 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
-	log.Warn("The following permission resources have been replaced:\n" +
-		"	Access replaces AuthProvider, Group, Role, and User\n" +
-		"	WorkflowAdministration replaces Policy and VulnerabilityReports\n")
 	ensureDB(ctx)
 
 	if !pgconfig.IsExternalDatabase() {
