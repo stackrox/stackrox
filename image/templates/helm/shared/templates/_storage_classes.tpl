@@ -1,5 +1,14 @@
 {{/*
-  srox.getStorageClasses
+  srox.getStorageClasses $
+
+  This function attempts to retrieve information about all available StorageClasses on the
+  cluster and write it to
+
+    $._rox.env.storageClasses.all: A dict mapping storage class names to dicts containing
+      relevant properties of the storage class.
+
+    $._rox.env.storageClasses.default: Either nil or a string containing the name of the
+      default StorageClass.
    */}}
 {{- define "srox.getStorageClasses" -}}
 
@@ -20,15 +29,6 @@
   {{- end -}}
 
   {{ $_ := set $._rox.env.storageClasses "all" (dict "all" $storageClasses) }}
-
-  {{- range $storageClassName, $storageClassProperties := $storageClasses -}}
-    {{/* Would like to use `break`, but there are quite a few Helm 3.x versions out there not supporting that...
-        On the other hand there should, of course, only be at most one default storage class on a cluster. ¯\_(ツ)_/¯ */}}
-    {{- if and (get $storageClassProperties "isDefault") (not $defaultStorageClass) -}}
-      {{- $defaultStorageClass = $storageClassName -}}
-    {{- end -}}
-  {{- end -}}
-
   {{- if ne $defaultStorageClass "" -}}
     {{- $_ := set $._rox.env.storageClasses "default" $defaultStorageClass -}}
   {{- end -}}
