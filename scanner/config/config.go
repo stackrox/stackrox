@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/internal/version"
+	yaml "gopkg.in/yaml.v3"
 )
 
 var (
