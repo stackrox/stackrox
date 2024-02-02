@@ -228,6 +228,7 @@ var (
 	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
 	ComplianceOperatorScanResult             = newFieldLabel("Compliance Scan Result")
+	ComplianceOperatorScanType               = newFieldLabel("Compliance Scan Type")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
