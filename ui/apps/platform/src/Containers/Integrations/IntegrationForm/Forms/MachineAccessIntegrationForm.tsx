@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import React, {ReactElement, useEffect, useState} from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -14,9 +14,9 @@ import {
     SelectOption,
     TextInput,
 } from '@patternfly/react-core';
-import {FieldArray, FormikProvider} from 'formik';
-import {ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon} from '@patternfly/react-icons';
-import {IntegrationFormProps} from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
+import { FieldArray, FormikProvider } from 'formik';
+import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
 import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
@@ -24,8 +24,8 @@ import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/Inte
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import SelectSingle from 'Components/SelectSingle';
-import {fetchRolesAsArray, Role} from 'services/RolesService';
-import {MachineConfigType} from 'services/MachineAccessService';
+import { fetchRolesAsArray, Role } from 'services/RolesService';
+import { MachineConfigType } from 'services/MachineAccessService';
 
 export type MachineAccessConfig = {
     id: string;
@@ -61,10 +61,10 @@ export const defaultValues: MachineAccessConfig = {
 };
 
 function MachineAccessIntegrationForm({
-                                          initialValues = null,
-                                          isEditable = false,
-                                      }: IntegrationFormProps<MachineAccessConfig>): ReactElement {
-    const formInitialValues = {...defaultValues, ...initialValues};
+    initialValues = null,
+    isEditable = false,
+}: IntegrationFormProps<MachineAccessConfig>): ReactElement {
+    const formInitialValues = { ...defaultValues, ...initialValues };
     const formik = useIntegrationForm<MachineAccessConfig>({
         initialValues: formInitialValues,
         validationSchema,
@@ -110,7 +110,7 @@ function MachineAccessIntegrationForm({
         <>
             {alertRoles}
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <FormMessage message={message}/>
+                <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>
                         <FormLabelGroup
@@ -212,25 +212,45 @@ function MachineAccessIntegrationForm({
                                                         <FormLabelGroup
                                                             label="Value"
                                                             labelIcon={
-                                                                <Popover bodyContent={
-                                                                    <div>
-                                                                        <a href="https://golang.org/s/re2syntax"
-                                                                           target="_blank" rel="noreferrer">Learn how to
-                                                                            use regex here</a>
-                                                                    </div>
-                                                                } headerContent={"Use regex to enter values"}>{
-                                                                    <Button
-                                                                        type="button"
-                                                                        aria-label="More info for name field"
-                                                                        onClick={e => e.preventDefault()}
-                                                                        aria-describedby="simple-form-name-02"
-                                                                        className="pf-c-form__group-label-help"
-                                                                        style={{backgroundColor: 'transparent'}}
-                                                                    >
-                                                                        <HelpIcon style={{color: 'black'}}
-                                                                                  noVerticalAlign/>
-                                                                    </Button>
-                                                                }
+                                                                <Popover
+                                                                    bodyContent={
+                                                                        <div>
+                                                                            <a
+                                                                                href="https://golang.org/s/re2syntax"
+                                                                                target="_blank"
+                                                                                rel="noreferrer"
+                                                                            >
+                                                                                Learn how to use
+                                                                                regex here
+                                                                            </a>
+                                                                        </div>
+                                                                    }
+                                                                    headerContent={
+                                                                        'Use regex to enter values'
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        <Button
+                                                                            type="button"
+                                                                            aria-label="More info for name field"
+                                                                            onClick={(e) =>
+                                                                                e.preventDefault()
+                                                                            }
+                                                                            aria-describedby="simple-form-name-02"
+                                                                            className="pf-c-form__group-label-help"
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    'transparent',
+                                                                            }}
+                                                                        >
+                                                                            <HelpIcon
+                                                                                style={{
+                                                                                    color: 'black',
+                                                                                }}
+                                                                                noVerticalAlign
+                                                                            />
+                                                                        </Button>
+                                                                    }
                                                                 </Popover>
                                                             }
                                                             fieldId={`mappings[${index}].valueExpression`}
@@ -281,7 +301,7 @@ function MachineAccessIntegrationForm({
                                                                 direction="up"
                                                                 placeholderText="Select a role"
                                                             >
-                                                                {roles.map(({name}) => (
+                                                                {roles.map(({ name }) => (
                                                                     <SelectOption
                                                                         key={name}
                                                                         value={name}
@@ -302,7 +322,7 @@ function MachineAccessIntegrationForm({
                                                                     arrayHelpers.remove(index)
                                                                 }
                                                             >
-                                                                <TrashIcon/>
+                                                                <TrashIcon />
                                                             </Button>
                                                         </FlexItem>
                                                     )}
@@ -315,7 +335,7 @@ function MachineAccessIntegrationForm({
                                                         variant="link"
                                                         isInline
                                                         icon={
-                                                            <PlusCircleIcon className="pf-u-mr-sm"/>
+                                                            <PlusCircleIcon className="pf-u-mr-sm" />
                                                         }
                                                         onClick={() =>
                                                             arrayHelpers.push({
