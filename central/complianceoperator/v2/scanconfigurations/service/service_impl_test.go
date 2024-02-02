@@ -123,6 +123,28 @@ func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigura
 	// ID will be added to the record and returned.  Add it to the validation object
 	request.Id = uuid.NewDummy().String()
 	s.Require().Equal(request, config)
+
+	// reset for error testing
+	request = getTestAPIRec()
+	request.ScanConfig = nil
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Nil(config)
+
+	request = getTestAPIRec()
+	request.Clusters = []string{}
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one cluster is required for a scan configuration")
+	s.Require().Nil(config)
+
+	request = getTestAPIRec()
+	request.ScanConfig.Profiles = []string{}
+	config, err = s.service.CreateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+	s.Require().Nil(config)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfiguration() {
@@ -143,6 +165,30 @@ func (s *ComplianceScanConfigServiceTestSuite) TestUpdateComplianceScanConfigura
 	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Error(err)
 	s.Require().Contains(err.Error(), "Scan configuration ID is required: invalid arguments")
+
+	// Test Case 3: No ScanConfig
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.ScanConfig = nil
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
+
+	// Test Case 4: No clusters
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.Clusters = []string{}
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one cluster is required for a scan configuration")
+
+	// Test Case 5: No profiles
+	request = getTestAPIRec()
+	request.Id = uuid.NewDummy().String()
+	request.ScanConfig.Profiles = []string{}
+	_, err = s.service.UpdateComplianceScanConfiguration(allAccessContext, request)
+	s.Require().Error(err)
+	s.Require().Contains(err.Error(), "At least one profile is required for a scan configuration")
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfiguration() {
