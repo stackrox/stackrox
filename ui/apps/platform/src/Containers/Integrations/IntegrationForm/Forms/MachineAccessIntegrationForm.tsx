@@ -125,7 +125,9 @@ function MachineAccessIntegrationForm({
                                     setFieldValue(name, value);
                                     setFieldValue(
                                         'issuer',
-                                        value === 'GITHUB_ACTIONS' ? 'https://token.actions.githubusercontent.com' : ''
+                                        value === 'GITHUB_ACTIONS'
+                                            ? 'https://token.actions.githubusercontent.com'
+                                            : ''
                                     );
                                 }}
                                 direction="down"
@@ -150,9 +152,7 @@ function MachineAccessIntegrationForm({
                                 isRequired
                                 type="text"
                                 id="issuer"
-                                value={
-                                    values.issuer
-                                }
+                                value={values.issuer}
                                 onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || values.type === 'GITHUB_ACTIONS'}
