@@ -22,7 +22,8 @@ var (
 	}
 
 	kubectlScannerScriptMap = FileNameMap{
-		"common/setup-scanner.sh": "scanner/scripts/setup.sh",
+		"common/setup-scanner.sh":    "scanner/scripts/setup.sh",
+		"common/setup-scanner-v4.sh": "scanner-v4/scripts/setup.sh",
 	}
 
 	centralDBScriptMap = FileNameMap{
