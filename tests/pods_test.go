@@ -95,14 +95,22 @@ func TestPod(testT *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		k8sPod, err := createK8sClient(testT).CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-		})
+		client := createK8sClient(testT)
+		k8sPod, err := client.CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{})
 		if err != nil {
 			log.Errorf("Error: %v", err)
+
+			pList, err := client.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				log.Errorf("error listing pods: %v", err)
+			}
+			log.Infof("Pods list: %+v", pList)
+
+			dList, err := client.AppsV1().Deployments("default").List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				log.Errorf("error listing deployments: %v", err)
+			}
+			log.Infof("Deployments: %+v", dList)
 		}
 		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
