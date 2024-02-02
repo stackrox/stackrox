@@ -36,7 +36,7 @@ spec:
       {{- end}}
       serviceAccountName: collector
       containers:
-      {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
+      {{- if ne (default ._rox.collector.collectionMethod "") "NO_COLLECTION"}}
       - name: collector
         image: {{ quote ._rox.image.collector.fullRef }}
         imagePullPolicy: {{ ._rox.collector.imagePullPolicy }}
@@ -48,8 +48,10 @@ spec:
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
+          {{- if (default ._rox.collector.forceCollection false) }}
         - name: COLLECTION_METHOD
           value: {{ ._rox.collector.collectionMethod }}
+        {{- end }}
         - name: GRPC_SERVER
           value: {{ ._rox.sensor.endpoint }}
         - name: SNI_HOSTNAME
