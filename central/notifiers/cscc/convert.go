@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -185,7 +186,7 @@ func convertProviderMetadataToResourceName(providerMetadata *storage.ProviderMet
 	case storage.ClusterMetadata_GKE:
 		return fmt.Sprintf("//container.googleapis.com/projects/%s/locations/%s/clusters/%s",
 			googleMetadata.GetProject(), providerMetadata.GetRegion(),
-			googleMetadata.GetClusterName())
+			stringutils.FirstNonEmpty(googleMetadata.GetClusterName(), providerMetadata.GetCluster().GetName()))
 	default:
 		return fmt.Sprintf("//cloudresourcemanager.googleapis.com/projects/%s",
 			googleMetadata.GetProject())
