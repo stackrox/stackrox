@@ -55,6 +55,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
                     return '/v1/apitokens'; // plural in endpoint address (and see next function)
                 case 'clusterInitBundle': // singular in page address
                     return '/v1/cluster-init/init-bundles'; // plural in endpoint address
+                case 'machineAccess':
+                    return '/v1/auth/m2m'
                 default:
                     return '';
             }
@@ -79,6 +81,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
                     return 'apitokens'; // plural in endpoint alias
                 case 'clusterInitBundle': // singular in page address
                     return 'cluster-init/init-bundles'; // plural in endpoint alias
+                case 'machineAccess':
+                    return '/v1/auth/m2m'
                 default:
                     return '';
             }
@@ -119,6 +123,7 @@ function getIntegrationEndpointAddress(integrationSource, integrationType, integ
 const routeMatcherMapForIntegrationsDashboard = Object.fromEntries(
     [
         ['authProviders', 'apitoken'],
+        ['authProviders', 'machineAccess'],
         ['imageIntegrations'],
         ['signatureIntegrations'],
         ['notifiers'],
@@ -148,6 +153,7 @@ const integrationTitleMap = {
     authProviders: {
         apitoken: 'API Token',
         clusterInitBundle: 'Cluster Init Bundle',
+        machineAccess: 'Machine access configuration'
     },
     backups: {
         gcs: 'Google Cloud Storage',
