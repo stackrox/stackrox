@@ -166,6 +166,9 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			enc := json.NewEncoder(out)
 			for _, vuln := range apiResp.Vulnerabilities {
 				item := filterFields(vuln.CVE)
+				if item == nil {
+					continue
+				}
 				enrichment, err := json.Marshal(item)
 				if err != nil {
 					return nil, hint, fmt.Errorf("serializing CVE %s: %w", item.ID, err)
@@ -207,6 +210,11 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		Metrics:      &schema.CVEAPIJSON20CVEItemMetrics{},
 		Published:    cve.Published,
 		LastModified: cve.LastModified,
+	}
+	// Return the item as-is if metrics are missing.
+	// We'd rather show the vulnerability without CVSS information than ignore it.
+	if cve.Metrics == nil {
+		return item
 	}
 	for _, cvss := range cve.Metrics.CvssMetricV31 {
 		if cvss.Type != "Primary" && cvss.Type != "" {

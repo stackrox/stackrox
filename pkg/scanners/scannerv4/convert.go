@@ -31,8 +31,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
-	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.GetPackageVulnerabilities()))
-	for _, pkg := range report.GetContents().GetPackages() {
+	pkgs := report.GetContents().GetPackages()
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(pkgs))
+	for _, pkg := range pkgs {
 		id := pkg.GetId()
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
 
@@ -48,9 +49,11 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:          pkg.GetName(),
-			Version:       pkg.GetVersion(),
-			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			Name:    pkg.GetName(),
+			Version: pkg.GetVersion(),
+			Vulns:   vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			// TODO(ROX-14100): Fill in package-level fixed-by.
+			FixedBy:       "",
 			Source:        source,
 			Location:      location,
 			HasLayerIndex: layerIdx,
@@ -117,21 +120,21 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 }
 
 func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
-	if len(vulnerabilities) == 0 {
+	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
 
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
 	uniqueVulns := set.NewStringSet()
 	for _, id := range ids {
-		ccVuln, ok := vulnerabilities[id]
-		if !ok {
-			log.Debugf("Bad Input: Vuln %q from PackageVulnerabilities not found in Vulnerabilities, skipping", id)
+		if !uniqueVulns.Add(id) {
+			// Already saw this vulnerability, so ignore it.
 			continue
 		}
 
-		if !uniqueVulns.Add(ccVuln.Name) {
-			// Already added this vulnerability, so ignore it.
+		ccVuln, ok := vulnerabilities[id]
+		if !ok {
+			log.Debugf("vuln ID %q from PackageVulnerabilities not found in Vulnerabilities, skipping", id)
 			continue
 		}
 
@@ -175,12 +178,12 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 			if v2.GetBaseScore() != 0.0 {
 				c.Score = v2.GetBaseScore()
 			}
-			c.Severity = cvssv2.Severity(v2.GetBaseScore())
+			c.Severity = cvssv2.Severity(c.Score)
 			vuln.CvssV2 = c
 			// This sets the top level score for use in policies. It will be overwritten if
 			// v3 exists.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vuln.Cvss = v2.GetBaseScore()
+			vuln.Cvss = c.Score
 		} else {
 			errList.AddError(fmt.Errorf("v2: %w", err))
 		}
@@ -195,11 +198,11 @@ func setCvss(vuln *storage.EmbeddedVulnerability, cvss *v4.VulnerabilityReport_V
 			if v3.GetBaseScore() != 0.0 {
 				c.Score = v3.GetBaseScore()
 			}
-			c.Severity = cvssv3.Severity(v3.GetBaseScore())
+			c.Severity = cvssv3.Severity(c.Score)
 			vuln.CvssV3 = c
 			// Overwrite V2 if set.
 			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vuln.Cvss = v3.GetBaseScore()
+			vuln.Cvss = c.Score
 		} else {
 			errList.AddError(fmt.Errorf("v3: %w", err))
 		}
@@ -240,7 +243,7 @@ func os(report *v4.VulnerabilityReport) string {
 	}
 
 	dist := dists[0]
-	return dist.Did + ":" + dist.VersionId
+	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
 func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {
