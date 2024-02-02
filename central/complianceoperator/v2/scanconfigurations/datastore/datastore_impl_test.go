@@ -341,6 +341,95 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 	s.Require().False(found)
 }
 
+func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExists() {
+	configID := uuid.NewV4().String()
+
+	scanConfig := s.getTestRec(mockScanName)
+	scanConfig.Id = configID
+
+	// Add a record so we have something to find
+	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
+
+	// Add testCases for different combinations of profiles and clusters
+	testCases := []struct {
+		desc        string
+		configID    string
+		profiles    []string
+		clusters    []string
+		found       bool
+		isErrorTest bool
+	}{
+		{
+			desc:        "Successful get - no deplicate profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis-node"},
+			clusters:    []string{s.clusterID1},
+			found:       false,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles, multiple clusters",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1, s.clusterID2},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - duplicate profiles, multiple clusters, multiple profiles",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-node"},
+			clusters:    []string{s.clusterID1, s.clusterID2},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - one duplicate profile with version string",
+			configID:    uuid.NewV4().String(),
+			profiles:    []string{"ocp4-cis-1-4-0"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - updateing existing config",
+			configID:    configID,
+			profiles:    []string{"no-match-profile", "ocp4-cis"},
+			clusters:    []string{s.clusterID1},
+			found:       false,
+			isErrorTest: false,
+		},
+		{
+			desc:        "Successful get - updateing existing config",
+			configID:    configID,
+			profiles:    []string{"no-match-profile", "ocp4-cis", "ocp4-cis-1-4-0"},
+			clusters:    []string{s.clusterID1},
+			found:       true,
+			isErrorTest: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		log.Info(tc.desc)
+		found, err := s.dataStore.ScanConfigurationProfileExists(s.testContexts[unrestrictedReadCtx], tc.configID, tc.profiles, tc.clusters)
+		if tc.isErrorTest {
+			s.Require().Error(err)
+		} else {
+			s.Require().NoError(err)
+			s.Require().Equal(tc.found, found)
+		}
+	}
+
+}
+
 func (s *complianceScanConfigDataStoreTestSuite) TestUpsertScanConfiguration() {
 	configID := uuid.NewV4().String()
 

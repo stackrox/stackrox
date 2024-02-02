@@ -223,6 +223,39 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		time.Sleep(60 * time.Second)
 	}), retry.Tries(10))
 	assert.NoError(t, err)
+
+	// Create a different scan configuration with the same profile
+	duplicateTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	duplicateProfileReq := &v2.ComplianceScanConfiguration{
+		ScanName: duplicateTestName,
+		Id:       "",
+		Clusters: []string{clusterID},
+		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+			OneTimeScan: false,
+			Profiles:    []string{"rhcos4-moderate-rev-4"},
+			Description: "test config with duplicate profile",
+			ScanSchedule: &v2.Schedule{
+				IntervalType: 1,
+				Hour:         15,
+				Minute:       0,
+				Interval: &v2.Schedule_DaysOfWeek_{
+					DaysOfWeek: &v2.Schedule_DaysOfWeek{
+						Days: []int32{1, 2, 3, 4, 5, 6},
+					},
+				},
+			},
+		},
+	}
+
+	// Verify that the duplicate profile was not created and the error message is correct
+	_, err = service.CreateComplianceScanConfiguration(ctx, duplicateProfileReq)
+	assert.Contains(t, err.Error(), "Duplicated profiles found in current or existing scan configurations")
+
+	query = &v2.RawQuery{Query: ""}
+	scanConfigs, err = service.ListComplianceScanConfigurations(ctx, query)
+	assert.NoError(t, err)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+
 }
 
 func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
