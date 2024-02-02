@@ -238,7 +238,8 @@ func shouldUseEmptyDir(ctx context.Context, objKind string, db *platform.Scanner
 	}
 
 	storageClassDefined := db != nil && db.Persistence != nil &&
-		db.Persistence.PersistentVolumeClaim != nil && db.Persistence.PersistentVolumeClaim.StorageClassName != nil &&
+		db.Persistence.PersistentVolumeClaim != nil &&
+		db.Persistence.PersistentVolumeClaim.StorageClassName != nil &&
 		*db.Persistence.PersistentVolumeClaim.StorageClassName != ""
 	if storageClassDefined {
 		return false, nil
