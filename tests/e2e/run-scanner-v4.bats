@@ -14,8 +14,8 @@ setup_file() {
     export DEFAULT_IMAGE_REGISTRY="quay.io/stackrox-io"
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
-    export EARLIER_VERSION="4.3.0"
-    export EARLIER_MAIN_IMAGE_TAG=EARLIER_VERSION
+    export EARLIER_CHART_VERSION="4.3.0"
+    export EARLIER_MAIN_IMAGE_TAG=$EARLIER_CHART_VERSION
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
@@ -135,7 +135,7 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_VERSION}/central-services"
+    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
     info "Deplying StackRox services using chart ${_CENTRAL_CHART_DIR_OVERRIDE}"
 
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
@@ -228,10 +228,10 @@ teardown() {
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     info "Download and use earlier version of roxctl without Scanner V4 support"
-    curl -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_VERSION}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+    curl -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
     chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     info "Installing old StackRox version without Scanner V4 support using roxctl"
-    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_VERSION}/central-services"
+    local _CENTRAL_CHART_DIR_OVERRIDE="${CHART_REPOSITORY}${CHART_BASE}/${EARLIER_CHART_VERSION}/central-services"
     if [[ -n "${EARLIER_MAIN_IMAGE_TAG:-}" ]]; then
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
@@ -531,7 +531,6 @@ wait_for_ready_pods() {
     echo "Pod(s) within deployment ${namespace}/${deployment} ready."
 }
 
-# Remove earlier roxctl binary from the folder added to PATH so default roxctl can be used again
 remove_earlier_roxctl_binary() {
     rm -f ${EARLIER_ROXCTL_PATH}/roxctl
     echo "Removed earlier roxctl binary"
