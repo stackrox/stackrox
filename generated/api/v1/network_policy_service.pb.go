@@ -698,7 +698,7 @@ func (m *GetUndoModificationResponse) Clone() *GetUndoModificationResponse {
 type NetworkPolicyInSimulation struct {
 	Policy               *storage.NetworkPolicy           `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 	Status               NetworkPolicyInSimulation_Status `protobuf:"varint,2,opt,name=status,proto3,enum=v1.NetworkPolicyInSimulation_Status" json:"status,omitempty"`
-	OldPolicy            *storage.NetworkPolicy           `protobuf:"bytes,3,opt,name=old_policy,json=oldPolicy,proto3" json:"old_policy,omitempty"`
+	OldPolicy            *storage.NetworkPolicy           `protobuf:"bytes,3,opt,name=old_policy,json=oldPolicy,proto3" json:"old_policy,omitempty"` // if status is MODIFIED or DELETED, this contains the previous network policy.
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
 	XXX_unrecognized     []byte                           `json:"-"`
 	XXX_sizecache        int32                            `json:"-"`

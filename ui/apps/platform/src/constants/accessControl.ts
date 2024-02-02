@@ -72,31 +72,7 @@ export const defaultSelectedRole = {
     resourceToAccess: defaultNewRolePermissions,
 };
 
-export const resourceSubstitutions: Record<string, string[]> = {
-    Access: ['AuthProvider', 'Group', 'Licenses', 'Role', 'User'],
-    Administration: [
-        'AllComments',
-        'Config',
-        'DebugLogs',
-        'NetworkGraphConfig',
-        'ProbeUpload',
-        'ScannerBundle',
-        'ScannerDefinitions',
-        'SensorUpgradeConfig',
-        'ServiceIdentity',
-    ],
-    Cluster: ['ClusterCVE'],
-    Compliance: ['ComplianceRuns'],
-    DeploymentExtension: ['Indicator', 'NetworkBaseline', 'ProcessWhitelist', 'Risk'],
-    Integration: [
-        'APIToken',
-        'BackupPlugins',
-        'ImageIntegration',
-        'Notifier',
-        'SignatureIntegration',
-    ],
-    Image: ['ImageComponent'],
-};
+export const resourceSubstitutions: Record<string, string[]> = {};
 
 export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([]);
 

@@ -8,7 +8,6 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
-	_ "github.com/kudobuilder/kuttl/cmd/kubectl-kuttl"
 	_ "github.com/mikefarah/yq/v4"
 	_ "github.com/operator-framework/operator-sdk/cmd/operator-sdk"
 	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"

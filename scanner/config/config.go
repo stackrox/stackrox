@@ -40,6 +40,8 @@ var (
 				ConnString:   "host=/var/run/postgresql",
 				PasswordFile: "",
 			},
+			// TODO(ROX-19005): replace with a URL related to the desired version.
+			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{
@@ -161,6 +163,8 @@ type MatcherConfig struct {
 	// instance at the specified address, instead of the local indexer (when the
 	// indexer is enabled).
 	IndexerAddr string `yaml:"indexer_addr"`
+	// VulnerabilitiesURL sets the URL to pull vulnerability data bundles.
+	VulnerabilitiesURL string `yaml:"vulnerabilities_url"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
 	RemoteIndexerEnabled bool
 }
@@ -181,7 +185,9 @@ func (c *MatcherConfig) validate() error {
 			return fmt.Errorf("indexer_addr: failed to parse address: %w", err)
 		}
 	}
-
+	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
+		return fmt.Errorf("vulnerabilities_url: %w", err)
+	}
 	return nil
 }
 

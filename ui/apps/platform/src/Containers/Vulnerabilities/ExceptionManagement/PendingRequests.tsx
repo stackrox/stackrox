@@ -20,6 +20,7 @@ import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionSer
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import useURLSort from 'hooks/useURLSort';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import PageTitle from 'Components/PageTitle';
 import {
     RequestExpires,
     RequestIDLink,
@@ -117,6 +118,7 @@ function PendingApprovals() {
 
     return (
         <PageSection>
+            <PageTitle title="Exception Management - Pending Requests" />
             <Toolbar>
                 <ToolbarContent>
                     <FilterAutocompleteSelect

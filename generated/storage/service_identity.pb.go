@@ -92,7 +92,7 @@ func (ServiceType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ServiceIdentity struct {
-	SerialStr string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"`
+	SerialStr string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation.
 	// Types that are valid to be assigned to Srl:
 	//	*ServiceIdentity_Serial
 	Srl                  isServiceIdentity_Srl `protobuf_oneof:"srl"`

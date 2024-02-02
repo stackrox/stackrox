@@ -110,8 +110,6 @@ function scanCompliance() {
 
     const scanButton = '[data-testid="scan-button"]';
 
-    cy.get(scanButton).should('not.have.attr', 'disabled');
-
     interactAndWaitForResponses(
         () => {
             cy.get(scanButton).click();
@@ -121,7 +119,11 @@ function scanCompliance() {
         { timeout: 20000 }
     );
 
-    cy.get(scanButton).should('not.have.attr', 'disabled');
+    // Note: scan results are polled for every 10 seconds, this should give us plenty of time
+    // to await completion of the scan.
+    cy.get('div:contains("Compliance scanning complete")', {
+        timeout: 30000,
+    });
 }
 
 /*

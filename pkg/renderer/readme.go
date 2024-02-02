@@ -44,11 +44,11 @@ the login page, and log in with username "admin" and the password found in the
 `
 
 	kubectlScannerTemplate = `
-  - Deploy Scanner
-     If you want to run the StackRox Scanner:
-     - Run scanner/scripts/setup.sh
-     - Run {{.K8sConfig.Command}} create -R -f scanner
-     - Run {{.K8sConfig.Command}} create -R -f scanner-v4
+  - Deploy Scanner components
+    - Run scanner/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f scanner
+    - Run scanner-v4/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f scanner-v4
 `
 	kubectlCentralDBTemplate = `
   - Deploy Central DB

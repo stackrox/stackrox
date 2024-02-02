@@ -39,11 +39,12 @@ function DiscoveredClustersPage(): ReactElement {
     const [count, setCount] = useState(0);
     const [errorMessage, setErrorMessage] = useState('');
     const [clusters, setClusters] = useState<DiscoveredCluster[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    // Use currentDatetime === null as substitute for initial isLoading.
+    const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
+    const [isReloading, setIsReloading] = useState(false);
 
     useEffect(() => {
-        setIsLoading(true);
-
+        setIsReloading(true);
         // const listArg = getListDiscoveredClustersArg({ page, perPage, searchFilter, sortOption });
         // const { filter } = listArg;
 
@@ -59,9 +60,10 @@ function DiscoveredClustersPage(): ReactElement {
                 setErrorMessage(getAxiosErrorMessage(error));
             })
             .finally(() => {
-                setIsLoading(false);
+                setCurrentDatetime(new Date());
+                setIsReloading(false);
             });
-    }, [page, perPage, searchFilter, setIsLoading, sortOption]);
+    }, [page, perPage, searchFilter, sortOption]);
 
     /* eslint-disable no-nested-ternary */
     return (
@@ -85,7 +87,7 @@ function DiscoveredClustersPage(): ReactElement {
                 </Flex>
             </PageSection>
             <PageSection component="div">
-                {isLoading ? (
+                {currentDatetime === null ? (
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -102,7 +104,7 @@ function DiscoveredClustersPage(): ReactElement {
                     <>
                         <DiscoveredClustersToolbar
                             count={count}
-                            isDisabled={isLoading}
+                            isDisabled={isReloading}
                             page={page}
                             perPage={perPage}
                             setPage={setPage}
@@ -112,6 +114,7 @@ function DiscoveredClustersPage(): ReactElement {
                         />
                         <DiscoveredClustersTable
                             clusters={clusters}
+                            currentDatetime={currentDatetime}
                             getSortParams={getSortParams}
                             searchFilter={searchFilter}
                         />

@@ -12,6 +12,7 @@ import { Route, Switch, Redirect, useLocation, useHistory } from 'react-router-d
 
 import { exceptionManagementPath } from 'routePaths';
 
+import PageTitle from 'Components/PageTitle';
 import PendingRequests from './PendingRequests';
 import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';
@@ -58,6 +59,7 @@ function ExceptionRequestsPage() {
 
     return (
         <>
+            <PageTitle title="Exception Management" />
             <PageSection
                 className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
                 variant="light"

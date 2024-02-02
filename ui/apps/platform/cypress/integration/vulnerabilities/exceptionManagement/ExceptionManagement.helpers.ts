@@ -11,6 +11,9 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 const basePath = '/main/vulnerabilities/exception-management';
 export const pendingRequestsPath = `${basePath}/pending-requests`;
+export const approvedDeferralsPath = `${basePath}/approved-deferrals`;
+export const approvedFalsePositivesPath = `${basePath}/approved-false-positives`;
+export const deniedRequestsPath = `${basePath}/denied-requests`;
 
 export function visitExceptionManagement() {
     visit(pendingRequestsPath);

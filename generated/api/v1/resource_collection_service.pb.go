@@ -745,7 +745,7 @@ func (m *UpdateCollectionResponse) Clone() *UpdateCollectionResponse {
 
 type DryRunCollectionRequest struct {
 	Name                  string                            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id                    string                            `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Id                    string                            `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // set if dryrun on existing collections
 	Description           string                            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	ResourceSelectors     []*storage.ResourceSelector       `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
 	EmbeddedCollectionIds []string                          `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`

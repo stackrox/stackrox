@@ -70,6 +70,33 @@ tests:
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
 
 - name: "scanner slim service account can access image pull secrets"
+  server:
+    objects:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: collector-stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-main
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-collector
+        namespace: stackrox
   set:
     scanner.disable: false
     scanner.mode: "slim"

@@ -10,16 +10,16 @@ import (
 	"strconv"
 	"strings"
 
-	nvdschema "github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/scanner/enricher/nvd"
 )
 
 var (
@@ -65,11 +65,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	scores, err := nvdScoresMap(r.Enrichments)
+	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
-		return nil, fmt.Errorf("internal error: parsing nvd scores: %w", err)
+		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, scores)
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -192,8 +192,8 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 	}, nil
 }
 
-// versionID returns the distribution version ID.
-func versionID(d *claircore.Distribution) string {
+// VersionID returns the distribution version ID.
+func VersionID(d *claircore.Distribution) string {
 	vID := d.VersionID
 	if vID == "" {
 		switch d.DID {
@@ -218,7 +218,7 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Name:            d.Name,
 		Version:         d.Version,
 		VersionCodeName: d.VersionCodeName,
-		VersionId:       versionID(d),
+		VersionId:       VersionID(d),
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,
@@ -272,15 +272,12 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 func toProtoV4VulnerabilitiesMap(
 	ctx context.Context,
 	vulns map[string]*claircore.Vulnerability,
-	nvdScores map[string]nvdschema.CVSSV30,
+	nvdVulns map[string]*nvdschema.CVEAPIJSON20CVEItem,
 ) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
 	var vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
-	if len(vulns) > 0 {
-		vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
-	}
 	for k, v := range vulns {
 		if v == nil {
 			continue
@@ -302,9 +299,13 @@ func toProtoV4VulnerabilitiesMap(
 			repoID = v.Repo.ID
 		}
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		sev, err := severityAndScores(v, nvdScores)
+		sev, err := severityAndScores(v, nvdVulns)
 		if err != nil {
-			return nil, err
+			zlog.Warn(ctx).
+				Str("vulnerability", v.ID).
+				Err(err).
+				Msg("ignoring invalid severity and CVSS scores")
+			continue
 		}
 		// Look for CVSS scores in the severity field, then set the
 		// scores only if at least one is found.
@@ -325,10 +326,22 @@ func toProtoV4VulnerabilitiesMap(
 				Vector:    sev.v3Vector,
 			}
 		}
+		// Using the NVD description if not provided.
+		description := v.Description
+		if description == "" {
+			if v, ok := nvdVulns[v.ID]; ok {
+				if len(v.Descriptions) > 0 {
+					description = v.Descriptions[0].Value
+				}
+			}
+		}
+		if vulnerabilities == nil {
+			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
+		}
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               vulnerabilityName(v),
-			Description:        v.Description,
+			Description:        description,
 			Issued:             issued,
 			Link:               v.Links,
 			Severity:           sev.severity,
@@ -509,29 +522,28 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 	return fixedIn
 }
 
-// nvdScoresMap look for NVD CVSS in the vulnerability report enrichments and
-// returns a mapping of vulnerability IDs to CVSS Scores V3.
-func nvdScoresMap(enrichments map[string][]json.RawMessage) (map[string]nvdschema.CVSSV30, error) {
-	cvss := enrichments[cvss.Type]
-	if len(cvss) == 0 {
+// nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
+// returns a map of CVEs.
+func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
+	enrichmentsList := enrichments[nvd.Type]
+	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
-	// TODO(ROX-21264): ClairCore only supports CVSS v3.1, so we assume CVSSV30 --
-	//                  need to update this when we start using our own CVSS score enricher.
-	var scores map[string][]nvdschema.CVSSV30
+	var items map[string][]nvdschema.CVEAPIJSON20CVEItem
 	// The CVSS enrichment always contains only one element.
-	err := json.Unmarshal(cvss[0], &scores)
+	err := json.Unmarshal(enrichmentsList[0], &items)
 	if err != nil {
 		return nil, err
 	}
-	if len(scores) == 0 {
+	if len(items) == 0 {
 		return nil, nil
 	}
-	ret := make(map[string]nvdschema.CVSSV30)
-	for id, l := range scores {
+	ret := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
+	for id, list := range items {
 		// There is no criteria for selecting more than one enrichment record, assume the
 		// first is the right one.
-		ret[id] = l[0]
+		i := list[0]
+		ret[id] = &i
 	}
 	return ret, nil
 }
@@ -555,14 +567,13 @@ var (
 // ClairCore vulnerability. The returned information is dependent on the
 // underlying updater. If errors are found in the encoded information, partial
 // values might be returned with an error.
-func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdschema.CVSSV30) (severityValues, error) {
+func severityAndScores(vuln *claircore.Vulnerability, nvdVulns map[string]*nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
 	var values severityValues
-	errList := errorhelpers.NewErrorList("parsing severity and CVSS scores")
+	errList := errorhelpers.NewErrorList(fmt.Sprintf("%s: parsing severity and CVSS scores", vuln.Updater))
 	switch {
 	case osvUpdaterPattern.MatchString(vuln.Updater):
 		if vuln.Severity == "" {
 			errList.AddStrings("severity is empty")
-			break
 		}
 		// ClairCore has no CVSS version indicator for OSV data, assuming CVSS V2 if
 		// not prefixed with a V3 version.
@@ -580,7 +591,6 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		if vuln.Severity == "" {
 			errList.AddStrings("severity is empty")
-			break
 		}
 		q, err := url.ParseQuery(vuln.Severity)
 		if err != nil {
@@ -588,8 +598,6 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 			break
 		}
 		values.severity = q.Get("severity")
-		// Look for CVSS fields. When at least one vector is found, we consider that the
-		// CVSS information exists, but return partial results in the case of failures.
 		if v := q.Get("cvss2_vector"); v != "" {
 			s := q.Get("cvss2_score")
 			if _, err := cvss2.VectorFromString(v); err != nil {
@@ -615,16 +623,21 @@ func severityAndScores(vuln *claircore.Vulnerability, nvdScores map[string]nvdsc
 	default:
 		// Everything else uses NVD.
 		values.severity = vuln.Severity
-		if nvd, ok := nvdScores[vuln.ID]; ok {
-			switch {
-			case strings.HasPrefix(nvd.Version, "2"):
-				values.v2Score = float32(nvd.BaseScore)
-				values.v2Vector = nvd.VectorString
-			case strings.HasPrefix(nvd.Version, "3"):
-				values.v3Score = float32(nvd.BaseScore)
-				values.v3Vector = nvd.VectorString
-			default:
-				errList.AddError(fmt.Errorf("unsupported CVSS score version: %s", nvd.Version))
+		if v, ok := nvdVulns[vuln.ID]; ok {
+			if len(v.Metrics.CvssMetricV31) > 0 {
+				cvssv31 := v.Metrics.CvssMetricV31[0]
+				values.v3Score = float32(cvssv31.CvssData.BaseScore)
+				values.v3Vector = cvssv31.CvssData.VectorString
+			}
+			if len(v.Metrics.CvssMetricV30) > 0 {
+				cvssv30 := v.Metrics.CvssMetricV30[0]
+				values.v3Score = float32(cvssv30.CvssData.BaseScore)
+				values.v3Vector = cvssv30.CvssData.VectorString
+			}
+			if len(v.Metrics.CvssMetricV2) > 0 {
+				cvssv2 := v.Metrics.CvssMetricV2[0]
+				values.v2Score = float32(cvssv2.CvssData.BaseScore)
+				values.v2Vector = cvssv2.CvssData.VectorString
 			}
 		}
 	}

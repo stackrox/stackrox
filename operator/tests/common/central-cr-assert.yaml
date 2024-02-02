@@ -29,6 +29,7 @@ collectors:
 - command: kubectl describe pod -n $NAMESPACE -l app=scanner-v4-indexer
 - command: kubectl describe pod -n $NAMESPACE -l app=scanner-v4-matcher
 - command: kubectl describe pod -n $NAMESPACE -l app=scanner-v4-db
+# Please keep the above lists in sync with pods-debug.yaml
 timeout: 1500
 ---
 apiVersion: platform.stackrox.io/v1alpha1

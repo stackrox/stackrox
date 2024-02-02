@@ -94,6 +94,18 @@ func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 			cvssV3.Integrity, ok = impactMap[v]
 		case "A":
 			cvssV3.Availability, ok = impactMap[v]
+		case "E", "RL", "RC":
+			// Ignore temporal score metrics.
+			continue
+		case "MAV", "MAC", "MPR", "MUI", "MS":
+			// Ignore environmental exploitability metrics.
+			continue
+		case "MC", "MI", "MA":
+			// Ignore environmental impact metrics.
+			continue
+		case "CR", "IR", "AR":
+			// Ignore environmental impact subscore modifiers.
+			continue
 		}
 		if !ok {
 			return nil, fmt.Errorf("invalid field value %q for %q", v, k)
