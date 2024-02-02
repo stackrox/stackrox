@@ -161,7 +161,7 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		assert.False(t, c.RemoteIndexerEnabled)
 	})
 	t.Run("when URL is replaceable, replace it", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION"}
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?version={{.Version}}"}
 		err := c.validate()
 		assert.NoError(t, err)
 		v := "dev"

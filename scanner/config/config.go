@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,10 +65,6 @@ type Config struct {
 	MTLS             MTLSConfig    `yaml:"mtls"`
 	Proxy            ProxyConfig   `yaml:"proxy"`
 	LogLevel         LogLevel      `yaml:"log_level"`
-}
-
-type MatcherConfigData struct {
-	Version string
 }
 
 func (c *Config) validate() error {
@@ -201,19 +196,7 @@ func (c *MatcherConfig) validate() error {
 	if buildinfo.ReleaseBuild {
 		v = version.Version
 	}
-	cfgV := MatcherConfigData{Version: v}
-	// Parse and execute the template
-	tmpl, err := template.New("vulnUrl").Parse(strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", "{{.Version}}"))
-	if err != nil {
-		return fmt.Errorf("vulnerabilities_url: unable to parse URL: %w", err)
-	}
-	var urlBuilder strings.Builder
-	err = tmpl.Execute(&urlBuilder, cfgV)
-	if err != nil {
-		return fmt.Errorf("vulnerabilities_url: fail to config version: %w", err)
-	}
-
-	c.VulnerabilitiesURL = urlBuilder.String()
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "{{.Version}}", v)
 	return nil
 }
 
