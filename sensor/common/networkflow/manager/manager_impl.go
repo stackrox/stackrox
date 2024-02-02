@@ -192,7 +192,7 @@ func (c *connection) IsExternal() (bool, error) {
 	if c.remote.IPAndPort.Address.IsPublic() {
 		return true, nil
 	}
-	return true, nil
+	return false, nil
 }
 
 type processInfo struct {
