@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	resultMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
+	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	convertUtils "github.com/stackrox/rox/central/convert/testutils"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -35,6 +36,7 @@ type ComplianceResultsServiceTestSuite struct {
 
 	ctx             context.Context
 	resultDatastore *resultMocks.MockDataStore
+	scanConfigDS    *scanConfigMocks.MockDataStore
 	service         Service
 }
 
@@ -51,8 +53,9 @@ func (s *ComplianceResultsServiceTestSuite) SetupSuite() {
 func (s *ComplianceResultsServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.resultDatastore = resultMocks.NewMockDataStore(s.mockCtrl)
+	s.scanConfigDS = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.resultDatastore)
+	s.service = New(s.resultDatastore, s.scanConfigDS)
 }
 
 func (s *ComplianceResultsServiceTestSuite) TearDownTest() {
@@ -77,6 +80,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 			setMocks: func() {
 				expectedQ := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetComplianceStorageResults(s.T()), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
 			},
 		},
 		{
@@ -89,6 +95,9 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 					WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery()
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(convertUtils.GetOneClusterComplianceStorageResults(s.T(), fixtureconsts.Cluster1), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig2").Return(getTestRec("scanConfig2"), nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig3").Return(getTestRec("scanConfig3"), nil).Times(1)
 			},
 		},
 		{
@@ -106,6 +115,7 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResults() {
 				}
 
 				s.resultDatastore.EXPECT().SearchComplianceCheckResults(gomock.Any(), expectedQ).Return(returnResults, nil).Times(1)
+				s.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), "scanConfig1").Return(getTestRec("scanConfig1"), nil).Times(1)
 			},
 		},
 		{
@@ -399,5 +409,30 @@ func (s *ComplianceResultsServiceTestSuite) TestGetComplianceScanResult() {
 				s.Require().Equal(convertUtils.GetConvertedComplianceResult(s.T()), result)
 			}
 		})
+	}
+}
+
+func getTestRec(scanName string) *storage.ComplianceOperatorScanConfigurationV2 {
+	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:                     scanName,
+		ScanConfigName:         scanName,
+		AutoApplyRemediations:  false,
+		AutoUpdateRemediations: false,
+		OneTimeScan:            false,
+		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			{
+				ProfileName: "ocp4-cis",
+			},
+		},
+		StrictNodeScan: false,
+		Description:    "test-description",
+		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+			{
+				ClusterId: fixtureconsts.Cluster1,
+			},
+			{
+				ClusterId: fixtureconsts.Cluster2,
+			},
+		},
 	}
 }

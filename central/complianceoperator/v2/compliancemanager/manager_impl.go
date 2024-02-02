@@ -121,13 +121,13 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	// No ID means an add so we need to make sure the name does not already exist
 	if createScanRequest {
 		// Check if scan configuration already exists by name.
-		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
+		scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
 		if err != nil {
 			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return nil, err
 		}
-		if found {
+		if scanConfig != nil {
 			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
 		}
 
