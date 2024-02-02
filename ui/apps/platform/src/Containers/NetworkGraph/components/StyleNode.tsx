@@ -22,7 +22,7 @@ import {
     WithSelectionProps,
 } from '@patternfly/react-topology';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
-import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
+import { PficonNetworkRangeIcon, ZoneIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
@@ -53,10 +53,10 @@ type StyleNodeProps = {
 const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> => {
     switch (type) {
         case 'EXTERNAL_ENTITIES':
-        case 'INTERNAL_ENTITIES':
         case 'CIDR_BLOCK':
             return PficonNetworkRangeIcon;
-
+        case 'INTERNAL_ENTITIES':
+            return ZoneIcon;
         default:
             return DefaultIcon;
     }

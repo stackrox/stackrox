@@ -152,7 +152,7 @@ function getInternalNodeModel(
     const baseNode = getBaseNode(entity.id);
     return {
         ...baseNode,
-        shape: NodeShape.rect,
+        shape: NodeShape.hexagon,
         label: 'Internal entities',
         data: { ...entity, type: 'INTERNAL_ENTITIES', outEdges, isFadedOut: false },
     };
