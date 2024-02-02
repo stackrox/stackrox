@@ -87,24 +87,35 @@ export function getEditDisabledMessage(type) {
 }
 
 export function transformDurationLongForm(duration: string): string {
-    const splitHoursSeparate = duration.split('h');
-    let result = pluralizeMeasurement(splitHoursSeparate[0], 'hour');
-    if (splitHoursSeparate.length === 1) {
-        return result;
+    const hours = extractUnitsOfTime(duration, 'h');
+    const minutes = extractUnitsOfTime(duration, 'm');
+    const seconds = extractUnitsOfTime(duration, 's');
+    let result = '';
+    if (hours && hours > 0) {
+        result += pluralizeMeasurement(hours, 'hour');
     }
-    const splitMinutesSeparate = splitHoursSeparate[1].split('m');
-    result = `${result} ${pluralizeMeasurement(splitMinutesSeparate[0], 'minute')}`;
-    if (
-        splitMinutesSeparate.length === 1 ||
-        (splitMinutesSeparate.length === 2 && splitMinutesSeparate[1] === '')
-    ) {
-        return result;
+    if (minutes && minutes > 0) {
+        result += ' ';
+        result += pluralizeMeasurement(minutes, 'minute');
     }
-    return `${result} ${pluralizeMeasurement(splitMinutesSeparate[1].split('s')[0], 'second')}`;
+    if (seconds && seconds > 0) {
+        result += ' ';
+        result += pluralizeMeasurement(seconds, 'second');
+    }
+    return result;
 }
 
 function pluralizeMeasurement(count, measurement: string): string {
     return `${count} ${pluralize(measurement, parseInt(count))}`;
+}
+
+function extractUnitsOfTime(duration, unit: string,) : number {
+    const unitRegex = new RegExp('[0-9]+' + unit);
+    const matchHours = duration.match(unitRegex);
+    if (matchHours && matchHours.length !== 0) {
+       return parseInt(matchHours[0].replace(unit, ''))
+    }
+    return 0;
 }
 
 export const daysOfWeek = [

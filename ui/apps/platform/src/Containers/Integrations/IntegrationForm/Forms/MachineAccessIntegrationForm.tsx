@@ -125,7 +125,7 @@ function MachineAccessIntegrationForm({
                                     setFieldValue(name, value);
                                     setFieldValue(
                                         'issuer',
-                                        'https://token.actions.githubusercontent.com'
+                                        value === 'GITHUB_ACTIONS' ? 'https://token.actions.githubusercontent.com' : ''
                                     );
                                 }}
                                 direction="down"
@@ -151,8 +151,6 @@ function MachineAccessIntegrationForm({
                                 type="text"
                                 id="issuer"
                                 value={
-                                    // values.type === 'GITHUB_ACTIONS'
-                                    //     ? 'https://token.actions.githubusercontent.com'
                                     values.issuer
                                 }
                                 onChange={onChange}
@@ -171,6 +169,7 @@ function MachineAccessIntegrationForm({
                                 isRequired
                                 type="text"
                                 id="tokenExpirationDuration"
+                                placeholder={'3h20m20s'}
                                 value={values.tokenExpirationDuration}
                                 onChange={onChange}
                                 onBlur={handleBlur}
