@@ -317,7 +317,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationsCount(
 	s.Require().Equal(0, count)
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
+func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationByName() {
 	configID := uuid.NewV4().String()
 
 	scanConfig := s.getTestRec(mockScanName)
@@ -326,19 +326,19 @@ func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
 
-	found, err := s.dataStore.ScanConfigurationExists(s.testContexts[unrestrictedReadCtx], mockScanName)
+	foundConfig, err := s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().True(found)
+	s.Require().Equal(scanConfig, foundConfig)
 
 	// Retrieve a record that does not exist
-	found, err = s.dataStore.ScanConfigurationExists(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
+	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[unrestrictedReadCtx], "DOES NOT EXIST")
 	s.Require().NoError(err)
-	s.Require().False(found)
+	s.Require().Nil(foundConfig)
 
 	// Try to retrieve a record with no access
-	found, err = s.dataStore.ScanConfigurationExists(s.testContexts[noAccessCtx], mockScanName)
+	foundConfig, err = s.dataStore.GetScanConfigurationByName(s.testContexts[noAccessCtx], mockScanName)
 	s.Require().NoError(err)
-	s.Require().False(found)
+	s.Require().Nil(foundConfig)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationProfileExists() {

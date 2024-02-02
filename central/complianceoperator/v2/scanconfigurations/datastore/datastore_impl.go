@@ -41,15 +41,22 @@ func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*
 	return scanConfig, found, err
 }
 
-// ScanConfigurationExists retrieves the existence of scan configuration specified by name
-func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
+// GetScanConfigurationByName retrieves the scan configuration specified by name
+func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanName string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfigName, scanName).ProtoQuery())
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	if len(scanConfigs) == 0 {
+		return nil, nil
 	}
 
-	return len(scanConfigs) > 0, nil
+	if len(scanConfigs) > 1 {
+		return nil, errors.Errorf("unable to retrieve distinct scan configuration named %q", scanName)
+	}
+
+	return scanConfigs[0], nil
 }
 
 // ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.

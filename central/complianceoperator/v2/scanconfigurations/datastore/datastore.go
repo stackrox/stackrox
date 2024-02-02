@@ -21,8 +21,8 @@ type DataStore interface {
 	// GetScanConfiguration retrieves the scan configuration specified by id
 	GetScanConfiguration(ctx context.Context, id string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error)
 
-	// ScanConfigurationExists retrieves the existence of scan configuration specified by name
-	ScanConfigurationExists(ctx context.Context, scanName string) (bool, error)
+	// GetScanConfigurationByName retrieves the scan configuration specified by name
+	GetScanConfigurationByName(ctx context.Context, scanName string) (*storage.ComplianceOperatorScanConfigurationV2, error)
 
 	// ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster is using it in any existing scan configurations.
 	ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) (bool, error)
