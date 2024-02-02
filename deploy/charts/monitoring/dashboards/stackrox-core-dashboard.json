@@ -21,7 +21,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1706843826358,
+  "iteration": 1706857744665,
   "links": [],
   "panels": [
     {
@@ -83,7 +83,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -137,7 +137,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -173,7 +173,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -263,7 +263,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -317,7 +317,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -353,7 +353,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -443,7 +443,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -497,7 +497,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -533,7 +533,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -623,7 +623,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -677,7 +677,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -713,7 +713,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -767,7 +767,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Percent CPU seconds",
+            "axisLabel": "Percent CPU Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -803,7 +803,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -857,7 +857,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -893,7 +893,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -983,7 +983,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1037,7 +1037,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1073,7 +1073,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -1163,7 +1163,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1217,7 +1217,7 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisLabel": "Memory Usage (Megabytes)",
+            "axisLabel": "Memory Usage",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -1253,7 +1253,7 @@
               }
             ]
           },
-          "unit": "short"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -1898,5 +1898,5 @@
   "timezone": "",
   "title": "Core Dashboard",
   "uid": "P0Ulb58nk",
-  "version": 2
+  "version": 1
 }
