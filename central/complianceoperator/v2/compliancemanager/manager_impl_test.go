@@ -184,6 +184,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "")
@@ -202,12 +203,25 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			expectedErr: errors.Errorf("Scan Configuration named %q already exists.", mockScanName),
 		},
 		{
+			desc:        "Scan configuration has duplicate profiles",
+			testRequest: getTestRecNoID(),
+			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
+			clusters:    []string{testconsts.Cluster1},
+			setMocks: func() {
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+			},
+			isErrorTest: true,
+			expectedErr: errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", mockScanName),
+		},
+		{
 			desc:        "Unable to store scan configuration",
 			testRequest: getTestRecNoID(),
 			testContext: suite.testContexts[testutils.UnrestrictedReadWriteCtx],
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
@@ -220,6 +234,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().ScanConfigurationExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "Unable to process sensor message")
@@ -253,6 +268,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 			clusters:    []string{testconsts.Cluster1},
 			setMocks: func() {
 				suite.scanConfigDS.EXPECT().GetScanConfiguration(gomock.Any(), mockScanID).Return(getTestRec(), true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(suite.testContexts[testutils.UnrestrictedReadWriteCtx], gomock.Any(), testconsts.Cluster1, "")
