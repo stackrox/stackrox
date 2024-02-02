@@ -58,6 +58,8 @@ message NetworkEntityInfo {
     INTERNET = 2;
     LISTEN_ENDPOINT = 3;
     EXTERNAL_SOURCE = 4;
+    // INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node
+    INTERNAL_ENTITIES = 5;
   }
 
   message Deployment {
