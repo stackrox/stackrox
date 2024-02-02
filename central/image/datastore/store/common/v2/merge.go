@@ -10,9 +10,8 @@ import (
 
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := parts.Image.Clone()
-	mergeComponents(parts, ret)
-	return ret
+	mergeComponents(parts, parts.Image)
+	return parts.Image
 }
 
 func mergeComponents(parts ImageParts, image *storage.Image) {

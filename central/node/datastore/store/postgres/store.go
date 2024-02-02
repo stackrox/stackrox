@@ -617,21 +617,10 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return node, found, getErr
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
-	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var node storage.Node
-	if err := node.Unmarshal(data); err != nil {
-		return nil, false, err
-	}
-
-	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, nodeID)
+func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
+	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, node.GetId())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 	componentIDs := make([]string, 0, len(componentEdgeMap))
 	for _, val := range componentEdgeMap {
@@ -640,7 +629,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 
 	componentMap, err := getNodeComponents(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	if len(componentEdgeMap) != len(componentMap) {
@@ -649,7 +638,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	cveIDs := set.NewStringSet()
@@ -661,11 +650,11 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 
 	cveMap, err := getCVEs(ctx, tx, cveIDs.AsSlice())
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	nodeParts := &common.NodeParts{
-		Node:     &node,
+		Node:     node,
 		Children: []*common.ComponentParts{},
 	}
 	for componentID, component := range componentMap {
@@ -683,7 +672,25 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 		}
 		nodeParts.Children = append(nodeParts.Children, child)
 	}
-	return common.Merge(nodeParts), true, nil
+	common.Merge(nodeParts)
+	return nil
+}
+
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
+	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
+	var data []byte
+	if err := row.Scan(&data); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var node storage.Node
+	if err := node.Unmarshal(data); err != nil {
+		return nil, false, err
+	}
+	if err := s.populateNode(ctx, tx, &node); err != nil {
+		return nil, false, err
+	}
+	return &node, true, nil
 }
 
 func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
@@ -898,14 +905,10 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		if err != nil {
 			return pgutils.ErrNilIfNoRows(err)
 		}
-		for _, data := range rows {
-			node, exists, err := s.getFullNode(ctx, tx, data.GetId())
+		for _, node := range rows {
+			err := s.populateNode(ctx, tx, node)
 			if err != nil {
 				return err
-			}
-			if !exists {
-				log.Errorf("UNEXPECTED: could not find node %q", data.GetId())
-				continue
 			}
 			if err := fn(node); err != nil {
 				return err
