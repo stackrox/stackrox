@@ -31,8 +31,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
-	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.GetPackageVulnerabilities()))
-	for _, pkg := range report.GetContents().GetPackages() {
+	pkgs := report.GetContents().GetPackages()
+	components := make([]*storage.EmbeddedImageScanComponent, 0, len(pkgs))
+	for _, pkg := range pkgs {
 		id := pkg.GetId()
 		vulnIDs := report.GetPackageVulnerabilities()[id].GetValues()
 
@@ -51,6 +52,8 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Name:          pkg.GetName(),
 			Version:       pkg.GetVersion(),
 			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			// TODO(ROX-14100): Fill in package-level fixed-by.
+			FixedBy: "",
 			Source:        source,
 			Location:      location,
 			HasLayerIndex: layerIdx,
@@ -117,21 +120,21 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 }
 
 func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
-	if len(vulnerabilities) == 0 {
+	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
 
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(ids))
 	uniqueVulns := set.NewStringSet()
 	for _, id := range ids {
-		ccVuln, ok := vulnerabilities[id]
-		if !ok {
-			log.Debugf("Bad Input: Vuln %q from PackageVulnerabilities not found in Vulnerabilities, skipping", id)
+		if !uniqueVulns.Add(id) {
+			// Already saw this vulnerability, so ignore it.
 			continue
 		}
 
-		if !uniqueVulns.Add(ccVuln.Name) {
-			// Already added this vulnerability, so ignore it.
+		ccVuln, ok := vulnerabilities[id]
+		if !ok {
+			log.Debugf("vuln ID %q from PackageVulnerabilities not found in Vulnerabilities, skipping", id)
 			continue
 		}
 
@@ -240,7 +243,7 @@ func os(report *v4.VulnerabilityReport) string {
 	}
 
 	dist := dists[0]
-	return dist.Did + ":" + dist.VersionId
+	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
 func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {

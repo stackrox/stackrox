@@ -197,11 +197,6 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 }
 
 func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
-	// Skip the CVE if there is no CVSS metrics to save space in the DB.
-	if cve.Metrics == nil || (cve.Metrics.CvssMetricV2 == nil && cve.Metrics.CvssMetricV30 == nil && cve.Metrics.CvssMetricV31 == nil) {
-		return nil
-	}
-
 	var desc []*schema.CVEAPIJSON20LangString
 	for _, d := range cve.Descriptions {
 		if d.Lang == "en" {
@@ -215,6 +210,11 @@ func filterFields(cve *schema.CVEAPIJSON20CVEItem) *schema.CVEAPIJSON20CVEItem {
 		Metrics:      &schema.CVEAPIJSON20CVEItemMetrics{},
 		Published:    cve.Published,
 		LastModified: cve.LastModified,
+	}
+	// Return the item as-is if metrics are missing.
+	// We'd rather show the vulnerability without CVSS information than ignore it.
+	if cve.Metrics == nil {
+		return item
 	}
 	for _, cvss := range cve.Metrics.CvssMetricV31 {
 		if cvss.Type != "Primary" && cvss.Type != "" {
