@@ -533,7 +533,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			ext, err := conn.IsExternal()
 			if err != nil { // IP is malformed or unknown - assume it is external and log a warning
 				log.Warnf("%s container %s/%s. Local: %s, Remote: %v. ",
-					dirPrefix, container.Namespace, container.ContainerName, conn.local.String(), conn.remote.String())
+					dirPrefix, container.Namespace, container.ContainerName, conn.local.DebugIPv4String(), conn.remote.IPAndPort.DebugIPv4String())
 			}
 			if !ext {
 				entityType = networkgraph.InternalEntities()

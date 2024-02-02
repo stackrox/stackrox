@@ -21,6 +21,11 @@ func (e NetworkPeerID) IsValid() bool {
 	return e.Address.IsValid()
 }
 
+// DebugIPv4String returns full info in a string
+func (e NetworkPeerID) DebugIPv4String() string {
+	return fmt.Sprintf("Port=%d, Addr=%s, Network=%s", e.Port, e.Address.String(), e.IPNetwork.String())
+}
+
 // String returns a string representation of this ip:port pair.
 func (e NetworkPeerID) String() string {
 	if e.Port == 0 {
