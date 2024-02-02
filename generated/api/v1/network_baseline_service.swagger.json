@@ -402,9 +402,11 @@
         "DEPLOYMENT",
         "INTERNET",
         "LISTEN_ENDPOINT",
-        "EXTERNAL_SOURCE"
+        "EXTERNAL_SOURCE",
+        "INTERNAL_ENTITIES"
       ],
-      "default": "UNKNOWN_TYPE"
+      "default": "UNKNOWN_TYPE",
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storageNetworkEntityScope": {
       "type": "object",

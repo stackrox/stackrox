@@ -53,6 +53,7 @@ type StyleNodeProps = {
 const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> => {
     switch (type) {
         case 'EXTERNAL_ENTITIES':
+        case 'INTERNAL_ENTITIES':
         case 'CIDR_BLOCK':
             return PficonNetworkRangeIcon;
 
