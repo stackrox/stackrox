@@ -44,7 +44,7 @@ type serviceImpl struct {
 
 	imageIntegrations iiDStore.DataStore
 	scannerConfigs    map[mtls.Subject]*tls.Config
-	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*types.Timestamp, error)
+	expiryFunc        func(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (time.Time, error)
 }
 
 func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpiry_Request) (*v1.GetCertExpiry_Response, error) {
@@ -204,7 +204,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 
 	numEndpoints := 2
 	errC := make(chan error, numEndpoints)
-	expiryC := make(chan *types.Timestamp, numEndpoints)
+	expiryC := make(chan time.Time, numEndpoints)
 	getExpiry := func(subject mtls.Subject, endpoint string) {
 		expiry, err := s.expiryFunc(ctx, subject, s.scannerConfigs[subject], endpoint)
 		if err != nil {
@@ -220,7 +220,7 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	go getExpiry(mtls.ScannerV4MatcherSubject, matcherEndpoint)
 
 	errorList := errorhelpers.NewErrorList("failed to determine Scanner V4 cert expiry")
-	expiries := make([]*types.Timestamp, 0, numEndpoints)
+	expiries := make([]time.Time, 0, numEndpoints)
 	for i := 0; i < numEndpoints; i++ {
 		select {
 		case <-ctx.Done():
@@ -239,7 +239,12 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 		return expiries[i].Compare(expiries[j]) < 0
 	})
 
-	return &v1.GetCertExpiry_Response{Expiry: expiries[0]}, nil
+	protoExpiry, err := protocompat.ConvertTimeToTimestampOrError(expiries[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "converting timestamp")
+	}
+
+	return &v1.GetCertExpiry_Response{Expiry: protoExpiry}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

@@ -5,6 +5,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"

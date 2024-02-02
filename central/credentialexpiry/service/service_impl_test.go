@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	iiDSMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -68,20 +67,19 @@ func TestEnsureTLSAndReturnAddr(t *testing.T) {
 }
 
 func TestGetScannerV4CertExpiry(t *testing.T) {
-	expiryCur := types.TimestampNow()
-	expiryOld, err := types.TimestampProto(time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC))
-	require.NoError(t, err)
+	expiryCur := time.Now()
+	expiryOld := time.Date(2000, 01, 01, 1, 1, 1, 1, time.UTC)
 
-	successExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
+	successExpiryFunc := genGetExpiryFunc(map[mtls.Subject]time.Time{
 		mtls.ScannerV4IndexerSubject: expiryOld,
 		mtls.ScannerV4MatcherSubject: expiryCur,
 	})
 
-	matcherSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
+	matcherSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]time.Time{
 		mtls.ScannerV4MatcherSubject: expiryCur,
 	})
 
-	indexerSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]*types.Timestamp{
+	indexerSuccessExpiryFunc := genGetExpiryFunc(map[mtls.Subject]time.Time{
 		mtls.ScannerV4IndexerSubject: expiryOld,
 	})
 
@@ -107,8 +105,8 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 		scannerConfigs      map[mtls.Subject]*tls.Config
 		getIntegrationError bool
 		integrationExists   bool
-		expiryFunc          func(context.Context, mtls.Subject, *tls.Config, string) (*types.Timestamp, error)
-		expiryExpected      *types.Timestamp
+		expiryFunc          func(context.Context, mtls.Subject, *tls.Config, string) (time.Time, error)
+		expiryExpected      time.Time
 	}{
 		{
 			"error if feature disabled",
@@ -178,11 +176,11 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 
 }
 
-func genGetExpiryFunc(expiries map[mtls.Subject]*types.Timestamp) func(context.Context, mtls.Subject, *tls.Config, string) (*types.Timestamp, error) {
-	return func(_ context.Context, subject mtls.Subject, _ *tls.Config, _ string) (*types.Timestamp, error) {
+func genGetExpiryFunc(expiries map[mtls.Subject]time.Time) func(context.Context, mtls.Subject, *tls.Config, string) (time.Time, error) {
+	return func(_ context.Context, subject mtls.Subject, _ *tls.Config, _ string) (time.Time, error) {
 		expiry, ok := expiries[subject]
 		if !ok {
-			return nil, errors.New("fake")
+			return time.Time{}, errors.New("fake")
 		}
 
 		return expiry, nil
