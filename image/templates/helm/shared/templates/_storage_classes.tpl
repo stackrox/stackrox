@@ -28,7 +28,7 @@
     {{- end -}}
   {{- end -}}
 
-  {{ $_ := set $._rox.env.storageClasses "all" (dict "all" $storageClasses) }}
+  {{ $_ := set $._rox.env.storageClasses "all" $storageClasses }}
   {{- if ne $defaultStorageClass "" -}}
     {{- $_ := set $._rox.env.storageClasses "default" $defaultStorageClass -}}
   {{- end -}}
