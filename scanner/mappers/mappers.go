@@ -192,8 +192,8 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 	}, nil
 }
 
-// versionID returns the distribution version ID.
-func versionID(d *claircore.Distribution) string {
+// VersionID returns the distribution version ID.
+func VersionID(d *claircore.Distribution) string {
 	vID := d.VersionID
 	if vID == "" {
 		switch d.DID {
@@ -218,7 +218,7 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Name:            d.Name,
 		Version:         d.Version,
 		VersionCodeName: d.VersionCodeName,
-		VersionId:       versionID(d),
+		VersionId:       VersionID(d),
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,

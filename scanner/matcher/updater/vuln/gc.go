@@ -1,4 +1,4 @@
-package updater
+package vuln
 
 import (
 	"context"
@@ -11,7 +11,7 @@ const gcName = `garbage-collection`
 
 // runGCFullPeriodic runs garbage collection until completion, periodically.
 func (u *Updater) runGCFullPeriodic() {
-	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/Updater.runFullGCPeriodic")
+	ctx := zlog.ContextWithValues(u.ctx, "component", "matcher/updater/vuln/Updater.runFullGCPeriodic")
 
 	zlog.Info(ctx).Str("full_gc_interval", u.fullGCInterval.String()).Msg("starting periodic full GC")
 	t := time.NewTicker(u.fullGCInterval)
@@ -31,7 +31,7 @@ func (u *Updater) runGCFullPeriodic() {
 
 // runGCFull runs garbage collection until completion.
 func (u *Updater) runGCFull(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runGCFull")
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runGCFull")
 
 	// Use Lock instead of TryLock to ensure we get the lock
 	// and run a full GC.
@@ -62,7 +62,7 @@ func (u *Updater) runGCFull(ctx context.Context) {
 
 // runGC runs a garbage collection cycle, once.
 func (u *Updater) runGC(ctx context.Context) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.runGC")
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runGC")
 
 	// Use TryLock instead of Lock because a GC cycle is already happening.
 	ctx, done := u.locker.TryLock(ctx, gcName)
