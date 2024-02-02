@@ -312,7 +312,7 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 		}
 	}
 
-	log.Info("No Cloud Provider metadata is found")
+	log.Info("No cloud provider metadata was found")
 	return nil
 }
 

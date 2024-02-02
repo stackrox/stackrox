@@ -273,7 +273,7 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				},
 			},
 		},
-		"on openshift running on a provider not supported should return nil": {
+		"on openshift running on a provider not supported should return basic information": {
 			getProviders: nilGetProviders,
 			openshift:    true,
 			infra: &configv1.Infrastructure{
@@ -285,6 +285,12 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 						AlibabaCloud: &configv1.AlibabaCloudPlatformStatus{},
 					},
 					InfrastructureName: "cluster-1",
+				},
+			},
+			metadata: &storage.ProviderMetadata{
+				Cluster: &storage.ClusterMetadata{
+					Type: storage.ClusterMetadata_OCP,
+					Name: "cluster-1",
 				},
 			},
 		},

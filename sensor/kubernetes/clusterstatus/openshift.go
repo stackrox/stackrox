@@ -70,8 +70,12 @@ func infraCRToProviderMetadata(infra *configv1.Infrastructure) *storage.Provider
 			},
 		}
 	default:
-		// In case of a non-supported cloud provider, we currently assume nil.
-		return nil
+		return &storage.ProviderMetadata{
+			Cluster: &storage.ClusterMetadata{
+				Type: storage.ClusterMetadata_OCP,
+				Name: infra.Status.InfrastructureName,
+			},
+		}
 	}
 }
 
