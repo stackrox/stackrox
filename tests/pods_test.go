@@ -48,10 +48,14 @@ func TestPod(testT *testing.T) {
 
 		// Get the test deployment.
 		deploymentID := getDeploymentID(retryT, deploymentName)
-		require.Equal(retryT, 1, getPodCount(retryT, deploymentID))
+
+		podCount := getPodCount(retryT, deploymentID)
+		log.Infof("Pod count: %d", podCount)
+		require.Equal(retryT, 1, podCount)
 
 		// Get the test pod.
 		pods := getPods(retryT, deploymentID)
+		log.Infof("Num pods: %d", len(pods))
 		require.Len(retryT, pods, 1)
 		pod := pods[0]
 
@@ -63,6 +67,7 @@ func TestPod(testT *testing.T) {
 		var events []Event
 		for {
 			events = getEvents(retryT, pod)
+			log.Infof("%d: Events: %+v", loopCount, events)
 			if len(events) == 4 {
 				break
 			}
@@ -73,24 +78,43 @@ func TestPod(testT *testing.T) {
 
 		// Expecting processes: nginx, sh, date, sleep
 		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-		require.ElementsMatch(retryT, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
+		expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
+
+		log.Infof("Event names: %+v", eventNames)
+		log.Infof("Expected name: %+v", expected)
+		require.ElementsMatch(retryT, eventNames, expected)
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
+		log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
 		require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
 
 		// Verify risk event timeline csv
+		log.Info("Before CSV Check")
 		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
+		log.Info("After CSV CHeck")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		k8sPod, err := createK8sClient(testT).CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-		})
+		client := createK8sClient(testT)
+		k8sPod, err := client.CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{})
+		if err != nil {
+			log.Errorf("Error: %v", err)
+
+			pList, err := client.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				log.Errorf("error listing pods: %v", err)
+			}
+			log.Infof("Pods list: %+v", pList)
+
+			dList, err := client.AppsV1().Deployments("default").List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				log.Errorf("error listing deployments: %v", err)
+			}
+			log.Infof("Deployments: %+v", dList)
+		}
 		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
+		log.Infof("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 	})
 }
@@ -104,6 +128,7 @@ func getDeploymentID(t testutils.T, deploymentName string) string {
 		query deployments($query: String) {
 			deployments(query: $query) {
 				id
+				name
 			}
 		}
 	`, map[string]interface{}{
@@ -179,6 +204,10 @@ func getEvents(t testutils.T, pod Pod) []Event {
 	makeGraphQLRequest(t, `
 		query getEvents($podId: ID!) {
 			pod(id: $podId) {
+				id
+				name
+				containerCount
+				started
 				events {
 					id
 					name
@@ -189,7 +218,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 	`, map[string]interface{}{
 		"podId": pod.ID,
 	}, &respData, timeout)
-	log.Infof("%+v", respData)
+	log.Infof("Get Events: %+v", respData)
 
 	return respData.Pod.Events
 }
