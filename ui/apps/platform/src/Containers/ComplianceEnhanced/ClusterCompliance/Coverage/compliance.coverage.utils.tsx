@@ -1,4 +1,15 @@
+import React, { ReactElement } from 'react';
 import { LabelProps } from '@patternfly/react-core';
+import {
+    BanIcon,
+    CheckCircleIcon,
+    ExclamationCircleIcon,
+    ExclamationTriangleIcon,
+    ResourcesEmptyIcon,
+    SecurityIcon,
+    UnknownIcon,
+    WrenchIcon,
+} from '@patternfly/react-icons';
 
 import {
     ComplianceCheckStatus,
@@ -10,6 +21,11 @@ const DANGER_THRESHOLD = 50;
 const WARNING_THRESHOLD = 75;
 
 type LabelColor = LabelProps['color'];
+
+type ClusterStatusObject = {
+    icon: ReactElement;
+    statusText: string;
+};
 
 export const ComplianceStatus = {
     SUCCESS: 'success',
@@ -91,4 +107,43 @@ export function getComplianceLabelGroupColor(
         return 'gold';
     }
     return 'blue';
+}
+
+const statusIconTextMap: { [key in ComplianceCheckStatus]: ClusterStatusObject } = {
+    [ComplianceCheckStatus.PASS]: {
+        icon: <CheckCircleIcon color="var(--pf-global--success-color--100)" />,
+        statusText: 'Pass',
+    },
+    [ComplianceCheckStatus.FAIL]: {
+        icon: <SecurityIcon color="var(--pf-global--danger-color--100)" />,
+        statusText: 'Fail',
+    },
+    [ComplianceCheckStatus.ERROR]: {
+        icon: <ExclamationTriangleIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Error',
+    },
+    [ComplianceCheckStatus.INFO]: {
+        icon: <ExclamationCircleIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Info',
+    },
+    [ComplianceCheckStatus.MANUAL]: {
+        icon: <WrenchIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Manual',
+    },
+    [ComplianceCheckStatus.NOT_APPLICABLE]: {
+        icon: <BanIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Not Applicable',
+    },
+    [ComplianceCheckStatus.INCONSISTENT]: {
+        icon: <UnknownIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Inconsistent',
+    },
+    [ComplianceCheckStatus.UNSET_CHECK_STATUS]: {
+        icon: <ResourcesEmptyIcon color="var(--pf-global--disabled-color--100)" />,
+        statusText: 'Unset', // TODO: ask about this status
+    },
+};
+
+export function getClusterResultsStatusObject(status: ComplianceCheckStatus): ClusterStatusObject {
+    return statusIconTextMap[status];
 }
