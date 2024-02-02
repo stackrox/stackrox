@@ -24,9 +24,9 @@ matcher:
       client_encoding=UTF8
     password_file: /run/secrets/stackrox.io/secrets/password
   {{- if ._rox.env.centralServices }}
-  vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version={{.Version}}
+  vulnerabilities_url: https://central.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VERSION
   {{- else }}
-  vulnerabilities_url: https://sensor.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version={{.Version}}
+  vulnerabilities_url: https://sensor.{{ .Release.Namespace }}.svc/api/extensions/scannerdefinitions?version=ROX_VERSION
   {{- end }}
   indexer_addr: scanner-v4-indexer.{{ .Release.Namespace }}.svc:8443
 log_level: info

@@ -168,6 +168,7 @@ type MatcherConfig struct {
 	VulnerabilitiesURL string `yaml:"vulnerabilities_url"`
 	// RemoteIndexerEnabled internal and generated flag, true when the remote indexer is enabled.
 	RemoteIndexerEnabled bool
+	VulnerabilityVersion string `yaml:"vulnerability_version"`
 }
 
 func (c *MatcherConfig) validate() error {
@@ -193,11 +194,15 @@ func (c *MatcherConfig) validate() error {
 	if _, err := url.Parse(c.VulnerabilitiesURL); err != nil {
 		return fmt.Errorf("vulnerabilities_url: invalid URL: %w", err)
 	}
+
 	v := "dev"
 	if buildinfo.ReleaseBuild {
 		v = version.Version
 	}
-	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "{{.Version}}", v)
+	if c.VulnerabilityVersion != "" {
+		v = c.VulnerabilityVersion
+	}
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", v)
 	return nil
 }
 
