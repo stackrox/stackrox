@@ -159,7 +159,7 @@ function ExceptionRequestDetailsPage() {
     const showUpdateButton =
         !expired &&
         currentUser.userId === requester.id &&
-        (status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
+        (status === 'PENDING' || 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
