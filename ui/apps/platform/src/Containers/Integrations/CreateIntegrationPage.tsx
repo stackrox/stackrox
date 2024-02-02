@@ -4,7 +4,7 @@ import usePageState from './hooks/usePageState';
 
 import IntegrationPage from './IntegrationPage';
 import IntegrationForm from './IntegrationForm';
-import {getIsMachineAccessConfig} from "./utils/integrationUtils";
+import { getIsMachineAccessConfig } from './utils/integrationUtils';
 
 function CreateIntegrationPage(): ReactElement {
     const {
@@ -12,8 +12,8 @@ function CreateIntegrationPage(): ReactElement {
     } = usePageState();
 
     const title = getIsMachineAccessConfig(source, type)
-        ? "Create configuration"
-        : "Create Integration";
+        ? 'Create configuration'
+        : 'Create Integration';
     return (
         <IntegrationPage title={title} name={title}>
             <IntegrationForm source={source} type={type} isEditable />

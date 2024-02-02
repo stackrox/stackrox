@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import IntegrationTile from './IntegrationTile';
 import { fetchMachineAccessConfigs } from 'services/MachineAccessService';
+import IntegrationTile from './IntegrationTile';
 import {
     authenticationTokensSource as source,
     machineAccessDescriptor as descriptor,
