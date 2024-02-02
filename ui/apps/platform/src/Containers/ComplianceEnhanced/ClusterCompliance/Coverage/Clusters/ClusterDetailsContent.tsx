@@ -5,12 +5,14 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import { ComplianceClusterScanStats } from 'services/ComplianceEnhancedService';
 
 import RadioButtonWithStats from '../Components/RadioButtonWithStats';
+import ClusterDetailsTable from './ClusterDetailsTable';
 
 export type ClusterDetailsContentProps = {
     scanRecords: ComplianceClusterScanStats[];
+    clusterId: string;
 };
 
-function ClusterDetailsContent({ scanRecords }: ClusterDetailsContentProps) {
+function ClusterDetailsContent({ scanRecords, clusterId }: ClusterDetailsContentProps) {
     const scanNames = scanRecords.map((item) => item.scanStats.scanName) as [string, ...string[]];
     const [urlSelectedScan, setUrlSelectedScan] = useURLStringUnion('selectedScan', scanNames);
     const [selectedScan, setSelectedScan] = useState('');
@@ -62,6 +64,11 @@ function ClusterDetailsContent({ scanRecords }: ClusterDetailsContentProps) {
             </FlexItem>
             <FlexItem>
                 <Divider component="div" />
+            </FlexItem>
+            <FlexItem>
+                {clusterId && selectedScan && (
+                    <ClusterDetailsTable clusterId={clusterId} scanName={selectedScan} />
+                )}
             </FlexItem>
         </Flex>
     );

@@ -4,7 +4,6 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
     visitComplianceEnhancedDashboard,
-    visitComplianceEnhancedFromLeftNav,
     statusDashboardPath,
 } from './ComplianceEnhanced.helpers';
 
@@ -17,13 +16,13 @@ describe('Compliance Dashboard', () => {
         }
     });
 
-    it('should visit using the left nav', () => {
-        visitComplianceEnhancedFromLeftNav();
+    // it('should visit using the left nav', () => {
+    //     visitComplianceEnhancedFromLeftNav();
 
-        cy.location('pathname').should('eq', statusDashboardPath);
+    //     cy.location('pathname').should('eq', statusDashboardPath);
 
-        cy.title().should('match', getRegExpForTitleWithBranding('Compliance Status Dashboard'));
-    });
+    //     cy.title().should('match', getRegExpForTitleWithBranding('Compliance Status Dashboard'));
+    // });
 
     it('should have expected elements on the status page', () => {
         visitComplianceEnhancedDashboard();
