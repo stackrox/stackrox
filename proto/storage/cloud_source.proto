@@ -31,9 +31,9 @@ message CloudSource {
 }
 
 message PaladinCloudConfig {
-  string endpoint = 1;
+  string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
 }
 
 message OCMConfig {
-  string endpoint = 1;
+  string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
 }

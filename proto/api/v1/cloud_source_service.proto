@@ -40,7 +40,7 @@ message CloudSource {
 message PaladinCloudConfig {
   // Endpoint to the Paladin Cloud API server. Https is assumed if no
   // protocol is specified. Example: https://apiqa.paladincloud.io
-  string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
+  string endpoint = 1;
 }
 
 // OCMConfig provides information required to fetch discovered clusters from
@@ -48,7 +48,7 @@ message PaladinCloudConfig {
 message OCMConfig {
   // Endpoint to the OpenShift API server. Https is assumed if no
   // protocol is specified. Example: https://api.openshift.com
-  string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
+  string endpoint = 1;
 }
 
 message CloudSourcesFilter {
