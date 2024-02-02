@@ -35,7 +35,7 @@ jobs:
     - name: Upload repository mappings to Google Cloud Storage
       run: |
         # Zip the files into mapping.zip
-        zip mapping.zip repomapping-tmp/*
+        zip mapping.zip repomapping/*
 
         mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
         # Upload mapping.zip to Google Cloud Storage

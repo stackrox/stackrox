@@ -62,8 +62,8 @@ var (
 	log = logging.LoggerForModule()
 
 	v4FileMapping = map[string]string{
-		"name2repos": "repomapping-tmp/container-name-repos-map.json",
-		"repo2cpe":   "repomapping-tmp/repository-to-cpe.json",
+		"name2repos": "repomapping/container-name-repos-map.json",
+		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
 )
 
