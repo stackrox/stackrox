@@ -408,7 +408,7 @@ require (
 	modernc.org/opt v0.1.3 // indirect
 	modernc.org/sqlite v1.28.0 // indirect
 	modernc.org/strutil v1.1.3 // indirect
-	modernc.org/token v1.0.1 // indirect
+	modernc.org/token v1.1.0 // indirect
 	nhooyr.io/websocket v1.8.10 // indirect
 	oras.land/oras-go v1.2.4 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
@@ -467,6 +467,8 @@ replace (
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
 	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20231129115732-524eea1342a6
+
+	google.golang.org/grpc => github.com/RTann/grpc-go v1.61.1-0.20240204023323-de61ed796580
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
