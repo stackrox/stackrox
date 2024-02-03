@@ -37,7 +37,7 @@ func TestPod(testT *testing.T) {
 	// - the process events expected in this test are not reliably detected.
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
-	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
+	testutils.Retry(testT, 1, 5*time.Second, func(retryT testutils.T) {
 		defer teardownPod(testT, client, kPod)
 		createPod(testT, client, kPod)
 
@@ -53,6 +53,8 @@ func TestPod(testT *testing.T) {
 		log.Infof("Num pods: %d", len(pods))
 		require.Len(retryT, pods, 1)
 		pod := pods[0]
+
+		log.Infof("Pod: %+v", pod)
 
 		// Verify the container count.
 		require.Equal(retryT, int32(2), pod.ContainerCount)
@@ -91,22 +93,17 @@ func TestPod(testT *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		k8sPod, err := client.CoreV1().Pods("default").Get(ctx, kPod.GetName(), metav1.GetOptions{})
+		k8sPod, err := client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
 		if err != nil {
 			log.Errorf("Error: %v", err)
 
-			pList, err := client.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{})
+			pList, err := client.CoreV1().Pods(kPod.GetNamespace()).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				log.Errorf("error listing pods: %v", err)
 			}
 			log.Infof("Pods list: %+v", pList)
-
-			dList, err := client.AppsV1().Deployments("default").List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				log.Errorf("error listing deployments: %v", err)
-			}
-			log.Infof("Deployments: %+v", dList)
 		}
+		log.Infof("K8s pod: %+v", k8sPod)
 		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
 		log.Infof("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())

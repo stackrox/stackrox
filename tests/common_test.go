@@ -18,8 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
-	v12 "k8s.io/api/core/v1"
-	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -198,28 +198,28 @@ func applyFile(t testutils.T, path string) {
 	require.NoError(t, err, string(output))
 }
 
-func createPodFromFile(t *testing.T, path string) *v12.Pod {
+func createPodFromFile(t *testing.T, path string) *coreV1.Pod {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(data), len(data))
-	var pod v12.Pod
+	var pod coreV1.Pod
 	err = decoder.Decode(&pod)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	p, err := createK8sClient(t).CoreV1().Pods(pod.GetNamespace()).Create(ctx, &pod, v13.CreateOptions{})
+	p, err := createK8sClient(t).CoreV1().Pods(pod.GetNamespace()).Create(ctx, &pod, metaV1.CreateOptions{})
 	require.NoError(t, err)
 	return p
 }
 
-func getPodFromFile(t testutils.T, path string) *v12.Pod {
+func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 
 	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(data), len(data))
-	var pod v12.Pod
+	var pod coreV1.Pod
 	err = decoder.Decode(&pod)
 	require.NoError(t, err)
 	return &pod
@@ -265,21 +265,22 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func createPod(t testutils.T, client kubernetes.Interface, pod *v12.Pod) {
+func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, v13.CreateOptions{})
+	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
+	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
 	require.NoError(t, err)
 
 	waitForDeployment(t, pod.GetName())
 }
 
-func teardownPod(t testutils.T, client kubernetes.Interface, pod *v12.Pod) {
+func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), v13.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())
