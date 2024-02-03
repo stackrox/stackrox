@@ -14,12 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Note: Update here if yamls/multi-container-pod.yaml is updated
-const (
-	deploymentName = "end-to-end-api-test-pod-multi-container"
-	podName        = "end-to-end-api-test-pod-multi-container"
-)
-
 type IDStruct struct {
 	ID graphql.ID `json:"id"`
 }
@@ -41,10 +35,12 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
+	deploymentName := "end-to-end-api-test-pod-multi-container2"
+	podName := "end-to-end-api-test-pod-multi-container2"
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
-		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
-		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
+		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod2.yaml")
+		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod2.yaml")
 
 		// Get the test deployment.
 		deploymentID := getDeploymentID(retryT, deploymentName)

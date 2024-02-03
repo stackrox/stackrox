@@ -1,0 +1,28 @@
+# Will be used within roxctl_verification.sh.
+# Contains a Pod with multiple containers.
+# Note: pods_test and container_instances_test depend on this.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: end-to-end-api-test-pod-multi-container2
+spec:
+  volumes:
+    - name: html
+      emptyDir: {}
+  containers:
+    - name: 1st
+      image: nginx:1.18@sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72
+      volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+    - name: 2nd
+      image: debian:latest@sha256:1e5f2d70c9441c971607727f56d0776fb9eecf23cd37b595b26db7a974b2301d
+      volumeMounts:
+        - name: html
+          mountPath: /html
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do
+          date >> /html/index.html;
+          sleep 1;
+          done

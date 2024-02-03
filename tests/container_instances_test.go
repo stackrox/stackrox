@@ -21,6 +21,7 @@ type ContainerNameGroup struct {
 func TestContainerInstances(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
+	deploymentName := "end-to-end-api-test-pod-multi-container"
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
 		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
