@@ -192,28 +192,6 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-func applyFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-}
-
-func createPodFromFile(t *testing.T, path string) *coreV1.Pod {
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(data), len(data))
-	var pod coreV1.Pod
-	err = decoder.Decode(&pod)
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	p, err := createK8sClient(t).CoreV1().Pods(pod.GetNamespace()).Create(ctx, &pod, metaV1.CreateOptions{})
-	require.NoError(t, err)
-	return p
-}
-
 func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
