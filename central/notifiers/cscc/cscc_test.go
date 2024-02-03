@@ -12,57 +12,32 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const (
-	projectKey = "FJ"
-)
+func TestCSCC(t *testing.T) {
+	var (
+		sourceID  = "organizations/0000000000/sources/0000000000"
+		alertID   = "myAlertID"
+		clusterID = "test_cluster"
+	)
 
-func TestWithFakeCSCC(t *testing.T) {
-
-	sourceID := "organizations/0000000000/sources/0000000000"
-
-	s := &storage.Notifier{
-		Name:         "FakeSCC",
-		UiEndpoint:   "https://central.stackrox",
-		Type:         "scc",
-		LabelDefault: projectKey,
-		Config: &storage.Notifier_Cscc{
-			Cscc: &storage.CSCC{
-				ServiceAccount: "test_service_account",
-				SourceId:       sourceID,
-			},
+	notifier := &cscc{
+		config: &config{
+			SourceID: sourceID,
 		},
-	}
-
-	cluster := &storage.Cluster{
-		Id:   "test_id",
-		Name: "test_cluster",
-		Status: &storage.ClusterStatus{
-			ProviderMetadata: &storage.ProviderMetadata{
-				Zone: "test_zone",
-				Provider: &storage.ProviderMetadata_Google{
-					Google: &storage.GoogleProviderMetadata{
-						Project:     "test_project",
-						ClusterName: "test_cluster",
-					},
+		Notifier: &storage.Notifier{
+			Name:       "FakeSCC",
+			UiEndpoint: "https://central.stackrox",
+			Type:       "scc",
+			Config: &storage.Notifier_Cscc{
+				Cscc: &storage.CSCC{
+					ServiceAccount: "test_service_account",
+					SourceId:       sourceID,
 				},
 			},
 		},
 	}
 
-	mockCtrl := gomock.NewController(t)
-	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
-	clusterStore.EXPECT().GetCluster(gomock.Any(), "test_id").Return(cluster, true, nil)
-	testCscc := &cscc{
-		config: &config{
-			SourceID: sourceID,
-		},
-		Notifier: s,
-	}
-
-	alertID := "myAlertID"
-	severity := securitycenterpb.Finding_HIGH
-
-	testAlert := &storage.Alert{
+	clusterStore := clusterMocks.NewMockDataStore(gomock.NewController(t))
+	alert := &storage.Alert{
 		Id: alertID,
 		Policy: &storage.Policy{
 			Id:             "myPolicyID",
@@ -74,18 +49,91 @@ func TestWithFakeCSCC(t *testing.T) {
 		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name:      "myDeployment",
 			Id:        "myDeploymentID",
-			ClusterId: "test_id",
+			ClusterId: clusterID,
 		}},
 		Time: types.TimestampNow(),
 	}
-	findingID := ""
-	var finding *securitycenterpb.Finding
-	var err error
-	findingID, finding, err = testCscc.initFinding(context.Background(), testAlert, clusterStore)
-	assert.NoError(t, err)
-	assert.Equal(t, "myAlertID", findingID)
-	assert.NotEmpty(t, finding)
-	assert.Equal(t, severity, finding.Severity)
-	assert.Equal(t, sourceID, finding.Parent)
-	assert.Contains(t, finding.ExternalUri, alertID)
+
+	cases := map[string]struct {
+		mockCluster  *storage.Cluster
+		resourceName string
+	}{
+		"alert associated with a GKE cluster": {
+			mockCluster: &storage.Cluster{
+				Id:   "test_id",
+				Name: "test_cluster",
+				Status: &storage.ClusterStatus{
+					ProviderMetadata: &storage.ProviderMetadata{
+						Region: "test_region",
+						Provider: &storage.ProviderMetadata_Google{
+							Google: &storage.GoogleProviderMetadata{
+								Project:     "test_project",
+								ClusterName: "test_cluster",
+							},
+						},
+						Cluster: &storage.ClusterMetadata{
+							Type: storage.ClusterMetadata_GKE,
+						},
+					},
+				},
+			},
+			resourceName: "//container.googleapis.com/projects/test_project/locations/test_region/clusters/test_cluster",
+		},
+		"alert associated with an OpenShift cluster running on GCP": {
+			mockCluster: &storage.Cluster{
+				Id:   "test_id",
+				Name: "test_cluster",
+				Status: &storage.ClusterStatus{
+					ProviderMetadata: &storage.ProviderMetadata{
+						Region: "test_region",
+						Provider: &storage.ProviderMetadata_Google{
+							Google: &storage.GoogleProviderMetadata{
+								Project:     "test_project",
+								ClusterName: "test_cluster",
+							},
+						},
+						Cluster: &storage.ClusterMetadata{
+							Type: storage.ClusterMetadata_OSD,
+						},
+					},
+				},
+			},
+			resourceName: "//cloudresourcemanager.googleapis.com/projects/test_project",
+		},
+		"alert associated with a cluster not deployed on GCP": {
+			mockCluster: &storage.Cluster{
+				Id:   "test_id",
+				Name: "test_cluster",
+				Status: &storage.ClusterStatus{
+					ProviderMetadata: &storage.ProviderMetadata{
+						Region: "test_region",
+						Provider: &storage.ProviderMetadata_Aws{
+							Aws: &storage.AWSProviderMetadata{
+								AccountId: "some-account",
+							},
+						},
+						Cluster: &storage.ClusterMetadata{
+							Type: storage.ClusterMetadata_OSD,
+							Name: "aws-cluster",
+						},
+					},
+				},
+			},
+			resourceName: "OSD/aws-cluster",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			clusterStore.EXPECT().GetCluster(gomock.Any(), clusterID).Return(tc.mockCluster, true, nil)
+			findingID, finding, err := notifier.initFinding(context.Background(), alert, clusterStore)
+			assert.NoError(t, err)
+			assert.Equal(t, alertID, findingID)
+			assert.NotEmpty(t, finding)
+			assert.Equal(t, securitycenterpb.Finding_HIGH, finding.Severity)
+			assert.Equal(t, sourceID, finding.Parent)
+			assert.Contains(t, finding.ExternalUri, alertID)
+			assert.Equal(t, tc.resourceName, finding.ResourceName)
+		})
+	}
 }
