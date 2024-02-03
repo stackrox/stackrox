@@ -6,7 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/secrets"
 )
 
-// CloudSource converts the given storage.CloudSource to a v1.CloudSource.
+// CloudSource converts the given storage.CloudSource to a v1.CloudSource
+// and scrubs secret fields.
 func CloudSource(cloudSource *storage.CloudSource) *v1.CloudSource {
 	v1CloudSource := &v1.CloudSource{
 		Id:                  cloudSource.GetId(),

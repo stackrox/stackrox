@@ -145,7 +145,7 @@ func (s *serviceImpl) UpdateCloudSource(ctx context.Context, request *v1.UpdateC
 					"cannot fetch existing credentials: cloud source %q does not exist", v1CloudSource.GetId(),
 				)
 			}
-			return nil, errors.Wrapf(err, "cannot fetch existing credentials for %q", v1CloudSource.GetId())
+			return nil, errors.Wrapf(err, "cannot fetch existing credentials for cloud source %q", v1CloudSource.GetId())
 		}
 	}
 
