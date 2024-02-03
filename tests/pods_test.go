@@ -39,8 +39,8 @@ func TestPod(testT *testing.T) {
 	podName := "end-to-end-api-test-pod-multi-container2"
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
-		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod2.yaml")
-		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod2.yaml")
+		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod-2.yaml")
+		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod-2.yaml")
 
 		// Get the test deployment.
 		deploymentID := getDeploymentID(retryT, deploymentName)
