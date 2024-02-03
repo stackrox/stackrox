@@ -275,7 +275,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 
 // WalkByQuery iterates over all the objects scoped by the query applies the closure.
 func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error {
-	if proto.Equal(q, search.EmptyQuery()) {
+	if q == nil || proto.Equal(q, search.EmptyQuery()) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
