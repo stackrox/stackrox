@@ -37,7 +37,7 @@ func TestPod(testT *testing.T) {
 	// - the process events expected in this test are not reliably detected.
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
-	testutils.Retry(testT, 1, 5*time.Second, func(retryT testutils.T) {
+	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		defer teardownPod(testT, client, kPod)
 		createPod(testT, client, kPod)
 
