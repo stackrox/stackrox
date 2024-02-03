@@ -1985,7 +1985,7 @@ func (m *ComplianceOperatorCondition) Clone() *ComplianceOperatorCondition {
 }
 
 // Next Tag: 5
-// ComplianceOperatorSuite represents scan status
+// ComplianceOperatorSuiteV2 represents scan status
 type ComplianceOperatorSuiteV2 struct {
 	Id                   string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`
 	Name                 string                            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Suite Name,hidden"`
