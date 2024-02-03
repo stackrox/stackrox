@@ -135,7 +135,7 @@ func ensureDatabaseExists() error {
 	if !pgconfig.IsExternalDatabase() {
 		return retry.WithRetry(func() error {
 			return dbCheck(sourceMap, adminConfig)
-		}, retry.Tries(10), retry.BetweenAttempts(func(_ int) {
+		}, retry.Tries(60), retry.BetweenAttempts(func(_ int) {
 			time.Sleep(5 * time.Second)
 		}))
 	}
