@@ -1,8 +1,10 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -11,10 +13,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
+	v12 "k8s.io/api/core/v1"
+	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -116,7 +122,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 	timer := time.NewTimer(waitTimeout)
 	defer timer.Stop()
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName)
+	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, deploymentName)
 
 	for {
 		select {
@@ -192,10 +198,31 @@ func applyFile(t testutils.T, path string) {
 	require.NoError(t, err, string(output))
 }
 
-// The deploymentName must be copied form the file path passed in
-func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	applyFile(t, path)
-	waitForDeployment(t, deploymentName)
+func createPodFromFile(t *testing.T, path string) *v12.Pod {
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(data), len(data))
+	var pod v12.Pod
+	err = decoder.Decode(&pod)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	p, err := createK8sClient(t).CoreV1().Pods(pod.GetNamespace()).Create(ctx, &pod, v13.CreateOptions{})
+	require.NoError(t, err)
+	return p
+}
+
+func getPodFromFile(t testutils.T, path string) *v12.Pod {
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewBuffer(data), len(data))
+	var pod v12.Pod
+	err = decoder.Decode(&pod)
+	require.NoError(t, err)
+	return &pod
 }
 
 func setupNginxLatestTagDeployment(t *testing.T) {
@@ -238,15 +265,24 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func teardownFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
+func createPod(t testutils.T, client kubernetes.Interface, pod *v12.Pod) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, v13.CreateOptions{})
+	require.NoError(t, err)
+
+	waitForDeployment(t, pod.GetName())
 }
 
-func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	teardownFile(t, path)
-	waitForTermination(t, deploymentName)
+func teardownPod(t testutils.T, client kubernetes.Interface, pod *v12.Pod) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), v13.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	require.NoError(t, err)
+
+	waitForTermination(t, pod.GetName())
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {

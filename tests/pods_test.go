@@ -35,15 +35,14 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
-	deploymentName := "end-to-end-api-test-pod-multi-container2"
-	podName := "end-to-end-api-test-pod-multi-container2"
+	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
-		// Set up testing environment
-		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod-2.yaml")
-		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod-2.yaml")
+		defer teardownPod(testT, client, kPod)
+		createPod(testT, client, kPod)
 
 		// Get the test deployment.
-		deploymentID := getDeploymentID(retryT, deploymentName)
+		deploymentID := getDeploymentID(retryT, kPod.GetName())
 
 		podCount := getPodCount(retryT, deploymentID)
 		log.Infof("Pod count: %d", podCount)
@@ -87,12 +86,12 @@ func TestPod(testT *testing.T) {
 		// Verify risk event timeline csv
 		log.Info("Before CSV Check")
 		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
-		log.Info("After CSV CHeck")
+		log.Info("After CSV Check")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		client := createK8sClient(testT)
-		k8sPod, err := client.CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{})
+
+		k8sPod, err := client.CoreV1().Pods("default").Get(ctx, kPod.GetName(), metav1.GetOptions{})
 		if err != nil {
 			log.Errorf("Error: %v", err)
 
