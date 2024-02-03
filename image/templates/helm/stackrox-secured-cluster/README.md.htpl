@@ -283,6 +283,7 @@ non-standard environments:
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
 |`collector.nodeScanningResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
+|`collector.priorityClassName` | Name of a cluster's PriorityClass object to assign to Collector pods. | `null` (no PriorityClass assignment) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
 |`sensor.nodeSelector` | Node selector for Sensor pod placement. | `null` (no placement constraints) |
