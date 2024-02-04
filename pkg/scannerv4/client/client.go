@@ -20,6 +20,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	// Register the custom Scanner v4 round-robin client-side gRPC load balancer.
+	_ "github.com/stackrox/rox/pkg/grpc/balancer/scannerv4/roundrobin"
 )
 
 // Scanner is the interface that contains the StackRox Scanner
@@ -101,9 +104,15 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.MaxMsgReceiveSize(env.ScannerV4MaxRespMsgSize.IntegerSetting()),
 		clientconn.WithDialOptions(
 			// Scanner v4 Indexer and Matcher pods are accessed via gRPC, which Kubernetes does not
-			// load balance too well on its own. We do client-side load balancing here.
-			// Note: this is possible because Scanner v4 services are "headless" (clusterIP: None).
-			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin": {}}]}`),
+			// load balance too well on its own. We opt to do client-side load balancing, instead,
+			// via DNS name resolution, which is possible because Scanner v4 services are "headless"
+			// (clusterIP: None).
+			//
+			// We use a custom round-robin load balancing algorithm tailored specifically for
+			// Scanner v4.
+			//
+			// See pkg/grpc/balancer/scannerv4/roundrobin for more details.
+			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"scanner_v4_round_robin": {}}]}`),
 		),
 	}
 

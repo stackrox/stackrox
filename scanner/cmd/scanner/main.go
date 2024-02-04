@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"time"
 
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
@@ -187,7 +188,7 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		},
 		// Setting this value causes the server to tell clients to GOAWAY after the specified duration (+/- some jitter).
 		// This is to ensure clients account for server-side horizontal scaling.
-		//MaxConnectionAge: 1 * time.Minute,
+		MaxConnectionAge: 1 * time.Minute,
 	})
 
 	// Register API services.
