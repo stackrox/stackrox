@@ -2,11 +2,11 @@ package export
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/central/export/deployments"
+	"github.com/stackrox/rox/roxctl/central/export/images"
+	"github.com/stackrox/rox/roxctl/central/export/nodes"
+	"github.com/stackrox/rox/roxctl/central/export/pods"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/export/deployments"
-	"github.com/stackrox/rox/roxctl/export/images"
-	"github.com/stackrox/rox/roxctl/export/nodes"
-	"github.com/stackrox/rox/roxctl/export/pods"
 )
 
 // Command defines the central command tree

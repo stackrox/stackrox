@@ -7,13 +7,13 @@ import (
 	"github.com/stackrox/rox/roxctl/central/cert"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
+	"github.com/stackrox/rox/roxctl/central/export"
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/login"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/export"
 )
 
 // Command defines the central command tree

@@ -3,7 +3,6 @@ package images
 import (
 	"context"
 	"io"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
@@ -11,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/central/export/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -21,7 +21,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:   "images",
 		Short: "Commands related to exporting images from Central.",
 	}
-	flags.AddTimeoutWithDefault(c, 10*time.Minute)
+	common.AddDefaultExportTimeout(c)
 
 	c.RunE = func(cmd *cobra.Command, args []string) error {
 		conn, err := cliEnvironment.GRPCConnection()
