@@ -108,7 +108,8 @@
                 "COMPLIANCE_PROFILE_CLUSTER_EDGE",
                 "COMPLIANCE_RULES",
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
-                "COMPLIANCE_SUITES"
+                "COMPLIANCE_SUITES",
+                "CLOUD_SOURCES"
               ]
             },
             "collectionFormat": "multi"
@@ -216,7 +217,8 @@
                 "COMPLIANCE_PROFILE_CLUSTER_EDGE",
                 "COMPLIANCE_RULES",
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
-                "COMPLIANCE_SUITES"
+                "COMPLIANCE_SUITES",
+                "CLOUD_SOURCES"
               ]
             },
             "collectionFormat": "multi"
@@ -318,7 +320,8 @@
                 "COMPLIANCE_PROFILE_CLUSTER_EDGE",
                 "COMPLIANCE_RULES",
                 "COMPLIANCE_SCAN_SETTING_BINDINGS",
-                "COMPLIANCE_SUITES"
+                "COMPLIANCE_SUITES",
+                "CLOUD_SOURCES"
               ]
             },
             "collectionFormat": "multi"
@@ -469,10 +472,11 @@
         "COMPLIANCE_PROFILE_CLUSTER_EDGE",
         "COMPLIANCE_RULES",
         "COMPLIANCE_SCAN_SETTING_BINDINGS",
-        "COMPLIANCE_SUITES"
+        "COMPLIANCE_SUITES",
+        "CLOUD_SOURCES"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 68"
+      "title": "Next available tag: 69"
     },
     "v1SearchOptionsResponse": {
       "type": "object",
