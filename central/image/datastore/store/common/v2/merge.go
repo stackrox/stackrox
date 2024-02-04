@@ -16,7 +16,7 @@ func Merge(parts ImageParts) *storage.Image {
 
 func mergeComponents(parts ImageParts, image *storage.Image) {
 	// If the image has a nil scan, there is nothing to fill in.
-	if image.Scan == nil {
+	if image.GetScan() == nil {
 		return
 	}
 
