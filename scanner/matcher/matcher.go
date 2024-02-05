@@ -53,6 +53,8 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
+	Ready(ctx context.Context) error
+	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
 }
 
@@ -211,4 +213,23 @@ func (m *matcherImpl) Close(ctx context.Context) error {
 	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
+}
+
+// Initialized returns nil if the matcher is fully initialized including the
+// vulnerability store.  Otherwise, an error with an explanation is returned.
+func (m *matcherImpl) Initialized(ctx context.Context) error {
+	if !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
+	}
+	return nil
+}
+
+// Ready returns nil if the matcher is ready to query for vulnerabilities. Notice
+// the vulnerability store initial load might still be in progress. Otherwise, an
+// error with an explanation is returned.
+func (m *matcherImpl) Ready(ctx context.Context) error {
+	if err := m.pool.Ping(ctx); err != nil {
+		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	return nil
 }

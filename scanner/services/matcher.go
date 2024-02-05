@@ -21,6 +21,8 @@ import (
 	"github.com/stackrox/rox/scanner/services/validators"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -55,6 +57,9 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher.GetVulnerabilities")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+	if err := s.matcher.Initialized(ctx); err != nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "the matcher is not initialized: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "hash_id", req.GetHashId())
 	// Get an index report to enrich: either using the indexer, or provided in the request.
