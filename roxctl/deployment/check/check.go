@@ -121,7 +121,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.MarkFlagRequired("file"))
 	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation. Setting cluster enables enhancing deployments with cluster-specific information.")
 	c.Flags().StringVarP(&deploymentCheckCmd.namespace, "namespace", "n", defaultNamespace, "a namespace to enhance the deployments with context information (network policies, RBACs, services) for deployments that lack namespace in their spec. Namespace defined in spec will not be changed.")
-
+	c.Flags().BoolVarP(&deploymentCheckCmd.verbose, "verbose", "v", false, "enable additional output like permission level and applied network policies for checked deployments")
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
 		"The new output format's structure has changed in a non-backward compatible way."))
@@ -145,6 +145,7 @@ type deploymentCheckCommand struct {
 	force              bool
 	cluster            string
 	namespace          string
+	verbose            bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -298,7 +299,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 		return errors.Wrap(err, "could not print policy summary")
 	}
 
-	if len(remarks) > 0 {
+	if d.verbose && len(remarks) > 0 {
 		printRemarks(remarks, d.env.Logger())
 	}
 
