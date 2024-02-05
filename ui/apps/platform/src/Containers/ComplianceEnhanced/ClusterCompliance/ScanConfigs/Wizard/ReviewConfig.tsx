@@ -17,10 +17,10 @@ import {
 
 import { ComplianceProfile, ComplianceIntegration } from 'services/ComplianceEnhancedService';
 
-import { ScanConfigFormValues } from './useFormikScanConfig';
 import {
     convertFormikParametersToSchedule,
     formatScanSchedule,
+    ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
 
 export type ProfileSelectionProps = {

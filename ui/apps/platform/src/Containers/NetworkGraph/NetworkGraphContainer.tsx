@@ -50,15 +50,16 @@ function getFilteredEdges(
         edges.forEach((edge) => {
             const { source, target } = edge;
             const { type } = selectedNode.data;
-            if (type === 'NAMESPACE' || type === 'EXTERNAL_GROUP') {
-                // if a namespace is selected, add children's node edges
+            if (type === 'NAMESPACE' || type === 'EXTERNAL_GROUP' || type === 'INTERNAL_GROUP') {
+                // if a "grouped type" is selected, add children's node edges
                 const { children } = selectedNode;
                 if (children?.includes(source) || children?.includes(target)) {
                     filteredEdges.push({ ...edge, visible: true });
                 }
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-            } else if (source === selectedNode.data?.id || target === selectedNode.data?.id) {
+            } else if (
+                'id' in selectedNode.data &&
+                (source === selectedNode.data.id || target === selectedNode.data.id)
+            ) {
                 filteredEdges.push({ ...edge, visible: true });
             }
         });

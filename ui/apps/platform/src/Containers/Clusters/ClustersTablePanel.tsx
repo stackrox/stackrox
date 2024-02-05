@@ -1,7 +1,8 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
+    Alert,
     Bullseye,
     Button,
     Dropdown,
@@ -9,6 +10,7 @@ import {
     DropdownPosition,
     DropdownToggle,
     PageSection,
+    Spinner,
 } from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
@@ -20,6 +22,7 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -38,13 +41,18 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
-import { clustersBasePath, clustersDelegatedScanningPath } from 'routePaths';
+import {
+    clustersBasePath,
+    clustersDelegatedScanningPath,
+    clustersSecureClusterPath,
+} from 'routePaths';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import ManageTokensButton from './Components/ManageTokensButton';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import AddClusterPrompt from './AddClusterPrompt';
+import NoClustersPage from './NoClustersPage';
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
@@ -62,6 +70,9 @@ function ClustersTablePanel({
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isMoveInitBundlesEnabled = isFeatureFlagEnabled('ROX_MOVE_INIT_BUNDLES_UI');
 
     const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
 
@@ -90,7 +101,8 @@ function ClustersTablePanel({
     const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
-    const [fetchingClusters, setFetchingClusters] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
@@ -154,7 +166,7 @@ function ClustersTablePanel({
                             component={LinkShim}
                             href={clustersDelegatedScanningPath}
                         >
-                            Manage delegated scanning
+                            Delegated scanning
                         </Button>
                     </div>
                 )}
@@ -169,8 +181,16 @@ function ClustersTablePanel({
         </PageHeader>
     );
 
+    /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
-        version ? (
+        isMoveInitBundlesEnabled ? (
+            <DropdownItem
+                key="init-bundle"
+                component={
+                    <Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>
+                }
+            />
+        ) : version ? (
             <DropdownItem
                 key="link"
                 description="Cluster installation guides"
@@ -185,13 +205,18 @@ function ClustersTablePanel({
                 Instructions unavailable; version missing
             </DropdownItem>
         ),
-        <DropdownItem key="add" onClick={onAddCluster}>
-            New cluster
-        </DropdownItem>,
+        <DropdownItem
+            key="legacy"
+            component={
+                <Link to={`${clustersBasePath}/new`}>
+                    {isMoveInitBundlesEnabled ? 'Legacy installation method' : 'New cluster'}
+                </Link>
+            }
+        />,
     ];
+    /* eslint-enable no-nested-ternary */
 
     function refreshClusterList(restSearch?: RestSearchOption[]) {
-        setFetchingClusters(true);
         // Although return works around typescript-eslint/no-floating-promises error elsewhere,
         // removed here because it caused the error for callers.
         // Anyway, catch block would be better.
@@ -199,10 +224,11 @@ function ClustersTablePanel({
             .then((clustersResponse) => {
                 setCurrentClusters(clustersResponse.clusters);
                 setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-                setFetchingClusters(false);
+                setErrorMessage('');
+                setHasFetchedClusters(true);
             })
-            .catch(() => {
-                setFetchingClusters(false);
+            .catch((error) => {
+                setErrorMessage(getAxiosErrorMessage(error));
             });
     }
 
@@ -223,8 +249,46 @@ function ClustersTablePanel({
         setPollingCount(pollingCount + 1);
     }, clusterTablePollingInterval);
 
-    function onAddCluster() {
-        history.push(`${clustersBasePath}/new`); // TODO we might replace pseudo-id with ?action=create
+    // Do not render page heading now because of current NoClustersPage design (rendered below).
+    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
+    //
+    // Before there is a response:
+    if (!hasFetchedClusters) {
+        return (
+            <PageSection variant="light">
+                <Bullseye>
+                    {errorMessage ? (
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Unable to fetch clusters"
+                            component="p"
+                        >
+                            {errorMessage}
+                        </Alert>
+                    ) : (
+                        <Spinner isSVG />
+                    )}
+                </Bullseye>
+            </PageSection>
+        );
+    }
+
+    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+
+    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
+    //
+    // After there is a response, if there are no clusters nor search filter:
+    if (currentClusters.length === 0 && !hasSearchApplied) {
+        return isMoveInitBundlesEnabled ? (
+            <NoClustersPage />
+        ) : (
+            <PageSection variant="light">
+                <Bullseye>
+                    <AddClusterPrompt />
+                </Bullseye>
+            </PageSection>
+        );
     }
 
     function setSelectedClusterId(cluster: Cluster) {
@@ -324,7 +388,7 @@ function ClustersTablePanel({
                                 toggleVariant="secondary"
                                 onToggle={onToggleInstallMenu}
                             >
-                                Install cluster
+                                Secure a cluster
                             </DropdownToggle>
                         }
                         position={DropdownPosition.right}
@@ -383,22 +447,8 @@ function ClustersTablePanel({
     const pageSize =
         currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
 
-    const hasSearchApplied = getHasSearchApplied(filteredSearch);
-
-    if (
-        (!fetchingClusters || pollingCount > 0) &&
-        currentClusters.length <= 0 &&
-        !hasSearchApplied
-    ) {
-        return (
-            <PageSection variant="light">
-                <Bullseye>
-                    <AddClusterPrompt />
-                </Bullseye>
-            </PageSection>
-        );
-    }
-
+    // After there is a response, if there are clusters or search filter.
+    // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
         <div className="overflow-hidden w-full">
             {pageHeader}
@@ -408,31 +458,38 @@ function ClustersTablePanel({
                     <PanelHeadEnd>{headerActions}</PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
+                    {errorMessage && (
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Unable to fetch clusters"
+                            component="p"
+                        >
+                            {errorMessage}
+                        </Alert>
+                    )}
                     {messages.length > 0 && (
                         <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
                             {messages}
                         </div>
                     )}
-                    {(!fetchingClusters || pollingCount > 0) &&
-                        (currentClusters.length > 0 || hasSearchApplied) && (
-                            <div data-testid="clusters-table" className="h-full w-full">
-                                <CheckboxTable
-                                    ref={(table) => {
-                                        setTableRef(table);
-                                    }}
-                                    rows={currentClusters}
-                                    columns={clusterColumns}
-                                    onRowClick={setSelectedClusterId}
-                                    toggleRow={toggleCluster}
-                                    toggleSelectAll={toggleAllClusters}
-                                    selection={checkedClusterIds}
-                                    selectedRowId={selectedClusterId}
-                                    noDataText="No clusters to show."
-                                    minRows={20}
-                                    pageSize={pageSize}
-                                />
-                            </div>
-                        )}
+                    <div data-testid="clusters-table" className="h-full w-full">
+                        <CheckboxTable
+                            ref={(table) => {
+                                setTableRef(table);
+                            }}
+                            rows={currentClusters}
+                            columns={clusterColumns}
+                            onRowClick={setSelectedClusterId}
+                            toggleRow={toggleCluster}
+                            toggleSelectAll={toggleAllClusters}
+                            selection={checkedClusterIds}
+                            selectedRowId={selectedClusterId}
+                            noDataText="No clusters to show."
+                            minRows={20}
+                            pageSize={pageSize}
+                        />
+                    </div>
                 </PanelBody>
             </PanelNew>
             <Dialog

@@ -35,12 +35,12 @@ import useDeleteModal, {
     isErrorDeleteResult,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
-import DeleteModal from '../components/DeleteModal';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetails';
 import ScheduleDetails from '../components/ScheduleDetails';

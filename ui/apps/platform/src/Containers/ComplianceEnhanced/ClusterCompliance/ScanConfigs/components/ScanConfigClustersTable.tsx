@@ -2,12 +2,14 @@
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import {
+    Button,
     Card,
     CardActions,
     CardBody,
     CardHeader,
     CardTitle,
     Pagination,
+    Popover,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, ThProps, Thead, Tr } from '@patternfly/react-table';
 
@@ -130,10 +132,31 @@ function ScanConfigClustersTable({ clusterScanStatuses }: ScanConfigClustersTabl
                                 <Tr key={cluster.clusterId}>
                                     <Td dataLabel="Cluster">{cluster.clusterName}</Td>
                                     <Td dataLabel="Operator status">
-                                        <IconText
-                                            icon={statusObj.icon}
-                                            text={statusObj.statusText}
-                                        />
+                                        {statusObj.statusText === 'Healthy' ? (
+                                            <IconText
+                                                icon={statusObj.icon}
+                                                text={statusObj.statusText}
+                                            />
+                                        ) : (
+                                            <Popover
+                                                aria-label="Reveal errors"
+                                                headerContent={
+                                                    <div>
+                                                        {cluster.errors.length === 1
+                                                            ? 'Error'
+                                                            : 'Errors'}
+                                                    </div>
+                                                }
+                                                bodyContent={<div>{cluster.errors}</div>}
+                                            >
+                                                <Button variant="link">
+                                                    <IconText
+                                                        icon={statusObj.icon}
+                                                        text={statusObj.statusText}
+                                                    />
+                                                </Button>
+                                            </Popover>
+                                        )}
                                     </Td>
                                 </Tr>
                             );

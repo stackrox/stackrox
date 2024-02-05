@@ -43,6 +43,7 @@ import { saveFile } from 'services/DownloadService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import useAuthStatus from 'hooks/useAuthStatus';
 
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import ReportParametersDetails from '../components/ReportParametersDetails';
@@ -50,7 +51,6 @@ import DeliveryDestinationsDetails from '../components/DeliveryDestinationsDetai
 import ScheduleDetails from '../components/ScheduleDetails';
 import ReportJobStatus from './ReportJobStatus';
 import JobDetails from './JobDetails';
-import DeleteModal from '../components/DeleteModal';
 
 export type RunHistoryProps = {
     reportId: string;

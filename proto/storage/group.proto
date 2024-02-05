@@ -1,21 +1,21 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "gogoproto/gogo.proto";
 import "storage/traits.proto";
 
-package storage;
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
 
 // Group is a GroupProperties : Role mapping.
 message Group {
-    // GroupProperties define the properties of a group, applying to users when their properties match.
-    // They also uniquely identify the group with the props.id field.
-    GroupProperties props = 1;
+  // GroupProperties define the properties of a group, applying to users when their properties match.
+  // They also uniquely identify the group with the props.id field.
+  GroupProperties props = 1;
 
-    // This is the name of the role that will apply to users in this group.
-    string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"'];
+  // This is the name of the role that will apply to users in this group.
+  string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"'];
 }
 
 // GroupProperties defines the properties of a group. Groups apply to users when
@@ -26,11 +26,11 @@ message Group {
 //     users with that auth provider and the claim key, etc.
 // Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 message GroupProperties {
-    // Unique identifier for group properties and respectively the group.
-    string id               = 4 [(gogoproto.moretags) = 'sql:"pk"'];
-    Traits traits           = 5;
+  // Unique identifier for group properties and respectively the group.
+  string id = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+  Traits traits = 5;
 
-    string auth_provider_id = 1 [(gogoproto.moretags) = 'search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
-    string key              = 2 [(gogoproto.moretags) = 'search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
-    string value            = 3 [(gogoproto.moretags) = 'search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+  string auth_provider_id = 1 [(gogoproto.moretags) = 'search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+  string key = 2 [(gogoproto.moretags) = 'search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+  string value = 3 [(gogoproto.moretags) = 'search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
 }

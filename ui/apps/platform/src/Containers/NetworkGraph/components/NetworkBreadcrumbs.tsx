@@ -6,6 +6,7 @@ import { useFetchClusterNamespacesForPermissions } from 'hooks/useFetchClusterNa
 import useFetchNamespaceDeployments from 'hooks/useFetchNamespaceDeployments';
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
 
+import { SearchFilter } from 'types/search';
 import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
 import NamespaceSelector from './NamespaceSelector';
 import DeploymentSelector from './DeploymentSelector';
@@ -15,6 +16,7 @@ export type NetworkBreadcrumbsProps = {
     selectedCluster: { name: string; id: string };
     selectedNamespaces: string[];
     selectedDeployments: string[];
+    onScopeChange: (newFilter: SearchFilter) => void;
 };
 
 function NetworkBreadcrumbs({
@@ -22,6 +24,7 @@ function NetworkBreadcrumbs({
     selectedCluster,
     selectedNamespaces,
     selectedDeployments,
+    onScopeChange,
 }: NetworkBreadcrumbsProps) {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -34,6 +37,11 @@ function NetworkBreadcrumbs({
     }, []);
     const { deploymentsByNamespace } = useFetchNamespaceDeployments(selectedNamespaceIds);
 
+    const onChange = (newFilter: SearchFilter) => {
+        setSearchFilter(newFilter);
+        onScopeChange(newFilter);
+    };
+
     return (
         <>
             <Breadcrumb>
@@ -42,7 +50,7 @@ function NetworkBreadcrumbs({
                         clusters={clusters}
                         selectedClusterName={selectedCluster?.name ?? ''}
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
+                        setSearchFilter={onChange}
                     />
                 </BreadcrumbItem>
                 <BreadcrumbItem isDropdown>
@@ -52,7 +60,7 @@ function NetworkBreadcrumbs({
                         selectedDeployments={selectedDeployments}
                         deploymentsByNamespace={deploymentsByNamespace}
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
+                        setSearchFilter={onChange}
                     />
                 </BreadcrumbItem>
                 <BreadcrumbItem isDropdown>
@@ -60,7 +68,7 @@ function NetworkBreadcrumbs({
                         deploymentsByNamespace={deploymentsByNamespace}
                         selectedDeployments={selectedDeployments}
                         searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
+                        setSearchFilter={onChange}
                     />
                 </BreadcrumbItem>
             </Breadcrumb>

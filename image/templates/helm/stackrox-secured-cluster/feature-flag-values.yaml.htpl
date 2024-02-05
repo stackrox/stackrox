@@ -1,8 +1,16 @@
 [<- if .FeatureFlags >]
+[</* There is no value in injecting this feature flag, because the Helm chart
+     will set this flag based on the chart configuration anyway. By excluding it
+     here we get rid of deployment warnings such as these:
+
+       Warning: spec.template.spec.containers[0].env[25].name: duplicate name "ROX_SCANNER_V4" */>]
+[<- $skipFeatureFlags := list "ROX_SCANNER_V4" >]
 envVars:
 [<- $featureFlags := .FeatureFlags >]
 [<- range $flagName := keys $featureFlags | sortAlpha >]
+[<- if not (has $flagName $skipFeatureFlags) >]
 - name: [< $flagName >]
   value: [< index $featureFlags $flagName | quote >]
+[<- end >]
 [<- end >]
 [<- end >]

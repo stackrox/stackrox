@@ -1,11 +1,11 @@
 package renderer
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/defaults/testutils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/zip"
@@ -19,30 +19,46 @@ import (
 func TestRenderTLSSecretsOnly(t *testing.T) {
 	config := Config{
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":              []byte("CA"),
-			"ca-key.pem":          []byte("CAKey"),
-			"cert.pem":            []byte("CentralCert"),
-			"key.pem":             []byte("CentralKey"),
-			"scanner-cert.pem":    []byte("ScannerCert"),
-			"scanner-key.pem":     []byte("ScannerKey"),
-			"scanner-db-cert.pem": []byte("ScannerDBCert"),
-			"scanner-db-key.pem":  []byte("ScannerDBKey"),
-			"jwt-key.pem":         []byte("JWTKey"),
+			"ca.pem":                      []byte("CA"),
+			"ca-key.pem":                  []byte("CAKey"),
+			"cert.pem":                    []byte("CentralCert"),
+			"key.pem":                     []byte("CentralKey"),
+			"scanner-cert.pem":            []byte("ScannerCert"),
+			"scanner-key.pem":             []byte("ScannerKey"),
+			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+			"scanner-db-key.pem":          []byte("ScannerDBKey"),
+			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+			"jwt-key.pem":                 []byte("JWTKey"),
 		},
 		K8sConfig: &K8sConfig{
 			DeploymentFormat: v1.DeploymentFormat_KUBECTL,
 		},
 	}
 
-	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
-		t.Run(fmt.Sprintf("mode=%s", renderMode), func(t *testing.T) {
-			contents, err := renderAndExtractSingleFileContents(config, renderMode, testutils.MakeImageFlavorForTest(t))
+	testcases := []struct {
+		name            string
+		renderFunc      func(Config, defaults.ImageFlavor) ([]byte, error)
+		numObjsExpected int
+	}{
+		{"central tls", RenderCentralTLSSecretOnly, 1},
+		{"scanner tls", RenderScannerTLSSecretOnly, 2},
+		{"scanner v4 tls", RenderScannerV4TLSSecretOnly, 3},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			contents, err := tc.renderFunc(config, testutils.MakeImageFlavorForTest(t))
 			assert.NoError(t, err)
 
 			objs, err := k8sutil.UnstructuredFromYAMLMulti(string(contents))
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, objs)
+			assert.Len(t, objs, tc.numObjsExpected)
 		})
 	}
 }
@@ -51,15 +67,21 @@ func TestRenderScannerOnly(t *testing.T) {
 	flavor := testutils.MakeImageFlavorForTest(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":              []byte("CA"),
-			"ca-key.pem":          []byte("CAKey"),
-			"cert.pem":            []byte("CentralCert"),
-			"key.pem":             []byte("CentralKey"),
-			"scanner-cert.pem":    []byte("ScannerCert"),
-			"scanner-key.pem":     []byte("ScannerKey"),
-			"scanner-db-cert.pem": []byte("ScannerDBCert"),
-			"scanner-db-key.pem":  []byte("ScannerDBKey"),
-			"jwt-key.pem":         []byte("JWTKey"),
+			"ca.pem":                      []byte("CA"),
+			"ca-key.pem":                  []byte("CAKey"),
+			"cert.pem":                    []byte("CentralCert"),
+			"key.pem":                     []byte("CentralKey"),
+			"scanner-cert.pem":            []byte("ScannerCert"),
+			"scanner-key.pem":             []byte("ScannerKey"),
+			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+			"scanner-db-key.pem":          []byte("ScannerDBKey"),
+			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+			"jwt-key.pem":                 []byte("JWTKey"),
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
@@ -83,17 +105,23 @@ func TestRenderWithDeclarativeConfig(t *testing.T) {
 	flavor := testutils.MakeImageFlavorForTest(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":              []byte("CA"),
-			"ca-key.pem":          []byte("CAKey"),
-			"cert.pem":            []byte("CentralCert"),
-			"key.pem":             []byte("CentralKey"),
-			"central-db-cert.pem": []byte("CentralDBCert"),
-			"central-db-key.pem":  []byte("CentralDBKey"),
-			"scanner-cert.pem":    []byte("ScannerCert"),
-			"scanner-key.pem":     []byte("ScannerKey"),
-			"scanner-db-cert.pem": []byte("ScannerDBCert"),
-			"scanner-db-key.pem":  []byte("ScannerDBKey"),
-			"jwt-key.pem":         []byte("JWTKey"),
+			"ca.pem":                      []byte("CA"),
+			"ca-key.pem":                  []byte("CAKey"),
+			"cert.pem":                    []byte("CentralCert"),
+			"key.pem":                     []byte("CentralKey"),
+			"central-db-cert.pem":         []byte("CentralDBCert"),
+			"central-db-key.pem":          []byte("CentralDBKey"),
+			"scanner-cert.pem":            []byte("ScannerCert"),
+			"scanner-key.pem":             []byte("ScannerKey"),
+			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+			"scanner-db-key.pem":          []byte("ScannerDBKey"),
+			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+			"jwt-key.pem":                 []byte("JWTKey"),
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
@@ -153,17 +181,23 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 	cases := map[string]Config{
 		"empty declarative config mounts": {
 			SecretsByteMap: map[string][]byte{
-				"ca.pem":              []byte("CA"),
-				"ca-key.pem":          []byte("CAKey"),
-				"cert.pem":            []byte("CentralCert"),
-				"key.pem":             []byte("CentralKey"),
-				"central-db-cert.pem": []byte("CentralDBCert"),
-				"central-db-key.pem":  []byte("CentralDBKey"),
-				"scanner-cert.pem":    []byte("ScannerCert"),
-				"scanner-key.pem":     []byte("ScannerKey"),
-				"scanner-db-cert.pem": []byte("ScannerDBCert"),
-				"scanner-db-key.pem":  []byte("ScannerDBKey"),
-				"jwt-key.pem":         []byte("JWTKey"),
+				"ca.pem":                      []byte("CA"),
+				"ca-key.pem":                  []byte("CAKey"),
+				"cert.pem":                    []byte("CentralCert"),
+				"key.pem":                     []byte("CentralKey"),
+				"central-db-cert.pem":         []byte("CentralDBCert"),
+				"central-db-key.pem":          []byte("CentralDBKey"),
+				"scanner-cert.pem":            []byte("ScannerCert"),
+				"scanner-key.pem":             []byte("ScannerKey"),
+				"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+				"scanner-db-key.pem":          []byte("ScannerDBKey"),
+				"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+				"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+				"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+				"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+				"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+				"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+				"jwt-key.pem":                 []byte("JWTKey"),
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
@@ -176,17 +210,23 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 		},
 		"empty literal [] in declarative config mounts": {
 			SecretsByteMap: map[string][]byte{
-				"ca.pem":              []byte("CA"),
-				"ca-key.pem":          []byte("CAKey"),
-				"cert.pem":            []byte("CentralCert"),
-				"key.pem":             []byte("CentralKey"),
-				"central-db-cert.pem": []byte("CentralDBCert"),
-				"central-db-key.pem":  []byte("CentralDBKey"),
-				"scanner-cert.pem":    []byte("ScannerCert"),
-				"scanner-key.pem":     []byte("ScannerKey"),
-				"scanner-db-cert.pem": []byte("ScannerDBCert"),
-				"scanner-db-key.pem":  []byte("ScannerDBKey"),
-				"jwt-key.pem":         []byte("JWTKey"),
+				"ca.pem":                      []byte("CA"),
+				"ca-key.pem":                  []byte("CAKey"),
+				"cert.pem":                    []byte("CentralCert"),
+				"key.pem":                     []byte("CentralKey"),
+				"central-db-cert.pem":         []byte("CentralDBCert"),
+				"central-db-key.pem":          []byte("CentralDBKey"),
+				"scanner-cert.pem":            []byte("ScannerCert"),
+				"scanner-key.pem":             []byte("ScannerKey"),
+				"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+				"scanner-db-key.pem":          []byte("ScannerDBKey"),
+				"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+				"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+				"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+				"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+				"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+				"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+				"jwt-key.pem":                 []byte("JWTKey"),
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
@@ -199,17 +239,23 @@ func TestRenderDeclarativeConfigEmpty(t *testing.T) {
 		},
 		"nil array in declarative config mounts": {
 			SecretsByteMap: map[string][]byte{
-				"ca.pem":              []byte("CA"),
-				"ca-key.pem":          []byte("CAKey"),
-				"cert.pem":            []byte("CentralCert"),
-				"key.pem":             []byte("CentralKey"),
-				"central-db-cert.pem": []byte("CentralDBCert"),
-				"central-db-key.pem":  []byte("CentralDBKey"),
-				"scanner-cert.pem":    []byte("ScannerCert"),
-				"scanner-key.pem":     []byte("ScannerKey"),
-				"scanner-db-cert.pem": []byte("ScannerDBCert"),
-				"scanner-db-key.pem":  []byte("ScannerDBKey"),
-				"jwt-key.pem":         []byte("JWTKey"),
+				"ca.pem":                      []byte("CA"),
+				"ca-key.pem":                  []byte("CAKey"),
+				"cert.pem":                    []byte("CentralCert"),
+				"key.pem":                     []byte("CentralKey"),
+				"central-db-cert.pem":         []byte("CentralDBCert"),
+				"central-db-key.pem":          []byte("CentralDBKey"),
+				"scanner-cert.pem":            []byte("ScannerCert"),
+				"scanner-key.pem":             []byte("ScannerKey"),
+				"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+				"scanner-db-key.pem":          []byte("ScannerDBKey"),
+				"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+				"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+				"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+				"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+				"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+				"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+				"jwt-key.pem":                 []byte("JWTKey"),
 			},
 			K8sConfig: &K8sConfig{
 				CommonConfig: CommonConfig{
@@ -260,17 +306,23 @@ func TestDeclarativeConfigDuplicateValues(t *testing.T) {
 	flavor := testutils.MakeImageFlavorForTest(t)
 	config := Config{
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":              []byte("CA"),
-			"ca-key.pem":          []byte("CAKey"),
-			"cert.pem":            []byte("CentralCert"),
-			"key.pem":             []byte("CentralKey"),
-			"central-db-cert.pem": []byte("CentralDBCert"),
-			"central-db-key.pem":  []byte("CentralDBKey"),
-			"scanner-cert.pem":    []byte("ScannerCert"),
-			"scanner-key.pem":     []byte("ScannerKey"),
-			"scanner-db-cert.pem": []byte("ScannerDBCert"),
-			"scanner-db-key.pem":  []byte("ScannerDBKey"),
-			"jwt-key.pem":         []byte("JWTKey"),
+			"ca.pem":                      []byte("CA"),
+			"ca-key.pem":                  []byte("CAKey"),
+			"cert.pem":                    []byte("CentralCert"),
+			"key.pem":                     []byte("CentralKey"),
+			"central-db-cert.pem":         []byte("CentralDBCert"),
+			"central-db-key.pem":          []byte("CentralDBKey"),
+			"scanner-cert.pem":            []byte("ScannerCert"),
+			"scanner-key.pem":             []byte("ScannerKey"),
+			"scanner-db-cert.pem":         []byte("ScannerDBCert"),
+			"scanner-db-key.pem":          []byte("ScannerDBKey"),
+			"scanner-v4-indexer-cert.pem": []byte("ScannerV4IndexerCert"),
+			"scanner-v4-indexer-key.pem":  []byte("ScannerV4IndexerKey"),
+			"scanner-v4-matcher-cert.pem": []byte("ScannerV4MatcherCert"),
+			"scanner-v4-matcher-key.pem":  []byte("ScannerV4MatcherKey"),
+			"scanner-v4-db-cert.pem":      []byte("ScannerV4DBCert"),
+			"scanner-v4-db-key.pem":       []byte("ScannerV4DBKey"),
+			"jwt-key.pem":                 []byte("JWTKey"),
 		},
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{

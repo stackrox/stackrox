@@ -1,29 +1,29 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/image_integration.proto";
 
-package central;
+option go_package = "central";
 
 // ScanImage is sent to sensor to request a local scan of an image.
 message ScanImage {
-    // request id is used to map scan results to a waiting goroutine.
-    string request_id = 1;
+  // request id is used to map scan results to a waiting goroutine.
+  string request_id = 1;
 
-    // full image name ie: <registry>/something/nginx:1.2.3.
-    string image_name = 2;
+  // full image name ie: <registry>/something/nginx:1.2.3.
+  string image_name = 2;
 
-    // force will cause central and sensor caches to be ignored.
-    bool   force      = 3;
+  // force will cause central and sensor caches to be ignored.
+  bool force = 3;
 
-    // namespace is used by sensor to pull additional secrets for registry authentication.
-    string namespace  = 4;
+  // namespace is used by sensor to pull additional secrets for registry authentication.
+  string namespace = 4;
 }
 
 // ImageIntegrations contains a list of integrations sensor should upsert and/or
-// delete from its internal store. 
+// delete from its internal store.
 message ImageIntegrations {
-    repeated storage.ImageIntegration updated_integrations    = 1;
-    repeated string                   deleted_integration_ids = 2;
+  repeated storage.ImageIntegration updated_integrations = 1;
+  repeated string deleted_integration_ids = 2;
 }

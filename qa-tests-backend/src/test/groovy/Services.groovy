@@ -409,7 +409,7 @@ class Services extends BaseService {
 
     static boolean waitForSRDeletionByID(String id, String name) {
         // Wait until the deployment disappears from StackRox.
-        Timer t = new Timer(60, 1)
+        Timer t = new Timer(120, 1)
         boolean disappearedFromStackRox = false
         while (t.IsValid()) {
             if (!roxDetectedDeployment(id, name)) {

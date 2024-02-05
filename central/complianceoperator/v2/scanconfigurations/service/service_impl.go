@@ -74,6 +74,10 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
 
+	if err := validateScanConfiguration(req); err != nil {
+		return nil, err
+	}
+
 	// Convert to storage type
 	scanConfig := convertV2ScanConfigToStorage(ctx, req)
 
@@ -88,6 +92,31 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	}
 
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
+}
+
+func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.Empty, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required")
+	}
+
+	if err := validateScanConfiguration(req); err != nil {
+		return nil, err
+	}
+
+	// Convert to storage type
+	scanConfig := convertV2ScanConfigToStorage(ctx, req)
+
+	// grab clusters
+	var clusterIDs []string
+	clusterIDs = append(clusterIDs, req.GetClusters()...)
+
+	// Process scan request, config may be updated in the event of errors from sensor.
+	_, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
+	}
+
+	return &v2.Empty{}, nil
 }
 
 func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
@@ -165,4 +194,16 @@ func (s *serviceImpl) RunComplianceScanConfiguration(ctx context.Context, reques
 
 	err := s.manager.ProcessRescanRequest(ctx, request.GetId())
 	return &v2.Empty{}, err
+}
+
+func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {
+	if len(req.GetClusters()) == 0 {
+		return errors.Wrap(errox.InvalidArgs, "At least one cluster is required for a scan configuration")
+	}
+
+	if req.GetScanConfig() == nil || len(req.GetScanConfig().GetProfiles()) == 0 {
+		return errors.Wrap(errox.InvalidArgs, "At least one profile is required for a scan configuration")
+	}
+
+	return nil
 }

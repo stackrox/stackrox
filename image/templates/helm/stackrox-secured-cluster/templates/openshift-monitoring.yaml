@@ -47,6 +47,11 @@ subjects:
 
 ---
 
+{{- /*
+The ServiceMonitor is placed into the openshift-monitoring namespace to comply with the
+OpenShift monitoring namespace label requirements. This is an exception to the rule
+that leaking resources into system namespaces should be avoided.
+*/}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -77,6 +82,9 @@ spec:
 
 ---
 
+{{- /*
+TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to kube-system namespace.
+*/}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -98,6 +106,13 @@ subjects:
 
 ---
 
+{{- /*
+The PrometheusRule is placed into the openshift-monitoring namespace to comply with the
+OpenShift monitoring namespace label requirements. This is an exception to the rule
+that leaking resources into system namespaces should be avoided.
+Note that we have an exception for this resource for the SRE webhook validation for
+managed OpenShift clusters.
+*/}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

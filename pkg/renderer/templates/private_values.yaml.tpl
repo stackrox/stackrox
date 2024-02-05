@@ -82,3 +82,38 @@ scanner:
     key: |
       {{- index .SecretsBase64Map "scanner-db-key.pem" | b64dec | nindent 6 }}
   {{- end }}
+
+scannerV4:
+  # Password for securing the communication between Scanner and its DB.
+  # This password is not relevant to the user (unless for debugging purposes);
+  # it merely acts as a pre-shared, random secret for securing the connection.
+  db:
+    {{- if ne (index .SecretsBase64Map "scanner-v4-db-password") "" }}
+    password:
+      value: {{ index .SecretsBase64Map "scanner-v4-db-password" | b64dec }}
+    {{- end }}
+    {{- if ne (index .SecretsBase64Map "scanner-v4-db-cert.pem") "" }}
+    serviceTLS:
+      cert: |
+        {{- index .SecretsBase64Map "scanner-v4-db-cert.pem" | b64dec | nindent 8 }}
+      key: |
+        {{- index .SecretsBase64Map "scanner-v4-db-key.pem" | b64dec | nindent 8 }}
+    {{- end }}
+
+  indexer:
+    {{- if ne (index .SecretsBase64Map "scanner-v4-indexer-cert.pem") "" }}
+    serviceTLS:
+      cert: |
+        {{- index .SecretsBase64Map "scanner-v4-indexer-cert.pem" | b64dec | nindent 8 }}
+      key: |
+        {{- index .SecretsBase64Map "scanner-v4-indexer-key.pem" | b64dec | nindent 8 }}
+    {{- end }}
+
+  matcher:
+    {{- if ne (index .SecretsBase64Map "scanner-v4-matcher-cert.pem") "" }}
+    serviceTLS:
+      cert: |
+        {{- index .SecretsBase64Map "scanner-v4-matcher-cert.pem" | b64dec | nindent 8 }}
+      key: |
+        {{- index .SecretsBase64Map "scanner-v4-matcher-key.pem" | b64dec | nindent 8 }}
+    {{- end }}

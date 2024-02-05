@@ -1,49 +1,51 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect, useCallback } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { generatePath, Link, useHistory } from 'react-router-dom';
 import { format } from 'date-fns';
+import pluralize from 'pluralize';
+
 import {
     Alert,
+    AlertGroup,
     Bullseye,
     Button,
     Divider,
     Flex,
     FlexItem,
+    List,
+    ListItem,
     PageSection,
     Pagination,
     Spinner,
     Text,
+    TextContent,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import {
-    ActionsColumn,
-    IAction,
-    TableComposable,
-    Tbody,
-    Td,
-    Th,
-    Thead,
-    Tr,
-} from '@patternfly/react-table';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
 import {
-    complianceEnhancedScanConfigsPath,
-    complianceEnhancedScanConfigDetailPath,
     complianceEnhancedCoveragePath,
+    complianceEnhancedScanConfigDetailPath,
+    complianceEnhancedScanConfigsPath,
 } from 'routePaths';
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import TabNavHeader from 'Components/TabNav/TabNavHeader';
 import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getScanConfigs, Schedule } from 'services/ComplianceEnhancedService';
+import {
+    getScanConfigs,
+    getScanConfigsCount,
+    deleteScanConfig,
+    ComplianceScanConfigurationStatus,
+} from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
-import { getDayOfMonthWithOrdinal, getTimeHoursMinutes } from 'utils/dateUtils';
 
 import { formatScanSchedule } from '../compliance.scanConfigs.utils';
 
@@ -59,12 +61,22 @@ const CreateScanConfigButton = () => {
     );
 };
 
-const sortFields = ['Name', 'Last Run'];
-const defaultSortOption = { field: 'Name', direction: 'asc' } as SortOption;
+const sortFields = ['Compliance Scan Config Name'];
+const defaultSortOption = {
+    field: 'Compliance Scan Config Name',
+    direction: 'asc',
+} as SortOption;
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
 }: ScanConfigsTablePageProps): React.ReactElement {
+    const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
+        ComplianceScanConfigurationStatus[]
+    >([]);
+    const [scanConfigDeletionErrors, setScanConfigDeletionErrors] = useState<Error[]>([]);
+    const [isDeletingScanConfigs, setIsDeletingScanConfigs] = useState(false);
+    const history = useHistory();
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -75,29 +87,79 @@ function ScanConfigsTablePage({
         () => getScanConfigs(sortOption, page - 1, perPage),
         [sortOption, page, perPage]
     );
-    const { data: scanSchedules, loading: isLoading, error } = useRestQuery(listQuery);
+    const { data: scanSchedules, loading: isLoading, error, refetch } = useRestQuery(listQuery);
 
-    const scanConfigActions = (): IAction[] => [
-        {
-            title: 'Edit schedule',
-        },
-        {
-            title: 'Delete schedule',
-        },
-    ];
+    const countQuery = useCallback(() => getScanConfigsCount(), []);
+    const { data: scanSchedulesCount } = useRestQuery(countQuery);
+
+    function openDeleteModal(scanConfigs) {
+        setScanConfigsToDelete(scanConfigs);
+    }
+
+    function closeDeleteScanConfigModal() {
+        setScanConfigDeletionErrors([]);
+        setScanConfigsToDelete([]);
+    }
+
+    function onDeleteScanConfig() {
+        const deletePromises = scanConfigsToDelete.map((scanConfig) =>
+            deleteScanConfig(scanConfig.id)
+        );
+
+        setScanConfigDeletionErrors([]);
+        setIsDeletingScanConfigs(true);
+        Promise.all(deletePromises)
+            .then(() => {
+                setScanConfigsToDelete([]);
+                refetch();
+            })
+            .catch((errorResult) => {
+                if (Array.isArray(errorResult)) {
+                    errorResult.forEach((error) => {
+                        setScanConfigDeletionErrors((prev) => [...prev, error as Error]);
+                    });
+                } else {
+                    setScanConfigDeletionErrors([errorResult]);
+                }
+            })
+            .finally(() => {
+                setIsDeletingScanConfigs(false);
+            });
+    }
 
     const renderTableContent = () => {
-        return scanSchedules?.map(
-            ({ id, scanName, scanConfig, lastUpdatedTime, clusterStatus }) => (
+        return scanSchedules?.map((scanSchedule) => {
+            const { id, scanName, scanConfig, lastUpdatedTime, clusterStatus } = scanSchedule;
+            const scanConfigUrl = generatePath(complianceEnhancedScanConfigDetailPath, {
+                scanConfigId: id,
+            });
+
+            const rowActions = [
+                {
+                    title: 'Edit scan schedule',
+                    onClick: (event) => {
+                        event.preventDefault();
+                        history.push({
+                            pathname: scanConfigUrl,
+                            search: 'action=edit',
+                        });
+                    },
+                    isDisabled: !hasWriteAccessForCompliance,
+                },
+                {
+                    title: 'Delete scan schedule',
+                    onClick: (event) => {
+                        event.preventDefault();
+                        openDeleteModal([scanSchedule]);
+                    },
+                    isDisabled: !hasWriteAccessForCompliance,
+                },
+            ];
+
+            return (
                 <Tr key={id}>
                     <Td>
-                        <Link
-                            to={generatePath(complianceEnhancedScanConfigDetailPath, {
-                                scanConfigId: id,
-                            })}
-                        >
-                            {scanName}
-                        </Link>
+                        <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
                     <Td>{formatScanSchedule(scanConfig.scanSchedule)}</Td>
                     <Td>{format(lastUpdatedTime, 'DD MMM YYYY, h:mm:ss A')}</Td>
@@ -109,11 +171,11 @@ function ScanConfigsTablePage({
                     </Td>
                     <Td>{displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}</Td>
                     <Td isActionCell>
-                        <ActionsColumn items={scanConfigActions()} />
+                        <ActionsColumn menuAppendTo={() => document.body} items={rowActions} />
                     </Td>
                 </Tr>
-            )
-        );
+            );
+        });
     };
 
     const renderLoadingContent = () => (
@@ -190,8 +252,7 @@ function ScanConfigsTablePage({
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
                                 <Pagination
-                                    isCompact
-                                    itemCount={scanSchedules ? scanSchedules.length : 0}
+                                    itemCount={scanSchedulesCount ?? 0}
                                     page={page}
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
@@ -204,9 +265,9 @@ function ScanConfigsTablePage({
                     <TableComposable>
                         <Thead noWrap>
                             <Tr>
-                                <Th sort={getSortParams('Name')}>Name</Th>
+                                <Th sort={getSortParams('Compliance Scan Config Name')}>Name</Th>
                                 <Th>Schedule</Th>
-                                <Th sort={getSortParams('Last Run')}>Last run</Th>
+                                <Th>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 <Td />
@@ -214,6 +275,47 @@ function ScanConfigsTablePage({
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
                     </TableComposable>
+                    <DeleteModal
+                        title={`Permanently delete scan (${scanConfigsToDelete.length}) ${pluralize(
+                            'schedule',
+                            scanConfigsToDelete.length
+                        )}?`}
+                        isOpen={scanConfigsToDelete.length > 0}
+                        onClose={closeDeleteScanConfigModal}
+                        isDeleting={isDeletingScanConfigs}
+                        onDelete={onDeleteScanConfig}
+                    >
+                        {scanConfigDeletionErrors.length > 0 ? (
+                            <AlertGroup>
+                                {scanConfigDeletionErrors.map((deleteError) => {
+                                    return (
+                                        <Alert
+                                            isInline
+                                            variant="danger"
+                                            title="Failed to delete"
+                                            className="pf-u-mb-sm"
+                                        >
+                                            {deleteError.toString()}
+                                        </Alert>
+                                    );
+                                })}
+                            </AlertGroup>
+                        ) : (
+                            <></>
+                        )}
+                        <TextContent>
+                            <Text>
+                                The following scan{' '}
+                                {`${pluralize('schedule', scanConfigsToDelete.length)}`} will be
+                                deleted.
+                            </Text>
+                            <List>
+                                {scanConfigsToDelete.map((scanConfig) => (
+                                    <ListItem key={scanConfig.id}>{scanConfig.scanName}</ListItem>
+                                ))}
+                            </List>
+                        </TextContent>
+                    </DeleteModal>
                 </PageSection>
             )}
         </>

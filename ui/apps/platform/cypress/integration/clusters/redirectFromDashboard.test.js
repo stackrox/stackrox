@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 import { visitMainDashboardWithStaticResponseForClustersForPermission } from '../../helpers/main';
 
 import { clustersAlias, interactAndVisitClusters } from './Clusters.helpers';
@@ -26,12 +27,15 @@ describe('Clusters', () => {
             );
         }, staticResponseMapForClusters);
 
-        cy.get(
-            'p:contains("You have successfully deployed a Red Hat Advanced Cluster Security platform.")'
-        );
-
-        cy.get('h2:contains("Configure the clusters you want to secure.")');
-
-        cy.get('a:contains("View instructions")');
+        if (hasFeatureFlag('ROX_MOVE_INIT_BUNDLES_UI')) {
+            // Replace h1 with h2 if we factor out a minimal Clusters page.
+            cy.get('h1:contains("Secure clusters with a reusable init bundle")');
+            // Assert links instead of button, because init bundles exist.
+            cy.get('a:contains("Installing secured cluster services on Red Hat OpenShift")');
+            cy.get('a:contains("Installing secured cluster services on other platforms")');
+        } else {
+            cy.get('h2:contains("Configure the clusters you want to secure.")');
+            cy.get('a:contains("View instructions")');
+        }
     });
 });

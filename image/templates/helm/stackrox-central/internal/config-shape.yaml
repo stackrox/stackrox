@@ -14,6 +14,9 @@ env:
   platform: null # string
   offlineMode: null # bool
   proxyConfig: null # string | dict
+  storageClasses:
+    all: {} # dict
+    default: null # string
 ca:
   cert: null # string
   key: null # string

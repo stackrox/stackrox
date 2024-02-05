@@ -47,11 +47,11 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 
 	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
 	for _, profile := range scanConfig.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileId())
+		profiles = append(profiles, profile.GetProfileName())
 	}
 
 	return &v2.ComplianceScanConfiguration{
-		Id:       scanConfig.Id,
+		Id:       scanConfig.GetId(),
 		ScanName: scanConfig.GetScanConfigName(),
 		Clusters: clusters,
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
@@ -68,10 +68,10 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 		return nil
 	}
 
-	profiles := make([]*storage.ProfileShim, 0, len(scanConfig.GetScanConfig().GetProfiles()))
+	profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(scanConfig.GetScanConfig().GetProfiles()))
 	for _, profile := range scanConfig.GetScanConfig().GetProfiles() {
-		profiles = append(profiles, &storage.ProfileShim{
-			ProfileId: profile,
+		profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+			ProfileName: profile,
 		})
 	}
 
@@ -83,6 +83,7 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 	}
 
 	return &storage.ComplianceOperatorScanConfigurationV2{
+		Id:                     scanConfig.GetId(),
 		ScanConfigName:         scanConfig.GetScanName(),
 		AutoApplyRemediations:  false,
 		AutoUpdateRemediations: false,
@@ -162,7 +163,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 
 	profiles := make([]string, 0, len(scanConfig.GetProfiles()))
 	for _, profile := range scanConfig.GetProfiles() {
-		profiles = append(profiles, profile.GetProfileId())
+		profiles = append(profiles, profile.GetProfileName())
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{

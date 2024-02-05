@@ -7,6 +7,7 @@ import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/
 import { mockGetComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/MockData/complianceResultsServiceMocks';
 import { mockListComplianceProfiles } from 'Containers/ComplianceEnhanced/MockData/complianceProfileServiceMocks';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { Empty } from './types';
 
 const scanScheduleUrl = '/v2/compliance/scan/configurations';
 const complianceIntegrationServiceUrl = '/v2/compliance/integrations';
@@ -96,16 +97,21 @@ export type ComplianceCheckStatusCount = {
     status: ComplianceCheckStatus;
 };
 
-type ComplianceScanStatsShim = {
+export type ComplianceScanStatsShim = {
     scanName: string;
     checkStats: ComplianceCheckStatusCount[];
     lastScan: string; // ISO 8601 date string
 };
 
-type ComplianceClusterScanStats = {
-    checkStats: ComplianceCheckStatusCount[];
+export type ComplianceClusterScanStats = {
+    scanStats: ComplianceScanStatsShim;
     cluster: ComplianceScanCluster;
 };
+
+export interface ComplianceClusterOverallStats {
+    cluster: ComplianceScanCluster;
+    checkStats: ComplianceCheckStatusCount[];
+}
 
 export interface ComplianceScanResultsOverview {
     scanStats: ComplianceScanStatsShim;
@@ -116,6 +122,32 @@ export interface ComplianceScanResultsOverview {
 export interface ListComplianceScanResultsOverviewResponse {
     scanOverviews: ComplianceScanResultsOverview[];
 }
+
+export type ClusterCheckStatus = {
+    cluster: ComplianceScanCluster;
+    status: ComplianceCheckStatus;
+    createdTime: string; // ISO 8601 date string
+    checkUid: string;
+};
+
+type ComplianceCheckResult = {
+    checkId: string;
+    checkName: string;
+    clusters: ClusterCheckStatus[];
+    description: string;
+    instructions: string;
+    standard: string;
+    control: string;
+    rationale: string;
+    valuesUsed: string[];
+    warnings: string[];
+};
+
+type ComplianceScanResult = {
+    scanName: string;
+    profileName: string;
+    checkResults: ComplianceCheckResult[];
+};
 
 // API types for Compliance Profiles:
 // https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_profile_service
@@ -187,7 +219,60 @@ export function complianceResultsOverview(
     });
 }
 
-export function getComplianceClusterScanStats(
+/**
+ * Fetches stats for all clusters
+ * Note: this function and getSingleClusterCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersCombinedStats(
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceClusterOverallStats[]> {
+    const searchFilter = {};
+    const sortOption = {
+        field: 'Cluster',
+        reversed: false,
+    };
+    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster
+ * Note: this function and getAllClustersCombinedStats call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterCombinedStats(
+    clusterId: string
+): Promise<ComplianceClusterOverallStats | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterOverallStats[];
+        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        .then((response) => {
+            const stats = response?.data?.scanStats;
+            return stats && stats.length > 0 ? stats[0] : null;
+        });
+}
+
+/**
+ * Fetches stats for all clusters grouped by scan config
+ * Note: this function and getSingleClusterStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getAllClustersStatsByScanConfig(
     page?: number,
     pageSize?: number
 ): Promise<ComplianceClusterScanStats[]> {
@@ -202,9 +287,96 @@ export function getComplianceClusterScanStats(
     return axios
         .get<{
             scanStats: ComplianceClusterScanStats[];
-        }>(`${complianceResultsServiceUrl}/stats/overall/cluster?${params}`)
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
         .then((response) => {
             return response?.data?.scanStats ?? [];
+        });
+}
+
+/**
+ * Fetches stats for a single cluster grouped by scan config
+ * Note: this function and getAllClustersStatsByScanConfig call the same API endpoint
+ * due to the absence of a dedicated single-cluster endpoint
+ */
+export function getSingleClusterStatsByScanConfig(
+    clusterId: string
+): Promise<ComplianceClusterScanStats[] | null> {
+    const query = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+    });
+    const params = qs.stringify({ query });
+
+    return axios
+        .get<{
+            scanStats: ComplianceClusterScanStats[];
+        }>(`${complianceResultsServiceUrl}/stats/cluster?${params}`)
+        .then((response) => {
+            return response?.data?.scanStats ?? [];
+        });
+}
+
+export function getSingleClusterResultsByScanConfig(
+    clusterId: string,
+    scanName: string,
+    searchFilter: SearchFilter,
+    sortOption: ApiSortOption,
+    page?: number,
+    pageSize?: number
+): Promise<ComplianceScanResult | null> {
+    if (!clusterId || !scanName) {
+        return Promise.reject(new Error('clusterId and scanName are required'));
+    }
+    const searchQuery = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+        'Compliance Scan Config Name': scanName,
+        ...searchFilter,
+    });
+
+    let offset: number | undefined;
+    if (typeof page === 'number' && typeof pageSize === 'number') {
+        offset = page > 0 ? page * pageSize : 0;
+    }
+    const query = {
+        query: searchQuery,
+        pagination: { offset, limit: pageSize, sortOption },
+    };
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+
+    return axios
+        .get<{
+            scanResults: ComplianceScanResult[];
+        }>(`${complianceResultsServiceUrl}/results?${params}`)
+        .then((response) => {
+            const results = response?.data?.scanResults ?? [];
+            if (results.length > 1) {
+                throw new Error('Expected a single result set, but received multiple');
+            }
+            return results[0] || null;
+        });
+}
+
+export function getSingleClusterResultsByScanConfigCount(
+    clusterId: string,
+    scanName: string,
+    searchFilter: SearchFilter
+): Promise<number> {
+    const searchQuery = getRequestQueryStringForSearchFilter({
+        'Cluster ID': clusterId,
+        'Compliance Scan Config Name': scanName,
+        ...searchFilter,
+    });
+
+    const query = {
+        query: searchQuery,
+    };
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
+
+    return axios
+        .get<{
+            count: number;
+        }>(`${complianceResultsServiceUrl}/count/results?${params}`)
+        .then((response) => {
+            return response?.data?.count ?? 0;
         });
 }
 
@@ -226,16 +398,21 @@ export function getScanConfig(
 /*
  * Create a Scan Schedule.
  */
-export function createScanConfig(
+export function saveScanConfig(
     complianceScanConfiguration: ComplianceScanConfiguration
 ): Promise<ComplianceScanConfiguration> {
-    return axios
-        .post<ComplianceScanConfiguration>(`${scanScheduleUrl}`, complianceScanConfiguration)
-        .then((response) => response.data);
+    const promise = complianceScanConfiguration.id
+        ? axios.put<ComplianceScanConfiguration>(
+              `${scanScheduleUrl}/${complianceScanConfiguration.id}`,
+              complianceScanConfiguration
+          )
+        : axios.post<ComplianceScanConfiguration>(scanScheduleUrl, complianceScanConfiguration);
+
+    return promise.then((response) => response.data);
 }
 
 /*
- * Get policies filtered by an optional query string.
+ * Get scan configs filtered by an optional query string.
  */
 export function getScanConfigs(
     sortOption: ApiSortOption,
@@ -249,7 +426,7 @@ export function getScanConfigs(
     const query = {
         pagination: { offset, limit: pageSize, sortOption },
     };
-    const params = qs.stringify({ query });
+    const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
     return axios
         .get<{
             configurations: ComplianceScanConfigurationStatus[];
@@ -257,6 +434,22 @@ export function getScanConfigs(
         .then((response) => {
             return response?.data?.configurations ?? [];
         });
+}
+
+export function getScanConfigsCount(): Promise<number> {
+    return axios
+        .get<{
+            count: number;
+        }>(`${complianceResultsServiceUrl}/count/configurations`)
+        .then((response) => {
+            return response?.data?.count ?? 0;
+        });
+}
+
+export function deleteScanConfig(scanConfigId: string) {
+    return axios.delete<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}`).then((response) => {
+        return response.data;
+    });
 }
 
 export function listComplianceProfiles(): Promise<ComplianceProfile[]> {

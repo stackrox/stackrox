@@ -35,6 +35,10 @@ type ComplianceManager interface {
 	// GetRunStatuses returns the statuses for the runs with the given IDs. Any runs that could not be located (e.g.,
 	// because they are too old or the ID is invalid) will be returned in the id to error map.
 	GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.ComplianceRun, error)
+
+	// GetLatestRunStatuses returns the statuses for the most recent runs for <cluster, standard> pair. This does not persist
+	// across restarts, but neither do run statuses
+	GetLatestRunStatuses(ctx context.Context) ([]*v1.ComplianceRun, error)
 }
 
 // NewManager creates and returns a new compliance manager.

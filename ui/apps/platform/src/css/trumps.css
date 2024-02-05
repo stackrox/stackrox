@@ -136,6 +136,10 @@
     display: inline;
 }
 
+.pf-c-progress__status-icon svg {
+  display: inline-block;
+}
+
 /* overriding vertical align property for table sort icon */
 .pf-c-table__sort-indicator {
     align-self: center;
@@ -191,6 +195,11 @@
 .pf-c-form__group input[type="checkbox"]:checked:disabled {
     background-color: var(--pf-global--disabled-color--200);
     border-color: transparent;
+}
+
+/* fixes flattened radio buttons caused by tailwind appearance when using pf standalone radio button */
+.pf-c-radio.pf-m-standalone input[type="radio"] {
+    appearance: auto;
 }
 
 /* For classic components to equal or exceed z-index of PatternFly elements. */
