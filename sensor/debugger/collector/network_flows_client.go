@@ -102,10 +102,6 @@ func (m *fakeNetworkFlowManager) run() {
 	}
 }
 
-func (m *fakeNetworkFlowManager) stop() {
-	m.stopper.Client().Stop()
-}
-
 func (m *fakeNetworkFlowManager) start(address string) error {
 	clientconn.SetUserAgent("Rox Collector")
 	ctx, cancel := context.WithCancel(context.Background())

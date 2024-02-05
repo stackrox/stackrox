@@ -75,6 +75,11 @@ func (c *FakeCollector) Start() error {
 	return nil
 }
 
+// Stop FakeCollector.
+func (c *FakeCollector) Stop() {
+	c.stopper.Client().Stop()
+}
+
 // SendFakeNetworkFlow sends a NetworkConnectionInfoMessage to sensor.
 func (c *FakeCollector) SendFakeNetworkFlow(msg *sensor.NetworkConnectionInfoMessage) {
 	c.networkFlowManager.send(msg)

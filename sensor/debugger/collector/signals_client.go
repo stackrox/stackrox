@@ -103,10 +103,6 @@ func (m *fakeSignalManager) run() {
 	}
 }
 
-func (m *fakeSignalManager) stop() {
-	m.stopper.Client().Stop()
-}
-
 func (m *fakeSignalManager) start(address string) error {
 	clientconn.SetUserAgent("Rox Collector")
 	ctx, cancel := context.WithCancel(context.Background())
