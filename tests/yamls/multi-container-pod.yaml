@@ -5,7 +5,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: end-to-end-api-test-pod-multi-container
-  namespace: default
+  namespace: qa
 spec:
   volumes:
     - name: html
