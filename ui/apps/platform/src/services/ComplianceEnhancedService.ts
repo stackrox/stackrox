@@ -452,6 +452,12 @@ export function deleteScanConfig(scanConfigId: string) {
     });
 }
 
+export function runComplianceScanConfiguration(scanConfigId: string) {
+    return axios.post<Empty | Error>(`${scanScheduleUrl}/${scanConfigId}/run`).then((response) => {
+        return response.data;
+    });
+}
+
 export function listComplianceProfiles(): Promise<ComplianceProfile[]> {
     // TODO: delete the below code once the actual API is ready
     return new Promise((resolve) => {
