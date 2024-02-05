@@ -172,21 +172,26 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim,
+func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim, string,
 	error) {
 	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: rawAccessToken,
 	}))
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching userinfo claims")
+		return nil, "", errors.Wrap(err, "fetching userinfo claims")
 	}
 
 	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting external claims from userinfo endpoint response")
+		return nil, "", errors.Wrap(err, "extracting external claims from userinfo endpoint response")
 	}
 
-	return externalClaims, nil
+	rawUserInfo, err := claimsAsString(userInfoFromEndpoint)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting raw user info from userinfo endpoint response")
+	}
+
+	return externalClaims, rawUserInfo, nil
 }
 
 func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken,
@@ -195,16 +200,12 @@ func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken
 	if err != nil {
 		return nil, err
 	}
-	claimsStr, err := claimsAsString(idToken)
-	if err != nil {
-		return nil, err
-	}
 
 	// Special case: in the case of an ID token being presented which has an empty group attribute, we attempt to
 	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
 	// (i.e. GitLab) only present the complete group membership in the userinfo endpoint, not within the ID token.
 	if hasEmptyGroups(externalClaims) && rawAccessToken != "" {
-		userInfoClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+		userInfoClaims, _, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 		if err != nil {
 			return nil, errors.Wrap(err, "fetching userinfo claims")
 		}
@@ -234,6 +235,11 @@ func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, ra
 		return nil, err
 	}
 
+	claimsStr, err := claimsAsString(idToken)
+	if err != nil {
+		return nil, err
+	}
+
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: idToken.GetExpiry(),
@@ -256,14 +262,9 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string,
 }
 
 func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
-	externalClaims, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+	externalClaims, rawUserInfo, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching userinfo claims")
-	}
-
-	rawUserInfo, err := claimsAsString(userInfoFromEndpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "extracting raw user info from userinfo endpoint response")
 	}
 
 	return &authproviders.AuthResponse{
