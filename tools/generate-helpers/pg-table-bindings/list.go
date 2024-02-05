@@ -49,6 +49,7 @@ func init() {
 		&storage.Config{}:                                       resources.Administration,
 		&storage.DeclarativeConfigHealth{}:                      resources.Integration,
 		&storage.DelegatedRegistryConfig{}:                      resources.Administration,
+		&storage.DiscoveredCluster{}:                            resources.Administration,
 		&storage.ExternalBackup{}:                               resources.Integration,
 		&storage.Group{}:                                        resources.Access,
 		&storage.Hash{}:                                         resources.Hash,
