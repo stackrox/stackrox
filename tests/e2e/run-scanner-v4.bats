@@ -19,10 +19,12 @@ setup_file() {
     export USE_LOCAL_ROXCTL=true
     export ROX_PRODUCT_BRANDING=RHACS_BRANDING
     export CI=${CI:-false}
+    OS="$(uname | tr '[:upper:]' '[:lower:]')"
+    export OS
     export ORCH_CMD=kubectl
     export SENSOR_HELM_MANAGED=true
 
-    # Prepare earlier version
+    # Prepare earlier Helm chart version.
     if [[ -z "${CHART_REPOSITORY:-}" ]]; then
         CHART_REPOSITORY=$(mktemp -d "helm-charts.XXXXXX" -p /tmp)
     fi
@@ -30,6 +32,19 @@ setup_file() {
         git clone --depth 1 -b main https://github.com/stackrox/helm-charts "${CHART_REPOSITORY}"
     fi
     export CHART_REPOSITORY
+
+    # Download and use earlier version of roxctl without Scanner V4 support
+    # We will just hard-code a pre-4.4 version here.
+    if [[ -z "${EARLIER_ROXCTL_PATH:-}" ]]; then
+        EARLIER_ROXCTL_PATH=$(mktemp -d "early_roxctl.XXXXXX" -p /tmp)
+    fi
+    echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
+    export EARLIER_ROXCTL_PATH
+    if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
+        curl --retry 5 -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+        chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
+    fi
+
     export CUSTOM_CENTRAL_NAMESPACE=${CUSTOM_CENTRAL_NAMESPACE:-stackrox-central}
     export CUSTOM_SENSOR_NAMESPACE=${CUSTOM_SENSOR_NAMESPACE:-stackrox-sensor}
 }
@@ -121,8 +136,12 @@ teardown() {
     fi
 
     for namespace in "${namespaces[@]}"; do
-        run remove_existing_stackrox_resources "${namespace}"
+        run remove_existing_stackrox_resources "${namespace}" >/dev/null
     done
+}
+
+teardown_file() {
+    remove_earlier_roxctl_binary
 }
 
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
@@ -217,6 +236,26 @@ teardown() {
 
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
+}
+
+@test "Upgrade from old version without Scanner V4 support to the version which supports Scanner v4" {
+    if [[ "$CI" = "true" ]]; then
+        setup_default_TLS_certs
+    fi
+
+    # Install using roxctl deployment bundles
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
+    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" _deploy_stackrox
+    verify_scannerV2_deployed
+    verify_no_scannerV4_deployed
+
+    info "Upgrading StackRox using HEAD deployment bundles"
+    _deploy_stackrox
+
+    verify_scannerV2_deployed
+    verify_scannerV4_deployed
 }
 
 verify_no_scannerV4_deployed() {
@@ -474,7 +513,8 @@ wait_for_ready_pods() {
     local deployment="${2}"
     local timeout_seconds="${3:-300}" # 5 minutes
 
-    local start_time="$(date '+%s')"
+    local start_time
+    start_time="$(date '+%s')"
     local start_time
     local deployment_json
     local num_replicas
@@ -503,4 +543,12 @@ wait_for_ready_pods() {
     done
 
     echo "Pod(s) within deployment ${namespace}/${deployment} ready."
+}
+
+remove_earlier_roxctl_binary() {
+    if [[ -d "${EARLIER_ROXCTL_PATH}" ]]; then
+      rm -f "${EARLIER_ROXCTL_PATH}/roxctl"
+      rmdir "${EARLIER_ROXCTL_PATH}"
+      echo "Removed earlier roxctl binary"
+    fi
 }
