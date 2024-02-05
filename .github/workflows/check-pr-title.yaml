@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Check if the PR title is well dressed
         env:
-          CONV: '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([\w\-\.]+\))?!?'
+          CONV: '(build|chore|ci|docs?|feat|fix|perf|refactor|revert|style|tests?)(\([\w\-\.]+\))?!?'
           JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
           TEXT: ': .+'
         run: |
