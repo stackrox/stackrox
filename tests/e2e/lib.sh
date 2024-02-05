@@ -635,6 +635,7 @@ check_for_errors_in_stackrox_logs() {
             summary="$(summarize_check_output "${check_out}")"
             save_junit_failure "SuspiciousLog-${app}" "${summary}" "$check_out"
             failure_found="true"
+            info "Found suspicious log in $app: $check_out"
         else
             save_junit_success "SuspiciousLog-${app}" "Suspicious entries in log file(s)"
         fi
