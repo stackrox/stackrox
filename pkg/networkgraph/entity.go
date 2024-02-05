@@ -17,6 +17,9 @@ var (
 		storage.NetworkEntityInfo_INTERNET: func(info *storage.NetworkEntityInfo) string {
 			return InternetExternalSourceName
 		},
+		storage.NetworkEntityInfo_INTERNAL_ENTITIES: func(info *storage.NetworkEntityInfo) string {
+			return InternalEntitiesName
+		},
 	}
 
 	ipv4InternetCIDR = "0.0.0.0/0"
@@ -58,6 +61,14 @@ func InternetEntity() Entity {
 	return Entity{
 		ID:   InternetExternalSourceID,
 		Type: storage.NetworkEntityInfo_INTERNET,
+	}
+}
+
+// InternalEntities returns the internal-unknown network entity to which all the connections to unidentified internal sources are attributed to.
+func InternalEntities() Entity {
+	return Entity{
+		ID:   InternalSourceID,
+		Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
 	}
 }
 

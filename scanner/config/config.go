@@ -41,7 +41,7 @@ var (
 				PasswordFile: "",
 			},
 			// TODO(ROX-19005): replace with a URL related to the desired version.
-			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/output.json.zst",
+			VulnerabilitiesURL: "https://storage.googleapis.com/scanner-v4-test/vulnerability-bundles/dev/vulns.json.zst",
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{

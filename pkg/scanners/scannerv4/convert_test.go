@@ -273,3 +273,38 @@ func TestOS(t *testing.T) {
 		})
 	}
 }
+
+func TestNotes(t *testing.T) {
+	testcases := []struct {
+		os       string
+		report   *v4.VulnerabilityReport
+		expected []storage.ImageScan_Note
+	}{
+		{
+			os: "unknown",
+			report: &v4.VulnerabilityReport{
+				Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
+			},
+			expected: []storage.ImageScan_Note{storage.ImageScan_OS_UNAVAILABLE, storage.ImageScan_PARTIAL_SCAN_DATA},
+		},
+		{
+			os: "debian:8",
+			report: &v4.VulnerabilityReport{
+				Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED},
+			},
+			expected: []storage.ImageScan_Note{storage.ImageScan_OS_CVES_UNAVAILABLE, storage.ImageScan_PARTIAL_SCAN_DATA},
+		},
+		{
+			os:       "rhel:9",
+			report:   &v4.VulnerabilityReport{},
+			expected: []storage.ImageScan_Note{},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.os, func(t *testing.T) {
+			notes := notes(testcase.report)
+			assert.ElementsMatch(t, testcase.expected, notes)
+		})
+	}
+}

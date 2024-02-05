@@ -28,7 +28,6 @@ jobs:
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
-      continue-on-error: true
       run: |
         if [ ! -d "scanner" ]; then
           echo "Scanner directory not found. Terminating current step."

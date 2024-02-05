@@ -124,7 +124,10 @@ function ClusterDetails() {
                         ) : (
                             scanStats &&
                             scanStats.length > 0 && (
-                                <ClusterDetailsContent scanRecords={scanStats} />
+                                <ClusterDetailsContent
+                                    scanRecords={scanStats}
+                                    clusterId={clusterId}
+                                />
                             )
                         )}
                     </PageSection>

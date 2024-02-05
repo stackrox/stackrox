@@ -58,6 +58,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - ROX_MEMLIMIT is meant to capture the memory limit of the deployment, so it may adjust the GOMEMLIMIT accordingly.
   - ROX_MEMLIMIT is not as flexible as GOMEMLIMIT. It may only be set to an integer representing a number of bytes.
 - ROX-21620: publish opensource instead of stackrox.io helm charts
+- ROX-20163: Sensor captures runtime events even if it is disconnected from Central.
 
 ## [4.3.0]
 

@@ -982,7 +982,7 @@ func Test_versionID(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			versionID := versionID(tt.d)
+			versionID := VersionID(tt.d)
 			assert.Equal(t, tt.versionID, versionID)
 		})
 	}

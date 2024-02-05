@@ -9,6 +9,7 @@
 # # - *.stackrox, *.stackrox.svc
 # # - localhost, localhost.localdomain, 127.0.0.0/8, ::1
 # # - *.local
+# # - $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
 # omitDefaultExcludes: false
 # excludes:  # hostnames (may include * components) for which not to use a proxy, like in-cluster repositories.
 # - some.domain

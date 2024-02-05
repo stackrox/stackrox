@@ -9,7 +9,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
-	ccpostgres "github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
@@ -20,7 +19,8 @@ import (
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
-	"github.com/stackrox/rox/scanner/matcher/updater"
+	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
+	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
 
 // matcherNames specifies the ClairCore matchers to use.
@@ -52,6 +52,7 @@ func matcherNames() []string {
 type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
+	GetKnownDistributions(ctx context.Context) []claircore.Distribution
 	Close(ctx context.Context) error
 }
 
@@ -61,7 +62,8 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	updater *updater.Updater
+	vulnUpdater   *vuln.Updater
+	distroUpdater *distribution.Updater
 }
 
 // NewMatcher creates a new matcher.
@@ -80,14 +82,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
-	store, err := ccpostgres.InitPostgresMatcherStore(ctx, pool, true)
+	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres matcher store: %w", err)
-	}
-
-	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
-	if err != nil {
-		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
 	}
 
 	locker, err := ctxlock.New(ctx, pool)
@@ -99,6 +96,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 			_ = locker.Close(ctx)
 		}
 	}()
+
+	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
+	if err != nil {
+		return nil, fmt.Errorf("initializing postgres matcher metadata store: %w", err)
+	}
 
 	// There should not be any network activity by the libvuln package.
 	// A nil *http.Client is not allowed, so use one which denies all outbound traffic.
@@ -139,7 +141,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	client := &http.Client{
 		Transport: transport,
 	}
-	u, err := updater.New(ctx, updater.Opts{
+	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:         store,
 		Locker:        locker,
 		Pool:          pool,
@@ -151,10 +153,31 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
+	distroUpdater, err := distribution.New(ctx, store)
+	if err != nil {
+		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
+	}
+
+	// Start the updaters asynchronously.
 	go func() {
-		if err := u.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+		// Run the initial vuln update prior to starting the distribution updater.
+		zlog.Info(ctx).Msg("starting initial update")
+		if err := vulnUpdater.Update(ctx); err != nil {
+			zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
 		}
+		zlog.Info(ctx).Msg("completed initial update")
+
+		go func() {
+			if err := vulnUpdater.Start(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("vulnerability updater failed")
+			}
+		}()
+
+		go func() {
+			if err := distroUpdater.Start(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
+			}
+		}()
 	}()
 
 	success = true
@@ -163,7 +186,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		updater: u,
+		vulnUpdater:   vulnUpdater,
+		distroUpdater: distroUpdater,
 	}, nil
 }
 
@@ -177,10 +201,14 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 	return m.metadataStore.GetLastVulnerabilityUpdate(ctx)
 }
 
+func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
+	return m.distroUpdater.Known()
+}
+
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	err := errors.Join(m.updater.Stop(), m.libVuln.Close(ctx))
+	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
 }

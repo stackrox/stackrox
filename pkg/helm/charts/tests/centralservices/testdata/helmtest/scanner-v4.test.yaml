@@ -292,3 +292,43 @@ tests:
     .networkpolicys["scanner-v4-matcher"].spec.ingress | assertThat(length == 1)
     .networkpolicys["scanner-v4-matcher"].spec.ingress[0] | .ports | assertThat(length == 1)
     .networkpolicys["scanner-v4-matcher"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "central")
+
+- name: "Scanner V4 DB persistence"
+  set:
+    scannerV4.disable: false
+  defs: |
+    def getVolume(deploymentName; volumeName):
+      .deployments[deploymentName].spec.template.spec.volumes[] | select(.name == "disk");
+    def getScannerV4Disk:
+      getVolume("scanner-v4-db"; "disk");
+    def getScannerV4PVC:
+      getScannerV4Disk | .persistentVolumeClaim;
+  tests:
+    - name: "defaults to PVC in absence of a default StorageClass"
+      expect: |
+        getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+        .persistentvolumeclaims["scanner-v4-db"] | assertThat(. != null)
+    - name: "can be configured to use a specific PVC"
+      values:
+        scannerV4:
+          db:
+            persistence:
+              persistentVolumeClaim:
+                claimName: "starfleet"
+                createClaim: true
+      expect: |
+        getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+        getScannerV4PVC | assertThat(.claimName == "starfleet")
+      tests:
+        - name: "which is newly created"
+          expect: |
+            .persistentvolumeclaims["starfleet"] | assertThat(. != null)
+        - name: "which is assumed to exist"
+          values:
+            scannerV4:
+              db:
+                persistence:
+                  persistentVolumeClaim:
+                    createClaim: false
+          expect: |
+            .persistentvolumeclaims["starfleet"] | assertThat(. == null)

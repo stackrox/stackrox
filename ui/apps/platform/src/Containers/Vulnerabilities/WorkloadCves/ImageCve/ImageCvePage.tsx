@@ -175,13 +175,14 @@ function ImageCvePage() {
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
-    const cveId: string = urlParams.cveId ?? '';
+    const cveId = urlParams.cveId ?? '';
+    const exactCveIdSearchRegex = `^${cveId}$`;
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getVulnStateScopedQueryString(
         {
             ...querySearchFilter,
-            CVE: [cveId],
+            CVE: [exactCveIdSearchRegex],
         },
         currentVulnerabilityState
     );
@@ -239,7 +240,7 @@ function ImageCvePage() {
     });
 
     function getDeploymentSearchQuery(severity?: VulnerabilitySeverity) {
-        const filters = { ...querySearchFilter, CVE: [cveId] };
+        const filters = { ...querySearchFilter, CVE: [exactCveIdSearchRegex] };
         if (severity) {
             filters.SEVERITY = [severity];
         }
@@ -371,7 +372,7 @@ function ImageCvePage() {
                         <WorkloadTableToolbar
                             searchOptions={searchOptions}
                             autocompleteSearchContext={{
-                                'CVE ID': cveId,
+                                CVE: exactCveIdSearchRegex,
                             }}
                             onFilterChange={() => setPage(1)}
                         />

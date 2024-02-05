@@ -186,7 +186,7 @@ message ComplianceOperatorScanV2 {
   ProfileShim profile = 5;
   map<string, string> labels = 6;
   map<string, string> annotations = 7;
-  ScanType scan_type = 8;
+  ScanType scan_type = 8 [(gogoproto.moretags) = 'search:"Compliance Scan Type,hidden"'];
   NodeRole node_selector = 9;
   ScanStatus status = 10;
   google.protobuf.Timestamp created_time = 11;

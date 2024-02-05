@@ -1,5 +1,8 @@
-import { Flex, FlexItem } from '@patternfly/react-core';
 import React from 'react';
+import { Flex, FlexItem } from '@patternfly/react-core';
+
+import useAuthStatus from 'hooks/useAuthStatus';
+
 import { ClusterStatus } from '../clusterTypes';
 import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
@@ -18,6 +21,9 @@ const CredentialExpirationWidget = ({
     status,
     isManagerTypeNonConfigurable,
 }: CredentialExpirationWidgetProps) => {
+    const { currentUser } = useAuthStatus();
+    const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
+
     const certExpiryStatus = status?.certExpiryStatus;
     const currentDatetime = new Date();
     // Secured cluster is healthy or has no expiration info => no interaction
@@ -34,9 +40,11 @@ const CredentialExpirationWidget = ({
                 <FlexItem>
                     <CredentialExpiration certExpiryStatus={certExpiryStatus} />
                 </FlexItem>
-                <FlexItem>
-                    <ManageTokensButton />
-                </FlexItem>
+                {hasAdminRole && (
+                    <FlexItem>
+                        <ManageTokensButton />
+                    </FlexItem>
+                )}
             </Flex>
         );
     }

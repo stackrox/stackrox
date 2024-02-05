@@ -228,6 +228,7 @@ var (
 	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
 	ComplianceOperatorScanResult             = newFieldLabel("Compliance Scan Result")
+	ComplianceOperatorScanType               = newFieldLabel("Compliance Scan Type")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -369,6 +370,10 @@ var (
 	EventType       = newFieldLabel("Event Type")
 	EventLevel      = newFieldLabel("Event Level")
 	EventOccurrence = newFieldLabel("Event Occurrence")
+
+	// Integration fields.
+	IntegrationName = newFieldLabel("Integration Name")
+	IntegrationType = newFieldLabel("Integration Type")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
