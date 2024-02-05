@@ -9,6 +9,8 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,6 +23,7 @@ const (
 	TolerationsKey = "tolerations"
 	// DefaultStorageClassAnnotationKey is the annotation used to identify a default storage class
 	DefaultStorageClassAnnotationKey = "storageclass.kubernetes.io/is-default-class"
+	defaultScannerV4PVCName          = "scanner-v4-db"
 )
 
 // GetResources converts platform.Resources to chart values builder.
@@ -175,11 +178,11 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 // that the extension prevents central DB's PVC deletion on deletion of the CR.
 // Since scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
 // through the helm uninstall if a CR is deleted.
-func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, client ctrlClient.Client) {
+func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) {
 	dbVB := NewValuesBuilder()
 	persistenceVB := NewValuesBuilder()
 
-	useEmptyDir, err := shouldUseEmptyDir(ctx, objKind, db, client)
+	useEmptyDir, err := shouldUseEmptyDir(ctx, db, objKind, namespace, client)
 	if err != nil {
 		sv.SetError(fmt.Errorf("error : %w", err))
 		return
@@ -244,8 +247,17 @@ func setScannerV4DBPersistence(sv *ValuesBuilder, objKind string, persistence *p
 	sv.AddChild("persistence", &persistenceVB)
 }
 
-func shouldUseEmptyDir(ctx context.Context, objKind string, db *platform.ScannerV4DB, client ctrlClient.Client) (bool, error) {
+func shouldUseEmptyDir(ctx context.Context, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Client) (bool, error) {
 	if objKind != v1alpha1.SecuredClusterGVK.Kind {
+		return false, nil
+	}
+
+	pvcAlreadyExists, err := hasScannerV4DBPVC(ctx, client, db.GetPersistence().GetPersistentVolumeClaim().GetClaimName(), namespace)
+	if err != nil {
+		return false, err
+	}
+
+	if pvcAlreadyExists {
 		return false, nil
 	}
 
@@ -262,6 +274,28 @@ func shouldUseEmptyDir(ctx context.Context, objKind string, db *platform.Scanner
 	return !hasSC, nil
 }
 
+func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Client, pvcName string, namespace string) (bool, error) {
+	lookupPvc := pvcName
+	if lookupPvc == "" {
+		lookupPvc = defaultScannerV4PVCName
+	}
+
+	pvc := corev1.PersistentVolumeClaim{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      lookupPvc,
+			Namespace: namespace,
+		},
+	}
+
+	if err := client.Get(ctx, ctrlClient.ObjectKeyFromObject(&pvc), &pvc); err != nil {
+		if apiErrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("looking for existing scanner v4 pvc: %w", err)
+	}
+
+	return false, nil
+}
 func hasDefaultStorageClass(ctx context.Context, client ctrlClient.Client) (bool, error) {
 	storageClassList := storagev1.StorageClassList{}
 	if err := client.List(ctx, &storageClassList); err != nil {

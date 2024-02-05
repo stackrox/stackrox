@@ -368,7 +368,7 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 	sv.SetBoolValue("disable", !config.DeployScannerResources)
 
 	translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, t.client)
+	translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client)
 
 	return &sv
 }

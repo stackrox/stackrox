@@ -223,6 +223,16 @@ func (s *ScannerV4PersistentVolumeClaim) GetStorageClassName() string {
 	return *s.StorageClassName
 }
 
+// GetClaimName gets the ClaimName string value
+// returns empty string if the object or the ClaimName pointer is nil
+func (s *ScannerV4PersistentVolumeClaim) GetClaimName() string {
+	if s == nil || s.ClaimName == nil {
+		return ""
+	}
+
+	return *s.ClaimName
+}
+
 // ScannerComponentScaling defines replication settings of scanner components.
 type ScannerComponentScaling struct {
 	// When enabled, the number of component replicas is managed dynamically based on the load, within the limits

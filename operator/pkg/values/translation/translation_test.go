@@ -604,7 +604,7 @@ func TestSetScannerV4DBValues(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			vb := NewValuesBuilder()
 			client := fkClient.NewFakeClient(tt.fakeObjects...)
-			SetScannerV4DBValues(context.Background(), &vb, tt.db, tt.kind, client)
+			SetScannerV4DBValues(context.Background(), &vb, tt.db, tt.kind, "test-namespace", client)
 			values, err := vb.Build()
 			if tt.wantErr {
 				require.NotNil(t, err)
