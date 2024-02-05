@@ -9,8 +9,6 @@ on:
 jobs:
   upload-dev-vulnerabilities:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
     steps:
     - name: Checkout
       uses: actions/checkout@v4

@@ -26,8 +26,6 @@ jobs:
   upload-release-vulnerabilities:
     needs: read-release-versions
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.61
     strategy:
       fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
       max-parallel: 1 # Jobs are memory intensive, so only run one at a time.
@@ -36,6 +34,13 @@ jobs:
     env:
       ROX_PRODUCT_VERSION: ${{ matrix.version }}
     steps:
+    - name: Recover docker image cache space
+      run: |
+        df --si /
+        docker system prune --force --all
+        df --si /
+      shell: bash
+
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
