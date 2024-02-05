@@ -61,7 +61,7 @@ function ImportPolicyJSONModal({
                     if (onlyHasDupeErrors) {
                         setDuplicateErrors(errors[0]);
                     }
-                    const errorMessageArray = getErrorMessages(errors[0]).map(({ msg }) => msg);
+                    const errorMessageArray = getErrorMessages(errors[0], metadata.overwrite).map(({ msg }) => msg);
                     setErrorMessages(errorMessageArray);
                     setModalType('error');
                 }
