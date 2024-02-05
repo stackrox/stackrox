@@ -210,14 +210,16 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	ssObj, err := resSS.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, request.GetScanSettings().GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		log.Error(err)
+		//return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
 	ssbObj, err := resSSB.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
 	if err != nil {
 		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found", ns, request.GetScanSettings().GetScanName())
-		return m.composeAndSendApplyScanConfigResponse(requestID, err)
+		log.Error(err)
+		//return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	if ssObj == nil && ssbObj == nil {
