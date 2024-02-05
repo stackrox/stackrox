@@ -130,9 +130,9 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	// If this is a release build, Matcher should only reach out to Central,
 	// so deny (and log) any other traffic.
 	// TODO(ROX-19004): re-add this when complete.
-	//if buildinfo.ReleaseBuild {
-	//	defaultTransport = httputil.DenyTransport
-	//}
+	// if buildinfo.ReleaseBuild {
+	// 	 defaultTransport = httputil.DenyTransport
+	// }
 	// Matcher should never reach out to Sensor, so ensure all Sensor-traffic is always denied.
 	transport, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices), httputil.WithDenySensor(true))
 	if err != nil {
