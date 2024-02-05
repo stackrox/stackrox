@@ -31,6 +31,7 @@ import (
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cloudproviders/gcp"
+	cloudSourcesService "github.com/stackrox/rox/central/cloudsources/service"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
@@ -456,6 +457,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
+	}
+
+	if features.CloudSources.Enabled() {
+		servicesToRegister = append(servicesToRegister, cloudSourcesService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
