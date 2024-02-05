@@ -193,7 +193,7 @@ $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [
 # Use one-liner above.
 
 # 4. Run bundle.
-$ .gotools/bin/operator-sdk run bundle \
+$ `make which-operator-sdk` run bundle \
   quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet --no-print-directory tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
@@ -208,7 +208,7 @@ $ kubectl -n bundle-test patch serviceaccount rhacs-operator-controller-manager 
 # You may need to bounce operator pods after this if they can't pull images for a while.
 $ kubectl -n bundle-test delete pod -l app=rhacs-operator
 
-# 6. operator-sdk run bundle command should complete successfully.
+# 6. The above operator-sdk run bundle command should complete successfully.
 # If it does not, watch pod statuses and check pod logs.
 $ kubectl -n bundle-test get pods
 # ... and dive deep from there into the ones that are not healthy.

@@ -153,21 +153,6 @@ export const TRIGGER_SCAN = gql`
     }
 `;
 
-export const RUN_STATUSES = gql`
-    query runStatuses($ids: [ID!]!) {
-        complianceRunStatuses(ids: $ids) {
-            invalidRunIds
-            runs {
-                id
-                standardId
-                clusterId
-                state
-                errorMessage
-            }
-        }
-    }
-`;
-
 export const STANDARDS_QUERY = gql`
     query getComplianceStandards {
         results: complianceStandards {

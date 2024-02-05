@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	v1 "github.com/openshift/api/config/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,7 +49,8 @@ type updaterImpl struct {
 	contextMtx    sync.Mutex
 	cancelContext context.CancelFunc
 	// This function is needed to be able to mock in test
-	getProviders func(context.Context) *storage.ProviderMetadata
+	getProviders                     func(context.Context) *storage.ProviderMetadata
+	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
 }
 
 func (u *updaterImpl) Start() error {
@@ -124,7 +125,7 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 }
 
 func (u *updaterImpl) run() {
-	clusterMetadata := u.getClusterMetadata()
+	orchestratorMetadata := u.getOrchestratorMetadata()
 	cloudProviderMetadata := u.getCloudProviderMetadata(context.Background())
 
 	updateMessage := &central.ClusterStatusUpdate{
@@ -132,7 +133,7 @@ func (u *updaterImpl) run() {
 			Status: &storage.ClusterStatus{
 				SensorVersion:        version.GetMainVersion(),
 				ProviderMetadata:     cloudProviderMetadata,
-				OrchestratorMetadata: clusterMetadata,
+				OrchestratorMetadata: orchestratorMetadata,
 			},
 		},
 	}
@@ -158,7 +159,7 @@ func (u *updaterImpl) run() {
 	u.sendMessage(updateMessage)
 }
 
-func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
+func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 	serverVersion, err := u.kubeClient.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
@@ -211,7 +212,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 	if operators == nil {
 		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
 	}
-	var clusterOperator *v1.ClusterOperator
+	var clusterOperator *configv1.ClusterOperator
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
@@ -293,11 +294,26 @@ func (u *updaterImpl) getAPIVersions() []string {
 }
 
 func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
+	// We first attempt to get providers by calling the metadata service of each cloud provider we currently support.
 	m := u.getProviders(ctx)
-	if m == nil {
-		log.Info("No Cloud Provider metadata is found")
+	if m != nil {
+		return m
 	}
-	return m
+
+	// In the case of OpenShift _and_ not having collected metadata previously through cloud providers metadata service,
+	// we can read out the Infrastructure CR for provider specific information.
+	if env.OpenshiftAPI.BooleanSetting() {
+		m, err := u.getProviderMetadataFromOpenShift(ctx, u.client.OpenshiftConfig())
+		if err != nil {
+			log.Error("Failed to obtain provider metadata from config.openshift.io/v1/Infrastructure: ", err)
+		}
+		if m != nil {
+			return m
+		}
+	}
+
+	log.Info("No cloud provider metadata was found")
+	return nil
 }
 
 // NewUpdater returns a new ready-to-use updater.
@@ -305,11 +321,12 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &updaterImpl{
-		client:       client,
-		kubeClient:   client.Kubernetes(),
-		updates:      make(chan *message.ExpiringMessage),
-		stopSig:      concurrency.NewSignal(),
-		offlineMode:  offlineMode,
-		getProviders: providers.GetMetadata,
+		client:                           client,
+		kubeClient:                       client.Kubernetes(),
+		updates:                          make(chan *message.ExpiringMessage),
+		stopSig:                          concurrency.NewSignal(),
+		offlineMode:                      offlineMode,
+		getProviders:                     providers.GetMetadata,
+		getProviderMetadataFromOpenShift: getProviderMetadataFromOpenShiftConfig,
 	}
 }

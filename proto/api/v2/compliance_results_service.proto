@@ -54,6 +54,7 @@ message ComplianceScanResult {
   string scan_name = 1;
   string profile_name = 2;
   repeated ComplianceCheckResult check_results = 3;
+  string scan_config_id = 4;
 }
 
 // Group the number of occurrences by status
@@ -67,6 +68,7 @@ message ComplianceScanStatsShim {
   string scan_name = 1;
   repeated ComplianceCheckStatusCount check_stats = 2;
   google.protobuf.Timestamp last_scan = 3;
+  string scan_config_id = 4;
 }
 
 // ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration
@@ -172,6 +174,10 @@ service ComplianceResultsService {
 
   rpc GetComplianceOverallClusterStats(RawQuery) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster"};
+  }
+
+  rpc GetComplianceOverallClusterCount(RawQuery) returns (CountComplianceScanResults) {
+    option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster/count"};
   }
 
   rpc GetComplianceScanResultsCount(RawQuery) returns (CountComplianceScanResults) {

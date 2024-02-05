@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/connection/messagestream"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,10 +32,13 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -169,14 +173,30 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.push(msg)
 }
 
+func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
+	messageType := reflectutils.Type(msg.GetMsg())
+	var eventType string
+	if msg.GetEvent() != nil {
+		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
+	}
+	return fmt.Sprintf("%s_%s", messageType, eventType)
+}
+
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
 	queues := make(map[string]*dedupingQueue)
 	for !c.stopSig.IsDone() {
 		msg, err := grpcServer.Recv()
 		if err != nil {
+			if errStatus, ok := status.FromError(err); ok {
+				if errStatus.Code() == codes.ResourceExhausted {
+					log.Debugf("Central received a payload from sensor that was too large: %v", errStatus.Details())
+				}
+				metrics.RegisterGRPCError(errStatus.Code().String())
+			}
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
+		metrics.SetGRPCLastMessageSizeReceived(getSensorMessageTypeString(msg), float64(msg.Size()))
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }
@@ -198,6 +218,9 @@ func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQu
 }
 
 func (c *sensorConnection) runSend(server central.SensorService_CommunicateServer) {
+
+	wrappedStream := messagestream.NewSizingEventStream(server)
+
 	for !c.stopSig.IsDone() {
 		select {
 		case <-c.stopSig.Done():
@@ -206,7 +229,7 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			c.stopSig.SignalWithError(errors.Wrap(server.Context().Err(), "context error"))
 			return
 		case msg := <-c.sendC:
-			if err := server.Send(msg); err != nil {
+			if err := wrappedStream.Send(msg); err != nil {
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}

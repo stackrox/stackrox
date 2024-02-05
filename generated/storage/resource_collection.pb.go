@@ -50,7 +50,7 @@ func (MatchType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ResourceCollection struct {
-	Id          string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"`
+	Id          string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"` // primary key
 	Name        string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Collection Name" sql:"unique"`
 	Description string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	CreatedAt   *types.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`

@@ -121,13 +121,13 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	// No ID means an add so we need to make sure the name does not already exist
 	if createScanRequest {
 		// Check if scan configuration already exists by name.
-		found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanConfigName())
+		scanConfig, err := m.scanSettingDS.GetScanConfigurationByName(ctx, scanRequest.GetScanConfigName())
 		if err != nil {
 			err = errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return nil, err
 		}
-		if found {
+		if scanConfig != nil {
 			return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
 		}
 
@@ -148,15 +148,29 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		// Use the created time from the DB
 		scanRequest.CreatedTime = scanConfig.GetCreatedTime()
 	}
-	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
-	if err != nil {
-		log.Error(err)
-		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
 
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
+	}
+
+	// Check if there any existing cluster that has the scan configuration with any of profiles being referenced by the scan request.
+	// If so, then we cannot create the scan configuration.
+	found, err := m.scanSettingDS.ScanConfigurationProfileExists(ctx, scanRequest.GetId(), profiles, clusters)
+
+	if err != nil {
+		log.Error(err)
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
+	}
+	// TODO (ROX-22187):  Include the name of the conflicting scan configuration in the error message.
+	if found {
+		return nil, errors.Errorf("Duplicated profiles found in current or existing scan configurations: %q.", scanRequest.GetScanConfigName())
+	}
+
+	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
+	if err != nil {
+		log.Error(err)
+		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	for _, clusterID := range clusters {

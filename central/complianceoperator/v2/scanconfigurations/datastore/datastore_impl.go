@@ -41,15 +41,86 @@ func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*
 	return scanConfig, found, err
 }
 
-// ScanConfigurationExists retrieves the existence of scan configuration specified by name
-func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
+// GetScanConfigurationByName retrieves the scan configuration specified by name
+func (ds *datastoreImpl) GetScanConfigurationByName(ctx context.Context, scanName string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfigName, scanName).ProtoQuery())
+	if err != nil {
+		return nil, err
+	}
+	if len(scanConfigs) == 0 {
+		return nil, nil
+	}
+
+	if len(scanConfigs) > 1 {
+		return nil, errors.Errorf("unable to retrieve distinct scan configuration named %q", scanName)
+	}
+
+	return scanConfigs[0], nil
+}
+
+// ScanConfigurationProfileExists takes all the profiles being referenced by the scan configuration and checks if any cluster in the configuration is using it in any existing scan configurations.
+func (ds *datastoreImpl) ScanConfigurationProfileExists(ctx context.Context, id string, profiles []string, clusters []string) (bool, error) {
+	// use areProfilesEqual to check if there are any duplicate profiles in the scan request profiles
+	for i := 0; i < len(profiles); i++ {
+		for j := i + 1; j < len(profiles); j++ {
+			if areProfilesEqual(profiles[i], profiles[j]) {
+				return true, nil
+			}
+		}
+	}
+
+	// Retrieve all scan configurations for the specified clusters.
+	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, clusters...).ProtoQuery())
 	if err != nil {
 		return false, err
 	}
 
-	return len(scanConfigs) > 0, nil
+	// Create a map for quick lookup of profiles.
+	profileMap := make(map[string]bool)
+
+	for _, scanConfig := range scanConfigs {
+		if scanConfig.GetId() == id {
+			continue
+		}
+		for _, profile := range scanConfig.GetProfiles() {
+			profileMap[profile.GetProfileName()] = true
+		}
+	}
+
+	// Check if any of the profiles are being used by any of the existing scan configurations.
+	for _, profile := range profiles {
+		for profileName := range profileMap {
+			if areProfilesEqual(profile, profileName) {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// areProfilesEqual returns true if the two profiles are equal
+func areProfilesEqual(ProfileNameA string, ProfileNameB string) bool {
+	// we use hasPrefix to handle the comparesion of profiles with version string in the name
+	// first get the shorter profile name
+	var shorterProfileName string
+	var longerProfileName string
+	if len(ProfileNameA) < len(ProfileNameB) {
+		shorterProfileName = ProfileNameA
+		longerProfileName = ProfileNameB
+	} else {
+		shorterProfileName = ProfileNameB
+		longerProfileName = ProfileNameA
+	}
+
+	// if the shorter profile name is a prefix of the longer profile name, and their substring are not equal to "node", then they are equal
+	if longerProfileName[:len(shorterProfileName)] == shorterProfileName && longerProfileName[len(shorterProfileName):] != "-node" {
+		return true
+	}
+
+	return false
 }
 
 // GetScanConfigurations retrieves the scan configurations specified by query

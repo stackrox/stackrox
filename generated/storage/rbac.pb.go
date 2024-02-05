@@ -529,7 +529,7 @@ func (m *K8SRoleBinding) Clone() *K8SRoleBinding {
 // Properties of an individual subjects who are granted roles via role bindings.
 // ////////////////////////////////////////
 type Subject struct {
-	Id                   string      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
+	Id                   string      `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"` // ID is derived from base64 of cluster id and name
 	Kind                 SubjectKind `protobuf:"varint,1,opt,name=kind,proto3,enum=storage.SubjectKind" json:"kind,omitempty" search:"Subject Kind"`
 	Name                 string      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Subject"`
 	Namespace            string      `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`

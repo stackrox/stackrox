@@ -10,29 +10,30 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"k8s.io/utils/pointer"
 )
 
 var (
 	endpoint        string
-	endpointChanged *bool
+	endpointChanged = pointer.Bool(false)
 
 	serverName    string
-	serverNameSet *bool
+	serverNameSet = pointer.Bool(false)
 	directGRPC    bool
-	directGRPCSet *bool
+	directGRPCSet = pointer.Bool(false)
 	forceHTTP1    bool
-	forceHTTP1Set *bool
+	forceHTTP1Set = pointer.Bool(false)
 
 	plaintext    bool
-	plaintextSet *bool
+	plaintextSet = pointer.Bool(false)
 	insecure     bool
-	insecureSet  *bool
+	insecureSet  = pointer.Bool(false)
 
 	insecureSkipTLSVerify    bool
-	insecureSkipTLSVerifySet *bool
+	insecureSkipTLSVerifySet = pointer.Bool(false)
 
 	caCertFile    string
-	caCertFileSet *bool
+	caCertFileSet = pointer.Bool(false)
 
 	useKubeContext bool
 )

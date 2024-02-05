@@ -2,7 +2,6 @@ package cscc
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
@@ -18,6 +17,7 @@ import (
 	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -150,17 +150,7 @@ func (c *cscc) getCluster(id string, clusterDatastore clusterDatastore.DataStore
 		return nil, err
 	}
 	if !exists {
-		return nil, fmt.Errorf("Could not retrieve cluster %q because it does not exist", id)
-	}
-	providerMetadata := cluster.GetStatus().GetProviderMetadata()
-	if providerMetadata.GetGoogle().GetProject() == "" {
-		return nil, fmt.Errorf("Could not find Google project for cluster %q", id)
-	}
-	if providerMetadata.GetGoogle().GetClusterName() == "" {
-		return nil, fmt.Errorf("Could not find Google cluster name for cluster %q", id)
-	}
-	if providerMetadata.GetZone() == "" {
-		return nil, fmt.Errorf("Could not find Google zone for cluster %q", id)
+		return nil, errox.NotFound.Newf("cluster %q does not exist", id)
 	}
 	return cluster, nil
 }

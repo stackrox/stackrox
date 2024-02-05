@@ -129,7 +129,7 @@ type Node struct {
 	// node external IP addresses
 	ExternalIpAddresses []string `protobuf:"bytes,9,rep,name=external_ip_addresses,json=externalIpAddresses,proto3" json:"external_ip_addresses,omitempty"`
 	// From NodeInfo
-	ContainerRuntimeVersion string                `protobuf:"bytes,10,opt,name=container_runtime_version,json=containerRuntimeVersion,proto3" json:"container_runtime_version,omitempty"` // Deprecated: Do not use.
+	ContainerRuntimeVersion string                `protobuf:"bytes,10,opt,name=container_runtime_version,json=containerRuntimeVersion,proto3" json:"container_runtime_version,omitempty"` // Deprecated: Do not use. // Use container_runtime.version
 	ContainerRuntime        *ContainerRuntimeInfo `protobuf:"bytes,14,opt,name=container_runtime,json=containerRuntime,proto3" json:"container_runtime,omitempty"`
 	KernelVersion           string                `protobuf:"bytes,11,opt,name=kernel_version,json=kernelVersion,proto3" json:"kernel_version,omitempty"`
 	// From NodeInfo. Operating system reported by the node (ex: linux).

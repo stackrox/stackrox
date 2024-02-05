@@ -25,8 +25,8 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // ClusterMetrics defines a set of metrics, which are collected by Sensor and
 // send to Central.
 type ClusterMetrics struct {
-	NodeCount            int64    `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`
-	CpuCapacity          int64    `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"`
+	NodeCount            int64    `protobuf:"varint,1,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`       // The number of nodes in the cluster accessible by Sensor.
+	CpuCapacity          int64    `protobuf:"varint,2,opt,name=cpu_capacity,json=cpuCapacity,proto3" json:"cpu_capacity,omitempty"` // The total cpu capacity of all nodes accessible by Sensor.
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

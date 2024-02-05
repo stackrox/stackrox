@@ -153,6 +153,34 @@ var (
 		Help:      "A counter for the total number of events sent from Sensor to Central",
 	}, []string{"Action", "ResourceType", "Type"})
 
+	sensorLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "grpc_last_message_size_sent_bytes",
+		Help:      "A gauge for last message size sent per message type",
+	}, []string{"Type"})
+
+	sensorMaxMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "grpc_max_message_size_sent_bytes",
+		Help:      "A gauge for maximum message size sent in the lifetime of this sensor",
+	}, []string{"Type"})
+
+	sensorMessageSizeSent = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "grpc_message_size_sent_bytes",
+		Help:      "A histogram for message sizes sent by sensor",
+		Buckets: []float64{
+			4_000_000,
+			12_000_000,
+			24_000_000,
+			48_000_000,
+			256_000_000,
+		}, // Bucket sizes selected arbitrary based on current default limits for grpc message size
+	}, []string{"Type"})
+
 	k8sObjectCounts = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),

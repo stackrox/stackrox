@@ -50,9 +50,7 @@ const (
 	// TODO(ROX-20481): Replace this URL with prod GCS bucket domain
 	v4StorageDomain   = "https://storage.googleapis.com/scanner-v4-test"
 	mappingFile       = "redhat-repository-mappings/mapping.zip"
-	cvssFile          = "nvd-bundle/nvd-data.tar.gz"
 	mappingUpdaterKey = "mapping"
-	cvssUpdaterKey    = "cvss"
 )
 
 var (
@@ -64,8 +62,8 @@ var (
 	log = logging.LoggerForModule()
 
 	v4FileMapping = map[string]string{
-		"name2repos": "repomapping-tmp/container-name-repos-map.json",
-		"repo2cpe":   "repomapping-tmp/repository-to-cpe.json",
+		"name2repos": "repomapping/container-name-repos-map.json",
+		"repo2cpe":   "repomapping/repository-to-cpe.json",
 	}
 )
 
@@ -129,10 +127,6 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	if fileName != "" && uuid == "" {
 		if v4FileName, exists := v4FileMapping[fileName]; exists {
 			h.getV4Files(w, r, mappingUpdaterKey, v4FileName)
-			return
-		}
-		if fileName == "cvss" {
-			h.getV4Files(w, r, cvssUpdaterKey, "")
 			return
 		}
 		writeErrorNotFound(w)
@@ -218,11 +212,8 @@ func (h *httpHandler) getUpdater(key string) *requestedUpdater {
 		var urlStr string
 		switch key {
 		case mappingUpdaterKey:
-			urlStr, _ = url.JoinPath(v4StorageDomain, mappingFile)
+			urlStr, _ = url.JoinPath(scannerUpdateDomain, mappingFile)
 			filePath += ".zip"
-		case cvssUpdaterKey:
-			urlStr, _ = url.JoinPath(v4StorageDomain, cvssFile)
-			filePath += ".tar.gz"
 		default: // uuid
 			urlStr, _ = url.JoinPath(scannerUpdateDomain, key, scannerUpdateURLSuffix)
 			filePath += ".zip"
@@ -432,8 +423,6 @@ func (h *httpHandler) openMostRecentFile(updaterKey string, fileName string) (fi
 		}
 	}
 	switch updaterKey {
-	case cvssUpdaterKey:
-		onlineFile = &vulDefFile{File: openedFile, modTime: onlineTime}
 	case mappingUpdaterKey:
 		targetFile, err := openFromArchive(openedFile.Name(), fileName)
 		if err != nil {
@@ -511,8 +500,6 @@ func (h *httpHandler) getV4Files(w http.ResponseWriter, r *http.Request, updater
 	var f *vulDefFile
 
 	switch updaterKey {
-	case cvssUpdaterKey:
-		f, err = h.openMostRecentFile(cvssUpdaterKey, "")
 	case mappingUpdaterKey:
 		f, err = h.openMostRecentFile(mappingUpdaterKey, fileName)
 	default:

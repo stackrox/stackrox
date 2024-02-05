@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,15 +33,17 @@ var (
 			"/v2.ComplianceResultsService/GetComplianceClusterScanStats",
 			"/v2.ComplianceResultsService/GetComplianceScanResultsCount",
 			"/v2.ComplianceResultsService/GetComplianceOverallClusterStats",
+			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 		},
 	})
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
+		scanConfigDS:        scanConfigDS,
 	}
 }
 
@@ -48,6 +51,7 @@ type serviceImpl struct {
 	v2.UnimplementedComplianceResultsServiceServer
 
 	complianceResultsDS complianceDS.DataStore
+	scanConfigDS        complianceConfigDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -88,8 +92,20 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", query)
 	}
 
+	// Need to look up the scan config IDs to return with the results.
+	scanConfigToIDs := make(map[string]string, len(scanResults))
+	for _, result := range scanResults {
+		if _, found := scanConfigToIDs[result.GetScanConfigName()]; !found {
+			config, err := s.scanConfigDS.GetScanConfigurationByName(ctx, result.GetScanConfigName())
+			if err != nil {
+				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", query)
+			}
+			scanConfigToIDs[result.GetScanConfigName()] = config.GetId()
+		}
+	}
+
 	return &v2.ListComplianceScanResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults),
+		ScanResults: storagetov2.ComplianceV2CheckResults(scanResults, scanConfigToIDs),
 	}, nil
 }
 
@@ -149,6 +165,22 @@ func (s *serviceImpl) GetComplianceScanResultsCount(ctx context.Context, query *
 	}
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Errorf("Unable to retrieve compliance scan results count for query %v", query)
+	}
+	return &v2.CountComplianceScanResults{
+		Count: int32(count),
+	}, nil
+}
+
+// GetComplianceOverallClusterCount returns scan results count
+func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	count, err := s.complianceResultsDS.ComplianceClusterStatsCount(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
 	}

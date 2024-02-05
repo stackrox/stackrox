@@ -2,30 +2,12 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Mutation } from '@apollo/client/react/components';
-import { useQuery } from '@apollo/client';
 import * as Icon from 'react-feather';
+import { Spinner } from '@patternfly/react-core';
 
 import { actions as notificationActions } from 'reducers/notifications';
-import { TRIGGER_SCAN, RUN_STATUSES } from 'queries/standard';
+import { TRIGGER_SCAN } from 'queries/standard';
 import Button from 'Components/Button';
-
-const getTriggerRunIds = (data) => {
-    if (data && data.complianceTriggerRuns.length) {
-        return data.complianceTriggerRuns.map((run) => run.id);
-    }
-    return [];
-};
-
-const areRunsFinished = (data) => {
-    let runsFinished = true;
-    if (data && data.complianceRunStatuses && data.complianceRunStatuses.runs) {
-        const incompleteRuns = data.complianceRunStatuses.runs.filter(
-            (x) => x.state !== 'FINISHED'
-        );
-        runsFinished = incompleteRuns.length === 0;
-    }
-    return runsFinished;
-};
 
 class ScanButton extends React.Component {
     static propTypes = {
@@ -38,6 +20,8 @@ class ScanButton extends React.Component {
         loaderSize: PropTypes.number,
         addToast: PropTypes.func.isRequired,
         removeToast: PropTypes.func.isRequired,
+        onScanTriggered: PropTypes.func,
+        scanInProgress: PropTypes.bool.isRequired,
     };
 
     static defaultProps = {
@@ -47,75 +31,28 @@ class ScanButton extends React.Component {
         textCondensed: null,
         standardId: '*',
         loaderSize: 20,
+        onScanTriggered: () => {},
     };
-
-    constructor(props) {
-        super(props);
-
-        this.state = { pendingRunIds: [] };
-    }
 
     onClick = (triggerScan) => () => {
         const { clusterId, standardId } = this.props;
         triggerScan({ variables: { clusterId, standardId } })
-            .then(this.mutationCompleted)
+            .then(() => {
+                this.props.onScanTriggered();
+            })
             .catch((e) => {
                 this.props.addToast(e.message);
                 setTimeout(this.props.removeToast, 2000);
             });
     };
 
-    mutationCompleted = ({ data }) => {
-        this.setState({ pendingRunIds: getTriggerRunIds(data) });
-    };
-
-    queryCompleted = (client) => (data) => {
-        if (this.state.pendingRunIds.length && areRunsFinished(data)) {
-            this.setState({ pendingRunIds: [] });
-            client.resetStore();
-        }
-    };
-
     render() {
-        const { className, text, textCondensed, textClass, loaderSize } = this.props;
+        const { className, text, textCondensed, textClass, loaderSize, scanInProgress } =
+            this.props;
+
         return (
             <Mutation mutation={TRIGGER_SCAN}>
-                {(triggerScan, { client }) => {
-                    const variables = { ids: this.state.pendingRunIds };
-                    const { startPolling, stopPolling, error } = useQuery(RUN_STATUSES, {
-                        variables,
-                        errorPolicy: 'all',
-                        notifyOnNetworkStatusChange: true,
-                        onCompleted: this.queryCompleted(client),
-                    });
-                    if (error) {
-                        return (
-                            <Button
-                                dataTestId="scan-button"
-                                className={className}
-                                text={text}
-                                textCondensed={textCondensed}
-                                textClass={textClass}
-                                icon={
-                                    <Icon.RefreshCcw
-                                        size="14"
-                                        className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
-                                    />
-                                }
-                                onClick={null}
-                                isLoading={null}
-                                disabled
-                                loaderSize={loaderSize}
-                            />
-                        );
-                    }
-
-                    const polling = !!this.state.pendingRunIds.length;
-                    if (polling) {
-                        startPolling(5000);
-                    } else {
-                        stopPolling();
-                    }
+                {(triggerScan, { loading }) => {
                     return (
                         <Button
                             dataTestId="scan-button"
@@ -124,14 +61,18 @@ class ScanButton extends React.Component {
                             textCondensed={textCondensed}
                             textClass={textClass}
                             icon={
-                                <Icon.RefreshCcw
-                                    size="14"
-                                    className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
-                                />
+                                scanInProgress ? (
+                                    <Spinner size="md" className="mx-1 lg:ml-1 lg:mr-3" />
+                                ) : (
+                                    <Icon.RefreshCcw
+                                        size="14"
+                                        className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
+                                    />
+                                )
                             }
                             onClick={this.onClick(triggerScan)}
-                            isLoading={polling}
-                            disabled={polling}
+                            isLoading={loading}
+                            disabled={loading}
                             loaderSize={loaderSize}
                         />
                     );

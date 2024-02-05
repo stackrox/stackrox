@@ -21,7 +21,7 @@ import (
 const (
 	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
 
-	mappingURL = "https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/mapping.zip"
+	mappingURL = "https://storage.googleapis.com/definitions.stackrox.io/redhat-repository-mappings/mapping.zip"
 
 	cvssURL = "https://storage.googleapis.com/scanner-v4-test/nvd-bundle/nvd-data.tar.gz"
 )
