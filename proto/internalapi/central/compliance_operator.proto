@@ -249,7 +249,7 @@ message ComplianceOperatorCondition {
   google.protobuf.Timestamp last_transition_time = 5;
 }
 
-message ComplianceOperatorSuite {
+message ComplianceOperatorSuiteV2 {
   string id = 1;
   string name = 2;
 

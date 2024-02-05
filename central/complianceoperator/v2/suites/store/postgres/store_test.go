@@ -19,17 +19,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceOperatorSuitesStoreSuite struct {
+type ComplianceOperatorSuiteV2StoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestComplianceOperatorSuitesStore(t *testing.T) {
-	suite.Run(t, new(ComplianceOperatorSuitesStoreSuite))
+func TestComplianceOperatorSuiteV2Store(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorSuiteV2StoreSuite))
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) SetupSuite() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) SetupSuite() {
 
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 	if !features.ComplianceEnhancements.Enabled() {
@@ -41,84 +41,84 @@ func (s *ComplianceOperatorSuitesStoreSuite) SetupSuite() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) SetupTest() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_suites CASCADE")
-	s.T().Log("compliance_operator_suites", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_suite_v2 CASCADE")
+	s.T().Log("compliance_operator_suite_v2", tag)
 	s.store = New(s.testDB.DB)
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TearDownSuite() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestStore() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	complianceOperatorSuite := &storage.ComplianceOperatorSuite{}
-	s.NoError(testutils.FullInit(complianceOperatorSuite, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	complianceOperatorSuiteV2 := &storage.ComplianceOperatorSuiteV2{}
+	s.NoError(testutils.FullInit(complianceOperatorSuiteV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorSuite, exists, err := store.Get(ctx, complianceOperatorSuite.GetId())
+	foundComplianceOperatorSuiteV2, exists, err := store.Get(ctx, complianceOperatorSuiteV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorSuite)
+	s.Nil(foundComplianceOperatorSuiteV2)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, complianceOperatorSuite))
-	foundComplianceOperatorSuite, exists, err = store.Get(ctx, complianceOperatorSuite.GetId())
+	s.NoError(store.Upsert(ctx, complianceOperatorSuiteV2))
+	foundComplianceOperatorSuiteV2, exists, err = store.Get(ctx, complianceOperatorSuiteV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorSuite, foundComplianceOperatorSuite)
+	s.Equal(complianceOperatorSuiteV2, foundComplianceOperatorSuiteV2)
 
-	complianceOperatorSuiteCount, err := store.Count(ctx)
+	complianceOperatorSuiteV2Count, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, complianceOperatorSuiteCount)
-	complianceOperatorSuiteCount, err = store.Count(withNoAccessCtx)
+	s.Equal(1, complianceOperatorSuiteV2Count)
+	complianceOperatorSuiteV2Count, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
-	s.Zero(complianceOperatorSuiteCount)
+	s.Zero(complianceOperatorSuiteV2Count)
 
-	complianceOperatorSuiteExists, err := store.Exists(ctx, complianceOperatorSuite.GetId())
+	complianceOperatorSuiteV2Exists, err := store.Exists(ctx, complianceOperatorSuiteV2.GetId())
 	s.NoError(err)
-	s.True(complianceOperatorSuiteExists)
-	s.NoError(store.Upsert(ctx, complianceOperatorSuite))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorSuite), sac.ErrResourceAccessDenied)
+	s.True(complianceOperatorSuiteV2Exists)
+	s.NoError(store.Upsert(ctx, complianceOperatorSuiteV2))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorSuiteV2), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorSuite, exists, err = store.Get(ctx, complianceOperatorSuite.GetId())
+	foundComplianceOperatorSuiteV2, exists, err = store.Get(ctx, complianceOperatorSuiteV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorSuite, foundComplianceOperatorSuite)
+	s.Equal(complianceOperatorSuiteV2, foundComplianceOperatorSuiteV2)
 
-	s.NoError(store.Delete(ctx, complianceOperatorSuite.GetId()))
-	foundComplianceOperatorSuite, exists, err = store.Get(ctx, complianceOperatorSuite.GetId())
+	s.NoError(store.Delete(ctx, complianceOperatorSuiteV2.GetId()))
+	foundComplianceOperatorSuiteV2, exists, err = store.Get(ctx, complianceOperatorSuiteV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorSuite)
-	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorSuite.GetId()))
+	s.Nil(foundComplianceOperatorSuiteV2)
+	s.NoError(store.Delete(withNoAccessCtx, complianceOperatorSuiteV2.GetId()))
 
-	var complianceOperatorSuites []*storage.ComplianceOperatorSuite
-	var complianceOperatorSuiteIDs []string
+	var complianceOperatorSuiteV2s []*storage.ComplianceOperatorSuiteV2
+	var complianceOperatorSuiteV2IDs []string
 	for i := 0; i < 200; i++ {
-		complianceOperatorSuite := &storage.ComplianceOperatorSuite{}
-		s.NoError(testutils.FullInit(complianceOperatorSuite, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorSuites = append(complianceOperatorSuites, complianceOperatorSuite)
-		complianceOperatorSuiteIDs = append(complianceOperatorSuiteIDs, complianceOperatorSuite.GetId())
+		complianceOperatorSuiteV2 := &storage.ComplianceOperatorSuiteV2{}
+		s.NoError(testutils.FullInit(complianceOperatorSuiteV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		complianceOperatorSuiteV2s = append(complianceOperatorSuiteV2s, complianceOperatorSuiteV2)
+		complianceOperatorSuiteV2IDs = append(complianceOperatorSuiteV2IDs, complianceOperatorSuiteV2.GetId())
 	}
 
-	s.NoError(store.UpsertMany(ctx, complianceOperatorSuites))
+	s.NoError(store.UpsertMany(ctx, complianceOperatorSuiteV2s))
 
-	complianceOperatorSuiteCount, err = store.Count(ctx)
+	complianceOperatorSuiteV2Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, complianceOperatorSuiteCount)
+	s.Equal(200, complianceOperatorSuiteV2Count)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorSuiteIDs))
+	s.NoError(store.DeleteMany(ctx, complianceOperatorSuiteV2IDs))
 
-	complianceOperatorSuiteCount, err = store.Count(ctx)
+	complianceOperatorSuiteV2Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(0, complianceOperatorSuiteCount)
+	s.Equal(0, complianceOperatorSuiteV2Count)
 }
 
 const (
@@ -140,15 +140,15 @@ type testCase struct {
 	expectedObjIDs         []string
 	expectedIdentifiers    []string
 	expectedMissingIndices []int
-	expectedObjects        []*storage.ComplianceOperatorSuite
+	expectedObjects        []*storage.ComplianceOperatorSuiteV2
 	expectedWriteError     error
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Access) (*storage.ComplianceOperatorSuite, *storage.ComplianceOperatorSuite, map[string]testCase) {
-	objA := &storage.ComplianceOperatorSuite{}
+func (s *ComplianceOperatorSuiteV2StoreSuite) getTestData(access ...storage.Access) (*storage.ComplianceOperatorSuiteV2, *storage.ComplianceOperatorSuiteV2, map[string]testCase) {
+	objA := &storage.ComplianceOperatorSuiteV2{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
-	objB := &storage.ComplianceOperatorSuite{}
+	objB := &storage.ComplianceOperatorSuiteV2{}
 	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
 	testCases := map[string]testCase{
@@ -157,7 +157,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{objA.GetId(), objB.GetId()},
 			expectedIdentifiers:    []string{objA.GetId(), objB.GetId()},
 			expectedMissingIndices: []int{},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{objA, objB},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{objA, objB},
 			expectedWriteError:     nil,
 		},
 		withNoAccess: {
@@ -165,7 +165,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withNoAccessToCluster: {
@@ -178,7 +178,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccess: {
@@ -191,7 +191,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{objA},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToCluster: {
@@ -204,7 +204,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{objA},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{objA},
 			expectedWriteError:     nil,
 		},
 		withAccessToDifferentCluster: {
@@ -217,7 +217,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{},
 			expectedIdentifiers:    []string{},
 			expectedMissingIndices: []int{0, 1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{},
 			expectedWriteError:     sac.ErrResourceAccessDenied,
 		},
 		withAccessToDifferentNs: {
@@ -231,7 +231,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 			expectedObjIDs:         []string{objA.GetId()},
 			expectedIdentifiers:    []string{objA.GetId()},
 			expectedMissingIndices: []int{1},
-			expectedObjects:        []*storage.ComplianceOperatorSuite{objA},
+			expectedObjects:        []*storage.ComplianceOperatorSuiteV2{objA},
 			expectedWriteError:     nil,
 		},
 	}
@@ -239,7 +239,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) getTestData(access ...storage.Acces
 	return objA, objB, testCases
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACUpsert() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACUpsert() {
 	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -248,16 +248,16 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACUpsertMany() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACUpsertMany() {
 	obj, _, testCases := s.getTestData(storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.ComplianceOperatorSuite{obj}), testCase.expectedWriteError)
+			assert.ErrorIs(t, s.store.UpsertMany(testCase.context, []*storage.ComplianceOperatorSuiteV2{obj}), testCase.expectedWriteError)
 		})
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACCount() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACCount() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
@@ -272,7 +272,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACWalk() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACWalk() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
@@ -280,7 +280,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACWalk() {
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			identifiers := []string{}
-			getIDs := func(obj *storage.ComplianceOperatorSuite) error {
+			getIDs := func(obj *storage.ComplianceOperatorSuiteV2) error {
 				identifiers = append(identifiers, obj.GetId())
 				return nil
 			}
@@ -291,7 +291,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACWalk() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACGetIDs() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACGetIDs() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
@@ -305,7 +305,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACExists() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACExists() {
 	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
@@ -322,7 +322,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACGet() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACGet() {
 	objA, _, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 
@@ -344,7 +344,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACDelete() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACDelete() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 
 	for name, testCase := range testCases {
@@ -371,7 +371,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACDeleteMany() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACDeleteMany() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS)
 	for name, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
@@ -399,7 +399,7 @@ func (s *ComplianceOperatorSuitesStoreSuite) TestSACDeleteMany() {
 	}
 }
 
-func (s *ComplianceOperatorSuitesStoreSuite) TestSACGetMany() {
+func (s *ComplianceOperatorSuiteV2StoreSuite) TestSACGetMany() {
 	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
 	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
