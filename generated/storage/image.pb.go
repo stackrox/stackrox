@@ -950,7 +950,7 @@ type EmbeddedImageScanComponent struct {
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy string `protobuf:"bytes,11,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// Values are cleared after moving to cache, remove them from the grpc return as well
-	Executables          []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"`  
+	Executables          []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"` // @gotags: json:"-"
 	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
 	XXX_unrecognized     []byte                                   `json:"-"`
 	XXX_sizecache        int32                                    `json:"-"`
