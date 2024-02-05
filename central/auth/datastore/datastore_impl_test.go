@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
-	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
+	"github.com/stackrox/rox/central/auth/store"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -58,7 +58,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 
-	store := pgStore.New(s.pool.DB)
+	store := store.New(s.pool.DB)
 
 	permSetStore := permissionSetPostgresStore.New(s.pool.DB)
 	accessScopeStore := accessScopePostgresStore.New(s.pool.DB)

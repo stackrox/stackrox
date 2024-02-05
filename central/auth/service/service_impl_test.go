@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/auth/datastore"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
-	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
+	"github.com/stackrox/rox/central/auth/store"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
@@ -107,7 +107,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.addRoles()
 
-	store := pgStore.New(s.pool.DB)
+	store := store.New(s.pool.DB)
 
 	s.mockIssuerFactory = tokensMocks.NewMockIssuerFactory(gomock.NewController(s.T()))
 	s.mockTokenExchanger = mocks.NewMockTokenExchanger(gomock.NewController(s.T()))

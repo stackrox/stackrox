@@ -85,12 +85,24 @@ func (mr *MockTokenExchangerSetMockRecorder) RemoveTokenExchanger(issuer any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RemoveTokenExchanger), issuer)
 }
 
-// UpsertTokenExchanger mocks base method.
-func (m *MockTokenExchangerSet) UpsertTokenExchanger(exchanger m2m.TokenExchanger, issuer string) error {
+// RollbackExchanger mocks base method.
+func (m *MockTokenExchangerSet) RollbackExchanger(issuer string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertTokenExchanger", exchanger, issuer)
+	ret := m.ctrl.Call(m, "RollbackExchanger", issuer)
 	ret0, _ := ret[0].(error)
 	return ret0
+}
+
+// RollbackExchanger indicates an expected call of RollbackExchanger.
+func (mr *MockTokenExchangerSetMockRecorder) RollbackExchanger(issuer any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).RollbackExchanger), issuer)
+}
+
+// UpsertTokenExchanger mocks base method.
+func (m *MockTokenExchangerSet) UpsertTokenExchanger(exchanger m2m.TokenExchanger, issuer string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpsertTokenExchanger", exchanger, issuer)
 }
 
 // UpsertTokenExchanger indicates an expected call of UpsertTokenExchanger.

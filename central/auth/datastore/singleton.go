@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/auth/m2m"
-	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
+	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -20,7 +20,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		set := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), jwt.IssuerFactorySingleton())
-		ds = New(pgStore.New(globaldb.GetPostgres()), set)
+		ds = New(store.New(globaldb.GetPostgres()), set)
 
 		// On initialization of the store, list all existing configs and fill the set.
 		// However, we do this in the background since the creation of the token exchanger

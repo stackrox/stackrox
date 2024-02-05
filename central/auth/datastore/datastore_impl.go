@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -57,9 +59,7 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 		return nil, err
 	}
 
-	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
-		return nil, err
-	}
+	d.set.UpsertTokenExchanger(exchanger, config.GetIssuer())
 	return config, nil
 }
 
@@ -72,18 +72,24 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 		return err
 	}
 
-	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+	// Start the transaction.
+	// The reason we require a transaction is in case of updating an existing config, there are dependencies to other
+	// in-memory store for token issuers.
+	ctx, tx, err := d.store.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := d.store.Upsert(ctx, config); err != nil {
-		return err
+	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+	if err != nil {
+		return d.wrapRollback(ctx, tx, err, existingConfig)
 	}
 
-	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
-		return err
+	if err := d.store.Upsert(ctx, config); err != nil {
+		return d.wrapRollback(ctx, tx, err, existingConfig)
 	}
+
+	d.set.UpsertTokenExchanger(exchanger, config.GetIssuer())
 
 	// We need to ensure that any previously existing config is removed from the token exchanger set.
 	// Since this updated config may have updated the issuer, we need to fetch the existing, stored config from the
@@ -91,11 +97,13 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 	// to successfully exist beforehand.
 	if exists && config.GetIssuer() != existingConfig.GetIssuer() {
 		if err := d.set.RemoveTokenExchanger(existingConfig.GetIssuer()); err != nil {
-			return err
+			// The removal only returns an error in case the source cannot be unregistered, hence we do not need to
+			// roll back the exchanger.
+			return d.wrapRollback(ctx, tx, err, nil)
 		}
 	}
 
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m2m.TokenExchanger, bool) {
@@ -141,12 +149,30 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
 			continue
 		}
-		if err := d.set.UpsertTokenExchanger(exchanger, config.GetId()); err != nil {
-			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
-		}
+		d.set.UpsertTokenExchanger(exchanger, config.GetId())
 	}
 	if tokenExchangerErrors != nil {
 		return tokenExchangerErrors
 	}
 	return tokenExchangerErrors
+}
+
+// wrapRollback wraps the error with potential rollback errors.
+// In the case the giving config is not nil, it will attempt to rollback the exchanger in the set in addition to
+// rolling back the transaction.
+func (d *datastoreImpl) wrapRollback(ctx context.Context, tx *pgPkg.Tx, err error, existingConfig *storage.AuthMachineToMachineConfig) error {
+	var exchangerErr error
+	if existingConfig != nil {
+		exchangerErr = d.set.RollbackExchanger(existingConfig.GetIssuer())
+	}
+
+	rollbackErr := tx.Rollback(ctx)
+	if exchangerErr != nil {
+		err = pkgErrors.Wrapf(exchangerErr, "rolling back due to exchanger error: %v", err)
+	}
+	if rollbackErr != nil {
+		err = pkgErrors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+
+	return err
 }

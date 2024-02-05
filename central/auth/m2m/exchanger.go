@@ -26,6 +26,7 @@ var (
 type TokenExchanger interface {
 	ExchangeToken(ctx context.Context, rawIDToken string) (string, error)
 	Provider() authproviders.Provider
+	RecreateIssuer(issuerFactory tokens.IssuerFactory) error
 }
 
 type machineToMachineTokenExchanger struct {
@@ -118,6 +119,22 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	}
 
 	return tokenInfo.Token, nil
+}
+
+func (m *machineToMachineTokenExchanger) RecreateIssuer(issuerFactory tokens.IssuerFactory) error {
+	tokenTTL, err := time.ParseDuration(m.config.GetTokenExpirationDuration())
+	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
+	// data store).
+	if err != nil {
+		return errors.Wrap(err, "parsing token expiration duration")
+	}
+
+	issuer, err := issuerFactory.CreateIssuer(m.provider, tokens.WithTTL(tokenTTL))
+	if err != nil {
+		return errors.Wrap(err, "creating token issuer")
+	}
+	m.issuer = issuer
+	return nil
 }
 
 func mapToStringClaims(claims map[string]interface{}) map[string][]string {

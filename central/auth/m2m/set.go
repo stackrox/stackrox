@@ -24,9 +24,10 @@ var (
 //go:generate mockgen-wrapper
 type TokenExchangerSet interface {
 	NewTokenExchangerFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (TokenExchanger, error)
-	UpsertTokenExchanger(exchanger TokenExchanger, issuer string) error
+	UpsertTokenExchanger(exchanger TokenExchanger, issuer string)
 	RemoveTokenExchanger(issuer string) error
 	GetTokenExchanger(issuer string) (TokenExchanger, bool)
+	RollbackExchanger(issuer string) error
 }
 
 // TokenExchangerFactory factory for creating a new token exchanger.
@@ -93,9 +94,8 @@ func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bo
 
 // UpsertTokenExchanger upserts a token exchanger based off the given config.
 // In case a token exchanger already exists for the given config, it will be replaced.
-func (t *tokenExchangerSet) UpsertTokenExchanger(exchanger TokenExchanger, issuer string) error {
+func (t *tokenExchangerSet) UpsertTokenExchanger(exchanger TokenExchanger, issuer string) {
 	t.tokenExchangers[issuer] = exchanger
-	return nil
 }
 
 // RemoveTokenExchanger removes the token exchanger for the specific configuration ID.
@@ -113,5 +113,19 @@ func (t *tokenExchangerSet) RemoveTokenExchanger(id string) error {
 	}
 
 	delete(t.tokenExchangers, id)
+	return nil
+}
+
+// RollbackExchanger is used to roll back any changes made to an existing exchanger.
+// In particular, it will ensure that the source is correctly registered.
+func (t *tokenExchangerSet) RollbackExchanger(issuer string) error {
+	exchanger, exists := t.tokenExchangers[issuer]
+	if !exists {
+		return nil
+	}
+
+	if err := exchanger.RecreateIssuer(t.issuerFactory); err != nil {
+		return err
+	}
 	return nil
 }
