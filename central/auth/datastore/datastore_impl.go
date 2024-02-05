@@ -48,22 +48,36 @@ func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storag
 }
 
 func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+
+	ctx, tx, err := d.store.Begin(ctx)
+	if err != nil {
+		return nil, nil
+	}
+
 	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
 	if err != nil {
-		return nil, err
+		return nil, d.wrapRollback(ctx, tx, err, config)
 	}
 
 	if err := d.store.Upsert(ctx, config); err != nil {
-		return nil, err
+		return nil, d.wrapRollback(ctx, tx, err, config)
 	}
 
 	d.set.UpsertTokenExchanger(exchanger, config.GetIssuer())
-	return config, nil
+	return config, tx.Commit(ctx)
 }
 
 func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return err
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
@@ -72,9 +86,6 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 		return err
 	}
 
-	// Start the transaction.
-	// The reason we require a transaction is in case of updating an existing config, there are dependencies to other
-	// in-memory store for token issuers.
 	ctx, tx, err := d.store.Begin(ctx)
 	if err != nil {
 		return err
@@ -114,6 +125,10 @@ func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m
 }
 
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return err
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
